@@ -63,3 +63,57 @@ genuinely decommitted, so there is nothing left to find. Control A is what prove
 - It exercises the scan in isolation, not the shim's other paths (the `jz` patch/restore, the
   slot-110 hook, `PokeAllPurchasable`'s direct writes — the last of which is a documented,
   deliberate residual, see the comment in `catalog_store_fix.cpp`).
+
+## S147/S148 focused controls
+
+Run these from this directory. They are standalone controls; none launches or injects SUPERVIVE.
+
+```powershell
+clang++ -std=c++17 -O2 s147_natural_state_test.cpp -o s147_natural_state_test.exe
+.\s147_natural_state_test.exe
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\s147_input_plan_test.ps1
+
+clang++ -std=c++17 -O2 s148_damage_calibration_test.cpp -o s148_damage_calibration_test.exe
+.\s148_damage_calibration_test.exe
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\s148_build_contract_test.ps1
+```
+
+Required terminal lines:
+
+```text
+PASS s147_natural_state_test
+PASS s147_input_plan_test
+PASS s148_damage_calibration_test
+PASS s148_build_contract_test
+```
+
+The S147 controls exercise the natural-input state/receipt policy and the host input-plan contract.
+The S148 C++ control exercises scalar preflight, owner-provenance facts, exact seed, and immediate/
+delayed receipt policy. The S148 PowerShell control compiles the isolated alias, requires every
+terminal marker and hardened source contract, and rejects legacy botfight-arm markers in the DLL.
+
+These controls do not prove that a live reflected offset, UObject identity, native wrapper, input
+dispatch, or damage pipeline behaves as expected in the game. Artifact verification, reproducible
+canonical `.text` identity, legacy regression gates, and ultimately a fresh-process live receipt are
+separate obligations.
+
+## S150 capture-generation contract
+
+Run from the repository root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/sigbypass-mod/tests/s150_capture_generation_test.ps1
+```
+
+This is an offline, temp-path-only contract for the S150 capture-generation helper and controlled
+launcher seam. It archives both canonical capture segments without clobbering, keeps a fresh
+canonical stream replacement-locked, accepts only the exact N-format generation token in the strict
+creation window, and exercises exact fake-process success and cleanup. It also proves PID/start/path
+drift is never stopped, every non-exact post-start inventory fails closed, and nonempty pre-start
+`ags`/`go` inventories are refused before mutation without stopping anything. Real temporary-file
+cases require strict, non-recursive certificate-directory clearing; revalidate the cleared root at
+pre-start and the exact certificate triplet at admission; reject reparse-point roots and entries
+without touching their targets; and reject locked/stale/unchanged certificate artifacts. Capture and
+archive paths are pinned to ordinary bases, reject reparse source/parent/archive components before
+mutation, and still reject non-file canonical sources. A guarded fake continuation also proves every
+terminating controlled pre-game failure stops only the exact pinned backend.

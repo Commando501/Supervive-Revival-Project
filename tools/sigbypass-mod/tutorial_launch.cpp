@@ -15,9 +15,29 @@
 #include <windows.h>
 #include <tlhelp32.h>
 #include <cstdint>
+#include "s147_natural_state.h"
+#ifndef KBFBINDONLY
+#define KBFBINDONLY 0
+#endif
+#ifndef KBFSELFCAL
+#define KBFSELFCAL 0
+#endif
+#ifndef KBFSELFTIMEOUTMS
+#define KBFSELFTIMEOUTMS 5000
+#endif
+#if KBFSELFCAL || KBFBINDONLY
+#include "s148_damage_calibration.h"
+#endif
+#if KBFBINDONLY
+#include "s149_bind_bootstrap.h"
+#endif
 #include <cstdio>
 #include <cstdarg>
 #include <cstring>
+
+#ifndef KBFNATURALINPUT
+#define KBFNATURALINPUT 0
+#endif
 
 static const char* kMarkerPath = "G:\\git\\Supervive Revival Project\\docs\\tutorial-launch-marker.txt";
 constexpr uintptr_t kPiRva=0x13454A0, kObjObjectsRva=0x9E38930, kNamePoolRva=0x9D81450, kGGameTidRva=0x9D49158;
@@ -159,6 +179,77 @@ static uint8_t g_template[0x180]={0}, g_myframe[0x180]={0};
 static uint64_t g_pbuf[16]={0}, g_rbuf[4]={0};
 static uint64_t g_spbuf[32]={0};   // S74 B2 exp3: larger param buffer for SpawnPlayer (96-byte FTransform OUT)
 
+#if KBFSELFCAL
+enum BfS148Phase : LONG {
+    BF_S148_INITIAL=0,
+    BF_S148_CALL_ISSUED=1,
+    BF_S148_WAIT_LATER=2,
+    BF_S148_DONE=3,
+};
+static volatile LONG g_s148Phase=BF_S148_INITIAL;
+__declspec(align(8)) static volatile LONGLONG g_s148TimeoutTick=0;
+static bool BfS148DoneLoad(){ return InterlockedCompareExchange(&g_done,0,0)!=0; }
+static void BfS148DoneStore(){ InterlockedExchange(&g_done,1); }
+#endif
+#if KBFSELFCAL || KBFBINDONLY
+static bool BfS148InHookLoad(){ return InterlockedCompareExchange(&g_inHook,0,0)!=0; }
+static bool BfS148InHookTryEnter(){ return InterlockedCompareExchange(&g_inHook,1,0)==0; }
+static void BfS148InHookExit(){ InterlockedExchange(&g_inHook,0); }
+#endif
+
+#if KBFBINDONLY
+static DWORD g_s149Pid=0;
+__declspec(align(8)) static volatile LONGLONG g_s149Run=0;
+static S149BindWitnessFacts g_s149BindFacts={};
+static S149BindCleanupFacts g_s149CleanupFacts={};
+static volatile LONG g_s149WitnessPublished=0;
+#endif
+
+#if KBFNATURALINPUT
+// S147 publication is one-way until the worker finalizer. All pointer identities are established
+// on the game thread before S147_SETUP_ARMED is published; the worker only performs guarded raw
+// reads and the one saved CDO restoration write.
+static volatile LONG g_s147State=S147_DISABLED;
+static volatile LONG g_s147ToggleMapEvents=0,g_s147Ability3Events=0;
+static volatile LONG g_s147Ability3WhileShiftDown=0;
+alignas(8) static volatile LONGLONG g_s147ToggleMapTicks[4]={0},g_s147Ability3Ticks[4]={0};
+alignas(8) static volatile LONGLONG g_s147ReadyQpc=0;
+static volatile LONG g_s147RestorePending=0,g_s147SampleReady=0,g_s147FinalizeOwner=0;
+static uintptr_t g_s147ToggleMapNode=0,g_s147Ability3Node=0;
+static uintptr_t g_s147Asc=0,g_s147AscClass=0,g_s147AbilityClass=0,g_s147AbilityCdo=0;
+static uintptr_t g_s147ExpectedPrimary=0,g_s147ExpectedManaSet=0,g_s147ManaClass=0;
+static int32_t g_s147Handle=0,g_s147SavedCdoCharge=0;
+static uint32_t g_s147ChargesOff=0,g_s147SpawnedAttrsOff=0;
+static uint8_t g_s147InstancingPolicy=0xFF;
+static DWORD g_s147Pid=0;
+static uint64_t g_s147RunId=0;
+static S147RawSample g_s147Baseline={0};
+
+static void BfObserveNaturalNode(void* frame){
+    if(!frame) return;
+    uintptr_t node=0;
+    __try{ node=*(uintptr_t*)((uint8_t*)frame+FF_NODE); }
+    __except(EXCEPTION_EXECUTE_HANDLER){ return; }
+    S147NodeKind kind=S147ClassifyNode(node,g_s147ToggleMapNode,g_s147Ability3Node);
+    LARGE_INTEGER qpc={0};
+    QueryPerformanceCounter(&qpc);
+    LONGLONG tick=qpc.QuadPart;
+    if(kind==S147_NODE_TOGGLE_MAP){
+        LONG published=InterlockedCompareExchange(&g_s147ToggleMapEvents,0,0);
+        if(published>=0&&published<4) InterlockedExchange64(&g_s147ToggleMapTicks[published],tick);
+        MemoryBarrier();
+        InterlockedIncrement(&g_s147ToggleMapEvents);
+    } else if(kind==S147_NODE_ABILITY3){
+        LONG published=InterlockedCompareExchange(&g_s147Ability3Events,0,0);
+        if(published>=0&&published<4) InterlockedExchange64(&g_s147Ability3Ticks[published],tick);
+        if((GetAsyncKeyState(VK_LSHIFT)&0x8000)!=0)
+            InterlockedExchange(&g_s147Ability3WhileShiftDown,1);
+        MemoryBarrier();
+        InterlockedIncrement(&g_s147Ability3Events);
+    }
+}
+#endif
+
 // ---- S68 spawn+possess mode (LEAD B / OPTION 2) ----
 // ⚠ RM_GOTOPHASE (2) is the S74 mode and is LEFT EXACTLY AS IT WAS -- it arms with InstallHook(), i.e.
 //   a standing ProcessInternal `.text` patch (the construct S112 measured at 10/10 armed-window deaths).
@@ -166,11 +257,17 @@ static uint64_t g_spbuf[32]={0};   // S74 B2 exp3: larger param buffer for Spawn
 //   mode: same subject (the round-phase ladder), heap-only arming, and the FK-22 A0'..A5 protocol.
 //   RM_DROPPLANE (25) is the S125 successor: same FK-22 subject one layer down (the DropPlane
 //   COMPONENT rather than the phase), also heap-only arming, and the B0..B4 protocol.
-enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24, RM_DROPPLANE=25, RM_DROPPOD=26, RM_DROPMARKERS=27, RM_POOLSPAWN=28, RM_RIDEABLE=29, RM_DISMOUNT=30, RM_BOTSPAWN=31 };
+enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24, RM_DROPPLANE=25, RM_DROPPOD=26, RM_DROPMARKERS=27, RM_POOLSPAWN=28, RM_RIDEABLE=29, RM_DISMOUNT=30, RM_BOTSPAWN=31, RM_BOTFIGHT=32, RM_MOUNT=33 };
 #ifndef KRUNMODE
 #define KRUNMODE RM_CHEATSPAWN
 #endif
 static const int kRunMode = KRUNMODE;   // override at build with -DKRUNMODE=RM_FORCEOPEN etc. RM_FORCEOPEN=force-open; RM_SPAWNPOSSESS=spawn+possess; RM_GOTOPHASE=advance round; RM_SPAWNPLAYER=real hero spawn+possess; RM_CHEATSPAWN=call the game's own LokiPlayerCheats spawn RPC (S74 Path B)
+#if KBFSELFCAL
+static_assert(kRunMode==RM_BOTFIGHT,"S148 self calibration is valid only in RM_BOTFIGHT");
+#endif
+#if KBFBINDONLY
+static_assert(kRunMode==RM_BOTFIGHT,"S149 bind-only setup is valid only in RM_BOTFIGHT");
+#endif
 static uintptr_t g_gm2=0, g_pc2=0, g_startSpot=0, g_spawnedPawn=0, g_heroClass=0;
 constexpr uint32_t GM_DEFPAWN_OFF=0x3F0;   // AGameModeBase::DefaultPawnClass
 // S68 GameplayStatics deferred-spawn (bypass GetDefaultPawnClass): explicit hero-class spawn + possess.
@@ -399,6 +496,8 @@ static void DoDropMarkers();                                    // S126 RM_DROPM
 static void DoRideable();                                      // S131 RM_RIDEABLE:  call the FIFTH WALL directly with a NON-NULL PlayerState (heap-only; NO module-image write)
 static void DoDismount();                                      // S132 RM_DISMOUNT: append the PlayerState to PlayersAttached, then call AuthPlayerDetachPlayerFromRidable (DATA-class write; NO module-image write)
 static void DoBotSpawn();                                      // S135 RM_BOTSPAWN: SpawnClassBotAtLoc on the tutorial GameMode's Comp_BP_BotSpawner (CALL ONLY; NO write of any kind)
+static void DoBotFight();                                      // S143 RM_BOTFIGHT: minimum bot-fight loop (WALL P bind/grant/activate + WALL E spawn/team/damage); all destructive steps KBFARMS-gated
+static void DoMount();                                          // S150-drop RM_MOUNT: put a rider INTO the pod (S132 PlayersAttached append) + co-move it (per-hit reposition) + optional StartPodGameplay descent; all steps KMTARMS-gated (DATA + CALL-ONLY; NO module-image write)
 static void DoPoolSpawn();                                     // S128 RM_POOLSPAWN:  ROUTE F -- does SpawnPoolableActorFromClassDeferred need the actor pool? (heap-only; NO module-image write)
 static void PhaseRestore(const char* who);                     //  ...its STOP: re-poke GameState+0xA44 back to 4. Idempotent, callable from any thread.
 
@@ -1231,10 +1330,35 @@ static void SetFStringAt(uint8_t* pbuf, uint32_t byteOff, const wchar_t* s){
 }
 
 extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
-    if(g_done || g_inHook) return;
+#if KBFSELFCAL
+    if(BfS148DoneLoad()) return;
+#else
+    if(g_done) return;
+#endif
+#if KBFNATURALINPUT
+    if(kRunMode==RM_BOTFIGHT){
+        LONG naturalState=InterlockedCompareExchange(&g_s147State,0,0);
+        if(naturalState>=S147_SETUP_OWNS_CDO){
+            // During the open window this callback is observation-only. It compares the exact
+            // resolved FFrame.Node identities and performs only atomic counter/timestamp updates.
+            if(naturalState==S147_WINDOW_OPEN&&!g_inHook&&
+               GetCurrentThreadId()==g_gameTid&&LooksLikePtr((uintptr_t)frame))
+                BfObserveNaturalNode(frame);
+            return;
+        }
+    }
+#endif
+#if KBFSELFCAL
+    if(GetCurrentThreadId()!=g_gameTid) return;
+    if(!LooksLikePtr((uintptr_t)frame)) return;
+    if(!BfS148InHookTryEnter()) return;
+    InterlockedIncrement(&g_hitsGT);
+#else
+    if(g_inHook) return;
     if(GetCurrentThreadId()!=g_gameTid) return;
     if(!LooksLikePtr((uintptr_t)frame)) return;
     InterlockedIncrement(&g_hitsGT); g_inHook=1;
+#endif
     memcpy(g_template, frame, sizeof(g_template));
     if(kRunMode==RM_GOTOPHASE){ DoGoToPhase(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // g_done set inside DoGoToPhase when phases exhausted
     if(kRunMode==RM_WAKEMOVE){ DoWakeMove(); InterlockedIncrement(&g_called); g_inHook=0; return; }       // g_done set inside DoWakeMove after sampling
@@ -1271,7 +1395,15 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     if(kRunMode==RM_POOLSPAWN){ DoPoolSpawn(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S128 Route F
     if(kRunMode==RM_RIDEABLE){ DoRideable(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S131 the fifth wall
     if(kRunMode==RM_DISMOUNT){ DoDismount(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S132 the dismount
+    if(kRunMode==RM_MOUNT){ DoMount(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S150-drop the mount + ride + descent (DoMount sets g_done itself unless POLL holds)
     if(kRunMode==RM_BOTSPAWN){ DoBotSpawn(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S135 the bot spawn
+    if(kRunMode==RM_BOTFIGHT){ DoBotFight(); InterlockedIncrement(&g_called);
+#if KBFSELFCAL
+        BfS148InHookExit();
+#else
+        g_inHook=0;
+#endif
+        return; }   // S143 the minimum bot-fight loop
     if(kRunMode==RM_PLAY){ DoPlay(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // holds until worker timeout (no g_done) — camera + WASD each hit
     if(kRunMode==RM_TRAINING){ DoTraining(); InterlockedIncrement(&g_called); g_inHook=0; return; }       // g_done set inside DoTraining (one step per hit)
     memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
@@ -1634,6 +1766,12 @@ static bool SafeWritable(const void* a,size_t sz){
 #ifndef KFUNCSWAP
 #define KFUNCSWAP 1
 #endif
+#if KBFSELFCAL
+static_assert(KFUNCSWAP==1,"S148 self-calibration requires heap UFunction callback delivery");
+#endif
+#if KBFBINDONLY
+static_assert(KFUNCSWAP==1,"S149 bind-only setup requires heap UFunction callback delivery");
+#endif
 // The RM_PLAY hold. 600000 = the historical value; -DKPLAYHOLDMS=<ms> shrinks the window a standing
 // .text patch is exposed for (variant `play-hold300`). Bare token so the default expands identically.
 #ifndef KPLAYHOLDMS
@@ -1702,10 +1840,98 @@ static uintptr_t g_fsSeen[KFSHOTN]={0};           // distinct FFrame.Node (= the
 static volatile long g_fsSeenHits[KFSHOTN]={0};
 static volatile long g_fsSeenN=0;
 static long g_fsSwapped=0;
+#if KBFSELFCAL || KBFBINDONLY
+constexpr LONG BF_S148_FS_COUNT_MASK=0x3FFFFFFF;
+constexpr LONG BF_S148_FS_DRAINING=0x40000000;
+constexpr LONG BF_S148_FS_RESTORING=(LONG)0x80000000u;
+static volatile LONG g_s148FsState=0;
+static DWORD g_s148FsTls=TLS_OUT_OF_INDEXES;
+#if KBFBINDONLY
+static volatile LONG g_s149FsParked=0;
+static volatile LONG g_s149FsEntryPending=0;
+static volatile LONG g_s149FsPhase=S149_BIND_THUNK_ACTIVE;
+static volatile LONG g_s149FsMutationRoots=0;
+static volatile LONG g_s149FsPostRestoreEntries=0;
+#endif
+static LONG BfS148FsActiveCount(LONG state){ return state&BF_S148_FS_COUNT_MASK; }
+static void BfS148FsEnter(){
+#if KBFBINDONLY
+    bool parked=false;
+#endif
+    for(;;){
+        LONG observed=InterlockedCompareExchange(&g_s148FsState,0,0);
+        uintptr_t depth=(uintptr_t)TlsGetValue(g_s148FsTls);
+        if((observed&BF_S148_FS_RESTORING)||
+           ((observed&BF_S148_FS_DRAINING)&&depth==0)){
+#if KBFBINDONLY
+            if(!parked){ InterlockedIncrement(&g_s149FsParked); parked=true; }
+#endif
+            Sleep(1); continue;
+        }
+        if(BfS148FsActiveCount(observed)==BF_S148_FS_COUNT_MASK){ Sleep(1); continue; }
+        // Active count and gate share one CAS word: an entrant and the zero-active transition to
+        // RESTORING cannot both win. Runtime TLS distinguishes an existing recursive call tree from
+        // a new root: DRAINING admits only recursion, while all new/prefetched roots park.
+        if(InterlockedCompareExchange(&g_s148FsState,observed+1,observed)==observed){
+#if KBFBINDONLY
+            if(parked) InterlockedDecrement(&g_s149FsParked);
+#endif
+            while(!TlsSetValue(g_s148FsTls,(void*)(depth+1))) Sleep(1); // valid slot; fail-stop if revoked.
+            return;
+        }
+    }
+}
+static void BfS148FsExit(){
+    uintptr_t depth=(uintptr_t)TlsGetValue(g_s148FsTls);
+    while(depth==0||!TlsSetValue(g_s148FsTls,(void*)(depth-1))) Sleep(1);
+    InterlockedDecrement(&g_s148FsState);
+}
+#endif
 // The replacement UFunction.Func. Same signature as the real ProcessInternal, so UFunction::Invoke's
 // `call [rax]` is unchanged; OnPI runs first (as the .text stub did), then the real dispatcher runs.
 extern "C" void FsThunk(void* ctx,void* frame,void* result){
+#if KBFBINDONLY
+    // The phase-load handshake closes the only race that a bounded quiet interval cannot: a caller
+    // may have loaded UFunction.Func=&FsThunk but not executed its first thunk instruction yet. Such
+    // a caller resumes into SEALED and returns without either OnPI or ProcessInternal. A caller that
+    // loads a pre-seal phase is promoted to a counted mutation-capable root before the handshake is
+    // released, so cleanup cannot complete until its original dispatch has returned.
+    InterlockedIncrement(&g_s149FsEntryPending);
     InterlockedIncrement(&g_fsCalls);
+    LONG s149EntryPhase=InterlockedCompareExchange(&g_s149FsPhase,0,0);
+    if(!S149BindThunkRunsOriginal((uint32_t)s149EntryPhase)){
+        InterlockedIncrement(&g_s149FsPostRestoreEntries);
+        InterlockedDecrement(&g_s149FsEntryPending);
+        return;
+    }
+    InterlockedIncrement(&g_s149FsMutationRoots);
+    InterlockedDecrement(&g_s149FsEntryPending);
+    BfS148FsEnter();
+    LONG s149DispatchPhase=InterlockedCompareExchange(&g_s149FsPhase,0,0);
+    bool s149RunSetup=S149BindThunkRunsSetup((uint32_t)s149DispatchPhase);
+    bool s149RunOriginal=S149BindThunkRunsOriginal((uint32_t)s149DispatchPhase);
+    if(!s149RunSetup) InterlockedIncrement(&g_s149FsPostRestoreEntries);
+#elif KBFSELFCAL
+    BfS148FsEnter();
+    InterlockedIncrement(&g_fsCalls);
+#else
+    InterlockedIncrement(&g_fsCalls);
+#endif
+#if KBFBINDONLY
+    if(s149RunSetup){
+#endif
+#if KBFNATURALINPUT
+    LONG s147EntryState=S147_DISABLED;
+    bool s147OwnsSetupReturn=false;
+    bool s147EntryIsGameThread=false,s147ReentrantAtEntry=false;
+    if(kRunMode==RM_BOTFIGHT){
+        s147EntryIsGameThread=GetCurrentThreadId()==g_gameTid;
+        s147ReentrantAtEntry=g_inHook!=0;
+        s147EntryState=InterlockedCompareExchange(&g_s147State,0,0);
+        if(s147EntryState==S147_WAIT_NEXT_DISPATCH&&s147EntryIsGameThread)
+            S147OpenAtLaterDispatch(&g_s147State);
+    }
+#endif
     if(g_fsProfile && GetCurrentThreadId()==g_gameTid && LooksLikePtr((uintptr_t)frame)){
         // ProcessInternal reads the executing UFunction out of the frame it is handed, so FFrame.Node
         // IS the target -- attribution for free, no per-target codegen.  Game thread only, so the
@@ -1716,7 +1942,32 @@ extern "C" void FsThunk(void* ctx,void* frame,void* result){
         else if(n<KFSHOTN){ g_fsSeen[n]=node; g_fsSeenHits[n]=1; g_fsSeenN=n+1; }
     }
     OnPI(ctx,frame,result);
+#if KBFBINDONLY
+    }
+#endif
+#if KBFNATURALINPUT
+    if(kRunMode==RM_BOTFIGHT&&g_fsPi){
+        LONG s147AfterOnPI=InterlockedCompareExchange(&g_s147State,0,0);
+        s147OwnsSetupReturn=S147OwnsSetupReturn(s147EntryState,s147AfterOnPI,
+                                               s147EntryIsGameThread,s147ReentrantAtEntry);
+    }
+#endif
+    #if KBFBINDONLY
+    if(s149RunOriginal&&g_fsPi) ((PFN_THUNK)g_fsPi)(ctx,frame,result);
+    #else
     if(g_fsPi) ((PFN_THUNK)g_fsPi)(ctx,frame,result);
+    #endif
+#if KBFNATURALINPUT
+    // This executes only after the real ProcessInternal call for the setup-owning dispatch returns.
+    // Nested dispatches entered after publication have s147EntryState==SETUP_ARMED and cannot claim it.
+    if(s147OwnsSetupReturn) S147MarkSetupCallbackReturned(&g_s147State);
+#endif
+#if KBFSELFCAL || KBFBINDONLY
+    BfS148FsExit();
+#endif
+#if KBFBINDONLY
+    InterlockedDecrement(&g_s149FsMutationRoots);
+#endif
 }
 // Walk GUObjectArray; rewrite UFunction.Func from `from` to `to` wherever it matches. Returns the
 // number of VERIFIED changes. Reads are SafeReadable-guarded exactly like FindInstByClass; the only
@@ -1751,6 +2002,213 @@ static long FsScan(uintptr_t from,uintptr_t to,long* outObjs,long* outFuncs,long
     if(outObjs)*outObjs=objs; if(outFuncs)*outFuncs=ufn;
     return changed;
 }
+#if KBFBINDONLY
+struct BfS149FsResidualPass {
+    bool complete;
+    uint32_t found;
+    uint32_t changed;
+};
+
+// S149's readiness proof is deliberately stricter than the shared best-effort FsScan used by prior
+// flights. Every populated FUObjectArray slot and every UFunction::Func field must be readable; a
+// chunk/header change during the pass makes the pass incomplete. The repair pass is followed by an
+// independent read-only pass, so BIND_READY never rests on the generic GC-shortfall explanation.
+static BfS149FsResidualPass BfS149FsResidualCensusUnsafe(bool repair){
+    BfS149FsResidualPass result{};
+    if(!g_fsFuncCls||!g_fsPi) return result;
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)) return result;
+    uintptr_t objectsPtr=*(uintptr_t*)oo;
+    int32_t numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(objectsPtr)||numEl<=0||numEl>8000000) return result;
+    int numChunks=(numEl+PERCHUNK-1)/PERCHUNK;
+    for(int ci=0;ci<numChunks;ci++){
+        uintptr_t chunkSlot=objectsPtr+(uintptr_t)ci*8;
+        if(!SafeReadable((void*)chunkSlot,8)) return result;
+        uintptr_t chunk=*(uintptr_t*)chunkSlot;
+        if(!LooksLikePtr(chunk)) return result;
+        int cnt=(ci==numChunks-1)?(numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE;
+            if(!SafeReadable((void*)item,8)) return result;
+            uintptr_t obj=*(uintptr_t*)item;
+            if(obj==0) continue;
+            if(!LooksLikePtr(obj)) return result;
+            uintptr_t cls=ClassOf(obj);
+            if(!LooksLikePtr(cls)) return result;
+            if(cls!=g_fsFuncCls) continue;
+            uintptr_t funcSlot=obj+UFUNC_FUNC;
+            if(!SafeReadable((void*)funcSlot,8)) return result;
+            if(*(uintptr_t*)funcSlot!=(uintptr_t)&FsThunk) continue;
+            result.found++;
+            if(!repair) continue;
+            if(!SafeWritable((void*)funcSlot,8)) continue;
+            *(uintptr_t*)funcSlot=g_fsPi;
+            MemoryBarrier();
+            if(SafeReadable((void*)funcSlot,8)&&*(uintptr_t*)funcSlot==g_fsPi)
+                result.changed++;
+        }
+    }
+    if(!SafeReadable((void*)oo,0x18)||*(uintptr_t*)oo!=objectsPtr||
+       *(int32_t*)(oo+0x14)!=numEl) return result;
+    result.complete=true;
+    return result;
+}
+
+static BfS149FsResidualPass BfS149FsResidualCensus(bool repair,bool* faulted){
+    BfS149FsResidualPass result{};
+    __try{
+        result=BfS149FsResidualCensusUnsafe(repair);
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        if(faulted)*faulted=true;
+        Markerf("[S149] %s residual census SEH fault contained\r\n",
+                repair?"repair":"verify");
+    }
+    return result;
+}
+
+struct BfS149FsDrainSnapshot {
+    LONG entryPending;
+    LONG parked;
+    LONG active;
+    LONG mutationRoots;
+    LONG postRestoreEntries;
+};
+
+static BfS149FsDrainSnapshot BfS149FsDrainSnapshotLoad(){
+    BfS149FsDrainSnapshot s{};
+    s.entryPending=InterlockedCompareExchange(&g_s149FsEntryPending,0,0);
+    s.parked=InterlockedCompareExchange(&g_s149FsParked,0,0);
+    s.active=BfS148FsActiveCount(InterlockedCompareExchange(&g_s148FsState,0,0));
+    s.mutationRoots=InterlockedCompareExchange(&g_s149FsMutationRoots,0,0);
+    s.postRestoreEntries=InterlockedCompareExchange(&g_s149FsPostRestoreEntries,0,0);
+    return s;
+}
+
+static bool BfS149FsDrainSnapshotEmpty(const BfS149FsDrainSnapshot& s){
+    return s.entryPending==0&&s.parked==0&&s.active==0&&s.mutationRoots==0;
+}
+
+static BfS149FsDrainSnapshot BfS149WaitForFsDrain(ULONGLONG timeoutMs,bool* drained){
+    const ULONGLONG deadline=GetTickCount64()+timeoutMs;
+    BfS149FsDrainSnapshot s{};
+    for(;;){
+        s=BfS149FsDrainSnapshotLoad();
+        if(BfS149FsDrainSnapshotEmpty(s)){
+            if(drained)*drained=true;
+            return s;
+        }
+        if(GetTickCount64()>=deadline){
+            if(drained)*drained=false;
+            return s;
+        }
+        Sleep(1);
+    }
+}
+
+// Restoration first releases already-entered/parked roots in pass-through mode so they can finish
+// their real ProcessInternal dispatch. SEALED is then a one-way no-dispatch phase. The entryPending
+// handshake and mutationRoots counter make the seal boundary race-free; a caller delayed before its
+// first thunk instruction later sees SEALED and returns without touching engine state.
+static BfS149FsDrainSnapshot BfS149SealCallbacks(bool* quiesced){
+    InterlockedExchange(&g_s149FsPhase,S149_BIND_THUNK_PASS_THROUGH);
+    MemoryBarrier();
+    InterlockedExchange(&g_s148FsState,0); // release roots parked behind RESTORING
+    bool passThroughDrained=false;
+    (void)BfS149WaitForFsDrain(5000ULL,&passThroughDrained);
+
+    InterlockedExchange(&g_s149FsPhase,S149_BIND_THUNK_SEALED);
+    MemoryBarrier();
+    Marker("[S149] callbacks SEALED; delayed prefetched thunk roots are no-dispatch\r\n");
+    bool sealedDrained=false;
+    BfS149FsDrainSnapshot final=BfS149WaitForFsDrain(5000ULL,&sealedDrained);
+    LONG phase=InterlockedCompareExchange(&g_s149FsPhase,0,0);
+    bool safe=sealedDrained&&final.parked==0&&final.active==0&&
+        S149BindTerminalCallbackSafe((uint32_t)phase,
+                                     (uint32_t)(final.entryPending>0?final.entryPending:0),
+                                     (uint32_t)(final.mutationRoots>0?final.mutationRoots:0));
+    if(quiesced)*quiesced=safe;
+    return final;
+}
+
+static void BfS149FinalizeFsCleanup(long restored){
+    memset(&g_s149CleanupFacts,0,sizeof(g_s149CleanupFacts));
+    g_s149CleanupFacts.swapped=(uint32_t)(g_fsSwapped>0?g_fsSwapped:0);
+    g_s149CleanupFacts.restored=(uint32_t)(restored>0?restored:0);
+    g_s149CleanupFacts.restoreCountExact=
+        g_fsSwapped>0&&restored==g_fsSwapped?1:0;
+
+    bool cleanupFaulted=false;
+    BfS149FsResidualPass repair=BfS149FsResidualCensus(true,&cleanupFaulted);
+    BfS149FsResidualPass verify=BfS149FsResidualCensus(false,&cleanupFaulted);
+    g_s149CleanupFacts.repairScanComplete=repair.complete?1:0;
+    g_s149CleanupFacts.verifyScanComplete=verify.complete?1:0;
+    g_s149CleanupFacts.residualRepaired=repair.changed;
+    g_s149CleanupFacts.residualRemaining=verify.found;
+
+    bool quiesced=false;
+    BfS149FsDrainSnapshot final=BfS149SealCallbacks(&quiesced);
+    g_s149CleanupFacts.callbacksSealed=
+        InterlockedCompareExchange(&g_s149FsPhase,0,0)==S149_BIND_THUNK_SEALED?1:0;
+    g_s149CleanupFacts.cleanupFaulted=cleanupFaulted?1:0;
+    g_s149CleanupFacts.postRestoreQuiesced=quiesced?1:0;
+    g_s149CleanupFacts.postRestoreEntries=
+        (uint32_t)(final.postRestoreEntries>0?final.postRestoreEntries:0);
+    g_s149CleanupFacts.entryPendingRemaining=
+        (uint32_t)(final.entryPending>0?final.entryPending:0);
+    g_s149CleanupFacts.parkedRemaining=(uint32_t)(final.parked>0?final.parked:0);
+    g_s149CleanupFacts.activeRemaining=(uint32_t)(final.active>0?final.active:0);
+    g_s149CleanupFacts.mutationRootsRemaining=
+        (uint32_t)(final.mutationRoots>0?final.mutationRoots:0);
+    Markerf(S149_BIND_CLEANUP_MARKER_FORMAT,
+            (unsigned)g_s149CleanupFacts.restoreCountExact,
+            (unsigned)g_s149CleanupFacts.repairScanComplete,
+            (unsigned)g_s149CleanupFacts.verifyScanComplete,
+            (unsigned)g_s149CleanupFacts.callbacksSealed,
+            (unsigned)g_s149CleanupFacts.cleanupFaulted,
+            (unsigned)g_s149CleanupFacts.postRestoreQuiesced,
+            (unsigned long)g_s149CleanupFacts.swapped,
+            (unsigned long)g_s149CleanupFacts.restored,
+            (unsigned long)g_s149CleanupFacts.residualRepaired,
+            (unsigned long)g_s149CleanupFacts.residualRemaining,
+            (unsigned long)g_s149CleanupFacts.postRestoreEntries,
+            (unsigned long)g_s149CleanupFacts.entryPendingRemaining,
+            (unsigned long)g_s149CleanupFacts.parkedRemaining,
+            (unsigned long)g_s149CleanupFacts.activeRemaining,
+            (unsigned long)g_s149CleanupFacts.mutationRootsRemaining);
+}
+
+static void BfS149ContainCleanupFault(){
+    memset(&g_s149CleanupFacts,0,sizeof(g_s149CleanupFacts));
+    g_s149CleanupFacts.swapped=(uint32_t)(g_fsSwapped>0?g_fsSwapped:0);
+    g_s149CleanupFacts.cleanupFaulted=1;
+    bool quiesced=false;
+    BfS149FsDrainSnapshot final=BfS149SealCallbacks(&quiesced);
+    g_s149CleanupFacts.callbacksSealed=
+        InterlockedCompareExchange(&g_s149FsPhase,0,0)==S149_BIND_THUNK_SEALED?1:0;
+    g_s149CleanupFacts.postRestoreQuiesced=quiesced?1:0;
+    g_s149CleanupFacts.postRestoreEntries=
+        (uint32_t)(final.postRestoreEntries>0?final.postRestoreEntries:0);
+    g_s149CleanupFacts.entryPendingRemaining=
+        (uint32_t)(final.entryPending>0?final.entryPending:0);
+    g_s149CleanupFacts.parkedRemaining=(uint32_t)(final.parked>0?final.parked:0);
+    g_s149CleanupFacts.activeRemaining=(uint32_t)(final.active>0?final.active:0);
+    g_s149CleanupFacts.mutationRootsRemaining=
+        (uint32_t)(final.mutationRoots>0?final.mutationRoots:0);
+    Markerf("[S149] cleanup SEH fault contained; callbacksSealed=%u; S148 remains gated off\r\n",
+            (unsigned)g_s149CleanupFacts.callbacksSealed);
+    Markerf(S149_BIND_CLEANUP_MARKER_FORMAT,
+            0u,0u,0u,(unsigned)g_s149CleanupFacts.callbacksSealed,1u,
+            (unsigned)g_s149CleanupFacts.postRestoreQuiesced,
+            (unsigned long)g_s149CleanupFacts.swapped,0ul,0ul,0ul,
+            (unsigned long)g_s149CleanupFacts.postRestoreEntries,
+            (unsigned long)g_s149CleanupFacts.entryPendingRemaining,
+            (unsigned long)g_s149CleanupFacts.parkedRemaining,
+            (unsigned long)g_s149CleanupFacts.activeRemaining,
+            (unsigned long)g_s149CleanupFacts.mutationRootsRemaining);
+}
+#endif
 static void FsReportHot(){
     long n=g_fsSeenN; if(n>KFSHOTN)n=KFSHOTN;
     Markerf("[FS] hot: %ld distinct UFunction%s dispatched on the GAME THREAD in the first %d ms%s\r\n",
@@ -1766,6 +2224,18 @@ static void FsReportHot(){
 }
 // Arm. Returns false ONLY on a condition that makes RM_PLAY a guaranteed no-op, and says why.
 static bool FsArm(){
+#if KBFSELFCAL || KBFBINDONLY
+    if(g_s148FsTls==TLS_OUT_OF_INDEXES) g_s148FsTls=TlsAlloc();
+    if(g_s148FsTls==TLS_OUT_OF_INDEXES||!TlsSetValue(g_s148FsTls,nullptr)){
+#if KBFSELFCAL
+        Marker("[FS] FAIL: S148 could not allocate/initialize the recursive-dispatch TLS gate; refusing to arm\r\n");
+#else
+        Marker("[FS] FAIL: S149 could not allocate/initialize the recursive-dispatch TLS gate; refusing to arm\r\n");
+#endif
+        return false;
+    }
+    InterlockedExchange(&g_s148FsState,0);
+#endif
     g_fsPi=g_modBase+kPiRva;
     if(!SafeReadable((void*)g_fsPi,5)||memcmp((void*)g_fsPi,kPiProlog,5)!=0){
         Markerf("[FS] FAIL: ProcessInternal prologue mismatch @0x%llX -- someone else is hooking it; refusing to arm\r\n",
@@ -1802,6 +2272,49 @@ static bool FsArm(){
 }
 // The RM_PLAY hold, with the instrumentation that lets the operator classify the run in <30 s.
 static void FsHold(DWORD ms){
+#if KBFSELFCAL
+    // S148 has a dedicated completion loop. Once a game-thread callback owns CALL_ISSUED, the
+    // worker fail-stops here until that callback publishes WAIT_LATER or DONE; it must never restore
+    // Func pointers out from under a callback that may still seed or call AdjustHealth.
+    DWORD t0=GetTickCount(); bool callWaitLogged=false;
+    while(!BfS148DoneLoad()){
+        Sleep(20);
+        DWORD elapsed=GetTickCount()-t0;
+        LONG phase=InterlockedCompareExchange(&g_s148Phase,0,0);
+        // The timeout/health-owner provenance path performs no Health, owner, or reflected-object
+        // reads off-thread. FsArm/FsDisarm still scan UFunctions as callback delivery infrastructure.
+        ULONGLONG s148Timeout=(ULONGLONG)InterlockedCompareExchange64(&g_s148TimeoutTick,0,0);
+        if(phase==BF_S148_WAIT_LATER&&s148Timeout&&
+           GetTickCount64()>=s148Timeout&&
+           InterlockedCompareExchange(&g_s148Phase,BF_S148_DONE,BF_S148_WAIT_LATER)==BF_S148_WAIT_LATER){
+            Markerf("[S148] LATER_TIMEOUT RESULT=LATER_TIMEOUT timeoutTick=%llu; "
+                    "no delayed game-thread dispatch arrived; timeout path read no Health/owner "
+                    "Unreal state off-thread, "
+                    "processDisposable=yes\r\n",(unsigned long long)s148Timeout);
+            BfS148DoneStore();
+            continue;
+        }
+
+        if(elapsed<ms) continue;
+        if(phase==BF_S148_INITIAL&&
+           InterlockedCompareExchange(&g_s148Phase,BF_S148_DONE,
+                                      BF_S148_INITIAL)==BF_S148_INITIAL){
+            Markerf("[S148] SETUP_TIMEOUT RESULT=SETUP_TIMEOUT elapsed=%lums; "
+                    "no game-thread calibration callback claimed the arm, no mutation/call\r\n",
+                    (unsigned long)elapsed);
+            BfS148DoneStore();
+            continue;
+        }
+        if(!callWaitLogged&&!BfS148DoneLoad()&&
+           InterlockedCompareExchange(&g_s148Phase,0,0)==BF_S148_CALL_ISSUED){
+            callWaitLogged=true;
+            Markerf("[S148] CALL_IN_FLIGHT_WAIT observedPhase=CALL_ISSUED elapsed=%lums; "
+                    "hold cap reached, disarm deferred fail-stop until callback publication\r\n",
+                    (unsigned long)elapsed);
+        }
+    }
+#endif
+#if !KBFSELFCAL
     DWORD t0=GetTickCount(),lastRep=t0,lastArm=t0; bool hotDone=false,watched=false;
     while(!g_done && GetTickCount()-t0<ms){
         Sleep(20);
@@ -1825,17 +2338,64 @@ static void FsHold(DWORD ms){
             lastArm=GetTickCount();
             if(add>0){ g_fsSwapped+=add; Markerf("[FS] re-arm: +%ld BP UFunctions loaded since the last walk (total=%ld)\r\n",add,g_fsSwapped); } }
     }
+#endif
 }
 // Disarm. g_done is raised FIRST so OnPI stops doing work instantly -- the .text unhook was atomic
 // (one 5-byte restore), whereas this walk takes ~a second, and without the flag OnPI could still be
 // entered through a not-yet-restored target while the scan is in flight.
 static void FsDisarm(){
+#if KBFSELFCAL
+    BfS148DoneStore();
+#else
     g_done=1;
+#endif
+#if KBFSELFCAL || KBFBINDONLY
+    // Enter DRAINING first. Recursive swapped dispatch remains admitted so an active real
+    // ProcessInternal can finish its call tree. The shared state CAS atomically claims the only
+    // zero-active boundary; a racing entrant either increments first or observes RESTORING.
+    InterlockedOr(&g_s148FsState,BF_S148_FS_DRAINING);
+    for(;;){
+        LONG observed=InterlockedCompareExchange(&g_s148FsState,0,0);
+        if(BfS148FsActiveCount(observed)==0&&!BfS148InHookLoad()&&
+           InterlockedCompareExchange(&g_s148FsState,BF_S148_FS_RESTORING,
+                                      BF_S148_FS_DRAINING)==BF_S148_FS_DRAINING) break;
+        Sleep(1);
+    }
+#if KBFSELFCAL
+    Marker("[S148] funcswap drain complete; no admitted FsThunk body/OnPI overlaps restoration; "
+           "new/prefetched roots parked at gate\r\n");
+#else
+    Marker("[S149] funcswap drain complete; no admitted FsThunk body/OnPI overlaps restoration; "
+           "new/prefetched roots parked at gate\r\n");
+#endif
+#endif
     long objs=0,ufn=0; DWORD ts=GetTickCount();
     long back=FsScan((uintptr_t)&FsThunk,g_fsPi,&objs,&ufn,0,nullptr);
+#if KBFBINDONLY
+    const char* restoreShortfall=(back<g_fsSwapped)?
+        "  (strict S149 restore mismatch -- terminal refusal)":"";
+#else
+    const char* restoreShortfall=(back<g_fsSwapped)?
+        "  (the shortfall is objects GC'd during the hold -- expected)":"";
+#endif
     Markerf("[FS] disarm: restored=%ld of %ld swapped (scan %lu ms, %ld UFunctions live)%s\r\n",
-            back,g_fsSwapped,GetTickCount()-ts,ufn,(back<g_fsSwapped)?"  (the shortfall is objects GC'd during the hold -- expected)":"");
+            back,g_fsSwapped,GetTickCount()-ts,ufn,restoreShortfall);
+#if KBFBINDONLY
+    BfS149FinalizeFsCleanup(back);
+#elif KBFSELFCAL
+    InterlockedExchange(&g_s148FsState,0);
+#endif
 }
+#if KBFBINDONLY
+static void BfS149FsDisarmGuarded(){
+    __try{
+        FsDisarm();
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        BfS149ContainCleanupFault();
+    }
+}
+#endif
 #endif   // KFUNCSWAP
 // ══════════════════════════════════════════════════════════════════════════════════════════════════
 // obj -> &FUObjectItem (Object@0x00, Flags@0x08, ClusterRootIndex@0x0C, SerialNumber@0x10; stride 0x18).
@@ -14021,6 +14581,169 @@ static void DoDismount(){
         Markerf("[DX] *** FAULT inside ladder step %ld -- halting. fault=%s ***\r\n",(long)g_dxStep,DP_FAULT);
         g_done=1; }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ RM_MOUNT (S150-drop, 2026-09-01) — PUT A RIDER INTO THE POD, then optionally DESCEND.
+//   Sibling of RM_DISMOUNT (S132). The game's own mount `AuthPlayerEnterWorldAttachedToRidable`
+//   (0x55CD510) is UNREACHABLE on this client: its round-game-mode getter `call 0x0F7EB50` (@0x55CD572)
+//   is the stripped null fold, and `test rax,rax; je 0x55CD7B2` (@0x55CD57A) always takes the bail.
+//   BUT its success body's ONLY component-state write is a single `PlayersAttached` append + a ONE-TIME
+//   reposition (no AttachToComponent). The S150-drop offline pre-flight then MEASURED that a
+//   poke-appended `PlayersAttached` rider does NOT co-move with the flying pod (nothing repositions
+//   `PlayersAttached`; docs/drop-sequence-status-s150.md §6.5). ⇒ a REAL ride needs THIS arm to co-move
+//   the hero itself, done here by a per-hit reposition to the pod's world location (the "P-poll"
+//   option). Running with POLL is the RIDE TREATMENT; running without it is the poke-only CONTROL
+//   (frozen rider) that confirms the offline verdict in flight.
+//   Risk class: DATA (one PlayersAttached append via the game's OWN ResizeGrow 0xF988D0) + CALL-ONLY
+//   (MoveStep, SetPredropHidden, SetActorEnableCollision, StartPodGameplay). NO .text write, NO PI
+//   hook, NO CDO poke. PRESUPPOSES an initialised pod (RdResolve refuses otherwise) -- stage a
+//   droppod/poolspawn injection FIRST so a flying pod exists.
+//   KMTARMS bits:  0x01 APPEND (PS->PlayersAttached)   0x02 UNHIDE (SetPredropHidden(false)+collision)
+//                  0x04 POSITION-ONCE (MoveStep hero->pod seat)   0x08 POLL (per-hit ride reposition)
+//                  0x10 PHASE-B (StartPodGameplay -> descent, ProcessEvent slot 78)
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════
+#ifndef KMTARMS
+#define KMTARMS 0
+#endif
+#ifndef KMTSEATZ
+#define KMTSEATZ 120.0   /* rider seat offset above the pod origin, uu */
+#endif
+static int       g_mtSetup=0;                 // 0=not yet, 1=done, -1=refused
+static uintptr_t g_mtPod=0,g_mtComp=0,g_mtPS=0,g_mtHero=0;
+static uint32_t  g_mtArrOff=0xFFFFFFFF;       // PlayersAttached, by name (must == 0x130)
+static long      g_mtRideHits=0;
+static double    g_mtHero0[3]={0,0,0}; static int g_mtHero0OK=0;
+static double    g_mtPod0[3]={0,0,0};  static int g_mtPod0OK=0;
+typedef void (__fastcall *MoveStep_t)(void* character,const double* loc);
+constexpr uintptr_t kMoveStepRva=0x0055C1B20ull; // SpawnAndMoveLokiCharacter_MoveStep: void(ALokiCharacter*, const FVector*)
+
+// Read an actor's world location from RootComponent(AActor+0x1B0)->RelativeLocation(USceneComponent+0x158).
+// A root component with no attach parent has RelativeLocation == world location (the offset PdPodDump reads).
+static int MtActorLoc(uintptr_t actor,double out[3]){
+    if(!LooksLikePtr(actor)||!SafeReadable((void*)(actor+0x1B0),8)) return 0;
+    uintptr_t root=*(uintptr_t*)(actor+0x1B0);
+    if(!LooksLikePtr(root)||!SafeReadable((void*)(root+0x158),24)) return 0;
+    double* P=(double*)(root+0x158); out[0]=P[0]; out[1]=P[1]; out[2]=P[2]; return 1;
+}
+// ComponentVelocity = USceneComponent+0x1A0 (read on the pod's RootComponent).
+static int MtActorVel(uintptr_t actor,double out[3]){
+    if(!LooksLikePtr(actor)||!SafeReadable((void*)(actor+0x1B0),8)) return 0;
+    uintptr_t root=*(uintptr_t*)(actor+0x1B0);
+    if(!LooksLikePtr(root)||!SafeReadable((void*)(root+0x1A0),24)) return 0;
+    double* P=(double*)(root+0x1A0); out[0]=P[0]; out[1]=P[1]; out[2]=P[2]; return 1;
+}
+// Reposition the hero to the pod's current world loc + seat Z. MoveStep is a raw native swept
+// SetActorLocation at base+0x55C1B20; NaN-guarded (MoveStep itself no-ops on NaN, but never pass garbage).
+static int MtMoveHeroToPod(const char* when){
+    double pod[3]; if(!MtActorLoc(g_mtPod,pod)){ if(when) Markerf("[MT] %s: pod location UNREADABLE -> skipped\r\n",when); return 0; }
+    double seat[3]={pod[0],pod[1],pod[2]+(double)KMTSEATZ};
+    for(int i=0;i<3;i++){ if(!(seat[i]==seat[i])||seat[i]>1e12||seat[i]<-1e12){ if(when) Marker("[MT] seat is not finite -> skipped\r\n"); return 0; } }
+    if(!LooksLikePtr(g_mtHero)||!GcAlive(g_mtHero)){ if(when) Marker("[MT] hero is not a live UObject -> skipped\r\n"); return 0; }
+    int tracks=0;
+    __try {
+        MoveStep_t f=(MoveStep_t)(g_modBase+kMoveStepRva);
+        f((void*)g_mtHero,seat);
+        double h[3]; if(MtActorLoc(g_mtHero,h)){
+            double dx=h[0]-seat[0],dy=h[1]-seat[1];
+            tracks=(dx*dx+dy*dy<1.0e6)?1:0;   // within 1000 uu horizontally of the pod seat
+            if(when) Markerf("[MT] %s: pod=(%.1f,%.1f,%.1f) hero->(%.1f,%.1f,%.1f) %s\r\n",
+                when,pod[0],pod[1],pod[2],h[0],h[1],h[2],tracks?"AT-POD":"did-not-reach");
+        }
+    } __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[MT] %s: MoveStep FAULTED (%s)\r\n",when?when:"?",DP_FAULT); tracks=0; }
+    return tracks;
+}
+// PHASE-B: StartPodGameplay is an Angelscript UFunction (Func@+0xE0==0), dispatched via the pod's OWN
+// vtable ProcessEvent slot 78 (disp 0x270). Receipt = bHasStartedGameplay(pod+0x4B8) 0->1. The call
+// STOPS the pod (ProjectileMovement.Deactivate) then a ~6.5s timer defers the descent, so velocity
+// IMMEDIATELY after is ZERO, not descent -- pre-registered so a zero here is not read as failure.
+static void MtStartPodGameplay(){
+    uintptr_t cls=ClassOf(g_mtPod); if(!cls){ Marker("[MT] PHASE-B: pod class unresolved -> skipped\r\n"); return; }
+    void* fn=nullptr; uintptr_t th=0,ch=0;
+    ResolveFuncNative(cls,"StartPodGameplay",&fn,&th,&ch);
+    if(!fn){ Marker("[MT] PHASE-B: StartPodGameplay did not resolve on the pod class -> skipped\r\n"); return; }
+    uintptr_t f=(uintptr_t)fn;
+    uintptr_t func=SafeReadable((void*)(f+UFUNC_FUNC),8)?*(uintptr_t*)(f+UFUNC_FUNC):0;
+    uint8_t hsg0=SafeReadable((void*)(g_mtPod+0x4B8),1)?*(uint8_t*)(g_mtPod+0x4B8):0xFF;
+    Markerf("[MT] PHASE-B: StartPodGameplay fn=0x%llX Func@+0xE0=0x%llX (0=AS, ProcessEvent-dispatched) bHasStartedGameplay@0x4B8=%u %s\r\n",
+            (unsigned long long)f,(unsigned long long)func,hsg0,(hsg0==0)?"(eligible)":"(⚠ non-zero -> body may no-op at its idempotency guard)");
+    __try {
+        using PE=void(__fastcall*)(void* self,void* ufn,void* parms);
+        uintptr_t vt=*(uintptr_t*)g_mtPod;
+        PE pe=*(PE*)(vt+0x270);
+        Markerf("[MT] PHASE-B: ProcessEvent slot 78 = base+0x%llX ; calling StartPodGameplay (void, empty params)\r\n",
+                (unsigned long long)((uintptr_t)pe-g_modBase));
+        uint8_t parms[16]={0};
+        pe((void*)g_mtPod,(void*)f,parms);
+        uint8_t hsg1=SafeReadable((void*)(g_mtPod+0x4B8),1)?*(uint8_t*)(g_mtPod+0x4B8):0xFF;
+        double v[3]={0,0,0}; MtActorVel(g_mtPod,v);
+        Markerf("[MT] PHASE-B: RETURNED. RECEIPT bHasStartedGameplay %u -> %u ; pod ComponentVelocity now (%.1f,%.1f,%.1f) "
+                "-- expect ~0 immediately (mover deactivated); descent is TIMER-DEFERRED ~6.5s toward CurrPodDestination\r\n",
+                hsg0,hsg1,v[0],v[1],v[2]);
+    } __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[MT] PHASE-B: ProcessEvent FAULTED (%s)\r\n",DP_FAULT); }
+}
+static void MtSetup(){
+    Markerf("[MT] ================ RM_MOUNT setup (KMTARMS=0x%X, seatZ=%.0f) ================\r\n",(unsigned)KMTARMS,(double)KMTSEATZ);
+    RdResolve();
+    if(!g_rdPod||!g_rdComp||!g_rdPS){
+        Marker("[MT] *** NOT RESOLVED (need an initialised pod + a live PlayerState). Stage a droppod/"
+               "poolspawn injection FIRST so a flying pod exists. REFUSING -- nothing written, nothing called. ***\r\n");
+        g_mtSetup=-1; return; }
+    g_mtPod=g_rdPod; g_mtComp=g_rdComp; g_mtPS=g_rdPS; g_mtHero=g_rdHero;
+    if(!LooksLikePtr(g_mtHero)||!GcAlive(g_mtHero)){
+        Marker("[MT] *** no live hero (BP_HERO_*) to mount -- the ride readout would be UNAVAILABLE. REFUSING. ***\r\n");
+        g_mtSetup=-1; return; }
+    g_mtHero0OK=MtActorLoc(g_mtHero,g_mtHero0); g_mtPod0OK=MtActorLoc(g_mtPod,g_mtPod0);
+    Markerf("[MT] baseline: pod=(%.1f,%.1f,%.1f)%s hero=(%.1f,%.1f,%.1f)%s\r\n",
+            g_mtPod0[0],g_mtPod0[1],g_mtPod0[2],g_mtPod0OK?"":"(UNREAD)",
+            g_mtHero0[0],g_mtHero0[1],g_mtHero0[2],g_mtHero0OK?"":"(UNREAD)");
+
+    // --- bit0 (0x01) APPEND: PS -> PlayersAttached, S132 recipe (game's own ResizeGrow) ---
+    if(KMTARMS&0x01){
+        g_mtArrOff=PropOffsetSuper(ClassOf(g_mtComp),"PlayersAttached");
+        if(g_mtArrOff==0xFFFFFFFF) Marker("[MT] APPEND: PlayersAttached did not resolve by name -> skipped\r\n");
+        else if(g_mtArrOff!=0x130) Markerf("[MT] APPEND: PlayersAttached by-name @0x%X != 0x130 (the wall's own offset) -> "
+                                           "REFUSING to write a disagreeing offset; skipped\r\n",g_mtArrOff);
+        else {
+            Markerf("[MT] APPEND: PlayersAttached @0x%X (⚠ NOT touching PlayersInside +0x120 -- the S131/S132 ordering trap)\r\n",g_mtArrOff);
+            int ok=DxAppend(g_mtComp,g_mtArrOff,g_mtPS);
+            Markerf("[MT] APPEND %s -- R1: PlayersAttached.Num %d -> %d\r\n",ok?"OK":"FAILED",g_dxNumBefore,g_dxNumAfterAppend);
+        }
+    }
+    // --- bit1 (0x02) UNHIDE: SetPredropHidden(false) + SetActorEnableCollision(true) (cosmetic; ride readout is unaffected) ---
+    if(KMTARMS&0x02){
+        void* fn=nullptr; uintptr_t th=0,ch=0;
+        ResolveFuncNative(ClassOf(g_mtHero),"SetPredropHidden",&fn,&th,&ch);
+        if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); ((uint8_t*)g_pbuf)[0]=0;
+                bool flt=CallNativeGuarded(fn,th,ch,(void*)g_mtHero,g_pbuf,g_rbuf); Markerf("[MT] SetPredropHidden(false) %s\r\n",flt?"FAULTED":"ok"); }
+        else Marker("[MT] SetPredropHidden did not resolve -> un-hide skipped\r\n");
+        fn=nullptr; th=0; ch=0; ResolveFuncNative(ClassOf(g_mtHero),"SetActorEnableCollision",&fn,&th,&ch);
+        if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); ((uint8_t*)g_pbuf)[0]=1;
+                bool flt=CallNativeGuarded(fn,th,ch,(void*)g_mtHero,g_pbuf,g_rbuf); Markerf("[MT] SetActorEnableCollision(true) %s\r\n",flt?"FAULTED":"ok"); }
+        else Marker("[MT] SetActorEnableCollision did not resolve -> collision restore skipped\r\n");
+    }
+    // --- bit2 (0x04) POSITION-ONCE: MoveStep hero -> pod seat (the game's own once-only reposition) ---
+    if(KMTARMS&0x04) MtMoveHeroToPod("POSITION-ONCE");
+    // --- bit4 (0x10) PHASE-B: StartPodGameplay -> descent ---
+    if(KMTARMS&0x10) MtStartPodGameplay();
+
+    g_mtSetup=1;
+    Markerf("[MT] setup done. POLL(ride)=%s -- %s\r\n",(KMTARMS&0x08)?"ON":"OFF",
+            (KMTARMS&0x08)?"the hero is repositioned to the pod EACH HIT; external RPM should see hero X TRACK pod X (R3 treatment)"
+                          :"poke-only: the hero is NOT repositioned; external RPM should see hero FROZEN while the pod flies (R3 control -- confirms the offline verdict)");
+}
+static void DoMount(){
+    __try {
+        if(g_mtSetup==0) MtSetup();
+        if(g_mtSetup==1 && (KMTARMS&0x08)){
+            long h=InterlockedIncrement(&g_mtRideHits);
+            MtMoveHeroToPod((h%30==1)?"RIDE":nullptr);   // per-hit ride; print ~every 30th hit
+        }
+    } __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[MT] *** FAULT in DoMount -- halting. fault=%s ***\r\n",DP_FAULT); g_done=1; return; }
+    if(!(KMTARMS&0x08)) g_done=1;   // one-shot unless POLL holds the mode open for external sampling
+}
 static void DxFinalReport(){
     Marker("[DX] ---------------- RM_DISMOUNT SUMMARY ----------------\r\n");
     Markerf("[DX] resolved=%d arrOff=0x%X | GATE5=%d GATE6=%d | D0c=%d D2c=%d | negRan=%d negMoved=%d | "
@@ -16682,6 +17405,4857 @@ static void DoBotSpawn(){
         g_done=1; }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ S143 — RM_BOTFIGHT (enum 32): the MINIMUM BOT-FIGHT LOOP arm.
+//
+// GOAL (docs/coop-vs-ai-roadmap-s142.md §0): one human hero CASTS an ability that DAMAGES and KILLS
+// a hostile enemy bot. This arm is the HYBRID design the operator chose: ALL read-only de-risking
+// runs unconditionally on the first game-thread hit, and each DESTRUCTIVE step is gated behind its
+// own KBFARMS bit -- so ONE build (KBFARMS default 0) flies pure read-only first, then action-by-
+// action across sittings with NO rebuild, which matches the FK-32 "~1 injection per staging" budget.
+//
+// Every address/signature below was GRADED OFFLINE against dumps/merged14.dump.exe AND (S144) live-verified vs the
+// real ULokiASC vtable RVA 0x886E788 on the golden client:
+//   InitAbilityActorInfo   base+0x447F410  void __fastcall(ASC, Owner, Avatar)  [M] REAL, reads [ASC+0x418]
+//   GRANT is the ENGINE path (S144): the reflected AuthGiveAbilityWithSourceObject impl 0x13d4e60 is a STRIPPED
+//     `mov [rdx],-1; ret` stub (returns InvalidHandle, adds nothing) -> proven no-op at S143. Standalone GiveAbility
+//     is inlined away. So K_GRANT builds a spec (ctor base+0x44ABED0) then calls the grant VIRTUAL [ASC_vtable+0x778]
+//     (live 0x552DC80) the engine's own AbilityPendingAdds flush uses. Auth gate IsOwnerActorAuthoritative =
+//     [ASC_vtable+0x688]=0x4481990 = `return !*(u8*)(ASC+0x800)`; ASC+0x800 read 0 live -> gate OPEN, no forcing.
+//   TryActivateAbilityByClass(TSubclassOf, bool bAllowRemoteActivation=true)  base+0x4493730                [M] REAL
+//   AdjustHealth(float HealthDelta)  ULokiAbilitySystemComponent                                        [M] REAL 0x5516610
+//   ULokiAttributeSetHealth.Health = FGameplayAttributeData (BaseValue@+0x8, CurrentValue@+0xC)
+//
+// WALL P (player casts): WireAbilitySystem builds the carrier ASC + caches hero+0xF00 but NEVER binds
+//   AvatarActor. The bind (InitAbilityActorInfo) was FOUND at S111 and CALLED FIRST at S143 (AvatarActor bound).
+//   K_GRANT (S144) then adds a spec via the engine grant virtual; K_ACTIVATE casts it.
+// WALL E (hostile enemy): the bot spawns (K_SPAWN, reuses BsResolve) but SetPlayerTeam/ServerSetHeroClass
+//   are stripped folds and TeamStates is unpopulatable -> the DECISION-CRITICAL read is "does the bot
+//   share the player's team index?" (printed unconditionally when a bot exists). Damageability is proven
+//   by K_DAMAGE (AdjustHealth on a target ASC -> Health drop), K_WIREBOT wires the bot's own ASC first.
+//
+// RISK CLASS: K_BIND/K_WIREBOT/K_DAMAGE are DATA + reflected-call (WireAbilitySystem's writes are the
+//   measured-safe class; InitAbilityActorInfo is a raw native call, SEH-guarded). No .text write, no PI
+//   hook. K_SPAWN is CALL-ONLY (CallBPGuarded). Reads are pure RPM. Every destructive step defaults OFF.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+#ifndef KBFARMS
+#define KBFARMS 0     // bit0(0x01) spawn enemy bot · bit1(0x02) bind player ASC · bit2(0x04) grant Ability1
+                      // bit3(0x08) activate ability · bit4(0x10) damage target ASC · bit5(0x20) wire bot ASC
+                      // bit6(0x40) poke hero LivingState=Alive (S144, run before activate)
+                      // bit7(0x80) borrow+populate player GAS AttributeSets (S145, run after Alive)
+#endif
+#ifndef KBFOWNER
+#define KBFOWNER 0    // InitAbilityActorInfo Owner: 0=carrier (the ASC's own PlayerState-like actor) 1=PlayerState 2=hero
+#endif
+#ifndef KBFDMG
+#define KBFDMG (-5000.0)  // HealthDelta for the damage-pipeline test (negative = damage; big enough to kill)
+#endif
+#ifndef KBFDMGTGT
+#define KBFDMGTGT 1   // damage target: 0=player's own ASC (pipeline proof, self) · 1=spawned bot's ASC (the KILL)
+#endif
+#ifndef KBFABIL
+#define KBFABIL "Ability1"   // hero ability class property to grant/activate (Ability1/2/3/AbilityDodgeRoll)
+#endif
+#ifndef KBFHERO
+#define KBFHERO "BP_HERO_Ronin_C"   // enemy bot hero class (K_SPAWN)
+#endif
+#ifndef KBFSETTLEMS
+#define KBFSETTLEMS 750
+#endif
+#ifndef KBFGRANT
+#define KBFGRANT 0    // S144 grant route: 0 = ENGINE GiveAbility (build spec via base+0x44ABED0, then the grant
+                      //   VIRTUAL at [ASC_vtable+0x778]=0x552DC80 that the engine's own AbilityPendingAdds flush uses);
+                      //   1 = the OLD stripped reflected AuthGiveAbilityWithSourceObject (measured no-op; A/B control only).
+#endif
+#ifndef KBFCHARGES
+#define KBFCHARGES 0  // S145 diagnostic only: seed this many runtime charges on the exact committed primary instance.
+#endif
+#ifndef KBFGATES
+#define KBFGATES 0    // S145 follow-up: separately measure MiniDash CheckCooldown and CheckCost before activation.
+#endif
+#ifndef KBFMANA
+#define KBFMANA 0     // S145 diagnostic only: seed this much Mana on the ASC-registered LokiAttributeSet.
+#endif
+#ifndef KBFCANACT
+#define KBFCANACT 0   // S145: 1=matched full-CanActivate control; 2=decompose its superclass gates. Never activate.
+#endif
+#ifndef KBFCDOCHARGES
+#define KBFCDOCHARGES 0 // S145 diagnostic: temporarily seed exact MiniDash CDO CurrentCharges, then restore before return.
+#endif
+#ifndef KBFHANDLEACT
+#define KBFHANDLEACT 0 // S146: after full eligibility=1, call exact native handle wrapper once; never use reflected ByClass.
+#endif
+#ifndef KBFHANDLEMISS
+#define KBFHANDLEMISS 0 // S146 control: keep the exact S146 state but pass INDEX_NONE (-1), proven absent, to stop before InternalTry.
+#endif
+#ifndef KBFINPUTID
+#define KBFINPUTID (-1) // S147 sets the canonical Ability3 action ordinal (5); every older arm retains INDEX_NONE.
+#endif
+#ifndef KBFNATURALMS
+#define KBFNATURALMS 30000 // bounded READY-to-final-sample window; the worker owns timeout and restoration.
+#endif
+#ifndef KBFNATURALPRESETUPMS
+#define KBFNATURALPRESETUPMS 60000 // bound worker launch -> CDO ownership; slow preflight does not consume unwind time.
+#endif
+#ifndef KBFNATURALSETUPMS
+#define KBFNATURALSETUPMS 10000 // bound CDO ownership publication -> proven-unwound later-dispatch readiness.
+#endif
+#ifndef KBFNATURALSAMPLEMS
+#define KBFNATURALSAMPLEMS 5 // timestamped worker raw-sample cadence; never blocks the game thread.
+#endif
+#ifndef KBFSELFLATERMS
+#define KBFSELFLATERMS 250 // minimum return-to-game interval before the delayed durability read.
+#endif
+#if KBFNATURALINPUT && (KBFHANDLEACT || KBFHANDLEMISS)
+#error S147 natural input must not compile either S146 shim-originated native-handle arm
+#endif
+#if KBFBINDONLY && (KBFARMS != 0x02)
+#error S149 bind-only setup must compile exactly K_BIND: KBFARMS=0x02
+#endif
+#if KBFBINDONLY && (KBFOWNER != 0)
+#error S149 bind-only setup must pass the exact live carrier as InitAbilityActorInfo Owner
+#endif
+#if KBFBINDONLY && (KBFSELFCAL || KBFNATURALINPUT)
+#error S149 bind-only setup must exclude S148 calibration and S147 natural input
+#endif
+#if KBFSELFCAL && ((KBFARMS != 0) || KBFNATURALINPUT)
+#error S148 self calibration must be isolated: KBFARMS=0 and KBFNATURALINPUT=0
+#endif
+#if KBFSELFCAL && (KBFSELFLATERMS < 250)
+#error S148 delayed durability read must occur at least 250 ms after the immediate receipt
+#endif
+#if KBFSELFCAL && (KBFSELFTIMEOUTMS < 1000)
+#error S148 later-dispatch timeout grace must be at least 1000 ms
+#endif
+
+// Read hero+0xF00 (AbilitySystemComponentStorage) by NAME; returns the ASC or 0.
+static uintptr_t BfGetAsc(uintptr_t actor){
+    uint32_t o=PropOffsetSuper(ClassOf(actor),"AbilitySystemComponentStorage");
+    if(o==0xFFFFFFFF||!SafeReadable((void*)(actor+o),8)) return 0;
+    uintptr_t a=*(uintptr_t*)(actor+o);
+    return LooksLikePtr(a)?a:0;
+}
+// carrier = PlayerState.HeroAffiliatedObject (built by WireAbilitySystem/EnsureHeroAffiliatedCarrier).
+static uintptr_t BfCarrier(uintptr_t ps){
+    if(!LooksLikePtr(ps)) return 0;
+    uint32_t o=PropOffsetSuper(ClassOf(ps),"HeroAffiliatedObject");
+    if(o==0xFFFFFFFF||!SafeReadable((void*)(ps+o),8)) return 0;
+    uintptr_t c=*(uintptr_t*)(ps+o); return LooksLikePtr(c)?c:0;
+}
+// ActivatableAbilities is an FGameplayAbilitySpecContainer; its Items TArray is NOT at container+0 -- it sits
+// AFTER the FFastArraySerializer base. S144 INSTRUMENT FIX: the old code read PropOffsetSuper("ActivatableAbilities")+8,
+// which lands on a FastArraySerializer counter (always 0) and MISREPORTED a real grant as "no change" (it read the
+// grant flight as 0->0 while a direct read of Items.Num showed 0->1). The MEASURED [M] Items layout on this build's
+// ULokiAbilitySystemComponent is ASC+0x538 Data / +0x540 Num / +0x544 Max (from FindAbilitySpecFromHandle 0x4476ED0:
+// `mov rax,[rcx+0x538]; movsxd rcx,[rcx+0x540]`). Read Items.Num directly.
+static int BfCountActivatable(uintptr_t asc){
+    if(!LooksLikePtr(asc)||!SafeReadable((void*)(asc+0x540),4)) return -1;
+    return *(int32_t*)(asc+0x540);
+}
+// Walk the ASC's SpawnedAttributes (TArray<UAttributeSet*>) for one carrying a reflected "Health"
+// FGameplayAttributeData; returns its CurrentValue (+0xC). *found=0 if none. clsOut names the set.
+static float BfReadHealth(uintptr_t asc,int* found,char* clsOut,int cap){
+    if(found)*found=0; if(clsOut&&cap)clsOut[0]=0;
+    uint32_t sa=PropOffsetSuper(ClassOf(asc),"SpawnedAttributes");
+    if(sa==0xFFFFFFFF||!SafeReadable((void*)(asc+sa),16)) return 0.0f;
+    uintptr_t data=*(uintptr_t*)(asc+sa); int32_t num=*(int32_t*)(asc+sa+8);
+    if(!LooksLikePtr(data)||num<=0||num>64) return 0.0f;
+    for(int i=0;i<num;i++){
+        if(!SafeReadable((void*)(data+i*8),8)) continue;
+        uintptr_t as=*(uintptr_t*)(data+i*8); if(!LooksLikePtr(as)) continue;
+        uint32_t ho=PropOffsetSuper(ClassOf(as),"Health");
+        if(ho==0xFFFFFFFF) continue;
+        if(!SafeReadable((void*)(as+ho+0xC),4)) continue;
+        if(clsOut&&cap&&ClassOf(as)) GetFNameStr(NameId(ClassOf(as)),clsOut,cap);
+        if(found)*found=1;
+        return *(float*)(as+ho+0xC);
+    }
+    return 0.0f;
+}
+
+#if KBFSELFCAL || KBFBINDONLY
+struct BfS148HealthTarget {
+    uintptr_t localPlayer;
+    uintptr_t localPlayerClass;
+    uintptr_t gameInstance;
+    uintptr_t gameInstanceClass;
+    uintptr_t localPlayersData;
+    uintptr_t localPlayersMembers[8];
+    uintptr_t pc;
+    uintptr_t pcClass;
+    uintptr_t pcLevel;
+    uintptr_t hero;
+    uintptr_t heroClass;
+    uintptr_t heroLevel;
+    uintptr_t levelClass;
+    uintptr_t world;
+    uintptr_t worldClass;
+    uintptr_t asc;
+    uintptr_t ascClass;
+    uintptr_t avatarActor;
+    uintptr_t avatarProp;
+    uintptr_t set;
+    uintptr_t setClass;
+    uintptr_t setSuperClass;
+    uintptr_t spawnedProp;
+    uintptr_t spawnedInnerProp;
+    uintptr_t healthProp;
+    uintptr_t maxHealthProp;
+    uintptr_t healthStruct;
+    uintptr_t maxHealthStruct;
+    uintptr_t spawnedData;
+    uintptr_t spawnedMembers[64];
+    int32_t spawnedNum;
+    int32_t spawnedMax;
+    int32_t candidateIndex;
+    int32_t localOwnerCandidates;
+    int32_t localPlayersNum;
+    int32_t localPlayersMax;
+    int32_t localPlayerIndex;
+    uint32_t localPlayerPcOff;
+    uint32_t pcPlayerOff;
+    uint32_t localPlayersOff;
+    uint32_t pawnOff;
+    uint32_t controllerOff;
+    uint32_t owningWorldOff;
+    uint32_t owningGameInstanceOff;
+    uint32_t ascOff;
+    uint32_t avatarOff;
+    uint32_t spawnedOff;
+    uint32_t healthOff;
+    uint32_t maxHealthOff;
+    uint32_t setPropertiesSize;
+    uint32_t setSuperPropertiesSize;
+    uint8_t ascCdoIdentityValid;
+    uint8_t ascOuterChainValid;
+    uint8_t cdoIdentityValid;
+    uint8_t outerChainValid;
+    uint8_t ownerScanComplete;
+    uint8_t localMembershipValid;
+    uint8_t worldIdentityValid;
+    S148HealthFacts facts;
+};
+
+static uint32_t BfS148FloatBits(const void* value) {
+    uint32_t bits=0;
+    memcpy(&bits,value,sizeof(bits));
+    return bits;
+}
+
+static bool BfS148IsCdo(uintptr_t obj,bool* known) {
+    if(known)*known=false;
+    if(!GcAlive(obj)) return false;
+    uintptr_t cls=ClassOf(obj);
+    if(!GcAlive(cls)||!SafeReadable((void*)(cls+0x178),8)) return false;
+    uintptr_t cdo=*(uintptr_t*)(cls+0x178);
+    if(!GcAlive(cdo)||ClassOf(cdo)!=cls) return false;
+    if(known)*known=true;
+    return cdo==obj;
+}
+
+// A native live attribute set may itself not be a CDO while still being a shared default subobject
+// whose Outer chain reaches one. That was exactly S145's borrowed-set shape; reject the whole chain.
+static bool BfS148OuterChainHasCdo(uintptr_t obj,bool* valid) {
+    if(valid)*valid=false;
+    if(!GcAlive(obj)) return false;
+    uintptr_t seen[16]={0}; int seenCount=0;
+    uintptr_t cur=obj;
+    for(int depth=0;depth<16;depth++){
+        if(!SafeReadable((void*)(cur+0x28),8)) return false;
+        uintptr_t next=*(uintptr_t*)(cur+0x28);
+        if(!next){ if(valid)*valid=true; return false; }
+        if(!GcAlive(next)) return false;
+        for(int i=0;i<seenCount;i++) if(seen[i]==next) return false;
+        seen[seenCount++]=next;
+        bool known=false;
+        if(BfS148IsCdo(next,&known)){ if(valid)*valid=true; return true; }
+        if(!known) return false;
+        cur=next;
+    }
+    return false;
+}
+
+enum BfS148ChainResult : int {
+    BF_S148_CHAIN_MALFORMED=-1,
+    BF_S148_CHAIN_NO_MATCH=0,
+    BF_S148_CHAIN_MATCH=1,
+};
+
+static BfS148ChainResult BfS148MalformedChain(
+    S148ClassChainFailure* diagnostic,S148ClassChainFailureReason reason,
+    int32_t depth,uint64_t node,uint64_t address,uint64_t detail0,uint64_t detail1) {
+    S148RecordClassChainFailure(
+        diagnostic,reason,depth,node,address,detail0,detail1);
+    return BF_S148_CHAIN_MALFORMED;
+}
+
+// Unlike the legacy bool helper, this distinguishes a complete non-match from a truncated,
+// unreadable, cyclic, or over-depth chain. A mutation-authority scan may skip only the former.
+static BfS148ChainResult BfS148ExactChain(uintptr_t cls,const char* want,
+                                          char* chainOut,size_t chainSz,
+                                          S148ClassChainFailure* diagnostic=nullptr) {
+    if(diagnostic) *diagnostic={};
+    bool renderEnabled=S148ClassChainRenderEnabled(chainOut,(uint64_t)chainSz);
+    bool hit=false; size_t written=0; if(renderEnabled) chainOut[0]=0;
+    uintptr_t seen[32]={0}; int seenCount=0; uintptr_t cur=cls;
+    for(int depth=0;depth<32;depth++){
+        if(!cur) return hit?BF_S148_CHAIN_MATCH:BF_S148_CHAIN_NO_MATCH;
+        if(!LooksLikePtr(cur))
+            return BfS148MalformedChain(
+                diagnostic,S148_CLASS_CHAIN_NODE_POINTER_INVALID,depth,
+                (uint64_t)cur,0,0,0);
+        if(!GcAlive(cur))
+            return BfS148MalformedChain(
+                diagnostic,S148_CLASS_CHAIN_NODE_NOT_LIVE,depth,
+                (uint64_t)cur,(uint64_t)cur,0,0);
+        for(int i=0;i<seenCount;i++) if(seen[i]==cur)
+            return BfS148MalformedChain(
+                diagnostic,S148_CLASS_CHAIN_CYCLE,depth,(uint64_t)cur,0,
+                (uint64_t)(uint32_t)i,(uint64_t)(uint32_t)seenCount);
+        seen[seenCount++]=cur;
+        char name[128];
+        uint32_t nameId=NameId(cur);
+        if(!GetFNameStr(nameId,name,sizeof(name)))
+            return BfS148MalformedChain(
+                diagnostic,S148_CLASS_CHAIN_NAME_DECODE_FAILED,depth,
+                (uint64_t)cur,(uint64_t)(cur+NAME_OFF),(uint64_t)nameId,sizeof(name));
+        if(!strcmp(name,want)) hit=true;
+        if(renderEnabled){
+            size_t len=strlen(name);
+            size_t required=written+len+3;
+            if(S148ClassChainRenderCapacityRefuses(
+                    renderEnabled,(uint64_t)required,(uint64_t)chainSz))
+                return BfS148MalformedChain(
+                    diagnostic,S148_CLASS_CHAIN_OUTPUT_BUFFER_EXHAUSTED,depth,
+                    (uint64_t)cur,0,(uint64_t)required,(uint64_t)chainSz);
+            if(written){ memcpy(chainOut+written,"<-",2); written+=2; }
+            memcpy(chainOut+written,name,len); written+=len; chainOut[written]=0;
+        }
+        uintptr_t superCell=cur+0x48;
+        if(!SafeReadable((void*)superCell,sizeof(uintptr_t)))
+            return BfS148MalformedChain(
+                diagnostic,S148_CLASS_CHAIN_SUPER_CELL_UNREADABLE,depth,
+                (uint64_t)cur,(uint64_t)superCell,sizeof(uintptr_t),0);
+        uintptr_t next=*(uintptr_t*)superCell;
+        if(next!=0&&!LooksLikePtr(next))
+            return BfS148MalformedChain(
+                diagnostic,S148_CLASS_CHAIN_SUPER_POINTER_INVALID,depth,
+                (uint64_t)cur,(uint64_t)superCell,(uint64_t)next,0);
+        cur=next;
+    }
+    uintptr_t source=seenCount?seen[seenCount-1]:0;
+    return BfS148MalformedChain(
+        diagnostic,S148_CLASS_CHAIN_DEPTH_LIMIT,32,(uint64_t)cur,
+        source?(uint64_t)(source+0x48):0,(uint64_t)source,(uint64_t)(uint32_t)seenCount);
+}
+
+static bool BfS148ExactDirectClass(uintptr_t cls,const char* want) {
+    char name[128];
+    return GcAlive(cls)&&GetFNameStr(NameId(cls),name,sizeof(name))&&
+           !strcmp(name,want)&&
+           BfS148ExactChain(cls,want,nullptr,0)==BF_S148_CHAIN_MATCH;
+}
+
+static bool BfS148ResolveExactStructPayload(uintptr_t prop,const char* want,
+                                             uintptr_t* structOut) {
+    if(structOut)*structOut=0;
+    if(!LooksLikePtr(prop)||
+       !SafeReadable((void*)(prop+FSTRUCTPROP_STRUCT),sizeof(uintptr_t))) return false;
+    uintptr_t payload=*(uintptr_t*)(prop+FSTRUCTPROP_STRUCT);
+    char directName[128];
+    if(!GcAlive(payload)||!GetFNameStr(NameId(payload),directName,sizeof(directName))||
+       strcmp(directName,want)!=0) return false;
+    uintptr_t seen[32]={0}; int seenCount=0; uintptr_t current=payload;
+    while(current){
+        if(seenCount>=32||!GcAlive(current)||
+           !BfS148ExactDirectClass(ClassOf(current),"ScriptStruct")||
+           !SafeReadable((void*)(current+0x48),sizeof(uintptr_t))) return false;
+        for(int i=0;i<seenCount;i++) if(seen[i]==current) return false;
+        seen[seenCount++]=current;
+        uintptr_t next=*(uintptr_t*)(current+0x48);
+        if(next&&!LooksLikePtr(next)) return false;
+        current=next;
+    }
+    if(structOut)*structOut=payload;
+    return true;
+}
+
+// Exact GUObjectArray cell snapshot used by both mutation-authority censuses. The top-level header,
+// every chunk pointer, and every FUObjectItem.Object cell are captured and then re-read byte-for-byte;
+// same-size object churn therefore cannot silently certify a partial owner/registration scan.
+struct BfS148OwnerScanContext {
+    S148OwnerScanFailure* failure;
+    S148OwnerScanPhase phase;
+    int32_t snapshotIndex;
+    int32_t censusIndex;
+    int32_t localIndex;
+    int32_t pass;
+};
+
+static BfS148OwnerScanContext BfS148OwnerScanSite(
+    S148OwnerScanFailure* failure,S148OwnerScanPhase phase,
+    int32_t snapshotIndex=-1,int32_t censusIndex=-1,
+    int32_t localIndex=-1,int32_t pass=-1) {
+    return {failure,phase,snapshotIndex,censusIndex,localIndex,pass};
+}
+
+static void BfS148OwnerScanFail(
+    const BfS148OwnerScanContext* context,S148OwnerScanReason reason,
+    uint64_t object=0,uint64_t address=0,uint64_t detail0=0,uint64_t detail1=0,
+    const S148ClassChainFailure* chain=nullptr) {
+    if(!context) return;
+    S148RecordOwnerScanFailure(
+        context->failure,context->phase,reason,context->snapshotIndex,
+        context->censusIndex,context->localIndex,context->pass,
+        object,address,detail0,detail1,chain);
+}
+
+struct BfS148ObjectSnapshot {
+    uintptr_t objectsPtr;
+    int32_t maxEl;
+    int32_t numEl;
+    int32_t numChunks;
+    uintptr_t* storage; // [numChunks] chunk pointers, followed by [numEl] Object cells.
+};
+
+static void BfS148FreeObjectSnapshot(BfS148ObjectSnapshot* snapshot) {
+    if(!snapshot) return;
+    if(snapshot->storage) VirtualFree(snapshot->storage,0,MEM_RELEASE);
+    memset(snapshot,0,sizeof(*snapshot));
+}
+
+static bool BfS148ObjectSnapshotStable(
+    const BfS148ObjectSnapshot& snapshot,const BfS148OwnerScanContext* diagnostic=nullptr) {
+    if(!snapshot.storage||snapshot.numEl<=0||snapshot.numChunks<=0){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_GUOBJECT_SAVED_STATE_INVALID,
+                           (uint64_t)snapshot.objectsPtr,0,
+                           (uint64_t)(uint32_t)snapshot.numEl,
+                           (uint64_t)(uint32_t)snapshot.numChunks);
+        return false;
+    }
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_GUOBJECT_HEADER_UNREADABLE,
+                           0,(uint64_t)oo,0x18,0);
+        return false;
+    }
+    uintptr_t observedObjects=*(uintptr_t*)oo;
+    int32_t observedMax=*(int32_t*)(oo+0x10);
+    int32_t observedNum=*(int32_t*)(oo+0x14);
+    if(observedObjects!=snapshot.objectsPtr){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_GUOBJECT_OBJECTS_POINTER_CHANGED,
+                           (uint64_t)observedObjects,(uint64_t)oo,
+                           (uint64_t)snapshot.objectsPtr,(uint64_t)observedObjects);
+        return false;
+    }
+    if(observedMax!=snapshot.maxEl){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_GUOBJECT_MAX_CHANGED,
+                           (uint64_t)observedObjects,(uint64_t)(oo+0x10),
+                           (uint64_t)(uint32_t)snapshot.maxEl,
+                           (uint64_t)(uint32_t)observedMax);
+        return false;
+    }
+    if(observedNum!=snapshot.numEl){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_GUOBJECT_NUM_CHANGED,
+                           (uint64_t)observedObjects,(uint64_t)(oo+0x14),
+                           (uint64_t)(uint32_t)snapshot.numEl,
+                           (uint64_t)(uint32_t)observedNum);
+        return false;
+    }
+    for(int ci=0;ci<snapshot.numChunks;ci++){
+        uintptr_t tableCell=snapshot.objectsPtr+(uintptr_t)ci*sizeof(uintptr_t);
+        BfS148OwnerScanContext site=diagnostic?*diagnostic:
+            BfS148OwnerScanSite(nullptr,S148_OWNER_SCAN_PHASE_NONE);
+        site.snapshotIndex=ci*PERCHUNK;
+        if(!SafeReadable((void*)tableCell,sizeof(uintptr_t))){
+            BfS148OwnerScanFail(&site,S148_OWNER_SCAN_GUOBJECT_CHUNK_CELL_UNREADABLE,
+                               (uint64_t)snapshot.objectsPtr,(uint64_t)tableCell,
+                               (uint64_t)(uint32_t)ci,sizeof(uintptr_t));
+            return false;
+        }
+        uintptr_t observedChunk=*(uintptr_t*)tableCell;
+        if(observedChunk!=snapshot.storage[ci]){
+            BfS148OwnerScanFail(&site,S148_OWNER_SCAN_GUOBJECT_CHUNK_CHANGED,
+                               (uint64_t)observedChunk,(uint64_t)tableCell,
+                               (uint64_t)snapshot.storage[ci],(uint64_t)observedChunk);
+            return false;
+        }
+        uintptr_t chunk=snapshot.storage[ci];
+        int count=(ci==snapshot.numChunks-1)?
+            (snapshot.numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<count;j++){
+            int index=ci*PERCHUNK+j;
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE;
+            site.snapshotIndex=index;
+            if(!SafeReadable((void*)item,sizeof(uintptr_t))){
+                BfS148OwnerScanFail(&site,S148_OWNER_SCAN_GUOBJECT_ITEM_CELL_UNREADABLE,
+                                   (uint64_t)chunk,(uint64_t)item,
+                                   (uint64_t)(uint32_t)ci,(uint64_t)(uint32_t)j);
+                return false;
+            }
+            uintptr_t observedObject=*(uintptr_t*)item;
+            uintptr_t expectedObject=snapshot.storage[snapshot.numChunks+index];
+            if(observedObject!=expectedObject){
+                BfS148OwnerScanFail(&site,S148_OWNER_SCAN_GUOBJECT_ITEM_CHANGED,
+                                   (uint64_t)observedObject,(uint64_t)item,
+                                   (uint64_t)expectedObject,(uint64_t)observedObject);
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+static bool BfS148TakeObjectSnapshot(
+    BfS148ObjectSnapshot* snapshot,const BfS148OwnerScanContext* diagnostic=nullptr) {
+    if(!snapshot){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_SNAPSHOT_OUTPUT_NULL);
+        return false;
+    }
+    memset(snapshot,0,sizeof(*snapshot));
+    uintptr_t oo=g_modBase+kObjObjectsRva;
+    if(!SafeReadable((void*)oo,0x18)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_GUOBJECT_HEADER_UNREADABLE,
+                           0,(uint64_t)oo,0x18,0);
+        return false;
+    }
+    snapshot->objectsPtr=*(uintptr_t*)oo;
+    snapshot->maxEl=*(int32_t*)(oo+0x10);
+    snapshot->numEl=*(int32_t*)(oo+0x14);
+    if(!LooksLikePtr(snapshot->objectsPtr)||snapshot->numEl<=0||
+       snapshot->numEl>snapshot->maxEl||snapshot->maxEl>8000000){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_GUOBJECT_HEADER_INVALID,
+                           (uint64_t)snapshot->objectsPtr,(uint64_t)oo,
+                           ((uint64_t)(uint32_t)snapshot->maxEl<<32)|
+                               (uint32_t)snapshot->numEl,
+                           8000000ull);
+        return false;
+    }
+    snapshot->numChunks=(snapshot->numEl+PERCHUNK-1)/PERCHUNK;
+    size_t slots=(size_t)snapshot->numChunks+(size_t)snapshot->numEl;
+    snapshot->storage=(uintptr_t*)VirtualAlloc(nullptr,slots*sizeof(uintptr_t),
+                                               MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE);
+    if(!snapshot->storage){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_SNAPSHOT_ALLOCATION_FAILED,
+                           (uint64_t)snapshot->objectsPtr,0,
+                           (uint64_t)slots,(uint64_t)(slots*sizeof(uintptr_t)));
+        return false;
+    }
+    bool complete=true;
+    for(int ci=0;ci<snapshot->numChunks&&complete;ci++){
+        uintptr_t tableCell=snapshot->objectsPtr+(uintptr_t)ci*sizeof(uintptr_t);
+        BfS148OwnerScanContext site=diagnostic?*diagnostic:
+            BfS148OwnerScanSite(nullptr,S148_OWNER_SCAN_PHASE_NONE);
+        site.snapshotIndex=ci*PERCHUNK;
+        if(!SafeReadable((void*)tableCell,sizeof(uintptr_t))){
+            BfS148OwnerScanFail(&site,S148_OWNER_SCAN_GUOBJECT_CHUNK_CELL_UNREADABLE,
+                               (uint64_t)snapshot->objectsPtr,(uint64_t)tableCell,
+                               (uint64_t)(uint32_t)ci,sizeof(uintptr_t));
+            complete=false; break;
+        }
+        uintptr_t chunk=*(uintptr_t*)tableCell;
+        if(!LooksLikePtr(chunk)){
+            BfS148OwnerScanFail(&site,S148_OWNER_SCAN_GUOBJECT_CHUNK_POINTER_INVALID,
+                               (uint64_t)chunk,(uint64_t)tableCell,
+                               (uint64_t)(uint32_t)ci,0);
+            complete=false; break;
+        }
+        snapshot->storage[ci]=chunk;
+        int count=(ci==snapshot->numChunks-1)?
+            (snapshot->numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<count;j++){
+            int index=ci*PERCHUNK+j;
+            uintptr_t item=chunk+(uintptr_t)j*ITEMSTRIDE;
+            site.snapshotIndex=index;
+            if(!SafeReadable((void*)item,sizeof(uintptr_t))){
+                BfS148OwnerScanFail(&site,S148_OWNER_SCAN_GUOBJECT_ITEM_CELL_UNREADABLE,
+                                   (uint64_t)chunk,(uint64_t)item,
+                                   (uint64_t)(uint32_t)ci,(uint64_t)(uint32_t)j);
+                complete=false; break;
+            }
+            snapshot->storage[snapshot->numChunks+index]=*(uintptr_t*)item;
+        }
+    }
+    if(!complete||!BfS148ObjectSnapshotStable(*snapshot,diagnostic)){
+        BfS148FreeObjectSnapshot(snapshot); return false;
+    }
+    return true;
+}
+
+enum BfS148PropertyFindResult : int {
+    BF_S148_PROPERTY_MALFORMED=-1,
+    BF_S148_PROPERTY_NO_MATCH=0,
+    BF_S148_PROPERTY_MATCH=1,
+};
+
+// Strict reflected lookup for the mutation boundary. Unlike PdFindPropOn, an unreadable/cyclic/
+// truncated class or FField chain is not conflated with an honest property absence.
+static BfS148PropertyFindResult BfS148StrictFindProperty(
+    uintptr_t cls,const char* name,uint32_t* offOut,uint32_t* elemOut,
+    char* type,size_t typeSize,char* structName,size_t structSize,
+    char* owner,size_t ownerSize,uintptr_t* propOut) {
+    if(offOut)*offOut=0xFFFFFFFF; if(elemOut)*elemOut=0; if(propOut)*propOut=0;
+    if(type&&typeSize) strncpy_s(type,typeSize,"?",_TRUNCATE);
+    if(structName&&structSize) strncpy_s(structName,structSize,"-",_TRUNCATE);
+    if(owner&&ownerSize) owner[0]=0;
+    uintptr_t seenClasses[32]={0}; int classCount=0,matchCount=0;
+    uintptr_t match=0; uint32_t matchOff=0xFFFFFFFF,matchElem=0;
+    char matchType[48]="?",matchStruct[64]="-",matchOwner[96]="-";
+    uintptr_t current=cls;
+    while(current){
+        if(classCount>=32||!GcAlive(current)) return BF_S148_PROPERTY_MALFORMED;
+        for(int i=0;i<classCount;i++) if(seenClasses[i]==current) return BF_S148_PROPERTY_MALFORMED;
+        seenClasses[classCount++]=current;
+        char currentOwner[96];
+        if(!GetFNameStr(NameId(current),currentOwner,sizeof(currentOwner))||
+           !SafeReadable((void*)(current+UFUNC_CHILDPROPS),sizeof(uintptr_t))||
+           !SafeReadable((void*)(current+0x48),sizeof(uintptr_t)))
+            return BF_S148_PROPERTY_MALFORMED;
+        uintptr_t fields=*(uintptr_t*)(current+UFUNC_CHILDPROPS);
+        uintptr_t seenFields[400]={0}; int fieldCount=0;
+        while(fields){
+            if(fieldCount>=400||!LooksLikePtr(fields)||
+               !SafeReadable((void*)fields,NAME_OFF+sizeof(uint32_t))||
+               !SafeReadable((void*)(fields+FIELD_NEXT),sizeof(uintptr_t)))
+                return BF_S148_PROPERTY_MALFORMED;
+            for(int i=0;i<fieldCount;i++) if(seenFields[i]==fields) return BF_S148_PROPERTY_MALFORMED;
+            seenFields[fieldCount++]=fields;
+            char fieldName[128];
+            if(!GetFNameStr(NameId(fields),fieldName,sizeof(fieldName)))
+                return BF_S148_PROPERTY_MALFORMED;
+            if(!strcmp(fieldName,name)){
+                matchCount++;
+                if(matchCount>1) return BF_S148_PROPERTY_MALFORMED;
+                if(!SafeReadable((void*)(fields+FPROP_OFFSET),sizeof(uint32_t))||
+                   !SafeReadable((void*)(fields+FPROP_ELEMSIZE),sizeof(uint32_t)))
+                    return BF_S148_PROPERTY_MALFORMED;
+                match=fields; matchOff=*(uint32_t*)(fields+FPROP_OFFSET);
+                matchElem=*(uint32_t*)(fields+FPROP_ELEMSIZE);
+                PdTypeOf(fields,matchType,sizeof(matchType),matchStruct,sizeof(matchStruct));
+                strncpy_s(matchOwner,sizeof(matchOwner),currentOwner,_TRUNCATE);
+            }
+            uintptr_t next=*(uintptr_t*)(fields+FIELD_NEXT);
+            if(next&&!LooksLikePtr(next)) return BF_S148_PROPERTY_MALFORMED;
+            fields=next;
+        }
+        uintptr_t nextClass=*(uintptr_t*)(current+0x48);
+        if(nextClass&&!LooksLikePtr(nextClass)) return BF_S148_PROPERTY_MALFORMED;
+        current=nextClass;
+    }
+    if(matchCount==0) return BF_S148_PROPERTY_NO_MATCH;
+    if(offOut)*offOut=matchOff; if(elemOut)*elemOut=matchElem; if(propOut)*propOut=match;
+    if(type&&typeSize) strncpy_s(type,typeSize,matchType,_TRUNCATE);
+    if(structName&&structSize) strncpy_s(structName,structSize,matchStruct,_TRUNCATE);
+    if(owner&&ownerSize) strncpy_s(owner,ownerSize,matchOwner,_TRUNCATE);
+    return BF_S148_PROPERTY_MATCH;
+}
+
+constexpr uintptr_t BF_S148_OBJECTPROP_CLASS=0x70;
+constexpr uintptr_t BF_S148_ARRAYPROP_INNER=0x78;
+
+// Resolve both the convenience offset and the live FProperty, then require them to agree on the
+// declaring owner, type, element size, ArrayDim, and referenced UObject class before interpreting
+// the bytes as a pointer. The reflected PropertyClass must have the expected direct FName and a
+// complete superclass chain; assignability alone is not exact schema provenance.
+static bool BfS148ResolveObjectProperty(uintptr_t cls,const char* name,
+                                        const char* expectedOwner,const char* expectedValueClass,
+                                        uint32_t* offOut,uintptr_t* propOut) {
+    if(offOut)*offOut=0xFFFFFFFF; if(propOut)*propOut=0;
+    if(!GcAlive(cls)) return false;
+    uint32_t convenienceOff=PropOffsetSuper(cls,name);
+    uint32_t reflectedOff=0xFFFFFFFF,elem=0; char type[48],sname[64],owner[96];
+    uintptr_t prop=0;
+    BfS148PropertyFindResult lookup=BfS148StrictFindProperty(
+        cls,name,&reflectedOff,&elem,type,sizeof(type),sname,sizeof(sname),
+        owner,sizeof(owner),&prop);
+    uint32_t arrayDim=LooksLikePtr(prop)&&SafeReadable((void*)(prop+FPROP_ARRAYDIM),4)?
+        *(uint32_t*)(prop+FPROP_ARRAYDIM):0;
+    uintptr_t valueClass=LooksLikePtr(prop)&&
+        SafeReadable((void*)(prop+BF_S148_OBJECTPROP_CLASS),sizeof(uintptr_t))?
+        *(uintptr_t*)(prop+BF_S148_OBJECTPROP_CLASS):0;
+    bool ok=lookup==BF_S148_PROPERTY_MATCH&&LooksLikePtr(prop)&&
+        convenienceOff!=0xFFFFFFFF&&reflectedOff==convenienceOff&&
+        elem==sizeof(uintptr_t)&&arrayDim==1&&!strcmp(type,"ObjectProperty")&&
+        !strcmp(owner,expectedOwner)&&
+        BfS148ExactDirectClass(valueClass,expectedValueClass);
+    if(ok){ if(offOut)*offOut=reflectedOff; if(propOut)*propOut=prop; }
+    return ok;
+}
+
+// FArrayProperty is the one reflected container whose Inner lives at +0x78. Prove that the outer
+// is the named TArray and that Inner is one pointer-sized ObjectProperty of the expected class.
+static bool BfS148ResolveArrayObjectProperty(uintptr_t cls,const char* name,
+                                             const char* expectedOwner,const char* expectedInnerClass,
+                                             uint32_t requiredOff,uint32_t* offOut,
+                                             uintptr_t* propOut,uintptr_t* innerOut,
+                                             const BfS148OwnerScanContext* diagnostic=nullptr) {
+    if(offOut)*offOut=0xFFFFFFFF; if(propOut)*propOut=0; if(innerOut)*innerOut=0;
+    S148LocalPlayersSchemaFacts facts{};
+    facts.classValid=GcAlive(cls)?1:0;
+    if(!facts.classValid){
+        BfS148OwnerScanFail(
+            diagnostic,S148LocalPlayersSchemaReason(facts),(uint64_t)cls,0,0,0);
+        return false;
+    }
+    uint32_t convenienceOff=PropOffsetSuper(cls,name);
+    uint32_t reflectedOff=0xFFFFFFFF,elem=0; char type[48],sname[64],owner[96];
+    uintptr_t prop=0;
+    BfS148PropertyFindResult lookup=BfS148StrictFindProperty(
+        cls,name,&reflectedOff,&elem,type,sizeof(type),sname,sizeof(sname),
+        owner,sizeof(owner),&prop);
+    uint32_t arrayDim=LooksLikePtr(prop)&&SafeReadable((void*)(prop+FPROP_ARRAYDIM),4)?
+        *(uint32_t*)(prop+FPROP_ARRAYDIM):0;
+    uintptr_t inner=LooksLikePtr(prop)&&
+        SafeReadable((void*)(prop+BF_S148_ARRAYPROP_INNER),sizeof(uintptr_t))?
+        *(uintptr_t*)(prop+BF_S148_ARRAYPROP_INNER):0;
+    char innerType[48],innerStruct[64]; PdTypeOf(inner,innerType,sizeof(innerType),
+                                                innerStruct,sizeof(innerStruct));
+    uint32_t innerElem=LooksLikePtr(inner)&&SafeReadable((void*)(inner+FPROP_ELEMSIZE),4)?
+        *(uint32_t*)(inner+FPROP_ELEMSIZE):0;
+    uint32_t innerArrayDim=LooksLikePtr(inner)&&SafeReadable((void*)(inner+FPROP_ARRAYDIM),4)?
+        *(uint32_t*)(inner+FPROP_ARRAYDIM):0;
+    uintptr_t innerClass=LooksLikePtr(inner)&&
+        SafeReadable((void*)(inner+BF_S148_OBJECTPROP_CLASS),sizeof(uintptr_t))?
+        *(uintptr_t*)(inner+BF_S148_OBJECTPROP_CLASS):0;
+    facts.lookupResult=(int8_t)lookup;
+    facts.propertyPointerValid=LooksLikePtr(prop)?1:0;
+    facts.convenienceOffsetValid=convenienceOff!=0xFFFFFFFF?1:0;
+    facts.offsetsMatch=reflectedOff==convenienceOff?1:0;
+    facts.requiredOffsetMatches=(requiredOff==0xFFFFFFFF||reflectedOff==requiredOff)?1:0;
+    facts.outerElementSizeValid=elem==0x10?1:0;
+    facts.outerArrayDimValid=arrayDim==1?1:0;
+    facts.outerTypeValid=!strcmp(type,"ArrayProperty")?1:0;
+    facts.outerOwnerValid=!strcmp(owner,expectedOwner)?1:0;
+    facts.innerPointerValid=LooksLikePtr(inner)?1:0;
+    facts.innerElementSizeValid=innerElem==sizeof(uintptr_t)?1:0;
+    facts.innerArrayDimValid=innerArrayDim==1?1:0;
+    facts.innerTypeValid=!strcmp(innerType,"ObjectProperty")?1:0;
+    facts.innerClassValid=1; // Preserve the original final short-circuit until earlier facts pass.
+    S148OwnerScanReason schemaReason=S148LocalPlayersSchemaReason(facts);
+    if(schemaReason==S148_OWNER_SCAN_NONE){
+        facts.innerClassValid=BfS148ExactDirectClass(innerClass,expectedInnerClass)?1:0;
+        schemaReason=S148LocalPlayersSchemaReason(facts);
+    }
+    if(schemaReason!=S148_OWNER_SCAN_NONE){
+        uint64_t object=(uint64_t)cls,address=(uint64_t)prop;
+        uint64_t detail0=((uint64_t)convenienceOff<<32)|reflectedOff;
+        uint64_t detail1=(uint64_t)inner;
+        switch(schemaReason){
+        case S148_OWNER_SCAN_SCHEMA_LOOKUP_NO_MATCH:
+        case S148_OWNER_SCAN_SCHEMA_LOOKUP_MALFORMED:
+            detail0=(uint64_t)(int64_t)(int32_t)lookup; detail1=(uint64_t)reflectedOff; break;
+        case S148_OWNER_SCAN_SCHEMA_PROPERTY_POINTER_INVALID:
+            object=(uint64_t)prop; address=0; detail0=0; detail1=0; break;
+        case S148_OWNER_SCAN_SCHEMA_CONVENIENCE_OFFSET_INVALID:
+            detail0=0xFFFFFFFFu; detail1=(uint64_t)convenienceOff; break;
+        case S148_OWNER_SCAN_SCHEMA_OFFSET_MISMATCH:
+            detail0=(uint64_t)convenienceOff; detail1=(uint64_t)reflectedOff; break;
+        case S148_OWNER_SCAN_SCHEMA_REQUIRED_OFFSET_MISMATCH:
+            detail0=(uint64_t)requiredOff; detail1=(uint64_t)reflectedOff; break;
+        case S148_OWNER_SCAN_SCHEMA_OUTER_ELEMENT_SIZE_INVALID:
+            object=(uint64_t)prop; address=(uint64_t)(prop+FPROP_ELEMSIZE);
+            detail0=0x10; detail1=(uint64_t)elem; break;
+        case S148_OWNER_SCAN_SCHEMA_OUTER_ARRAY_DIM_INVALID:
+            object=(uint64_t)prop; address=(uint64_t)(prop+FPROP_ARRAYDIM);
+            detail0=1; detail1=(uint64_t)arrayDim; break;
+        case S148_OWNER_SCAN_SCHEMA_INNER_POINTER_INVALID:
+            object=(uint64_t)inner; address=(uint64_t)(prop+BF_S148_ARRAYPROP_INNER);
+            detail0=0; detail1=(uint64_t)inner; break;
+        case S148_OWNER_SCAN_SCHEMA_INNER_ELEMENT_SIZE_INVALID:
+            object=(uint64_t)inner; address=(uint64_t)(inner+FPROP_ELEMSIZE);
+            detail0=sizeof(uintptr_t); detail1=(uint64_t)innerElem; break;
+        case S148_OWNER_SCAN_SCHEMA_INNER_ARRAY_DIM_INVALID:
+            object=(uint64_t)inner; address=(uint64_t)(inner+FPROP_ARRAYDIM);
+            detail0=1; detail1=(uint64_t)innerArrayDim; break;
+        case S148_OWNER_SCAN_SCHEMA_INNER_CLASS_INVALID:
+            object=(uint64_t)innerClass; address=(uint64_t)(inner+BF_S148_OBJECTPROP_CLASS);
+            detail0=(uint64_t)inner; detail1=(uint64_t)innerClass; break;
+        default: break;
+        }
+        BfS148OwnerScanFail(diagnostic,schemaReason,object,address,detail0,detail1);
+        return false;
+    }
+    if(offOut)*offOut=reflectedOff; if(propOut)*propOut=prop; if(innerOut)*innerOut=inner;
+    return true;
+}
+
+static bool BfS148PointerArrayHeaderValid(uintptr_t data,int32_t num,int32_t max,int32_t cap) {
+    if(num<0||max<num||max>cap) return false;
+    return (max==0&&data==0)||(max>0&&LooksLikePtr(data)&&
+           SafeReadable((void*)data,(size_t)max*sizeof(uintptr_t)));
+}
+
+static bool BfS148LocalPlayersSnapshotStable(
+    uintptr_t gi,const BfS148HealthTarget& target,
+    const BfS148OwnerScanContext* diagnostic=nullptr) {
+    if(!GcAlive(gi)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_SNAPSHOT_GI_INVALID,
+                           (uint64_t)gi,0,0,0);
+        return false;
+    }
+    if(target.localPlayersOff==0xFFFFFFFF){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_SNAPSHOT_OFFSET_INVALID,
+                           (uint64_t)gi,0,0xFFFFFFFFu,0);
+        return false;
+    }
+    uintptr_t header=gi+target.localPlayersOff;
+    if(!SafeReadable((void*)header,0x10)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_SNAPSHOT_HEADER_UNREADABLE,
+                           (uint64_t)gi,(uint64_t)header,0x10,0);
+        return false;
+    }
+    uintptr_t observedData=*(uintptr_t*)header;
+    int32_t observedNum=*(int32_t*)(header+8);
+    int32_t observedMax=*(int32_t*)(header+12);
+    if(observedData!=target.localPlayersData){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_SNAPSHOT_DATA_CHANGED,
+                           (uint64_t)gi,(uint64_t)header,
+                           (uint64_t)target.localPlayersData,(uint64_t)observedData);
+        return false;
+    }
+    if(observedNum!=target.localPlayersNum){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_SNAPSHOT_NUM_CHANGED,
+                           (uint64_t)gi,(uint64_t)(header+8),
+                           (uint64_t)(uint32_t)target.localPlayersNum,
+                           (uint64_t)(uint32_t)observedNum);
+        return false;
+    }
+    if(observedMax!=target.localPlayersMax){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_SNAPSHOT_MAX_CHANGED,
+                           (uint64_t)gi,(uint64_t)(header+12),
+                           (uint64_t)(uint32_t)target.localPlayersMax,
+                           (uint64_t)(uint32_t)observedMax);
+        return false;
+    }
+    for(int i=0;i<target.localPlayersNum;i++){
+        uintptr_t cell=target.localPlayersData+(uintptr_t)i*sizeof(uintptr_t);
+        BfS148OwnerScanContext site=diagnostic?*diagnostic:
+            BfS148OwnerScanSite(nullptr,S148_OWNER_SCAN_PHASE_NONE);
+        site.localIndex=i;
+        if(!SafeReadable((void*)cell,sizeof(uintptr_t))){
+            BfS148OwnerScanFail(&site,S148_OWNER_SCAN_LOCAL_PLAYERS_SNAPSHOT_MEMBER_CELL_UNREADABLE,
+                               (uint64_t)gi,(uint64_t)cell,sizeof(uintptr_t),0);
+            return false;
+        }
+        uintptr_t observedMember=*(uintptr_t*)cell;
+        if(observedMember!=target.localPlayersMembers[i]){
+            BfS148OwnerScanFail(&site,S148_OWNER_SCAN_LOCAL_PLAYERS_SNAPSHOT_MEMBER_CHANGED,
+                               (uint64_t)gi,(uint64_t)cell,
+                               (uint64_t)target.localPlayersMembers[i],
+                               (uint64_t)observedMember);
+            return false;
+        }
+    }
+    return true;
+}
+
+// Validate the reflected UGameInstance::LocalPlayers TArray before a LocalPlayer can confer
+// mutation authority. This rejects stale-but-allocationally-live LocalPlayer/PC pairs left by travel.
+static bool BfS148ReadLocalPlayers(uintptr_t gi,uintptr_t wantedLocalPlayer,
+                                   BfS148HealthTarget* target,int* membershipCountOut,
+                                   const BfS148OwnerScanContext* diagnostic=nullptr) {
+    if(membershipCountOut)*membershipCountOut=0;
+    if(!target){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_TARGET_NULL,
+                           (uint64_t)gi,0,0,0);
+        return false;
+    }
+    if(!GcAlive(gi)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_GAME_INSTANCE_NOT_LIVE,
+                           (uint64_t)gi,0,0,0);
+        return false;
+    }
+    uintptr_t giClass=ClassOf(gi);
+    if(!GcAlive(giClass)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_GAME_INSTANCE_CLASS_INVALID,
+                           (uint64_t)gi,0,(uint64_t)giClass,0);
+        return false;
+    }
+    S148ClassChainFailure giChainFailure{};
+    BfS148ChainResult giChain=BfS148ExactChain(
+        giClass,"GameInstance",nullptr,0,&giChainFailure);
+    if(giChain!=BF_S148_CHAIN_MATCH){
+        BfS148OwnerScanFail(
+            diagnostic,giChain==BF_S148_CHAIN_MALFORMED?
+                S148_OWNER_SCAN_GAME_INSTANCE_CHAIN_MALFORMED:
+                S148_OWNER_SCAN_GAME_INSTANCE_CHAIN_NO_MATCH,
+            (uint64_t)gi,0,(uint64_t)giClass,(uint64_t)(int32_t)giChain,
+            giChain==BF_S148_CHAIN_MALFORMED?&giChainFailure:nullptr);
+        return false;
+    }
+    bool cdoKnown=false;
+    bool isCdo=BfS148IsCdo(gi,&cdoKnown);
+    if(!cdoKnown){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_GAME_INSTANCE_CDO_UNKNOWN,
+                           (uint64_t)gi,0,(uint64_t)giClass,0);
+        return false;
+    }
+    if(isCdo){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_GAME_INSTANCE_IS_CDO,
+                           (uint64_t)gi,0,(uint64_t)giClass,0);
+        return false;
+    }
+
+    uint32_t localPlayersOff=PropOffsetSuper(giClass,"LocalPlayers");
+    uint32_t reflectedOff=0xFFFFFFFF; uintptr_t prop=0,inner=0;
+    bool propertyValid=BfS148ResolveArrayObjectProperty(
+        giClass,"LocalPlayers","GameInstance","LocalPlayer",0xFFFFFFFF,
+        &reflectedOff,&prop,&inner,diagnostic);
+    if(!propertyValid||!LooksLikePtr(prop)||!LooksLikePtr(inner)||
+       localPlayersOff==0xFFFFFFFF||reflectedOff!=localPlayersOff){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_SCHEMA_INVALID,
+                           (uint64_t)gi,(uint64_t)prop,
+                           ((uint64_t)localPlayersOff<<32)|reflectedOff,
+                           (uint64_t)inner);
+        return false;
+    }
+    uintptr_t header=gi+localPlayersOff;
+    if(!SafeReadable((void*)header,0x10)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_SNAPSHOT_HEADER_UNREADABLE,
+                           (uint64_t)gi,(uint64_t)header,0x10,0);
+        return false;
+    }
+    uintptr_t data=*(uintptr_t*)header;
+    int32_t num=*(int32_t*)(header+8);
+    int32_t max=*(int32_t*)(header+12);
+    uint64_t packedHeader=((uint64_t)(uint32_t)num<<32)|(uint32_t)max;
+    if(num<0){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_NUM_NEGATIVE,
+                           (uint64_t)gi,(uint64_t)(header+8),packedHeader,(uint64_t)data);
+        return false;
+    }
+    if(num>8){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_NUM_OVER_CAP,
+                           (uint64_t)gi,(uint64_t)(header+8),(uint64_t)(uint32_t)num,8);
+        return false;
+    }
+    if(max<num){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_MAX_BELOW_NUM,
+                           (uint64_t)gi,(uint64_t)(header+12),
+                           (uint64_t)(uint32_t)num,(uint64_t)(uint32_t)max);
+        return false;
+    }
+    if(max>8){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_MAX_OVER_CAP,
+                           (uint64_t)gi,(uint64_t)(header+12),(uint64_t)(uint32_t)max,8);
+        return false;
+    }
+    if(max==0&&data!=0){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_EMPTY_DATA_INVALID,
+                           (uint64_t)gi,(uint64_t)header,0,(uint64_t)data);
+        return false;
+    }
+    if(max>0&&!LooksLikePtr(data)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_DATA_POINTER_INVALID,
+                           (uint64_t)gi,(uint64_t)header,packedHeader,(uint64_t)data);
+        return false;
+    }
+    if(max>0&&!SafeReadable((void*)data,(size_t)max*sizeof(uintptr_t))){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYERS_DATA_UNREADABLE,
+                           (uint64_t)gi,(uint64_t)data,
+                           (uint64_t)((size_t)max*sizeof(uintptr_t)),packedHeader);
+        return false;
+    }
+
+    target->gameInstance=gi; target->gameInstanceClass=giClass;
+    target->localPlayersOff=localPlayersOff; target->localPlayersData=data;
+    target->localPlayersNum=num; target->localPlayersMax=max;
+
+    int membershipCount=0,memberIndex=-1;
+    for(int i=0;i<num;i++){
+        uintptr_t cell=data+(uintptr_t)i*sizeof(uintptr_t);
+        BfS148OwnerScanContext site=diagnostic?*diagnostic:
+            BfS148OwnerScanSite(nullptr,S148_OWNER_SCAN_PHASE_NONE);
+        site.localIndex=i;
+        if(!SafeReadable((void*)cell,sizeof(uintptr_t))){
+            BfS148OwnerScanFail(&site,S148_OWNER_SCAN_LOCAL_PLAYERS_MEMBER_CELL_UNREADABLE,
+                               (uint64_t)gi,(uint64_t)cell,sizeof(uintptr_t),0);
+            return false;
+        }
+        uintptr_t member=*(uintptr_t*)cell;
+        target->localPlayersMembers[i]=member;
+        if(!GcAlive(member)){
+            BfS148OwnerScanFail(&site,S148_OWNER_SCAN_LOCAL_PLAYERS_MEMBER_NOT_LIVE,
+                               (uint64_t)member,(uint64_t)cell,(uint64_t)gi,0);
+            return false;
+        }
+        uintptr_t memberClass=ClassOf(member);
+        if(!GcAlive(memberClass)){
+            BfS148OwnerScanFail(&site,S148_OWNER_SCAN_LOCAL_PLAYERS_MEMBER_CLASS_INVALID,
+                               (uint64_t)member,(uint64_t)cell,(uint64_t)memberClass,0);
+            return false;
+        }
+        S148ClassChainFailure memberChainFailure{};
+        BfS148ChainResult memberChain=BfS148ExactChain(
+            memberClass,"LocalPlayer",nullptr,0,&memberChainFailure);
+        if(memberChain!=BF_S148_CHAIN_MATCH){
+            BfS148OwnerScanFail(
+                &site,memberChain==BF_S148_CHAIN_MALFORMED?
+                    S148_OWNER_SCAN_LOCAL_PLAYER_CHAIN_MALFORMED:
+                    S148_OWNER_SCAN_LOCAL_PLAYER_CHAIN_NO_MATCH,
+                (uint64_t)member,(uint64_t)cell,(uint64_t)memberClass,
+                (uint64_t)(int32_t)memberChain,
+                memberChain==BF_S148_CHAIN_MALFORMED?&memberChainFailure:nullptr);
+            return false;
+        }
+        for(int prior=0;prior<i;prior++){
+            if(target->localPlayersMembers[prior]==member){
+                BfS148OwnerScanFail(&site,S148_OWNER_SCAN_LOCAL_PLAYERS_MEMBER_DUPLICATE,
+                                   (uint64_t)member,(uint64_t)cell,
+                                   (uint64_t)(uint32_t)prior,(uint64_t)(uint32_t)i);
+                return false;
+            }
+        }
+        if(member==wantedLocalPlayer){ membershipCount++; memberIndex=i; }
+    }
+    if(!BfS148LocalPlayersSnapshotStable(gi,*target,diagnostic)) return false;
+    target->localPlayerIndex=memberIndex;
+    if(membershipCountOut)*membershipCountOut=membershipCount;
+    return true;
+}
+
+struct BfS148LocalPlayersCensusEntry {
+    uintptr_t gi;
+    uintptr_t giClass;
+    uintptr_t data;
+    int32_t num;
+    int32_t max;
+    uint32_t off;
+    uintptr_t members[8];
+};
+
+static bool BfS148LocalPlayersCensusStable(
+    const BfS148LocalPlayersCensusEntry& expected,
+    const BfS148OwnerScanContext* diagnostic=nullptr) {
+    BfS148HealthTarget current{}; int ignoredMembership=0;
+    if(!BfS148ReadLocalPlayers(expected.gi,0,&current,&ignoredMembership,diagnostic)) return false;
+    if(current.gameInstanceClass!=expected.giClass){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CENSUS_GAME_INSTANCE_CLASS_CHANGED,
+                           (uint64_t)expected.gi,0,(uint64_t)expected.giClass,
+                           (uint64_t)current.gameInstanceClass);
+        return false;
+    }
+    if(current.localPlayersOff!=expected.off){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CENSUS_OFFSET_CHANGED,
+                           (uint64_t)expected.gi,0,(uint64_t)expected.off,
+                           (uint64_t)current.localPlayersOff);
+        return false;
+    }
+    if(current.localPlayersData!=expected.data){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CENSUS_DATA_CHANGED,
+                           (uint64_t)expected.gi,0,(uint64_t)expected.data,
+                           (uint64_t)current.localPlayersData);
+        return false;
+    }
+    if(current.localPlayersNum!=expected.num){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CENSUS_NUM_CHANGED,
+                           (uint64_t)expected.gi,0,(uint64_t)(uint32_t)expected.num,
+                           (uint64_t)(uint32_t)current.localPlayersNum);
+        return false;
+    }
+    if(current.localPlayersMax!=expected.max){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CENSUS_MAX_CHANGED,
+                           (uint64_t)expected.gi,0,(uint64_t)(uint32_t)expected.max,
+                           (uint64_t)(uint32_t)current.localPlayersMax);
+        return false;
+    }
+    for(int i=0;i<8;i++){
+        if(current.localPlayersMembers[i]!=expected.members[i]){
+            BfS148OwnerScanContext site=diagnostic?*diagnostic:
+                BfS148OwnerScanSite(nullptr,S148_OWNER_SCAN_PHASE_NONE);
+            site.localIndex=i;
+            BfS148OwnerScanFail(&site,S148_OWNER_SCAN_CENSUS_MEMBER_CHANGED,
+                               (uint64_t)expected.gi,0,(uint64_t)expected.members[i],
+                               (uint64_t)current.localPlayersMembers[i]);
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool BfS148ValidateLocalController(uintptr_t localPlayer,uintptr_t pc,
+                                           uintptr_t gameInstance,
+                                           BfS148HealthTarget* target,
+                                           const BfS148OwnerScanContext* diagnostic=nullptr) {
+    if(!target){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CONTROLLER_TARGET_NULL,
+                           (uint64_t)localPlayer,0,(uint64_t)pc,(uint64_t)gameInstance);
+        return false;
+    }
+    if(!GcAlive(localPlayer)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CONTROLLER_LOCAL_PLAYER_NOT_LIVE,
+                           (uint64_t)localPlayer,0,(uint64_t)pc,(uint64_t)gameInstance);
+        return false;
+    }
+    if(!GcAlive(pc)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CONTROLLER_NOT_LIVE,
+                           (uint64_t)pc,0,(uint64_t)localPlayer,(uint64_t)gameInstance);
+        return false;
+    }
+    if(!GcAlive(gameInstance)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CONTROLLER_GAME_INSTANCE_NOT_LIVE,
+                           (uint64_t)gameInstance,0,(uint64_t)localPlayer,(uint64_t)pc);
+        return false;
+    }
+    uintptr_t lpClass=ClassOf(localPlayer),pcClass=ClassOf(pc);
+    if(!GcAlive(lpClass)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CONTROLLER_LOCAL_PLAYER_CLASS_INVALID,
+                           (uint64_t)localPlayer,0,(uint64_t)lpClass,0);
+        return false;
+    }
+    if(!GcAlive(pcClass)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CONTROLLER_CLASS_INVALID,
+                           (uint64_t)pc,0,(uint64_t)pcClass,0);
+        return false;
+    }
+    S148ClassChainFailure lpChainFailure{};
+    BfS148ChainResult lpChain=BfS148ExactChain(
+        lpClass,"LocalPlayer",nullptr,0,&lpChainFailure);
+    if(lpChain!=BF_S148_CHAIN_MATCH){
+        BfS148OwnerScanFail(
+            diagnostic,lpChain==BF_S148_CHAIN_MALFORMED?
+                S148_OWNER_SCAN_CONTROLLER_LOCAL_PLAYER_CHAIN_MALFORMED:
+                S148_OWNER_SCAN_CONTROLLER_LOCAL_PLAYER_CHAIN_NO_MATCH,
+            (uint64_t)localPlayer,0,(uint64_t)lpClass,(uint64_t)(int32_t)lpChain,
+            lpChain==BF_S148_CHAIN_MALFORMED?&lpChainFailure:nullptr);
+        return false;
+    }
+    S148ClassChainFailure pcChainFailure{};
+    BfS148ChainResult pcChain=BfS148ExactChain(
+        pcClass,"LokiPlayerController",nullptr,0,&pcChainFailure);
+    if(pcChain!=BF_S148_CHAIN_MATCH){
+        BfS148OwnerScanFail(
+            diagnostic,pcChain==BF_S148_CHAIN_MALFORMED?
+                S148_OWNER_SCAN_CONTROLLER_CHAIN_MALFORMED:
+                S148_OWNER_SCAN_CONTROLLER_CHAIN_NO_MATCH,
+            (uint64_t)pc,0,(uint64_t)pcClass,(uint64_t)(int32_t)pcChain,
+            pcChain==BF_S148_CHAIN_MALFORMED?&pcChainFailure:nullptr);
+        return false;
+    }
+    constexpr uint32_t kLocalPlayerPcOff=0x38; // S79/S80 pointer-equality measured ULocalPlayer->PlayerController.
+    constexpr uint32_t kPcPlayerOff=0x458;     // S79/S80 pointer-equality measured reciprocal PC->Player.
+    uintptr_t lpPcCell=localPlayer+kLocalPlayerPcOff;
+    if(!SafeReadable((void*)lpPcCell,8)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYER_CONTROLLER_CELL_UNREADABLE,
+                           (uint64_t)localPlayer,(uint64_t)lpPcCell,8,(uint64_t)pc);
+        return false;
+    }
+    uintptr_t observedPc=*(uintptr_t*)lpPcCell;
+    if(observedPc!=pc){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_LOCAL_PLAYER_CONTROLLER_MISMATCH,
+                           (uint64_t)localPlayer,(uint64_t)lpPcCell,
+                           (uint64_t)pc,(uint64_t)observedPc);
+        return false;
+    }
+    uintptr_t pcPlayerCell=pc+kPcPlayerOff;
+    if(!SafeReadable((void*)pcPlayerCell,8)){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CONTROLLER_PLAYER_CELL_UNREADABLE,
+                           (uint64_t)pc,(uint64_t)pcPlayerCell,8,(uint64_t)localPlayer);
+        return false;
+    }
+    uintptr_t observedLocalPlayer=*(uintptr_t*)pcPlayerCell;
+    if(observedLocalPlayer!=localPlayer){
+        BfS148OwnerScanFail(diagnostic,S148_OWNER_SCAN_CONTROLLER_PLAYER_MISMATCH,
+                           (uint64_t)pc,(uint64_t)pcPlayerCell,
+                           (uint64_t)localPlayer,(uint64_t)observedLocalPlayer);
+        return false;
+    }
+    int membershipCount=0;
+    if(!BfS148ReadLocalPlayers(gameInstance,localPlayer,target,&membershipCount,diagnostic))
+        return false;
+    if(membershipCount!=1){
+        BfS148OwnerScanFail(
+            diagnostic,membershipCount==0?S148_OWNER_SCAN_LOCAL_PLAYERS_MEMBERSHIP_ZERO:
+                S148_OWNER_SCAN_LOCAL_PLAYERS_MEMBERSHIP_MULTIPLE,
+            (uint64_t)gameInstance,0,(uint64_t)(uint32_t)membershipCount,
+            (uint64_t)localPlayer);
+        return false;
+    }
+    target->localPlayer=localPlayer; target->localPlayerClass=lpClass;
+    target->pc=pc; target->pcClass=pcClass;
+    target->localPlayerPcOff=kLocalPlayerPcOff; target->pcPlayerOff=kPcPlayerOff;
+    target->localOwnerCandidates=1;
+    target->ownerScanComplete=1; target->localMembershipValid=1;
+    return true;
+}
+
+// Select only a unique GameInstance.LocalPlayers member with a reciprocal
+// ULocalPlayer -> LokiPlayerController -> ULocalPlayer pair. Any unreadable GUObjectArray region or
+// malformed active LocalPlayers array voids uniqueness rather than silently certifying a partial scan.
+static void BfS148EmitOwnerScanFailure(
+    const S148OwnerScanFailure& failure,int candidates,int retained,
+    int snapshotNumEl,int snapshotNumChunks) {
+    Markerf(S148_OWNER_SCAN_MARKER_FORMAT,
+            S148OwnerScanPhaseName(failure.phase),S148OwnerScanReasonName(failure.reason),
+            (unsigned)failure.reason,(int)failure.pass,(int)failure.snapshotIndex,
+            (int)failure.censusIndex,(int)failure.localIndex,
+            (unsigned long long)failure.object,(unsigned long long)failure.address,
+            (unsigned long long)failure.detail0,(unsigned long long)failure.detail1,
+            (int)candidates,(int)retained,(int)snapshotNumEl,(int)snapshotNumChunks);
+    if(failure.chain.reason!=S148_CLASS_CHAIN_NONE)
+        Markerf(S148_CLASS_CHAIN_MARKER_FORMAT,
+                S148ClassChainFailureName(failure.chain.reason),
+                (unsigned)failure.chain.reason,(int)failure.chain.depth,
+                (unsigned long long)failure.chain.node,
+                (unsigned long long)failure.chain.address,
+                (unsigned long long)failure.chain.detail0,
+                (unsigned long long)failure.chain.detail1);
+}
+
+static bool BfS148FindUniqueLocalController(BfS148HealthTarget* target,bool emitLog) {
+    S148OwnerScanFailure failure{};
+    if(!target){
+        BfS148OwnerScanContext site=BfS148OwnerScanSite(
+            &failure,S148_OWNER_SCAN_PHASE_SELECTION);
+        BfS148OwnerScanFail(&site,S148_OWNER_SCAN_OWNER_TARGET_NULL);
+        if(emitLog) BfS148EmitOwnerScanFailure(failure,0,0,0,0);
+        return false;
+    }
+    BfS148ObjectSnapshot snapshot{};
+    BfS148OwnerScanContext captureSite=BfS148OwnerScanSite(
+        &failure,S148_OWNER_SCAN_PHASE_CAPTURE);
+    if(!BfS148TakeObjectSnapshot(&snapshot,&captureSite)){
+        if(failure.reason==S148_OWNER_SCAN_NONE)
+            BfS148OwnerScanFail(&captureSite,S148_OWNER_SCAN_UNCLASSIFIED_FAILURE);
+        if(emitLog){
+            BfS148EmitOwnerScanFailure(failure,0,0,snapshot.numEl,snapshot.numChunks);
+            Marker("[S148] owner scan REFUSED: exact GUObjectArray snapshot unavailable\r\n");
+        }
+        return false;
+    }
+    constexpr int BF_S148_MAX_GAME_INSTANCES=64;
+    BfS148LocalPlayersCensusEntry* census=(BfS148LocalPlayersCensusEntry*)VirtualAlloc(
+        nullptr,sizeof(BfS148LocalPlayersCensusEntry)*BF_S148_MAX_GAME_INSTANCES,
+        MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE);
+    if(!census){
+        BfS148OwnerScanFail(&captureSite,S148_OWNER_SCAN_CENSUS_ALLOCATION_FAILED,
+                           (uint64_t)snapshot.objectsPtr,0,
+                           BF_S148_MAX_GAME_INSTANCES,
+                           sizeof(BfS148LocalPlayersCensusEntry)*BF_S148_MAX_GAME_INSTANCES);
+        int snapshotNumEl=snapshot.numEl,snapshotNumChunks=snapshot.numChunks;
+        BfS148FreeObjectSnapshot(&snapshot);
+        if(emitLog) BfS148EmitOwnerScanFailure(
+            failure,0,0,snapshotNumEl,snapshotNumChunks);
+        return false;
+    }
+    int count=0;
+    int censusCount=0;
+    uintptr_t selectedLp=0,selectedPc=0,selectedGi=0;
+    int selectedSnapshotIndex=-1,selectedCensusIndex=-1,selectedLocalIndex=-1;
+    bool scanComplete=true;
+    for(int ci=0;ci<snapshot.numChunks;ci++){
+        int cnt=(ci==snapshot.numChunks-1)?
+            (snapshot.numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            int index=ci*PERCHUNK+j;
+            uintptr_t gi=snapshot.storage[snapshot.numChunks+index];
+            if(!gi) continue;
+            BfS148OwnerScanContext objectSite=BfS148OwnerScanSite(
+                &failure,S148_OWNER_SCAN_PHASE_ENUM_OBJECT,index,censusCount);
+            if(!LooksLikePtr(gi)){
+                BfS148OwnerScanFail(&objectSite,S148_OWNER_SCAN_OBJECT_POINTER_INVALID,
+                                   (uint64_t)gi,0,(uint64_t)(uint32_t)ci,
+                                   (uint64_t)(uint32_t)j);
+                scanComplete=false; break;
+            }
+            if(!GcAlive(gi)) continue;
+            uintptr_t giClass=ClassOf(gi);
+            if(!GcAlive(giClass)){
+                BfS148OwnerScanFail(&objectSite,S148_OWNER_SCAN_OBJECT_CLASS_INVALID,
+                                   (uint64_t)gi,0,(uint64_t)giClass,0);
+                scanComplete=false; break;
+            }
+            S148ClassChainFailure giChainFailure{};
+            BfS148ChainResult giChain=BfS148ExactChain(
+                giClass,"GameInstance",nullptr,0,&giChainFailure);
+            if(giChain==BF_S148_CHAIN_MALFORMED){
+                BfS148OwnerScanFail(&objectSite,S148_OWNER_SCAN_GAME_INSTANCE_CHAIN_MALFORMED,
+                                   (uint64_t)gi,0,(uint64_t)giClass,
+                                   (uint64_t)(int32_t)giChain,&giChainFailure);
+                scanComplete=false; break;
+            }
+            if(giChain==BF_S148_CHAIN_NO_MATCH) continue;
+            bool cdoKnown=false,isCdo=BfS148IsCdo(gi,&cdoKnown);
+            if(!cdoKnown){
+                BfS148OwnerScanFail(&objectSite,S148_OWNER_SCAN_GAME_INSTANCE_CDO_UNKNOWN,
+                                   (uint64_t)gi,0,(uint64_t)giClass,0);
+                scanComplete=false; break;
+            }
+            if(isCdo) continue;
+
+            BfS148HealthTarget giView{}; int ignoredMembership=0;
+            BfS148OwnerScanContext giSite=BfS148OwnerScanSite(
+                &failure,S148_OWNER_SCAN_PHASE_GI_CAPTURE,index,censusCount);
+            if(!BfS148ReadLocalPlayers(gi,0,&giView,&ignoredMembership,&giSite)){
+                scanComplete=false; break;
+            }
+            if(censusCount>=BF_S148_MAX_GAME_INSTANCES){
+                BfS148OwnerScanFail(&giSite,S148_OWNER_SCAN_GAME_INSTANCE_CENSUS_CAPACITY,
+                                   (uint64_t)gi,0,(uint64_t)(uint32_t)censusCount,
+                                   BF_S148_MAX_GAME_INSTANCES);
+                scanComplete=false; break;
+            }
+            for(int prior=0;prior<censusCount;prior++){
+                if(census[prior].gi==gi){
+                    BfS148OwnerScanFail(&giSite,S148_OWNER_SCAN_DUPLICATE_GAME_INSTANCE,
+                                       (uint64_t)gi,0,(uint64_t)(uint32_t)prior,
+                                       (uint64_t)(uint32_t)censusCount);
+                    scanComplete=false; break;
+                }
+            }
+            if(!scanComplete) break;
+            int savedCensusIndex=censusCount;
+            BfS148LocalPlayersCensusEntry& saved=census[censusCount++];
+            saved.gi=gi; saved.giClass=giView.gameInstanceClass;
+            saved.data=giView.localPlayersData; saved.num=giView.localPlayersNum;
+            saved.max=giView.localPlayersMax; saved.off=giView.localPlayersOff;
+            memcpy(saved.members,giView.localPlayersMembers,sizeof(saved.members));
+            for(int li=0;li<giView.localPlayersNum;li++){
+                uintptr_t lp=giView.localPlayersMembers[li];
+                BfS148OwnerScanContext candidateSite=BfS148OwnerScanSite(
+                    &failure,S148_OWNER_SCAN_PHASE_CANDIDATE_VALIDATE,index,
+                    savedCensusIndex,li);
+                uintptr_t lpPcCell=lp+0x38;
+                if(!SafeReadable((void*)lpPcCell,8)){
+                    BfS148OwnerScanFail(
+                        &candidateSite,S148_OWNER_SCAN_LOCAL_PLAYER_CONTROLLER_CELL_UNREADABLE,
+                        (uint64_t)lp,(uint64_t)lpPcCell,8,(uint64_t)gi);
+                    scanComplete=false; break;
+                }
+                uintptr_t pc=*(uintptr_t*)lpPcCell;
+                BfS148HealthTarget candidate{};
+                if(!BfS148ValidateLocalController(lp,pc,gi,&candidate,&candidateSite)){
+                    scanComplete=false; break;
+                }
+                count++;
+                if(count==1){
+                    selectedLp=lp; selectedPc=pc; selectedGi=gi;
+                    selectedSnapshotIndex=index; selectedCensusIndex=savedCensusIndex;
+                    selectedLocalIndex=li;
+                }
+                if(emitLog){
+                    Markerf("[S148] local-owner candidate[%d] GI=0x%llX LocalPlayers[%d]=0x%llX PC=0x%llX\r\n",
+                            count-1,(unsigned long long)gi,li,
+                            (unsigned long long)lp,(unsigned long long)pc);
+                }
+            }
+            BfS148OwnerScanContext postSite=BfS148OwnerScanSite(
+                &failure,S148_OWNER_SCAN_PHASE_GI_POSTCHECK,index,savedCensusIndex);
+            if(scanComplete&&!BfS148LocalPlayersSnapshotStable(gi,giView,&postSite))
+                scanComplete=false;
+            if(!scanComplete) break;
+        }
+        if(!scanComplete) break;
+    }
+    BfS148HealthTarget selected{};
+    BfS148OwnerScanContext selectedSite=BfS148OwnerScanSite(
+        &failure,S148_OWNER_SCAN_PHASE_SELECTED_REVALIDATE,selectedSnapshotIndex,
+        selectedCensusIndex,selectedLocalIndex);
+    bool selectedValid=scanComplete&&count==1&&
+        BfS148ValidateLocalController(
+            selectedLp,selectedPc,selectedGi,&selected,&selectedSite);
+    if(scanComplete&&count==1&&!selectedValid) scanComplete=false;
+    for(int pass=0;pass<2&&scanComplete;pass++){
+        for(int i=0;i<censusCount;i++){
+            BfS148OwnerScanContext censusSite=BfS148OwnerScanSite(
+                &failure,S148_OWNER_SCAN_PHASE_CENSUS_REVALIDATE,-1,i,-1,pass);
+            if(!BfS148LocalPlayersCensusStable(census[i],&censusSite)){
+                scanComplete=false; break;
+            }
+        }
+        BfS148OwnerScanContext objectSite=BfS148OwnerScanSite(
+            &failure,S148_OWNER_SCAN_PHASE_GUOBJECT_REVALIDATE,-1,-1,-1,pass);
+        if(scanComplete&&!BfS148ObjectSnapshotStable(snapshot,&objectSite))
+            scanComplete=false;
+    }
+    int snapshotNumEl=snapshot.numEl,snapshotNumChunks=snapshot.numChunks;
+    VirtualFree(census,0,MEM_RELEASE);
+    BfS148FreeObjectSnapshot(&snapshot);
+    if(!scanComplete){
+        if(failure.reason==S148_OWNER_SCAN_NONE){
+            BfS148OwnerScanContext fallback=BfS148OwnerScanSite(
+                &failure,S148_OWNER_SCAN_PHASE_NONE);
+            BfS148OwnerScanFail(&fallback,S148_OWNER_SCAN_UNCLASSIFIED_FAILURE);
+        }
+        target->localOwnerCandidates=count;
+        target->ownerScanComplete=0;
+        if(emitLog){
+            BfS148EmitOwnerScanFailure(
+                failure,count,censusCount,snapshotNumEl,snapshotNumChunks);
+            Markerf("[S148] owner scan REFUSED: incomplete enumeration or active LocalPlayers validation; "
+                    "partialCandidates=%d\r\n",count);
+        }
+        return false;
+    }
+    if(count!=1){
+        BfS148OwnerScanContext selectionSite=BfS148OwnerScanSite(
+            &failure,S148_OWNER_SCAN_PHASE_SELECTION);
+        BfS148OwnerScanFail(
+            &selectionSite,count==0?S148_OWNER_SCAN_CANDIDATE_COUNT_ZERO:
+                S148_OWNER_SCAN_CANDIDATE_COUNT_MULTIPLE,
+            0,0,(uint64_t)(uint32_t)count,1);
+        if(emitLog){
+            BfS148EmitOwnerScanFailure(
+                failure,count,censusCount,snapshotNumEl,snapshotNumChunks);
+            Markerf("[S148] local-owner selection REFUSED: reciprocal candidate count=%d (need exactly 1)\r\n",count);
+        }
+        target->localOwnerCandidates=count;
+        target->ownerScanComplete=1;
+        return false;
+    }
+    *target=selected;
+    target->localOwnerCandidates=count;
+    target->ownerScanComplete=1;
+    return selectedValid;
+}
+
+// Resolve an actor's UObject Outer (ULevel), the reflected ULevel::OwningWorld, and the reflected
+// UWorld::OwningGameInstance. Both the controller and possessed hero must converge on the same world
+// and on the GameInstance whose LocalPlayers array selected the owner.
+static bool BfS148ResolveActorWorld(uintptr_t actor,uintptr_t expectedGameInstance,
+                                    uintptr_t* levelOut,uintptr_t* levelClassOut,
+                                    uintptr_t* worldOut,uintptr_t* worldClassOut,
+                                    uint32_t* owningWorldOffOut,
+                                    uint32_t* owningGameInstanceOffOut) {
+    if(levelOut)*levelOut=0; if(levelClassOut)*levelClassOut=0;
+    if(worldOut)*worldOut=0; if(worldClassOut)*worldClassOut=0;
+    if(owningWorldOffOut)*owningWorldOffOut=0xFFFFFFFF;
+    if(owningGameInstanceOffOut)*owningGameInstanceOffOut=0xFFFFFFFF;
+    if(!GcAlive(actor)||!GcAlive(expectedGameInstance)||
+       !SafeReadable((void*)(actor+0x28),sizeof(uintptr_t))) return false;
+    uintptr_t level=*(uintptr_t*)(actor+0x28);
+    uintptr_t levelClass=GcAlive(level)?ClassOf(level):0; char chain[256];
+    if(!GcAlive(levelClass)||
+       BfS148ExactChain(levelClass,"Level",chain,sizeof(chain))!=BF_S148_CHAIN_MATCH) return false;
+    uint32_t owningWorldOff=PropOffsetSuper(levelClass,"OwningWorld");
+    uint32_t reflectedWorldOff=0xFFFFFFFF; uintptr_t worldProp=0;
+    bool worldPropertyValid=BfS148ResolveObjectProperty(
+        levelClass,"OwningWorld","Level","World",&reflectedWorldOff,&worldProp);
+    if(!worldPropertyValid||!LooksLikePtr(worldProp)||owningWorldOff==0xFFFFFFFF||
+       reflectedWorldOff!=owningWorldOff||
+       !SafeReadable((void*)(level+owningWorldOff),sizeof(uintptr_t))) return false;
+    uintptr_t world=*(uintptr_t*)(level+owningWorldOff);
+    uintptr_t worldClass=GcAlive(world)?ClassOf(world):0;
+    if(!GcAlive(worldClass)||
+       BfS148ExactChain(worldClass,"World",chain,sizeof(chain))!=BF_S148_CHAIN_MATCH) return false;
+    uint32_t owningGameInstanceOff=PropOffsetSuper(worldClass,"OwningGameInstance");
+    uint32_t reflectedGiOff=0xFFFFFFFF; uintptr_t giProp=0;
+    bool giPropertyValid=BfS148ResolveObjectProperty(
+        worldClass,"OwningGameInstance","World","GameInstance",&reflectedGiOff,&giProp);
+    if(!giPropertyValid||!LooksLikePtr(giProp)||owningGameInstanceOff==0xFFFFFFFF||
+       reflectedGiOff!=owningGameInstanceOff||
+       !SafeReadable((void*)(world+owningGameInstanceOff),sizeof(uintptr_t))||
+       *(uintptr_t*)(world+owningGameInstanceOff)!=expectedGameInstance) return false;
+    if(levelOut)*levelOut=level; if(levelClassOut)*levelClassOut=levelClass;
+    if(worldOut)*worldOut=world; if(worldClassOut)*worldClassOut=worldClass;
+    if(owningWorldOffOut)*owningWorldOffOut=owningWorldOff;
+    if(owningGameInstanceOffOut)*owningGameInstanceOffOut=owningGameInstanceOff;
+    return true;
+}
+
+struct BfS148SpawnedCensusEntry {
+    uintptr_t asc;
+    uintptr_t ascClass;
+    uintptr_t prop;
+    uintptr_t inner;
+    uintptr_t data;
+    uint32_t off;
+    int32_t num;
+    int32_t max;
+    uintptr_t members[64];
+};
+
+static bool BfS148SpawnedCensusStable(const BfS148SpawnedCensusEntry& expected) {
+    if(!GcAlive(expected.asc)||ClassOf(expected.asc)!=expected.ascClass) return false;
+    bool cdoKnown=false;
+    if(BfS148IsCdo(expected.asc,&cdoKnown)||!cdoKnown) return false;
+    if(BfS148ExactChain(expected.ascClass,"AbilitySystemComponent",nullptr,0)!=BF_S148_CHAIN_MATCH)
+        return false;
+    uint32_t off=0xFFFFFFFF; uintptr_t prop=0,inner=0;
+    if(!BfS148ResolveArrayObjectProperty(
+            expected.ascClass,"SpawnedAttributes","AbilitySystemComponent","AttributeSet",0x168,
+            &off,&prop,&inner)||off!=expected.off||prop!=expected.prop||inner!=expected.inner||
+       !SafeReadable((void*)(expected.asc+off),0x10)) return false;
+    uintptr_t data=*(uintptr_t*)(expected.asc+off);
+    int32_t num=*(int32_t*)(expected.asc+off+8),max=*(int32_t*)(expected.asc+off+12);
+    if(data!=expected.data||num!=expected.num||max!=expected.max||
+       !BfS148PointerArrayHeaderValid(data,num,max,64)) return false;
+    for(int i=0;i<num;i++){
+        uintptr_t cell=data+(uintptr_t)i*sizeof(uintptr_t);
+        if(!SafeReadable((void*)cell,sizeof(uintptr_t))||
+           *(uintptr_t*)cell!=expected.members[i]) return false;
+        uintptr_t member=expected.members[i];
+        if(member){
+            uintptr_t memberClass=GcAlive(member)?ClassOf(member):0;
+            if(!GcAlive(memberClass)||
+               BfS148ExactChain(memberClass,"AttributeSet",nullptr,0)!=BF_S148_CHAIN_MATCH)
+                return false;
+        }
+    }
+    return true;
+}
+
+// Prove that the chosen set is registered exactly once across every complete live non-CDO ASC in a
+// stable GUObjectArray snapshot, and that the single registration belongs to the selected ASC.
+// Any malformed class/property/array state makes the scan incomplete instead of certifying a
+// partial negative. This is the evidence behind S148's "self-owned/unshared" boundary.
+static bool BfS148CountSetRegistrations(uintptr_t wantedSet,uintptr_t expectedAsc,
+                                        int* countOut,bool* completeOut,bool* ownerValidOut) {
+    if(countOut)*countOut=0; if(completeOut)*completeOut=false;
+    if(ownerValidOut)*ownerValidOut=false;
+    if(!GcAlive(wantedSet)||!GcAlive(expectedAsc)) return false;
+    BfS148ObjectSnapshot snapshot{};
+    if(!BfS148TakeObjectSnapshot(&snapshot)) return false;
+    constexpr int BF_S148_MAX_ASC_CENSUS=4096;
+    BfS148SpawnedCensusEntry* census=(BfS148SpawnedCensusEntry*)VirtualAlloc(
+        nullptr,sizeof(BfS148SpawnedCensusEntry)*BF_S148_MAX_ASC_CENSUS,
+        MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE);
+    if(!census){ BfS148FreeObjectSnapshot(&snapshot); return false; }
+    int count=0,censusCount=0; bool complete=true,ownerValid=false;
+    for(int ci=0;ci<snapshot.numChunks&&complete;ci++){
+        int cnt=(ci==snapshot.numChunks-1)?
+            (snapshot.numEl-ci*PERCHUNK):PERCHUNK;
+        for(int j=0;j<cnt;j++){
+            int index=ci*PERCHUNK+j;
+            uintptr_t obj=snapshot.storage[snapshot.numChunks+index];
+            if(!obj) continue;
+            if(!LooksLikePtr(obj)){ complete=false; break; }
+            if(!GcAlive(obj)) continue;
+            uintptr_t cls=ClassOf(obj);
+            if(!GcAlive(cls)){ complete=false; break; }
+            BfS148ChainResult ascChain=BfS148ExactChain(cls,"AbilitySystemComponent",nullptr,0);
+            if(ascChain==BF_S148_CHAIN_MALFORMED){ complete=false; break; }
+            if(ascChain==BF_S148_CHAIN_NO_MATCH) continue;
+            bool cdoKnown=false,isCdo=BfS148IsCdo(obj,&cdoKnown);
+            if(!cdoKnown){ complete=false; break; }
+            if(isCdo) continue;
+
+            uint32_t spawnedOff=0xFFFFFFFF; uintptr_t spawnedProp=0,spawnedInner=0;
+            if(!BfS148ResolveArrayObjectProperty(
+                    cls,"SpawnedAttributes","AbilitySystemComponent","AttributeSet",0x168,
+                    &spawnedOff,&spawnedProp,&spawnedInner)||
+               !SafeReadable((void*)(obj+spawnedOff),0x10)){
+                complete=false; break;
+            }
+            uintptr_t data=*(uintptr_t*)(obj+spawnedOff);
+            int32_t num=*(int32_t*)(obj+spawnedOff+8),max=*(int32_t*)(obj+spawnedOff+12);
+            if(num>64||!BfS148PointerArrayHeaderValid(data,num,max,64)||
+               censusCount>=BF_S148_MAX_ASC_CENSUS){
+                complete=false; break;
+            }
+            for(int prior=0;prior<censusCount;prior++)
+                if(census[prior].asc==obj){ complete=false; break; }
+            if(!complete) break;
+            BfS148SpawnedCensusEntry& saved=census[censusCount++];
+            saved.asc=obj; saved.ascClass=cls; saved.prop=spawnedProp; saved.inner=spawnedInner;
+            saved.data=data; saved.off=spawnedOff; saved.num=num; saved.max=max;
+            for(int ai=0;ai<num;ai++){
+                uintptr_t cell=data+(uintptr_t)ai*sizeof(uintptr_t);
+                if(!SafeReadable((void*)cell,sizeof(uintptr_t))){ complete=false; break; }
+                uintptr_t member=*(uintptr_t*)cell; saved.members[ai]=member;
+                if(member){
+                    uintptr_t memberClass=GcAlive(member)?ClassOf(member):0;
+                    if(!GcAlive(memberClass)||
+                       BfS148ExactChain(memberClass,"AttributeSet",nullptr,0)!=BF_S148_CHAIN_MATCH){
+                        complete=false; break;
+                    }
+                }
+                if(member==wantedSet){ count++; if(obj==expectedAsc) ownerValid=true; }
+            }
+            if(!complete) break;
+            if(!SafeReadable((void*)(obj+spawnedOff),0x10)||
+               *(uintptr_t*)(obj+spawnedOff)!=data||
+               *(int32_t*)(obj+spawnedOff+8)!=num||
+               *(int32_t*)(obj+spawnedOff+12)!=max){ complete=false; break; }
+            for(int ai=0;ai<num;ai++){
+                uintptr_t cell=data+(uintptr_t)ai*sizeof(uintptr_t);
+                if(!SafeReadable((void*)cell,sizeof(uintptr_t))||
+                   *(uintptr_t*)cell!=saved.members[ai]){ complete=false; break; }
+            }
+            if(!complete) break;
+        }
+    }
+    for(int pass=0;pass<2&&complete;pass++){
+        for(int i=0;i<censusCount;i++)
+            if(!BfS148SpawnedCensusStable(census[i])){ complete=false; break; }
+        if(complete&&!BfS148ObjectSnapshotStable(snapshot)) complete=false;
+    }
+    VirtualFree(census,0,MEM_RELEASE);
+    BfS148FreeObjectSnapshot(&snapshot);
+    if(countOut)*countOut=count; if(completeOut)*completeOut=complete;
+    if(ownerValidOut)*ownerValidOut=ownerValid;
+    return complete&&ownerValid&&count==1;
+}
+
+static bool BfS148SelectedArraysStable(const BfS148HealthTarget& expected) {
+    if(!GcAlive(expected.asc)||ClassOf(expected.asc)!=expected.ascClass) return false;
+    BfS148HealthTarget localNow{}; int membership=0;
+    if(!BfS148ReadLocalPlayers(expected.gameInstance,expected.localPlayer,&localNow,&membership)||
+       membership!=1||localNow.gameInstanceClass!=expected.gameInstanceClass||
+       localNow.localPlayersOff!=expected.localPlayersOff||
+       localNow.localPlayersData!=expected.localPlayersData||
+       localNow.localPlayersNum!=expected.localPlayersNum||
+       localNow.localPlayersMax!=expected.localPlayersMax||
+       localNow.localPlayerIndex!=expected.localPlayerIndex||
+       memcmp(localNow.localPlayersMembers,expected.localPlayersMembers,
+              sizeof(expected.localPlayersMembers))!=0) return false;
+
+    uint32_t off=0xFFFFFFFF; uintptr_t prop=0,inner=0;
+    if(!BfS148ResolveArrayObjectProperty(
+            expected.ascClass,"SpawnedAttributes","AbilitySystemComponent","AttributeSet",0x168,
+            &off,&prop,&inner)||off!=expected.spawnedOff||prop!=expected.spawnedProp||
+       inner!=expected.spawnedInnerProp||!SafeReadable((void*)(expected.asc+off),0x10)) return false;
+    uintptr_t data=*(uintptr_t*)(expected.asc+off);
+    int32_t num=*(int32_t*)(expected.asc+off+8),max=*(int32_t*)(expected.asc+off+12);
+    if(data!=expected.spawnedData||num!=expected.spawnedNum||max!=expected.spawnedMax||
+       !BfS148PointerArrayHeaderValid(data,num,max,64)) return false;
+    for(int i=0;i<num;i++){
+        uintptr_t cell=data+(uintptr_t)i*sizeof(uintptr_t);
+        if(!SafeReadable((void*)cell,sizeof(uintptr_t))||
+           *(uintptr_t*)cell!=expected.spawnedMembers[i]) return false;
+        uintptr_t member=expected.spawnedMembers[i];
+        if(member){
+            uintptr_t memberClass=GcAlive(member)?ClassOf(member):0;
+            if(!GcAlive(memberClass)||
+               BfS148ExactChain(memberClass,"AttributeSet",nullptr,0)!=BF_S148_CHAIN_MATCH)
+                return false;
+        }
+    }
+    return expected.candidateIndex>=0&&expected.candidateIndex<num&&
+           expected.spawnedMembers[expected.candidateIndex]==expected.set;
+}
+
+static uint32_t BfS148ResolveHealthTarget(uintptr_t expectedLocalPlayer,uintptr_t expectedPc,
+                                          uintptr_t expectedGameInstance,
+                                          bool requireUniqueOwner,BfS148HealthTarget* out,bool emitLog) {
+    BfS148HealthTarget t{};
+    t.candidateIndex=-1; t.localPlayerIndex=-1;
+    t.localPlayerPcOff=0xFFFFFFFF; t.pcPlayerOff=0xFFFFFFFF;
+    t.localPlayersOff=0xFFFFFFFF;
+    t.pawnOff=0xFFFFFFFF; t.controllerOff=0xFFFFFFFF;
+    t.owningWorldOff=0xFFFFFFFF; t.owningGameInstanceOff=0xFFFFFFFF;
+    t.ascOff=0xFFFFFFFF; t.avatarOff=0xFFFFFFFF; t.spawnedOff=0xFFFFFFFF;
+    t.healthOff=0xFFFFFFFF; t.maxHealthOff=0xFFFFFFFF;
+    bool ownerValid=requireUniqueOwner?BfS148FindUniqueLocalController(&t,emitLog):
+        BfS148ValidateLocalController(expectedLocalPlayer,expectedPc,expectedGameInstance,&t);
+    bool pawnPropertyValid=false,controllerPropertyValid=false,ascPropertyValid=false;
+    uintptr_t pawnProp=0,controllerProp=0,ascProp=0;
+    if(ownerValid){
+        pawnPropertyValid=BfS148ResolveObjectProperty(
+            t.pcClass,"Pawn","Controller","Pawn",&t.pawnOff,&pawnProp);
+        if(pawnPropertyValid&&SafeReadable((void*)(t.pc+t.pawnOff),8))
+            t.hero=*(uintptr_t*)(t.pc+t.pawnOff);
+    }
+    if(GcAlive(t.hero)){
+        t.heroClass=ClassOf(t.hero);
+        if(GcAlive(t.heroClass)){
+            controllerPropertyValid=BfS148ResolveObjectProperty(
+                t.heroClass,"Controller","Pawn","Controller",&t.controllerOff,&controllerProp);
+            ascPropertyValid=BfS148ResolveObjectProperty(
+                t.heroClass,"AbilitySystemComponentStorage","LokiCharacter","LokiAbilitySystemComponent",
+                &t.ascOff,&ascProp);
+            if(ascPropertyValid&&SafeReadable((void*)(t.hero+t.ascOff),8))
+                t.asc=*(uintptr_t*)(t.hero+t.ascOff);
+        }
+    }
+    bool avatarPropertyValid=false,ascIsCdo=false,ascHasCdoOuter=false;
+    bool ascCdoKnown=false,ascOuterValid=false;
+    if(GcAlive(t.asc)){
+        t.ascClass=ClassOf(t.asc);
+        if(GcAlive(t.ascClass)){
+            avatarPropertyValid=BfS148ResolveObjectProperty(
+                t.ascClass,"AvatarActor","AbilitySystemComponent","Actor",
+                &t.avatarOff,&t.avatarProp);
+            if(avatarPropertyValid&&SafeReadable((void*)(t.asc+t.avatarOff),sizeof(uintptr_t)))
+                t.avatarActor=*(uintptr_t*)(t.asc+t.avatarOff);
+            ascIsCdo=BfS148IsCdo(t.asc,&ascCdoKnown);
+            ascHasCdoOuter=BfS148OuterChainHasCdo(t.asc,&ascOuterValid);
+            t.ascCdoIdentityValid=ascCdoKnown?1:0;
+            t.ascOuterChainValid=ascOuterValid?1:0;
+        }
+    }
+    char ownerChain[256];
+    bool heroClassExact=GcAlive(t.heroClass)&&
+        BfS148ExactChain(t.heroClass,"LokiHeroCharacter",ownerChain,sizeof(ownerChain))==BF_S148_CHAIN_MATCH;
+    bool ascClassExact=GcAlive(t.ascClass)&&
+        BfS148ExactChain(t.ascClass,"LokiAbilitySystemComponent",ownerChain,sizeof(ownerChain))==BF_S148_CHAIN_MATCH;
+    bool controllerReciprocal=controllerPropertyValid&&t.controllerOff!=0xFFFFFFFF&&
+        SafeReadable((void*)(t.hero+t.controllerOff),8)&&
+        *(uintptr_t*)(t.hero+t.controllerOff)==t.pc;
+    uintptr_t pcWorld=0,pcWorldClass=0,pcLevelClass=0;
+    uint32_t pcOwningWorldOff=0xFFFFFFFF,pcOwningGiOff=0xFFFFFFFF;
+    bool pcWorldValid=BfS148ResolveActorWorld(t.pc,t.gameInstance,&t.pcLevel,&pcLevelClass,
+                                              &pcWorld,&pcWorldClass,&pcOwningWorldOff,
+                                              &pcOwningGiOff);
+    uintptr_t heroWorld=0,heroWorldClass=0,heroLevelClass=0;
+    uint32_t heroOwningWorldOff=0xFFFFFFFF,heroOwningGiOff=0xFFFFFFFF;
+    bool heroWorldValid=BfS148ResolveActorWorld(t.hero,t.gameInstance,&t.heroLevel,&heroLevelClass,
+                                                &heroWorld,&heroWorldClass,&heroOwningWorldOff,
+                                                &heroOwningGiOff);
+    t.levelClass=pcLevelClass; t.world=pcWorld; t.worldClass=pcWorldClass;
+    t.owningWorldOff=pcOwningWorldOff; t.owningGameInstanceOff=pcOwningGiOff;
+    t.worldIdentityValid=pcWorldValid&&heroWorldValid&&pcWorld==heroWorld&&
+        pcWorldClass==heroWorldClass&&pcLevelClass==heroLevelClass&&
+        pcOwningWorldOff==heroOwningWorldOff&&pcOwningGiOff==heroOwningGiOff;
+    t.facts.ownerScanComplete=t.ownerScanComplete;
+    t.facts.gameInstanceMembershipValid=ownerValid&&t.localMembershipValid;
+    t.facts.worldIdentityValid=t.worldIdentityValid;
+    t.facts.ascInstanceOwned=t.ascCdoIdentityValid&&t.ascOuterChainValid&&
+        !ascIsCdo&&!ascHasCdoOuter;
+    t.facts.avatarBindingValid=avatarPropertyValid&&GcAlive(t.avatarActor)&&
+        t.avatarActor==t.hero;
+    t.facts.ascValid=ownerValid&&t.ownerScanComplete&&t.localMembershipValid&&
+        t.worldIdentityValid&&t.localOwnerCandidates==1&&GcAlive(t.localPlayer)&&
+        GcAlive(t.localPlayerClass)&&GcAlive(t.pc)&&GcAlive(t.pcClass)&&
+        GcAlive(t.hero)&&GcAlive(t.heroClass)&&GcAlive(t.asc)&&GcAlive(t.ascClass)&&
+        pawnPropertyValid&&controllerPropertyValid&&ascPropertyValid&&avatarPropertyValid&&
+        t.facts.ascInstanceOwned&&t.facts.avatarBindingValid&&
+        heroClassExact&&ascClassExact&&controllerReciprocal&&BfGetAsc(t.hero)==t.asc;
+    bool spawnedPropertyValid=false;
+    if(t.facts.ascValid){
+        spawnedPropertyValid=BfS148ResolveArrayObjectProperty(
+            t.ascClass,"SpawnedAttributes","AbilitySystemComponent","AttributeSet",0x168,
+            &t.spawnedOff,&t.spawnedProp,&t.spawnedInnerProp);
+        bool headerReadable=spawnedPropertyValid&&SafeReadable((void*)(t.asc+t.spawnedOff),16);
+        if(headerReadable){
+            t.spawnedData=*(uintptr_t*)(t.asc+t.spawnedOff);
+            t.spawnedNum=*(int32_t*)(t.asc+t.spawnedOff+8);
+            t.spawnedMax=*(int32_t*)(t.asc+t.spawnedOff+12);
+            t.facts.spawnedHeaderValid=t.spawnedNum>0&&t.spawnedNum<=64&&
+                BfS148PointerArrayHeaderValid(t.spawnedData,t.spawnedNum,t.spawnedMax,64);
+        }
+    }
+
+    int healthCount=0; bool entriesValid=t.facts.spawnedHeaderValid!=0;
+    uintptr_t chosen=0,chosenClass=0,chosenHealthProp=0;
+    uint32_t chosenHealthOff=0xFFFFFFFF,chosenHealthElem=0;
+    char chosenHealthType[48]="?",chosenHealthStruct[64]="-",chosenHealthOwner[96]="-";
+    char chosenMaxStruct[64]="-",chosenMaxOwner[96]="-";
+    bool healthShape=false,maxShape=false;
+    if(t.facts.spawnedHeaderValid){
+        for(int i=0;i<t.spawnedNum;i++){
+            uintptr_t cell=t.spawnedData+(uintptr_t)i*sizeof(uintptr_t);
+            if(!SafeReadable((void*)cell,sizeof(uintptr_t))){ entriesValid=false; break; }
+            uintptr_t candidate=*(uintptr_t*)cell; t.spawnedMembers[i]=candidate;
+            if(!candidate) continue;
+            uintptr_t memberClass=GcAlive(candidate)?ClassOf(candidate):0;
+            if(!GcAlive(memberClass)||
+               BfS148ExactChain(memberClass,"AttributeSet",nullptr,0)!=BF_S148_CHAIN_MATCH){
+                entriesValid=false; continue;
+            }
+            uint32_t off=0xFFFFFFFF,elem=0; char type[48],sname[64],owner[96];
+            uintptr_t prop=0;
+            BfS148PropertyFindResult healthLookup=BfS148StrictFindProperty(
+                memberClass,"Health",&off,&elem,type,sizeof(type),sname,sizeof(sname),
+                owner,sizeof(owner),&prop);
+            if(healthLookup==BF_S148_PROPERTY_MALFORMED){ entriesValid=false; continue; }
+            if(healthLookup==BF_S148_PROPERTY_NO_MATCH) continue;
+            healthCount++;
+            if(healthCount==1){
+                chosen=candidate; chosenClass=memberClass; chosenHealthProp=prop;
+                chosenHealthOff=off; chosenHealthElem=elem;
+                t.candidateIndex=i;
+                strncpy_s(chosenHealthType,sizeof(chosenHealthType),type,_TRUNCATE);
+                strncpy_s(chosenHealthStruct,sizeof(chosenHealthStruct),sname,_TRUNCATE);
+                strncpy_s(chosenHealthOwner,sizeof(chosenHealthOwner),owner,_TRUNCATE);
+            }
+        }
+        if(!SafeReadable((void*)(t.asc+t.spawnedOff),0x10)||
+           *(uintptr_t*)(t.asc+t.spawnedOff)!=t.spawnedData||
+           *(int32_t*)(t.asc+t.spawnedOff+8)!=t.spawnedNum||
+           *(int32_t*)(t.asc+t.spawnedOff+12)!=t.spawnedMax) entriesValid=false;
+        for(int i=0;i<t.spawnedNum&&entriesValid;i++){
+            uintptr_t cell=t.spawnedData+(uintptr_t)i*sizeof(uintptr_t);
+            if(!SafeReadable((void*)cell,sizeof(uintptr_t))||
+               *(uintptr_t*)cell!=t.spawnedMembers[i]) entriesValid=false;
+        }
+    }
+    t.facts.spawnedMemberTypesValid=entriesValid?1:0;
+    if(!entriesValid) t.facts.spawnedHeaderValid=0;
+    t.facts.healthCandidateCount=(uint8_t)healthCount;
+
+    if(healthCount==1&&LooksLikePtr(chosen)&&LooksLikePtr(chosenClass)){
+        t.set=chosen; t.setClass=chosenClass; t.healthProp=chosenHealthProp;
+        t.healthOff=chosenHealthOff;
+        t.facts.candidateClassExact=BfS148ExactDirectClass(chosenClass,"LokiAttributeSetHealth");
+        uint32_t healthArrayDim=LooksLikePtr(chosenHealthProp)&&
+            SafeReadable((void*)(chosenHealthProp+FPROP_ARRAYDIM),4)?
+            *(uint32_t*)(chosenHealthProp+FPROP_ARRAYDIM):0;
+        uintptr_t healthStruct=0,maxStruct=0;
+        bool healthStructValid=BfS148ResolveExactStructPayload(
+            chosenHealthProp,"GameplayAttributeData",&healthStruct);
+        t.healthStruct=healthStruct;
+        healthShape=LooksLikePtr(chosenHealthProp)&&chosenHealthElem==0x10&&
+                    healthArrayDim==1&&!strcmp(chosenHealthType,"StructProperty")&&
+                    !strcmp(chosenHealthStruct,"GameplayAttributeData")&&
+                    !strcmp(chosenHealthOwner,"LokiAttributeSetHealth")&&
+                    chosenHealthOff!=0xFFFFFFFF&&healthStructValid;
+
+        uint32_t maxOff=0xFFFFFFFF,maxElem=0; char maxType[48],maxStructName[64],maxOwner[96];
+        uintptr_t maxProp=0;
+        BfS148PropertyFindResult maxLookup=BfS148StrictFindProperty(
+            chosenClass,"MaxHealth",&maxOff,&maxElem,maxType,sizeof(maxType),
+            maxStructName,sizeof(maxStructName),maxOwner,sizeof(maxOwner),&maxProp);
+        strncpy_s(chosenMaxStruct,sizeof(chosenMaxStruct),maxStructName,_TRUNCATE);
+        strncpy_s(chosenMaxOwner,sizeof(chosenMaxOwner),maxOwner,_TRUNCATE);
+        t.maxHealthProp=maxProp; t.maxHealthOff=maxOff;
+        uint32_t maxArrayDim=LooksLikePtr(maxProp)&&SafeReadable((void*)(maxProp+FPROP_ARRAYDIM),4)?
+            *(uint32_t*)(maxProp+FPROP_ARRAYDIM):0;
+        bool maxStructValid=BfS148ResolveExactStructPayload(
+            maxProp,"GameplayAttributeData",&maxStruct);
+        t.maxHealthStruct=maxStruct;
+        t.facts.structPayloadValid=healthStructValid&&maxStructValid&&healthStruct==maxStruct;
+        maxShape=maxLookup==BF_S148_PROPERTY_MATCH&&LooksLikePtr(maxProp)&&
+                 maxOff!=0xFFFFFFFF&&maxElem==0x10&&maxArrayDim==1&&
+                 !strcmp(maxType,"StructProperty")&&
+                 !strcmp(maxStructName,"GameplayAttributeData")&&
+                 !strcmp(maxOwner,"LokiAttributeSetHealth")&&maxStructValid&&
+                 t.facts.structPayloadValid;
+
+        bool classSizesReadable=SafeReadable((void*)(chosenClass+0x48),sizeof(uintptr_t))&&
+            SafeReadable((void*)(chosenClass+USTRUCT_PROPSIZE),sizeof(uint32_t));
+        if(classSizesReadable){
+            t.setSuperClass=*(uintptr_t*)(chosenClass+0x48);
+            classSizesReadable=GcAlive(t.setSuperClass)&&
+                SafeReadable((void*)(t.setSuperClass+USTRUCT_PROPSIZE),sizeof(uint32_t));
+        }
+        if(classSizesReadable){
+            t.setPropertiesSize=*(uint32_t*)(chosenClass+USTRUCT_PROPSIZE);
+            t.setSuperPropertiesSize=*(uint32_t*)(t.setSuperClass+USTRUCT_PROPSIZE);
+        }
+        bool classSizeValid=classSizesReadable&&t.setSuperPropertiesSize>0&&
+            t.setPropertiesSize>t.setSuperPropertiesSize&&t.setPropertiesSize<=0x10000&&
+            t.setPropertiesSize>=0x10;
+        bool healthRangeValid=classSizeValid&&chosenHealthOff>=t.setSuperPropertiesSize&&
+            chosenHealthOff<=t.setPropertiesSize-0x10;
+        bool maxRangeValid=classSizeValid&&maxOff>=t.setSuperPropertiesSize&&
+            maxOff<=t.setPropertiesSize-0x10;
+        bool rangesDisjoint=healthRangeValid&&maxRangeValid&&
+            (chosenHealthOff+0x10<=maxOff||maxOff+0x10<=chosenHealthOff);
+        t.facts.attributeLayoutValid=healthRangeValid&&maxRangeValid&&rangesDisjoint;
+
+        bool cdoKnown=false,outerValid=false;
+        t.facts.candidateIsCdo=BfS148IsCdo(chosen,&cdoKnown);
+        t.facts.candidateHasCdoOuter=BfS148OuterChainHasCdo(chosen,&outerValid);
+        t.cdoIdentityValid=cdoKnown; t.outerChainValid=outerValid;
+        t.facts.candidateReadable=healthShape&&t.facts.attributeLayoutValid&&
+            cdoKnown&&outerValid&&SafeReadable((void*)(chosen+chosenHealthOff+0x8),8);
+        uintptr_t healthPair=chosen+chosenHealthOff+0x8;
+        t.facts.candidateWritable=t.facts.candidateReadable&&((healthPair&7)==0)&&
+                                  SafeWritable((void*)healthPair,8);
+        if(t.facts.candidateReadable){
+            t.facts.originalBaseBits=BfS148FloatBits((void*)(chosen+chosenHealthOff+0x8));
+            t.facts.originalCurrentBits=BfS148FloatBits((void*)(chosen+chosenHealthOff+0xC));
+        }
+        t.facts.maxHealthPresent=maxShape&&t.facts.attributeLayoutValid;
+        t.facts.maxHealthReadable=t.facts.maxHealthPresent&&
+            SafeReadable((void*)(chosen+maxOff+0x8),8);
+        if(t.facts.maxHealthReadable){
+            t.facts.maxBaseBits=BfS148FloatBits((void*)(chosen+maxOff+0x8));
+            t.facts.maxCurrentBits=BfS148FloatBits((void*)(chosen+maxOff+0xC));
+        }
+    }
+
+    int registrationCount=0; bool registrationComplete=false,registrationOwner=false;
+    if(t.facts.candidateClassExact&&t.facts.candidateReadable&&maxShape&&
+       t.facts.structPayloadValid&&
+       t.facts.spawnedMemberTypesValid&&spawnedPropertyValid)
+        BfS148CountSetRegistrations(t.set,t.asc,&registrationCount,
+                                    &registrationComplete,&registrationOwner);
+    t.facts.registrationScanComplete=registrationComplete?1:0;
+    t.facts.registrationOwnerValid=registrationOwner?1:0;
+    t.facts.registrationCount=(uint8_t)(registrationCount>255?255:registrationCount);
+    bool selectedArraysStable=registrationComplete&&registrationOwner&&registrationCount==1&&
+        BfS148SelectedArraysStable(t);
+    t.facts.censusClosureValid=ownerValid&&t.ownerScanComplete&&selectedArraysStable;
+    t.facts.reflectedProvenanceValid=ownerValid&&t.worldIdentityValid&&
+        pawnPropertyValid&&controllerPropertyValid&&ascPropertyValid&&avatarPropertyValid&&
+        spawnedPropertyValid&&t.facts.spawnedMemberTypesValid&&
+        healthShape&&maxShape&&t.facts.attributeLayoutValid&&
+        t.facts.structPayloadValid&&t.facts.censusClosureValid;
+
+    uint32_t issues=S148PreflightIssues(t.facts);
+    if(emitLog){
+        Markerf("[S148] active owner GI=0x%llX class=0x%llX LocalPlayers@0x%X "
+                "Data=0x%llX Num=%d Max=%d memberIndex=%d membership=%u scanComplete=%u\r\n",
+                (unsigned long long)t.gameInstance,(unsigned long long)t.gameInstanceClass,
+                t.localPlayersOff,(unsigned long long)t.localPlayersData,t.localPlayersNum,
+                t.localPlayersMax,t.localPlayerIndex,(unsigned)t.localMembershipValid,
+                (unsigned)t.ownerScanComplete);
+        Markerf("[S148] owner LocalPlayer=0x%llX class=0x%llX PC@0x%X candidates=%d "
+                "PC=0x%llX class=0x%llX Player@0x%X Pawn@0x%X hero=0x%llX class=0x%llX Controller@0x%X "
+                "ASCStorage@0x%X ASC=0x%llX class=0x%llX AvatarActor@0x%X=0x%llX "
+                "avatarBound=%u ascOwned=%u\r\n",
+                (unsigned long long)t.localPlayer,(unsigned long long)t.localPlayerClass,
+                t.localPlayerPcOff,t.localOwnerCandidates,
+                (unsigned long long)t.pc,(unsigned long long)t.pcClass,t.pcPlayerOff,t.pawnOff,
+                (unsigned long long)t.hero,(unsigned long long)t.heroClass,t.controllerOff,t.ascOff,
+                (unsigned long long)t.asc,(unsigned long long)t.ascClass,t.avatarOff,
+                (unsigned long long)t.avatarActor,(unsigned)t.facts.avatarBindingValid,
+                (unsigned)t.facts.ascInstanceOwned);
+        Markerf("[S148] world identity PCLevel=0x%llX HeroLevel=0x%llX LevelClass=0x%llX "
+                "OwningWorld@0x%X World=0x%llX class=0x%llX OwningGameInstance@0x%X valid=%u\r\n",
+                (unsigned long long)t.pcLevel,(unsigned long long)t.heroLevel,
+                (unsigned long long)t.levelClass,t.owningWorldOff,
+                (unsigned long long)t.world,(unsigned long long)t.worldClass,
+                t.owningGameInstanceOff,(unsigned)t.worldIdentityValid);
+        Markerf("[S148] SpawnedAttributes@0x%X prop=0x%llX inner=0x%llX "
+                "expectedOwner=AbilitySystemComponent type=ArrayProperty innerType=ObjectProperty<AttributeSet> "
+                "provenance=%u memberTypes=%u Data=0x%llX Num=%d Max=%d healthCandidates=%d candidateIndex=%d\r\n",
+                t.spawnedOff,(unsigned long long)t.spawnedProp,
+                (unsigned long long)t.spawnedInnerProp,(unsigned)spawnedPropertyValid,
+                (unsigned)t.facts.spawnedMemberTypesValid,
+                (unsigned long long)t.spawnedData,t.spawnedNum,t.spawnedMax,
+                healthCount,t.candidateIndex);
+        Markerf("[S148] registration scan complete=%u count=%u selectedAscOwns=%u censusClosure=%u "
+                "set=0x%llX ASC=0x%llX\r\n",
+                (unsigned)t.facts.registrationScanComplete,(unsigned)t.facts.registrationCount,
+                (unsigned)t.facts.registrationOwnerValid,(unsigned)t.facts.censusClosureValid,
+                (unsigned long long)t.set,
+                (unsigned long long)t.asc);
+        Markerf("[S148] target set=0x%llX class=0x%llX Health@0x%X MaxHealth@0x%X "
+                "HealthOwner=%s MaxOwner=%s HealthStruct=%s MaxStruct=%s expected=GameplayAttributeData "
+                "HealthStructPtr=0x%llX MaxHealthStructPtr=0x%llX structPayload=%u "
+                "superPropertiesSize=%u setPropertiesSize=%u layoutValid=%u "
+                "HealthBits=%08X/%08X MaxBits=%08X/%08X CDO=%u(certain=%u) "
+                "CDOOuter=%u(chainValid=%u) writable=%u issues=0x%X\r\n",
+                (unsigned long long)t.set,(unsigned long long)t.setClass,t.healthOff,t.maxHealthOff,
+                chosenHealthOwner,chosenMaxOwner,chosenHealthStruct,chosenMaxStruct,
+                (unsigned long long)t.healthStruct,(unsigned long long)t.maxHealthStruct,
+                (unsigned)t.facts.structPayloadValid,
+                t.setSuperPropertiesSize,t.setPropertiesSize,(unsigned)t.facts.attributeLayoutValid,
+                t.facts.originalBaseBits,t.facts.originalCurrentBits,t.facts.maxBaseBits,
+                t.facts.maxCurrentBits,(unsigned)t.facts.candidateIsCdo,
+                (unsigned)t.cdoIdentityValid,(unsigned)t.facts.candidateHasCdoOuter,
+                (unsigned)t.outerChainValid,(unsigned)t.facts.candidateWritable,issues);
+    }
+    if(out)*out=t;
+    return issues;
+}
+
+static bool BfS148SameIdentity(const BfS148HealthTarget& a,const BfS148HealthTarget& b) {
+    return a.localPlayer==b.localPlayer&&a.localPlayerClass==b.localPlayerClass&&
+           a.localPlayerPcOff==b.localPlayerPcOff&&a.pcPlayerOff==b.pcPlayerOff&&
+           a.localOwnerCandidates==b.localOwnerCandidates&&a.ownerScanComplete==b.ownerScanComplete&&
+           a.localMembershipValid==b.localMembershipValid&&
+           a.gameInstance==b.gameInstance&&a.gameInstanceClass==b.gameInstanceClass&&
+           a.localPlayersOff==b.localPlayersOff&&a.localPlayersData==b.localPlayersData&&
+           a.localPlayersNum==b.localPlayersNum&&a.localPlayersMax==b.localPlayersMax&&
+           !memcmp(a.localPlayersMembers,b.localPlayersMembers,sizeof(a.localPlayersMembers))&&
+           a.localPlayerIndex==b.localPlayerIndex&&
+           a.pc==b.pc&&a.pcClass==b.pcClass&&a.pcLevel==b.pcLevel&&a.pawnOff==b.pawnOff&&
+           a.controllerOff==b.controllerOff&&a.heroLevel==b.heroLevel&&
+           a.levelClass==b.levelClass&&a.world==b.world&&a.worldClass==b.worldClass&&
+           a.owningWorldOff==b.owningWorldOff&&
+           a.owningGameInstanceOff==b.owningGameInstanceOff&&
+           a.worldIdentityValid==b.worldIdentityValid&&
+           a.hero==b.hero&&a.heroClass==b.heroClass&&a.ascOff==b.ascOff&&
+           a.asc==b.asc&&a.ascClass==b.ascClass&&a.avatarOff==b.avatarOff&&
+           a.avatarActor==b.avatarActor&&a.avatarProp==b.avatarProp&&
+           a.ascCdoIdentityValid==b.ascCdoIdentityValid&&
+           a.ascOuterChainValid==b.ascOuterChainValid&&
+           a.set==b.set&&a.setClass==b.setClass&&a.setSuperClass==b.setSuperClass&&
+           a.spawnedProp==b.spawnedProp&&a.spawnedInnerProp==b.spawnedInnerProp&&
+           a.healthProp==b.healthProp&&a.maxHealthProp==b.maxHealthProp&&
+           a.healthStruct==b.healthStruct&&a.maxHealthStruct==b.maxHealthStruct&&
+           a.spawnedOff==b.spawnedOff&&a.spawnedData==b.spawnedData&&
+           a.spawnedNum==b.spawnedNum&&a.spawnedMax==b.spawnedMax&&
+           !memcmp(a.spawnedMembers,b.spawnedMembers,sizeof(a.spawnedMembers))&&
+           a.candidateIndex==b.candidateIndex&&
+           a.healthOff==b.healthOff&&a.maxHealthOff==b.maxHealthOff&&
+           a.setPropertiesSize==b.setPropertiesSize&&
+           a.setSuperPropertiesSize==b.setSuperPropertiesSize&&
+           a.cdoIdentityValid==b.cdoIdentityValid&&a.outerChainValid==b.outerChainValid&&
+           a.facts.ownerScanComplete==b.facts.ownerScanComplete&&
+           a.facts.gameInstanceMembershipValid==b.facts.gameInstanceMembershipValid&&
+           a.facts.worldIdentityValid==b.facts.worldIdentityValid&&
+           a.facts.ascValid==b.facts.ascValid&&
+           a.facts.ascInstanceOwned==b.facts.ascInstanceOwned&&
+           a.facts.avatarBindingValid==b.facts.avatarBindingValid&&
+           a.facts.spawnedHeaderValid==b.facts.spawnedHeaderValid&&
+           a.facts.spawnedMemberTypesValid==b.facts.spawnedMemberTypesValid&&
+           a.facts.attributeLayoutValid==b.facts.attributeLayoutValid&&
+           a.facts.censusClosureValid==b.facts.censusClosureValid&&
+           a.facts.structPayloadValid==b.facts.structPayloadValid&&
+           a.facts.healthCandidateCount==b.facts.healthCandidateCount&&
+           a.facts.candidateReadable==b.facts.candidateReadable&&
+           a.facts.candidateWritable==b.facts.candidateWritable&&
+           a.facts.candidateClassExact==b.facts.candidateClassExact&&
+           a.facts.candidateIsCdo==b.facts.candidateIsCdo&&
+           a.facts.candidateHasCdoOuter==b.facts.candidateHasCdoOuter&&
+           a.facts.maxHealthPresent==b.facts.maxHealthPresent&&
+           a.facts.maxHealthReadable==b.facts.maxHealthReadable&&
+           a.facts.maxBaseBits==b.facts.maxBaseBits&&
+           a.facts.maxCurrentBits==b.facts.maxCurrentBits&&
+           a.facts.reflectedProvenanceValid==b.facts.reflectedProvenanceValid&&
+           a.facts.registrationScanComplete==b.facts.registrationScanComplete&&
+           a.facts.registrationOwnerValid==b.facts.registrationOwnerValid&&
+           a.facts.registrationCount==b.facts.registrationCount;
+}
+
+static bool BfS148ResolveFloatInputParam(uintptr_t child,const char* name,
+                                         uintptr_t* propOut,uint32_t* offOut,
+                                         uint32_t* elemOut,uint32_t* arrayDimOut,uint64_t* flagsOut,
+                                         int* parmCountOut,bool* chainCompleteOut) {
+    if(propOut)*propOut=0; if(offOut)*offOut=0xFFFFFFFF;
+    if(elemOut)*elemOut=0; if(arrayDimOut)*arrayDimOut=0;
+    if(flagsOut)*flagsOut=0; if(parmCountOut)*parmCountOut=0;
+    if(chainCompleteOut)*chainCompleteOut=false;
+    uintptr_t match=0; uint32_t matchOff=0xFFFFFFFF,matchElem=0,matchArrayDim=0;
+    uint64_t matchFlags=0; int namedCount=0,parmCount=0;
+    uintptr_t seen[64]={0}; int seenCount=0,scanned=0; uintptr_t f=child;
+    bool malformed=false;
+    for(;LooksLikePtr(f)&&scanned<64;scanned++){
+        for(int i=0;i<seenCount;i++) if(seen[i]==f){ malformed=true; break; }
+        if(malformed) break;
+        seen[seenCount++]=f;
+        if(!SafeReadable((void*)f,FPROP_FLAGS+sizeof(uint64_t))||
+           !SafeReadable((void*)(f+FIELD_NEXT),sizeof(uintptr_t))){ malformed=true; break; }
+        uint64_t flags=SafeReadable((void*)(f+FPROP_FLAGS),8)?*(uint64_t*)(f+FPROP_FLAGS):0;
+        if(flags&CPF_Parm) parmCount++;
+        if(NameIs(f,name)){
+            namedCount++; match=f;
+            matchOff=SafeReadable((void*)(f+FPROP_OFFSET),4)?*(uint32_t*)(f+FPROP_OFFSET):0xFFFFFFFF;
+            matchElem=SafeReadable((void*)(f+FPROP_ELEMSIZE),4)?*(uint32_t*)(f+FPROP_ELEMSIZE):0;
+            matchArrayDim=SafeReadable((void*)(f+FPROP_ARRAYDIM),4)?*(uint32_t*)(f+FPROP_ARRAYDIM):0;
+            matchFlags=flags;
+        }
+        uintptr_t next=*(uintptr_t*)(f+FIELD_NEXT);
+        if(next!=0&&!LooksLikePtr(next)){ malformed=true; f=next; break; }
+        f=next;
+    }
+    if(f!=0&&scanned>=64) malformed=true;
+    char type[48],structName[64]; PdTypeOf(match,type,sizeof(type),structName,sizeof(structName));
+    bool input=(matchFlags&CPF_Parm)!=0&&(matchFlags&CPF_OutParm)==0&&
+               (matchFlags&CPF_ReturnParm)==0;
+    bool chainComplete=(f==0);
+    bool ok=chainComplete&&!malformed&&namedCount==1&&parmCount==1&&LooksLikePtr(match)&&matchOff!=0xFFFFFFFF&&
+            matchElem==sizeof(float)&&matchArrayDim==1&&!strcmp(type,"FloatProperty")&&input;
+    if(propOut)*propOut=match; if(offOut)*offOut=matchOff;
+    if(elemOut)*elemOut=matchElem; if(arrayDimOut)*arrayDimOut=matchArrayDim;
+    if(flagsOut)*flagsOut=matchFlags;
+    if(parmCountOut)*parmCountOut=parmCount;
+    if(chainCompleteOut)*chainCompleteOut=chainComplete&&!malformed;
+    return ok;
+}
+#endif
+
+// Raw, SEH-guarded direct native call: InitAbilityActorInfo(ASC, Owner, Avatar). NON-UFunction, so the
+// FFrame-shaped CallNative primitive cannot serve it (roadmap §3.1). base+0x447F410, void __fastcall.
+static bool BfCallInitAAI(uintptr_t asc,uintptr_t owner,uintptr_t avatar){
+    typedef void (__fastcall *PFN_IAAI)(void*,void*,void*);
+    PFN_IAAI fn=(PFN_IAAI)(g_modBase+0x447F410);
+    __try{ fn((void*)asc,(void*)owner,(void*)avatar); return false; }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[BF] InitAbilityActorInfo FAULT: %s\r\n",DP_FAULT); return true; }
+}
+
+#if KBFBINDONLY
+struct BfS149Selection {
+    uintptr_t localPlayer;
+    uintptr_t gameInstance;
+    uintptr_t pc;
+    uintptr_t pcClass;
+    uintptr_t hero;
+    uintptr_t heroClass;
+    uintptr_t playerState;
+    uintptr_t playerStateClass;
+    uintptr_t pawnProp;
+    uintptr_t controllerProp;
+    uintptr_t playerStateProp;
+    uintptr_t ascProp;
+    uintptr_t asc;
+    uintptr_t ascClass;
+    uintptr_t carrierProp;
+    uintptr_t carrier;
+    uintptr_t carrierClass;
+    uintptr_t carrierAscProp;
+    uint32_t pawnOff;
+    uint32_t controllerOff;
+    uint32_t playerStateOff;
+    uint32_t ascOff;
+    uint32_t carrierOff;
+    uint32_t carrierAscOff;
+};
+
+static BfS149Selection g_s149Selection={};
+static volatile LONG g_s149SelectionPublished=0;
+static volatile LONG g_s149CallClaimed=0;
+static volatile LONG g_s149CallIssued=0;
+static volatile LONG g_s149SetupFaulted=0;
+static volatile LONG g_s149InitFaulted=0;
+
+static bool BfS149LiveExact(uintptr_t obj,uintptr_t cls){
+    return GcAlive(obj)&&GcAlive(cls)&&ClassOf(obj)==cls;
+}
+
+static bool BfS149SameWorld(uintptr_t pc,uintptr_t hero,uintptr_t gameInstance){
+    uintptr_t pcLevel=0,pcLevelClass=0,pcWorld=0,pcWorldClass=0;
+    uintptr_t heroLevel=0,heroLevelClass=0,heroWorld=0,heroWorldClass=0;
+    uint32_t pcWorldOff=0xFFFFFFFF,pcGiOff=0xFFFFFFFF;
+    uint32_t heroWorldOff=0xFFFFFFFF,heroGiOff=0xFFFFFFFF;
+    bool pcOk=BfS148ResolveActorWorld(pc,gameInstance,&pcLevel,&pcLevelClass,
+                                     &pcWorld,&pcWorldClass,&pcWorldOff,&pcGiOff);
+    bool heroOk=BfS148ResolveActorWorld(hero,gameInstance,&heroLevel,&heroLevelClass,
+                                       &heroWorld,&heroWorldClass,&heroWorldOff,&heroGiOff);
+    return pcOk&&heroOk&&pcLevel==heroLevel&&pcLevelClass==heroLevelClass&&
+           pcWorld==heroWorld&&pcWorldClass==heroWorldClass&&
+           pcWorldOff==heroWorldOff&&pcGiOff==heroGiOff;
+}
+
+static bool BfS149RevalidateAuthority(const BfS149Selection& s){
+    BfS148HealthTarget fresh{};
+    if(!BfS148FindUniqueLocalController(&fresh,false)) return false;
+    return fresh.localPlayer==s.localPlayer&&fresh.gameInstance==s.gameInstance&&
+           fresh.pc==s.pc&&fresh.pcClass==s.pcClass;
+}
+
+static bool BfS149SelectOwner(BfS149Selection* out){
+    if(!out) return false;
+    memset(out,0,sizeof(*out));
+    out->pawnOff=out->controllerOff=out->playerStateOff=out->ascOff=
+        out->carrierOff=out->carrierAscOff=0xFFFFFFFF;
+    BfS148HealthTarget selected{};
+    if(!BfS148FindUniqueLocalController(&selected,false)) return false;
+    uintptr_t pc=selected.pc,pcClass=selected.pcClass;
+    uintptr_t pawnProp=0; uint32_t pawnOff=0xFFFFFFFF;
+    bool pawnResolved=BfS148ResolveObjectProperty(
+        pcClass,"Pawn","Controller","Pawn",&pawnOff,&pawnProp);
+    bool pawnReadable=pawnResolved&&SafeReadable((void*)(pc+pawnOff),sizeof(uintptr_t));
+    uintptr_t hero=pawnReadable?*(uintptr_t*)(pc+pawnOff):0;
+    uintptr_t heroClass=GcAlive(hero)?ClassOf(hero):0;
+    if(!pawnReadable||!GcAlive(heroClass)||
+       BfS148ExactChain(heroClass,"LokiHeroCharacter",nullptr,0)!=BF_S148_CHAIN_MATCH)
+        return false;
+    uintptr_t controllerProp=0; uint32_t controllerOff=0xFFFFFFFF;
+    bool controllerResolved=BfS148ResolveObjectProperty(
+        heroClass,"Controller","Pawn","Controller",&controllerOff,&controllerProp);
+    bool controllerReadable=controllerResolved&&
+        SafeReadable((void*)(hero+controllerOff),sizeof(uintptr_t));
+    if(!controllerReadable||*(uintptr_t*)(hero+controllerOff)!=pc) return false;
+    uintptr_t psProp=0; uint32_t psOff=0xFFFFFFFF;
+    bool psResolved=BfS148ResolveObjectProperty(
+        pcClass,"PlayerState","Controller","PlayerState",&psOff,&psProp);
+    bool psReadable=psResolved&&SafeReadable((void*)(pc+psOff),sizeof(uintptr_t));
+    uintptr_t ps=psReadable?*(uintptr_t*)(pc+psOff):0;
+    uintptr_t psClass=GcAlive(ps)?ClassOf(ps):0;
+    if(!psReadable||!GcAlive(psClass)||
+       BfS148ExactChain(psClass,"LokiPlayerState",nullptr,0)!=BF_S148_CHAIN_MATCH||
+       !BfS149SameWorld(pc,hero,selected.gameInstance)) return false;
+    out->localPlayer=selected.localPlayer;
+    out->gameInstance=selected.gameInstance;
+    out->pc=pc; out->pcClass=pcClass;
+    out->hero=hero; out->heroClass=heroClass;
+    out->playerState=ps; out->playerStateClass=psClass;
+    out->pawnProp=pawnProp; out->pawnOff=pawnOff;
+    out->controllerProp=controllerProp; out->controllerOff=controllerOff;
+    out->playerStateProp=psProp; out->playerStateOff=psOff;
+    return true;
+}
+
+static bool BfS149RevalidatePossession(const BfS149Selection& s){
+    if(!BfS149LiveExact(s.pc,s.pcClass)||!BfS149LiveExact(s.hero,s.heroClass)||
+       !BfS149LiveExact(s.playerState,s.playerStateClass)) return false;
+    uintptr_t pawnProp=0,controllerProp=0,psProp=0;
+    uint32_t pawnOff=0xFFFFFFFF,controllerOff=0xFFFFFFFF,psOff=0xFFFFFFFF;
+    bool resolved=BfS148ResolveObjectProperty(
+        s.pcClass,"Pawn","Controller","Pawn",&pawnOff,&pawnProp)&&
+        BfS148ResolveObjectProperty(
+            s.heroClass,"Controller","Pawn","Controller",&controllerOff,&controllerProp)&&
+        BfS148ResolveObjectProperty(
+            s.pcClass,"PlayerState","Controller","PlayerState",&psOff,&psProp);
+    if(!resolved||pawnProp!=s.pawnProp||pawnOff!=s.pawnOff||
+       controllerProp!=s.controllerProp||controllerOff!=s.controllerOff||
+       psProp!=s.playerStateProp||psOff!=s.playerStateOff||
+       !SafeReadable((void*)(s.pc+pawnOff),sizeof(uintptr_t))||
+       !SafeReadable((void*)(s.hero+controllerOff),sizeof(uintptr_t))||
+       !SafeReadable((void*)(s.pc+psOff),sizeof(uintptr_t))) return false;
+    return *(uintptr_t*)(s.pc+pawnOff)==s.hero&&
+           *(uintptr_t*)(s.hero+controllerOff)==s.pc&&
+           *(uintptr_t*)(s.pc+psOff)==s.playerState&&
+           BfS149SameWorld(s.pc,s.hero,s.gameInstance)&&
+           BfS149RevalidateAuthority(s);
+}
+
+static bool BfS149ResolvePostWire(BfS149Selection* s){
+    if(!s||!BfS149RevalidatePossession(*s)) return false;
+    uintptr_t ascProp=0; uint32_t ascOff=0xFFFFFFFF;
+    bool ascResolved=BfS148ResolveObjectProperty(
+        s->heroClass,"AbilitySystemComponentStorage","LokiCharacter",
+        "LokiAbilitySystemComponent",&ascOff,&ascProp);
+    bool ascReadable=ascResolved&&SafeReadable(
+        (void*)(s->hero+ascOff),sizeof(uintptr_t));
+    uintptr_t asc=ascReadable?*(uintptr_t*)(s->hero+ascOff):0;
+    uintptr_t ascClass=GcAlive(asc)?ClassOf(asc):0;
+    bool cdoKnown=false,outerValid=false;
+    bool ascIsCdo=GcAlive(asc)?BfS148IsCdo(asc,&cdoKnown):false;
+    bool ascHasCdoOuter=GcAlive(asc)?BfS148OuterChainHasCdo(asc,&outerValid):false;
+    if(!ascReadable||!GcAlive(ascClass)||
+       BfS148ExactChain(ascClass,"LokiAbilitySystemComponent",nullptr,0)!=BF_S148_CHAIN_MATCH||
+       !cdoKnown||ascIsCdo||!outerValid||ascHasCdoOuter) return false;
+    uintptr_t carrierProp=0; uint32_t carrierOff=0xFFFFFFFF;
+    bool carrierResolved=BfS148ResolveObjectProperty(
+        s->playerStateClass,"HeroAffiliatedObject","LokiPlayerState",
+        "LokiPlayerState_HeroAffiliated",&carrierOff,&carrierProp);
+    bool carrierReadable=carrierResolved&&SafeReadable(
+        (void*)(s->playerState+carrierOff),sizeof(uintptr_t));
+    uintptr_t carrier=carrierReadable?*(uintptr_t*)(s->playerState+carrierOff):0;
+    uintptr_t carrierClass=GcAlive(carrier)?ClassOf(carrier):0;
+    if(!carrierReadable||!GcAlive(carrierClass)||
+       BfS148ExactChain(carrierClass,"LokiPlayerState_HeroAffiliated",nullptr,0)!=
+           BF_S148_CHAIN_MATCH) return false;
+    uintptr_t carrierAscProp=0; uint32_t carrierAscOff=0xFFFFFFFF;
+    bool carrierAscResolved=BfS148ResolveObjectProperty(
+        carrierClass,"AbilitySystemComponent","LokiPlayerState_HeroAffiliated",
+        "LokiAbilitySystemComponent",&carrierAscOff,&carrierAscProp);
+    bool carrierAscReadable=carrierAscResolved&&SafeReadable(
+        (void*)(carrier+carrierAscOff),sizeof(uintptr_t));
+    if(!carrierAscReadable||*(uintptr_t*)(carrier+carrierAscOff)!=asc) return false;
+    s->ascProp=ascProp; s->ascOff=ascOff; s->asc=asc; s->ascClass=ascClass;
+    s->carrierProp=carrierProp; s->carrierOff=carrierOff;
+    s->carrier=carrier; s->carrierClass=carrierClass;
+    s->carrierAscProp=carrierAscProp; s->carrierAscOff=carrierAscOff;
+    return true;
+}
+
+static void BfS149PublishWitness(const S149BindWitnessFacts& facts,
+                                 uintptr_t pc,uintptr_t hero,uintptr_t asc,
+                                 uintptr_t avatar,uintptr_t carrier,uintptr_t owner){
+    g_s149BindFacts=facts;
+    MemoryBarrier();
+    InterlockedExchange(&g_s149WitnessPublished,1);
+    Markerf(S149_BIND_WITNESS_MARKER_FORMAT,g_s149Pid,
+            (unsigned long long)g_s149Run,(unsigned)facts.callCount,
+            (unsigned)facts.setupFaulted,(unsigned)facts.initFaulted,
+            (unsigned)facts.terminalRevalidated,
+            (unsigned)facts.localAuthorityStable,(unsigned)facts.pcLive,
+            (unsigned)facts.possessedHeroStable,(unsigned)facts.heroLive,
+            (unsigned)facts.ascLive,(unsigned)facts.ascStorageResolved,
+            (unsigned)facts.ascStorageReadable,(unsigned)facts.ascStable,
+            (unsigned)facts.avatarPropertyResolved,(unsigned)facts.avatarSlotReadable,
+            (unsigned)facts.avatarLive,(unsigned)facts.avatarMatchesHero,
+            (unsigned long long)pc,(unsigned long long)hero,(unsigned long long)asc,
+            (unsigned long long)avatar);
+    Markerf(S149_BIND_OWNER_MARKER_FORMAT,g_s149Pid,
+            (unsigned long long)g_s149Run,(unsigned)facts.ownerPropertyResolved,
+            (unsigned)facts.ownerSlotReadable,(unsigned)facts.ownerLive,
+            (unsigned)facts.ownerMatchesCarrier,
+            (unsigned)facts.carrierPropertyResolved,
+            (unsigned)facts.carrierSlotReadable,(unsigned)facts.carrierLive,
+            (unsigned)facts.carrierStable,
+            (unsigned)facts.carrierAscPropertyResolved,
+            (unsigned)facts.carrierAscSlotReadable,
+            (unsigned)facts.carrierAscStable,(unsigned long long)carrier,
+            (unsigned long long)owner);
+}
+
+static void BfS149StoreSelection(const BfS149Selection& selection){
+    g_s149Selection=selection;
+    MemoryBarrier();
+    InterlockedExchange(&g_s149SelectionPublished,1);
+}
+
+static void BfS149FinishRefusal(const char* phase,bool mutationMayHaveOccurred,
+                                const BfS149Selection* selection=nullptr,
+                                bool setupFaulted=false){
+    if(selection)BfS149StoreSelection(*selection);
+    if(setupFaulted)InterlockedExchange(&g_s149SetupFaulted,1);
+    LONG callIssued=InterlockedCompareExchange(&g_s149CallIssued,0,0);
+    Markerf("[S149] %s gameplayMutationMayHaveOccurred=%u callIssued=%u; "
+            "S148 remains gated off\r\n",phase?phase:"BIND_REFUSED",
+            mutationMayHaveOccurred?1u:0u,callIssued?1u:0u);
+    InterlockedExchange(&g_done,1);
+}
+
+static void BfS149DoBindOnly(){
+    BfS149Selection selected{};
+    if(!BfS149SelectOwner(&selected)){
+        BfS149FinishRefusal("PRESELECT_REFUSED",false);
+        return;
+    }
+    Markerf("[S149] PRESELECT_READY pc=0x%llX hero=0x%llX playerState=0x%llX "
+            "uniqueLocalOwner=1 reciprocalPossession=1 sameWorld=1\r\n",
+            (unsigned long long)selected.pc,(unsigned long long)selected.hero,
+            (unsigned long long)selected.playerState);
+    Marker("[S149] ---- K_BIND ONLY: WireAbilitySystem + exactly one "
+           "InitAbilityActorInfo ----\r\n");
+    WireAbilitySystem(selected.hero,selected.pc);
+    if(!BfS149ResolvePostWire(&selected)){
+        BfS149FinishRefusal("POSTWIRE_REFUSED",true,&selected);
+        return;
+    }
+    BfS149StoreSelection(selected);
+    if(InterlockedCompareExchange(&g_s149CallClaimed,1,0)!=0){
+        BfS149FinishRefusal("DUPLICATE_CALL_REFUSED",true,&selected);
+        return;
+    }
+    Markerf("[S149] CALL_ISSUED pid=%lu run=%016llX callCount=1 asc=0x%llX "
+            "owner=0x%llX avatar=0x%llX persistentSetup=yes\r\n",
+            g_s149Pid,(unsigned long long)g_s149Run,
+            (unsigned long long)selected.asc,(unsigned long long)selected.carrier,
+            (unsigned long long)selected.hero);
+    InterlockedExchange(&g_s149CallIssued,1);
+    bool initFaulted=BfCallInitAAI(selected.asc,selected.carrier,selected.hero);
+    InterlockedExchange(&g_s149InitFaulted,initFaulted?1:0);
+    Markerf("[BF] InitAbilityActorInfo returned %s\r\n",initFaulted?"FAULTED":"ok");
+    InterlockedExchange(&g_done,1);
+}
+
+static void BfS149DoBindOnlyGuarded(){
+    __try{
+        BfS149DoBindOnly();
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[S149] setup SEH fault contained; %s; S148 remains gated off\r\n",DP_FAULT);
+        BfS149FinishRefusal("SETUP_FAULT_REFUSED",true,nullptr,true);
+    }
+}
+
+static void BfS149CollectTerminalWitnessUnsafe(S149BindWitnessFacts* factsOut,
+                                                uintptr_t* avatarOut,
+                                                uintptr_t* ownerOut){
+    if(!factsOut)return;
+    S149BindWitnessFacts facts{};
+    facts.callCount=InterlockedCompareExchange(&g_s149CallIssued,0,0)?1:0;
+    facts.setupFaulted=InterlockedCompareExchange(&g_s149SetupFaulted,0,0)?1:0;
+    facts.initFaulted=InterlockedCompareExchange(&g_s149InitFaulted,0,0)?1:0;
+    LONG phase=InterlockedCompareExchange(&g_s149FsPhase,0,0);
+    LONG pending=InterlockedCompareExchange(&g_s149FsEntryPending,0,0);
+    LONG mutationRoots=InterlockedCompareExchange(&g_s149FsMutationRoots,0,0);
+    bool callbackSafe=g_s149CleanupFacts.callbacksSealed&&
+        g_s149CleanupFacts.postRestoreQuiesced&&
+        S149BindTerminalCallbackSafe((uint32_t)phase,
+                                     (uint32_t)(pending>0?pending:0),
+                                     (uint32_t)(mutationRoots>0?mutationRoots:0));
+    if(!callbackSafe){ *factsOut=facts; return; }
+    facts.terminalRevalidated=1;
+    if(InterlockedCompareExchange(&g_s149SelectionPublished,0,0)==0){
+        *factsOut=facts; return;
+    }
+    MemoryBarrier();
+    const BfS149Selection selected=g_s149Selection;
+    facts.localAuthorityStable=BfS149RevalidateAuthority(selected)?1:0;
+    facts.pcLive=BfS149LiveExact(selected.pc,selected.pcClass)?1:0;
+    facts.heroLive=BfS149LiveExact(selected.hero,selected.heroClass)?1:0;
+    facts.ascLive=BfS149LiveExact(selected.asc,selected.ascClass)?1:0;
+    facts.possessedHeroStable=BfS149RevalidatePossession(selected)?1:0;
+
+    uintptr_t ascProp=0; uint32_t ascOff=0xFFFFFFFF;
+    facts.ascStorageResolved=BfS148ResolveObjectProperty(
+        selected.heroClass,"AbilitySystemComponentStorage","LokiCharacter",
+        "LokiAbilitySystemComponent",&ascOff,&ascProp)?1:0;
+    facts.ascStorageReadable=facts.ascStorageResolved&&
+        SafeReadable((void*)(selected.hero+ascOff),sizeof(uintptr_t))?1:0;
+    uintptr_t ascReread=facts.ascStorageReadable?
+        *(uintptr_t*)(selected.hero+ascOff):0;
+    facts.ascStable=facts.ascStorageReadable&&ascProp==selected.ascProp&&
+        ascOff==selected.ascOff&&ascReread==selected.asc?1:0;
+
+    uintptr_t avatarProp=0; uint32_t avatarOff=0xFFFFFFFF;
+    facts.avatarPropertyResolved=BfS148ResolveObjectProperty(
+        selected.ascClass,"AvatarActor","AbilitySystemComponent","Actor",
+        &avatarOff,&avatarProp)?1:0;
+    facts.avatarSlotReadable=facts.avatarPropertyResolved&&
+        SafeReadable((void*)(selected.asc+avatarOff),sizeof(uintptr_t))?1:0;
+    uintptr_t avatar=facts.avatarSlotReadable?
+        *(uintptr_t*)(selected.asc+avatarOff):0;
+    facts.avatarLive=BfS149LiveExact(avatar,selected.heroClass)?1:0;
+    facts.avatarMatchesHero=facts.avatarLive&&avatar==selected.hero?1:0;
+
+    uintptr_t ownerProp=0; uint32_t ownerOff=0xFFFFFFFF;
+    facts.ownerPropertyResolved=BfS148ResolveObjectProperty(
+        selected.ascClass,"OwnerActor","AbilitySystemComponent","Actor",
+        &ownerOff,&ownerProp)?1:0;
+    facts.ownerSlotReadable=facts.ownerPropertyResolved&&
+        SafeReadable((void*)(selected.asc+ownerOff),sizeof(uintptr_t))?1:0;
+    uintptr_t owner=facts.ownerSlotReadable?
+        *(uintptr_t*)(selected.asc+ownerOff):0;
+    facts.ownerLive=BfS149LiveExact(owner,selected.carrierClass)?1:0;
+    facts.ownerMatchesCarrier=facts.ownerLive&&owner==selected.carrier?1:0;
+
+    uintptr_t carrierProp=0; uint32_t carrierOff=0xFFFFFFFF;
+    facts.carrierPropertyResolved=BfS148ResolveObjectProperty(
+        selected.playerStateClass,"HeroAffiliatedObject","LokiPlayerState",
+        "LokiPlayerState_HeroAffiliated",&carrierOff,&carrierProp)?1:0;
+    facts.carrierSlotReadable=facts.carrierPropertyResolved&&
+        SafeReadable((void*)(selected.playerState+carrierOff),sizeof(uintptr_t))?1:0;
+    uintptr_t carrier=facts.carrierSlotReadable?
+        *(uintptr_t*)(selected.playerState+carrierOff):0;
+    facts.carrierLive=BfS149LiveExact(selected.carrier,selected.carrierClass)?1:0;
+    facts.carrierStable=facts.carrierSlotReadable&&facts.carrierLive&&
+        carrierProp==selected.carrierProp&&carrierOff==selected.carrierOff&&
+        carrier==selected.carrier?1:0;
+
+    uintptr_t carrierAscProp=0; uint32_t carrierAscOff=0xFFFFFFFF;
+    facts.carrierAscPropertyResolved=BfS148ResolveObjectProperty(
+        selected.carrierClass,"AbilitySystemComponent","LokiPlayerState_HeroAffiliated",
+        "LokiAbilitySystemComponent",&carrierAscOff,&carrierAscProp)?1:0;
+    facts.carrierAscSlotReadable=facts.carrierAscPropertyResolved&&facts.carrierLive&&
+        SafeReadable((void*)(selected.carrier+carrierAscOff),sizeof(uintptr_t))?1:0;
+    uintptr_t carrierAsc=facts.carrierAscSlotReadable?
+        *(uintptr_t*)(selected.carrier+carrierAscOff):0;
+    facts.carrierAscStable=facts.carrierAscSlotReadable&&
+        carrierAscProp==selected.carrierAscProp&&
+        carrierAscOff==selected.carrierAscOff&&carrierAsc==selected.asc?1:0;
+    if(avatarOut)*avatarOut=avatar;
+    if(ownerOut)*ownerOut=owner;
+    *factsOut=facts;
+}
+
+static void BfS149PublishTerminalWitnessAfterCleanup(){
+    S149BindWitnessFacts facts{};
+    uintptr_t avatar=0,owner=0;
+    __try{
+        BfS149CollectTerminalWitnessUnsafe(&facts,&avatar,&owner);
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        memset(&facts,0,sizeof(facts));
+        facts.callCount=InterlockedCompareExchange(&g_s149CallIssued,0,0)?1:0;
+        facts.setupFaulted=1;
+        facts.initFaulted=InterlockedCompareExchange(&g_s149InitFaulted,0,0)?1:0;
+        InterlockedExchange(&g_s149SetupFaulted,1);
+        Markerf("[S149] terminal revalidation SEH fault contained; %s; S148 remains gated off\r\n",
+                DP_FAULT);
+    }
+    uintptr_t pc=0,hero=0,asc=0,carrier=0;
+    if(InterlockedCompareExchange(&g_s149SelectionPublished,0,0)!=0){
+        MemoryBarrier();
+        pc=g_s149Selection.pc; hero=g_s149Selection.hero; asc=g_s149Selection.asc;
+        carrier=g_s149Selection.carrier;
+    }
+    Marker("[S149] terminal witness collected after sealed callback drain\r\n");
+    BfS149PublishWitness(facts,pc,hero,asc,avatar,carrier,owner);
+}
+
+static void BfS149EmitTerminalAfterDisarm(){
+    BfS149PublishTerminalWitnessAfterCleanup();
+    MemoryBarrier();
+    bool published=InterlockedCompareExchange(&g_s149WitnessPublished,0,0)!=0;
+    uint32_t cleanupIssues=S149BindCleanupIssues(g_s149CleanupFacts);
+    uint32_t issues=S149BindAdmissionIssues(g_s149BindFacts,published,g_s149CleanupFacts);
+    uint32_t restoreMask=S149_BIND_ISSUE_RESTORE_COUNT_MISMATCH|
+        S149_BIND_ISSUE_REPAIR_SCAN_INCOMPLETE|
+        S149_BIND_ISSUE_VERIFY_SCAN_INCOMPLETE|S149_BIND_ISSUE_FUNCS_REMAIN;
+    bool funcsRestored=(cleanupIssues&restoreMask)==0;
+    bool postRestoreQuiesced=
+        (cleanupIssues&S149_BIND_ISSUE_POST_RESTORE_NOT_QUIESCED)==0;
+    Markerf(S149_BIND_RESULT_MARKER_FORMAT,g_s149Pid,
+            (unsigned long long)g_s149Run,S149BindOutcomeName(issues),
+            (unsigned)issues,funcsRestored?"yes":"NO",
+            postRestoreQuiesced?"yes":"NO",
+            (unsigned long)g_s149CleanupFacts.residualRemaining,
+            (unsigned long)g_s149CleanupFacts.postRestoreEntries);
+}
+#endif
+
+// ═════ S144: the ENGINE grant path (the reflected AuthGiveAbility 0x13d4e60 is a stripped `mov [rdx],-1; ret` stub) ═════
+// Standalone UAbilitySystemComponent::GiveAbility is INLINED (no callable body), so we mirror what the game itself does:
+//   (1) build a valid FGameplayAbilitySpec with the game's own BuildAbilitySpecFromClass-equivalent ctor at base+0x44ABED0;
+//   (2) call the GRANT VIRTUAL the engine's AbilityPendingAdds flush invokes: [ASC_vtable + 0x778] (live target 0x552DC80).
+// Every address graded [M] offline (dumps/merged14) AND live-verified this session against the real ULokiASC vtable
+// (RVA 0x886E788): disp 0x688 -> 0x4481990 `return !*(u8*)(this+0x800)` (IsOwnerActorAuthoritative; the byte read 0 on the
+// bound player ASC, so the gate is OPEN with no forcing); disp 0x778 -> 0x552DC80 (grant). ctor signature confirmed by disasm:
+//   void* __fastcall(FGameplayAbilitySpec* sret /*rcx*/, UClass** ppClass /*rdx, BY POINTER*/, int32 Level /*r8d*/,
+//                    int32 InputID /*r9d*/, UObject* SourceObject /*5th, stack*/)
+//   -> writes Ability@+0x10 = *(class+0x178) (CDO), Handle@+0xC (minted from counter 0x9B086C4), Level@+0x20, InputID@+0x24,
+//      SourceObject@+0x30, +0xa0=-1 ; sizeof/stride 0xF8.
+// grant  : void __fastcall(ULokiASC* this /*rcx*/, int32* outHandle /*rdx*/, FGameplayAbilitySpec* Spec /*r8*/)
+typedef void* (__fastcall *PFN_BFBUILDSPEC)(void*,void*,int32_t,int32_t,void*);
+typedef void  (__fastcall *PFN_BFGRANT)(void*,int32_t*,void*);
+static bool BfBuildSpec(uintptr_t abilCls,int32_t level,int32_t inputID,uintptr_t source,uint8_t* spec /*>=0xF8, 16-aligned, zeroed*/){
+    PFN_BFBUILDSPEC fn=(PFN_BFBUILDSPEC)(g_modBase+0x44ABED0);
+    void* cls=(void*)abilCls;   // ppClass is BY POINTER: the ctor does `mov rsi,[rdx]`
+    __try{ fn(spec,&cls,level,inputID,(void*)source); return true; }
+    __except(SEH_FILTER(GetExceptionInformation())){ Markerf("[BF] BuildSpec FAULT: %s\r\n",DP_FAULT); return false; }
+}
+// Calls the grant virtual off the LIVE object vtable (disp 0x778) so any revectoring is followed. Returns outHandle.
+static int32_t BfGiveAbilityNative(uintptr_t asc,uint8_t* spec,bool* faulted){
+    if(faulted)*faulted=false;
+    if(!SafeReadable((void*)asc,8)){ if(faulted)*faulted=true; return 0; }
+    uintptr_t vtbl=*(uintptr_t*)asc;
+    if(!SafeReadable((void*)(vtbl+0x778),8)){ if(faulted)*faulted=true; return 0; }
+    uintptr_t vGrant=*(uintptr_t*)(vtbl+0x778);
+    Markerf("[BF] grant virtual [vtbl+0x778] = 0x%llX (expect base+0x552DC80 = 0x%llX) %s\r\n",
+            (unsigned long long)vGrant,(unsigned long long)(g_modBase+0x552DC80),
+            (vGrant==g_modBase+0x552DC80)?"MATCH":"<-- differs (revectored?)");
+    int32_t outHandle=0;
+    PFN_BFGRANT fn=(PFN_BFGRANT)vGrant;
+    __try{ fn((void*)asc,&outHandle,spec); return outHandle; }
+    __except(SEH_FILTER(GetExceptionInformation())){ if(faulted)*faulted=true;
+        Markerf("[BF] GiveAbility(native) FAULT: %s\r\n",DP_FAULT); return 0; }
+}
+
+// S145 WALL P step 3: borrow ONLY the generic + health AttributeSet default subobjects. The live
+// hero's AbilitySystemComponentStorage is the solved S143/S144 ASC and must never be overwritten.
+static bool BfPlayerGasAttrs(uintptr_t hero,bool apply){
+    Markerf("[BF] ---- K_GASATTR %s: borrow player AttributeSets + %s the complete movement block ----\r\n",
+            apply?"APPLY":"REVALIDATE",apply?"write":"read back");
+    uintptr_t ha=FindObjExact("Default__LokiPlayerState_HeroAffiliated");
+    if(!LooksLikePtr(ha)){
+        Marker("[BF] *** K_GASATTR FAILED: Default__LokiPlayerState_HeroAffiliated not found; carrier will NOT be spawned. ***\r\n");
+        return false;
+    }
+    char hc[128]="-"; if(ClassOf(ha)) GetFNameStr(NameId(ClassOf(ha)),hc,sizeof(hc));
+    Markerf("[BF] K_GASATTR source CDO=0x%llX class=%s (default subobjects only; never spawned)\r\n",
+            (unsigned long long)ha,hc);
+
+    static const char* kSrc[2]={"AttributeSet","AttributeSetHealth"};
+    static const char* kDst[2]={"AttributeSetStorage","AttributeSetHealthStorage"};
+    uintptr_t src[2]={0,0},before[2]={0,0}; uint32_t dst[2]={0xFFFFFFFF,0xFFFFFFFF};
+    bool preflight=true;
+    for(int i=0;i<2;i++){
+        uint32_t so=PropOffsetSuper(ClassOf(ha),kSrc[i]);
+        src[i]=(so!=0xFFFFFFFF&&SafeReadable((void*)(ha+so),8))?*(uintptr_t*)(ha+so):0;
+        char sc[128]="-"; if(LooksLikePtr(src[i])&&ClassOf(src[i])) GetFNameStr(NameId(ClassOf(src[i])),sc,sizeof(sc));
+        Markerf("[BF] K_GASATTR src %-18s @0x%X = 0x%llX class=%s\r\n",kSrc[i],so,
+                (unsigned long long)src[i],LooksLikePtr(src[i])?sc:"NULL");
+        dst[i]=PropOffsetSuper(ClassOf(hero),kDst[i]);
+        before[i]=(dst[i]!=0xFFFFFFFF&&SafeReadable((void*)(hero+dst[i]),8))?*(uintptr_t*)(hero+dst[i]):0;
+        bool dstAccess=dst[i]!=0xFFFFFFFF&&
+                       (apply?SafeWritable((void*)(hero+dst[i]),8):SafeReadable((void*)(hero+dst[i]),8));
+        if(!dstAccess||!LooksLikePtr(src[i])) preflight=false;
+    }
+
+    struct BfAttrValue { const char* name; float value; } attrs[6]={
+        {"MoveSpeed",500.0f},
+        {"MaxMoveSpeed",500.0f},
+        {"MaxAcceleration",50000.0f},
+        {"GroundFriction",8.0f},
+        {"BrakingDecelerationWalking",2048.0f},
+        {"Mass",100.0f},
+    };
+    uint32_t attrOff[6]={0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF};
+    for(int i=0;i<6;i++){
+        attrOff[i]=LooksLikePtr(src[0])?PropOffsetSuper(ClassOf(src[0]),attrs[i].name):0xFFFFFFFF;
+        bool attrAccess=attrOff[i]!=0xFFFFFFFF&&
+                        (apply?SafeWritable((void*)(src[0]+attrOff[i]+0x8),8):SafeReadable((void*)(src[0]+attrOff[i]+0x8),8));
+        if(!attrAccess){
+            Markerf("[BF] K_GASATTR %s attr %-28s @0x%X *** PREFLIGHT NOT %s/NOT FOUND ***\r\n",
+                    apply?"APPLY":"REVALIDATE",attrs[i].name,attrOff[i],apply?"WRITABLE":"READABLE");
+            preflight=false;
+        }
+    }
+    if(!preflight){
+        for(int i=0;i<2;i++) Markerf("[BF] K_GASATTR %s dst %-28s @0x%X before=0x%llX after=0x%llX *** PREFLIGHT FAILED; NOT %s ***\r\n",
+                apply?"APPLY":"REVALIDATE",
+                kDst[i],dst[i],(unsigned long long)before[i],(unsigned long long)before[i],
+                apply?"WRITTEN":"READ");
+        for(int i=0;i<6;i++) Markerf("[BF] K_GASATTR %s attr %-28s @0x%X Base@+0x8=unread Current@+0xC=unread expected=%g *** PREFLIGHT FAILED ***\r\n",
+                apply?"APPLY":"REVALIDATE",attrs[i].name,attrOff[i],(double)attrs[i].value);
+        Markerf("[BF] K_GASATTR %s summary: destination readbacks 0/2 (required 2/2) ; attribute readbacks 0/6 (required 6/6)\r\n",
+                apply?"APPLY":"REVALIDATE");
+        Markerf("[BF] *** K_GASATTR %s INCOMPLETE: preflight failed; activation is forbidden. ***\r\n",
+                apply?"APPLY":"REVALIDATION");
+        return false;
+    }
+
+    int wired=0;
+    for(int i=0;i<2;i++){
+        if(apply) *(uintptr_t*)(hero+dst[i])=src[i];
+        uintptr_t after=*(uintptr_t*)(hero+dst[i]);
+        Markerf("[BF] K_GASATTR %s dst %-28s @0x%X before=0x%llX after=0x%llX expected=0x%llX %s\r\n",
+                apply?"APPLY":"REVALIDATE",kDst[i],dst[i],
+                (unsigned long long)before[i],(unsigned long long)after,
+                (unsigned long long)src[i],
+                (after==src[i])?"OK":"*** READBACK FAILED ***");
+        if(after==src[i]) wired++;
+    }
+    int attrOk=0;
+    for(int i=0;i<6;i++){
+        uint32_t ao=attrOff[i];
+        if(apply){
+            *(float*)(src[0]+ao+0x8)=attrs[i].value;
+            *(float*)(src[0]+ao+0xC)=attrs[i].value;
+        }
+        float rbBase=*(float*)(src[0]+ao+0x8), rbCurrent=*(float*)(src[0]+ao+0xC);
+        bool ok=rbBase==attrs[i].value&&rbCurrent==attrs[i].value;
+        Markerf("[BF] K_GASATTR %s attr %-28s @0x%X Base@+0x8=%g Current@+0xC=%g expected=%g %s\r\n",
+                apply?"APPLY":"REVALIDATE",attrs[i].name,ao,(double)rbBase,(double)rbCurrent,(double)attrs[i].value,
+                ok?"OK":"*** READBACK FAILED ***");
+        if(ok) attrOk++;
+    }
+    Markerf("[BF] K_GASATTR %s summary: destination readbacks %d/2 (required 2/2) ; attribute readbacks %d/6 (required 6/6)\r\n",
+            apply?"APPLY":"REVALIDATE",wired,attrOk);
+    bool ok=wired==2&&attrOk==6;
+    if(!ok) Markerf("[BF] *** K_GASATTR %s INCOMPLETE: activation is forbidden; partial GAS wiring is invalid. ***\r\n",
+                    apply?"APPLY":"REVALIDATION");
+    return ok;
+}
+
+static bool BfLogCommittedSpec(uintptr_t asc,int32_t wantedHandle,uintptr_t abilCls,uintptr_t* primaryOut){
+    if(primaryOut)*primaryOut=0;
+    if(!LooksLikePtr(asc)||!SafeReadable((void*)asc,0x20)||!LooksLikePtr(ClassOf(asc))||
+       !LooksLikePtr(abilCls)||!SafeReadable((void*)abilCls,0x180)||!LooksLikePtr(ClassOf(abilCls))){
+        Marker("[BF] phase-2 spec evidence invalid: persisted ASC/ability pointer validation failed.\r\n"); return false;
+    }
+    if(!SafeReadable((void*)(asc+0x538),16)){
+        Marker("[BF] phase-2 spec evidence unavailable: ASC Items header unreadable.\r\n"); return false;
+    }
+    uintptr_t data=*(uintptr_t*)(asc+0x538); int32_t num=*(int32_t*)(asc+0x540), max=*(int32_t*)(asc+0x544);
+    Markerf("[BF] phase-2 ActivatableAbilities.Items Data=0x%llX Num=%d Max=%d\r\n",
+            (unsigned long long)data,num,max);
+    if(!LooksLikePtr(data)||num<=0||num>4096||max<num||max>4096){
+        Marker("[BF] phase-2 spec evidence unavailable: invalid Items Data/Num/Max.\r\n"); return false;
+    }
+    uintptr_t wantedCdo=*(uintptr_t*)(abilCls+0x178);
+    if(!LooksLikePtr(wantedCdo)||!SafeReadable((void*)wantedCdo,8)){
+        Marker("[BF] phase-2 spec evidence invalid: persisted ability class has no readable CDO.\r\n"); return false;
+    }
+    int handleMatch=-1,abilityMatch=-1,firstReadable=-1;
+    for(int i=0;i<num;i++){
+        uintptr_t candidate=data+(uintptr_t)i*0xF8;
+        if(!SafeReadable((void*)candidate,0x80)) continue;
+        if(firstReadable<0) firstReadable=i;
+        int32_t h=*(int32_t*)(candidate+0x0C); uintptr_t a=*(uintptr_t*)(candidate+0x10);
+        if(handleMatch<0&&h==wantedHandle) handleMatch=i;
+        if(abilityMatch<0&&a==wantedCdo) abilityMatch=i;
+    }
+    int chosen=(handleMatch>=0)?handleMatch:(abilityMatch>=0)?abilityMatch:firstReadable;
+    bool matched=handleMatch>=0||abilityMatch>=0;
+    if(chosen<0){ Marker("[BF] phase-2 spec evidence unavailable: no readable spec record.\r\n"); return false; }
+    uintptr_t sp=data+(uintptr_t)chosen*0xF8;
+    if(!SafeReadable((void*)sp,0xA0)){ Marker("[BF] phase-2 selected spec unreadable through the instance arrays.\r\n"); return false; }
+    int32_t rep=*(int32_t*)(sp+0x00), h=*(int32_t*)(sp+0x0C); uintptr_t a=*(uintptr_t*)(sp+0x10);
+    uintptr_t nrd=*(uintptr_t*)(sp+0x80); int32_t nrn=*(int32_t*)(sp+0x88),nrm=*(int32_t*)(sp+0x8C);
+    uintptr_t rpd=*(uintptr_t*)(sp+0x90); int32_t rpn=*(int32_t*)(sp+0x98),rpm=*(int32_t*)(sp+0x9C);
+    Markerf("[BF] phase-2 %s spec[%d] @0x%llX ReplicationID@+0x00=%d Handle@+0x0C=%d Ability@+0x10=0x%llX\r\n",
+            matched?"matching":"first",chosen,(unsigned long long)sp,rep,h,(unsigned long long)a);
+    Markerf("[BF] phase-2 NonReplicatedInstances@spec+0x80 Data=0x%llX Num=%d Max=%d ; ReplicatedInstances@spec+0x90 Data=0x%llX Num=%d Max=%d\r\n",
+            (unsigned long long)nrd,nrn,nrm,(unsigned long long)rpd,rpn,rpm);
+    bool aOk=LooksLikePtr(a)&&SafeReadable((void*)a,8);
+    bool nrShape=nrn>=0&&nrm>=nrn&&nrm<=4096&&
+                 ((nrm==0&&(nrd==0||LooksLikePtr(nrd)))||(nrm>0&&LooksLikePtr(nrd)));
+    bool rpShape=rpn>=0&&rpm>=rpn&&rpm<=4096&&
+                 ((rpm==0&&(rpd==0||LooksLikePtr(rpd)))||(rpm>0&&LooksLikePtr(rpd)));
+    uintptr_t nrInst=(nrShape&&nrn>0&&SafeReadable((void*)nrd,8))?*(uintptr_t*)nrd:0;
+    uintptr_t rpInst=(rpShape&&rpn>0&&SafeReadable((void*)rpd,8))?*(uintptr_t*)rpd:0;
+    bool nrInstOk=LooksLikePtr(nrInst)&&SafeReadable((void*)nrInst,0x20)&&LooksLikePtr(ClassOf(nrInst));
+    bool rpInstOk=LooksLikePtr(rpInst)&&SafeReadable((void*)rpInst,0x20)&&LooksLikePtr(ClassOf(rpInst));
+    bool nrClassMatch=nrInstOk&&ClassOf(nrInst)==abilCls;
+    bool rpClassMatch=rpInstOk&&ClassOf(rpInst)==abilCls;
+    char nrName[128]="-",rpName[128]="-";
+    if(nrInstOk) GetFNameStr(NameId(ClassOf(nrInst)),nrName,sizeof(nrName));
+    if(rpInstOk) GetFNameStr(NameId(ClassOf(rpInst)),rpName,sizeof(rpName));
+    bool policyReadable=SafeReadable((void*)(wantedCdo+0xEE),1);
+    uint8_t instancingPolicy=policyReadable?*(uint8_t*)(wantedCdo+0xEE):0xFF;
+    Markerf("[BF] phase-2 primary-instance evidence: InstancingPolicy@AbilityCDO+0xEE=%u (1=InstancedPerActor) ; NonRep[0]=0x%llX(%s) ; Rep[0]=0x%llX(%s)\r\n",
+            (unsigned)instancingPolicy,(unsigned long long)nrInst,nrInstOk?nrName:"invalid/empty",
+            (unsigned long long)rpInst,rpInstOk?rpName:"invalid/empty");
+    // Match FGameplayAbilitySpec::GetPrimaryInstance(): NonRep[0] wins by
+    // occupancy, even if that object later fails our class validation.  Never
+    // fall through to Rep[0] merely because NonRep[0] is malformed/mismatched.
+    uintptr_t primaryInst=0;
+    bool primaryClassMatch=false;
+    if(instancingPolicy==1){
+        if(nrn>0){ primaryInst=nrInst; primaryClassMatch=nrClassMatch; }
+        else if(rpn>0){ primaryInst=rpInst; primaryClassMatch=rpClassMatch; }
+    }
+    bool exactMatch=h==wantedHandle&&a==wantedCdo;
+    bool primaryOk=policyReadable&&(instancingPolicy!=1||primaryClassMatch);
+    if(!exactMatch||!aOk||!nrShape||!rpShape||!primaryOk){
+        Marker("[BF] phase-2 spec evidence invalid: selected Handle/Ability/instance-array shape failed validation.\r\n");
+        return false;
+    }
+    if(primaryOut&&instancingPolicy==1)*primaryOut=primaryInst;
+    return true;
+}
+
+static bool BfSeedDiagnosticCharges(uintptr_t abilityInst,int32_t target){
+    Markerf("[BF] ---- K_CHARGES: seed exact committed primary instance CurrentCharges@+0x628=%d ----\r\n",target);
+    bool objOk=LooksLikePtr(abilityInst)&&SafeReadable((void*)abilityInst,0x20)&&LooksLikePtr(ClassOf(abilityInst));
+    uintptr_t instCls=objOk?ClassOf(abilityInst):0;
+    char className[128]="-";
+    if(LooksLikePtr(instCls)) GetFNameStr(NameId(instCls),className,sizeof(className));
+    uint32_t usesOff=LooksLikePtr(instCls)?PropOffsetSuper(instCls,"bSpellUsesCharges"):0xFFFFFFFF;
+    uint32_t chargesOff=LooksLikePtr(instCls)?PropOffsetSuper(instCls,"CurrentCharges"):0xFFFFFFFF;
+    bool exactLayout=objOk&&!strcmp(className,"GS_Ronin_MiniDash_Charges_C")&&usesOff==0x622&&chargesOff==0x628;
+    Markerf("[BF] K_CHARGES reflected layout: class=%s bSpellUsesCharges@0x%X CurrentCharges@0x%X exact=%s\r\n",
+            className,usesOff,chargesOff,exactLayout?"yes":"NO");
+    if(!exactLayout||target!=1){
+        Markerf("[BF] *** K_CHARGES REFUSED: expected exact MiniDash class/layout and target=1; instance=0x%llX target=%d. ***\r\n",
+                (unsigned long long)abilityInst,target);
+        return false;
+    }
+    bool fieldsOk=SafeReadable((void*)(abilityInst+usesOff),1)&&SafeReadable((void*)(abilityInst+chargesOff),4)&&
+                  SafeWritable((void*)(abilityInst+chargesOff),4);
+    if(!fieldsOk){
+        Markerf("[BF] *** K_CHARGES REFUSED: validated fields on primary instance 0x%llX are unreadable/not writable. ***\r\n",
+                (unsigned long long)abilityInst);
+        return false;
+    }
+    uint8_t uses=*(uint8_t*)(abilityInst+usesOff); int32_t before=*(int32_t*)(abilityInst+chargesOff);
+    Markerf("[BF] K_CHARGES preflight: instance=0x%llX UsesCharges@+0x622=%u CurrentCharges@+0x628=%d target=%d\r\n",
+            (unsigned long long)abilityInst,(unsigned)uses,before,target);
+    if(uses!=1){
+        Marker("[BF] *** K_CHARGES REFUSED: exact MiniDash charge-layout invariant failed; nothing written. ***\r\n");
+        return false;
+    }
+    *(int32_t*)(abilityInst+chargesOff)=target;
+    int32_t after=*(int32_t*)(abilityInst+chargesOff);
+    Markerf("[BF] K_CHARGES write: CurrentCharges %d -> %d (expected %d) %s\r\n",
+            before,after,target,(after==target)?"OK":"*** READBACK FAILED ***");
+    return after==target;
+}
+
+// The S145 gate census localized MiniDash to stock CheckCost.  Read-only live inspection then
+// proved that the live level-1 cost is -10 Mana and the generated dynamic cost GE targets LokiAttributeSet.Mana; the set which
+// is actually registered in ASC.SpawnedAttributes has Mana Base/Current 0/0.  This intentionally
+// does NOT add Mana to BfPlayerGasAttrs: that helper writes the hero-storage borrowed CDO object,
+// while affordability is evaluated against the ASC-registered set.  Keep this treatment exact,
+// single-variable, and fail-closed.
+static bool BfSeedDiagnosticMana(uintptr_t asc,uintptr_t abilityInst,float target,uintptr_t* manaSetOut){
+    if(manaSetOut)*manaSetOut=0;
+    Markerf("[BF] ---- K_MANA: seed ASC-registered LokiAttributeSet.Mana Base/Current=%g ----\r\n",(double)target);
+
+    bool instOk=LooksLikePtr(abilityInst)&&SafeReadable((void*)abilityInst,0x20)&&LooksLikePtr(ClassOf(abilityInst));
+    uintptr_t instCls=instOk?ClassOf(abilityInst):0;
+    char instName[128]="-";
+    if(LooksLikePtr(instCls)) GetFNameStr(NameId(instCls),instName,sizeof(instName));
+    uint32_t simpleCostsOff=LooksLikePtr(instCls)?PropOffsetSuper(instCls,"SimpleCosts"):0xFFFFFFFF;
+    uint32_t costGeOff=LooksLikePtr(instCls)?PropOffsetSuper(instCls,"CostGameplayEffect"):0xFFFFFFFF;
+    uintptr_t costGe=(costGeOff!=0xFFFFFFFF&&SafeReadable((void*)(abilityInst+costGeOff),8))
+                     ?*(uintptr_t*)(abilityInst+costGeOff):0;
+    char costName[128]="-",costClass[128]="-";
+    if(LooksLikePtr(costGe)&&SafeReadable((void*)costGe,0x20)){
+        GetFNameStr(NameId(costGe),costName,sizeof(costName));
+        if(LooksLikePtr(ClassOf(costGe))) GetFNameStr(NameId(ClassOf(costGe)),costClass,sizeof(costClass));
+    }
+    bool costExact=instOk&&!strcmp(instName,"GS_Ronin_MiniDash_Charges_C")&&
+                   simpleCostsOff==0x120&&costGeOff==0x438&&LooksLikePtr(costGe)&&
+                   !strcmp(costName,"GS_Ronin_MiniDash_Charges_CDynCost")&&!strcmp(costClass,"GameplayEffect");
+    Markerf("[BF] K_MANA cost provenance: ability=%s SimpleCosts@0x%X CostGameplayEffect@0x%X=0x%llX(%s:%s) exact=%s\r\n",
+            instName,simpleCostsOff,costGeOff,(unsigned long long)costGe,costClass,costName,costExact?"yes":"NO");
+    if(!costExact||target!=10.0f){
+        Markerf("[BF] *** K_MANA REFUSED: exact MiniDash dynamic-cost provenance and target=10 are required (target=%g). ***\r\n",
+                (double)target);
+        return false;
+    }
+
+    bool ascOk=LooksLikePtr(asc)&&SafeReadable((void*)asc,0x20)&&LooksLikePtr(ClassOf(asc));
+    uint32_t spawnedOff=ascOk?PropOffsetSuper(ClassOf(asc),"SpawnedAttributes"):0xFFFFFFFF;
+    bool headerOk=spawnedOff==0x168&&SafeReadable((void*)(asc+spawnedOff),16);
+    uintptr_t data=headerOk?*(uintptr_t*)(asc+spawnedOff):0;
+    int32_t num=headerOk?*(int32_t*)(asc+spawnedOff+8):-1;
+    int32_t max=headerOk?*(int32_t*)(asc+spawnedOff+12):-1;
+    bool arrayOk=headerOk&&LooksLikePtr(data)&&num==2&&max>=num&&max<=64;
+    Markerf("[BF] K_MANA SpawnedAttributes@0x%X Data=0x%llX Num=%d Max=%d exact-two=%s\r\n",
+            spawnedOff,(unsigned long long)data,num,max,arrayOk?"yes":"NO");
+    if(!arrayOk){
+        Marker("[BF] *** K_MANA REFUSED: exact registered-attribute array contract failed; nothing written. ***\r\n");
+        return false;
+    }
+
+    uintptr_t manaSet=0; int exactMatches=0;
+    for(int i=0;i<num;i++){
+        if(!SafeReadable((void*)(data+(uintptr_t)i*8),8)) continue;
+        uintptr_t candidate=*(uintptr_t*)(data+(uintptr_t)i*8);
+        if(!LooksLikePtr(candidate)||!SafeReadable((void*)candidate,0x20)||!LooksLikePtr(ClassOf(candidate))) continue;
+        char clsName[128]="-"; GetFNameStr(NameId(ClassOf(candidate)),clsName,sizeof(clsName));
+        Markerf("[BF] K_MANA SpawnedAttributes[%d]=0x%llX class=%s\r\n",
+                i,(unsigned long long)candidate,clsName);
+        if(!strcmp(clsName,"LokiAttributeSet")){ manaSet=candidate; exactMatches++; }
+    }
+    if(exactMatches!=1||!LooksLikePtr(manaSet)){
+        Markerf("[BF] *** K_MANA REFUSED: expected exactly one registered exact LokiAttributeSet; found %d. ***\r\n",
+                exactMatches);
+        return false;
+    }
+
+    uintptr_t setCls=ClassOf(manaSet);
+    uint32_t manaOff=PropOffsetSuper(setCls,"Mana"),maxManaOff=PropOffsetSuper(setCls,"MaxMana");
+    bool layoutExact=manaOff==0x210&&maxManaOff==0x220&&
+                     SafeReadable((void*)(manaSet+manaOff+8),8)&&SafeWritable((void*)(manaSet+manaOff+8),8)&&
+                     SafeReadable((void*)(manaSet+maxManaOff+8),8);
+    Markerf("[BF] K_MANA reflected layout: Mana@0x%X MaxMana@0x%X exact/readable/writable=%s\r\n",
+            manaOff,maxManaOff,layoutExact?"yes":"NO");
+    if(!layoutExact){
+        Marker("[BF] *** K_MANA REFUSED: registered Mana layout/access contract failed; nothing written. ***\r\n");
+        return false;
+    }
+
+    float beforeBase=*(float*)(manaSet+manaOff+8),beforeCurrent=*(float*)(manaSet+manaOff+0xC);
+    float maxBase=*(float*)(manaSet+maxManaOff+8),maxCurrent=*(float*)(manaSet+maxManaOff+0xC);
+    Markerf("[BF] K_MANA preflight: set=0x%llX Mana Base=%g Current=%g ; MaxMana Base=%g Current=%g (MaxMana read-only)\r\n",
+            (unsigned long long)manaSet,(double)beforeBase,(double)beforeCurrent,(double)maxBase,(double)maxCurrent);
+    if(beforeBase!=0.0f||beforeCurrent!=0.0f){
+        Marker("[BF] *** K_MANA REFUSED: controlled 0/0 Mana baseline was not present; nothing written. ***\r\n");
+        return false;
+    }
+    *(float*)(manaSet+manaOff+8)=target;
+    *(float*)(manaSet+manaOff+0xC)=target;
+    float afterBase=*(float*)(manaSet+manaOff+8),afterCurrent=*(float*)(manaSet+manaOff+0xC);
+    bool wrote=afterBase==target&&afterCurrent==target;
+    Markerf("[BF] K_MANA write: Mana Base/Current %g/%g -> %g/%g (expected %g/%g) %s\r\n",
+            (double)beforeBase,(double)beforeCurrent,(double)afterBase,(double)afterCurrent,
+            (double)target,(double)target,wrote?"OK":"*** READBACK FAILED ***");
+    if(wrote&&manaSetOut)*manaSetOut=manaSet;
+    return wrote;
+}
+
+typedef bool (__fastcall *PFN_BFGATE)(void*,int32_t,const void*,void*);
+static int BfCallAbilityGate(uintptr_t fn,uintptr_t abilityInst,int32_t handle,uintptr_t actorInfo,const char* label){
+#if KFAULTINFO
+    FaultReset();
+#endif
+    __try{
+        bool open=((PFN_BFGATE)fn)((void*)abilityInst,handle,(const void*)actorInfo,nullptr);
+        Markerf("[BF] K_GATES %s returned %d (AL bool; OptionalRelevantTags=null)\r\n",label,open?1:0);
+        return open?1:0;
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[BF] *** K_GATES %s FAULTED: %s ***\r\n",label,DP_FAULT);
+        return -1;
+    }
+}
+
+static bool BfProbeActivationGates(uintptr_t asc,uintptr_t abilityInst,int32_t wantedHandle,bool* bothOpen,
+                                   int* cooldownOut,int* costOut){
+    if(bothOpen)*bothOpen=false;
+    if(cooldownOut)*cooldownOut=-1;
+    if(costOut)*costOut=-1;
+    Marker("[BF] ---- K_GATES: separate CheckCooldown and CheckCost on the exact committed primary instance ----\r\n");
+    bool headersOk=LooksLikePtr(asc)&&SafeReadable((void*)(asc+0x418),8)&&
+                   LooksLikePtr(abilityInst)&&SafeReadable((void*)abilityInst,8)&&
+                   SafeReadable((void*)(abilityInst+0x3A8),12);
+    if(!headersOk){
+        Marker("[BF] *** K_GATES REFUSED: ASC ActorInfo or primary-instance handle state is unreadable. ***\r\n");
+        return false;
+    }
+    uintptr_t actorInfo=*(uintptr_t*)(asc+0x418);
+    uintptr_t currentActorInfo=*(uintptr_t*)(abilityInst+0x3A8);
+    int32_t currentHandle=*(int32_t*)(abilityInst+0x3B0);
+    uintptr_t vtbl=*(uintptr_t*)abilityInst;
+    bool slotHeader=LooksLikePtr(vtbl)&&SafeReadable((void*)(vtbl+0x3A8),8)&&SafeReadable((void*)(vtbl+0x3C0),8);
+    uintptr_t cooldownFn=slotHeader?*(uintptr_t*)(vtbl+0x3A8):0;
+    uintptr_t costFn=slotHeader?*(uintptr_t*)(vtbl+0x3C0):0;
+    bool inputExact=LooksLikePtr(actorInfo)&&SafeReadable((void*)actorInfo,0x70)&&
+                    actorInfo==currentActorInfo&&currentHandle==wantedHandle;
+    bool slotsExact=cooldownFn==g_modBase+0x44508F0&&costFn==g_modBase+0x551BA70;
+    Markerf("[BF] K_GATES inputs: ASC.ActorInfo@+0x418=0x%llX primary.CurrentActorInfo@+0x3A8=0x%llX ; wantedHandle=%d primary.Handle@+0x3B0=%d ; exact=%s\r\n",
+            (unsigned long long)actorInfo,(unsigned long long)currentActorInfo,wantedHandle,currentHandle,
+            inputExact?"yes":"NO");
+    Markerf("[BF] K_GATES virtuals: CheckCooldown[vtbl+0x3A8]=0x%llX (expect base+0x44508F0=0x%llX) ; CheckCost[vtbl+0x3C0]=0x%llX (expect base+0x551BA70=0x%llX) ; exact=%s\r\n",
+            (unsigned long long)cooldownFn,(unsigned long long)(g_modBase+0x44508F0),
+            (unsigned long long)costFn,(unsigned long long)(g_modBase+0x551BA70),slotsExact?"yes":"NO");
+    if(!inputExact||!slotsExact||(int32_t)KBFCHARGES!=1){
+        Markerf("[BF] *** K_GATES REFUSED: exact ActorInfo/handle/virtual-target invariants and KBFCHARGES=1 are required (KBFCHARGES=%d). ***\r\n",
+                (int32_t)KBFCHARGES);
+        return false;
+    }
+    int cooldown=BfCallAbilityGate(cooldownFn,abilityInst,wantedHandle,actorInfo,"CheckCooldown");
+    if(cooldown<0) return false;
+    if(cooldownOut)*cooldownOut=cooldown;
+    int cost=BfCallAbilityGate(costFn,abilityInst,wantedHandle,actorInfo,"CheckCost");
+    if(cost<0) return false;
+    if(costOut)*costOut=cost;
+    bool open=cooldown==1&&cost==1;
+    Markerf("[BF] K_GATES summary: CheckCooldown=%d CheckCost=%d bothOpen=%s\r\n",
+            cooldown,cost,open?"yes":"NO");
+    if(bothOpen)*bothOpen=open;
+    return true;
+}
+
+// Full UGameplayAbility/Loki CanActivateAbility virtual.  Unlike the two leaf gates above this
+// covers the remaining ShouldActivate/inhibition/tag/input/K2/Loki target checks, but it does not
+// enter ASC::InternalTryActivateAbility or mutate activation state.  Windows x64 ABI has three tag
+// pointers after ActorInfo: SourceTags (R9), TargetTags (stack arg 5), OptionalRelevantTags (arg 6).
+// The lit TryActivateAbility precheck dispatches this virtual on Spec.Ability (the CDO), not the
+// primary instance. ULokiGameplaySpell::CanActivateAbility at base+0x551AD70 explicitly tolerates
+// all three tag pointers as null.
+typedef bool (__fastcall *PFN_BFCANACT)(void*,int32_t,const void*,const void*,const void*,void*);
+static int BfCallFullCanActivate(uintptr_t asc,uintptr_t abilityInst,uintptr_t abilityCls,int32_t wantedHandle){
+#if KFAULTINFO
+    FaultReset();
+#endif
+    bool headersOk=LooksLikePtr(asc)&&SafeReadable((void*)(asc+0x418),8)&&
+                   LooksLikePtr(abilityInst)&&SafeReadable((void*)abilityInst,8)&&
+                   SafeReadable((void*)(abilityInst+0x3A8),12)&&LooksLikePtr(ClassOf(abilityInst));
+    uintptr_t actorInfo=headersOk?*(uintptr_t*)(asc+0x418):0;
+    uintptr_t currentActorInfo=headersOk?*(uintptr_t*)(abilityInst+0x3A8):0;
+    int32_t currentHandle=headersOk?*(int32_t*)(abilityInst+0x3B0):0;
+    bool classOk=LooksLikePtr(abilityCls)&&SafeReadable((void*)abilityCls,0x180)&&LooksLikePtr(ClassOf(abilityCls));
+    uintptr_t cdo=classOk?*(uintptr_t*)(abilityCls+0x178):0;
+    bool cdoOk=LooksLikePtr(cdo)&&SafeReadable((void*)cdo,0x3B8)&&ClassOf(cdo)==abilityCls;
+    uintptr_t vtbl=cdoOk?*(uintptr_t*)cdo:0;
+    uintptr_t canFn=(LooksLikePtr(vtbl)&&SafeReadable((void*)(vtbl+0x2F8),8))?*(uintptr_t*)(vtbl+0x2F8):0;
+    char className[128]="-",cdoName[128]="-";
+    if(headersOk) GetFNameStr(NameId(ClassOf(abilityInst)),className,sizeof(className));
+    if(cdoOk) GetFNameStr(NameId(cdo),cdoName,sizeof(cdoName));
+    bool exact=headersOk&&classOk&&cdoOk&&ClassOf(abilityInst)==abilityCls&&
+               LooksLikePtr(actorInfo)&&SafeReadable((void*)actorInfo,0x70)&&
+               actorInfo==currentActorInfo&&currentHandle==wantedHandle&&
+               !strcmp(className,"GS_Ronin_MiniDash_Charges_C")&&
+               !strcmp(cdoName,"Default__GS_Ronin_MiniDash_Charges_C")&&canFn==g_modBase+0x551AD70&&
+               (int32_t)KBFCHARGES==1&&(int32_t)KBFMANA==10;
+    Markerf("[BF] K_CANACT inputs: primaryClass=%s receiverCDO=0x%llX(%s) ActorInfo=0x%llX primary.ActorInfo=0x%llX handle=%d/%d ; CDO.CanActivate[vtbl+0x2F8]=0x%llX (expect base+0x551AD70=0x%llX) exact=%s\r\n",
+            className,(unsigned long long)cdo,cdoName,
+            (unsigned long long)actorInfo,(unsigned long long)currentActorInfo,
+            wantedHandle,currentHandle,(unsigned long long)canFn,
+            (unsigned long long)(g_modBase+0x551AD70),exact?"yes":"NO");
+    if(!exact){
+        Marker("[BF] *** K_CANACT REFUSED: exact MiniDash/ActorInfo/handle/virtual/Mana10/charge1 profile is required. ***\r\n");
+        return -1;
+    }
+    __try{
+        bool can=((PFN_BFCANACT)canFn)((void*)cdo,wantedHandle,(const void*)actorInfo,
+                                      nullptr,nullptr,nullptr);
+        Markerf("[BF] K_CANACT full CanActivateAbility returned %d (AL bool; SourceTags/TargetTags/OptionalRelevantTags=null)\r\n",
+                can?1:0);
+        return can?1:0;
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[BF] *** K_CANACT full CanActivateAbility FAULTED: %s ***\r\n",DP_FAULT);
+        return -1;
+    }
+}
+
+// S145 full-CanActivate decomposition.  The matched control proved the exact CDO virtual returns
+// false even after CheckCooldown/CheckCost become 1/1.  Its first operation is the engine base
+// UGameplayAbility::CanActivateAbility at base+0x444FDC0.  Decompose that query without entering
+// ASC::TryActivateAbility or mutating activation state:
+//   * resolve the exact ActorInfo weak objects and mirror ShouldActivateAbility (vtbl+0x308);
+//   * read GetUserAbilityActivationInhibited's exact byte (ASC+0x3C8);
+//   * prove the durable spec's InputID and call IsAbilityInputBlocked (base+0x4481850);
+//   * call the base CanActivate with a valid empty FGameplayTagContainer so its failure tag survives;
+//   * only when base returns false, call tag requirements and (if tags pass) the Blueprint K2 query.
+// The three distinct static tag containers intentionally live for the DLL lifetime. Engine-side AddTag may
+// allocate their TArrays; retaining them avoids a destructor/free ABI guess and costs only a few bytes.
+struct BfTagContainer {
+    uintptr_t tagsData; int32_t tagsNum,tagsMax;
+    uintptr_t parentsData; int32_t parentsNum,parentsMax;
+};
+static BfTagContainer s_bfBaseRelevant={0};
+static BfTagContainer s_bfTreatmentRelevant={0};
+static BfTagContainer s_bfTagReqRelevant={0};
+
+static bool BfDumpTagArray(const char* label,const char* which,uintptr_t data,int32_t num,int32_t max){
+    bool shape=num>=0&&max>=num&&max<=128&&
+               ((num==0&&(data==0||LooksLikePtr(data)))||(num>0&&LooksLikePtr(data)&&SafeReadable((void*)data,(size_t)num*8)));
+    Markerf("[BF] K_CANDECOMP %s.%s Data=0x%llX Num=%d Max=%d shape=%s\r\n",
+            label,which,(unsigned long long)data,num,max,shape?"yes":"NO");
+    if(!shape) return false;
+    for(int32_t i=0;i<num;i++){
+        uint32_t nameId=*(uint32_t*)(data+(uintptr_t)i*8);
+        uint32_t number=*(uint32_t*)(data+(uintptr_t)i*8+4);
+        char tagName[192]="-"; GetFNameStr(nameId,tagName,sizeof(tagName));
+        Markerf("[BF] K_CANDECOMP %s.%s[%d] FName=%u:%u tag=%s\r\n",
+                label,which,i,nameId,number,tagName);
+    }
+    return true;
+}
+static bool BfDumpRelevantTags(const char* label,const BfTagContainer* c){
+    if(!SafeReadable((void*)c,sizeof(*c))) return false;
+    bool a=BfDumpTagArray(label,"Explicit",c->tagsData,c->tagsNum,c->tagsMax);
+    bool b=BfDumpTagArray(label,"Parents",c->parentsData,c->parentsNum,c->parentsMax);
+    return a&&b;
+}
+
+static bool BfTagArrayHasExactName(uintptr_t data,int32_t num,const char* wanted){
+    if(!wanted||num<0||num>128||(num>0&&(!LooksLikePtr(data)||!SafeReadable((void*)data,(size_t)num*8)))) return false;
+    int matches=0;
+    for(int32_t i=0;i<num;i++){
+        uint32_t nameId=*(uint32_t*)(data+(uintptr_t)i*8);
+        uint32_t number=*(uint32_t*)(data+(uintptr_t)i*8+4);
+        char tagName[192]="-"; GetFNameStr(nameId,tagName,sizeof(tagName));
+        if(number==0&&!strcmp(tagName,wanted)) matches++;
+    }
+    return matches==1;
+}
+
+static bool BfExactNoChargeFailure(const BfTagContainer* c){
+    bool exact=SafeReadable((void*)c,sizeof(*c))&&c->tagsNum==2&&c->parentsNum==2&&
+               BfTagArrayHasExactName(c->tagsData,c->tagsNum,"Ability.Fail.NoCharges")&&
+               BfTagArrayHasExactName(c->tagsData,c->tagsNum,"Ability.Fail.Cost")&&
+               BfTagArrayHasExactName(c->parentsData,c->parentsNum,"Ability.Fail")&&
+               BfTagArrayHasExactName(c->parentsData,c->parentsNum,"Ability");
+    Markerf("[BF] K_CDOCHARGE baseline failure-tag contract: explicit NoCharges+Cost, parents Ability.Fail+Ability exact=%s\r\n",
+            exact?"yes":"NO");
+    return exact;
+}
+
+static bool BfRestoreDiagnosticCdoCharge(uintptr_t cdo,uint32_t chargesOff,int32_t saved){
+    bool writable=LooksLikePtr(cdo)&&chargesOff==0x628&&SafeReadable((void*)(cdo+chargesOff),4)&&
+                  SafeWritable((void*)(cdo+chargesOff),4);
+    if(!writable){
+        Marker("[BF] *** K_CDOCHARGE RESTORE FAILED: exact shared CDO field is not readable/writable. Discard this process. ***\r\n");
+        return false;
+    }
+    int32_t before=*(int32_t*)(cdo+chargesOff);
+    *(int32_t*)(cdo+chargesOff)=saved;
+    int32_t after=*(int32_t*)(cdo+chargesOff);
+    Markerf("[BF] K_CDOCHARGE RESTORE shared CDO CurrentCharges %d -> %d (saved=%d) %s\r\n",
+            before,after,saved,(after==saved)?"OK":"*** READBACK FAILED; DISCARD PROCESS ***");
+    return after==saved;
+}
+
+typedef uintptr_t (__fastcall *PFN_BFWEAKGET)(const void*);
+typedef bool (__fastcall *PFN_BFSHOULDACT)(void*,uint8_t);
+typedef bool (__fastcall *PFN_BFINPUTBLOCKED)(void*,int32_t);
+typedef bool (__fastcall *PFN_BFTAGREQ)(void*,void*,const void*,const void*,void*);
+typedef bool (__fastcall *PFN_BFK2CAN)(void*,void*);
+typedef bool (__fastcall *PFN_BFLOCALCONTROL)(void*);
+typedef bool (__fastcall *PFN_BFTRYHANDLE)(void*,int32_t,uint8_t,const void*);
+typedef bool (__fastcall *PFN_BFISACTIVE)(void*);
+
+static int BfCallBaseCanActivate(uintptr_t cdo,int32_t wantedHandle,uintptr_t actorInfo,
+                                 BfTagContainer* relevant,const char* label){
+    if(!relevant) return -1;
+    memset(relevant,0,sizeof(*relevant));
+    int baseCan=-1;
+    __try{
+        baseCan=((PFN_BFCANACT)(g_modBase+0x444FDC0))((void*)cdo,wantedHandle,(const void*)actorInfo,
+                                                      nullptr,nullptr,(void*)relevant)?1:0;
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[BF] *** K_CANDECOMP %s base CanActivateAbility FAULTED: %s ***\r\n",label,DP_FAULT);
+        return -1;
+    }
+    Markerf("[BF] K_CANDECOMP %s base UGameplayAbility::CanActivateAbility[base+0x444FDC0] returned %d\r\n",
+            label,baseCan);
+    if(!BfDumpRelevantTags(label,relevant)) return -1;
+    return baseCan;
+}
+
+static bool BfExplainClosedBase(uintptr_t cdo,uintptr_t asc,uintptr_t actorInfo,uintptr_t tagReqFn,
+                                int should,uint8_t inhibited,int inputBlocked,int cooldown,int cost,
+                                int baseCan,const char* label){
+    if(baseCan==0&&(cooldown!=1||cost!=1)){
+        Markerf("[BF] *** K_CANDECOMP %s BASE-BLOCKED-AT-CDO-LEAF: primary leaf gates=1/1 but CDO CheckCooldown/CheckCost=%d/%d; tag/K2 queries intentionally not called. TryActivate intentionally NOT called. ***\r\n",
+                label,cooldown,cost);
+        return true;
+    }
+    if(baseCan==0){
+        memset(&s_bfTagReqRelevant,0,sizeof(s_bfTagReqRelevant));
+        int tagReq=-1;
+        __try{
+            tagReq=((PFN_BFTAGREQ)tagReqFn)((void*)cdo,(void*)asc,nullptr,nullptr,(void*)&s_bfTagReqRelevant)?1:0;
+        }
+        __except(SEH_FILTER(GetExceptionInformation())){
+            Markerf("[BF] *** K_CANDECOMP %s DoesAbilitySatisfyTagRequirements FAULTED: %s ***\r\n",label,DP_FAULT);
+            return false;
+        }
+        Markerf("[BF] K_CANDECOMP %s DoesAbilitySatisfyTagRequirements[CDO vtbl+0x330] returned %d\r\n",label,tagReq);
+        if(!BfDumpRelevantTags("TagReqRelevant",&s_bfTagReqRelevant)) return false;
+        int k2Can=-2;
+        if(tagReq==1){
+            alignas(16) uint8_t actorInfoCopy[0x48]; memcpy(actorInfoCopy,(const void*)actorInfo,sizeof(actorInfoCopy));
+            __try{ k2Can=((PFN_BFK2CAN)(g_modBase+0x442B940))((void*)cdo,actorInfoCopy)?1:0; }
+            __except(SEH_FILTER(GetExceptionInformation())){
+                Markerf("[BF] *** K_CANDECOMP %s K2_CanActivateAbility wrapper FAULTED: %s ***\r\n",label,DP_FAULT);
+                return false;
+            }
+        }
+        Markerf("[BF] *** K_CANDECOMP %s BASE-BLOCKED-AFTER-CDO-LEAVES: Should=%d Inhibited=%u CDOCooldown=%d CDOCost=%d TagRequirements=%d InputBlocked=%d K2Can=%d (-2=not called after tag failure). TryActivate intentionally NOT called. ***\r\n",
+                label,should,(unsigned)inhibited,cooldown,cost,tagReq,inputBlocked,k2Can);
+    } else{
+        Markerf("[BF] *** K_CANDECOMP %s BASE-OPEN: only ULokiGameplaySpell's extension remains; TryActivate stays compiled out. ***\r\n",
+                label);
+    }
+    return true;
+}
+
+// Re-read the live ActivatableAbilities.Items header and find the unique Handle+CDO record.
+// Call this at the activation boundary rather than trusting a spec pointer captured before engine calls:
+// CanActivate/leaf queries are permitted to mutate or reallocate the Items array.
+static bool BfFindCurrentExactSpec(uintptr_t asc,int32_t wantedHandle,uintptr_t wantedCdo,
+                                   uintptr_t* specOut,int* matchCountOut,int32_t* numOut,int32_t* maxOut,
+                                   int32_t censusHandle=0x7fffffff,int* censusHandleCountOut=nullptr){
+    if(specOut)*specOut=0;
+    if(matchCountOut)*matchCountOut=0;
+    if(numOut)*numOut=-1;
+    if(maxOut)*maxOut=-1;
+    if(censusHandleCountOut)*censusHandleCountOut=0;
+    if(!LooksLikePtr(asc)||!SafeReadable((void*)(asc+0x538),16)) return false;
+    uintptr_t data=*(uintptr_t*)(asc+0x538);
+    int32_t num=*(int32_t*)(asc+0x540),max=*(int32_t*)(asc+0x544);
+    if(numOut)*numOut=num;
+    if(maxOut)*maxOut=max;
+    if(num<0||num>64||max<num||max>64) return false;
+    if(num==0) return true;
+    if(!LooksLikePtr(data)||!SafeReadable((void*)data,(size_t)num*0xF8)) return false;
+    uintptr_t exact=0; int matches=0;
+    for(int32_t i=0;i<num;i++){
+        uintptr_t sp=data+(uintptr_t)i*0xF8;
+        int32_t handle=*(int32_t*)(sp+0x0C);
+        if(censusHandleCountOut&&handle==censusHandle)(*censusHandleCountOut)++;
+        if(handle==wantedHandle&&*(uintptr_t*)(sp+0x10)==wantedCdo){ exact=sp; matches++; }
+    }
+    if(specOut)*specOut=exact;
+    if(matchCountOut)*matchCountOut=matches;
+    return true;
+}
+
+#if KBFNATURALINPUT
+static bool BfS147ClaimCdoOwnership(uintptr_t asc,uintptr_t abilityCls,uintptr_t cdo,
+                                    uint32_t chargesOff,int32_t savedCdoCharge){
+    if(InterlockedCompareExchange(&g_s147State,0,0)!=S147_DISABLED||
+       !LooksLikePtr(asc)||!LooksLikePtr(abilityCls)||!LooksLikePtr(cdo)||
+       chargesOff!=0x628||savedCdoCharge!=0) return false;
+    g_s147Asc=asc; g_s147AscClass=ClassOf(asc);
+    g_s147AbilityClass=abilityCls; g_s147AbilityCdo=cdo;
+    g_s147ChargesOff=chargesOff; g_s147SavedCdoCharge=savedCdoCharge;
+    g_s147Pid=GetCurrentProcessId();
+    g_s147RunId=((uint64_t)g_s147Pid<<32)^GetTickCount64();
+    InterlockedExchange(&g_s147SampleReady,0);
+    InterlockedExchange(&g_s147RestorePending,1);
+    InterlockedExchange(&g_s147Ability3WhileShiftDown,0);
+    InterlockedExchange64(&g_s147ReadyQpc,0);
+    MemoryBarrier();
+    if(InterlockedCompareExchange(&g_s147State,S147_SETUP_OWNS_CDO,S147_DISABLED)!=S147_DISABLED){
+        InterlockedExchange(&g_s147RestorePending,0);
+        return false;
+    }
+    __try{
+        Markerf("[S147] CDO OWNERSHIP CLAIMED pid=%lu run=%016llX before write: saved charge=%d; only the worker may restore after callback unwind.\r\n",
+                g_s147Pid,(unsigned long long)g_s147RunId,savedCdoCharge);
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){}
+    return true;
+}
+
+static bool BfS147AbortSetup(const char* reason){
+    LONG prior=InterlockedCompareExchange(&g_s147State,S147_SETUP_ABORT_REQUESTED,S147_SETUP_OWNS_CDO);
+    __try{
+        Markerf("[S147] SETUP ABORT REQUEST pid=%lu run=%016llX reason=%s stateWas=%ld. Returning the callback; worker restore is forbidden until unwind is published.\r\n",
+                g_s147Pid,(unsigned long long)g_s147RunId,reason?reason:"unspecified",(long)prior);
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){}
+    return false;
+}
+
+struct BfS147Capture {
+    S147RawSample raw;
+    uintptr_t specData;
+    uintptr_t spec;
+    uintptr_t primary;
+    uintptr_t manaSet;
+    int32_t specNum;
+    int32_t specMax;
+};
+
+// Raw equivalent of FGameplayAbilitySpec::GetPrimaryInstance: NonRep[0] wins by occupancy, even
+// when malformed; Rep[0] is consulted only when NonRep is empty. No UObject virtual is called.
+static uintptr_t BfS147PrimaryFromFreshSpec(uintptr_t spec,uint32_t* issues){
+    if(g_s147InstancingPolicy!=1){
+        if(issues)*issues|=S147_ISSUE_PRIMARY_WRONG_CLASS;
+        return 0;
+    }
+    if(!SafeReadable((void*)(spec+0x80),0x20)){
+        if(issues)*issues|=S147_ISSUE_PRIMARY_MISSING;
+        return 0;
+    }
+    uintptr_t nrData=*(uintptr_t*)(spec+0x80),rpData=*(uintptr_t*)(spec+0x90);
+    int32_t nrNum=*(int32_t*)(spec+0x88),nrMax=*(int32_t*)(spec+0x8C);
+    int32_t rpNum=*(int32_t*)(spec+0x98),rpMax=*(int32_t*)(spec+0x9C);
+    bool nrShape=nrNum>=0&&nrMax>=nrNum&&nrMax<=64&&
+                 (nrNum==0||(LooksLikePtr(nrData)&&SafeReadable((void*)nrData,8)));
+    bool rpShape=rpNum>=0&&rpMax>=rpNum&&rpMax<=64&&
+                 (rpNum==0||(LooksLikePtr(rpData)&&SafeReadable((void*)rpData,8)));
+    if(!nrShape||!rpShape){
+        if(issues)*issues|=S147_ISSUE_PRIMARY_MISSING;
+        return 0;
+    }
+    uintptr_t primary=nrNum>0?*(uintptr_t*)nrData:(rpNum>0?*(uintptr_t*)rpData:0);
+    if(!LooksLikePtr(primary)||!SafeReadable((void*)primary,0x20)){
+        if(issues)*issues|=S147_ISSUE_PRIMARY_MISSING;
+        return 0;
+    }
+    return primary;
+}
+
+// One S147 sample. Every dereference is within this SEH boundary. The two Items headers bracket the
+// unique Handle+CDO scan; a header change discards the sample before the spec is dereferenced.
+static bool BfS147CaptureRaw(BfS147Capture* out){
+    if(!out) return false;
+    memset(out,0,sizeof(*out));
+    out->specNum=-1; out->specMax=-1;
+    out->raw.toggleMapEvents=(uint32_t)InterlockedCompareExchange(&g_s147ToggleMapEvents,0,0);
+    out->raw.ability3Events=(uint32_t)InterlockedCompareExchange(&g_s147Ability3Events,0,0);
+    __try{
+        uint32_t issues=0;
+        uintptr_t asc=g_s147Asc;
+        if(!LooksLikePtr(asc)||!SafeReadable((void*)asc,0x20)||ClassOf(asc)!=g_s147AscClass){
+            out->raw.issueMask=S147_ISSUE_UNREADABLE;
+            return false;
+        }
+
+        if(!SafeReadable((void*)(asc+0x538),16)){
+            out->raw.issueMask=S147_ISSUE_UNREADABLE;
+            return false;
+        }
+        uintptr_t dataA=*(uintptr_t*)(asc+0x538);
+        int32_t numA=*(int32_t*)(asc+0x540),maxA=*(int32_t*)(asc+0x544);
+        out->specData=dataA; out->specNum=numA; out->specMax=maxA;
+        bool shape=numA>=0&&numA<=64&&maxA>=numA&&maxA<=64&&
+                   (numA==0||(LooksLikePtr(dataA)&&SafeReadable((void*)dataA,(size_t)numA*0xF8)));
+        uintptr_t exact=0; int matches=0;
+        if(shape){
+            for(int32_t i=0;i<numA;i++){
+                uintptr_t spec=dataA+(uintptr_t)i*0xF8;
+                if(*(int32_t*)(spec+0x0C)==g_s147Handle&&
+                   *(uintptr_t*)(spec+0x10)==g_s147AbilityCdo){ exact=spec; matches++; }
+            }
+        }
+        if(!SafeReadable((void*)(asc+0x538),16)){
+            out->raw.issueMask=S147_ISSUE_UNREADABLE;
+            return false;
+        }
+        uintptr_t dataB=*(uintptr_t*)(asc+0x538);
+        int32_t numB=*(int32_t*)(asc+0x540),maxB=*(int32_t*)(asc+0x544);
+        if(dataA!=dataB||numA!=numB||maxA!=maxB){
+            out->raw.issueMask=S147_ISSUE_ASC_HEADER_CHANGED;
+            return false;
+        }
+        if(!shape||matches==0) issues|=S147_ISSUE_SPEC_MISSING;
+        else if(matches!=1) issues|=S147_ISSUE_SPEC_AMBIGUOUS;
+        else if(!SafeReadable((void*)(exact+0x0C),0x90)||
+                *(int32_t*)(exact+0x0C)!=g_s147Handle||
+                *(uintptr_t*)(exact+0x10)!=g_s147AbilityCdo){
+            // Header equality alone does not freeze a FastArray slot.  Do not touch any other
+            // FGameplayAbilitySpec field until the selected record is re-proven after header B.
+            issues|=S147_ISSUE_SPEC_MISSING;
+        } else{
+            out->spec=exact; out->raw.specPresent=1;
+            out->raw.inputID=*(int32_t*)(exact+0x24);
+            if(out->raw.inputID!=(int32_t)KBFINPUTID) issues|=S147_ISSUE_INPUT_ID_CHANGED;
+            out->raw.activeCount=*(uint8_t*)(exact+0x38);
+            out->raw.specFlags=*(uint8_t*)(exact+0x39);
+            uintptr_t primary=BfS147PrimaryFromFreshSpec(exact,&issues);
+            out->primary=primary;
+            if(primary){
+                out->raw.primaryPresent=1;
+                if(primary!=g_s147ExpectedPrimary) issues|=S147_ISSUE_PRIMARY_REPLACED;
+                else out->raw.primaryIdentityMatches=1;
+                if(ClassOf(primary)!=g_s147AbilityClass) issues|=S147_ISSUE_PRIMARY_WRONG_CLASS;
+                if(SafeReadable((void*)(primary+0x408),3)&&
+                   SafeReadable((void*)(primary+g_s147ChargesOff),4)){
+                    out->raw.primary408=*(uint8_t*)(primary+0x408);
+                    out->raw.primary409=*(uint8_t*)(primary+0x409);
+                    out->raw.primary40A=*(uint8_t*)(primary+0x40A);
+                    out->raw.primaryCharge=*(int32_t*)(primary+g_s147ChargesOff);
+                } else issues|=S147_ISSUE_UNREADABLE;
+            }
+
+            // A third header/identity proof invalidates a non-faulting in-place slot replacement
+            // that happened while the selected spec and primary arrays were being sampled.
+            if(!SafeReadable((void*)(asc+0x538),16)||
+               *(uintptr_t*)(asc+0x538)!=dataB||*(int32_t*)(asc+0x540)!=numB||
+               *(int32_t*)(asc+0x544)!=maxB||
+               !SafeReadable((void*)(exact+0x0C),12)||
+               *(int32_t*)(exact+0x0C)!=g_s147Handle||
+               *(uintptr_t*)(exact+0x10)!=g_s147AbilityCdo)
+                issues|=S147_ISSUE_ASC_HEADER_CHANGED|S147_ISSUE_SPEC_MISSING;
+        }
+
+        if(!LooksLikePtr(g_s147AbilityCdo)||ClassOf(g_s147AbilityCdo)!=g_s147AbilityClass||
+           !SafeReadable((void*)(g_s147AbilityCdo+g_s147ChargesOff),4)) issues|=S147_ISSUE_UNREADABLE;
+        else out->raw.cdoCharge=*(int32_t*)(g_s147AbilityCdo+g_s147ChargesOff);
+
+        uintptr_t spawnedA=0,spawnedB=0; int32_t spawnedNumA=-1,spawnedMaxA=-1;
+        int32_t spawnedNumB=-1,spawnedMaxB=-1;
+        if(g_s147SpawnedAttrsOff!=0x168||!SafeReadable((void*)(asc+g_s147SpawnedAttrsOff),16))
+            issues|=S147_ISSUE_UNREADABLE;
+        else{
+            spawnedA=*(uintptr_t*)(asc+g_s147SpawnedAttrsOff);
+            spawnedNumA=*(int32_t*)(asc+g_s147SpawnedAttrsOff+8);
+            spawnedMaxA=*(int32_t*)(asc+g_s147SpawnedAttrsOff+12);
+            bool spawnedShape=spawnedNumA>=0&&spawnedNumA<=64&&spawnedMaxA>=spawnedNumA&&spawnedMaxA<=64&&
+                              (spawnedNumA==0||(LooksLikePtr(spawnedA)&&
+                               SafeReadable((void*)spawnedA,(size_t)spawnedNumA*8)));
+            uintptr_t mana=0; int manaMatches=0;
+            if(spawnedShape){
+                for(int32_t i=0;i<spawnedNumA;i++){
+                    uintptr_t candidate=*(uintptr_t*)(spawnedA+(uintptr_t)i*8);
+                    if(!LooksLikePtr(candidate)||!SafeReadable((void*)candidate,0x220)) continue;
+                    if(ClassOf(candidate)==g_s147ManaClass){ mana=candidate; manaMatches++; }
+                }
+            }
+            if(!SafeReadable((void*)(asc+g_s147SpawnedAttrsOff),16)) issues|=S147_ISSUE_UNREADABLE;
+            else{
+                spawnedB=*(uintptr_t*)(asc+g_s147SpawnedAttrsOff);
+                spawnedNumB=*(int32_t*)(asc+g_s147SpawnedAttrsOff+8);
+                spawnedMaxB=*(int32_t*)(asc+g_s147SpawnedAttrsOff+12);
+                if(spawnedA!=spawnedB||spawnedNumA!=spawnedNumB||spawnedMaxA!=spawnedMaxB)
+                    issues|=S147_ISSUE_SPAWNED_HEADER_CHANGED;
+                else if(!spawnedShape||manaMatches==0) issues|=S147_ISSUE_MANA_SET_MISSING;
+                else if(manaMatches!=1) issues|=S147_ISSUE_MANA_SET_AMBIGUOUS;
+                else{
+                    // Re-prove the selected set in the unchanged array after header B.  A slot can
+                    // change without reallocating the array, so pointer/class membership is part of
+                    // every sample rather than an assumption inherited from setup.
+                    int manaMatchesB=0; bool sameManaPresent=false;
+                    for(int32_t i=0;i<spawnedNumB;i++){
+                        uintptr_t candidate=*(uintptr_t*)(spawnedB+(uintptr_t)i*8);
+                        if(!LooksLikePtr(candidate)||!SafeReadable((void*)candidate,0x220)) continue;
+                        if(ClassOf(candidate)==g_s147ManaClass){
+                            manaMatchesB++;
+                            if(candidate==mana) sameManaPresent=true;
+                        }
+                    }
+                    if(manaMatchesB!=1||!sameManaPresent) issues|=manaMatchesB>1?
+                        S147_ISSUE_MANA_SET_AMBIGUOUS:S147_ISSUE_MANA_SET_MISSING;
+                    else{
+                        out->manaSet=mana; out->raw.manaSetPresent=1;
+                        if(mana!=g_s147ExpectedManaSet) issues|=S147_ISSUE_MANA_SET_REPLACED;
+                        out->raw.manaBaseBits=*(uint32_t*)(mana+0x218);
+                        out->raw.manaCurrentBits=*(uint32_t*)(mana+0x21C);
+
+                        if(!SafeReadable((void*)(asc+g_s147SpawnedAttrsOff),16)||
+                           *(uintptr_t*)(asc+g_s147SpawnedAttrsOff)!=spawnedB||
+                           *(int32_t*)(asc+g_s147SpawnedAttrsOff+8)!=spawnedNumB||
+                           *(int32_t*)(asc+g_s147SpawnedAttrsOff+12)!=spawnedMaxB){
+                            issues|=S147_ISSUE_SPAWNED_HEADER_CHANGED;
+                        } else{
+                            int sameAfterRead=0;
+                            for(int32_t i=0;i<spawnedNumB;i++)
+                                if(*(uintptr_t*)(spawnedB+(uintptr_t)i*8)==mana) sameAfterRead++;
+                            if(sameAfterRead!=1||!SafeReadable((void*)mana,0x220)||
+                               ClassOf(mana)!=g_s147ManaClass)
+                                issues|=S147_ISSUE_MANA_SET_MISSING;
+                        }
+                    }
+                }
+            }
+        }
+        out->raw.issueMask=issues;
+        out->raw.valid=issues==0?1:0;
+        return out->raw.valid!=0;
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        out->raw.valid=0;
+        out->raw.issueMask|=S147_ISSUE_UNREADABLE;
+        return false;
+    }
+}
+
+static bool BfArmNaturalInput(uintptr_t asc,uintptr_t abilityInst,uintptr_t abilityCls,
+                              uintptr_t cdo,int32_t wantedHandle,uintptr_t actorInfo,
+                              uintptr_t diagnosticManaSet,uint32_t chargesOff,int32_t savedCdoCharges,
+                              int fullCan){
+    if(InterlockedCompareExchange(&g_s147State,0,0)!=S147_SETUP_OWNS_CDO||
+       InterlockedCompareExchange(&g_s147RestorePending,0,0)!=1||
+       g_s147Asc!=asc||g_s147AbilityClass!=abilityCls||g_s147AbilityCdo!=cdo||
+       g_s147ChargesOff!=chargesOff||g_s147SavedCdoCharge!=savedCdoCharges) return false;
+    uintptr_t finalActorInfo=0,primaryActorInfo=0,roleActor=0,actorInfoAsc=0;
+    int32_t primaryHandle=0x7fffffff; uint8_t role=0xFF; int locallyControlled=-1;
+    __try{
+        finalActorInfo=*(uintptr_t*)(asc+0x418);
+        primaryActorInfo=*(uintptr_t*)(abilityInst+0x3A8);
+        primaryHandle=*(int32_t*)(abilityInst+0x3B0);
+        PFN_BFWEAKGET weakGet=(PFN_BFWEAKGET)(g_modBase+0x137DE80);
+        roleActor=weakGet((const void*)(finalActorInfo+0x10));
+        actorInfoAsc=weakGet((const void*)(finalActorInfo+0x20));
+        if(LooksLikePtr(roleActor)&&SafeReadable((void*)(roleActor+0x160),1))
+            role=*(uint8_t*)(roleActor+0x160);
+        locallyControlled=((PFN_BFLOCALCONTROL)(g_modBase+0x44CACC0))((void*)finalActorInfo)?1:0;
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[S147] REFUSED: final local/authority revalidation faulted: %s\r\n",DP_FAULT);
+        return false;
+    }
+
+    uintptr_t pc=FindInstByClass("LokiPlayerController_Dev",nullptr);
+    if(!LooksLikePtr(pc)) pc=FindInstByClass("LokiPlayerController",nullptr);
+    uintptr_t pcClass=LooksLikePtr(pc)?ClassOf(pc):0;
+    const char* toggleName="InpActEvt_Toggle Map_K2Node_InputActionEvent";
+    const char* ability3Name="InpActEvt_Ability3_K2Node_InputActionEvent";
+    uintptr_t toggleNode=LooksLikePtr(pcClass)?FindBPFunc(pcClass,toggleName,nullptr):0;
+    uintptr_t ability3Node=LooksLikePtr(pcClass)?FindBPFunc(pcClass,ability3Name,nullptr):0;
+    bool nodesExact=LooksLikePtr(toggleNode)&&LooksLikePtr(ability3Node)&&toggleNode!=ability3Node&&
+                    NameIs(toggleNode,toggleName)&&NameIs(ability3Node,ability3Name);
+
+    uintptr_t vtable=SafeReadable((void*)abilityInst,8)?*(uintptr_t*)abilityInst:0;
+    uintptr_t isActiveFn=(LooksLikePtr(vtable)&&SafeReadable((void*)(vtable+0x2F0),8))
+                         ?*(uintptr_t*)(vtable+0x2F0):0;
+    int isActive=-1;
+    if(isActiveFn==g_modBase+0x4455540){
+        __try{ isActive=((PFN_BFISACTIVE)isActiveFn)((void*)abilityInst)?1:0; }
+        __except(SEH_FILTER(GetExceptionInformation())){
+            Markerf("[S147] REFUSED: primary IsActive preflight faulted: %s\r\n",DP_FAULT);
+            return false;
+        }
+    }
+
+    uint32_t spawnedOff=PropOffsetSuper(ClassOf(asc),"SpawnedAttributes");
+    uint8_t instancingPolicy=SafeReadable((void*)(cdo+0xEE),1)?*(uint8_t*)(cdo+0xEE):0xFF;
+    bool immutableExact=finalActorInfo==actorInfo&&primaryActorInfo==actorInfo&&
+                        primaryHandle==wantedHandle&&actorInfoAsc==asc&&role==3&&locallyControlled==1&&
+                        fullCan==1&&chargesOff==0x628&&savedCdoCharges==0&&
+                        (int32_t)KBFINPUTID==5&&spawnedOff==0x168&&instancingPolicy==1&&
+                        nodesExact&&isActive==0&&
+                        LooksLikePtr(diagnosticManaSet)&&ClassOf(diagnosticManaSet)!=0;
+    Markerf("[S147] final natural-input preflight: Role=%u local=%d ActorInfoStable=%s handle=%d/%d requestedInputID=%d InstancingPolicy=%u fullCan=%d IsActive=%d nodes Toggle=0x%llX Ability3=0x%llX exact=%s\r\n",
+            (unsigned)role,locallyControlled,
+            (finalActorInfo==actorInfo&&primaryActorInfo==actorInfo&&actorInfoAsc==asc)?"yes":"NO",
+            wantedHandle,primaryHandle,(int32_t)KBFINPUTID,(unsigned)instancingPolicy,fullCan,isActive,
+            (unsigned long long)toggleNode,(unsigned long long)ability3Node,
+            immutableExact?"yes":"NO");
+    if(!immutableExact) return false;
+
+    g_s147Asc=asc; g_s147AscClass=ClassOf(asc);
+    g_s147AbilityClass=abilityCls; g_s147AbilityCdo=cdo;
+    g_s147ExpectedPrimary=abilityInst; g_s147ExpectedManaSet=diagnosticManaSet;
+    g_s147ManaClass=ClassOf(diagnosticManaSet); g_s147Handle=wantedHandle;
+    g_s147ChargesOff=chargesOff; g_s147SpawnedAttrsOff=spawnedOff;
+    g_s147SavedCdoCharge=savedCdoCharges; g_s147InstancingPolicy=instancingPolicy;
+    g_s147ToggleMapNode=toggleNode; g_s147Ability3Node=ability3Node;
+    InterlockedExchange(&g_s147ToggleMapEvents,0); InterlockedExchange(&g_s147Ability3Events,0);
+    for(int i=0;i<4;i++){
+        InterlockedExchange64(&g_s147ToggleMapTicks[i],0);
+        InterlockedExchange64(&g_s147Ability3Ticks[i],0);
+    }
+
+    BfS147Capture baseline={0};
+    bool baselineOk=BfS147CaptureRaw(&baseline);
+    bool exactBaseline=baselineOk&&baseline.spec!=0&&
+                       S147SampleMatchesInputID(baseline.raw,(int32_t)KBFINPUTID)&&
+                       baseline.primary==abilityInst&&baseline.manaSet==diagnosticManaSet&&
+                       baseline.raw.specFlags==0&&baseline.raw.activeCount==0&&baseline.raw.primary408==0&&
+                       baseline.raw.primaryCharge==1&&baseline.raw.cdoCharge==1&&
+                       baseline.raw.manaBaseBits==0x41200000u&&baseline.raw.manaCurrentBits==0x41200000u;
+    Markerf("[S147] raw baseline: valid=%u issue=0x%X Items=%d/%d spec=0x%llX primary=0x%llX actualInputID=%d expectedInputID=%d flags=0x%02X ActiveCount=%u state=%u/%u/%u charges=%d/%d ManaBits=%08X/%08X exact=%s\r\n",
+            (unsigned)baseline.raw.valid,baseline.raw.issueMask,baseline.specNum,baseline.specMax,
+            (unsigned long long)baseline.spec,(unsigned long long)baseline.primary,
+            baseline.raw.inputID,(int32_t)KBFINPUTID,
+            (unsigned)baseline.raw.specFlags,(unsigned)baseline.raw.activeCount,
+            (unsigned)baseline.raw.primary408,(unsigned)baseline.raw.primary409,(unsigned)baseline.raw.primary40A,
+            baseline.raw.primaryCharge,baseline.raw.cdoCharge,
+            baseline.raw.manaBaseBits,baseline.raw.manaCurrentBits,exactBaseline?"yes":"NO");
+    if(!exactBaseline) return false;
+
+    g_s147Baseline=baseline.raw;
+    Markerf("[S147] SETUP ARM COMMIT pid=%lu run=%016llX: CDO charge remains 1 under worker ownership; READY stays forbidden until callback unwind and a later game-thread dispatch.\r\n",
+            g_s147Pid,(unsigned long long)g_s147RunId);
+    InterlockedExchange(&g_s147SampleReady,1);
+    MemoryBarrier();
+    if(InterlockedCompareExchange(&g_s147State,S147_SETUP_ARMED,S147_SETUP_OWNS_CDO)!=
+       S147_SETUP_OWNS_CDO){
+        InterlockedExchange(&g_s147SampleReady,0);
+        return false;
+    }
+    return true;
+}
+#endif
+
+static bool BfDecomposeBaseCanActivate(uintptr_t asc,uintptr_t abilityInst,uintptr_t abilityCls,
+                                      int32_t wantedHandle,uintptr_t diagnosticManaSet,
+                                      int* baseCanOut,int* fullCanOut,int* activationOut){
+    if(baseCanOut)*baseCanOut=-1;
+    if(fullCanOut)*fullCanOut=-1;
+    if(activationOut)*activationOut=-1;
+#if KFAULTINFO
+    FaultReset();
+#endif
+    bool headersOk=LooksLikePtr(asc)&&SafeReadable((void*)(asc+0x418),8)&&SafeReadable((void*)(asc+0x3C8),1)&&
+                   LooksLikePtr(abilityInst)&&SafeReadable((void*)abilityInst,0x3B8)&&LooksLikePtr(ClassOf(abilityInst));
+    uintptr_t actorInfo=headersOk?*(uintptr_t*)(asc+0x418):0;
+    uintptr_t currentActorInfo=headersOk?*(uintptr_t*)(abilityInst+0x3A8):0;
+    int32_t currentHandle=headersOk?*(int32_t*)(abilityInst+0x3B0):0;
+    bool classOk=LooksLikePtr(abilityCls)&&SafeReadable((void*)abilityCls,0x180)&&LooksLikePtr(ClassOf(abilityCls));
+    uintptr_t cdo=classOk?*(uintptr_t*)(abilityCls+0x178):0;
+    bool cdoOk=LooksLikePtr(cdo)&&SafeReadable((void*)cdo,0x3B8)&&ClassOf(cdo)==abilityCls;
+    uintptr_t vtbl=cdoOk?*(uintptr_t*)cdo:0;
+    uintptr_t fullCanFn=(LooksLikePtr(vtbl)&&SafeReadable((void*)(vtbl+0x2F8),8))?*(uintptr_t*)(vtbl+0x2F8):0;
+    uintptr_t shouldFn=(LooksLikePtr(vtbl)&&SafeReadable((void*)(vtbl+0x308),8))?*(uintptr_t*)(vtbl+0x308):0;
+    uintptr_t tagReqFn=(LooksLikePtr(vtbl)&&SafeReadable((void*)(vtbl+0x330),8))?*(uintptr_t*)(vtbl+0x330):0;
+    uintptr_t cdoCooldownFn=(LooksLikePtr(vtbl)&&SafeReadable((void*)(vtbl+0x3A8),8))?*(uintptr_t*)(vtbl+0x3A8):0;
+    uintptr_t cdoCostFn=(LooksLikePtr(vtbl)&&SafeReadable((void*)(vtbl+0x3C0),8))?*(uintptr_t*)(vtbl+0x3C0):0;
+
+    uintptr_t specData=headersOk&&SafeReadable((void*)(asc+0x538),16)?*(uintptr_t*)(asc+0x538):0;
+    int32_t specNum=headersOk&&SafeReadable((void*)(asc+0x540),4)?*(int32_t*)(asc+0x540):-1;
+    uintptr_t exactSpec=0; int exactSpecCount=0;
+    if(LooksLikePtr(specData)&&specNum>=0&&specNum<=64&&SafeReadable((void*)specData,(size_t)specNum*0xF8)){
+        for(int32_t i=0;i<specNum;i++){
+            uintptr_t sp=specData+(uintptr_t)i*0xF8;
+            if(*(int32_t*)(sp+0x0C)==wantedHandle&&*(uintptr_t*)(sp+0x10)==cdo){ exactSpec=sp; exactSpecCount++; }
+        }
+    }
+    int32_t inputId=(exactSpecCount==1&&SafeReadable((void*)(exactSpec+0x24),4))?*(int32_t*)(exactSpec+0x24):0x7fffffff;
+    char className[128]="-",cdoName[128]="-";
+    if(headersOk)GetFNameStr(NameId(ClassOf(abilityInst)),className,sizeof(className));
+    if(cdoOk)GetFNameStr(NameId(cdo),cdoName,sizeof(cdoName));
+    bool exact=headersOk&&classOk&&cdoOk&&ClassOf(abilityInst)==abilityCls&&
+               LooksLikePtr(actorInfo)&&SafeReadable((void*)actorInfo,0x48)&&actorInfo==currentActorInfo&&
+               currentHandle==wantedHandle&&!strcmp(className,"GS_Ronin_MiniDash_Charges_C")&&
+               !strcmp(cdoName,"Default__GS_Ronin_MiniDash_Charges_C")&&
+               fullCanFn==g_modBase+0x551AD70&&
+               shouldFn==g_modBase+0x4459720&&tagReqFn==g_modBase+0x44517D0&&
+               cdoCooldownFn==g_modBase+0x44508F0&&cdoCostFn==g_modBase+0x551BA70&&
+               exactSpecCount==1&&inputId==(int32_t)KBFINPUTID&&
+               (int32_t)KBFCHARGES==1&&(int32_t)KBFMANA==10;
+    Markerf("[BF] K_CANDECOMP preflight: CDO=0x%llX(%s) ActorInfo=0x%llX primary.ActorInfo=0x%llX handle=%d/%d spec=0x%llX matches=%d InputID=%d ; FullCan[+0x2F8]=0x%llX Should[+0x308]=0x%llX TagReq[+0x330]=0x%llX CDO.Cooldown[+0x3A8]=0x%llX CDO.Cost[+0x3C0]=0x%llX exact=%s\r\n",
+            (unsigned long long)cdo,cdoName,(unsigned long long)actorInfo,(unsigned long long)currentActorInfo,
+            wantedHandle,currentHandle,(unsigned long long)exactSpec,exactSpecCount,inputId,
+            (unsigned long long)fullCanFn,(unsigned long long)shouldFn,(unsigned long long)tagReqFn,
+            (unsigned long long)cdoCooldownFn,(unsigned long long)cdoCostFn,exact?"yes":"NO");
+    if(!exact){ Marker("[BF] *** K_CANDECOMP REFUSED: exact CDO/ActorInfo/spec/virtual/profile invariants failed. ***\r\n"); return false; }
+
+    uintptr_t roleActor=0,actorInfoAsc=0; uint8_t role=0xFF; int should=-1,inputBlocked=-1;
+    const uint8_t inhibited=*(uint8_t*)(asc+0x3C8);
+    __try{
+        PFN_BFWEAKGET weakGet=(PFN_BFWEAKGET)(g_modBase+0x137DE80);
+        roleActor=weakGet((const void*)(actorInfo+0x10));
+        actorInfoAsc=weakGet((const void*)(actorInfo+0x20));
+        if(LooksLikePtr(roleActor)&&SafeReadable((void*)(roleActor+0x160),1)){
+            role=*(uint8_t*)(roleActor+0x160);
+            should=((PFN_BFSHOULDACT)shouldFn)((void*)cdo,role)?1:0;
+        }
+        inputBlocked=((PFN_BFINPUTBLOCKED)(g_modBase+0x4481850))((void*)asc,inputId)?1:0;
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[BF] *** K_CANDECOMP actor/inhibit/input census FAULTED: %s ***\r\n",DP_FAULT); return false;
+    }
+    bool prelim=LooksLikePtr(roleActor)&&actorInfoAsc==asc&&role!=0xFF&&should>=0&&inputBlocked>=0;
+    Markerf("[BF] K_CANDECOMP engine prelims: ActorInfo+0x10=0x%llX Role@+0x160=%u ShouldActivate=%d ; ActorInfo.ASC=0x%llX == ASC %s ; UserActivationInhibited@ASC+0x3C8=%u ; IsAbilityInputBlocked(InputID=%d)=%d ; exact=%s\r\n",
+            (unsigned long long)roleActor,(unsigned)role,should,(unsigned long long)actorInfoAsc,
+            (actorInfoAsc==asc)?"yes":"NO",(unsigned)inhibited,(int32_t)KBFINPUTID,inputBlocked,prelim?"yes":"NO");
+    if(!prelim) return false;
+
+    Marker("[BF] K_CANDECOMP exact CDO-receiver leaf census (distinct from the already-proven primary-instance 1/1):\r\n");
+    int cdoCooldown=BfCallAbilityGate(cdoCooldownFn,cdo,wantedHandle,actorInfo,"CDO.CheckCooldown");
+    if(cdoCooldown<0) return false;
+    int cdoCost=BfCallAbilityGate(cdoCostFn,cdo,wantedHandle,actorInfo,"CDO.CheckCost");
+    if(cdoCost<0) return false;
+    int32_t primaryCharges=SafeReadable((void*)(abilityInst+0x628),4)?*(int32_t*)(abilityInst+0x628):-2147483647;
+    int32_t cdoCharges=SafeReadable((void*)(cdo+0x628),4)?*(int32_t*)(cdo+0x628):-2147483647;
+    Markerf("[BF] K_CANDECOMP receiver split: primary CurrentCharges=%d with leaf gates=1/1 ; CDO CurrentCharges=%d with leaf gates=%d/%d\r\n",
+            primaryCharges,cdoCharges,cdoCooldown,cdoCost);
+
+    int baselineBaseCan=BfCallBaseCanActivate(cdo,wantedHandle,actorInfo,&s_bfBaseRelevant,"BASELINE");
+    if(baselineBaseCan<0) return false;
+
+#if KBFCDOCHARGES
+    // The fresh matched baseline must reproduce the exact causal signature before the one-field write:
+    // CDO charge 0, CDO leaves 1/0, base false, and precisely NoCharges+Cost failure tags.
+    uint32_t usesOff=PropOffsetSuper(abilityCls,"bSpellUsesCharges");
+    uint32_t chargesOff=PropOffsetSuper(abilityCls,"CurrentCharges");
+    bool fieldsOk=usesOff==0x622&&chargesOff==0x628&&cdo!=abilityInst&&
+                  SafeReadable((void*)(cdo+usesOff),1)&&SafeReadable((void*)(cdo+chargesOff),4)&&
+                  SafeWritable((void*)(cdo+chargesOff),4)&&SafeReadable((void*)(abilityInst+chargesOff),4);
+    uint8_t cdoUses=fieldsOk?*(uint8_t*)(cdo+usesOff):0xFF;
+    int32_t savedCdoCharges=fieldsOk?*(int32_t*)(cdo+chargesOff):-2147483647;
+    int32_t freshPrimaryCharges=fieldsOk?*(int32_t*)(abilityInst+chargesOff):-2147483647;
+    bool manaOk=LooksLikePtr(diagnosticManaSet)&&SafeReadable((void*)diagnosticManaSet,0x220)&&
+                LooksLikePtr(ClassOf(diagnosticManaSet));
+    char manaClass[128]="-";
+    if(manaOk)GetFNameStr(NameId(ClassOf(diagnosticManaSet)),manaClass,sizeof(manaClass));
+    float manaBase=manaOk?*(float*)(diagnosticManaSet+0x218):-99999.0f;
+    float manaCurrent=manaOk?*(float*)(diagnosticManaSet+0x21C):-99999.0f;
+    int locallyControlled=-1;
+    bool handleProfileExact=true;
+#if KBFHANDLEACT
+    handleProfileExact=(int32_t)KBFHANDLEACT==1&&
+                       ((int32_t)KBFHANDLEMISS==0||(int32_t)KBFHANDLEMISS==1)&&
+                       SafeReadable((void*)(g_modBase+0x44CACC0),16)&&
+                       SafeReadable((void*)(g_modBase+0x4493420),16);
+    if(handleProfileExact){
+        __try{ locallyControlled=((PFN_BFLOCALCONTROL)(g_modBase+0x44CACC0))((void*)actorInfo)?1:0; }
+        __except(SEH_FILTER(GetExceptionInformation())){
+            Markerf("[BF] *** K_HANDLEACT ActorInfo::IsLocallyControlled FAULTED before any CDO write: %s ***\r\n",DP_FAULT);
+            return false;
+        }
+        handleProfileExact=locallyControlled==1;
+    }
+    Markerf("[BF] K_HANDLEACT local-control preflight: ActorInfo::IsLocallyControlled[base+0x44CACC0]=%d ; Role=%u (require 3) ; native handle wrapper=base+0x4493420 ; allowRemote=false ; exact=%s\r\n",
+            locallyControlled,(unsigned)role,(role==3&&handleProfileExact)?"yes":"NO");
+    handleProfileExact=handleProfileExact&&role==3;
+#endif
+    bool baselineTagsExact=BfExactNoChargeFailure(&s_bfBaseRelevant);
+    bool treatmentExact=(int32_t)KBFCDOCHARGES==1&&fieldsOk&&cdoUses==1&&savedCdoCharges==0&&
+                        freshPrimaryCharges==1&&cdoCooldown==1&&cdoCost==0&&baselineBaseCan==0&&
+                        baselineTagsExact&&!strcmp(manaClass,"LokiAttributeSet")&&
+                        manaBase==10.0f&&manaCurrent==10.0f&&handleProfileExact;
+    Markerf("[BF] K_CDOCHARGE preflight: CDO!=primary=%s reflected UsesCharges@0x%X=%u CurrentCharges@0x%X CDO=%d primary=%d ; CDO gates=%d/%d base=%d ; Mana %s %g/%g ; target=%d exact=%s\r\n",
+            (cdo!=abilityInst)?"yes":"NO",usesOff,(unsigned)cdoUses,chargesOff,savedCdoCharges,
+            freshPrimaryCharges,cdoCooldown,cdoCost,baselineBaseCan,manaClass,(double)manaBase,
+            (double)manaCurrent,(int32_t)KBFCDOCHARGES,treatmentExact?"yes":"NO");
+    if(!treatmentExact){
+        Marker("[BF] *** K_CDOCHARGE REFUSED: exact fresh CDO 1/0 NoCharges+Cost baseline and Mana10 profile are required; nothing written. ***\r\n");
+        return false;
+    }
+
+#if KBFNATURALINPUT
+    // Publish the complete restoration tuple before the shared CDO is dirtied.  From this point on,
+    // every natural-input error path merely requests abort; only the worker may restore, and only
+    // after FsThunk proves that this setup-owning ProcessInternal call has returned.
+    if(!BfS147ClaimCdoOwnership(asc,abilityCls,cdo,chargesOff,savedCdoCharges)){
+        Marker("[S147] REFUSED: could not reserve exclusive worker restoration ownership; nothing written.\r\n");
+        return false;
+    }
+    __try{
+#endif
+    *(int32_t*)(cdo+chargesOff)=1;
+    int32_t cdoAfterWrite=*(int32_t*)(cdo+chargesOff);
+    int32_t primaryAfterWrite=*(int32_t*)(abilityInst+chargesOff);
+    Markerf("[BF] K_CDOCHARGE WRITE ONLY shared CDO CurrentCharges %d -> %d (target=1); primary remains %d %s\r\n",
+            savedCdoCharges,cdoAfterWrite,primaryAfterWrite,
+            (cdoAfterWrite==1&&primaryAfterWrite==1)?"OK":"*** READBACK/ISOLATION FAILED ***");
+    if(cdoAfterWrite!=1||primaryAfterWrite!=1){
+#if KBFNATURALINPUT
+        return BfS147AbortSetup("CDO_WRITE_READBACK");
+#else
+        BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges);
+        return false;
+#endif
+    }
+
+    Marker("[BF] K_CDOCHARGE treatment CDO-receiver leaf census after the one-field write:\r\n");
+    int treatmentCooldown=BfCallAbilityGate(cdoCooldownFn,cdo,wantedHandle,actorInfo,"CDO.TREATMENT.CheckCooldown");
+    if(treatmentCooldown<0){
+#if KBFNATURALINPUT
+        return BfS147AbortSetup("TREATMENT_COOLDOWN_FAULT");
+#else
+        BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges); return false;
+#endif
+    }
+    int treatmentCost=BfCallAbilityGate(cdoCostFn,cdo,wantedHandle,actorInfo,"CDO.TREATMENT.CheckCost");
+    if(treatmentCost<0){
+#if KBFNATURALINPUT
+        return BfS147AbortSetup("TREATMENT_COST_FAULT");
+#else
+        BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges); return false;
+#endif
+    }
+    primaryAfterWrite=SafeReadable((void*)(abilityInst+chargesOff),4)?*(int32_t*)(abilityInst+chargesOff):-2147483647;
+    cdoAfterWrite=SafeReadable((void*)(cdo+chargesOff),4)?*(int32_t*)(cdo+chargesOff):-2147483647;
+    Markerf("[BF] K_CDOCHARGE treatment receipt: CDO CurrentCharges=%d gates=%d/%d ; primary CurrentCharges=%d\r\n",
+            cdoAfterWrite,treatmentCooldown,treatmentCost,primaryAfterWrite);
+    if(cdoAfterWrite!=1||primaryAfterWrite!=1){
+#if KBFNATURALINPUT
+        return BfS147AbortSetup("TREATMENT_READBACK");
+#else
+        BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges);
+        return false;
+#endif
+    }
+    if(treatmentCooldown!=1||treatmentCost!=1){
+        Marker("[BF] *** K_CDOCHARGE RESULT: charge=1 was insufficient to open the exact CDO leaves; base/full intentionally not called. TryActivate compiled out. ***\r\n");
+#if KBFNATURALINPUT
+        return BfS147AbortSetup("TREATMENT_GATES_CLOSED");
+#else
+        bool restored=BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges);
+        return restored;
+#endif
+    }
+
+    int treatmentBaseCan=BfCallBaseCanActivate(cdo,wantedHandle,actorInfo,&s_bfTreatmentRelevant,"TREATMENT");
+    if(treatmentBaseCan<0){
+#if KBFNATURALINPUT
+        return BfS147AbortSetup("TREATMENT_BASE_FAULT");
+#else
+        BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges); return false;
+#endif
+    }
+    if(!BfExplainClosedBase(cdo,asc,actorInfo,tagReqFn,should,inhibited,inputBlocked,
+                            treatmentCooldown,treatmentCost,treatmentBaseCan,"TREATMENT")){
+#if KBFNATURALINPUT
+        return BfS147AbortSetup("TREATMENT_BASE_EXPLAIN");
+#else
+        BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges); return false;
+#endif
+    }
+    int treatmentFullCan=-1;
+    if(treatmentBaseCan==1){
+        treatmentFullCan=BfCallFullCanActivate(asc,abilityInst,abilityCls,wantedHandle);
+        if(treatmentFullCan<0){
+#if KBFNATURALINPUT
+            return BfS147AbortSetup("TREATMENT_FULL_FAULT");
+#else
+            BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges); return false;
+#endif
+        }
+    } else{
+        Marker("[BF] K_CDOCHARGE full Loki CDO query intentionally not called because its first base predicate remained false.\r\n");
+    }
+    int directActivation=-1;
+    bool restored=false;
+#if KBFNATURALINPUT
+    if(treatmentBaseCan!=1||treatmentFullCan!=1){
+        Marker("[S147] REFUSED before input window publication; requesting worker-owned restore after callback unwind. No activation call was made.\r\n");
+        return BfS147AbortSetup("FINAL_ELIGIBILITY_NOT_OPEN");
+    }
+    if(baseCanOut)*baseCanOut=treatmentBaseCan;
+    if(fullCanOut)*fullCanOut=treatmentFullCan;
+    if(activationOut)*activationOut=-1;
+    Marker("[S147] eligibility handoff exact: CDO leaves/base/full=1/1/1/1; committing observation state with no shim-originated activation call.\r\n");
+    if(!BfArmNaturalInput(asc,abilityInst,abilityCls,cdo,wantedHandle,actorInfo,
+                          diagnosticManaSet,chargesOff,savedCdoCharges,treatmentFullCan))
+        return BfS147AbortSetup("FINAL_NATURAL_PREFLIGHT");
+    return true; // BfArmNaturalInput's final operation published SETUP_ARMED; return immediately.
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        BfS147AbortSetup("POST_RESERVATION_SEH");
+        return false;
+    }
+#elif KBFHANDLEACT
+    static const uint8_t kTryHandlePrologue[16]={
+        0x48,0x8B,0xC4,0x4C,0x89,0x48,0x20,0x55,0x53,0x48,0x8D,0x68,0xA1,0x48,0x81,0xEC
+    };
+    uintptr_t primaryVtable=SafeReadable((void*)abilityInst,8)?*(uintptr_t*)abilityInst:0;
+    uintptr_t primaryIsActiveFn=(LooksLikePtr(primaryVtable)&&SafeReadable((void*)(primaryVtable+0x2F0),8))
+                                ?*(uintptr_t*)(primaryVtable+0x2F0):0;
+    bool prologueExact=SafeReadable((void*)(g_modBase+0x4493420),sizeof(kTryHandlePrologue))&&
+                       !memcmp((const void*)(g_modBase+0x4493420),kTryHandlePrologue,sizeof(kTryHandlePrologue));
+    int primaryActiveBefore=-1;
+    if(primaryIsActiveFn==g_modBase+0x4455540){
+        __try{ primaryActiveBefore=((PFN_BFISACTIVE)primaryIsActiveFn)((void*)abilityInst)?1:0; }
+        __except(SEH_FILTER(GetExceptionInformation())){
+            restored=BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges);
+            Markerf("[BF] *** K_HANDLEACT primary IsActive census FAULTED before activation: %s ; CDO restore=%s ***\r\n",
+                    DP_FAULT,restored?"yes":"NO");
+            return false;
+        }
+    }
+
+    // Re-sample the authority/local actor state after every eligibility engine call. Then rescan
+    // Items last, so no engine call can invalidate the spec pointer between this census and CALL NOW.
+    uintptr_t finalActorInfo=0,finalPrimaryActorInfo=0,finalRoleActor=0,finalActorInfoAsc=0;
+    int32_t finalPrimaryHandle=0x7fffffff;
+    uint8_t finalRole=0xFF;
+    int finalLocallyControlled=-1;
+    __try{
+        if(SafeReadable((void*)(asc+0x418),8)) finalActorInfo=*(uintptr_t*)(asc+0x418);
+        if(SafeReadable((void*)(abilityInst+0x3A8),16)){
+            finalPrimaryActorInfo=*(uintptr_t*)(abilityInst+0x3A8);
+            finalPrimaryHandle=*(int32_t*)(abilityInst+0x3B0);
+        }
+        if(LooksLikePtr(finalActorInfo)&&SafeReadable((void*)finalActorInfo,0x48)){
+            PFN_BFWEAKGET weakGet=(PFN_BFWEAKGET)(g_modBase+0x137DE80);
+            finalRoleActor=weakGet((const void*)(finalActorInfo+0x10));
+            finalActorInfoAsc=weakGet((const void*)(finalActorInfo+0x20));
+            if(LooksLikePtr(finalRoleActor)&&SafeReadable((void*)(finalRoleActor+0x160),1))
+                finalRole=*(uint8_t*)(finalRoleActor+0x160);
+            finalLocallyControlled=((PFN_BFLOCALCONTROL)(g_modBase+0x44CACC0))((void*)finalActorInfo)?1:0;
+        }
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        restored=BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges);
+        Markerf("[BF] *** K_HANDLEACT final local-authority revalidation FAULTED: %s ; CDO restore=%s ***\r\n",
+                DP_FAULT,restored?"yes":"NO");
+        return false;
+    }
+
+    uintptr_t finalSpec=0;
+    int finalSpecCount=0;
+    int32_t finalSpecNum=-1,finalSpecMax=-1;
+#if KBFHANDLEMISS
+    const int32_t callHandle=-1; // FGameplayAbilitySpecHandle::INDEX_NONE; must be absent in the final census.
+    const char* handleMode="INDEX_NONE_ENTRY_CONTROL";
+#else
+    const int32_t callHandle=wantedHandle;
+    const char* handleMode="VALID_ACTIVATION";
+#endif
+    int callHandleMatches=0;
+    bool finalSpecHeaderOk=BfFindCurrentExactSpec(asc,wantedHandle,cdo,&finalSpec,&finalSpecCount,
+                                                  &finalSpecNum,&finalSpecMax,callHandle,&callHandleMatches);
+    int32_t finalInputId=(finalSpecHeaderOk&&finalSpecCount==1&&SafeReadable((void*)(finalSpec+0x24),4))
+                         ?*(int32_t*)(finalSpec+0x24):0x7fffffff;
+    uint8_t primaryActiveRawBefore=SafeReadable((void*)(abilityInst+0x408),3)?*(uint8_t*)(abilityInst+0x408):0xFF;
+    uint8_t activeCountBefore=(finalSpecHeaderOk&&finalSpecCount==1&&SafeReadable((void*)(finalSpec+0x38),1))
+                              ?*(uint8_t*)(finalSpec+0x38):0xFF;
+    uint8_t specFlagsBefore=(finalSpecHeaderOk&&finalSpecCount==1&&SafeReadable((void*)(finalSpec+0x39),1))
+                            ?*(uint8_t*)(finalSpec+0x39):0xFF;
+    bool directExact=treatmentBaseCan==1&&treatmentFullCan==1&&locallyControlled==1&&role==3&&
+                     finalActorInfo==actorInfo&&finalPrimaryActorInfo==actorInfo&&
+                     finalPrimaryHandle==wantedHandle&&finalActorInfoAsc==asc&&
+                     finalLocallyControlled==1&&finalRole==3&&
+                     finalSpecHeaderOk&&finalSpecCount==1&&finalInputId==(int32_t)KBFINPUTID&&
+                     ((int32_t)KBFHANDLEMISS==0?callHandleMatches==1:
+                       ((int32_t)KBFHANDLEMISS==1&&callHandle==-1&&callHandleMatches==0))&&
+                     prologueExact&&primaryActiveBefore==0&&
+                     SafeReadable((void*)(finalSpec+0x38),2)&&primaryIsActiveFn==g_modBase+0x4455540&&
+                     primaryActiveRawBefore==0&&
+                     SafeReadable((void*)(abilityInst+chargesOff),4)&&
+                     SafeReadable((void*)(diagnosticManaSet+0x218),8)&&
+                     *(int32_t*)(cdo+chargesOff)==1&&*(int32_t*)(abilityInst+chargesOff)==1&&
+                     *(float*)(diagnosticManaSet+0x218)==10.0f&&*(float*)(diagnosticManaSet+0x21C)==10.0f;
+    directExact=directExact&&activeCountBefore==0&&specFlagsBefore==0;
+    Markerf("[BF] K_HANDLEACT final preflight: mode=%s target=base+0x4493420 prologueExact=%s local=%d->%d Role=%u->%u ActorInfo stable=%s ValidHandle=%d/%d CallHandle=%d callMatches=%d Spec=0x%llX exactMatches=%d Items=%d/%d InputID=%d ActiveCount=%u flags@+0x39=0x%02X primary.IsActive[vtbl+0x2F0]=0x%llX result=%d raw@+0x408=%u fullCan=%d exact=%s\r\n",
+            handleMode,prologueExact?"yes":"NO",
+            locallyControlled,finalLocallyControlled,(unsigned)role,(unsigned)finalRole,
+            (finalActorInfo==actorInfo&&finalPrimaryActorInfo==actorInfo&&finalActorInfoAsc==asc)?"yes":"NO",
+            wantedHandle,finalPrimaryHandle,callHandle,callHandleMatches,(unsigned long long)finalSpec,
+            finalSpecCount,finalSpecNum,finalSpecMax,
+            finalInputId,(unsigned)activeCountBefore,(unsigned)specFlagsBefore,
+            (unsigned long long)primaryIsActiveFn,primaryActiveBefore,(unsigned)primaryActiveRawBefore,
+            treatmentFullCan,directExact?"yes":"NO");
+    if(!directExact){
+        restored=BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges);
+        Marker("[BF] *** K_HANDLEACT REFUSED: exact local-authority/all-gates-open/spec-fresh/native-target contract failed; activation not called. ***\r\n");
+        return false;
+    }
+
+    alignas(16) uint8_t activationAux[0x30]={0};
+    Markerf("[BF] ---- K_HANDLEACT CALL NOW: mode=%s direct native TryActivateAbility(handle=%d) base+0x4493420; allowRemote=false; zeroed aligned 0x30 aux; reflected ByClass NOT called ----\r\n",
+            handleMode,callHandle);
+    __try{
+        directActivation=((PFN_BFTRYHANDLE)(g_modBase+0x4493420))((void*)asc,callHandle,0,(const void*)activationAux)?1:0;
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        restored=BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges);
+        Markerf("[BF] *** K_HANDLEACT native handle wrapper FAULTED after entry: %s ; CDO restore=%s ***\r\n",
+                DP_FAULT,restored?"yes":"NO");
+        return false;
+    }
+
+    // The shared CDO is restored immediately after the native call returns, before any post-call
+    // engine query or receipt marker. Raw field reads below cannot delay or confound CommitCost.
+    restored=BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges);
+    uintptr_t postSpec=0;
+    int postSpecCount=0;
+    int32_t postSpecNum=-1,postSpecMax=-1;
+    bool postSpecHeaderOk=BfFindCurrentExactSpec(asc,wantedHandle,cdo,&postSpec,&postSpecCount,
+                                                 &postSpecNum,&postSpecMax);
+    bool postSpecCurrent=postSpecHeaderOk&&postSpecCount==1&&SafeReadable((void*)(postSpec+0x38),2);
+    uint8_t activeCountAfter=postSpecCurrent?*(uint8_t*)(postSpec+0x38):0xFF;
+    uint8_t specFlagsAfter=postSpecCurrent?*(uint8_t*)(postSpec+0x39):0xFF;
+    uint8_t primaryActiveRawAfter=SafeReadable((void*)(abilityInst+0x408),1)?*(uint8_t*)(abilityInst+0x408):0xFF;
+    uint8_t primaryCancelableAfter=SafeReadable((void*)(abilityInst+0x409),1)?*(uint8_t*)(abilityInst+0x409):0xFF;
+    uint8_t primaryBlockingAfter=SafeReadable((void*)(abilityInst+0x40A),1)?*(uint8_t*)(abilityInst+0x40A):0xFF;
+    int32_t primaryChargesAfter=SafeReadable((void*)(abilityInst+chargesOff),4)?*(int32_t*)(abilityInst+chargesOff):-2147483647;
+    float manaBaseAfter=SafeReadable((void*)(diagnosticManaSet+0x218),8)?*(float*)(diagnosticManaSet+0x218):-99999.0f;
+    float manaCurrentAfter=SafeReadable((void*)(diagnosticManaSet+0x218),8)?*(float*)(diagnosticManaSet+0x21C):-99999.0f;
+    Markerf("[BF] *** K_HANDLEACT RETURN RECEIPT: mode=%s CallHandle=%d AL=%d ; current valid Spec membership=%s ptr=0x%llX matches=%d Items=%d/%d ; ActiveCount %u->%u flags 0x%02X->0x%02X ; primary active/cancelable/blocking 0/?/?->%u/%u/%u ; CurrentCharges 1->%d ; Mana Base/Current 10/10->%g/%g ; CDO restored=%s ***\r\n",
+            handleMode,callHandle,directActivation,postSpecCurrent?"exact":"missing/stale",(unsigned long long)postSpec,
+            postSpecCount,postSpecNum,postSpecMax,(unsigned)activeCountBefore,(unsigned)activeCountAfter,(unsigned)specFlagsBefore,
+            (unsigned)specFlagsAfter,(unsigned)primaryActiveRawAfter,(unsigned)primaryCancelableAfter,
+            (unsigned)primaryBlockingAfter,primaryChargesAfter,(double)manaBaseAfter,(double)manaCurrentAfter,
+            restored?"yes":"NO");
+    if(activationOut)*activationOut=directActivation;
+#else
+    restored=BfRestoreDiagnosticCdoCharge(cdo,chargesOff,savedCdoCharges);
+#endif
+#if !KBFNATURALINPUT
+    if(baseCanOut)*baseCanOut=treatmentBaseCan;
+    if(fullCanOut)*fullCanOut=treatmentFullCan;
+#if KBFHANDLEACT
+    Markerf("[BF] *** K_CDOCHARGE + K_HANDLEACT COMPLETE: CDO leaves 1/1 base=%d full=%d directHandleActivation=%d; CDO restored=%s; reflected ByClass never called. ***\r\n",
+            treatmentBaseCan,treatmentFullCan,directActivation,restored?"yes":"NO");
+#else
+    Markerf("[BF] *** K_CDOCHARGE TREATMENT COMPLETE: CDO leaves 1/1 base=%d full=%d (-1=not called after base false); CDO restored=%s; TryActivate intentionally NOT called. ***\r\n",
+            treatmentBaseCan,treatmentFullCan,restored?"yes":"NO");
+#endif
+    return restored;
+#endif
+#else
+    if(baseCanOut)*baseCanOut=baselineBaseCan;
+    if(!BfExplainClosedBase(cdo,asc,actorInfo,tagReqFn,should,inhibited,inputBlocked,
+                            cdoCooldown,cdoCost,baselineBaseCan,"BASELINE")) return false;
+    return true;
+#endif
+}
+
+#if !KBFNATURALINPUT
+static int BfActivate(uintptr_t asc,uintptr_t abilCls,bool phase2){
+    Marker("[BF] ---- K_ACTIVATE: TryActivateAbilityByClass(Ability, bAllowRemoteActivation=true) ----\r\n");
+    void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(asc),"TryActivateAbilityByClass",&f,&th,&ch);
+    if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+        uint32_t oa=ParamOffset(ch,"InAbilityToActivate"), ob=ParamOffset(ch,"bAllowRemoteActivation"), orr=ParamOffset(ch,"ReturnValue");
+        uint8_t* pb=(uint8_t*)g_pbuf;
+        if(oa==0xFFFFFFFF||oa+sizeof(uintptr_t)>sizeof(g_pbuf)||ob==0xFFFFFFFF||ob>=sizeof(g_pbuf)){
+            Markerf("[BF] K_ACTIVATE: invalid param layout Ability@0x%X AllowRemote@0x%X buffer=%u; activation NOT called.\r\n",
+                    oa,ob,(unsigned)sizeof(g_pbuf));
+            return -1;
+        }
+        *(uintptr_t*)(pb+oa)=abilCls;
+        pb[ob]=1;
+        bool flt=CallNativeGuarded(f,th,ch,(void*)asc,g_pbuf,g_rbuf);
+        int ret=(int)(((uint8_t*)g_rbuf)[0]&1);
+        int paramsRet=(orr!=0xFFFFFFFF&&orr<sizeof(g_pbuf))?(int)(pb[orr]&1):-1;
+        Markerf("[BF] TryActivateAbilityByClass %s ; RESULT_DECL=%d ; params.ReturnValue@0x%X=%d ; %s\r\n",
+                flt?"FAULTED":"ok",ret,orr,paramsRet,
+                ret?"*** ABILITY ACTIVATED ***":(phase2?"(not activated -- phase-2 evidence above localizes the remaining blocker)":"(not activated -- may need AvatarActor bound + a valid target)"));
+        return flt?-1:ret;
+    }
+    Marker("[BF] K_ACTIVATE: TryActivateAbilityByClass not resolved on the ASC.\r\n");
+    return -1;
+}
+#endif
+
+static void BfFinish(int botA,int heroA){
+    int botC=-1,heroC=-1;
+    Sleep((DWORD)(KBFSETTLEMS));
+    BsScanWorld("BF-A2",&botC,&heroC,nullptr,nullptr);
+    Markerf("[BF] post census: botOrAIControllers %d -> %d ; heroCharacters %d -> %d\r\n",botA,botC,heroA,heroC);
+    Marker("[BF] ===== RM_BOTFIGHT done =====\r\n");
+}
+
+#if KBFSELFCAL
+static void BfS148FinishTerminal(){
+    InterlockedExchange64(&g_s148TimeoutTick,0);
+    InterlockedExchange(&g_s148Phase,BF_S148_DONE);
+    BfS148DoneStore();
+}
+
+static void BfS148DoCalibration(){
+    static BfS148HealthTarget s_seeded{};
+    static uint32_t s_originalBase=0,s_originalCurrent=0;
+    static uint32_t s_seedBase=0,s_seedCurrent=0;
+    static uint32_t s_immediateBase=0,s_immediateCurrent=0;
+    static bool s_immediateReceipt=false;
+    static ULONGLONG s_callTick=0,s_laterNotBefore=0;
+
+    LONG phase=InterlockedCompareExchange(&g_s148Phase,0,0);
+    if(phase==BF_S148_DONE){ BfS148DoneStore(); return; }
+    if(phase==BF_S148_CALL_ISSUED) return; // one-shot guard, including any unexpected nested dispatch.
+    if(phase==BF_S148_WAIT_LATER){
+        ULONGLONG now=GetTickCount64();
+        if(now<s_laterNotBefore) return; // distinct later callback; never sleep on the game thread.
+        if(InterlockedCompareExchange(&g_s148Phase,BF_S148_CALL_ISSUED,
+                                      BF_S148_WAIT_LATER)!=BF_S148_WAIT_LATER) return;
+
+        BfS148HealthTarget later{};
+        uint32_t laterIssues=BfS148ResolveHealthTarget(0,0,0,true,&later,true);
+        bool laterIdentity=laterIssues==S148_ISSUE_NONE&&BfS148SameIdentity(s_seeded,later);
+        uint32_t laterBase=later.facts.originalBaseBits;
+        uint32_t laterCurrent=later.facts.originalCurrentBits;
+        ULONGLONG elapsed=now>=s_callTick?now-s_callTick:0;
+
+        if(!laterIdentity){
+            Markerf("[S148] LATER_IDENTITY_CHANGED RESULT=LATER_IDENTITY_CHANGED issues=0x%X "
+                    "elapsed=%llums immediateBits=%08X/%08X laterBits=%08X/%08X\r\n",
+                    laterIssues,(unsigned long long)elapsed,s_immediateBase,s_immediateCurrent,
+                    laterBase,laterCurrent);
+        } else if(!s_immediateReceipt){
+            Markerf("[S148] IMMEDIATE_MISMATCH RESULT=IMMEDIATE_MISMATCH elapsed=%llums "
+                    "seedBits=%08X/%08X immediateBits=%08X/%08X laterBits=%08X/%08X\r\n",
+                    (unsigned long long)elapsed,s_seedBase,s_seedCurrent,
+                    s_immediateBase,s_immediateCurrent,laterBase,laterCurrent);
+        } else if(!S148LaterReceipt(s_immediateReceipt,laterIdentity,laterCurrent)){
+            Markerf("[S148] LATER_MISMATCH RESULT=LATER_MISMATCH elapsed=%llums "
+                    "immediateBits=%08X/%08X laterBits=%08X/%08X\r\n",
+                    (unsigned long long)elapsed,s_immediateBase,s_immediateCurrent,
+                    laterBase,laterCurrent);
+        } else{
+            Markerf("[S148] RESULT=SELF_DAMAGE_CALIBRATED originalBits=%08X/%08X "
+                    "seedBits=%08X/%08X immediateBits=%08X/%08X laterBits=%08X/%08X "
+                    "elapsed=%llums callCount=1\r\n",
+                    s_originalBase,s_originalCurrent,s_seedBase,s_seedCurrent,
+                    s_immediateBase,s_immediateCurrent,laterBase,laterCurrent,
+                    (unsigned long long)elapsed);
+        }
+        BfS148FinishTerminal(); return;
+    }
+
+    // Reserve the one-shot before any mutation. OnPI already suppresses nested calls with g_inHook,
+    // and this phase is a second independent guard against a duplicate AdjustHealth call.
+    if(InterlockedCompareExchange(&g_s148Phase,BF_S148_CALL_ISSUED,
+                                  BF_S148_INITIAL)!=BF_S148_INITIAL) return;
+    Marker("[S148] ===== isolated self-owned ASC damage calibration =====\r\n");
+    Markerf("[S148] policy KBFARMS=0 seedBits=%08X/%08X delta=-250 expectedCurrent=%08X "
+            "laterMin=%dms laterTimeoutGrace=%dms\r\n",
+            S148_HEALTH_SEED_BITS,S148_HEALTH_SEED_BITS,S148_HEALTH_EXPECTED_BITS,
+            (int)KBFSELFLATERMS,(int)KBFSELFTIMEOUTMS);
+    Marker(S148_OWNER_CENSUS_CHAIN_MODE_MARKER);
+
+    BfS148HealthTarget target{};
+    uint32_t issues=BfS148ResolveHealthTarget(0,0,0,true,&target,true);
+    if(issues!=S148_ISSUE_NONE){
+        Markerf("[S148] PREFLIGHT_REFUSED RESULT=PREFLIGHT_REFUSED issues=0x%X; "
+                "no Health write and no AdjustHealth call\r\n",issues);
+        BfS148FinishTerminal(); return;
+    }
+
+    // Resolve the exact native wrapper and its typed input before Health is touched. ResolveFuncNative
+    // skips BP overrides; FunctionFlags and the FProperty chain independently prove native/float/input.
+    void* adjustFn=nullptr; uintptr_t adjustThunk=0,adjustChild=0;
+    ResolveFuncNative(target.ascClass,"AdjustHealth",&adjustFn,&adjustThunk,&adjustChild);
+    uintptr_t deltaProp=0; uint32_t deltaOff=0xFFFFFFFF,deltaElem=0,deltaArrayDim=0;
+    uint64_t deltaFlags=0;
+    int adjustParmCount=0; bool adjustChainComplete=false;
+    bool deltaTyped=BfS148ResolveFloatInputParam(adjustChild,"HealthDelta",&deltaProp,
+                                                 &deltaOff,&deltaElem,&deltaArrayDim,&deltaFlags,
+                                                 &adjustParmCount,
+                                                 &adjustChainComplete);
+    uintptr_t adjustClass=GcAlive((uintptr_t)adjustFn)?ClassOf((uintptr_t)adjustFn):0;
+    uintptr_t adjustOwner=GcAlive((uintptr_t)adjustFn)&&
+        SafeReadable((void*)((uintptr_t)adjustFn+0x28),sizeof(uintptr_t))?
+        *(uintptr_t*)((uintptr_t)adjustFn+0x28):0;
+    char adjustClassChain[256];
+    bool functionClassExact=BfS148ExactDirectClass(adjustClass,"Function")&&
+        BfS148ExactChain(adjustClass,"Function",adjustClassChain,sizeof(adjustClassChain))==BF_S148_CHAIN_MATCH;
+    bool functionOwnerExact=BfS148ExactDirectClass(adjustOwner,"LokiAbilitySystemComponent");
+    uint32_t functionFlags=GcAlive((uintptr_t)adjustFn)&&
+        SafeReadable((void*)((uintptr_t)adjustFn+0xB8),4)?
+        *(uint32_t*)((uintptr_t)adjustFn+0xB8):0;
+    uint32_t propertiesSize=GcAlive((uintptr_t)adjustFn)&&
+        SafeReadable((void*)((uintptr_t)adjustFn+USTRUCT_PROPSIZE),4)?
+        *(uint32_t*)((uintptr_t)adjustFn+USTRUCT_PROPSIZE):0;
+    uintptr_t declaredChild=GcAlive((uintptr_t)adjustFn)&&
+        SafeReadable((void*)((uintptr_t)adjustFn+UFUNC_CHILDPROPS),8)?
+        *(uintptr_t*)((uintptr_t)adjustFn+UFUNC_CHILDPROPS):0;
+    bool nativeFlag=(functionFlags&0x400u)!=0; // stock EFunctionFlags::FUNC_Native.
+    bool thunkInImage=adjustThunk>=g_modBase&&(adjustThunk-g_modBase)<0x0B000000ULL;
+    bool thunkExact=adjustThunk==g_modBase+0x5516610;
+    bool frameBounded=propertiesSize>0&&propertiesSize<=sizeof(g_pbuf)&&
+        deltaElem<=propertiesSize&&deltaOff<=propertiesSize-deltaElem;
+    bool adjustResolved=GcAlive((uintptr_t)adjustFn)&&functionClassExact&&functionOwnerExact&&
+        nativeFlag&&thunkInImage&&thunkExact&&
+        adjustThunk!=g_modBase+kPiRva&&LooksLikePtr(adjustChild)&&
+        declaredChild==adjustChild&&SafeReadable((void*)adjustChild,FIELD_NEXT+8)&&
+        deltaTyped&&frameBounded;
+    Markerf("[S148] AdjustHealth native resolve ufunc=0x%llX flags=0x%08X thunk=0x%llX "
+            "class=0x%llX functionClassExact=%s owner=0x%llX ownerExact=%s thunkExact=%s "
+            "child=0x%llX declaredChild=0x%llX "
+            "PropertiesSize=%u parmCount=%d chainComplete=%s HealthDeltaProp=0x%llX "
+            "off=0x%X size=%u arrayDim=%u propFlags=0x%016llX "
+            "resolved=%s\r\n",
+            (unsigned long long)(uintptr_t)adjustFn,functionFlags,(unsigned long long)adjustThunk,
+            (unsigned long long)adjustClass,functionClassExact?"yes":"NO",
+            (unsigned long long)adjustOwner,functionOwnerExact?"yes":"NO",thunkExact?"yes":"NO",
+            (unsigned long long)adjustChild,(unsigned long long)declaredChild,propertiesSize,
+            adjustParmCount,adjustChainComplete?"yes":"NO",
+            (unsigned long long)deltaProp,deltaOff,deltaElem,deltaArrayDim,
+            (unsigned long long)deltaFlags,adjustResolved?"yes":"NO");
+    if(!adjustResolved){
+        Marker("[S148] ADJUST_UNRESOLVED RESULT=ADJUST_UNRESOLVED; exact native wrapper and "
+               "one FloatProperty input named HealthDelta were not proven, no Health write, callCount=0\r\n");
+        BfS148FinishTerminal(); return;
+    }
+
+    // Re-run the entire owner, registration, reflected-property, layout, and struct-payload proof
+    // after native-call resolution and immediately before the first mutable byte. This closes the
+    // authority window over all retained census containers; identity must match the earlier proof.
+    BfS148HealthTarget preSeed{};
+    uint32_t preSeedIssues=BfS148ResolveHealthTarget(0,0,0,true,&preSeed,true);
+    bool preSeedIdentity=preSeedIssues==S148_ISSUE_NONE&&BfS148SameIdentity(target,preSeed);
+    Markerf("[S148] PRESEED_REVALIDATION issues=0x%X identityStable=%s censusClosure=%u "
+            "structPayload=%u\r\n",
+            preSeedIssues,preSeedIdentity?"yes":"NO",
+            (unsigned)preSeed.facts.censusClosureValid,
+            (unsigned)preSeed.facts.structPayloadValid);
+    if(!preSeedIdentity){
+        Markerf("[S148] PRESEED_REFUSED RESULT=PRESEED_REFUSED issues=0x%X; "
+                "full mutation authority changed, no Health write, callCount=0\r\n",preSeedIssues);
+        BfS148FinishTerminal(); return;
+    }
+    target=preSeed;
+
+    s_originalBase=target.facts.originalBaseBits;
+    s_originalCurrent=target.facts.originalCurrentBits;
+    uintptr_t healthPair=target.set+target.healthOff+0x8;
+    const uint64_t seedPair=((uint64_t)S148_HEALTH_SEED_BITS<<32)|S148_HEALTH_SEED_BITS;
+    bool seedFaulted=false;
+    __try{
+        *(volatile uint64_t*)healthPair=seedPair;
+        MemoryBarrier();
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){ seedFaulted=true; }
+
+    BfS148HealthTarget seeded{};
+    uint32_t seedIssues=BfS148ResolveHealthTarget(0,0,0,true,&seeded,true);
+    bool seedIdentity=seedIssues==S148_ISSUE_NONE&&BfS148SameIdentity(target,seeded);
+    s_seedBase=seeded.facts.originalBaseBits;
+    s_seedCurrent=seeded.facts.originalCurrentBits;
+    bool seedExact=!seedFaulted&&seedIdentity&&S148SeedExact(s_seedBase,s_seedCurrent);
+    Markerf("[S148] seed originalBits=%08X/%08X readbackBits=%08X/%08X "
+            "faulted=%s identityStable=%s exact=%s\r\n",
+            s_originalBase,s_originalCurrent,s_seedBase,s_seedCurrent,
+            seedFaulted?"YES":"no",seedIdentity?"yes":"NO",seedExact?"yes":"NO");
+    if(!seedExact){
+        Markerf("[S148] SEED_REFUSED RESULT=SEED_REFUSED faulted=%u identityStable=%u "
+                "issues=0x%X; AdjustHealth not called, mutationMayHaveOccurred=yes, "
+                "processDisposable=yes\r\n",
+                (unsigned)seedFaulted,(unsigned)seedIdentity,seedIssues);
+        BfS148FinishTerminal(); return;
+    }
+    s_seeded=seeded;
+
+    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+    const uint32_t deltaBits=0xC37A0000u; // -250.0f
+    memcpy((uint8_t*)g_pbuf+deltaOff,&deltaBits,sizeof(deltaBits));
+    Markerf("[S148] CALL_ISSUED AdjustHealth HealthDeltaBits=%08X callCount=1\r\n",deltaBits);
+    bool callFaulted=CallNativeGuarded(adjustFn,adjustThunk,adjustChild,
+                                       (void*)s_seeded.asc,g_pbuf,g_rbuf);
+    if(callFaulted){
+        Markerf("[S148] ADJUST_FAULTED RESULT=ADJUST_FAULTED callCount=1 %s "
+                "processDisposable=yes\r\n",DP_FAULT);
+        BfS148FinishTerminal(); return;
+    }
+
+    BfS148HealthTarget immediate{};
+    uint32_t immediateIssues=BfS148ResolveHealthTarget(0,0,0,true,&immediate,true);
+    bool immediateIdentity=immediateIssues==S148_ISSUE_NONE&&
+                           BfS148SameIdentity(s_seeded,immediate);
+    s_immediateBase=immediate.facts.originalBaseBits;
+    s_immediateCurrent=immediate.facts.originalCurrentBits;
+    s_immediateReceipt=S148ImmediateReceipt(true,false,immediateIdentity,s_immediateCurrent);
+    s_callTick=GetTickCount64(); s_laterNotBefore=s_callTick+(ULONGLONG)KBFSELFLATERMS;
+    ULONGLONG timeoutTick=s_laterNotBefore+(ULONGLONG)KBFSELFTIMEOUTMS;
+    Markerf("[S148] immediate return issues=0x%X identityStable=%s HealthBits=%08X/%08X "
+            "receipt=%s; returning to game until notBefore=%llu timeout=%llu\r\n",
+            immediateIssues,immediateIdentity?"yes":"NO",s_immediateBase,s_immediateCurrent,
+            s_immediateReceipt?"yes":"NO",(unsigned long long)s_laterNotBefore,
+            (unsigned long long)timeoutTick);
+    InterlockedExchange64(&g_s148TimeoutTick,(LONGLONG)timeoutTick);
+    MemoryBarrier();
+    InterlockedExchange(&g_s148Phase,BF_S148_WAIT_LATER);
+}
+#endif
+
+static void DoBotFight(){
+#if KBFSELFCAL
+    BfS148DoCalibration();
+#elif KBFBINDONLY
+    BfS149DoBindOnlyGuarded();
+#else
+    // 0=first phase not run, 1=grant returned a handle and later callbacks are verifying durability,
+    // 2=complete/refused. Setting phase 2 before first-phase work makes every destructive action one-shot.
+    static int s_bfPhase=0;
+    static uintptr_t s_bfAsc=0,s_bfAbilCls=0,s_bfHero=0;
+    static int32_t s_bfBaselineNum=-1,s_bfPostGrantNum=-1,s_bfHandle=0;
+    static ULONGLONG s_bfCommitDeadline=0;
+    static int s_bfBotA=-1,s_bfHeroA=-1;
+    if(s_bfPhase==2){ g_done=1; return; }
+    if(s_bfPhase==1){
+        bool ascFresh=LooksLikePtr(s_bfAsc)&&SafeReadable((void*)s_bfAsc,0x20)&&LooksLikePtr(ClassOf(s_bfAsc));
+        bool abilFresh=LooksLikePtr(s_bfAbilCls)&&SafeReadable((void*)s_bfAbilCls,0x180)&&LooksLikePtr(ClassOf(s_bfAbilCls));
+        if(!ascFresh||!abilFresh){
+            Markerf("[BF] *** PHASE-2 INVALID: persisted ASC/ability pointer validation failed (ASC=%s ability=%s); activation NOT called. ***\r\n",
+                    ascFresh?"valid":"INVALID",abilFresh?"valid":"INVALID");
+            s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+        }
+        int liveNum=BfCountActivatable(s_bfAsc); ULONGLONG now=GetTickCount64();
+        Markerf("[BF] phase-2 durable-grant poll: Items.Num live=%d ; baseline=%d ; post-grant in-hook=%d ; need >=%d ; elapsed=%llu ms\r\n",
+                liveNum,s_bfBaselineNum,s_bfPostGrantNum,s_bfBaselineNum+1,
+                (unsigned long long)(now-(s_bfCommitDeadline-5000ULL)));
+        if(now>=s_bfCommitDeadline){
+            Marker("[BF] *** DURABLE-GRANT TIMEOUT at 5000 ms: invalid/inconclusive; activation NOT called. ***\r\n");
+            s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+        }
+        if(liveNum<s_bfBaselineNum+1) return; // condition-based wait: returning releases any scope lock; never Sleep here.
+        Marker("[BF] phase-2 durable granted-count threshold verified on a later game-thread callback.\r\n");
+        uintptr_t primaryInst=0;
+        if(!BfLogCommittedSpec(s_bfAsc,s_bfHandle,s_bfAbilCls,&primaryInst)){
+            Marker("[BF] *** PHASE-2 INVALID/INCONCLUSIVE: complete committed-spec evidence was not obtained; activation NOT called. ***\r\n");
+            s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+        }
+        bool heroFresh=LooksLikePtr(s_bfHero)&&SafeReadable((void*)s_bfHero,0x20)&&LooksLikePtr(ClassOf(s_bfHero));
+        uint8_t liveState=(heroFresh&&SafeReadable((void*)(s_bfHero+0x1090),1))?*(uint8_t*)(s_bfHero+0x1090):0xFF;
+        bool aliveFresh=!(KBFARMS&0x40)||(heroFresh&&liveState==1);
+        Markerf("[BF] phase-2 K_ALIVE revalidation: required=%s hero=0x%llX valid=%s LivingState@+0x1090=%u %s\r\n",
+                (KBFARMS&0x40)?"yes":"no",
+                (unsigned long long)s_bfHero,heroFresh?"yes":"NO",(unsigned)liveState,
+                aliveFresh?"OK":"*** INVALID/NOT ALIVE ***");
+        bool attrsFresh=!(KBFARMS&0x80)||(heroFresh&&BfPlayerGasAttrs(s_bfHero,false));
+        if(!heroFresh||!aliveFresh||!attrsFresh){
+            Marker("[BF] *** PHASE-2 INVALID/INCONCLUSIVE: Alive/GAS state did not survive to activation; activation NOT called. ***\r\n");
+            s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+        }
+        if((int32_t)KBFCHARGES>0&&!BfSeedDiagnosticCharges(primaryInst,(int32_t)KBFCHARGES)){
+            Marker("[BF] *** PHASE-2 INVALID/INCONCLUSIVE: diagnostic charge preflight/readback failed; activation NOT called. ***\r\n");
+            s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+        }
+#if KBFMANA && !KBFGATES
+        Marker("[BF] *** PHASE-2 INVALID/INCONCLUSIVE: KBFMANA requires KBFGATES for a controlled pre/post cost census; activation NOT called. ***\r\n");
+        s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+#endif
+        uintptr_t diagnosticManaSet=0;
+#if KBFGATES
+        bool gatesOpen=false;
+#if KBFMANA
+        bool baselineOpen=false; int baselineCooldown=-1,baselineCost=-1;
+        Marker("[BF] K_MANA controlled baseline gate census (before the one-variable Mana write):\r\n");
+        if(!BfProbeActivationGates(s_bfAsc,primaryInst,s_bfHandle,&baselineOpen,&baselineCooldown,&baselineCost)){
+            Marker("[BF] *** PHASE-2 INVALID/INCONCLUSIVE: pre-Mana gate-census preflight/call faulted; activation NOT called. ***\r\n");
+            s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+        }
+        if(baselineOpen||baselineCooldown!=1||baselineCost!=0){
+            Markerf("[BF] *** K_MANA CONTROL REFUSED: expected baseline cooldown=1 cost=0, measured %d/%d; nothing written and activation NOT called. ***\r\n",
+                    baselineCooldown,baselineCost);
+            s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+        }
+        if(!BfSeedDiagnosticMana(s_bfAsc,primaryInst,(float)(KBFMANA),&diagnosticManaSet)){
+            Marker("[BF] *** PHASE-2 INVALID/INCONCLUSIVE: diagnostic registered-Mana preflight/readback failed; activation NOT called. ***\r\n");
+            s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+        }
+        Marker("[BF] K_MANA treatment gate census (after the one-variable Mana write):\r\n");
+#endif
+        int treatmentCooldown=-1,treatmentCost=-1;
+        if(!BfProbeActivationGates(s_bfAsc,primaryInst,s_bfHandle,&gatesOpen,&treatmentCooldown,&treatmentCost)){
+            Marker("[BF] *** PHASE-2 INVALID/INCONCLUSIVE: gate-census preflight/call faulted; activation NOT called. ***\r\n");
+            s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+        }
+        if(!gatesOpen){
+            Marker("[BF] *** K_GATES LOCALIZED: cooldown and/or cost is closed; activation intentionally NOT called. ***\r\n");
+            s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+        }
+#endif
+#if KBFCANACT && !KBFGATES
+        Marker("[BF] *** PHASE-2 INVALID/INCONCLUSIVE: KBFCANACT requires the exact leaf-gate census; activation NOT called. ***\r\n");
+        s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+#elif KBFCANACT
+        Marker("[BF] ---- K_CANACT matched control: full CanActivateAbility after gates 1/1; TryActivate intentionally compiled out ----\r\n");
+#if KBFCANACT >= 2
+        int baseCan=-1,decompFullCan=-1,directActivation=-1;
+        Marker("[BF] ---- K_CANDECOMP: decompose base CanActivate gates before the full CDO query ----\r\n");
+        if(!BfDecomposeBaseCanActivate(s_bfAsc,primaryInst,s_bfAbilCls,s_bfHandle,diagnosticManaSet,
+                                       &baseCan,&decompFullCan,&directActivation)){
+#if KBFNATURALINPUT
+            if(InterlockedCompareExchange(&g_s147State,0,0)==S147_SETUP_ABORT_REQUESTED){
+                s_bfPhase=2;
+                return; // FsThunk publishes S147_ABORT_UNWOUND only after the real dispatcher returns.
+            }
+#endif
+            Marker("[BF] *** PHASE-2 INVALID/INCONCLUSIVE: base-CanActivate decomposition preflight/call faulted; activation NOT called. ***\r\n");
+            s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+        }
+#if KBFCDOCHARGES
+#if KBFNATURALINPUT
+        if(InterlockedCompareExchange(&g_s147State,0,0)==S147_SETUP_ARMED){
+            s_bfPhase=2;
+            return; // do not Sleep, set g_done, restore the CDO, or disarm from the setup callback.
+        }
+#endif
+        Markerf("[BF] *** K_CDOCHARGE HANDOFF COMPLETE: treatment base=%d full=%d directHandleActivation=%d (-1=not compiled/called); shared CDO was restored inside the guarded treatment. ***\r\n",
+                baseCan,decompFullCan,directActivation);
+        if(LooksLikePtr(diagnosticManaSet)&&SafeReadable((void*)(diagnosticManaSet+0x218),8)){
+            Markerf("[BF] K_CDOCHARGE post-census Mana Base=%g Current=%g ; primary CurrentCharges=%d\r\n",
+                    (double)*(float*)(diagnosticManaSet+0x218),(double)*(float*)(diagnosticManaSet+0x21C),
+                    SafeReadable((void*)(primaryInst+0x628),4)?*(int32_t*)(primaryInst+0x628):-2147483647);
+        }
+        s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+#endif
+        if(baseCan==0){
+            Marker("[BF] *** K_CANDECOMP CONTROL COMPLETE: base CanActivate=0 is the full override's first false-return branch; full CDO query not redundantly repeated and TryActivate intentionally NOT called. ***\r\n");
+            if(LooksLikePtr(diagnosticManaSet)&&SafeReadable((void*)(diagnosticManaSet+0x218),8)){
+                Markerf("[BF] K_CANDECOMP post-census Mana Base=%g Current=%g ; CurrentCharges=%d\r\n",
+                        (double)*(float*)(diagnosticManaSet+0x218),(double)*(float*)(diagnosticManaSet+0x21C),
+                        SafeReadable((void*)(primaryInst+0x628),4)?*(int32_t*)(primaryInst+0x628):-2147483647);
+            }
+            s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+        }
+#endif
+        int fullCan=BfCallFullCanActivate(s_bfAsc,primaryInst,s_bfAbilCls,s_bfHandle);
+        if(fullCan<0){
+            Marker("[BF] *** PHASE-2 INVALID/INCONCLUSIVE: full CanActivate preflight/call faulted; activation NOT called. ***\r\n");
+        } else{
+            Markerf("[BF] *** K_CANACT CONTROL COMPLETE: leaf gates=1/1 full CanActivate=%d; TryActivateAbilityByClass intentionally NOT called. ***\r\n",
+                    fullCan);
+            if(LooksLikePtr(diagnosticManaSet)&&SafeReadable((void*)(diagnosticManaSet+0x218),8)){
+                Markerf("[BF] K_CANACT post-census Mana Base=%g Current=%g ; CurrentCharges=%d\r\n",
+                        (double)*(float*)(diagnosticManaSet+0x218),(double)*(float*)(diagnosticManaSet+0x21C),
+                        SafeReadable((void*)(primaryInst+0x628),4)?*(int32_t*)(primaryInst+0x628):-2147483647);
+            }
+        }
+        s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+#endif
+#if !KBFNATURALINPUT
+        int activationRet=BfActivate(s_bfAsc,s_bfAbilCls,true);
+        if((int32_t)KBFCHARGES>0){
+            const int32_t unreadable=-2147483647;
+            int32_t post=SafeReadable((void*)(primaryInst+0x628),4)?*(int32_t*)(primaryInst+0x628):unreadable;
+            Markerf("[BF] K_CHARGES post-activation: ReturnValue=%d CurrentCharges@+0x628=%d%s\r\n",
+                    activationRet,post,(post==unreadable)?" (unreadable)":"");
+        }
+#if KBFMANA
+        if(LooksLikePtr(diagnosticManaSet)&&SafeReadable((void*)(diagnosticManaSet+0x218),8)){
+            float postBase=*(float*)(diagnosticManaSet+0x218),postCurrent=*(float*)(diagnosticManaSet+0x21C);
+            Markerf("[BF] K_MANA post-activation: ReturnValue=%d Mana Base=%g Current=%g\r\n",
+                    activationRet,(double)postBase,(double)postCurrent);
+        } else Markerf("[BF] K_MANA post-activation: ReturnValue=%d Mana unreadable\r\n",activationRet);
+#endif
+        s_bfPhase=2; BfFinish(s_bfBotA,s_bfHeroA); g_done=1; return;
+#endif
+    }
+    s_bfPhase=2;
+    Marker("[BF] ===== RM_BOTFIGHT: minimum bot-fight loop (roadmap-s142) =====\r\n");
+    Markerf("[BF] KBFARMS=0x%X (bit0 spawn, bit1 bind, bit2 grant, bit3 activate, bit4 damage, bit5 wirebot, bit6 alive, bit7 GAS attrs)\r\n",
+            (unsigned)(KBFARMS));
+
+    // ---------- RESOLVE the player (read-only) ----------
+    uintptr_t pc=FindInstByClass("LokiPlayerController_Dev",nullptr);
+    if(!LooksLikePtr(pc)) pc=FindInstByClass("LokiPlayerController",nullptr);
+    if(!LooksLikePtr(pc)){ Marker("[BF] REFUSE: no live PlayerController (did sp run?). Nothing done.\r\n"); g_done=1; return; }
+    uint32_t pawnOff=PropOffsetSuper(ClassOf(pc),"Pawn");
+    uintptr_t hero=(pawnOff!=0xFFFFFFFF&&SafeReadable((void*)(pc+pawnOff),8))?*(uintptr_t*)(pc+pawnOff):0;
+    uint32_t psOff=PropOffsetSuper(ClassOf(pc),"PlayerState");
+    uintptr_t ps=(psOff!=0xFFFFFFFF&&SafeReadable((void*)(pc+psOff),8))?*(uintptr_t*)(pc+psOff):0;
+    char hn[128]="-",pn[128]="-";
+    if(LooksLikePtr(hero)&&ClassOf(hero)) GetFNameStr(NameId(ClassOf(hero)),hn,sizeof(hn));
+    if(LooksLikePtr(ps)&&ClassOf(ps)) GetFNameStr(NameId(ClassOf(ps)),pn,sizeof(pn));
+    Markerf("[BF] PC=0x%llX hero=0x%llX(%s) PlayerState=0x%llX(%s)\r\n",
+            (unsigned long long)pc,(unsigned long long)hero,hn,(unsigned long long)ps,pn);
+    if(!LooksLikePtr(hero)){ Marker("[BF] REFUSE: PC has no possessed pawn. Nothing done.\r\n"); g_done=1; return; }
+
+    // ---------- READ player ASC state (WALL P) ----------
+    uintptr_t asc=BfGetAsc(hero);
+    Markerf("[BF] player ASC (hero+0xF00) = 0x%llX %s\r\n",(unsigned long long)asc,
+            LooksLikePtr(asc)?"(present -- WireAbilitySystem already ran, e.g. via play)":"(NULL -- not wired yet)");
+    if(LooksLikePtr(asc)){
+        ReportAscActorInfo(ps,hero,"PLAYER-PRE");
+        Markerf("[BF] player ActivatableAbilities Num = %d\r\n",BfCountActivatable(asc));
+    }
+
+    // ---------- READ player team index (WALL E: the decision-critical read) ----------
+    int playerTeam=-999; uint32_t ptOff=0xFFFFFFFF;
+    if(LooksLikePtr(ps)){
+        ptOff=PropOffsetSuper(ClassOf(ps),"TeamIndex");
+        if(ptOff==0xFFFFFFFF) ptOff=PropOffsetSuper(ClassOf(ps),"Team");
+        if(ptOff!=0xFFFFFFFF&&SafeReadable((void*)(ps+ptOff),4)) playerTeam=*(int32_t*)(ps+ptOff);
+    }
+    Markerf("[BF] player teamOff=0x%X teamIndex=%d\r\n",ptOff,playerTeam);
+
+    // ---------- READ hero kit ability classes ----------
+    static const char* kAbil[4]={"Ability1","Ability2","Ability3","AbilityDodgeRoll"};
+    uintptr_t abilCls=0;
+    for(int i=0;i<4;i++){
+        uint32_t ao=PropOffsetSuper(ClassOf(hero),kAbil[i]);
+        uintptr_t av=(ao!=0xFFFFFFFF&&SafeReadable((void*)(hero+ao),8))?*(uintptr_t*)(hero+ao):0;
+        char an[128]="-"; if(LooksLikePtr(av)) GetFNameStr(NameId(av),an,sizeof(an));
+        Markerf("[BF] hero.%-16s @0x%X = 0x%llX (%s)\r\n",kAbil[i],ao,(unsigned long long)av,LooksLikePtr(av)?an:"NULL");
+        if(!strcmp(kAbil[i],KBFABIL)&&LooksLikePtr(av)) abilCls=av;
+    }
+    if(!LooksLikePtr(abilCls)){ // fallback: CharacterAbilities[0]
+        uint32_t co=PropOffsetSuper(ClassOf(hero),"CharacterAbilities");
+        if(co!=0xFFFFFFFF&&SafeReadable((void*)(hero+co),16)){
+            uintptr_t d=*(uintptr_t*)(hero+co); int32_t n=*(int32_t*)(hero+co+8);
+            if(LooksLikePtr(d)&&n>0&&SafeReadable((void*)d,8)){ abilCls=*(uintptr_t*)d;
+                char an[128]="-"; if(LooksLikePtr(abilCls))GetFNameStr(NameId(abilCls),an,sizeof(an));
+                Markerf("[BF] fallback CharacterAbilities[0] = 0x%llX (%s)\r\n",(unsigned long long)abilCls,an); }
+        }
+    }
+
+    // ---------- baseline census (read-only) ----------
+    int botA=-1,heroA=-1,botC=-1,heroC=-1;
+    BsScanWorld("BF-A0",&botA,&heroA,nullptr,nullptr);
+    s_bfBotA=botA; s_bfHeroA=heroA;
+    Markerf("[BF] baseline census: botOrAIControllers=%d heroCharacters=%d\r\n",botA,heroA);
+
+    // ============================ GATED ACTIONS ============================
+
+    // --- K_SPAWN: an enemy bot in front of the player ---
+    uintptr_t bot=0;
+    if(KBFARMS&0x01){
+        Marker("[BF] ---- K_SPAWN: SpawnClassBotAtLoc (reusing BsResolve) ----\r\n");
+        BsResolve(hero);
+        if(g_bsFn&&LooksLikePtr(g_bsComp)&&g_bsOTeam!=0xFFFFFFFF&&g_bsOLoc!=0xFFFFFFFF){
+            memset(g_bplocals,0,sizeof(g_bplocals));
+            *(int32_t*)(g_bplocals+g_bsOTeam)=g_bsTeam;
+            *(double*)(g_bplocals+g_bsOLoc)=g_bsLoc[0]; *(double*)(g_bplocals+g_bsOLoc+8)=g_bsLoc[1];
+            *(double*)(g_bplocals+g_bsOLoc+16)=g_bsLoc[2];
+            if(g_bsODiff!=0xFFFFFFFF)*(int32_t*)(g_bplocals+g_bsODiff)=(int32_t)(KBSDIFF);
+            uintptr_t hc=FindClassExact(KBFHERO); if(!LooksLikePtr(hc))hc=g_bsHeroCls;
+            if(g_bsOCls!=0xFFFFFFFF&&LooksLikePtr(hc))*(uint64_t*)(g_bplocals+g_bsOCls)=(uint64_t)hc;
+            if(g_bsOLvl!=0xFFFFFFFF)*(int32_t*)(g_bplocals+g_bsOLvl)=(int32_t)(KBSLEVEL);
+            bool f=false;
+            __try{ CallBPGuarded(g_bsFn,(void*)g_bsComp,nullptr); }
+            __except(SEH_FILTER(GetExceptionInformation())){ f=true; Markerf("[BF] SpawnClassBotAtLoc FAULT: %s\r\n",DP_FAULT); }
+            if(!f&&g_bsORet!=0xFFFFFFFF) bot=*(uintptr_t*)(g_bplocals+g_bsORet);
+            char bn[128]="-"; if(LooksLikePtr(bot))GetFNameStr(NameId(bot),bn,sizeof(bn));
+            Markerf("[BF] spawned CreatedBot=0x%llX (%s) botTeamArg=%d (⚠ CreatedBot null != failure; census delta is the verdict)\r\n",
+                    (unsigned long long)bot,LooksLikePtr(bot)?bn:"NULL",g_bsTeam);
+            // DECISION-CRITICAL: does the bot share the player's team? Read the bot's own PlayerState team.
+            if(LooksLikePtr(bot)){
+                uint32_t bpo=PropOffsetSuper(ClassOf(bot),"PlayerState");
+                uintptr_t bps=(bpo!=0xFFFFFFFF&&SafeReadable((void*)(bot+bpo),8))?*(uintptr_t*)(bot+bpo):0;
+                int botTeam=-999;
+                if(LooksLikePtr(bps)){ uint32_t bto=PropOffsetSuper(ClassOf(bps),"TeamIndex");
+                    if(bto==0xFFFFFFFF)bto=PropOffsetSuper(ClassOf(bps),"Team");
+                    if(bto!=0xFFFFFFFF&&SafeReadable((void*)(bps+bto),4))botTeam=*(int32_t*)(bps+bto); }
+                uintptr_t basc=BfGetAsc(bot);
+                Markerf("[BF] *** DECISION-CRITICAL: bot PlayerState=0x%llX teamIndex=%d (player=%d) -> %s ; bot ASC(bot+0xF00)=0x%llX ***\r\n",
+                        (unsigned long long)bps,botTeam,playerTeam,
+                        (botTeam==playerTeam)?"SAME TEAM (not hostile as-is)":"DIFFERENT TEAM (hostile)",
+                        (unsigned long long)basc);
+            }
+        } else Marker("[BF] K_SPAWN: BsResolve did not produce a callable spawner (see [BS] REFUSE lines).\r\n");
+    }
+
+    // --- K_BIND: WALL P step 1 -- build+cache the carrier ASC, then the NEVER-CALLED AvatarActor bind ---
+    if(KBFARMS&0x02){
+        Marker("[BF] ---- K_BIND: WireAbilitySystem + InitAbilityActorInfo (the S111 never-run bind) ----\r\n");
+        WireAbilitySystem(hero,pc);                 // builds carrier ASC, caches hero+0xF00 (existing, proven)
+        asc=BfGetAsc(hero);
+        if(!LooksLikePtr(asc)){ Marker("[BF] K_BIND: hero+0xF00 still NULL after WireAbilitySystem -> cannot bind.\r\n"); }
+        else{
+            uintptr_t carrier=BfCarrier(ps);
+            uintptr_t owner=(KBFOWNER==1)?ps:(KBFOWNER==2)?hero:(LooksLikePtr(carrier)?carrier:ps);
+            char own[128]="-"; if(LooksLikePtr(owner)&&ClassOf(owner))GetFNameStr(NameId(ClassOf(owner)),own,sizeof(own));
+            Markerf("[BF] InitAbilityActorInfo(ASC=0x%llX, Owner=0x%llX(%s,mode=%d), Avatar=hero=0x%llX)\r\n",
+                    (unsigned long long)asc,(unsigned long long)owner,own,(int)(KBFOWNER),(unsigned long long)hero);
+            bool f=BfCallInitAAI(asc,owner,hero);
+            Markerf("[BF] InitAbilityActorInfo returned %s\r\n",f?"FAULTED":"ok");
+            ReportAscActorInfo(ps,hero,"PLAYER-POST-BIND");   // success witness = *** AVATAR IS THE HERO -- BOUND ***
+        }
+    }
+
+    bool handoffCombinedActivation=false; int32_t handoffHandle=0,handoffBaselineNum=-1,handoffPostGrantNum=-1;
+    // --- K_GRANT: give the player the kit ability. S144: the ENGINE grant (reflected Auth is a stripped stub) ---
+    if((KBFARMS&0x04)&&LooksLikePtr(asc)&&LooksLikePtr(abilCls)){
+#if KBFGRANT==1
+        // A/B CONTROL ARM: the OLD stripped reflected AuthGiveAbilityWithSourceObject (measured no-op at S143).
+        Marker("[BF] ---- K_GRANT (A/B control: stripped reflected Auth) ----\r\n");
+        void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(asc),"AuthGiveAbilityWithSourceObject",&f,&th,&ch);
+        if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            uint32_t oc=ParamOffset(ch,"AbilityClass"), ol=ParamOffset(ch,"AbilityLevel"), os=ParamOffset(ch,"SourceObject");
+            if(oc!=0xFFFFFFFF)*(uint64_t*)(g_pbuf+oc)=(uint64_t)abilCls;
+            if(ol!=0xFFFFFFFF)*(int32_t*)(g_pbuf+ol)=1;
+            if(os!=0xFFFFFFFF)*(uint64_t*)(g_pbuf+os)=(uint64_t)hero;
+            int before=BfCountActivatable(asc);
+            bool flt=CallNativeGuarded(f,th,ch,(void*)asc,g_pbuf,g_rbuf);
+            int after=BfCountActivatable(asc);
+            Markerf("[BF] grant(auth-stub) %s ; ActivatableAbilities %d -> %d %s\r\n",flt?"FAULTED":"ok",before,after,
+                    (after>before)?"*** ABILITY GRANTED ***":"(no change -- expected: stripped stub)");
+        } else Marker("[BF] K_GRANT: AuthGiveAbilityWithSourceObject not resolved on the ASC.\r\n");
+#else
+        // NATIVE ENGINE GRANT: build the spec, then call the grant virtual [ASC_vtable+0x778] the game itself uses.
+        uintptr_t cdo=SafeReadable((void*)(abilCls+0x178),8)?*(uintptr_t*)(abilCls+0x178):0;
+        char cn[128]="-",dn[128]="-";
+        if(LooksLikePtr(abilCls)&&ClassOf(abilCls)) GetFNameStr(NameId(abilCls),cn,sizeof(cn));
+        if(LooksLikePtr(cdo)) GetFNameStr(NameId(cdo),dn,sizeof(dn));
+        Markerf("[BF] ---- K_GRANT (native GiveAbility): ability=0x%llX(%s) CDO=0x%llX(%s) ----\r\n",
+                (unsigned long long)abilCls,cn,(unsigned long long)cdo,dn);
+        alignas(16) uint8_t spec[0x100]; memset(spec,0,sizeof(spec));
+        bool bsf=BfBuildSpec(abilCls,1,(int32_t)KBFINPUTID,hero,spec);
+        uintptr_t specAbil=*(uintptr_t*)(spec+0x10); int32_t specHandle=*(int32_t*)(spec+0xC);
+        int32_t specLvl=*(int32_t*)(spec+0x20), specIn=*(int32_t*)(spec+0x24); uintptr_t specSrc=*(uintptr_t*)(spec+0x30);
+        Markerf("[BF] spec built=%s Ability@+0x10=0x%llX(%s CDO) Handle@+0xC=%d Level@+0x20=%d InputID@+0x24=%d Source@+0x30=0x%llX\r\n",
+                bsf?"ok":"FAULT",(unsigned long long)specAbil,(specAbil==cdo)?"==":"!=",specHandle,specLvl,specIn,(unsigned long long)specSrc);
+        uint8_t netsim=SafeReadable((void*)(asc+0x800),1)?*(uint8_t*)(asc+0x800):0xFF;
+        Markerf("[BF] auth gate bCachedIsNetSimulated@+0x800=%d (0 => IsOwnerActorAuthoritative==true => grant proceeds)\r\n",netsim);
+        if(bsf&&LooksLikePtr(specAbil)&&specAbil==cdo){
+            int before=BfCountActivatable(asc); bool flt=false;
+            int32_t h=BfGiveAbilityNative(asc,spec,&flt);
+            int after=BfCountActivatable(asc);
+            // GiveAbility commits immediately when AbilityScopeLockCount==0 and queues in AbilityPendingAdds when it
+            // is scope-locked. Both paths return a valid handle. Always hand off to a later callback and verify the
+            // exact durable Handle+Ability spec there; the in-hook Items.Num only distinguishes immediate vs queued.
+            const char* verdict = (after>before) ? "*** ABILITY GRANTED (engine GiveAbility, committed in-hook) ***"
+                                : (!flt && h>0)  ? "*** GRANT DEFERRED (valid handle -> AbilityPendingAdds; commits after the hook; verify Items.Num@ASC+0x540 live) ***"
+                                : (h==-1)        ? "(InvalidHandle -1 -- denied/stripped grant)"
+                                :                  "(no change / grant did not add a spec)";
+            Markerf("[BF] grant(native) %s ; ActivatableAbilities(Items.Num@0x540) %d -> %d ; outHandle=%d %s\r\n",
+                    flt?"FAULTED":"ok",before,after,h,verdict);
+            if((KBFARMS&0x08)&&!flt&&h>0){
+                handoffCombinedActivation=true; handoffHandle=h; handoffBaselineNum=before; handoffPostGrantNum=after;
+            }
+        } else Marker("[BF] K_GRANT: spec build failed or Ability!=CDO -> NOT calling grant (would risk a bad spec).\r\n");
+#endif
+    } else if(KBFARMS&0x04) Marker("[BF] K_GRANT skipped: no ASC or no ability class (run K_BIND, and check the ability reads above).\r\n");
+
+    // --- K_WIREBOT: give the enemy bot its own ASC + Health set so it is damageable ---
+    uintptr_t botAsc=0;
+    if((KBFARMS&0x20)&&LooksLikePtr(bot)){
+        Marker("[BF] ---- K_WIREBOT: wire the enemy bot's ASC (so it has a damageable Health) ----\r\n");
+        uint32_t bpo=PropOffsetSuper(ClassOf(bot),"PlayerState");
+        uintptr_t bps=(bpo!=0xFFFFFFFF&&SafeReadable((void*)(bot+bpo),8))?*(uintptr_t*)(bot+bpo):0;
+        // bot PlayerState comes from S137 ARM B/C; the bot's controller possesses it. Use bot's controller as PC.
+        uint32_t co=PropOffsetSuper(ClassOf(bot),"Controller");
+        uintptr_t bctl=(co!=0xFFFFFFFF&&SafeReadable((void*)(bot+co),8))?*(uintptr_t*)(bot+co):0;
+        if(LooksLikePtr(bps)&&LooksLikePtr(bctl)){ WireAbilitySystem(bot,bctl); botAsc=BfGetAsc(bot);
+            uintptr_t bcar=BfCarrier(bps);
+            uintptr_t bown=LooksLikePtr(bcar)?bcar:bps;
+            if(LooksLikePtr(botAsc)){ bool f=BfCallInitAAI(botAsc,bown,bot); Markerf("[BF] bot InitAbilityActorInfo %s\r\n",f?"FAULTED":"ok"); }
+        } else Markerf("[BF] K_WIREBOT: bot PlayerState=0x%llX Controller=0x%llX -> cannot wire (bot may lack a PlayerState/controller).\r\n",
+                       (unsigned long long)bps,(unsigned long long)bctl);
+    }
+
+    // --- K_DAMAGE: the damage pipeline / the KILL. AdjustHealth on the chosen target ASC. ---
+    if(KBFARMS&0x10){
+        uintptr_t tgt = (KBFDMGTGT==1) ? (LooksLikePtr(botAsc)?botAsc:BfGetAsc(bot)) : asc;
+        const char* tgtName = (KBFDMGTGT==1)?"BOT":"PLAYER(self)";
+        Markerf("[BF] ---- K_DAMAGE: AdjustHealth(%.1f) on %s ASC=0x%llX ----\r\n",(double)(KBFDMG),tgtName,(unsigned long long)tgt);
+        if(!LooksLikePtr(tgt)){ Markerf("[BF] K_DAMAGE: %s ASC is NULL (wire it first: K_BIND for self, K_WIREBOT for bot).\r\n",tgtName); }
+        else{
+            int hb=0; char hcls[128]="-"; float before=BfReadHealth(tgt,&hb,hcls,sizeof(hcls));
+            void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(tgt),"AdjustHealth",&f,&th,&ch);
+            if(th){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                uint32_t od=ParamOffset(ch,"HealthDelta"); if(od==0xFFFFFFFF)od=0;
+                *(float*)(g_pbuf+od)=(float)(KBFDMG);
+                bool flt=CallNativeGuarded(f,th,ch,(void*)tgt,g_pbuf,g_rbuf);
+                int ha=0; float after=BfReadHealth(tgt,&ha,nullptr,0);
+                Markerf("[BF] AdjustHealth %s ; Health(%s) %.1f -> %.1f  %s\r\n",flt?"FAULTED":"ok",
+                        hb?hcls:"unread",before,after,
+                        (hb&&ha&&after<before)?"*** DAMAGE APPLIED ***":"(Health unread or unchanged)");
+            } else Marker("[BF] K_DAMAGE: AdjustHealth not resolved on the target ASC.\r\n");
+        }
+    }
+
+    // --- K_ALIVE (S144, bit 0x40): make the player hero Alive so the ability passes its IsAlive/CanActivate gate.
+    //   S138 measured that NOTHING writes ELivingState=Alive on this route, so every character reads Dead(0), and
+    //   TryActivateAbilityByClass returned 0 at the S144 grant flight with the hero LivingState@+0x1090=0. Poke it 1.
+    //   Single aligned DATA byte, readback-verified (ARM F class). Run this BEFORE K_ACTIVATE. ---
+    if(KBFARMS&0x40){
+        uint8_t ls0=SafeReadable((void*)(hero+0x1090),1)?*(uint8_t*)(hero+0x1090):0xFF;
+        Markerf("[BF] ---- K_ALIVE: hero LivingState@+0x1090 = %u (0=Dead 1=Alive 2=Knocked) ----\r\n",ls0);
+        if(ls0!=1&&SafeWritable((void*)(hero+0x1090),1)){
+            *(uint8_t*)(hero+0x1090)=1; uint8_t rb=*(uint8_t*)(hero+0x1090);
+            Markerf("[BF] K_ALIVE: poked hero LivingState 0x%X -> 1 (Alive) readback=%u %s\r\n",ls0,rb,(rb==1)?"OK":"*** POKE FAILED ***");
+        } else if(ls0==1) Marker("[BF] K_ALIVE: LivingState already 1 (no poke)\r\n");
+        else Markerf("[BF] K_ALIVE: LivingState=%u but byte is not safely writable; activation will fail phase-2 revalidation.\r\n",ls0);
+    }
+
+    // --- K_GASATTR (S145, bit 0x80): complete AttributeSet wiring, after Alive and before activation. ---
+    bool gasAttrsOk=true;
+    if(KBFARMS&0x80) gasAttrsOk=BfPlayerGasAttrs(hero,true);
+
+    // A positive native grant handle means immediate commit or a queued AbilityPendingAdds entry. Return now;
+    // later callbacks verify the exact durable spec before activation, independent of which grant path occurred.
+    if(handoffCombinedActivation){
+        if(!gasAttrsOk){
+            Marker("[BF] *** COMBINED HANDOFF ABORTED: K_GASATTR is incomplete; activation NOT called. ***\r\n");
+            BfFinish(botA,heroA); g_done=1; return;
+        } else if(handoffBaselineNum<0||handoffPostGrantNum<0){
+            Marker("[BF] *** COMBINED HANDOFF INVALID: baseline/post-grant Items.Num was unreadable; activation NOT called. ***\r\n");
+            BfFinish(botA,heroA); g_done=1; return;
+        } else{
+            s_bfAsc=asc; s_bfAbilCls=abilCls; s_bfHero=hero; s_bfHandle=handoffHandle;
+            s_bfBaselineNum=handoffBaselineNum; s_bfPostGrantNum=handoffPostGrantNum;
+            s_bfCommitDeadline=GetTickCount64()+5000ULL; s_bfPhase=1;
+            Markerf("[BF] combined grant+activate handoff: handle=%d, baseline Num=%d, post-grant in-hook Num=%d; returning callback with g_done=false and waiting up to 5000 ms for durable Num >= %d.\r\n",
+                    handoffHandle,handoffBaselineNum,handoffPostGrantNum,handoffBaselineNum+1);
+            return;
+        }
+    }
+
+    // --- K_ACTIVATE: the player casts the granted ability (highest-risk step -> last) ---
+    if((KBFARMS&0x08)&&LooksLikePtr(asc)&&LooksLikePtr(abilCls)){
+        if(!gasAttrsOk) Marker("[BF] *** K_ACTIVATE REFUSED: K_GASATTR bit is set but its 2/2 + 6/6 wiring contract failed. ***\r\n");
+        else{
+#if KBFCANACT || KBFNATURALINPUT
+            Marker("[BF] K_CANACT control: phase-1 standalone TryActivate fallback is compiled out; without a valid durable-grant handoff no activation/census is called.\r\n");
+#else
+            BfActivate(asc,abilCls,false);
+#endif
+        }
+    }
+
+    // ---------- post census ----------
+    BfFinish(botA,heroA);
+    g_done=1;
+#endif
+}
+
+#if KBFNATURALINPUT && KFUNCSWAP
+static void BfS147LogIssues(uint32_t issues){
+    if(issues&S147_ISSUE_UNREADABLE) Marker("[S147][TRANSITION] SAMPLE UNREADABLE / SEH -- emergency finalization required.\r\n");
+    if(issues&S147_ISSUE_ASC_HEADER_CHANGED) Marker("[S147][TRANSITION] ASC Items header changed during the A/B sample; discarded without dereferencing a stale spec.\r\n");
+    if(issues&S147_ISSUE_SPEC_MISSING) Marker("[S147][TRANSITION] exact Handle+CDO spec membership LOST.\r\n");
+    if(issues&S147_ISSUE_SPEC_AMBIGUOUS) Marker("[S147][TRANSITION] exact Handle+CDO spec membership became AMBIGUOUS.\r\n");
+    if(issues&S147_ISSUE_PRIMARY_MISSING) Marker("[S147][TRANSITION] freshly-derived primary instance MISSING.\r\n");
+    if(issues&S147_ISSUE_PRIMARY_REPLACED) Marker("[S147][TRANSITION] freshly-derived primary instance REPLACED.\r\n");
+    if(issues&S147_ISSUE_PRIMARY_WRONG_CLASS) Marker("[S147][TRANSITION] freshly-derived primary instance has WRONG CLASS.\r\n");
+    if(issues&S147_ISSUE_SPAWNED_HEADER_CHANGED) Marker("[S147][TRANSITION] SpawnedAttributes header changed during the A/B sample; discarded.\r\n");
+    if(issues&S147_ISSUE_MANA_SET_MISSING) Marker("[S147][TRANSITION] current registered LokiAttributeSet Mana set MISSING.\r\n");
+    if(issues&S147_ISSUE_MANA_SET_REPLACED) Marker("[S147][TRANSITION] current registered LokiAttributeSet Mana set REPLACED.\r\n");
+    if(issues&S147_ISSUE_MANA_SET_AMBIGUOUS) Marker("[S147][TRANSITION] current registered LokiAttributeSet Mana set AMBIGUOUS.\r\n");
+    if(issues&S147_ISSUE_INPUT_ID_CHANGED) Marker("[S147][TRANSITION] freshly-found exact spec InputID changed from canonical Ability3 InputID=5.\r\n");
+}
+
+static void BfS147LogSample(const char* label,ULONGLONG readyTick,const BfS147Capture& sample,
+                            uint32_t receipt,bool shiftDown){
+    ULONGLONG tick=GetTickCount64();
+    ULONGLONG rel=readyTick&&tick>=readyTick?tick-readyTick:0;
+    Markerf("[S147][%s] tick=%llu t=+%llums valid=%u issue=0x%X Items=%d/%d spec=0x%llX primary=0x%llX mana=0x%llX InputID=%d events=%u/%u Shift=%s flags=0x%02X ActiveCount=%u state=%u/%u/%u charges=%d/%d ManaBits=%08X/%08X receipt=0x%X\r\n",
+            label,(unsigned long long)tick,(unsigned long long)rel,
+            (unsigned)sample.raw.valid,sample.raw.issueMask,sample.specNum,sample.specMax,
+            (unsigned long long)sample.spec,(unsigned long long)sample.primary,
+            (unsigned long long)sample.manaSet,sample.raw.inputID,
+            sample.raw.toggleMapEvents,sample.raw.ability3Events,
+            shiftDown?"DOWN":"up",(unsigned)sample.raw.specFlags,(unsigned)sample.raw.activeCount,
+            (unsigned)sample.raw.primary408,(unsigned)sample.raw.primary409,(unsigned)sample.raw.primary40A,
+            sample.raw.primaryCharge,sample.raw.cdoCharge,
+            sample.raw.manaBaseBits,sample.raw.manaCurrentBits,receipt);
+}
+
+static bool BfS147RestoreCdoOnce(){
+    if(InterlockedCompareExchange(&g_s147RestorePending,0,0)==0) return true;
+    bool restored=false,faulted=false; int32_t before=-2147483647,after=-2147483647;
+    __try{
+        bool exact=LooksLikePtr(g_s147AbilityCdo)&&g_s147ChargesOff==0x628&&
+                   SafeReadable((void*)g_s147AbilityCdo,0x20)&&
+                   ClassOf(g_s147AbilityCdo)==g_s147AbilityClass&&
+                   SafeReadable((void*)(g_s147AbilityCdo+g_s147ChargesOff),4)&&
+                   SafeWritable((void*)(g_s147AbilityCdo+g_s147ChargesOff),4);
+        if(exact){
+            before=*(int32_t*)(g_s147AbilityCdo+g_s147ChargesOff);
+            *(int32_t*)(g_s147AbilityCdo+g_s147ChargesOff)=g_s147SavedCdoCharge;
+            after=*(int32_t*)(g_s147AbilityCdo+g_s147ChargesOff);
+            restored=after==g_s147SavedCdoCharge;
+        }
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){ faulted=true; }
+    Markerf("[S147] WORKER CDO RESTORE pid=%lu run=%016llX: before=%d after=%d saved=%d restored=%s faulted=%s%s\r\n",
+            g_s147Pid,(unsigned long long)g_s147RunId,before,after,g_s147SavedCdoCharge,
+            restored?"yes":"NO",faulted?"YES":"no",faulted?DP_FAULT:"");
+    if(restored) InterlockedExchange(&g_s147RestorePending,0);
+    return restored;
+}
+
+// Once restorePending is published, returning with a dirty shared CDO is forbidden.  A transient
+// access/write fault therefore leaves the worker in an explicit recovery loop instead of disarming
+// and abandoning ownership.  Every attempt revalidates the exact CDO/class/offset and readback.
+static void BfS147RestoreUntilClean(){
+    LONG attempts=0;
+    while(InterlockedCompareExchange(&g_s147RestorePending,0,0)!=0){
+        attempts++;
+        if(BfS147RestoreCdoOnce()) break;
+        if(attempts==1||(attempts%50)==0)
+            Markerf("[S147] FAIL-STOP RECOVERY pid=%lu run=%016llX: CDO remains worker-owned after %ld restore attempts; no RESULT, disarm, or worker return is permitted.\r\n",
+                    g_s147Pid,(unsigned long long)g_s147RunId,(long)attempts);
+        Sleep(100);
+    }
+}
+
+static void BfS147DisarmUntilReturned(){
+    bool done=false;
+    while(!done){
+        __try{ FsDisarm(); done=true; }
+        __except(SEH_FILTER(GetExceptionInformation())){
+            Markerf("[S147] funcswap disarm fault pid=%lu run=%016llX: %s ; retrying, worker will not return.\r\n",
+                    g_s147Pid,(unsigned long long)g_s147RunId,DP_FAULT);
+            Sleep(100);
+        }
+    }
+}
+
+static void BfS147EnterFinishing(const char* why){
+    bool reported=false;
+    for(;;){
+        LONG state=InterlockedCompareExchange(&g_s147State,0,0);
+        if(state==S147_FINISHING||state==S147_FINISHED) return;
+        if(S147SafeToFinalize(state)&&
+           InterlockedCompareExchange(&g_s147State,S147_FINISHING,state)==state) return;
+        if(!reported){
+            Markerf("[S147] %s pid=%lu run=%016llX waiting for setup callback unwind before worker restoration (state=%ld).\r\n",
+                    why?why:"finalizer",g_s147Pid,(unsigned long long)g_s147RunId,(long)state);
+            reported=true;
+        }
+        Sleep(1);
+    }
+}
+
+static bool BfS147ControlsOrderedBeforeShift(ULONGLONG readyTick,ULONGLONG shiftDownTick,
+                                             LONG toggleCount){
+    if(toggleCount!=2||readyTick==0||shiftDownTick==0) return false;
+    ULONGLONG first=(ULONGLONG)InterlockedCompareExchange64(&g_s147ToggleMapTicks[0],0,0);
+    ULONGLONG second=(ULONGLONG)InterlockedCompareExchange64(&g_s147ToggleMapTicks[1],0,0);
+    return first>=readyTick&&second>first&&second<shiftDownTick;
+}
+
+static bool BfS147AbilityObservedAfterShift(ULONGLONG shiftDownTick,LONG abilityCount){
+    if(shiftDownTick==0||abilityCount<1) return false;
+    LONG retained=abilityCount<4?abilityCount:4;
+    for(LONG i=0;i<retained;i++)
+        if((ULONGLONG)InterlockedCompareExchange64(&g_s147Ability3Ticks[i],0,0)>=shiftDownTick)
+            return true;
+    return false;
+}
+
+static void BfS147Finalize(const char* reason,uint32_t preShiftReceipt,uint32_t postShiftReceipt,
+                           bool sawShiftDown,bool sawShiftUp,ULONGLONG readyTick,
+                           ULONGLONG shiftDownTick,bool classifyInput){
+    if(InterlockedCompareExchange(&g_s147FinalizeOwner,1,0)!=0){
+        while(InterlockedCompareExchange(&g_s147State,0,0)!=S147_FINISHED) Sleep(1);
+        return;
+    }
+    // This CAS closes the DISABLED->SETUP_OWNS_CDO race as well as the
+    // WAIT_NEXT_DISPATCH->WINDOW_OPEN race before any cleanup begins.
+    BfS147EnterFinishing("finalizer");
+
+    bool finalValid=false,finalizerFaulted=false;
+    const char* finalReason=reason?reason:"UNSPECIFIED";
+    __try{
+        // The final raw sample is taken only when setup published a proven baseline.  It remains
+        // before restoration, so it can still capture the last post-key-up GAS transition.
+        if(InterlockedCompareExchange(&g_s147SampleReady,0,0)!=0){
+            BfS147Capture finalSample={0};
+            finalValid=BfS147CaptureRaw(&finalSample);
+            uint32_t finalReceipt=finalValid?S147ReceiptMask(g_s147Baseline,finalSample.raw):0;
+            if(sawShiftDown) postShiftReceipt|=finalReceipt;
+            else preShiftReceipt|=finalReceipt;
+            BfS147LogSample("FINAL",readyTick,finalSample,postShiftReceipt,sawShiftDown&&!sawShiftUp);
+            if(finalSample.raw.issueMask) BfS147LogIssues(finalSample.raw.issueMask);
+        } else Marker("[S147] FINAL raw sample unavailable: setup never published a proven raw baseline.\r\n");
+
+        LONG toggleCount=InterlockedCompareExchange(&g_s147ToggleMapEvents,0,0);
+        LONG abilityCount=InterlockedCompareExchange(&g_s147Ability3Events,0,0);
+        ULONGLONG readyEventTick=(ULONGLONG)InterlockedCompareExchange64(&g_s147ReadyQpc,0,0);
+        bool controlsOrdered=BfS147ControlsOrderedBeforeShift(readyEventTick,shiftDownTick,toggleCount);
+        bool abilityTimestampAfterShift=BfS147AbilityObservedAfterShift(shiftDownTick,abilityCount);
+        // The worker can observe VK_LSHIFT a few milliseconds after the game thread dispatches the
+        // BP event.  The exact event callback therefore captures the authoritative key-down witness;
+        // QPC ordering remains diagnostic and must not manufacture a false negative.
+        bool abilityAfterShift=InterlockedCompareExchange(&g_s147Ability3WhileShiftDown,0,0)!=0;
+        if(classifyInput){
+            bool positive=finalValid&&sawShiftDown&&sawShiftUp&&
+                S147PositiveResultEligible(postShiftReceipt,preShiftReceipt,(uint32_t)toggleCount,
+                                           controlsOrdered,(uint32_t)abilityCount,abilityAfterShift);
+            if(!finalValid) finalReason="FINAL_SAMPLE_INVALID";
+            else if(positive) finalReason="ACTIVATION_RECEIPT";
+            else if(preShiftReceipt!=0) finalReason="VOID_PRE_SHIFT_DRIFT";
+            else if(!sawShiftDown||!sawShiftUp||toggleCount!=2||!controlsOrdered)
+                finalReason="VOID_INPUT_CONTROL";
+            else if(abilityCount<1||!abilityAfterShift) finalReason="ABILITY3_NOT_OBSERVED";
+            else finalReason="TIMEOUT_NO_RECEIPT";
+        }
+
+        // Restoration must complete before any Func swap is disarmed or any terminal marker exists.
+        BfS147RestoreUntilClean();
+        BfS147DisarmUntilReturned();
+        InterlockedExchange(&g_s147State,S147_FINISHED);
+        Markerf("[S147] RESULT pid=%lu run=%016llX reason=%s preReceipt=0x%X postReceipt=0x%X ToggleMap=%ld controlsOrderedBeforeShift=%s Ability3=%ld abilityWhileShiftDown=%s abilityQpcAfterWorkerPoll=%s sawShiftDown=%s sawShiftUp=%s finalValid=%s CDOrestored=yes funcsDisarmCompleted=yes\r\n",
+                g_s147Pid,(unsigned long long)g_s147RunId,finalReason,preShiftReceipt,postShiftReceipt,
+                (long)toggleCount,controlsOrdered?"yes":"NO",(long)abilityCount,
+                abilityAfterShift?"yes":"NO",abilityTimestampAfterShift?"yes":"no",
+                sawShiftDown?"yes":"no",sawShiftUp?"yes":"no",
+                finalValid?"yes":"NO");
+    }
+    __except(SEH_FILTER(GetExceptionInformation())){ finalizerFaulted=true; }
+
+    if(finalizerFaulted){
+        // A fault anywhere in classification/logging still converges on the two release obligations.
+        Markerf("[S147] FINALIZER SEH pid=%lu run=%016llX: %s ; entering fail-stop cleanup.\r\n",
+                g_s147Pid,(unsigned long long)g_s147RunId,DP_FAULT);
+        BfS147EnterFinishing("finalizer-SEH");
+        BfS147RestoreUntilClean();
+        BfS147DisarmUntilReturned();
+        InterlockedExchange(&g_s147State,S147_FINISHED);
+        Markerf("[S147] RESULT pid=%lu run=%016llX reason=FINALIZER_SEH preReceipt=0x%X postReceipt=0x%X CDOrestored=yes funcsDisarmCompleted=yes\r\n",
+                g_s147Pid,(unsigned long long)g_s147RunId,preShiftReceipt,postShiftReceipt);
+    }
+}
+
+static void BfS147WorkerRun(){
+    S147SetupDeadlineClock setupClock={GetTickCount64(),0};
+    bool setupTimeoutReported=false;
+    for(;;){
+        LONG state=InterlockedCompareExchange(&g_s147State,0,0);
+        if(state==S147_ABORT_UNWOUND){
+            BfS147Finalize("SETUP_ABORT",0,0,false,false,0,0,false);
+            return;
+        }
+        ULONGLONG now=GetTickCount64();
+        S147SetupDeadlineKind deadline=S147SetupDeadlineFor(
+            &setupClock,state,now,(ULONGLONG)KBFNATURALPRESETUPMS,
+            (ULONGLONG)KBFNATURALSETUPMS);
+        if(deadline==S147_SETUP_DEADLINE_PRE_RESERVATION){
+            Markerf("[S147] pre-reservation timeout after %d ms (state=%ld): setup never claimed CDO ownership; nothing was written.\r\n",
+                    (int)KBFNATURALPRESETUPMS,(long)state);
+            BfS147Finalize("PRESETUP_TIMEOUT",0,0,false,false,0,0,false);
+            return;
+        }
+        if(deadline==S147_SETUP_DEADLINE_POST_RESERVATION&&S147SafeToFinalize(state)){
+            Markerf("[S147] post-claim setup timeout after %d ms (state=%ld): callback unwind/later-dispatch proof was not completed.\r\n",
+                    (int)KBFNATURALSETUPMS,(long)state);
+            BfS147Finalize("SETUP_TIMEOUT",0,0,false,false,0,0,false);
+            return;
+        }
+        if(deadline==S147_SETUP_DEADLINE_POST_RESERVATION&&!setupTimeoutReported){
+            Markerf("[S147] post-claim setup timeout reached pid=%lu run=%016llX in unsafe state=%ld; worker remains fail-stopped until callback unwind is proven.\r\n",
+                    g_s147Pid,(unsigned long long)g_s147RunId,(long)state);
+            setupTimeoutReported=true;
+        }
+        if(state==S147_WINDOW_OPEN) break;
+        Sleep(1);
+    }
+
+    ULONGLONG readyTick=GetTickCount64();
+    LARGE_INTEGER readyQpc={0}; QueryPerformanceCounter(&readyQpc);
+    InterlockedExchange64(&g_s147ReadyQpc,readyQpc.QuadPart);
+    Markerf("[S147] READY FOR INPUT pid=%lu run=%016llX tick=%llu window=%dms sampleCadence=%dms InputID=%d. Press Tab twice, then hold LeftShift 250-500 ms. Ability3 BP observation alone will NOT end the window.\r\n",
+            g_s147Pid,(unsigned long long)g_s147RunId,(unsigned long long)readyTick,
+            (int)KBFNATURALMS,(int)KBFNATURALSAMPLEMS,(int32_t)KBFINPUTID);
+
+    uint32_t preShiftReceipt=0,postShiftReceipt=0,lastIssues=0;
+    LONG loggedToggle=0,loggedAbility3=0;
+    bool sawShiftDown=false,sawShiftUp=false,sampledAfterShiftUp=false;
+    ULONGLONG shiftDownTick=0,lastLogTick=0;
+    bool lastShiftDown=false;
+    const char* reason="WINDOW_DONE";
+    bool classifyInput=true;
+    for(;;){
+        ULONGLONG now=GetTickCount64();
+        bool shiftDown=(GetAsyncKeyState(VK_LSHIFT)&0x8000)!=0;
+        if(shiftDown&&!sawShiftDown){
+            LARGE_INTEGER shiftQpc={0}; QueryPerformanceCounter(&shiftQpc);
+            sawShiftDown=true; shiftDownTick=(ULONGLONG)shiftQpc.QuadPart;
+        }
+        else if(sawShiftDown) sawShiftUp=true;
+
+        BfS147Capture sample={0};
+        bool valid=BfS147CaptureRaw(&sample);
+        LONG toggleNow=(LONG)sample.raw.toggleMapEvents,ability3Now=(LONG)sample.raw.ability3Events;
+        while(loggedToggle<toggleNow&&loggedToggle<4){
+            LONGLONG eventTick=InterlockedCompareExchange64(&g_s147ToggleMapTicks[loggedToggle],0,0);
+            if(eventTick==0) break;
+            loggedToggle++;
+            Markerf("[S147][BP] Toggle Map pid=%lu run=%016llX count=%ld qpc=%lld\r\n",
+                    g_s147Pid,(unsigned long long)g_s147RunId,
+                    (long)loggedToggle,(long long)eventTick);
+        }
+        while(loggedAbility3<ability3Now&&loggedAbility3<4){
+            LONGLONG eventTick=InterlockedCompareExchange64(&g_s147Ability3Ticks[loggedAbility3],0,0);
+            if(eventTick==0) break;
+            loggedAbility3++;
+            Markerf("[S147][BP] Ability3 pid=%lu run=%016llX count=%ld qpc=%lld\r\n",
+                    g_s147Pid,(unsigned long long)g_s147RunId,
+                    (long)loggedAbility3,(long long)eventTick);
+        }
+
+        // If the 5 ms worker poll missed the leading edge, the exact Ability3 callback's atomic
+        // VK_LSHIFT witness still proves that the hold occurred.  Its QPC is a conservative (later)
+        // ordering boundary; controls must precede it, and this sample is treated as post-input.
+        if(!sawShiftDown&&
+           InterlockedCompareExchange(&g_s147Ability3WhileShiftDown,0,0)!=0){
+            ULONGLONG abilityQpc=(ULONGLONG)InterlockedCompareExchange64(&g_s147Ability3Ticks[0],0,0);
+            if(abilityQpc!=0){
+                sawShiftDown=true; shiftDownTick=abilityQpc;
+                if(!shiftDown) sawShiftUp=true;
+            }
+        }
+
+        uint32_t sampleReceipt=valid?S147ReceiptMask(g_s147Baseline,sample.raw):0;
+        uint32_t priorReceipt=sawShiftDown?postShiftReceipt:preShiftReceipt;
+        uint32_t newReceipt=sampleReceipt&~priorReceipt;
+        if(sawShiftDown) postShiftReceipt|=sampleReceipt;
+        else preShiftReceipt|=sampleReceipt;
+        // Sampling remains continuous at KBFNATURALSAMPLEMS; file output is transition/checkpoint based
+        // to avoid turning a 5 ms observation cadence into thousands of synchronous writes.
+        bool logSample=newReceipt!=0||sample.raw.issueMask!=lastIssues||
+                       toggleNow!=loggedToggle||ability3Now!=loggedAbility3||
+                       shiftDown!=lastShiftDown||now-lastLogTick>=250;
+        if(logSample){
+            BfS147LogSample("SAMPLE",readyTick,sample,postShiftReceipt,shiftDown);
+            lastLogTick=now; lastShiftDown=shiftDown;
+        }
+        if(sample.raw.issueMask!=lastIssues){
+            if(sample.raw.issueMask) BfS147LogIssues(sample.raw.issueMask);
+            lastIssues=sample.raw.issueMask;
+        }
+        if(sawShiftUp) sampledAfterShiftUp=true; // this sample was captured after the OS key state read up.
+
+        bool deadlineReached=now-readyTick>=(ULONGLONG)KBFNATURALMS;
+        if(sample.raw.issueMask&S147_ISSUE_UNREADABLE){ reason="SAMPLE_SEH"; classifyInput=false; break; }
+        uint32_t structural=sample.raw.issueMask&
+            (S147_ISSUE_ASC_HEADER_CHANGED|S147_ISSUE_SPEC_MISSING|S147_ISSUE_SPEC_AMBIGUOUS|
+             S147_ISSUE_PRIMARY_MISSING|
+             S147_ISSUE_PRIMARY_REPLACED|S147_ISSUE_PRIMARY_WRONG_CLASS|S147_ISSUE_MANA_SET_MISSING|
+             S147_ISSUE_MANA_SET_REPLACED|S147_ISSUE_SPAWNED_HEADER_CHANGED|
+             S147_ISSUE_MANA_SET_AMBIGUOUS|S147_ISSUE_INPUT_ID_CHANGED);
+        if(structural&&(!sawShiftDown||sawShiftUp)){
+            reason="STRUCTURAL_DRIFT"; classifyInput=false; break;
+        }
+        if(S147WindowComplete(postShiftReceipt,deadlineReached,sawShiftDown,sawShiftUp,sampledAfterShiftUp)){
+            break;
+        }
+        Sleep((DWORD)KBFNATURALSAMPLEMS);
+    }
+    BfS147Finalize(reason,preShiftReceipt,postShiftReceipt,sawShiftDown,sawShiftUp,
+                   readyTick,shiftDownTick,classifyInput);
+}
+
+static void BfS147WorkerGuarded(){
+    __try{ BfS147WorkerRun(); }
+    __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[S147] WORKER SEH pid=%lu run=%016llX: %s ; invoking single-owner emergency finalizer.\r\n",
+                g_s147Pid,(unsigned long long)g_s147RunId,DP_FAULT);
+        BfS147Finalize("WORKER_SEH",0,0,false,false,0,0,false);
+    }
+}
+#endif
+
 static void BsFinalReport(){
     Marker("[BS] ---------------- RM_BOTSPAWN SUMMARY ----------------\r\n");
     Markerf("[BS] resolved=%d roster=%d team=%d(player=%d) called=%d faulted=%d refused=%d\r\n",
@@ -18250,6 +23824,80 @@ static DWORD WINAPI Worker(LPVOID){
             Markerf("[BS] *** ALERT: the ladder did not reach its final step (stopped at %ld). Most "
                     "likely game-thread STARVATION -- read FsHold's own verdict line first, and re-fly "
                     "with an empty KFSNAME if the swap took no hits. Returning 9. ***\r\n",(long)g_bsStep);
+            return 9; }
+        return 0;
+    }
+    // *** S143 RM_BOTFIGHT -- the minimum bot-fight loop. Same no-.text-write funcswap route as
+    //   RM_BOTSPAWN. Everything runs in ONE game-thread hit (DoBotFight); all destructive steps are
+    //   KBFARMS-gated (default 0 = pure read-only recon). Stage gft -> fo -> sp -> this.
+    if(kRunMode==RM_BOTFIGHT){
+#if KBFSELFCAL
+        Marker("[S148] RM_BOTFIGHT isolated self-damage calibration: require the unique local "
+               "possessed hero's existing live ASC; no wiring, bot, team, grant, activation, or legacy damage arm.\r\n");
+#elif KBFBINDONLY
+        g_s149Pid=GetCurrentProcessId();
+        InterlockedExchange64(&g_s149Run,(LONGLONG)GetTickCount64());
+        memset(&g_s149BindFacts,0,sizeof(g_s149BindFacts));
+        memset(&g_s149CleanupFacts,0,sizeof(g_s149CleanupFacts));
+        memset(&g_s149Selection,0,sizeof(g_s149Selection));
+        InterlockedExchange(&g_s149WitnessPublished,0);
+        InterlockedExchange(&g_s149SelectionPublished,0);
+        InterlockedExchange(&g_s149CallClaimed,0);
+        InterlockedExchange(&g_s149CallIssued,0);
+        InterlockedExchange(&g_s149SetupFaulted,0);
+        InterlockedExchange(&g_s149InitFaulted,0);
+        InterlockedExchange(&g_s149FsParked,0);
+        InterlockedExchange(&g_s149FsEntryPending,0);
+        InterlockedExchange(&g_s149FsPhase,S149_BIND_THUNK_ACTIVE);
+        InterlockedExchange(&g_s149FsMutationRoots,0);
+        InterlockedExchange(&g_s149FsPostRestoreEntries,0);
+        Markerf(S149_BIND_POLICY_MARKER_FORMAT,g_s149Pid,
+                (unsigned long long)g_s149Run);
+        Marker("[S149] bind-only setup is persistent by design: WireAbilitySystem may create/cache "
+               "the carrier ASC and InitAbilityActorInfo mutates actor-info state; no spawn, grant, "
+               "activation, damage, bot wiring, Alive poke, GAS borrow, natural input, or S148 call.\r\n");
+#else
+        Marker("[BF] RM_BOTFIGHT (S147): minimum bot-fight loop. Read-only recon always; WALL P (bind/\r\n"
+               "[BF] grant/eligibility/natural input) and WALL E (spawn/team/damage) each gated by a KBFARMS bit. Grade the\r\n"
+               "[BF] decision-critical bot-team read + the InitAbilityActorInfo bind (never called in 31\r\n"
+               "[BF] sessions). Stage into a TUTORIAL WORLD (gft -> fo -> sp -> this).\r\n");
+#endif
+#if KFUNCSWAP
+        Marker("[BF] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write\r\n");
+        if(!FsArm()){
+#if KBFSELFCAL
+            Marker("[S148] DELIVERY_REFUSED RESULT=DELIVERY_REFUSED; funcswap arm failed, "
+                   "no mutation/call\r\n");
+#elif KBFBINDONLY
+            Marker("[S149] DELIVERY_REFUSED funcswap arm failed; no setup mutation/call and "
+                   "no BIND_READY terminal\r\n");
+#else
+            Marker("[BF] FAIL funcswap arm -- nothing was armed and nothing was called\r\n");
+#endif
+            return 6;
+        }
+#if KBFNATURALINPUT
+        BfS147WorkerGuarded(); // owns READY, continuous raw sampling, CDO restoration, and FsDisarm.
+#else
+        FsHold(KPDMODEHOLDMS);       // returns as soon as DoBotFight sets g_done
+        #if KBFBINDONLY
+        BfS149FsDisarmGuarded();
+        #else
+        FsDisarm();
+        #endif
+#if KBFBINDONLY
+        BfS149EmitTerminalAfterDisarm();
+#endif
+#endif
+#else
+        Marker("[BF] REFUSING TO RUN with KFUNCSWAP=0 -- that path installs a standing .text patch "
+               "(measured 10/10 lethal, S112). This mode writes no module image.\r\n");
+        return 7;
+#endif
+        Markerf("[BF] worker done (hits=%ld hitsGT=%ld)\r\n",(long)g_called,(long)g_hitsGT);
+        if(g_called<1){
+            Marker("[BF] *** ALERT: DoBotFight never ran on the game thread (hitsGT low). Likely game-\r\n"
+                   "[BF] thread starvation -- read FsHold's verdict; re-fly with empty KFSNAME. Return 9. ***\r\n");
             return 9; }
         return 0;
     }

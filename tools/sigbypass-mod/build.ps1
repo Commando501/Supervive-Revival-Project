@@ -74,6 +74,14 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 
+# PowerShell 7's Standard native argument mode removes the literal quotes from registry entries such
+# as -DKFSNAME=\"\" before clang sees them, turning an intended empty C string into an empty macro and
+# breaking otherwise reproducible builds. Legacy mode preserves the argv shape used by Windows
+# PowerShell 5.1. This assignment is script-scoped and has no effect on the caller after the script.
+if ($PSVersionTable.PSVersion.Major -ge 7) {
+    $PSNativeCommandArgumentPassing = 'Legacy'
+}
+
 # ⚠⚠ S125 GUARD. `-Variant X` WITHOUT `-Name` used to be SILENTLY IGNORED: the script fell through to
 #    the default injection set, built 11 shims and printed "11 built, 0 failed" -- which reads exactly
 #    like success, and the only way to notice was to diff a `.text` hash afterwards. CLAUDE.md records
@@ -270,6 +278,16 @@ $Variants = @{
         #   so its census delta is attributable to the handler alone. In the default build B3 runs AFTER
         #   B1 and is therefore confounded by it -- THIS is the arm that answers "subscribed but inert?".
         'dropplane-handler'   = @('-DKRUNMODE=RM_DROPPLANE','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKDPARMS=0x3D')
+        #   ★★★★★ S150-drop PHASE-A: the CLEAN drop-phase REACT arm. B0 + B3a + B4 + B0c
+        #     (0x01|0x04|0x10|0x20 = 0x35) -- calls ONLY `OnRoundPhaseChanged` (no spaces, ubergraph 1403,
+        #     the DROP reaction) with NewPhase=6 (EGP_Lineup, KDPPHASE default), NOT the spaces-variant
+        #     `On Round Phase Changed` (ubergraph 545 = the GoToPhase LADDER, which is NOT the plane).
+        #     `dropplane-handler` (0x3D) confounds the two by running BOTH; this isolates the correct one.
+        #     No SpawnPlane (B1), so the census delta is attributable to the react handler alone; if the
+        #     handler internally spawns/flies the plane it shows in the AFTER census. Pairs with the
+        #     external reader tools/re/drop_ride_readout.py. Risk class: CALL-ONLY, no .text write.
+        #     See docs/drop-sequence-status-s150.md §6.5 (offline pre-flight L2). Diff the .text HASH.
+        'dropplane-react'     = @('-DKRUNMODE=RM_DROPPLANE','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKDPARMS=0x35')
         #   +1 dim on the frame fix: the ds_hybrid.cpp:2151 recipe (FlowStack empty + Max=8,
         #   PreviousFrame=0, CurrentNativeFunction=0) -- the only form of this fix that has ever run in
         #   this game. Use it if 'dropplane' faults, to separate "SpawnPlane really faults" from
@@ -537,6 +555,25 @@ $Variants = @{
         #   KDXARMS bits: 0 D0c ContainsPlayer dispatch control | 1 D1 pre-append NEGATIVE control |
         #                 2 D2 the append | 3 D3 the detach | 4 D4 second cycle | 5 D5 restore on bail
         'dismount'            = @('-DKRUNMODE=RM_DISMOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1')
+        # ★★★★★ S150-drop RM_MOUNT -- PUT THE RIDER INTO THE POD + co-move it + optional descent.
+        #   Sibling of RM_DISMOUNT: the game's own mount (AuthPlayerEnterWorldAttachedToRidable 0x55CD510)
+        #   is unreachable (stripped round-game-mode getter), but its success body is just a PlayersAttached
+        #   append + a one-time reposition -- both replicable. The S150 pre-flight MEASURED that a
+        #   poke-appended rider does NOT co-move the flying pod, so a real ride needs THIS arm's per-hit
+        #   reposition (POLL). Risk class DATA (one PlayersAttached append via the game's OWN ResizeGrow)
+        #   + CALL-ONLY (MoveStep 0x55C1B20, SetPredropHidden, SetActorEnableCollision, StartPodGameplay
+        #   via ProcessEvent slot 78). NO .text write, NO PI hook, NO CDO poke. PRESUPPOSES an initialised
+        #   flying pod -- stage a droppod/poolspawn injection FIRST (e.g. gft -> fo -> sp ->
+        #   droppod-pe-cdopoke -> this). See docs/drop-sequence-status-s150.md §6.5.
+        #   KMTARMS bits: 0x01 APPEND | 0x02 UNHIDE | 0x04 POSITION-ONCE | 0x08 POLL(ride) | 0x10 PHASE-B(descend)
+        #   ⚠ R3 is the decisive receipt (external RPM: hero X vs pod X). mount-ride = treatment;
+        #     mount-noride = the poke-only control that MUST show a frozen rider. Diff the .text HASH.
+        'mount'               = @('-DKRUNMODE=RM_MOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1')                                 # recon only (KMTARMS=0): resolve pod/comp/PS/hero, read arrays, no writes
+        'mount-append'        = @('-DKRUNMODE=RM_MOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKMTARMS=0x01')                # append PS -> PlayersAttached only
+        'mount-noride'        = @('-DKRUNMODE=RM_MOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKMTARMS=0x07')                # append+unhide+position, NO poll -> POKE-ONLY CONTROL (frozen rider)
+        'mount-ride'          = @('-DKRUNMODE=RM_MOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKMTARMS=0x0F')                # append+unhide+position+POLL -> the RIDE TREATMENT
+        'mount-descend'       = @('-DKRUNMODE=RM_MOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKMTARMS=0x1F')                # ride + StartPodGameplay (descent)
+        'mount-phaseb'        = @('-DKRUNMODE=RM_MOUNT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKMTARMS=0x10')                # StartPodGameplay only (descent test, no mount)
         # ★★★★★ S135 RM_BOTSPAWN -- bots on the TUTORIAL route. CALL-ONLY: no module-image write,
         #   no data poke, no PI hook; REFUSES under KFUNCSWAP=0. Staging: gft -> fo -> sp -> this
         #   (NO pod, NO plane -- this is not the drop chain).
@@ -548,6 +585,77 @@ $Variants = @{
         #   Knobs: -DKBSTEAM (default -1 = opposite the player) -DKBSHERO -DKBSDIFF -DKBSLEVEL
         #          -DKBSOFFSET -DKBSARMS -DKBSFUNC -DKBSNUM -DKBSAI
         'botspawn'            = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1')
+        # ---- S143 RM_BOTFIGHT: the MINIMUM BOT-FIGHT LOOP (docs/coop-vs-ai-roadmap-s142.md) --------
+        # ONE source arm (DoBotFight), read-only recon always, each destructive step gated by a KBFARMS
+        # bit: bit0 spawn, bit1 bind (WireAbilitySystem+InitAbilityActorInfo), bit2 grant, bit3 activate,
+        # bit4 damage, bit5 wirebot. Fly the escalation ACROSS SITTINGS (FK-32 ~1 injection/staging),
+        # no source edit. All are the no-.text-write funcswap route (refuse under KFUNCSWAP=0).
+        # Knobs: -DKBFOWNER (InitAbilityActorInfo owner 0=carrier/1=PS/2=hero) -DKBFDMG -DKBFDMGTGT
+        #        -DKBFABIL (Ability1/2/3/AbilityDodgeRoll) -DKBFHERO.
+        # SITTING 1 -- pure read-only recon (zero risk): resolution, player ASC/AvatarActor state,
+        #   player team index, hero ability classes, baseline census. Confirms the arm reads correctly.
+        'botfight'            = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1')
+        # SITTING 2 (recommended first REAL flight) -- the two DECISION-CRITICAL de-risks in one
+        #   injection (independent subsystems, each with its own readout): K_SPAWN reads the bot's team
+        #   vs the player's (is an enemy bot hostile client-side at all?), K_BIND runs the never-called
+        #   InitAbilityActorInfo AvatarActor bind (WALL P). 0x03 = spawn|bind.
+        'botfight-probe'      = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x03')
+        # S149 isolated persistent bootstrap for unchanged S148: unique-owner selection, the existing
+        # WireAbilitySystem path, exactly one guarded InitAbilityActorInfo call, strict post-bind
+        # identity/property witness, then callback drain + Func restoration before BIND_READY.
+        # Compile-time policy and artifact contracts forbid every other KBF arm, natural input, and S148.
+        'botfight-bind-only'  = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x02','-DKBFBINDONLY=1','-DKBFOWNER=0','-DKBFSELFCAL=0','-DKBFNATURALINPUT=0')
+        # SITTING 3 -- WALL P full: bind -> grant Ability1 -> activate (player casts). 0x0E.
+        'botfight-cast'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x0E')
+        # S144 -- ACTIVATE ONLY (0x08): no re-bind, no re-grant. Retained as a diagnostic for a process where
+        #   the ability is already granted+committed; combined arms now verify the exact durable spec later.
+        'botfight-activate'   = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x08')
+        # S144 -- ALIVE + ACTIVATE (0x48): poke hero LivingState=Alive, then TryActivate. For a process where the
+        #   ability is ALREADY granted; tests whether LivingState=Dead was THE activation blocker (single variable).
+        'botfight-alivecast'  = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x48')
+        # S145 -- full WALL P: bind->grant->alive->GAS attributes->later-callback verified activation (0xCE).
+        'botfight-castalive'  = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE')
+        # S145 controlled follow-up: identical 0xCE path, only Ability1/LMB -> Ability3/MiniDash changes.
+        'botfight-castalive-dash' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE','-DKBFABIL=\"Ability3\"')
+        # S145 charge-gate intervention: same direct MiniDash path, one verified runtime charge immediately before activation.
+        'botfight-castalive-dash-charge1' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE','-DKBFABIL=\"Ability3\"','-DKBFCHARGES=1')
+        # S145 diagnostic after charge1 remained false: same charge treatment, then exact virtual cooldown/cost census.
+        'botfight-castalive-dash-gates' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE','-DKBFABIL=\"Ability3\"','-DKBFCHARGES=1','-DKBFGATES=1')
+        # S145 one-variable cost treatment: prove cooldown/cost 1/0, seed only registered Mana 0/0->10/10,
+        # re-run the identical exact-instance gates, and activate only if the treatment flips them to 1/1.
+        'botfight-castalive-dash-mana10' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE','-DKBFABIL=\"Ability3\"','-DKBFCHARGES=1','-DKBFGATES=1','-DKBFMANA=10')
+        # S145 matched no-activation control after two gates-open attempts ended at 0xDEAD: call the full
+        # MiniDash CanActivateAbility virtual after 1/0->1/1, but compile out TryActivateAbilityByClass.
+        'botfight-castalive-dash-mana10-canactivate' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE','-DKBFABIL=\"Ability3\"','-DKBFCHARGES=1','-DKBFGATES=1','-DKBFMANA=10','-DKBFCANACT=1')
+        # S145 no-activation decomposition: call base CanActivate with a failure-tag output, then isolate
+        # the remaining tag/K2/Loki gate. KBFCANACT stays truthy, so every TryActivate path is compiled out.
+        'botfight-castalive-dash-mana10-candecomp' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE','-DKBFABIL=\"Ability3\"','-DKBFCHARGES=1','-DKBFGATES=1','-DKBFMANA=10','-DKBFCANACT=2')
+        # S145 one-variable matched causal treatment: the engine's receiver is the MiniDash CDO,
+        # so temporarily seed only its CurrentCharges 0->1, run no-activation eligibility queries,
+        # then restore the shared CDO field to 0 before returning.
+        'botfight-castalive-dash-mana10-candecomp-cdocharge1' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE','-DKBFABIL=\"Ability3\"','-DKBFCHARGES=1','-DKBFGATES=1','-DKBFMANA=10','-DKBFCANACT=2','-DKBFCDOCHARGES=1')
+        # S147 activation-provenance arm: grant MiniDash with its canonical Ability3 InputID=5,
+        # open the exact S145 CDO/base/full eligibility profile, then return through ProcessInternal.
+        # The worker waits for a distinct later game-thread dispatch before printing READY, observes
+        # the real Ability3 input path with raw samples, restores the shared CDO, and disarms. No
+        # reflected ByClass, native handle wrapper, InternalTry, or InternalDo activation call.
+        'botfight-castalive-dash-mana10-cdocharge1-naturalinput' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE','-DKBFABIL=\"Ability3\"','-DKBFCHARGES=1','-DKBFGATES=1','-DKBFMANA=10','-DKBFCANACT=2','-DKBFCDOCHARGES=1','-DKBFINPUTID=5','-DKBFNATURALINPUT=1','-DKBFNATURALMS=30000','-DKBFNATURALPRESETUPMS=60000')
+        # S146 first all-gates-open activation crossing: direct native handle-level TryActivateAbility,
+        # only when Role==Authority and ActorInfo::IsLocallyControlled==true; allowRemote=false.
+        # Reflected TryActivateAbilityByClass remains compiled out.
+        'botfight-castalive-dash-mana10-cdocharge1-handleactivate' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE','-DKBFABIL=\"Ability3\"','-DKBFCHARGES=1','-DKBFGATES=1','-DKBFMANA=10','-DKBFCANACT=2','-DKBFCDOCHARGES=1','-DKBFHANDLEACT=1')
+        # S146 localization control: identical state and native wrapper call, but pass the canonical
+        # invalid FGameplayAbilitySpecHandle INDEX_NONE (-1), proven absent from the live Items census.
+        'botfight-castalive-dash-mana10-cdocharge1-handlemiss' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE','-DKBFABIL=\"Ability3\"','-DKBFCHARGES=1','-DKBFGATES=1','-DKBFMANA=10','-DKBFCANACT=2','-DKBFCDOCHARGES=1','-DKBFHANDLEACT=1','-DKBFHANDLEMISS=1')
+        # S148A isolated damage calibration: require the possessed hero's live Health set to have one
+        # globally unique registration on its selected ASC, seed exact Health 1000/1000, call
+        # AdjustHealth(-250) once, and require immediate plus distinct >=250 ms later Current=750
+        # receipts. Exact reflected-property provenance; no legacy KBF arm.
+        'botfight-damage-self-cal' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1')
+        # SITTING 4 -- WALL E full: spawn -> wire the bot's ASC -> AdjustHealth to KILL it. 0x31.
+        'botfight-kill'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x31','-DKBFDMGTGT=1')
+        # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.
+        'botfight-full'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x3F','-DKBFDMGTGT=1')
 
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
@@ -622,6 +730,12 @@ $Variants = @{
         # S138 flight 7 -- ARM D (make the LokiBotController) + ARM F (drive the gate recompute).
         # NO ARM E: flight 6 already settled that SpawnBot's premade path runs, and leaving it out
         # keeps ARM F's result attributable to the recompute rather than to a second world change.
+        # ⚠⚠ audit-S142 HAZARD: KBSPSARMS 0xA0 == gasattr-ctrl's 0x0A0, so 'driverecompute' now builds
+        #    BYTE-IDENTICAL to 'gasattr-ctrl' (both 4465ebc4d7168c03). It is a DEAD S138 NAME -- do NOT
+        #    A/B it against gasattr-ctrl (that would be a copy-against-itself, a burned run), and do NOT
+        #    cite its recorded gate a2a952babfed256b as reproducible: that flown artifact is preserved
+        #    ONLY in dumps/s140-arms-pre/ and no longer rebuilds. Use gasattr-ctrl as the canonical
+        #    ARM-D+F control. (text_digest.py --dupes flags this pair.)
         'driverecompute'      = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0xA0')
         # READ-ONLY control for ARM F: ARM D runs, ARM F is compiled OUT (bit7 clear), so the gate
         # must NOT move. It converts an ARM F null from 'something is broken' into 'the call did

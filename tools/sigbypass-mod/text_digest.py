@@ -177,6 +177,13 @@ KNOWN_GATES = {
     "catalog_store_fix_jzpatch":    [("21e62f50f6d40c8d", "RAW", "docs/s111-jz-dropped-shipping.md:18")],
     "gft_ready_fix":                [("6b2fe2c2a747c19f", "RAW", "docs/s111-FK7-HANDOFF.md:151")],
     "botai":                        [("5e47c13cf7f0a158", "RAW", "CLAUDE.md:1235")],
+    "botfight_castalive_dash_mana10_cdocharge1_naturalinput":
+                                    [("366e8ef09afa8cb9", "RAW", "docs/s147-natural-input-build-evidence.md")],
+    "botfight_bind_only":         [("f7765063941de93a", "RAW", "docs/s149-bind-bootstrap-flight1.md")],
+    "botfight_damage_self_cal":    [("7c6be77666e2083d", "RAW", "docs/s148-self-damage-build-evidence.md"),
+                                     ("8549bb0acd8d785d", "RAW", "docs/s148-self-damage-flight2.md"),
+                                     ("1be00cb993cab717", "RAW", "docs/s148-self-damage-flight3.md"),
+                                     ("c46fb598d0850f24", "RAW", "docs/s148-self-damage-flight4.md")],
     "botspawn":                     [("e48c90bc6cf17c93", "VSIZE", "CLAUDE.md:1125")],
     "botspawn_readonly":            [("319ac875af229f46", "RAW", "CLAUDE.md:1250"),
                                      ("d96480ad64c1a403", "VSIZE", "CLAUDE.md:1251 (diagnostic, not a gate)")],
