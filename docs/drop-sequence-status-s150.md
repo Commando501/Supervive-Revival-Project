@@ -717,7 +717,13 @@ The shim's own [MT] markers are trustworthy because RM_MOUNT already uses that g
   step from here.
 
 **Next possible steps (offline, no launch needed):**
-1. Fix `drop_ride_readout.py` to use the RdResolve filter.
+1. ~~Fix `drop_ride_readout.py` to use the RdResolve filter.~~ **DONE 2026-09-01** —
+   `tools/re/drop_ride_readout.py` now applies the shim's mount gate in `discover()`:
+   `chain_ends_at(cls, "Actor") && chain_has(cls, "DropPod") && PodTeamIndex@+0x460 == 0 &&
+   RootComponent@+0x1B0 != NULL`. Non-qualifying "DropPod"-named UObjects (AnimInstance /
+   UUserWidget / component templates) are rejected AND named in the output so a wrong pick is
+   impossible to hide. Same gate applied to hero discovery for symmetry. Syntax-checked; CLI
+   unchanged. Line count 285 → 415. No behavior change for callers that pass `--pod`/`--hero`.
 2. Design a `mount-descend` flight to test descent (StartPodGameplay via ProcessEvent slot 78).
 3. Chain toward the acceptance predicate: `mount-descend → dismount@landing (S132 existing) → play`.
 4. Fix the CallBPGuarded primitive's `FFrame+0x80` OutParms miss (§6.9 ROUTE β) — unblocks every

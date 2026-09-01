@@ -148,6 +148,70 @@ def chain_has(cls, needle):
     return False
 
 
+def chain_ends_at(cls, exact):
+    """S150-drop mount-flight 2 fix: exact leaf-name walk of the SuperStruct chain.
+    Mirrors the shim's DPV_ACTOR test (strcmp(n,"Actor")==0). Substring `chain_has`
+    is not enough — an AnimInstance/UUserWidget with 'DropPod' in the class name
+    passes substring but has no Actor ancestor, and the reader would then read
+    stale bytes off the wrong object. Use this to gate discovery."""
+    cur, g = cls, 0
+    while lp(cur) and g < 24:
+        if oname(cur) == exact:
+            return True
+        cur = p(cur + SUPER_OFF)
+        g += 1
+    return False
+
+
+# S150-drop offsets [M] from the shim's RdResolve + PdPodDump — same offsets the
+# working RM_MOUNT arm reads. Never diverge from these.
+POD_TEAM_INDEX = 0x460   # IntProperty; class default -1; == 0 means InitializeDropPod ran
+POD_CUR_DEST   = 0x478   # StructProperty Vector (24 B, LWC doubles)
+
+
+def pod_qualifies(o):
+    """S150-drop: apply the shim's RdResolve gate to reject non-Actor/uninitialised
+    'DropPod'-named UObjects. Returns (True, "why") for a real mountable pod, else
+    (False, "why-not") so discovery is self-attributing.
+
+    Gate:
+      (a) class chain contains 'DropPod' (name family)
+      (b) class chain EXACT-terminates at 'Actor' (kills AnimInstance/UUserWidget)
+      (c) RootComponent @pod+0x1B0 is non-null (kills DEFERRED-never-finished pool templates)
+      (d) PodTeamIndex @pod+0x460 == 0 (kills class-default -1 = never went through InitializeDropPod)
+    """
+    cls = p(o + CLASS_OFF)
+    if not lp(cls):
+        return (False, "no class")
+    if not chain_has(cls, "DropPod"):
+        return (False, "not DropPod-named")
+    if not chain_ends_at(cls, "Actor"):
+        return (False, "not Actor-derived (AnimInstance/UUserWidget/Component with DropPod in name)")
+    root = p(o + POD_ROOT)
+    if not lp(root):
+        return (False, "RootComponent null (deferred/template pod)")
+    b = rpm(o + POD_TEAM_INDEX, 4)
+    if not b:
+        return (False, "PodTeamIndex unreadable")
+    ti = int.from_bytes(b, "little", signed=True)
+    if ti != 0:
+        return (False, "PodTeamIndex=%d (class default -1; expect 0 from InitializeDropPod)" % ti)
+    return (True, "actor-derived, root=0x%X, PodTeamIndex=0" % root)
+
+
+def hero_qualifies(o):
+    """S150-drop: same discipline for hero discovery. Reject non-Actor 'BP_HERO_'-named
+    UObjects (e.g. widgets, animation blueprints)."""
+    cls = p(o + CLASS_OFF)
+    if not lp(cls):
+        return (False, "no class")
+    if not chain_ends_at(cls, "Actor"):
+        return (False, "not Actor-derived")
+    if not lp(p(o + POD_ROOT)):
+        return (False, "RootComponent null")
+    return (True, "actor-derived, has RootComponent")
+
+
 def actor_loc(actor):
     root = p(actor + POD_ROOT)
     return v3(root + SC_LOC) if lp(root) else None
@@ -159,14 +223,19 @@ def actor_vel(actor):
 
 
 def discover():
-    """One GUObjectArray pass -> (pods[], heroes[])."""
+    """One GUObjectArray pass -> (pods[], heroes[], rejected).
+
+    S150-drop mount-flight 2 fix: apply the shim's RdResolve gate so we never
+    pick a non-Actor UObject whose class name contains 'DropPod' or 'BP_HERO_'.
+    Rejected candidates are returned so the caller can print WHY discovery failed.
+    """
     hdr = rpm(OBJOBJECTS, 0x18)
     if not hdr:
-        return [], []
+        return [], [], []
     objptr, numEl = u64(hdr, 0), u32(hdr, 0x14)
     if not lp(objptr) or not (0 < numEl < 8000000):
-        return [], []
-    pods, heroes = [], []
+        return [], [], []
+    pods, heroes, rejected = [], [], []
     for ci in range((numEl + PERCHUNK - 1) // PERCHUNK):
         chunk = p(objptr + ci * 8)
         if not lp(chunk):
@@ -178,11 +247,21 @@ def discover():
             nm = oname(o)
             if nm.startswith("Default__") or "_GEN_VARIABLE" in nm:
                 continue
+            # Pod candidacy: object name starts with BP_DropPod (fast prefilter)
+            # AND class chain passes the mount gate.
             if nm.startswith("BP_DropPod"):
-                pods.append((o, nm))
+                ok, why = pod_qualifies(o)
+                if ok:
+                    pods.append((o, nm))
+                else:
+                    rejected.append(("pod", o, nm, why))
             elif nm.startswith("BP_HERO_"):
-                heroes.append((o, nm))
-    return pods, heroes
+                ok, why = hero_qualifies(o)
+                if ok:
+                    heroes.append((o, nm))
+                else:
+                    rejected.append(("hero", o, nm, why))
+    return pods, heroes, rejected
 
 
 def read_num(comp, arr_off):
@@ -213,9 +292,9 @@ if not pod or not hero:
         if not alive():
             print("*** process gone while discovering -- NOT OBTAINED (not a null) ***")
             sys.exit(3)
-        pods, heroes = discover()
+        pods, heroes, rejected = discover()
         if pods:
-            print("\npod candidates:")
+            print("\npod candidates (PASSED the RdResolve gate: Actor-derived + PodTeamIndex==0 + Root!=null):")
             for a, nm in pods:
                 loc = actor_loc(a)
                 print("  0x%X  %s  loc=%s" % (a, nm, ("(%.1f,%.1f,%.1f)" % loc) if loc else "?"))
@@ -223,6 +302,15 @@ if not pod or not hero:
             for a, nm in heroes:
                 loc = actor_loc(a)
                 print("  0x%X  %s  loc=%s" % (a, nm, ("(%.1f,%.1f,%.1f)" % loc) if loc else "?"))
+            # S150-drop mount-flight 2 fix: name the REJECTED candidates so a wrong
+            # pick is impossible to hide. Mount-flight 2 picked a stale template because
+            # the reader lacked this gate.
+            if rejected:
+                print("rejected candidates (would have been picked by the old startswith-only filter):")
+                for kind, a, nm, why in rejected[:12]:
+                    print("  [%s] 0x%X  %s  -- %s" % (kind, a, nm, why))
+                if len(rejected) > 12:
+                    print("  ... %d more rejected" % (len(rejected) - 12))
             if not pod:
                 pod = pods[0][0]
             if not hero and heroes:
@@ -232,7 +320,10 @@ if not pod or not hero:
             break
         time.sleep(1.0)
     if not pod:
-        print("\n*** no BP_DropPod* appeared within %.0fs -- STAGING statement, not a result. ***" % SECS)
+        print("\n*** no qualifying BP_DropPod* appeared within %.0fs. This may mean the pod actor" % SECS)
+        print("    was never created (staging incomplete) OR only non-Actor 'DropPod'-named UObjects")
+        print("    exist (§6.8 substring hits: AnimInstance/UUserWidget/Component templates).")
+        print("    STAGING statement, not a result.")
         sys.exit(3)
 
 if not hero:
