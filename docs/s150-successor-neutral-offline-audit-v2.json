@@ -1,0 +1,253 @@
+{
+    "schema":  "s150-successor-neutral-offline-audit/v2",
+    "status":  "PASS",
+    "recordedUtc":  "2026-08-31T23:22:35.5043446Z",
+    "baseline":  {
+                     "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\s150-successor-historical-baseline.json",
+                     "sha256":  "BC4C2E1906CE03C04DA10C86BA85F2533DB3DEF6486AF55C0418E93215C1925D",
+                     "receipt":  {
+                                     "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\s150-successor-historical-baseline.receipt.json",
+                                     "size":  439,
+                                     "sha256":  "57668C75C23448165FA5963C7D12F512C9D37C5DC976D391757FAA1EF2D03D47",
+                                     "creationUtcTicks":  639238017285008714,
+                                     "lastWriteUtcTicks":  639238017285018715,
+                                     "attributes":  "Archive"
+                                 }
+                 },
+    "validatedHistoricalRecordCounts":  {
+                                            "neutralInputs":  2,
+                                            "pinnedPreState":  12,
+                                            "activeState":  6,
+                                            "retirementFiles":  15
+                                        },
+    "preexistingIdentityNamespaces":  {
+                                          "retirementDirectories":  [
+                                                                        "s150-retirement-s150captureflight1-20260827-164413",
+                                                                        "s150-retirement-s150captureflight2-20260829-192619"
+                                                                    ],
+                                          "dumpDirectories":  [
+                                                                  "crash-s150captureflight1-20260827-164413",
+                                                                  "crash-s150captureflight2-20260829-192619"
+                                                              ]
+                                      },
+    "preexistingIdentityArtifacts":  {
+                                         "ledgerDirectoryPath":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\docs\\s149-ledgers",
+                                         "ledgerDirectoryExists":  false,
+                                         "ledgerJsonPaths":  [
+
+                                                             ],
+                                         "runtimeReceiptPaths":  [
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/crashwatch.stderr.log",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/crashwatch.stdout.log",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-child.json",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-cleanup-result.json",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-invoked.json",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-result.json",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-result.receipt.json",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher.stderr.log",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/launcher.stdout.log",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/recoverlaunch-invoked.json",
+                                                                     "docs/s150-retirement-s150captureflight2-20260829-192619/recovery-handoff.json"
+                                                                 ],
+                                         "identityLabeledPaths":  [
+                                                                      "docs/s150-retirement-s150captureflight1-20260827-164413",
+                                                                      "docs/s150-retirement-s150captureflight1-20260827-164413/capture-archive",
+                                                                      "docs/s150-retirement-s150captureflight1-20260827-164413/prior-watcher-output-manifest.json",
+                                                                      "docs/s150-retirement-s150captureflight1-20260827-164413/stager-planonly.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/capture-archive",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/capture-archive/9135172aa73b4cc8bac2c9fcbbe93aa1-capture.log",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/capture-archive/9135172aa73b4cc8bac2c9fcbbe93aa1-capture.log.prev",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/crashwatch.stderr.log",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/crashwatch.stdout.log",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-child.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-cleanup-result.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-invoked.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-result.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher-result.receipt.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher.stderr.log",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/launcher.stdout.log",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/prior-server.out.log",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/recoverlaunch-invoked.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/recovery-handoff.json",
+                                                                      "docs/s150-retirement-s150captureflight2-20260829-192619/stager-planonly.json",
+                                                                      "dumps/crash-s150captureflight1-20260827-164413",
+                                                                      "dumps/crash-s150captureflight2-20260829-192619"
+                                                                  ],
+                                         "identityControlTraversalExclusions":  {
+                                                                                    "codegraphIndex":  {
+                                                                                                           "path":  ".codegraph",
+                                                                                                           "type":  "Directory",
+                                                                                                           "attributes":  "Directory",
+                                                                                                           "directEntryNames":  [
+                                                                                                                                    ".gitignore"
+                                                                                                                                ]
+                                                                                                       },
+                                                                                    "gitMetadata":  {
+                                                                                                        "path":  ".git",
+                                                                                                        "type":  "File",
+                                                                                                        "attributes":  "Hidden, Archive"
+                                                                                                    }
+                                                                                },
+                                         "identityControlObservedPaths":  [
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight1-controller-test.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight1-controller.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight2-controller-test.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight2-controller.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight2-review-manifest.json",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/task-5-controller-report.md",
+                                                                              "docs/s150-retirement-s150captureflight1-20260827-164413/prior-watcher-output-manifest.json",
+                                                                              "tools/sigbypass-mod/tests/s150_successor_controller_contract_test.ps1"
+                                                                          ],
+                                         "identityControlArtifactPaths":  [
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight1-controller-test.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight1-controller.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight2-controller-test.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight2-controller.ps1",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/s150-flight2-review-manifest.json",
+                                                                              ".superpowers/sdd/2026-08-27-s150-capture-generation/task-5-controller-report.md",
+                                                                              "docs/s150-retirement-s150captureflight1-20260827-164413/prior-watcher-output-manifest.json"
+                                                                          ],
+                                         "neutralControllerContractTestExemption":  {
+                                                                                        "path":  "tools/sigbypass-mod/tests/s150_successor_controller_contract_test.ps1",
+                                                                                        "record":  {
+                                                                                                       "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\tools\\sigbypass-mod\\tests\\s150_successor_controller_contract_test.ps1",
+                                                                                                       "size":  7007,
+                                                                                                       "sha256":  "BFF7F84034827007F0E227346F823F6E545D64185E755A1CB714E185A8303DF5",
+                                                                                                       "creationUtcTicks":  639238085402310206,
+                                                                                                       "lastWriteUtcTicks":  639238085402310206,
+                                                                                                       "attributes":  "Archive"
+                                                                                                   },
+                                                                                        "includedInNewSourceRecords":  true,
+                                                                                        "includedInCanonicalArtifactSet":  true
+                                                                                    }
+                                     },
+    "runtimeRepoIdentityBoundary":  {
+                                        "root":  "G:\\git\\Supervive Revival Project",
+                                        "docs":  "G:\\git\\Supervive Revival Project\\docs",
+                                        "ledgerDirectory":  "G:\\git\\Supervive Revival Project\\docs\\s149-ledgers",
+                                        "ledgerJsonPaths":  [
+
+                                                            ],
+                                        "s150RuntimeEvidencePaths":  [
+
+                                                                     ]
+                                    },
+    "newSourceRecords":  [
+                             {
+                                 "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\configs\\s150-successor-evidence.ps1",
+                                 "size":  28494,
+                                 "sha256":  "D9AA3C2ED0EC28E2A3465B29281FFE9CED47567CF114AF345459E80C4E917635",
+                                 "creationUtcTicks":  639238053853549877,
+                                 "lastWriteUtcTicks":  639238053853549877,
+                                 "attributes":  "Archive"
+                             },
+                             {
+                                 "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\tools\\sigbypass-mod\\tests\\s150_successor_watcher_envelope_test.ps1",
+                                 "size":  28589,
+                                 "sha256":  "34FB06EC34C714B7578B750CBC8209CCDA2E0CEA932E5C405D442FAE75C6C77D",
+                                 "creationUtcTicks":  639238034841283644,
+                                 "lastWriteUtcTicks":  639238034841283644,
+                                 "attributes":  "Archive"
+                             },
+                             {
+                                 "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\tools\\sigbypass-mod\\tests\\s150_successor_output_ownership_test.ps1",
+                                 "size":  61809,
+                                 "sha256":  "D7E69AA65D61694536281C4B860F1B728072D1BD0E37C728313F87D565D89AB0",
+                                 "creationUtcTicks":  639238077287940016,
+                                 "lastWriteUtcTicks":  639238077287940016,
+                                 "attributes":  "Archive"
+                             },
+                             {
+                                 "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\tools\\sigbypass-mod\\tests\\s150_successor_controller_contract_test.ps1",
+                                 "size":  7007,
+                                 "sha256":  "BFF7F84034827007F0E227346F823F6E545D64185E755A1CB714E185A8303DF5",
+                                 "creationUtcTicks":  639238085402310206,
+                                 "lastWriteUtcTicks":  639238085402310206,
+                                 "attributes":  "Archive"
+                             },
+                             {
+                                 "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\tools\\sigbypass-mod\\tests\\fixtures\\s150_output_writer_fixture.cpp",
+                                 "size":  7766,
+                                 "sha256":  "1D58CA16705BA5622C755DB4B3076E0D355077F4A22F2D306C8566CCF5710606",
+                                 "creationUtcTicks":  639238040382681272,
+                                 "lastWriteUtcTicks":  639238040382681272,
+                                 "attributes":  "Archive"
+                             },
+                             {
+                                 "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\tools\\sigbypass-mod\\tests\\fixtures\\s150_output_fake_launcher.ps1",
+                                 "size":  2141,
+                                 "sha256":  "665A237B785EB42A4B2B358285F3FAB006744AF060A12E0D6EE93A9B4BD57070",
+                                 "creationUtcTicks":  639238042286691053,
+                                 "lastWriteUtcTicks":  639238042286701075,
+                                 "attributes":  "Archive"
+                             }
+                         ],
+    "launcher":  {
+                     "record":  {
+                                    "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\configs\\launch-redirect.ps1",
+                                    "size":  38916,
+                                    "sha256":  "8B01999B64C843C51336F8CDC99A0A3CB953837A289092981EA415CC0FF8A24C",
+                                    "creationUtcTicks":  639233152032860282,
+                                    "lastWriteUtcTicks":  639238075518714782,
+                                    "attributes":  "Archive"
+                                },
+                     "bom":  "EF BB BF",
+                     "nonAsciiCodePointCount":  8,
+                     "loadIsolation":  "PASS",
+                     "sourceContract":  "PASS"
+                 },
+    "processCensus":  {
+                          "pretest":  {
+                                          "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\tools\\sigbypass-mod\\build\\s150-successor-neutral-output-tests\\pretest-process-census.json",
+                                          "size":  601,
+                                          "sha256":  "DB40A4F0E4324300ECF2B8602C61067AAC79C4B5F1551AF44ED2B95422BBD213",
+                                          "creationUtcTicks":  639238083047043766,
+                                          "lastWriteUtcTicks":  639238083047083730,
+                                          "attributes":  "Archive"
+                                      },
+                          "pretestReceipt":  {
+                                                 "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\tools\\sigbypass-mod\\build\\s150-successor-neutral-output-tests\\pretest-process-census.receipt.json",
+                                                 "size":  486,
+                                                 "sha256":  "3A0721B438DA256B2ED166D7A0E96BA039571C84B2BF7FFD141BD91B342F33BC",
+                                                 "creationUtcTicks":  639238083047458998,
+                                                 "lastWriteUtcTicks":  639238083047458998,
+                                                 "attributes":  "Archive"
+                                             },
+                          "requiredPretestCounts":  {
+                                                        "ags":  0,
+                                                        "SUPERVIVE-Win64-Shipping":  0,
+                                                        "usmapdump":  0,
+                                                        "go":  0,
+                                                        "inject":  0,
+                                                        "crashpad_handler":  0,
+                                                        "s150_output_writer_fixture":  0,
+                                                        "s147_natural_state_test":  0,
+                                                        "s148_damage_calibration_test":  0,
+                                                        "s149_bind_bootstrap_test":  0
+                                                    },
+                          "posttestCounts":  {
+                                                 "ags":  0,
+                                                 "SUPERVIVE-Win64-Shipping":  0,
+                                                 "usmapdump":  0,
+                                                 "go":  0,
+                                                 "inject":  0,
+                                                 "crashpad_handler":  0,
+                                                 "s150_output_writer_fixture":  0,
+                                                 "s147_natural_state_test":  0,
+                                                 "s148_damage_calibration_test":  0,
+                                                 "s149_bind_bootstrap_test":  0
+                                             }
+                      },
+    "buildInventory":  {
+                           "path":  "C:\\Users\\eastr\\.codex\\worktrees\\78d0\\Supervive Revival Project\\tools\\sigbypass-mod\\build\\s150-successor-neutral-output-tests\\offline-build-inventory.json",
+                           "size":  8285,
+                           "sha256":  "76AAC08CE896CA53B8128EA20025343D5C3B7492057DCEB8CD1C29D767DB700D",
+                           "creationUtcTicks":  639238090865818446,
+                           "lastWriteUtcTicks":  639238090865868410,
+                           "attributes":  "Archive"
+                       },
+    "productionInvocationCount":  0,
+    "successorIdentityCreated":  false,
+    "liveAuthorization":  false
+}

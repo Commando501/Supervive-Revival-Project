@@ -81,11 +81,14 @@ param(
                          # Trade-off, stated: on a real crash it FREEZES the process for the
                          # duration of the dump. That is free (it is dying), but if a marker ever
                          # fires spuriously a healthy game would freeze once, then resume.
-  [int]$InjectGapSeconds # S109: seconds between successive secondary manual-maps. Injector default is
+  [int]$InjectGapSeconds, # S109: seconds between successive secondary manual-maps. Injector default is
                          # now 20 (raised from 3 on 2026-08-05). At 3 s the four secondaries were
                          # mapped in a ~13 s burst and EVERY death in the S109 series landed at or
                          # after it; >=10 s gaps cut the hazard ~71x. Pass 3 to restore the old burst.
                          # See docs/s109-dump-forensics.md sections 18-20.
+  [switch]$S150ControlledCapture,
+  [string]$S150CaptureArchiveDirectory,
+  [guid]$S150CaptureGeneration
 )
 # DEFAULT (no flags): primary catalog_store_fix.dll (store + HUNTERS roster) is injected at launch, then
 # configs/inject-secondaries.ps1 injects the full secondary set once it settles � pick/refresh (pi8),
@@ -112,6 +115,76 @@ $Marker = "# SUPERVIVE-REVIVAL"
 
 # ---- require admin ----
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+if ($S150ControlledCapture) {
+  # This route exists only for the single tightly controlled S150 flight. All
+  # preconditions are checked before certificate, capture, process, hosts, CA,
+  # crashwatch, or game state can be mutated.
+  if (-not $isAdmin) { throw 'S150 controlled capture requires an already elevated shell; it will not self-elevate.' }
+  if (-not $NoHook) { throw 'S150 controlled capture requires -NoHook.' }
+  if (-not $NoCrashWatch) { throw 'S150 controlled capture requires -NoCrashWatch.' }
+  if ($PSBoundParameters.ContainsKey('Hook')) { throw 'S150 controlled capture rejects -Hook.' }
+  if ($NoLaunch) { throw 'S150 controlled capture rejects -NoLaunch.' }
+  if ($PSBoundParameters.ContainsKey('Open')) { throw 'S150 controlled capture rejects -Open.' }
+  if ($Revert) { throw 'S150 controlled capture rejects -Revert.' }
+  if (-not $PSBoundParameters.ContainsKey('S150CaptureGeneration') -or $S150CaptureGeneration -eq [guid]::Empty) {
+    throw 'S150 controlled capture requires an explicit nonempty -S150CaptureGeneration GUID.'
+  }
+  if ([string]::IsNullOrWhiteSpace($S150CaptureArchiveDirectory)) {
+    throw 'S150 controlled capture requires -S150CaptureArchiveDirectory.'
+  }
+
+  $S150CaptureArchiveDirectory = [IO.Path]::GetFullPath($S150CaptureArchiveDirectory)
+  if (-not [IO.Directory]::Exists($S150CaptureArchiveDirectory)) {
+    throw "S150 capture archive directory does not exist: $S150CaptureArchiveDirectory"
+  }
+  $s150DocsRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot 'docs'))
+  $s150DocsPrefix = $s150DocsRoot
+  if (-not $s150DocsPrefix.EndsWith([string][IO.Path]::DirectorySeparatorChar)) {
+    $s150DocsPrefix += [IO.Path]::DirectorySeparatorChar
+  }
+  if (-not $S150CaptureArchiveDirectory.StartsWith($s150DocsPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "S150 capture archive directory must be strictly below this worktree's docs directory: $s150DocsRoot"
+  }
+
+  $s150PreStartInventory = @(Get-Process ags,go -ErrorAction SilentlyContinue)
+  if ($s150PreStartInventory.Count -ne 0) {
+    throw "S150 controlled capture requires zero pre-start ags/go processes; found $($s150PreStartInventory.Count)."
+  }
+
+  $s150HelperPath = Join-Path $PSScriptRoot 's150-capture-generation.ps1'
+  if (-not (Test-Path -LiteralPath $s150HelperPath -PathType Leaf)) {
+    throw "S150 capture-generation helper not found: $s150HelperPath"
+  }
+  . $s150HelperPath
+
+  # Lexical containment is not physical containment on NTFS. Pin docs as an
+  # ordinary base and reject every existing reparse component before any
+  # certificate, build, capture, or process mutation.
+  $null = Assert-S150NoReparsePath -PinnedBaseDirectory $s150DocsRoot `
+    -TargetPath $s150DocsRoot
+  $null = Assert-S150NoReparsePath -PinnedBaseDirectory $s150DocsRoot `
+    -TargetPath $S150CaptureArchiveDirectory
+  $s150ControlledCapturePath = [IO.Path]::GetFullPath((Join-Path $s150DocsRoot 'capture.log'))
+  $null = Assert-S150NoReparsePath -PinnedBaseDirectory $s150DocsRoot `
+    -TargetPath $s150ControlledCapturePath
+  $null = Assert-S150NoReparsePath -PinnedBaseDirectory $s150DocsRoot `
+    -TargetPath "$s150ControlledCapturePath.prev"
+
+  # S150 successor output ownership: derive distinct backend sinks under the
+  # retirement root and pin the successor evidence helper before any mutation.
+  $s150SuccessorHelperPath = Join-Path $PSScriptRoot 's150-successor-evidence.ps1'
+  if (-not (Test-Path -LiteralPath $s150SuccessorHelperPath -PathType Leaf)) {
+    throw "S150 successor evidence helper not found: $s150SuccessorHelperPath"
+  }
+  $null = Assert-S150NoReparsePath -PinnedBaseDirectory ([IO.Path]::GetFullPath($PSScriptRoot)) `
+    -TargetPath ([IO.Path]::GetFullPath($s150SuccessorHelperPath))
+  . $s150SuccessorHelperPath
+  $s150ExpectedRetirementDirectory = [IO.Path]::GetFullPath((Split-Path -Parent $S150CaptureArchiveDirectory))
+  $s150OutputContract = Get-S150SuccessorOutputPathContract -CaptureArchiveDirectory $S150CaptureArchiveDirectory -ExpectedRetirementDirectory $s150ExpectedRetirementDirectory
+  $s150BackendStdoutPath = $s150OutputContract.BackendStdoutPath
+  $s150BackendStderrPath = $s150OutputContract.BackendStderrPath
+  $null = Assert-S150SuccessorControlledBackendOutputState -PathContract $s150OutputContract -PinnedBaseDirectory $s150DocsRoot -RequireEmpty
+}
 if (-not $isAdmin) {
   Write-Host "Elevation required (hosts file + port 443). Relaunching as admin..." -ForegroundColor Yellow
   $argList = @("-NoExit","-ExecutionPolicy","Bypass","-File",$PSCommandPath,"-GameRoot",$GameRoot)
@@ -205,13 +278,23 @@ if ($Revert) {
   return
 }
 
-# ---- kill any prior server holding our ports ----
-Get-Process ags,go -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process $_ -Force } catch {} }
-Start-Sleep -Seconds 2
+# ---- kill any prior server holding our ports (legacy route only) ----
+if (-not $S150ControlledCapture) {
+  Get-Process ags,go -ErrorAction SilentlyContinue | ForEach-Object { try { Stop-Process $_ -Force } catch {} }
+  Start-Sleep -Seconds 2
+}
 
 # regenerate the cert chain fresh (structure changed: root + leaf)
-$certsDir = Join-Path $repoRoot "certs"
-if (Test-Path $certsDir) { Get-ChildItem $certsDir | Remove-Item -Force -ErrorAction SilentlyContinue }
+$certsDir = [IO.Path]::GetFullPath((Join-Path $repoRoot "certs"))
+if ($S150ControlledCapture) {
+  $verifiedWorktreeCertsDir = [IO.Path]::GetFullPath((Join-Path $repoRoot 'certs'))
+  if (-not [string]::Equals($certsDir, $verifiedWorktreeCertsDir, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "S150 certificate directory identity mismatch: expected $verifiedWorktreeCertsDir, got $certsDir"
+  }
+  $s150CertificateSnapshot = Clear-S150CertificateArtifacts -CertificateDirectory $certsDir
+} elseif (Test-Path $certsDir) {
+  Get-ChildItem $certsDir | Remove-Item -Force -ErrorAction SilentlyContinue
+}
 
 # ---- build the server first (so startup is instant, not a cold compile) ----
 if (-not (Test-Path $go)) { throw "Go not found at $go" }
@@ -229,39 +312,132 @@ $srvOut = Join-Path $repoRoot "docs\server.out.log"
 # token, so unquoted space paths silently drop later flags. Pass ONE quoted
 # argument string instead.
 $argString = "-http :8080 -https :443 -log `"$logArg`" -certs `"$certsDir`""
-Start-Process -FilePath $agsExe -ArgumentList $argString `
-  -WorkingDirectory $serverDir -RedirectStandardError $srvOut
-# wait up to 30s for the cert chain
-for ($i=0; $i -lt 60 -and -not (Test-Path $certPath); $i++) { Start-Sleep -Milliseconds 500 }
-if (-not (Test-Path $certPath)) {
-  if (Test-Path $srvOut) { Write-Host "--- server output ---" -ForegroundColor Red; Get-Content $srvOut | Write-Host }
-  throw "Server did not produce $certPath (see $srvOut)"
-}
-Write-Host "Server up; cert chain generated." -ForegroundColor Green
-Start-Sleep -Seconds 2
+if ($S150ControlledCapture) {
+  # Recheck immediately before opening the generation. A process that appeared
+  # during the build is refusal, never a reason to enumerate-and-stop by name.
+  $s150LaunchInventory = @(Get-Process ags,go -ErrorAction SilentlyContinue)
+  $s150ResolveProcess = {
+    param($processId)
+    Get-Process -Id $processId -ErrorAction Stop
+  }
+  $s150StopProcess = {
+    param($process)
+    Stop-Process -InputObject $process -Force -ErrorAction Stop
+    if (-not $process.WaitForExit(5000)) {
+      throw "S150 backend PID $($process.Id) did not exit within 5 seconds."
+    }
+  }
+  $controlledLaunch = Invoke-S150ControlledLaunch -CapturePath $logArg `
+    -ArchiveDirectory $S150CaptureArchiveDirectory -Generation $S150CaptureGeneration `
+    -CaptureBaseDirectory $s150DocsRoot -ArchiveBaseDirectory $s150DocsRoot `
+    -PreStartInventory $s150LaunchInventory -ExpectedBackendPath $agsExe `
+    -StartBackend {
+      Assert-S150CertificateArtifactsAbsent -CertificateDirectory $certsDir
+      $null = Assert-S150SuccessorControlledBackendOutputState -PathContract $s150OutputContract -PinnedBaseDirectory $s150DocsRoot -RequireEmpty
+      Start-Process -FilePath $agsExe -ArgumentList $argString -WorkingDirectory $serverDir `
+        -RedirectStandardOutput $s150BackendStdoutPath `
+        -RedirectStandardError $s150BackendStderrPath -PassThru
+    } `
+    -ResolveProcess $s150ResolveProcess `
+    -PostStartInventory {
+      param($backend)
 
-# ---- verify the HTTP mux is actually SERVING (not just that TLS certs were written) ----
-# The cert-chain wait proves ags started + cleared TLS init, but not that the request mux answers. A
-# quick GET of a lightweight, side-effect-free revival endpoint confirms the backend will actually
-# respond to the game's login/menu calls � catching a half-up server (panicked handler, port bind race)
-# BEFORE we launch the game and stare at a mystery hang. Best-effort: retry ~5s, WARN (don't abort) on
-# failure, since a probe false-negative shouldn't block a launch when ags is otherwise up.
-# -UseBasicParsing avoids the IE engine; 127.0.0.1 bypasses the proxy.
-$healthUrl = "http://127.0.0.1:8080/revival/missions/progress"
-$served = $false
-for ($i=0; $i -lt 10 -and -not $served; $i++) {
-  try {
-    $resp = Invoke-WebRequest -Uri $healthUrl -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
-    if ($resp.StatusCode -eq 200) { $served = $true }
-  } catch { Start-Sleep -Milliseconds 500 }
-}
-if ($served) {
-  Write-Host "Backend serving HTTP (probe $healthUrl -> 200)." -ForegroundColor Green
+      # The cert directory was cleared before build, so this bounded wait can
+      # only observe the newly spawned backend's generated chain. Revalidate
+      # the exact process before taking the post-start inventory.
+      $expectedCertificatePaths = @(
+        (Join-Path $certsDir 'root.crt'),
+        (Join-Path $certsDir 'server.crt'),
+        (Join-Path $certsDir 'server.key')
+      )
+      $certificatesExist = $false
+      for ($i=0; $i -lt 60 -and -not $certificatesExist; $i++) {
+        $certificatesExist = $true
+        foreach ($expectedCertificatePath in $expectedCertificatePaths) {
+          if (-not [IO.File]::Exists($expectedCertificatePath)) {
+            $certificatesExist = $false
+            break
+          }
+        }
+        if (-not $certificatesExist) { Start-Sleep -Milliseconds 500 }
+      }
+      if (-not $certificatesExist) {
+        foreach ($s150DiagPath in @($s150BackendStdoutPath, $s150BackendStderrPath)) {
+          if (Test-Path -LiteralPath $s150DiagPath -PathType Leaf) {
+            Write-Host "--- backend output ($s150DiagPath) ---" -ForegroundColor Red
+            Get-Content -LiteralPath $s150DiagPath | Write-Host
+          }
+        }
+        throw "S150 backend did not produce root.crt, server.crt, and server.key within 30 seconds (see $s150BackendStdoutPath and $s150BackendStderrPath)."
+      }
+
+      $liveBackend = Get-Process -Id $backend.Id -ErrorAction Stop
+      $expectedIdentity = Get-S150ProcessIdentity $backend
+      $liveIdentity = Get-S150ProcessIdentity $liveBackend
+      if (-not (Test-S150ProcessIdentityMatch -Expected $expectedIdentity -Actual $liveIdentity)) {
+        throw 'S150 backend identity mismatch after certificate generation.'
+      }
+
+      $certificateReceipt = Test-S150CertificateArtifacts -CertificateDirectory $certsDir `
+        -PriorSnapshot $s150CertificateSnapshot -BackendStartUtc $expectedIdentity.StartTimeUtc
+      if (-not $certificateReceipt.Valid) {
+        throw "S150 certificate validation failed: $($certificateReceipt.Reason)"
+      }
+
+      @(Get-Process ags,go -ErrorAction SilentlyContinue)
+    } `
+    -ProbeBackend {
+      param($backend, $generationText)
+      $healthUrl = "http://127.0.0.1:8080/healthz?captureGeneration=$generationText"
+      $response = Invoke-WebRequest -Uri $healthUrl -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop
+      if ($response.StatusCode -ne 200) {
+        throw "S150 mandatory health probe returned HTTP $($response.StatusCode): $healthUrl"
+      }
+    } `
+    -StopProcess $s150StopProcess
+
+  if ($controlledLaunch.Refused) {
+    throw "S150 controlled capture refused: $($controlledLaunch.Reason)"
+  }
 } else {
-  Write-Warning "Backend cert chain is up but $healthUrl did not answer in ~5s."
-  Write-Warning "  The game may still work, but if login/menu hangs, check $srvOut for a handler panic or bind error."
+  Start-Process -FilePath $agsExe -ArgumentList $argString `
+    -WorkingDirectory $serverDir -RedirectStandardError $srvOut
+  # wait up to 30s for the cert chain
+  for ($i=0; $i -lt 60 -and -not (Test-Path $certPath); $i++) { Start-Sleep -Milliseconds 500 }
+  if (-not (Test-Path $certPath)) {
+    if (Test-Path $srvOut) { Write-Host "--- server output ---" -ForegroundColor Red; Get-Content $srvOut | Write-Host }
+    throw "Server did not produce $certPath (see $srvOut)"
+  }
+  Write-Host "Server up; cert chain generated." -ForegroundColor Green
+  Start-Sleep -Seconds 2
+
+  # ---- verify the HTTP mux is actually SERVING (not just that TLS certs were written) ----
+  # The cert-chain wait proves ags started + cleared TLS init, but not that the request mux answers. A
+  # quick GET of a lightweight, side-effect-free revival endpoint confirms the backend will actually
+  # respond to the game's login/menu calls � catching a half-up server (panicked handler, port bind race)
+  # BEFORE we launch the game and stare at a mystery hang. Best-effort: retry ~5s, WARN (don't abort) on
+  # failure, since a probe false-negative shouldn't block a launch when ags is otherwise up.
+  # -UseBasicParsing avoids the IE engine; 127.0.0.1 bypasses the proxy.
+  $healthUrl = "http://127.0.0.1:8080/revival/missions/progress"
+  $served = $false
+  for ($i=0; $i -lt 10 -and -not $served; $i++) {
+    try {
+      $resp = Invoke-WebRequest -Uri $healthUrl -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
+      if ($resp.StatusCode -eq 200) { $served = $true }
+    } catch { Start-Sleep -Milliseconds 500 }
+  }
+  if ($served) {
+    Write-Host "Backend serving HTTP (probe $healthUrl -> 200)." -ForegroundColor Green
+  } else {
+    Write-Warning "Backend cert chain is up but $healthUrl did not answer in ~5s."
+    Write-Warning "  The game may still work, but if login/menu hangs, check $srvOut for a handler panic or bind error."
+  }
 }
 
+$launchContinuation = {
+if ($S150ControlledCapture) {
+  Write-Host "S150 backend/capture verified (PID $($controlledLaunch.BackendIdentity.Id), generation $($controlledLaunch.Generation))." -ForegroundColor Green
+}
 # ---- append our ROOT CA to the game's libcurl CA bundle (from clean backup) ----
 if (-not (Test-Path $caBundle)) { throw "CA bundle not found: $caBundle" }
 if (-not (Test-Path "$caBundle.supervive-bak")) { Copy-Item $caBundle "$caBundle.supervive-bak" }
@@ -457,6 +633,15 @@ if ($Hook) {
 } else {
   Write-Host "Launching SUPERVIVE (PostAuth -> $local)..." -ForegroundColor Cyan
   & $exe @iniArgs
+}
+}
+
+if ($S150ControlledCapture) {
+  Invoke-S150ControlledContinuation -BackendIdentity $controlledLaunch.BackendIdentity `
+    -Continuation $launchContinuation -ResolveProcess $s150ResolveProcess `
+    -StopProcess $s150StopProcess | Out-Null
+} else {
+  & $launchContinuation
 }
 
 # ---- NO post-exit sweep here, deliberately (FK-9, S109) ----
