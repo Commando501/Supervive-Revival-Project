@@ -2495,6 +2495,34 @@ that COVERAGE IS EARNED AND NEVER SPENT.**
   hypothesis's SECOND-order refutation is worth the same offline effort as the first-order — the
   auto-fire mechanism turned out to also be fully real, moving the search one hop deeper into
   state-machine transitions rather than validating the "stripped path" conjecture.
+  ★★★★ **S154 STATE-TRACKER CLASS + SEMANTIC MAP (multi-agent workflow, offline). Read
+  `docs/wall-p-statetracker-class-s154.md`.** Workflow `wf_4b66ad0b-994` (4 fan-out + 1
+  synthesizer, 5/5 done, 8.7 min, 1.5M subagent tokens) identified the state-tracker class as
+  **`ALokiPlayerController` [MEASURED via vtable RVA `0x8A1AEE0`]**, cross-checked against
+  CLAUDE.md's own `[pawn+0x400]=Controller` finding from S135/S136 (`APawn::SpawnDefaultController`
+  disassembly). State-machine model: 4 phases (Warmup=`0xBFC`, Channel=`0xBF4`, Invoke=`0xC04`,
+  Cooldown=`0xC0C`) + 1 authority gate (`0xC0D`) + 1 re-entrancy latch (`0xBEC`) + 2 timing floats
+  (`0xBF8` shared, `0xBF0` secondary). ⚠⚠ **AND `0x56A5370` IS NOT THE DELEGATE BROADCAST**
+  [MEASURED via full 501 B disassembly across 3 chained `.pdata` rows] — it's a 2-D target-vector
+  commit helper (thresholds `|v|`, commits to `[this+0xB88..0xBBC]`, reads world-time float via
+  `[r8+0x380]`, zero refs to state-tracker offsets). All 6 direct callees REAL, no fold tail-call.
+  **⇒ THE ACTUAL `OnGameplaySpellEnded` BROADCAST LIVES DOWNSTREAM IN THE 4 SIBLING HANDLER TAILS,
+  NOT INSIDE `0x56A5370`** — WALL P block relocates AGAIN (fourth relocation this session).
+  ★★ **SYNTHESIZER FAILURE-MODE CAUGHT AND CORRECTED (R-S154-e).** The workflow synthesizer chose
+  `ULokiCharacterMovementComponent` over `ALokiPlayerController` by citing a `docs/symbols.csv:515`
+  row whose confidence field was `LOW` and evidence field was `NO-NAME-EVIDENCE` (`0x5512380`'s
+  actual role is generic `IsChildOfUsingStructArray`, not CMC-specific). CLAUDE.md's own
+  `[pawn+0x400]=Controller` (S135/S136, three explicit citations at lines 1225/1282/1339) settled
+  it. **New rule R-S154-e:** verify every multi-agent synthesizer verdict against CLAUDE.md's own
+  documented facts before believing it. Corollary of R-S153-k. First same-session refutation of a
+  workflow synthesis result in this project's history.
+  ★★★ **REFINED WALL P LIVE-READ PREREGISTRATION** (replaces the S153 hunt's abstract version):
+  target is `pawn->Controller` (via `[pawn + 0x400]` deref); sanity-gate on vtable equality with
+  `IMAGE_BASE + 0x8A1AEE0` BEFORE trusting byte reads; then read the 8 concrete PC-offset bytes.
+  4-outcome discriminator table in `docs/next-session-prompt-s154.md` §1 (updated) and
+  `docs/wall-p-statetracker-class-s154.md`. **This is the highest-yield offline-preregistered
+  live-read this project has produced for WALL P** — every outcome has a specific next
+  investigation named.
   ⚠ **GAPS worth noting.** The movement wall (S141 T3 open: what zeros the bot's `Velocity` from
   rest, what clamps `MaxInputSpeed`) is NOT in the stripped set — the relevant code is stock UE
   `PhysFalling`/`CalcVelocity`, which the protector doesn't strip. **Architectural, not stub-

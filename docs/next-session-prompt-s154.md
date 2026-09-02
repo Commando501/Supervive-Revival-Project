@@ -28,28 +28,46 @@ The auto-fire mechanism hunt produced a concrete, preregistered live-read
 recipe with clean discriminator outcomes. **This is the single highest-yield
 first live action.**
 
+**⚠ S154-refined (see `docs/wall-p-statetracker-class-s154.md`):** the
+state-tracker subobject class is now IDENTIFIED as `ALokiPlayerController`
+[MEASURED via vtable RVA `0x8A1AEE0`, cross-checked against CLAUDE.md's
+`[pawn+0x400]=Controller` finding from S135/S136]. The state-machine model
+is also refined: 4 phases (Warmup/Channel/Invoke/Cooldown) + 1 authority
+gate + 1 re-entrancy latch + 2 timing floats. And `0x56A5370` is NOT the
+delegate broadcast — it's a 2-D target-vector commit helper; the actual
+`OnGameplaySpellEnded` broadcast lives downstream in the 4 sibling
+handlers' tails.
+
 **Setup:** launch the game, stage the tutorial world (`configs/fk24-stage.ps1`),
 inject any spell-arming shim that produces a live MiniDash spec (S143/S144-era
 `tutorial_launch` variants). See `configs/s148-move4.ps1` for the current
 staging pattern.
 
 **Post-cast reads (RPM, no injection):**
-1. Locate the state-tracker subobject via `[spell + 0x400]`-shaped chain (see
-   `docs/wall-p-autofire-mechanism-s153.md` §"BEGIN function" for the 4-gate
-   validation the spell activation runs).
-2. Read `[subobject + 0xC0D]` (byte) — the propagated
-   `bManuallyCallSpellCompleteEvent` value.
-3. Read state bytes `[subobject + 0xBFC]`, `[+0xBEC]`, `[+0xBF4]`, `[+0xC0C]`,
-   `[+0xC04]` — each corresponds to one of the 4 auto-fire sibling handlers'
-   state guards.
+1. Get the possessed hero's `pawn->Controller` = `[pawn + 0x400]` — this is
+   an `ALokiPlayerController` instance.
+2. **Sanity gate:** verify `[pc + 0]` equals `IMAGE_BASE + 0x8A1AEE0`. If
+   not, `[pawn+0x400]` deref went somewhere unexpected — DO NOT trust the
+   byte reads below.
+3. Read (all byte-precise from access map):
+   - `[pc + 0xC0D]` — authority gate (`bManuallyCallSpellCompleteEvent`
+     propagated from spell)
+   - `[pc + 0xBEC]` — re-entrancy latch
+   - `[pc + 0xBFC]` — phase_warmup (1 = in Warmup)
+   - `[pc + 0xBF4]` — phase_channel
+   - `[pc + 0xC04]` — phase_invoke
+   - `[pc + 0xC0C]` — phase_cooldown
+   - `[pc + 0xBF8]` — timing_A_shared (Warmup/Channel pace)
+   - `[pc + 0xBF0]` — timing_B (secondary)
 
-**Discriminator table:**
+**Discriminator table** (S154-refined per `docs/wall-p-statetracker-class-s154.md`):
 
-| observation | verdict | next action |
+| observation post-cast | verdict | next investigation |
 |---|---|---|
-| `[+0xC0D] == 1` | Propagation failed — BEGIN function's 4-gate validation refused MiniDash's subobject | Instrument the 4 gates (`0x44556A0`, `0x4453EC0`, `0x54F8DC0`, `0x5512380`) — find which one rejected |
-| `[+0xC0D] == 0`, one state byte was `1` and cleared post-cast | Auto-fire fired successfully | Block is DOWNSTREAM of `0x56A5370` — trace its call graph, currently ~0x1EB B decoded but chained continuation exists |
-| `[+0xC0D] == 0`, all state bytes still `0` | State machine never reached any of the 4 end-triggers | Block is UPSTREAM — the state machine stalled before montage/timer/dash-end fired |
+| `[pc+0xC0D] == 0` (auth gate unset) | **Propagation failed.** BEGIN `0x5515C55`'s 4-gate validation refused MiniDash's chain. | Instrument the 4 gates (`0x44556A0`, `0x4453EC0`, `0x54F8DC0`, `0x5512380`) — find the rejecter. |
+| `[pc+0xC0D] == 1` and all four phase bytes `0` | **Auth gate open but no phase active.** State machine idle; handlers can never fire without a phase to consume. | Look at where phases get set — Warmup `[+0xBFC]=1` is set by BEGIN or by Channel handler's cyclic back-write. |
+| `[pc+0xC0D] == 1`, a phase byte was 1 and is now 0 (cleared post-cast) | **Handler fired.** `0x56A5370` did its geometric commit but the delegate broadcast (elsewhere in the handler tail) may be stripped/blocked. | Disassemble the 4 handler tails past their `call 0x56A5370` — find the `OnGameplaySpellEnded` broadcast site. |
+| `[pc+0xC0D] == 1`, phase byte still 1 (never cleared) | **Handler never fired.** State-active but consumer path not reached. | Handler entry has an internal `cmp [phase],0; je exit` — the phase must be non-zero AT the call site. Something is calling the handlers speculatively. |
 
 All three outcomes are actionable and have concrete next steps. This is a real
 step forward from S147's "no durable ability body" observation.
