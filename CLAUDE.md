@@ -4059,6 +4059,30 @@ blockers, neither about markers.**
   internal if/else flow, not a terminator — a naive walker that stops at any `jmp` misses the real
   tail call ~200 bytes later. **Only jmps whose target is OUTSIDE the wrapper's byte range are
   terminators.**
+  ★★★ **S153 v2 CLOSES THE fk13natreg INSTRUMENT GAP: 16,490 native UFunctions (+1,596 vs v1),
+  318 STRIPPED (+15 vs v1's 303), all 5 CLAUDE.md FK-1 register entries confirmed. Read the
+  "v2 — closing the fk13natreg instrument gap" section of `docs/fk1-native-sweep-s153.md`.** v1
+  used `fk13natreg`'s per-class walker which needs `<Class>::GetPrivateStaticClass` to match a
+  specific shape; classes with different registration patterns (like `ALokiGameMode`, which is
+  register entry #1) were silently missed. **v2 replaces the enumerator with
+  `tools/re/exec_chain_grade.py`'s DATA-DIRECTED `FNameNativePtrPair` scanner** (walks .data/.rdata
+  for consecutive {name*, thunk*} pairs, groups into constant-stride runs, name-set-overlap
+  assigns runs to classes) — finds 17,892 raw pairs → 16,490 (class, func) → thunk keys. **17 NEW
+  STRIPPED entries fk13natreg missed**, concentrated in: `ALokiGameMode` (7 stripped, entire
+  class fk13natreg didn't see — includes register #1 `SpawnPlayer`, `CheatCantEndGame`,
+  `EliminateTeam`, `GameModeCheat`, `TickAFKChecking`), `ULokiSpellSwapper` (5 stripped — the
+  entire spell-swap subsystem is gutted), `ULokiGameplaySpell` (2 stripped), `ALandscapeProxy`
+  (3 stripped, editor-only).
+  ⚠⚠ **CLASSIFIER DEFECT UNCOVERED BY SPAWNPLAYER: the "last E8 call before ret" heuristic misses
+  the fold when MSVC inserts `call __security_check_cookie` before ret.** SpawnPlayer's wrapper
+  has `call 0xF7EB50` (fold) at +0x1B8 immediately followed by `call 0x751DEB0`
+  (`__security_check_cookie`) at +0x1CB and `ret` at +0x1DD. v1 picked the cookie as `last_call`
+  and graded REAL. **Fix in v2: `IGNORED_TAIL_TARGETS = {0x751DEB0}`** — identified by
+  disassembling: canonical MSVC helper `cmp rcx, [__security_cookie]; jne fail; rol rcx, 0x10;
+  test cx, 0xffff; jne fail; ret`. ⚠ Alternative "any fold call anywhere in the body wins" was
+  rejected — false-positives on real functions that legitimately consume fold results (e.g.
+  `if (LokiIsClient()) ...`). **New rule: any UFunction sweep classifier must specifically
+  ignore `__security_check_cookie` and MSVC-inserted epilogue helpers when picking `last_call`.**
   ★★ **S153 DARK PAGE-CLUSTER ANALYSIS: the 4,910 DARK entries cluster on 406 distinct pages, with
   a heavy stock-UE tail. Read `docs/fk1-dark-pageclusters-s153.md`.** 16 of the top 20 all-page
   clusters are stock UE modules that will never execute here (`UMovieScene*`, `UDiscord*`,
