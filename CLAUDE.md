@@ -2428,7 +2428,11 @@ that COVERAGE IS EARNED AND NEVER SPENT.**
   Movement), `ALokiPlayerState::ServerSetHeroClass` (WALL E+Netcode), `ALokiGameState::SetPlayerTeam`
   (WALL E+Match+Netcode), `ALokiGameState::SetNumTeams` (WALL E+Match), `ALokiGameMode::EliminateTeam`
   (WALL E+Match).
-  ★★★ **NEW REUSABLE RULES BANKED (add to method-rules as R-S153-a..f):**
+  ★★★ **NEW REUSABLE RULES BANKED (S155 update: NOW FOLDED INTO `docs/method-rules.md` — 5 rows added
+  to Rule 1's tabulated register (S153-a, S153-b, S154-a, S154-c, S154-e; row total 131 → 136), and 4
+  new "How to apply" items #16–19 (R-S153-g/h/i/j/k + R-S154-a/b/d/e). The scattered CLAUDE.md
+  descriptions below are kept for context but the canonical source is now `method-rules.md` §1 and
+  its "How to apply" list. Re-derive the count with `grep -cE '^\| \*\*[^|]*S[0-9]+[A-Za-z0-9]*-[a-z]+\*\*' docs/method-rules.md`.):**
   (a) **The entire `ULokiSpellSwapper` subsystem is gutted** — SwitchSpell/NextSpell/PreviousSpell/
   AddSubSpell/RemoveSubSpell all fold. Any hero routing through this class is dead by design.
   (b) **The 11-writer `ALokiPlayerState::Add*Stat` family is uniformly `void_ret`** (all on
@@ -5128,8 +5132,9 @@ Two standing rules that are not about any one subsystem, and that have overturne
 than any single investigation:
 
 1. **★★★ The instrument-artifact pattern** — the project's dominant error mode: an instrument's
-   blind spot recorded as a property of the game. **131 tabulated instances as of S142** (S140 Tier 1
-   added 7: `S140T1-a..g`; Tier 2 added 16: `S140T2-a..p`; S141 added 12: `S141-a..l`).
+   blind spot recorded as a property of the game. **136 tabulated instances as of S155 (S153/S154
+   added 5: `S153-a`, `S153-b`, `S154-a`, `S154-c`, `S154-e`), previously 131 as of S142** (S140
+   Tier 1 added 7: `S140T1-a..g`; Tier 2 added 16: `S140T2-a..p`; S141 added 12: `S141-a..l`).
    ⚠⚠⚠ **THE PRESCRIBED RE-DERIVATION COMMAND WAS ITSELF THE DEFECT, AND THAT IS WHY THIS LINE HAS
    NOW DIVERGED FIVE TIMES.** The command below used to be
    `grep -cE '^\| \*\*[^|]*S[0-9]+-[a-z]+\*\*'`, which requires a hyphen **immediately** after the

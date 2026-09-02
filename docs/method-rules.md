@@ -268,6 +268,20 @@ for this very tally, which under-counted by half until it was run.
 | **★★★★★ S141-k** | **naming a function from the control flow I EXPECTED, rather than from its own bytes** — three times in one sitting, hunting `DoJump` | (1) `0x35395E0` called `ACharacter::CheckJumpInput` — it takes four args and is unidentified; (2) CMC disp `0x608` called `DoJump` — it is a two-term boolean returning `MovementMode==3 && UpdatedComponent!=null`; (3) CMC disp `0x728` called `DoJump` — it is a **forwarder to `0x608`** | each name was "confirmed" by the fact that the call sat where I expected `DoJump` to sit. The decisive negative — **`0x3520930`'s entire CFG contains ZERO writes to `+0xE8/+0xF0/+0xF8`** — was available at attempt one and I did not run it | ⇒ ★★★ **structural position is not identity.** For a function defined by what it WRITES, **start from the write and work back to the callers** — never from the caller and forward to the name. ⇒ ★ and when the same identification fails twice, the third attempt is not the fix: **stop and record NOT ESTABLISHED** (which is what finally happened) |
 | **★★★★★ S141-l** | **an A/B whose second arm silently stopped being the experiment** — ARM L was built to test "does the KICK AXIS decide whether a bot escapes `Velocity == 0`", by kicking one bot horizontally, sampling, then kicking it vertically and sampling again | by the time kick B was written the bot **was already walking at 500 uu/s**, so B added `-600` on Z to a moving body. It tested *"a vertical impulse added to a moving character"* — about which nothing had been predicted | the data landed on pre-registered outcome **P2 ("both sustain")**, whose written reading was *"the axis is NOT the variable; the mechanism is REFUTED"*. **That reading is false and the pre-registration would have licensed it.** I had thought about re-latching the START LOCATION at the B write — and did it — and never considered the **velocity state**, which is the entire subject of the hypothesis | ⇒ ★★★ **a within-sitting A/B must restore the PRECONDITION, not just the measurement baseline.** "From rest" means arm B has to start from rest. ⇒ ★★ **and a pre-registered outcome can be reached by an invalid path** — before reading a pre-registration's verdict, re-derive that the arm still tested what the outcome table assumed. Writing the outcomes down does not protect you if the arm drifts out from under them |
 
+★ **S153/S154 batch — the FK-1 sweep, the WALL P deep-dive family, and the state-tracker workflow.
+Sixteen new rules (R-S153-a..k + R-S154-a..e). Five fit the instrument-artifact pattern and go in
+the table below; three are methodological (folded into "How to apply" items 16–18 below); two are
+offline TECHNIQUES worth banking as their own item 19; and six are SUBSYSTEM findings kept in
+their evidence docs (`docs/fk1-*-s153.md`, `docs/wall-p-*.md`) because they concern specific game
+subsystems rather than reasoning method.**
+
+| id | instrument | blind spot | false result | how it fell |
+|---|---|---|---|---|
+| **★★★★ S153-a** | **the "5-fold set" this project graded stubs against for months** — `0xF7EC20` (void_ret), `0xF7EB50` (xor eax), `0xF7EB60` (xor al), `0xB9E1F0` (mov al,1) | it was **actually 4 folds** until S131 added `0xFC6CF0` = `xorps xmm0,xmm0; ret` (return `0.0f`). Any fold census run before adding it under-graded float-returning stubs — 13 records + 6 `ALokiPlayerState` float getters | a stub-count grader with the old 4-fold set reads `AuthGetTeamSurvivalTime` and its siblings as **REAL** because their tail-call target `0xFC6CF0` is not on the fold list, when they are void folds returning `0.0f` | ⇒ ★★ **a fold set is a claim about the WHOLE IMAGE — every kind of return type has its own zero-value ret. Enumerate the return-type space (void, bool, int, float, ptr, xmm0.0f, xmm0.0d) and check for a fold-shaped ret per type**, not just the two the first stub you looked at happened to use |
+| **★★★★★ S153-b** | **naming ONE stripped UFunction as "the block" for a specific gameplay behaviour** | doesn't check the shipping asset population that actually CALLS it. `CallSpellCompleteEvent` was ranked #1 in the S153 cross-index as *"the most plausible mechanism for S147's no-durable-ability-body phenomenon"* | grep of 596 shipping `GS_*.json` blueprints: **only 26 (4.4%) call `CallSpellCompleteEvent`; 570 (95.6%) use the AUTO-fire path** — including `GS_Ronin_MiniDash_Charges`, S147's actual target. The named stub cannot be its blocker | ⇒ ★★★ **any stripped-stub hypothesis MUST be checked against the shipping population that actually calls it before ranking it a "smoking gun".** For UFunctions on ULokiGameplaySpell/ability classes, the check is `grep -l <FunctionName> tools/extractor/out/catalog/gs/*.json` — one command, decisive. ⇒ ★ this is R-S153-g and is now item 16 in the "How to apply" list below |
+| **★★★★★ S154-a** | **a tick/init function that writes multiple state bytes, mistaken for the state OWNER** | init `0x56777B0` writes bytes at 5 offsets (`+0xBEC`, `+0xBF4`, `+0xBF8`, `+0xBFC`, `+0xC04`) in one pass — but MISSES the master authority byte `+0xC0D`. The BEGIN function `0x5515C55` is the true owner (it writes `+0xC0D` from spell's `+0xC76`) | the state-machine model would have used `0x56777B0` as the "authoritative writer" for the whole 8-byte block, deriving semantics from ONE resetter's writes instead of from the FOUR handlers plus the true BEGIN | ⇒ ★★ **find the writer of the MISSING byte — that identifies the BEGIN/authority owner.** A function that writes many bytes but not the gate byte is a state RESETTER, not the owner. Same shape as S140T1-a but for a WRITE set rather than a flag latch |
+| **★★★★★ S154-c** | **naming a callable "the broadcast" without checking its shape** | `0x56A5370` was the auto-fire branch target for all 4 sibling handlers, and the natural inference was *"this is where `OnGameplaySpellEnded` gets broadcast"*. Full 501 B disassembly proved it's a **2-D target-vector commit helper**: thresholds `|v|` vs `[this+0xB48]`, commits to `[this+0xB88..0xBBC]`, reads a world-time float — **zero references to state-tracker offsets**, all 6 direct callees REAL, no fold tail-call | had the naming stuck, WALL P would have been "solved" as *"the delegate broadcast is not stripped"* — mid the block relocation is really one hop deeper still, in the sibling handler tails past their `call 0x56A5370` | ⇒ ★★ **a "broadcast" function must have one of: `FMulticastScriptDelegate` walk, invocation-list iteration, or a call to a delegate `Broadcast` helper. Absence of ALL THREE + presence of geometric arithmetic + coordinate stores = compute helper, NOT delegate.** Do not label an auto-fire branch target "broadcast" until one of those three shows |
+| **★★★★★★ S154-e** | **a multi-agent workflow SYNTHESIZER's verdict, taken as an authoritative aggregation** — the workflow tool used for the S153 cross-index and the S154 state-tracker profile | the synthesizer receives per-agent verdicts and merges them, but it has no independent memory of CLAUDE.md's own documented facts and will REVERSE a correct verdict if an incorrect angle cites a plausible-looking source (a `docs/symbols.csv` row with `LOW` confidence + `NO-NAME-EVIDENCE` was cited as decisive against a MEASURED vtable identity) | it named the WALL P state-tracker class as `ULokiCharacterMovementComponent` when it is `ALokiPlayerController` (both angles converged on `[pawn+0x400]` — one interpreted it as `Controller` per CLAUDE.md S135/S136 disassembly, the other as a "CMC helper" per a LOW-confidence label). If believed, the entire live-read recipe would target the wrong class | ⇒ ★★★ **verify every multi-agent synthesizer verdict against CLAUDE.md's own documented facts before believing it.** Corollary of R-S153-k (second-order refutation). First same-session refutation of a workflow synthesis in this project's history — the pattern will recur. **The workflow tool is an instrument; its synthesizer stage is another instrument stacked on top; a rules-#1 discipline applies to it just as to a byte scanner.** |
 
 Also from S124, tool-level and worth knowing before they cost a session:
 - **`extractor wherefile` clamps at `.Take(20)` BEFORE counting** (`Program.cs:840-844`) — any printed
@@ -436,12 +450,77 @@ Also from S124, tool-level and worth knowing before they cost a session:
     case: **a correct conclusion resting on a bogus statistic will survive review and then be cited
     for the statistic.**
 
+16. **★★★ S153: CHECK THE SHIPPING CALL POPULATION BEFORE RANKING A STRIPPED-STUB HYPOTHESIS.**
+    A finding that "UFunction X is stripped" is a fact about the function. Whether it BLOCKS a
+    specific behaviour depends entirely on whether the code path that produces that behaviour
+    actually calls it. `CallSpellCompleteEvent` was ranked #1 in a cross-index as the WALL P
+    smoking gun; a `grep -l` over the 596 shipping `GS_*.json` blueprints revealed **26 of them
+    call it, 570 don't** — including MiniDash (S147's actual target), which puts it in the
+    majority that isn't blocked by the strip. **The check is one command; run it before the
+    hypothesis reaches a doc.** Corollary: a `b*` UPROPERTY named `bManually<Verb>` is a strong
+    hint that a non-manual (auto) path exists elsewhere — search the shipping catalog for the
+    value distribution first. (R-S153-g/h)
+
+17. **★★★ S154: DISTINGUISH GATE / PHASE / RESETTER BEFORE BUILDING A STATE DIAGRAM.**
+    Three related pitfalls in state-machine reverse engineering:
+    - A byte written by ALL consumers as a **predicate** but by ONLY the outermost function as a
+      **value** is a **gate**, not a phase. The WALL P `[pc+0xC0D]` reads across all 4 auto-fire
+      handlers (`cmp byte [rcx+0xC0D], 0`) but is written only by BEGIN `0x5515C55` and
+      terminator `0x5525360`. (R-S154-d)
+    - A function that writes multiple state bytes but MISSES the master authority byte is a
+      **RESETTER**, not the state owner. Find the writer of the missing byte — that names the
+      owner. Same shape as S140T1-a's flag-latch trap. (R-S154-a)
+    - A byte set on entry to a handler and cleared on exit is a **re-entrancy latch**, not a
+      phase. WALL P's `[pc+0xBEC]` wraps only the Invoke/Cooldown handlers, idempotent-fire
+      discipline — not a "state active" flag despite reading exactly like one. (R-S154-d cont'd)
+    - Bank `[pawn+0x400] = APawn::Controller` in this build's stable-offset register alongside
+      `+0xF00` (ASC), `+0x3D0` (AIControllerClass), `+0x160` (Role). (R-S154-b)
+
+18. **★★★ S153/S154: A STRIPPED-STUB HYPOTHESIS's SECOND-ORDER REFUTATION IS WORTH THE SAME
+    OFFLINE EFFORT AS ITS FIRST-ORDER CHECK — and a WORKFLOW SYNTHESIZER's verdict counts as
+    just another instrument.** Each layer of a WALL-P-shaped hypothesis chain gets refined by
+    dropping to the next hop:
+    - Layer 1 (cross-index): "CallSpellCompleteEvent is stripped, it's the block"
+    - Layer 2 (deep-dive): refuted for MiniDash — 96% of spells use the auto-fire path
+    - Layer 3 (auto-fire hunt): the auto-fire mechanism is REAL, not stripped — block is at
+      state-byte layer
+    - Layer 4 (state-tracker profile): `0x56A5370` is NOT the delegate broadcast — it's a 2-D
+      target-vector helper; broadcast lives further downstream in handler tails
+    Every relocation was one 20–30 min offline dive. **The pattern: keep asking "is there
+    something one hop deeper that would explain this without invoking my hypothesis?", and
+    dig until the answer is no.** (R-S153-k)
+
+    Corollary: **verify multi-agent workflow SYNTHESIZER verdicts against CLAUDE.md's own
+    documented facts before believing them.** A synthesizer without independent memory of the
+    project's history can be reversed by ONE angle's over-confident citation of a `LOW`-confidence
+    source. The WALL P state-tracker synthesizer chose `ULokiCharacterMovementComponent` over
+    `ALokiPlayerController` on exactly this pattern; CLAUDE.md's own `[pawn+0x400]=Controller`
+    from S135/S136 settled it. **The workflow tool is an instrument; its synthesizer stage is
+    another instrument stacked on top; rule-1 discipline applies to both.** (R-S154-e)
+
+19. **★★ S153: TWO OFFLINE TECHNIQUES WORTH BANKING AS PRIMARY MOVES.** Both cheap, both
+    decisive, both underused in this project's earlier work:
+    - **UHT `SetBitFunc` disassembly is the offline oracle for a bool UPROPERTY's `[class +
+      offset]` byte address.** Find the property name in `.rdata`, walk to the adjacent 8-byte
+      pointer at `-8`, disassemble it. `bManuallyCallSpellCompleteEvent`'s setter at RVA
+      `0x5356750` is `mov byte [rcx+0xC76], 1; ret` — two instructions, whole layout revealed.
+      Fixes the standing note that `FBoolPropertyParams` carries no `ByteOffset`/`ByteMask`
+      fields (they exist only in the compiled `SetBitFunc`). (R-S153-i)
+    - **A `[reg+disp32]` reader hunt across `.text` can be done by literal-searching for the
+      4-byte disp32 pattern (`disp & 0xFF`, `>>8 & 0xFF`, `>>16 & 0xFF`, `>>24 & 0xFF`) then
+      decoding backward 2–8 bytes to check for a valid memory-operand instruction with the
+      right displacement.** Cheap and offline-decisive when the offset is uncommon: WALL P's
+      `0xC76` and `0xC0D` had ≤8 raw hits each, collapsing to 3–6 unique valid accesses. The
+      whole readers/writers map for the state-tracker's 8 offsets was built in a single Python
+      script (`scratchpad/s154_statetracker_enum.py`) in a few seconds. (R-S153-j)
+
 Also of a piece: **findings that die in commit messages get re-litigated.** `46d873a` and `b420a69`
 had the input mechanism right on 2026-07-16 and were never promoted to a doc, so four later sessions
 re-derived it. **Promote findings out of commit bodies into `docs/`.**
 
 Related: [strxref-open-questions.md](strxref-open-questions.md),
-[fk2-input-settled.md](fk2-input-settled.md), [fk1-angelscript-settled.md](fk1-angelscript-settled.md).
+[fk2-input-settled.md](fk2-input-settled.md), [fk1-angelscript-settled.md](fk1-angelscript-settled.md),
+[fk1-native-sweep-s153.md](fk1-native-sweep-s153.md), [wall-p-statetracker-class-s154.md](wall-p-statetracker-class-s154.md).
 
 ---
 
