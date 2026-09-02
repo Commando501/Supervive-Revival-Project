@@ -2460,6 +2460,41 @@ that COVERAGE IS EARNED AND NEVER SPENT.**
   UPROPERTY named `bManually<Verb>` is a strong hint that a non-manual (auto) path exists
   elsewhere; grep the shipping BP catalog for the value distribution before assuming the manual
   verb is the only path.
+  ★★★★ **AUTO-FIRE CALLER HUNT (S153 same-session, purely offline). Read
+  `docs/wall-p-autofire-mechanism-s153.md`.** Since MiniDash uses the auto-fire path, WHAT is the
+  auto-fire mechanism? Found in ~4 offline steps: (1) UHT `SetBitFunc` disassembly says
+  `bManuallyCallSpellCompleteEvent` is a whole byte at `[GameplaySpell + 0xC76]` (setter
+  `0x5356750` = `mov byte [rcx+0xC76],1; ret`). (2) Only 3 unique readers of that offset in all of
+  `.text`: two writers + ONE reader at `0x5515D40` inside a REAL BEGIN function
+  `0x5515C55..0x5515D6D` that PROPAGATES the flag from spell to a subobject: `[subobject+0xC0D] =
+  spell.bManuallyCallSpellCompleteEvent`. (3) The `+0xC0D` byte has 4 readers in the tight
+  `0x5679xxx` band — a family of 4 REAL sibling functions (`0x5679D50`, `0x5679DF7`, `0x5679E80`,
+  `0x5679F2C`, each ~0x75 B) that each check a different state-tracker byte (`+0xBFC`, `+0xBEC`,
+  `+0xBF4`, `+0xC0C`) and when it transitions, read `[+0xC0D]` → if 0 (auto), call `0x56A5370`
+  after a `0x56992A0` predicate. (4) `0x56A5370` (auto-fire broadcast) and `0x56992A0`
+  (predicate) are BOTH REAL — pages LIT, real MSVC prologues, not folds.
+  ★★★★★ **⇒ THE AUTO-FIRE MECHANISM IS FULLY PRESENT IN THE SHIPPING BINARY.** The synthesizer's
+  original "CallSpellCompleteEvent is the block" hypothesis was doubly wrong — MiniDash doesn't
+  call it, AND the auto-alternative isn't stripped. **If MiniDash's completion isn't firing, the
+  block is at the STATE-BYTE READ layer, not the broadcast layer.** Three candidates
+  narrow-searchable in the next live session: (a) propagation to `[subobject+0xC0D]` never
+  happened because the BEGIN function's 4-gate validation chain failed on a MiniDash subobject;
+  (b) the state-tracker's state byte never flipped because the montage/timer/dash-end callback
+  didn't fire; (c) the predicate `0x56992A0` returned the blocking value.
+  ★★ **NEW LIVE-READ PREREGISTRATION for the next MiniDash session** (replaces the previous
+  deep-dive §6 recipe): after activation, RPM-read `[subobject+0xC0D]` — if 1, propagation
+  failed (block at validation chain); if 0, read state bytes `[+0xBFC]`/`[+0xBEC]`/`[+0xBF4]`/
+  `[+0xC0C]` — whichever is 1 identifies which of the 4 sibling handlers is stalled; if all are
+  0, MiniDash's state machine never reached ANY of the 4 end-triggers. Three discriminator
+  outcomes with clean action items per branch, documented in the doc's §"Discriminators".
+  ★★ **NEW RULES from the hunt (R-S153-i..k):** (i) a UHT `SetBitFunc` is the offline oracle for
+  a bool UPROPERTY's byte offset — two instructions decode the layout. (j) a `[reg+disp32]` read
+  across `.text` can be found by literal-searching for the 4-byte disp32 pattern then decoding
+  backward 2-8 bytes to check for a valid memory-operand instruction — cheap and offline-decisive
+  when the offset is uncommon (0xC76, 0xC0D both had ≤6 raw hits). (k) a stripped-stub
+  hypothesis's SECOND-order refutation is worth the same offline effort as the first-order — the
+  auto-fire mechanism turned out to also be fully real, moving the search one hop deeper into
+  state-machine transitions rather than validating the "stripped path" conjecture.
   ⚠ **GAPS worth noting.** The movement wall (S141 T3 open: what zeros the bot's `Velocity` from
   rest, what clamps `MaxInputSpeed`) is NOT in the stripped set — the relevant code is stock UE
   `PhysFalling`/`CalcVelocity`, which the protector doesn't strip. **Architectural, not stub-
