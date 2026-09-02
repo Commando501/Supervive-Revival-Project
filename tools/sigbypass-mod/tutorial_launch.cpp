@@ -17787,7 +17787,11 @@ static void DoBotSpawn(){
 //     (live 0x552DC80) the engine's own AbilityPendingAdds flush uses. Auth gate IsOwnerActorAuthoritative =
 //     [ASC_vtable+0x688]=0x4481990 = `return !*(u8*)(ASC+0x800)`; ASC+0x800 read 0 live -> gate OPEN, no forcing.
 //   TryActivateAbilityByClass(TSubclassOf, bool bAllowRemoteActivation=true)  base+0x4493730                [M] REAL
-//   AdjustHealth(float HealthDelta)  ULokiAbilitySystemComponent                                        [M] REAL 0x5516610
+//   AdjustHealth(float HealthDelta)  ULokiAbilitySystemComponent   [M] REAL, wrapper 0x5294270 -> impl 0x5516610
+//     ⚠ The reflected Func @+0xE0 is the UHT-emitted EXEC WRAPPER (0x5294270) that unpacks the FFrame arg and
+//     tail-calls the impl at 0x5516610 (wrapper+0x6F: E8 2C 23 28 00). Any thunkExact check MUST compare
+//     against 0x5294270 and verify the tail call reaches 0x5516610 - NEVER `Func == impl RVA` (S152). The
+//     impl reads PAGE_NOACCESS until first executed (protector demand-decrypt), which is EXPECTED.
 //   ULokiAttributeSetHealth.Health = FGameplayAttributeData (BaseValue@+0x8, CurrentValue@+0xC)
 //
 // WALL P (player casts): WireAbilitySystem builds the carrier ASC + caches hero+0xF00 but NEVER binds
@@ -18062,6 +18066,23 @@ static BfS148ChainResult BfS148MalformedChain(
 
 // Unlike the legacy bool helper, this distinguishes a complete non-match from a truncated,
 // unreadable, cyclic, or over-depth chain. A mutation-authority scan may skip only the former.
+//
+// Render helpers (S148 damage calibration contract, per docs/s148-self-damage-flight4.md §"TDD
+// and contract evidence"). The commit that introduced BfS148ExactChain's chain-rendering call
+// sites (0b1ad5d, S150-drop, 2026-09-01) referenced these two helpers but did not commit their
+// definitions back to the main worktree, leaving KBFSELFCAL variants unbuildable from HEAD.
+// Semantics are pinned by the call sites at 18074 / 18098 / 18101 in this file:
+//   - Enabled iff the caller provided a non-null output buffer with non-zero capacity.
+//   - CapacityRefuses iff rendering another `required` bytes would exceed `chainSz`, with the
+//     `renderEnabled` argument acting as a defensive short-circuit for a chain that would render
+//     nothing anyway.
+static bool S148ClassChainRenderEnabled(const char* chainOut,uint64_t chainSz){
+    return chainOut!=nullptr && chainSz>0;
+}
+static bool S148ClassChainRenderCapacityRefuses(bool renderEnabled,
+                                                uint64_t required,uint64_t chainSz){
+    return renderEnabled && required>chainSz;
+}
 static BfS148ChainResult BfS148ExactChain(uintptr_t cls,const char* want,
                                           char* chainOut,size_t chainSz,
                                           S148ClassChainFailure* diagnostic=nullptr) {
@@ -21913,7 +21934,25 @@ static void BfS148DoCalibration(){
         *(uintptr_t*)((uintptr_t)adjustFn+UFUNC_CHILDPROPS):0;
     bool nativeFlag=(functionFlags&0x400u)!=0; // stock EFunctionFlags::FUNC_Native.
     bool thunkInImage=adjustThunk>=g_modBase&&(adjustThunk-g_modBase)<0x0B000000ULL;
-    bool thunkExact=adjustThunk==g_modBase+0x5516610;
+    // The reflected Func @+0xE0 for a UHT-emitted exec wrapper on a reflected native
+    // with parameters points to the WRAPPER at RVA 0x5294270, not the impl at
+    // 0x5516610. Verify the wrapper matches AND its tail call at wrapper+0x6F
+    // resolves to the impl. [M, S152] tail: 0x52942DF: E8 <rel32>, rel32=0x0028232C.
+    // Refuted an earlier check `adjustThunk == impl RVA`, which is unsatisfiable by
+    // UE construction on any build that emits exec wrappers for reflected natives
+    // with params (see docs/move4-external-poke-PREREGISTERED.txt and CLAUDE.md
+    // FK-1 5th entry / S152 §5 "thunkExact bug").
+    bool wrapperExact=adjustThunk==g_modBase+0x5294270;
+    bool tailReachesImpl=false;
+    if(wrapperExact&&SafeReadable((void*)(adjustThunk+0x6F),5)){
+        const uint8_t* tp=(const uint8_t*)(adjustThunk+0x6F);
+        if(tp[0]==0xE8){
+            int32_t rel=*(const int32_t*)(tp+1);
+            uintptr_t tgt=adjustThunk+0x6F+5+(intptr_t)rel;
+            tailReachesImpl=tgt==(g_modBase+0x5516610);
+        }
+    }
+    bool thunkExact=wrapperExact&&tailReachesImpl;
     bool frameBounded=propertiesSize>0&&propertiesSize<=sizeof(g_pbuf)&&
         deltaElem<=propertiesSize&&deltaOff<=propertiesSize-deltaElem;
     bool adjustResolved=GcAlive((uintptr_t)adjustFn)&&functionClassExact&&functionOwnerExact&&

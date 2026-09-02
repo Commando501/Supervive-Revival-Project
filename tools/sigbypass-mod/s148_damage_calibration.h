@@ -9,6 +9,15 @@
 constexpr uint32_t S148_HEALTH_SEED_BITS = 0x447A0000u;     // 1000.0f
 constexpr uint32_t S148_HEALTH_EXPECTED_BITS = 0x443B8000u; //  750.0f
 
+// Marker line the runtime emits once at the start of the S148 self-damage flight to record the
+// owner-census class-chain policy. Presence in the DLL is a contract asserted by the S148 build
+// test; the exact wording matches historical Flight 3/4 evidence at docs/tutorial-launch-marker.
+// s148-self-damage-flight4-*.txt line 8 and every other s148-move4-* / move4-poke-* / crashwatch.
+// s148-* marker file, so any change to the wording must be paired with docs updates. Restored to
+// the main worktree in S153 (missing definition since commit 0b1ad5d, S150-drop, 2026-09-01).
+#define S148_OWNER_CENSUS_CHAIN_MODE_MARKER \
+    "[S148] owner-census class-chain mode=CLASSIFY_ONLY directChecks=5\r\n"
+
 // Diagnostic-only provenance for the unique local-owner census. The runtime latches the first
 // failure into POD scalars, then renders the enum names only while emitting the final refusal line.
 // None of these values participates in admission or mutation policy.

@@ -3945,6 +3945,31 @@ blockers, neither about markers.**
   in the tail call, not the entry. Only full-body disassembly reveals it.
   Corroborates FK-1's "the enrichment is on `Auth*` naming, not on subsystem" — Cheat-family verb,
   no drop-phase relationship. Details: `docs/move4-external-poke-PREREGISTERED.txt`.
+  ★★★★ **S153 (2026-09-02): THE S152 THUNKEXACT BUG IS FIXED IN THE MAIN WORKTREE — UNFLOWN.**
+  The S152 check at `tools/sigbypass-mod/tutorial_launch.cpp:21916` required
+  `adjustThunk == impl RVA 0x5516610`, unsatisfiable by UE construction (reflected `Func @+0xE0`
+  for a UHT-emitted exec wrapper on a reflected native with parameters points to the **WRAPPER**
+  at `0x5294270`, not the impl). The fix requires **BOTH** `adjustThunk == g_modBase+0x5294270`
+  AND the wrapper's `E8 <rel32>` tail call at `wrapper+0x6F` resolving to `g_modBase+0x5516610`.
+  Portable across builds that keep the UHT wrapper shape. Comment at :17790 and
+  `tests/s148_build_contract_test.ps1` updated to pin the corrected check so a future reader
+  can't rederive the same bug. **Regression gates `play` `9bc10a4552c596e1` and `botai`
+  `5e47c13cf7f0a158` reproduce EXACTLY from source; new S148 DLL 221,696 B RAW `899ac8b56a477110`
+  VSIZE `9638ac4199d08961`, deterministic on rebuild; both `s148_build_contract_test` and
+  `s148_damage_calibration_test` PASS.** ⚠ **NOT FLOWN — no live measurement that the game's own
+  `AdjustHealth` path actually runs.** Live confirmation would take the S148 result from
+  `RESULT=ADJUST_UNRESOLVED` to either `HEALTH_APPLIED` (game's `AdjustHealth` ran) or a downstream
+  refusal that names the next wall.
+  ⚠ **AND FIXED THREE PRE-EXISTING BUILD BREAKS AS COLLATERAL — commit `0b1ad5d` S150-drop
+  (2026-09-01) referenced three symbols in `tutorial_launch.cpp` that were never committed to the
+  main worktree**, leaving every `-Variant botfight-damage-self-cal` build broken for ~1 day
+  (`S148ClassChainRenderEnabled` + `S148ClassChainRenderCapacityRefuses` restored as `static bool`
+  in the same `#if KBFSELFCAL || KBFBINDONLY` block as `BfS148ExactChain`, semantics derived from
+  call sites; `S148_OWNER_CENSUS_CHAIN_MODE_MARKER` restored in `s148_damage_calibration.h`, exact
+  wording preserved from historical Flight-3/4 marker files). ⚠ If the frozen S148 DLL from S152
+  flight 3 was built from a source tree that DID have these definitions, that source lived in the
+  codex worktree only, not the main worktree — a real archaeology question for the flight-4 doc's
+  "PASS s148_build_contract_test" claim.
   ★★★★★ **S152 BATCH HUNT (2026-09-02): 83 STRIPPED STUBS CONFIRMED LIVE IN ONE PASS. Read
   `docs/fk1-batch-hunt-s152.md`.** Live disassembly of 624 UFunctions matching `Auth*`/`Server*`/
   `*Cheat*` on the Move 4 process. **[M] STRIPPED=83 (13.3%), REAL=417, UNREADABLE=124** (PAGE_NOACCESS

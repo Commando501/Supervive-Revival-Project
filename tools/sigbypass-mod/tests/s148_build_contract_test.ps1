@@ -81,7 +81,14 @@ $requiredSource = @(
     'matchArrayDim==1',
     'BfS148ExactChain(adjustClass,"Function"',
     'BfS148ExactDirectClass(adjustOwner,"LokiAbilitySystemComponent")',
-    'adjustThunk==g_modBase+0x5516610',
+    # S153 thunkExact fix: `adjustThunk == impl RVA 0x5516610` is unsatisfiable by UE
+    # construction (reflected Func @+0xE0 for a UHT-emitted exec wrapper on a reflected
+    # native with parameters points to the WRAPPER at 0x5294270, not the impl). The
+    # corrected check requires the wrapper AND its tail call at wrapper+0x6F to resolve
+    # to the impl. See CLAUDE.md S152 §5 / docs/move4-external-poke-PREREGISTERED.txt.
+    'bool wrapperExact=adjustThunk==g_modBase+0x5294270',
+    'tailReachesImpl=tgt==(g_modBase+0x5516610)',
+    'bool thunkExact=wrapperExact&&tailReachesImpl',
     'BF_S148_INITIAL)!=BF_S148_INITIAL',
     '[S148] SETUP_TIMEOUT RESULT=SETUP_TIMEOUT',
     '[S148] DELIVERY_REFUSED RESULT=DELIVERY_REFUSED',
