@@ -232,3 +232,27 @@ __pycache__/
 /docs/crashwatch.out.log
 /docs/inject-watch.out.log
 /docs/inject-secondaries.log
+
+# S150 Flight 2 raw capture archives (large; kept locally, never tracked)
+docs/s150-retirement-*/capture-archive/
+
+# ---------------------------------------------------------------------------------------
+# Individual files that hit or exceeded GitHub's 100 MB per-file hard push limit.
+#
+# These sit in commit 38d96d9 (S139) and are the reason `git push origin dedicated-server-stub`
+# is rejected until history is rewritten (git-lfs migrate or git-filter-repo). Removing them
+# from HEAD in a new commit does NOT unblock the push -- the blob objects stay reachable via
+# 38d96d9's tree -- but this .gitignore entry AND the pre-commit hook at configs/git-hooks/
+# ensure they cannot be re-added by accident before or after a rewrite.
+#
+# Regeneration: capture-emote-attempt1.log is the raw docs/capture.log from one live run and
+# can be reproduced by re-running the emote sweep with ags's capture on. LVL_Skylands_WP.json
+# is a whole-map extractor dump (CUE4Parse), reproducible by re-running the extractor. The
+# CONCLUSIONS drawn from both are already in the smaller sibling summary files that stay
+# tracked (SUMMARY-NUMBERS.txt beside the log; the smaller LVL_Training.json etc. beside the
+# map dump), and in CLAUDE.md's emotes / drop-phase blocks.
+#
+# Rule: any single blob >= ~100 MB is rejected by GitHub. Prefer LFS for anything that MUST
+# stay tracked at that size; prefer .gitignore + a run-specific summary file for evidence.
+/scratchpad/s133/evidence/capture-emote-attempt1.log
+/scratchpad/s134/laneb/mapdumps/LVL_Skylands_WP.json
