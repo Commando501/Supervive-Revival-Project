@@ -257,11 +257,82 @@ static void BfObserveNaturalNode(void* frame){
 //   mode: same subject (the round-phase ladder), heap-only arming, and the FK-22 A0'..A5 protocol.
 //   RM_DROPPLANE (25) is the S125 successor: same FK-22 subject one layer down (the DropPlane
 //   COMPONENT rather than the phase), also heap-only arming, and the B0..B4 protocol.
-enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24, RM_DROPPLANE=25, RM_DROPPOD=26, RM_DROPMARKERS=27, RM_POOLSPAWN=28, RM_RIDEABLE=29, RM_DISMOUNT=30, RM_BOTSPAWN=31, RM_BOTFIGHT=32, RM_MOUNT=33 };
+enum RunMode { RM_FORCEOPEN=0, RM_SPAWNPOSSESS=1, RM_GOTOPHASE=2, RM_SPAWNPLAYER=3, RM_CHEATSPAWN=4, RM_WAKEMOVE=5, RM_PUPPET=6, RM_TOGGLEREADY=7, RM_TRAINING=8, RM_SPAWNSEQ=9, RM_SPAWNQUEST=10, RM_QUESTPLAY=11, RM_BPCALL=12, RM_OBJDRIVE=13, RM_OBJCOMPLETE=14, RM_FIREOVERLAP=15, RM_DRIVECHAIN=16, RM_CAMERA=17, RM_TOPDOWNCAM=18, RM_MESHCAM=19, RM_DROPIN=20, RM_MAKEMESH=21, RM_PLAY=22, RM_CHEATMGR=23, RM_PHASELADDER=24, RM_DROPPLANE=25, RM_DROPPOD=26, RM_DROPMARKERS=27, RM_POOLSPAWN=28, RM_RIDEABLE=29, RM_DISMOUNT=30, RM_BOTSPAWN=31, RM_BOTFIGHT=32, RM_MOUNT=33, RM_DROPLANDPLAY=34 };
 #ifndef KRUNMODE
 #define KRUNMODE RM_CHEATSPAWN
 #endif
 static const int kRunMode = KRUNMODE;   // override at build with -DKRUNMODE=RM_FORCEOPEN etc. RM_FORCEOPEN=force-open; RM_SPAWNPOSSESS=spawn+possess; RM_GOTOPHASE=advance round; RM_SPAWNPLAYER=real hero spawn+possess; RM_CHEATSPAWN=call the game's own LokiPlayerCheats spawn RPC (S74 Path B)
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ S150-drop RM_DROPLANDPLAY (34) -- THE DROP-LAND-PLAY COMBINED ARM.
+//   Composes what has been four sequential injections since flight 4b (dropplane_b1only ->
+//   droppod-pe-cdopoke -> dismount-landstart -> play-atlanding-walk) into ONE injection, driven
+//   by a state machine across game-thread hits. Each phase runs its existing Do* function
+//   verbatim; each phase's terminal case (formerly g_done=1) advances g_dlpPhase instead.
+//   Reduces total per-flight injections from 7 to 4 (gft, fo, sp, dlp) -- FK-31 sitting-loss
+//   budget goes ~54% -> ~19% on an independent binomial with historical ~27% per-window rate.
+//
+//   ⚠ SEPARATE PREPROCESSOR MACRO (`KISDLP`) rather than `#if kRunMode == RM_DROPLANDPLAY`,
+//     because kRunMode is a `static const int` (not a preprocessor macro) and enum values are
+//     invisible to `#if`, so an identifier-vs-identifier `#if` comparison collapses to 0==0
+//     (always true) and would emit DLP code in every variant. `-DKISDLP=1` is only set on the
+//     `droplandplay` build; every other variant preprocess-strips every DLP addition, which is
+//     what keeps existing gates (botai / play / dropplane_b1only / droppod-pe-cdopoke / dismount
+//     / dismount-landstart / mount-*) byte-identical.
+//
+//   Read docs/next-session-prompt-s150-drop-dlp.md and docs/drop-sequence-status-s150.md §6.16
+//   before touching any of it. DIAGNOSTIC arm; NOT SHIPPING. Do NOT add to the default set.
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+#ifndef KISDLP
+#define KISDLP 0
+#endif
+#ifndef KDLPPLAYHOLDMS
+#define KDLPPLAYHOLDMS 600000       // S150-drop DLP: PL playable-hold; default matches KPLAYHOLDMS
+#endif
+#if KISDLP
+// ── DLP orchestrator state (declared here so SubladderTerminate is defined BEFORE the DP/PD/DX
+//    terminal cases that call it; DoDropLandPlay + DlpFinalReport are defined LATER, once all
+//    Do*/ResolvePlay/*FinalReport symbols are available). ─────────────────────────────────────
+// Forward-declare the marker helpers we use in SubladderTerminate. Their DEFINITIONS live at
+// ~line 563/564 (well below this block), and we cannot move this whole block below them without
+// pushing SubladderTerminate past the DP/PD/DX terminal cases that call it. Forward function
+// declarations do not emit any bytes, and this block is entirely `#if KISDLP`-guarded, so no
+// non-DLP variant sees these decls -- byte-identity of every existing gate is preserved.
+static void Marker(const char* m);
+static void Markerf(const char* f, ...);
+// The DLP orchestrator itself lives past line 14900 (after every sub-arm's Do* / FinalReport is
+// declared), but its dispatch is added to the OnPI hook-table (~line 1458) and its FinalReport
+// is called from the Worker block (~line 24054) -- both of which are above the definitions.
+static void DoDropLandPlay();
+static void DlpFinalReport();
+static volatile int g_dlpPhase = 0;          // 0=DP 1=PD 2=DX 3=PL 4=DONE
+static DWORD        g_dlpPhaseEnteredMs = 0;
+static int          g_dlpFaultPhase = -1;
+static int          g_dlpDpEntered = 0, g_dlpPdEntered = 0, g_dlpDxEntered = 0, g_dlpPlEntered = 0;
+static const char* const g_dlpPhaseNames[5] = { "DP", "PD", "DX", "PL", "DONE" };
+// Called by each sub-ladder's terminal case in place of `g_done=1;`. Advances the DLP phase or,
+// for the final phase (PL), lets FsHold time out on its own -- PL has no terminal state.
+// ⚠ If the current DLP phase doesn't match the caller's, this is a stale terminal from a prior
+//   phase's ladder step -- do NOTHING (do NOT advance past the intended phase, do NOT set
+//   g_done). Silent by design; the FinalReport prints g_dlpFaultPhase for attribution.
+static void SubladderTerminate(int currentPhase){
+    if(g_dlpPhase != currentPhase) return;
+    if(currentPhase < 3){
+        Markerf("[DLP] === PHASE %d (%s) COMPLETE, advancing to PHASE %d (%s) ===\r\n",
+                currentPhase, g_dlpPhaseNames[currentPhase],
+                currentPhase+1, g_dlpPhaseNames[currentPhase+1]);
+        g_dlpPhase = currentPhase + 1;
+        g_dlpPhaseEnteredMs = GetTickCount();
+        // RAII: reset the FFrame-init policy. Only DP entry sets FI_S80 (the ds_hybrid recipe);
+        // PD/DX/PL run with the ZEROONLY default. Non-DLP builds don't see this write.
+        g_frameInit = KFRAMEINIT;
+    } else {
+        // currentPhase == 3 (PL) -- PL has no terminal; FsHold(KDLPPLAYHOLDMS) releases the arm.
+        // The Worker prints the final report after FsDisarm; do not set g_done here.
+        Markerf("[DLP] PL (phase 3) has no terminal -- FsHold(KDLPPLAYHOLDMS=%d) will release "
+                "the arm on timeout.\r\n", (int)KDLPPLAYHOLDMS);
+    }
+}
+#endif // KISDLP
 #if KBFSELFCAL
 static_assert(kRunMode==RM_BOTFIGHT,"S148 self calibration is valid only in RM_BOTFIGHT");
 #endif
@@ -1396,6 +1467,9 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     if(kRunMode==RM_RIDEABLE){ DoRideable(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S131 the fifth wall
     if(kRunMode==RM_DISMOUNT){ DoDismount(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S132 the dismount
     if(kRunMode==RM_MOUNT){ DoMount(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S150-drop the mount + ride + descent (DoMount sets g_done itself unless POLL holds)
+#if KISDLP
+    if(kRunMode==RM_DROPLANDPLAY){ DoDropLandPlay(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S150-drop DLP: state machine over DP/PD/DX/PL
+#endif
     if(kRunMode==RM_BOTSPAWN){ DoBotSpawn(); InterlockedIncrement(&g_called); g_inHook=0; return; }   // S135 the bot spawn
     if(kRunMode==RM_BOTFIGHT){ DoBotFight(); InterlockedIncrement(&g_called);
 #if KBFSELFCAL
@@ -7443,7 +7517,14 @@ static void DpLadderStep(){
     default:
         Marker("[DP] ================ game-thread arms COMPLETE (B4 runs on the worker after a settle) "
                "================\r\n");
+#if KISDLP
+        // S150-drop DLP: advance to PHASE 1 (PD) instead of releasing the arm. The Worker's
+        // FsHold stays live and the game thread keeps dispatching to the funcswap callback,
+        // which then routes to DoDropPod on the next hit.
+        SubladderTerminate(0);
+#else
         g_done=1;
+#endif
         return;
     }
 }
@@ -10931,7 +11012,13 @@ static void PdLadderStep(){
     case 10:
     default:
         Marker("[PD] ================ game-thread arms COMPLETE (C4 runs on the worker after a settle) ================\r\n");
-        g_done=1; return;
+#if KISDLP
+        // S150-drop DLP: advance to PHASE 2 (DX) instead of releasing the arm.
+        SubladderTerminate(1);
+#else
+        g_done=1;
+#endif
+        return;
     }
 }
 static void DoDropPod(){
@@ -14629,7 +14716,13 @@ static void DxLadderStep(){
             }
         }
         Marker("[DX] ============ game-thread arms COMPLETE ============\r\n");
-        g_done=1; return; }
+#if KISDLP
+        // S150-drop DLP: advance to PHASE 3 (PL) instead of releasing the arm.
+        SubladderTerminate(2);
+#else
+        g_done=1;
+#endif
+        return; }
     }
 }
 static void DoDismount(){
@@ -14849,6 +14942,139 @@ static void DxFinalReport(){
            "GetLandingTeleportLocation returning the hero's current position, or to SetActorLocation "
            "refusing (it bails when RootComponent is null). Read the hero's RootComponent.\r\n");
 }
+
+#if KISDLP
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ S150-drop RM_DROPLANDPLAY ORCHESTRATOR (2026-09-02).
+//   Composed here, AFTER all four sub-arms (DoDropPlane / DoDropPod / DoDismount / DoPlay) and
+//   all four Resolve+FinalReport functions are declared, so no forward decls are needed. The
+//   supervisor state and SubladderTerminate() live NEAR THE TOP of the file (under the KISDLP
+//   block after the enum) so the DP/PD/DX terminal cases can call SubladderTerminate before this
+//   larger block is seen.
+//
+//   FLOW (all on the game thread, inside the funcswap callback):
+//     phase 0 (DP): DpResolve + BEFORE census + marker scan (first entry) -> DoDropPlane
+//                   -> DpLadderStep terminal calls SubladderTerminate(0) -> phase becomes 1
+//     phase 1 (PD): C0-BEFORE census + PdResolve (first entry) -> DoDropPod
+//                   -> PdLadderStep terminal calls SubladderTerminate(1) -> phase becomes 2
+//     phase 2 (DX): RdResolve (first entry) -> DoDismount
+//                   -> DxLadderStep terminal calls SubladderTerminate(2) -> phase becomes 3
+//     phase 3 (PL): ResolvePlay (first entry) -> DoPlay (per-hit; no terminal)
+//                   -> FsHold(KDLPPLAYHOLDMS) releases the arm on timeout
+//
+//   Each Resolve() is done on the GAME THREAD at phase entry, exactly the RM_MOUNT precedent
+//   (MtSetup -> RdResolve, on game thread). It costs a ~2 s hitch per phase transition (three
+//   GUObjectArray sweeps total in a sitting), which is well within budget vs the four separate
+//   FsArm/FsHold/FsDisarm cycles that would replace it if resolves ran on the worker thread.
+//
+//   ⚠ SEH IS LOCAL TO THE ORCHESTRATOR ONLY. DoDropPlane/DoDropPod/DoDismount each already have
+//     their own __except that sets g_done=1 on ANY exception (which, under KISDLP, is what we
+//     WANT for a sub-arm fault -- it halts the DLP arm cleanly). DoDropLandPlay's __except is a
+//     belt-and-braces catch for anything the sub-arm SEH did not.
+//
+//   ⚠ HALT SEMANTICS: on any resolve failure OR any SEH inside the orchestrator, set
+//     g_dlpFaultPhase, jump to phase 4 (DONE), and set g_done. DlpFinalReport prints the
+//     terminal phase and fault phase so a null is attributable.
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+static void DoDropLandPlay(){
+    __try {
+        switch(g_dlpPhase){
+        case 0: {   // DP -- drop-plane spawn
+            if(!g_dlpDpEntered){
+                Marker("[DLP] ============ PHASE 0: DP (drop-plane spawn) ============\r\n");
+                if(!DpResolve()){
+                    Marker("[DLP] DP: DpResolve failed -- HALTING (fault attributed to phase 0)\r\n");
+                    g_dlpFaultPhase = 0; g_dlpPhase = 4; g_done = 1; return;
+                }
+                g_dpResolved = true;
+                DpCensus("B0-BEFORE", true, true, &g_dpC0);
+                DpMarkerScan();
+                // RAII scope: DP uses the ds_hybrid FI_S80 frame recipe; the SubladderTerminate
+                // at DP's terminal case resets g_frameInit back to the build-knob default so
+                // PD/DX/PL see ZEROONLY (or whatever KFRAMEINIT selects).
+                g_frameInit = FI_S80;   // the ds_hybrid.cpp:2151 recipe -- only DP uses it; SubladderTerminate resets to KFRAMEINIT at phase advance
+                g_dlpDpEntered = 1;
+            }
+            DoDropPlane();
+            break; }
+        case 1: {   // PD -- drop-pod spawn
+            if(!g_dlpPdEntered){
+                Marker("[DLP] ============ PHASE 1: PD (drop-pod spawn) ============\r\n");
+                DpCensus("C0-BEFORE", true, true, &g_pdB);
+                if(!PdResolve()){
+                    Marker("[DLP] PD: PdResolve failed -- HALTING (fault attributed to phase 1)\r\n");
+                    g_dlpFaultPhase = 1; g_dlpPhase = 4; g_done = 1; return;
+                }
+                g_pdResolved = true;
+                if(g_pdPreSpawned){
+                    Marker("[DLP] PD: C3 pre-spawn ran (unexpected in DLP -- DP just spawned a plane); "
+                           "re-taking BEFORE census as the C1 baseline.\r\n");
+                    DpCensus("C0-BEFORE(re-baselined after C3)", true, true, &g_pdB);
+                }
+                g_dlpPdEntered = 1;
+            }
+            DoDropPod();
+            break; }
+        case 2: {   // DX -- dismount + land at PlayerStart
+            if(!g_dlpDxEntered){
+                Marker("[DLP] ============ PHASE 2: DX (dismount, land at PlayerStart) ============\r\n");
+                RdResolve();
+                if(!g_rdResolved){
+                    Marker("[DLP] DX: RdResolve failed -- HALTING (fault attributed to phase 2)\r\n");
+                    g_dlpFaultPhase = 2; g_dlpPhase = 4; g_done = 1; return;
+                }
+                g_dlpDxEntered = 1;
+            }
+            DoDismount();
+            break; }
+        case 3: {   // PL -- play at landing (per-hit; no terminal)
+            if(!g_dlpPlEntered){
+                Marker("[DLP] ============ PHASE 3: PL (play at landing) ============\r\n");
+                if(!ResolvePlay()){
+                    Marker("[DLP] PL: ResolvePlay failed -- HALTING (fault attributed to phase 3)\r\n");
+                    g_dlpFaultPhase = 3; g_dlpPhase = 4; g_done = 1; return;
+                }
+                g_dlpPlEntered = 1;
+            }
+            DoPlay();
+            break; }
+        case 4:
+        default:
+            // Terminal (fault or normal completion): let FsHold time out and the Worker take it.
+            g_done = 1;
+            break;
+        }
+    } __except(SEH_FILTER(GetExceptionInformation())){
+        Markerf("[DLP] *** FAULT in DoDropLandPlay orchestrator at phase %d (%s) -- fault=%s ***\r\n",
+                g_dlpPhase, (g_dlpPhase < 5) ? g_dlpPhaseNames[g_dlpPhase] : "?", DP_FAULT);
+        if(g_dlpFaultPhase < 0) g_dlpFaultPhase = g_dlpPhase;
+        g_dlpPhase = 4;
+        g_done = 1;
+    }
+}
+
+// Composite final report -- prints the terminal phase, the fault phase (if any), and each
+// per-phase FinalReport that entered. Runs on the WORKER thread after FsDisarm.
+static void DlpFinalReport(){
+    Marker("[DLP] ================= RM_DROPLANDPLAY FINAL REPORT =================\r\n");
+    Markerf("[DLP] terminal phase: %d (%s)   faultPhase: %d   entered: DP=%d PD=%d DX=%d PL=%d\r\n",
+            g_dlpPhase, (g_dlpPhase < 5) ? g_dlpPhaseNames[g_dlpPhase] : "?",
+            g_dlpFaultPhase, g_dlpDpEntered, g_dlpPdEntered, g_dlpDxEntered, g_dlpPlEntered);
+    if(g_dlpFaultPhase >= 0)
+        Markerf("[DLP] *** VERDICT: FAULTED at phase %d (%s). Do NOT read later phases as results. ***\r\n",
+                g_dlpFaultPhase, (g_dlpFaultPhase < 5) ? g_dlpPhaseNames[g_dlpFaultPhase] : "?");
+    Marker("[DLP] --- per-phase summaries (from the sub-arms' own FinalReports) ---\r\n");
+    if(g_dlpDpEntered) DpFinalReport();
+    else               Marker("[DLP]   DP never entered -- no summary\r\n");
+    if(g_dlpPdEntered) PdFinalReport();
+    else               Marker("[DLP]   PD never entered -- no summary\r\n");
+    if(g_dlpDxEntered) DxFinalReport();
+    else               Marker("[DLP]   DX never entered -- no summary\r\n");
+    if(g_dlpPlEntered) Marker("[DLP]   PL entered -- ran under FsHold(KDLPPLAYHOLDMS) until timeout; "
+                              "read [PL] lines above for its state\r\n");
+    else               Marker("[DLP]   PL never entered\r\n");
+}
+#endif // KISDLP
 
 
 // ---- S74 Path B: resolve the cheat object accessor + target RPC thunks (off-thread, before hooking) ----
@@ -23836,6 +24062,61 @@ static DWORD WINAPI Worker(LPVOID){
             return 9; }
         return 0;
     }
+
+#if KISDLP
+    // ★★★★★ S150-drop RM_DROPLANDPLAY -- THE DROP-LAND-PLAY COMBINED ARM (state machine).
+    //   ONE injection composes what has been four sequential injections since flight 4b:
+    //     dropplane_b1only -> droppod-pe-cdopoke -> dismount-landstart -> play-atlanding-walk
+    //   Total per-flight injections drop from 7 to 4 (gft, fo, sp, dlp) -- FK-31 sitting-loss
+    //   budget goes ~54% -> ~19% on an independent binomial with historical ~27% per-window rate.
+    //
+    //   PATTERN: same as every other funcswap-armed mode (dropplane / droppod / dismount / mount).
+    //   The DIFFERENCE is that the game-thread callback DoDropLandPlay dispatches to one of four
+    //   sub-arms based on g_dlpPhase (0=DP 1=PD 2=DX 3=PL), and each sub-arm's terminal case
+    //   advances g_dlpPhase via SubladderTerminate() instead of setting g_done=1. FsHold stays
+    //   alive across all four phases; only the final KDLPPLAYHOLDMS timeout releases the arm.
+    //
+    //   Resolve for each phase runs ON THE GAME THREAD at first entry (matches the RM_MOUNT
+    //   precedent -- MtSetup runs RdResolve inside DoMount). Each resolve is a ~2 s hitch; the
+    //   game recovers. This is preferable to four separate FsArm/FsHold/FsDisarm cycles.
+    //
+    //   ⚠ DIAGNOSTIC arm; NOT SHIPPING. Do NOT add to the default injection set.
+    //   ⚠ Same staging as the four separate arms: gft -> fo -> sp -> this.
+    //   See docs/next-session-prompt-s150-drop-dlp.md and docs/drop-sequence-status-s150.md §6.16.
+    if(kRunMode==RM_DROPLANDPLAY){
+        Marker("[DLP] RM_DROPLANDPLAY (S150-drop): DP -> PD -> DX -> PL, ONE injection, phase advances\r\n"
+               "[DLP] on OnPI hits. Each phase's Do* runs verbatim; terminal cases call SubladderTerminate\r\n"
+               "[DLP] instead of g_done=1. Inject into a STAGED TUTORIAL WORLD (gft -> fo -> sp -> this).\r\n");
+#if KFUNCSWAP
+        Marker("[DLP] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write\r\n");
+        // Reset chain state -- insurance against stale DLL state from a previous injection into
+        // the same process (should be rare; the mode is one-shot per DLL load).
+        g_dlpPhase = 0;
+        g_dlpPhaseEnteredMs = GetTickCount();
+        g_dlpFaultPhase = -1;
+        g_dlpDpEntered = g_dlpPdEntered = g_dlpDxEntered = g_dlpPlEntered = 0;
+        if(!FsArm()){ Marker("[DLP] FAIL funcswap arm -- nothing was armed, nothing was called\r\n"); return 6; }
+        Markerf("[DLP] armed; holding for up to %d ms (KDLPPLAYHOLDMS). Phases will advance on OnPI hits.\r\n",
+                (int)KDLPPLAYHOLDMS);
+        FsHold(KDLPPLAYHOLDMS);
+        FsDisarm();
+#else
+        // Same deliberate refusal as every other funcswap-armed mode. The alternative delivery
+        // path is InstallHook(), a standing 5-byte .text patch measured 10/10 lethal (S112).
+        Marker("[DLP] REFUSING TO RUN with KFUNCSWAP=0 -- that path installs a standing .text patch.\r\n");
+        return 7;
+#endif
+        DlpFinalReport();
+        Markerf("[DLP] done (terminalPhase=%d faultPhase=%d entered: DP=%d PD=%d DX=%d PL=%d called=%ld hitsGT=%ld)\r\n",
+                g_dlpPhase, g_dlpFaultPhase,
+                g_dlpDpEntered, g_dlpPdEntered, g_dlpDxEntered, g_dlpPlEntered,
+                (long)g_called, (long)g_hitsGT);
+        // A fault at any phase returns non-zero so a harness keying on the return code can distinguish
+        // a successful full traversal (DP -> PD -> DX -> PL -> hold expired) from a fault mid-arm.
+        if(g_dlpFaultPhase >= 0) return 9;
+        return 0;
+    }
+#endif // KISDLP
 
     // *** S135 RM_BOTSPAWN -- the first AI hero. CALL-ONLY: one CallBPGuarded into
     //   Comp_BP_BotSpawner_C::SpawnClassBotAtLoc. NO module-image write, NO data poke, NO PI hook.

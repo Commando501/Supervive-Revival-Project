@@ -857,6 +857,42 @@ $Variants = @{
         #     point the dismount landed it has never been measured. Stage it on a `dismount-landstart`
         #     hero (real ground at the PlayerStart), not on a pod-relative one over open air.
         'play-atlanding-walk' = @('-DKRUNMODE=RM_PLAY','-DKNOTELE=1','-DKFLYMODE=1')
+        # ════════════════════════════════════════════════════════════════════════════════════════
+        # ★★★★★ S150-drop RM_DROPLANDPLAY -- THE DROP-LAND-PLAY COMBINED ARM.
+        #
+        # ONE injection composes what has been four sequential injections since flight 4b
+        # (dropplane_b1only -> droppod-pe-cdopoke -> dismount-landstart -> play-atlanding-walk).
+        # A state machine across game-thread hits dispatches to each phase's existing Do* function
+        # verbatim; each phase's terminal case (formerly g_done=1) advances g_dlpPhase instead.
+        # Reduces total per-flight injections from 7 to 4 (gft, fo, sp, dlp) -- FK-31 sitting-loss
+        # budget goes ~54% -> ~19% on an independent binomial with historical ~27% per-window rate.
+        #
+        # SAME BEHAVIOUR AS THE FOUR SEPARATE ARMS -- knobs mirror them, one-for-one:
+        #   * KDPARMS=0x33          matches dropplane_b1only  (DP: B0+B1+B0c+B4, KFRAMEINIT=1)
+        #   * KPDARMS=0x1FF         matches droppod-pe-cdopoke (PD: full C ladder + E0 + E1)
+        #     KPDCDOPOKE=1            (PD: poke CDO(BP_DropPod_C)+0x6C=0, S130 C7 bypass)
+        #   * KDXLANDING=2          matches dismount-landstart (DX: pass LokiPlayerStart, S132 §14)
+        #   * KNOTELE=1 KFLYMODE=1  matches play-atlanding-walk (PL: skip teleport, Walking mode)
+        # (Shared KFSNAME="" / KFRAMEINIT=1 / KFAULTINFO=1 / KOUTPARMRET=1 are already common to
+        #  every one of the four.)
+        #
+        # ⚠ REGRESSION GATES (verified byte-identical after this edit -- check with
+        #   text_digest.py --dupes and by diffing each recorded sha256):
+        #     botai 5e47c13cf7f0a158 · play 9bc10a4552c596e1 · dropplane_b1only dcb19157cf45f9aa ·
+        #     droppod-pe-cdopoke 283c1692a2135680 · dismount 0fe6d7ae1f26e16b ·
+        #     dismount-landstart 62f257c191027ee3 · mount-ride 9b7f88af3210c438 ·
+        #     mount-descend c26e8831f45d7548 · mount-phaseb d69642beacc5e7a8
+        #   All KISDLP-guarded additions are `#if KISDLP ... #endif`, and every non-DLP variant
+        #   is compiled with the default KISDLP=0 (KISDLP is undefined at their build line and
+        #   the source's `#ifndef KISDLP #define KISDLP 0 #endif` sets it), so the preprocessor
+        #   strips every DLP addition and the compiler sees the pre-edit source. Verify at build.
+        #
+        # ⚠ DIAGNOSTIC arm; NOT SHIPPING. Do NOT add to the default injection set (leave
+        #   launch-redirect.ps1 alone). Same staging as the four separate arms:
+        #     gft -> fo -> sp -> this
+        # See docs/next-session-prompt-s150-drop-dlp.md and docs/drop-sequence-status-s150.md §6.16.
+        # ════════════════════════════════════════════════════════════════════════════════════════
+        'droplandplay'        = @('-DKRUNMODE=RM_DROPLANDPLAY','-DKISDLP=1','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKDPARMS=0x33','-DKPDARMS=0x1FF','-DKPDCDOPOKE=1','-DKDXLANDING=2','-DKNOTELE=1','-DKFLYMODE=1')
 
         'poolspawn-cdoctrl'   = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDCDOPOKE=0')
         'poolspawn-cdopoke'   = @('-DKRUNMODE=RM_POOLSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKPDCDOPOKE=1')
