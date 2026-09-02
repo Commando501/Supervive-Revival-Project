@@ -2412,6 +2412,28 @@ that COVERAGE IS EARNED AND NEVER SPENT.**
   all four are now annotated in place (`0x556D910`, `0x5879000`, the `0x5873280`–`0x5879EE0` band,
   `0x5456000`). ⚠ The sweep is a **FLOOR**: 294 of 431 keyword lines carry no same-line address and
   were never graded at all.
+  ★★ **RE-RUN AT S153 (2026-09-02, against `merged14`): 58 raw claim-instances flagged across
+  ~19 files (12 in `docs/fk22-dropphase-reachability.md`, 7 in `docs/fk-playability-audit-s134.md`,
+  6 in the already-SUPERSEDED-banner-carrying `docs/fk5-battle-gate-settled.md`, 5 in
+  `docs/ignorance-map-s101.md`, 4 in `docs/method-rules.md`, 4 in `docs/coverage-audit-s101.md`,
+  and smaller counts across ~13 more).** Both instrument controls still pass (`ProcessInternal
+  0x13454A0` → LIT, `ULokiRespawnComponent::Respawn 0x5A6AC40` → DARK). Count went **43 (S137,
+  merged13) → 58 (S153, merged14) = +15 more stale citations** as merged14 decrypted more pages
+  than merged13 did. Reproducible: `python scratchpad/s133/tools/regrade_blocked.py`.
+  ⚠ **CLAUDE.md itself has ONLY 2 raw hits (lines 2427 and 3772), BOTH FALSE POSITIVES** — the
+  regex fires on any line containing a claim-shaped phrase AND a `.text` RVA, and can't
+  discriminate assertion from discussion. Line 2427 is inside the paragraph that CORRECTS the
+  `0x1F8CFC0` all-zero claim; line 3772 has "45 % of `.text` is undecrypted" as general
+  background beside the compiler-init RVA `0x56772CF` it explicitly says is IN the decrypted
+  `.text`. **CLAUDE.md is CLEAN of true stale claims after per-line adjudication — verified
+  S153.** Same class of false-positive fires on `docs/fk1-exec-sweep-s153.md:210` (this
+  session's own doc), which is discussing the S153 SetGamepadAimSettings finding.
+  ⚠⚠ **PATTERN, not just a count:** most of the 58 hits are in doc lines that are ALREADY
+  ANNOTATED with corrections (the correction text itself matches the regex because it quotes
+  the original claim), which is why per-line adjudication is required and simple substitution
+  edits would remove information. **The reusable rule is: run the tool as a first-pass filter,
+  then adjudicate each flagged line by reading the paragraph it lives in.** The current dated
+  snapshot lives at `scratchpad/s153_regrade_blocked.out.txt`.
 - ⚠⚠★ **AND A COVERAGE NEGATIVE CONTROL IS ONLY VALID UNTIL SOMETHING ON ITS *PAGE* RUNS — WE KILLED
   ONE OURSELVES (S137).** `docs/fk22-dropphase-reachability.md` designated
   `ALokiGameState::AuthSetDeathCircle` impl `0x55653E0` as FK-22's coverage negative control
