@@ -2442,6 +2442,24 @@ that COVERAGE IS EARNED AND NEVER SPENT.**
   ability body" phenomenon; a spell that never signals completion never re-arms cooldowns or next-
   cast, and CanActivate + Mana debit measured by S145/S146/S147 are all pre-completion signals.
   Priority read for the S151 Move 3 BINDCENSUS follow-up.
+  ⚠⚠ **PARTIAL REFUTATION (S153 same-day deep dive; read `docs/wall-p-callspellcomplete-deep-dive-s153.md`
+  BEFORE citing R-S153-e).** MEASURED across 596 shipping `GS_*` blueprints: **only 26 (4.4%) set
+  `bManuallyCallSpellCompleteEvent: true`** and reference the stub; the other **570 (95.6%) use an
+  AUTO-fire path** and never call `CallSpellCompleteEvent` at all. **S147's actual target,
+  `GS_Ronin_MiniDash_Charges`, is in the auto-fire majority** — so the stub cannot explain
+  MiniDash's specific failure. R-S153-e holds for the 26 manual-fire spells (AirBlast, HoverWings,
+  BungeeShot, TreePrison, etc. — complex spells whose completion is a discrete BP-decided event)
+  and is REFUTED for MiniDash and every other majority-path spell. The Move 3 BINDCENSUS follow-up
+  should read `spec.bIsActive`/`spec.ActiveCount`/`OnGameplaySpellEnded.InvocationList.Num` plus
+  a post-cast page-`0x535F000` readability check (contains `EndInvoke`, still DARK in merged14),
+  NOT assume the CallSpellCompleteEvent strip is the block. Two new discriminators for the S147
+  live session are documented in the deep-dive doc §6.
+  ★★ **NEW RULES from the deep dive (R-S153-g, R-S153-h):** (g) a stripped-stub hypothesis that
+  names one UFunction as blocking a specific behaviour must be checked against the shipping asset
+  population that actually CALLS it — 96% of spells don't call CallSpellCompleteEvent. (h) a `b*`
+  UPROPERTY named `bManually<Verb>` is a strong hint that a non-manual (auto) path exists
+  elsewhere; grep the shipping BP catalog for the value distribution before assuming the manual
+  verb is the only path.
   ⚠ **GAPS worth noting.** The movement wall (S141 T3 open: what zeros the bot's `Velocity` from
   rest, what clamps `MaxInputSpeed`) is NOT in the stripped set — the relevant code is stock UE
   `PhysFalling`/`CalcVelocity`, which the protector doesn't strip. **Architectural, not stub-
