@@ -81,11 +81,16 @@ param(
                          # Trade-off, stated: on a real crash it FREEZES the process for the
                          # duration of the dump. That is free (it is dying), but if a marker ever
                          # fires spuriously a healthy game would freeze once, then resume.
-  [int]$InjectGapSeconds # S109: seconds between successive secondary manual-maps. Injector default is
+  [int]$InjectGapSeconds, # S109: seconds between successive secondary manual-maps. Injector default is
                          # now 20 (raised from 3 on 2026-08-05). At 3 s the four secondaries were
                          # mapped in a ~13 s burst and EVERY death in the S109 series landed at or
                          # after it; >=10 s gaps cut the hazard ~71x. Pass 3 to restore the old burst.
                          # See docs/s109-dump-forensics.md sections 18-20.
+  [switch]$ResetCapture  # S149 capture-gen fix: before starting ags, archive any existing docs\capture.log
+                         # under a stamped name and CreateNew a fresh entry with CreationTimeUtc == UtcNow.
+                         # Off by default -- byte-identical to today's primary launch when unset. Unblocks
+                         # S149's bind-only flight and any successor gate that admits on capture generation
+                         # (measured -10849 s stale in flight 1). See configs/capture-gate.ps1.
 )
 # DEFAULT (no flags): primary catalog_store_fix.dll (store + HUNTERS roster) is injected at launch, then
 # configs/inject-secondaries.ps1 injects the full secondary set once it settles � pick/refresh (pi8),
@@ -126,6 +131,9 @@ if (-not $isAdmin) {
   # S113: forward -ExtraArgs too. CLAUDE.md records that -NoPasses was silently
   # DROPPED across elevation, which invalidated a whole bisection - do not repeat it.
   if ($ExtraArgs -and $ExtraArgs.Count) { $argList += @("-ExtraArgs", ($ExtraArgs -join ',')) }
+  # S149 capture-gen fix: same forwarding rule -- silently dropping this across
+  # elevation would leave the capture stale under a fresh backend.
+  if ($ResetCapture) { $argList += "-ResetCapture" }
   Start-Process powershell -Verb RunAs -ArgumentList $argList
   return
 }
@@ -219,6 +227,23 @@ $agsExe = Join-Path $serverDir "ags.exe"
 Write-Host "Building community backend..." -ForegroundColor Cyan
 & $go build -C $serverDir -o $agsExe ./cmd/ags
 if ($LASTEXITCODE -ne 0) { throw "go build failed (exit $LASTEXITCODE)" }
+
+# ---- S149 capture-gen fix (opt-in): archive stale docs\capture.log + stamp a
+#      fresh one under UtcNow BEFORE ags opens it. Off by default -- primary
+#      launch flow is byte-identical when -ResetCapture is not passed. See
+#      configs/capture-gate.ps1's block-comment for the S149-flight-1 refusal
+#      this closes (measured CreationTimeUtc delta -10849.3 s, gate 60s window).
+if ($ResetCapture) {
+  # Label the archive with either the caller's tag or a wall-clock stamp so
+  # runs don't collide. AGS_CAPTURE_LABEL is a plain env var so any flight
+  # helper (fk24-stage.ps1, an S149 wrapper, etc.) can name its capture
+  # without adding another cross-elevation switch.
+  $labelForGate = if ($env:AGS_CAPTURE_LABEL) { $env:AGS_CAPTURE_LABEL }
+                  else { Get-Date -Format 'yyyyMMdd-HHmmss' }
+  & (Join-Path $PSScriptRoot 'capture-gate.ps1') `
+      -CapturePath (Join-Path $repoRoot 'docs\capture.log') `
+      -Label       $labelForGate
+}
 
 # ---- start it (:8080 HTTP + :443 HTTPS) ----
 Write-Host "Starting community backend (:8080 HTTP + :443 HTTPS)..." -ForegroundColor Cyan
