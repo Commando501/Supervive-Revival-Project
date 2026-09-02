@@ -1,0 +1,16 @@
+﻿PID=41816 SET_PTR=0x15F109D5500
+BEFORE:
+  Health.BaseValue @0x15F109D5578: bits=0x00000000 f=0.0
+  Health.CurrentValue @0x15F109D557C: bits=0x00000000 f=0.0
+  MaxHealth.BaseValue @0x15F109D5588: bits=0x00000000 f=0.0
+  MaxHealth.CurrentValue @0x15F109D558C: bits=0x00000000 f=0.0
+
+WRITING SEED_BITS=0x447A0000 (1000.0) to all four ...
+
+AFTER (readback):
+  Health.BaseValue @0x15F109D5578: bits=0x447A0000 f=1000.0 — OK
+  Health.CurrentValue @0x15F109D557C: bits=0x447A0000 f=1000.0 — OK
+  MaxHealth.BaseValue @0x15F109D5588: bits=0x447A0000 f=1000.0 — OK
+  MaxHealth.CurrentValue @0x15F109D558C: bits=0x447A0000 f=1000.0 — OK
+
+VERIFIED: all four writes landed. S148 preflight bit 9 (MAX_HEALTH_BELOW_SEED) should now clear.

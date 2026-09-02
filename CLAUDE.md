@@ -3937,6 +3937,14 @@ blockers, neither about markers.**
   → impl **`0x0F7EC20` = `ret 0`** ·
   `ALokiTeamState_TeamOnly::SetDropLeader` thunk `0x2C2CE30` (⚠ 23-way ICF) → impl **`0x0F7EC20`** ·
   `ALokiDropPlane::OverridePlaneLocations` thunk `0x53372A0` → impl **`0x0F7EC20`**.
+  ★★★ **5TH ENTRY (S152 Move 4, 2026-09-02): `ULokiCharacter::AuthCheatSetHealth` Func RVA `0x52FD620`
+  → impl `0x0F7EC20`.** UHT-generated exec wrapper (real MSVC prologue, unpacks the `NewHealth` float
+  from `FFrame`), tail-calls the void_ret fold at `0x52FD68F: call 0xF7EC20`. Found live-disassembled
+  on the S152 process. **New instrument-artifact instance: a prologue-signature check for known folds
+  MISSES a stripped stub whose exec wrapper has a real MSVC prologue** — the fold is only reachable
+  in the tail call, not the entry. Only full-body disassembly reveals it.
+  Corroborates FK-1's "the enrichment is on `Auth*` naming, not on subsystem" — Cheat-family verb,
+  no drop-phase relationship. Details: `docs/move4-external-poke-PREREGISTERED.txt`.
   Empty-impl base rate in this image is **1.2 % (78/6,669)**, so this is informative, not ambient.
   Likely `WITH_SERVER_CODE`-stripped [I]. **This explains ~7 failed spawn attempts
   across S68/S74 and CLOSES `AvatarActor = NULL`:** the design routes the whole GAS bind through

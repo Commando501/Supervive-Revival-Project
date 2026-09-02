@@ -131,7 +131,10 @@ function CopyEvidence([string]$srcName,[string]$suffix){
 
 # ---- Step 1-3: stage gft -> fo -> sp via fk24-stage.ps1 -SkipProbe --------------------------
 Say "=== steps 1-3: staging gft -> fo -> sp (fk24-stage.ps1 -SkipProbe) ==="
-& $staker -SkipProbe -Label "$Label-stage" -InjectGapSeconds $InjectGapSeconds
+# fk24-stage.ps1 marks -Probe as Mandatory even in -SkipProbe mode (all $Probe
+# references are guarded by if(-not $SkipProbe), so the value is never read here).
+# Pass the S148 DLL as the placeholder so a real, existing file satisfies the binder.
+& $staker -SkipProbe -Probe $S148Dll -Label "$Label-stage" -InjectGapSeconds $InjectGapSeconds
 if($LASTEXITCODE -ne 0){
     SayErr "fk24-stage.ps1 -SkipProbe FAILED (exit $LASTEXITCODE)"
     exit 20
