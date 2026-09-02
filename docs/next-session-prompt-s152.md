@@ -250,3 +250,66 @@ ANY new shim.**
 **`LokiCharacter::ForceDeath` is stripped** (Func RVA `0x05289020` →
 `0xF7EC20` void). Combined with the death-probe finding, the "kill hero"
 path is fully closed client-side by two independent mechanisms.
+
+
+---
+
+## 7. FURTHER ADDITIONS — dumpimage + AS census + AS Func probe (2026-09-02)
+
+Three more probes on the live process after commit 5919e35, before cleanup.
+
+### dumpimage (`dumps/move4-post-s152-12h-20260902T142000Z/`)
+- Captured the 12h-uptime Move 4 process at 67.47% .text readable — highest
+  single-dump coverage this project has ever taken.
+- Merged into `dumps/merged14.dump.exe`: **+14 pages of new coverage** (57,344
+  bytes of decrypted .text that no prior dump captured), 0 conflicts.
+- `merged14.dump.exe.txt`: 169.9 MB, 51.94% non-zero (all-section metric;
+  the .text metric alone is higher).
+- Every future offline RE benefits from these pages. Update `strxref.py`'s
+  DEFAULT_DUMP to `dumps/merged14.dump.exe` if desired.
+
+### AS UClass census (`scratchpad/move4_as_census.py` +
+`scratchpad/move4-as-census.out.log`)
+- Answers CLAUDE.md's S113 open question: are AS UClasses registered in a
+  LOADED MAP (S113 measured "not at menu")?
+- **YES. 5 AS UClasses live in the tutorial world:**
+  - `LokiDropShip`, `LokiDropPod`, `LokiRespawnComponent`, `LokiGem`,
+    `FFABotSpawnerComponent` — all with class `ASClass` (Angelscript
+    class-generator UClass)
+- Also 3 non-AS classes with matching names live: `LokiTutorialGameMode`,
+  `LokiDropInGameMode`, `LokiAirship` (regular `Class` = native).
+- 2 AS UFunctions live: `Respawn` (on LokiRespawnComponent), `SpawnDropPod-
+  ForTeam` (on LokiDropShip) — class `ASFunction_NotThreadSafe_JIT`. The
+  `_JIT` suffix independently confirms CLAUDE.md's claim that AS is AOT-
+  compiled.
+
+### AS Func probe (`scratchpad/move4_as_func_probe.py` +
+`scratchpad/move4-as-func-probe.out.log`)
+- For both live AS UFunctions found above, read `Func @+0xE0`.
+- **Both read NULL.** Page is NOACCESS.
+- **Confirms CLAUDE.md's FK-22 note** (previously [I, strong] from menu-only
+  measurement): the S55 direct-thunk primitive does NOT reach AS UFunctions
+  even in a loaded tutorial world. The NULL Func is durable, not a menu-
+  scoping artifact.
+- **Any future AS-callability test must use `ProcessEvent` slot 78** (per
+  FK-22 §21.2), not S55.
+
+### Combined implication for the fresh session
+The AS layer's callability route is now measured live and specifically:
+- UClass registration: **only in loaded map** (measured both directions)
+- UFunction dispatch: **ProcessEvent slot 78 only** (NULL Func rules out
+  S55, measured on 2/2 AS UFunctions in a loaded map)
+
+For the recommended S148-rebuild-or-bypass path in section 2 above, this
+doesn't change the AdjustHealth analysis (AdjustHealth is native, not AS).
+But if any successor arm targets the AS-layer respawn/pod chain from
+CLAUDE.md's FK-1 SETTLED block (`LokiRespawnComponent::Respawn`,
+`LokiDropShip::SpawnDropPodForTeam`), it must use ProcessEvent, not S55.
+
+### Files added
+- `dumps/move4-post-s152-12h-20260902T142000Z/` — dumpimage output
+  (gitignored; ~169 MB + private exec regions)
+- `dumps/merged14.dump.exe` (gitignored — 169 MB)
+- `scratchpad/move4_as_census.py` + `move4_as_func_probe.py` (reusable
+  live-process probes)
+- `scratchpad/move4-as-census.out.log` + `move4-as-func-probe.out.log`
