@@ -2412,6 +2412,44 @@ that COVERAGE IS EARNED AND NEVER SPENT.**
   all four are now annotated in place (`0x556D910`, `0x5879000`, the `0x5873280`–`0x5879EE0` band,
   `0x5456000`). ⚠ The sweep is a **FLOOR**: 294 of 431 keyword lines carry no same-line address and
   were never graded at all.
+  ★★★★★ **S153 FK-1 TOPIC CROSS-INDEX: WHICH STRIPPED STUBS BLOCK WHICH WALLS. Read
+  `docs/fk1-topic-crossindex-s153.md`.** Multi-agent workflow (`wf_d7a1c52f-50d`, 8 fan-out agents
+  + 1 synthesizer, 9/9 done, 0 errors, 2.5M subagent tokens, 4.5 min wall clock) cross-indexed the
+  318 stripped native UFunctions from `scratchpad/s153_native_ufunction_sweep_v2.csv` against 8
+  open FK topics. **~170 unique stubs identified as blockers across topics (~65 genuinely new
+  vs FK-1 register + S152 batch hunt + S153 exec sweep combined).** Per-topic count:
+  WALL P 29 (7 new — all `ULokiGameplaySpell` + `ULokiSpellSwapper`), WALL E 30 (1 new —
+  `EliminateTeam`), Drop chain 18 (~8 new), Mount 13 (~6 new), Movement 9 (1 new),
+  Missions 38 (~28 new — the 11-writer `Add*Stat` family + 10 stat getters + callbacks),
+  Match lifecycle 21 (~9 new), Netcode/RPC 12 (~5 new).
+  ⭐ **HIGHEST-LEVERAGE MULTI-TOPIC BLOCKERS** (appear in ≥2 topic reports): all 4 non-`AuthCheatSet
+  Health` FK-1 register entries plus `ULokiRideableComponent::AuthAddPlayer`/`AuthRemovePlayer`
+  (Drop+Mount), `ULokiCharacterMovementComponent::AuthBeginGlideDiveFromDropPod` (Drop+Mount+
+  Movement), `ALokiPlayerState::ServerSetHeroClass` (WALL E+Netcode), `ALokiGameState::SetPlayerTeam`
+  (WALL E+Match+Netcode), `ALokiGameState::SetNumTeams` (WALL E+Match), `ALokiGameMode::EliminateTeam`
+  (WALL E+Match).
+  ★★★ **NEW REUSABLE RULES BANKED (add to method-rules as R-S153-a..f):**
+  (a) **The entire `ULokiSpellSwapper` subsystem is gutted** — SwitchSpell/NextSpell/PreviousSpell/
+  AddSubSpell/RemoveSubSpell all fold. Any hero routing through this class is dead by design.
+  (b) **The 11-writer `ALokiPlayerState::Add*Stat` family is uniformly `void_ret`** (all on
+  `0x52FD8F0`, shared 14+ ways) — if a stat-writer name starts with `Add`, assume folded and check
+  backend passthrough. (c) **10 stat-getter void folds on `0x5436E40` (int) and `0x5349FB0` (float)
+  return zero universally** — any HUD reading these directly (vs backend-served) shows zeros.
+  (d) **9-way ICF at `0x52FD620` is a "cheat setter" family** — AuthCheatSetHealth, AuthCheatSet
+  Mana, AuthAddDamageMultiplier, `ALokiMissionObjective::AddProgress`, `ALokiDropPlane::AuthStart`
+  all share it. A stub on this thunk is a cheat-verb or auth-adjust path. (e) **`ULokiGameplaySpell
+  ::CallSpellCompleteEvent` is stripped** — the most plausible explanation for S147's "no durable
+  ability body" phenomenon; a spell that never signals completion never re-arms cooldowns or next-
+  cast, and CanActivate + Mana debit measured by S145/S146/S147 are all pre-completion signals.
+  Priority read for the S151 Move 3 BINDCENSUS follow-up.
+  ⚠ **GAPS worth noting.** The movement wall (S141 T3 open: what zeros the bot's `Velocity` from
+  rest, what clamps `MaxInputSpeed`) is NOT in the stripped set — the relevant code is stock UE
+  `PhysFalling`/`CalcVelocity`, which the protector doesn't strip. **Architectural, not stub-
+  driven.** Same shape: S146 valid-handle/INDEX_NONE asymmetry isn't explained by any stub here.
+  ★ **This whole cross-index is offline, replayable, and per-agent-preserved** — resume with
+  `Workflow({scriptPath: "...s153-fk1-crossindex-wf_d7a1c52f-50d.js", resumeFromRunId: "..."})`;
+  edited agents rerun, unchanged agents replay from cache. Every load-bearing claim in the
+  synthesizer output cites specific thunk RVAs a successor can grep against the CSV.
   ★★ **RE-RUN AT S153 (2026-09-02, against `merged14`): 58 raw claim-instances flagged across
   ~19 files (12 in `docs/fk22-dropphase-reachability.md`, 7 in `docs/fk-playability-audit-s134.md`,
   6 in the already-SUPERSEDED-banner-carrying `docs/fk5-battle-gate-settled.md`, 5 in
