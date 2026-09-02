@@ -4007,6 +4007,23 @@ blockers, neither about markers.**
   ⚠ **Bumped count:** the 91-way ICF-shared thunk at `0x5254180` documented in S131 lane D is now
   **92-way** in this analysis — one more UFunction landed on it since. Not material to any
   conclusion, but future FK-1 register updates should quote the higher count.
+  ★★ **S153 COVERAGE RE-GRADE of the 18 COVERAGE-BLOCKED exec entries: 17/18 STILL-DARK, 1 REAL,
+  and the 1 REAL is an INSTRUMENT-LIMITATION finding — NOT a coverage gain.** Read
+  `docs/fk1-exec-sweep-s153.md` §"Coverage re-grade" and `scratchpad/s153_coverage_regrade.py`
+  (read-only, offline, two mandatory positive controls). `ALokiPlayerCheats::SetGamepadAimSettings`
+  impl `0x55653E0` is a 5-byte `E9 <rel32>` JMP trampoline to `0x338C990`; page `0x5565000`
+  (trampoline) went DARK→LIT via S137's side effect but page `0x338C000` (real body) was **already
+  lit in tutorial-hero (3818/4096)** — the entry should have been REAL under the S114 baseline
+  too. ⚠ **Instrument-limitation rule for `exec_chain_grade`: the `impl RVA` field is the tail-call
+  target in the exec thunk, which for ICF-folded impls may be a JMP trampoline sitting on a
+  demand-decrypt page. A COVERAGE-BLOCKED verdict on such an entry describes the trampoline's
+  page, not the real body's — chase `E9 <rel32>` one level before believing the verdict.**
+  ⚠ **ICF-attribution overlap noted:** `0x55653E0` is designated as `ALokiGameState::AuthSetDeathCircle`
+  impl in `docs/fk22-dropphase-reachability.md` (FK-22 negative control). Both may resolve through
+  the same trampoline; not settled here — a successor should not take either attribution as ground
+  truth without a second instrument. **The 17 STILL-DARK entries cluster on 7 distinct pages** —
+  page `0x5422000` alone gates 6 `ALokiPlayerCheats::Cheat*` verbs; firing any one of them in a
+  live session decrypts the whole page and unblocks the other 5 for offline re-grading.
   ★ **Any future shim design proposing to call a UFunction on this list is a wasted injection.**
   Cross-check the full list at `docs/fk1-batch-hunt-s152.md` before building.
   Empty-impl base rate in this image is **1.2 % (78/6,669)**, so this is informative, not ambient.

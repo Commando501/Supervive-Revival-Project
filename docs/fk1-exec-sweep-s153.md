@@ -188,9 +188,86 @@ Spot-check performed against `dumps/merged14.dump.exe` on 2026-09-02:
   wrapper-hides-stub trap doesn't apply here (a stripped stub always
   tail-calls a fold at a specific offset).
 
+## Coverage re-grade of the 18 COVERAGE-BLOCKED entries (same session, offline)
+
+The 18 COVERAGE-BLOCKED verdicts in `exec_chain_grade.txt` were computed against
+`dumps/tutorial-hero/SUPERVIVE-Win64-Shipping.dump.exe` (S114 baseline). Since
+then coverage has advanced through `merged13` (S137) and `merged14` (S152 +14
+pages). Re-grading offline against `merged14`:
+
+**Tool:** `scratchpad/s153_coverage_regrade.py` (read-only file-byte reader; two
+mandatory positive controls — `UCheatManager::God` impl must classify REAL and
+the known fold `0x0F7EC20` must classify FOLDED-STUB before any verdict emits).
+Chases one level of `E9 <rel32>` JMP trampoline (which UHT/MSVC emits for
+ICF-folded stubs) so a jmp-to-real-body doesn't misclassify as COVERAGE-BLOCKED
+because the trampoline itself sits on a dark page.
+
+**Result: 17/18 STILL-DARK, 1 REAL — and the 1 REAL is an instrument-limitation
+finding, NOT a coverage gain.**
+
+| entry | outcome | why |
+|---|---|---|
+| `ALokiPlayerCheats::SetGamepadAimSettings` | **REAL** | impl `0x55653E0` is a 5-byte `E9 <rel32>` JMP trampoline → `0x338C990`; page `0x5565000` (trampoline) went DARK→LIT via S137's side effect; page `0x338C000` (real body) was **already lit in tutorial-hero (3818/4096)**. exec_chain_grade doesn't chase JMP trampolines, so this verdict was COVERAGE-BLOCKED under S114's baseline for an instrument reason, not a coverage reason. Grade in the S114 baseline should be REAL. |
+| 17 others | STILL-DARK | pages listed below still all-zero in `merged14` |
+
+⚠ **The REAL promotion may have an ICF-attribution overlap.** `docs/fk22-drop
+phase-reachability.md` designates `0x55653E0` as `ALokiGameState::AuthSetDeathCircle`'s
+impl (FK-22 negative control until S137's side effect broke it). Both
+`SetGamepadAimSettings` and `AuthSetDeathCircle` appear to resolve to
+`0x55653E0` — either ICF has folded two disparate functions onto one JMP
+trampoline (both then land at `0x338C990`), or one of the two tool
+attributions is wrong. Not settled here; noted so a successor doesn't take
+either attribution as ground truth without a second instrument.
+
+**Instrument-limitation rule for exec_chain_grade:** its `impl RVA` field is
+the tail-call target in the exec thunk, which for ICF-folded impls may be a
+JMP trampoline sitting on a page that hasn't been demand-decrypted. A
+COVERAGE-BLOCKED verdict on such an entry describes the trampoline's
+page, not the real body's — the real body may be readable elsewhere.
+Chase `E9 <rel32>` one level before believing a COVERAGE-BLOCKED verdict.
+
+### The 7 distinct pages that gate the remaining 17
+
+Any live session that FIRES one verb whose thunk sits on a page decrypts the
+whole page and unblocks every verb on it (S118's "driving a path decrypts it"
+method).
+
+| page | # verbs | side | verbs |
+|---|---|---|---|
+| `0x05422000` | **6** | mixed | `ALokiPlayerCheats::CheatGetAllClientActorsByClassName`, `CheatMeasureCursor`, `CheatMuteAudio`, `CheatNoCooldowns`, `CheatSetEmote`, `CheatTeleportLocation` |
+| `0x035C5000` | 3 | impl | `UCheatManager::ViewActor`, `ViewClass`, `ViewPlayer` |
+| `0x0534B000` | 2 | thunk | `ALokiPlayerController::ServerDebugEnsureAllowRepeat`, `ALokiPlayerCheats::CheatChangeHero` (same ICF-shared thunk `0x534BE80`) |
+| `0x052FE000` | 2 | thunk | `ALokiCharacter::CheatToggleCharacterDebugMode`, `DebugStatString` |
+| `0x05483000` | 2 | thunk | `ULokiTimelineManager::DebugTimelineAddEvent`, `DebugTimelinePrintEvents` |
+| `0x038AB000` | 1 | thunk | `AHUD::PreviousDebugTarget` |
+| `0x03F44000` | 1 | thunk | `UPlayerInput::SetBind` (⚠ likely inert anyway — CLAUDE.md's FK-13 block records `DebugExecBindings` as never evaluated) |
+
+### Highest-value target (offline):
+
+If a live session eventually fires one Route B verb on the `ALokiPlayerCheats` carrier, it
+would decrypt page `0x05422000` and expose the 6 `Cheat*` verbs on it for classification. That is
+the highest single-page yield of any target in this table. Once decrypted, those
+6 impls can be re-graded offline without any further live work.
+
+### What this does NOT establish
+
+- **The re-grade tells us nothing about the 17 STILL-DARK entries' actual
+  status** — they could all be REAL, all STRIPPED, or any mix. No verdict
+  is currently supportable for them.
+- **The 1 REAL promotion may or may not correctly attribute the body to
+  `SetGamepadAimSettings`** — see the ICF-attribution overlap note above.
+- **The tool caveats are new to this project's record.** Two of them:
+  (1) exec_chain_grade doesn't chase JMP trampolines and can misclassify
+  ICF-folded targets as COVERAGE-BLOCKED; (2) a "COVERAGE-BLOCKED" entry
+  with a resolved impl RVA is a statement about that one page, not about
+  the underlying function — the underlying function may be reachable via
+  a different route (a different call site with a different resolved impl).
+
 ## Files
 
 - `tools/re/out/exec_chain_grade.txt` — the source data (S114, FK-13 lane 3)
 - `dumps/merged14.dump.exe` — the underlying image
+- `scratchpad/s153_coverage_regrade.py` — the re-grade tool (read-only, offline)
+- `scratchpad/s153_coverage_regrade.out.txt` — this session's output
 - CLAUDE.md FK-1 register — the 5 existing entries this sweep complements
 - `docs/fk1-batch-hunt-s152.md` — the companion sweep on a different surface
