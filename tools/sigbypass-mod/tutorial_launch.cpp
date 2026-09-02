@@ -102,6 +102,61 @@ constexpr uintptr_t FIELD_NEXT=0x18, FPROP_OFFSET=0x44, FPROP_FLAGS=0x38;   // F
 #ifndef KFRAMEINIT
 #define KFRAMEINIT 0
 #endif
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// ★★★★★ S147 MOVE 3 -- KBFBINDCENSUS: ActionBindings census + FsDisarm phase heartbeat.
+//
+// Move-3 offline analysis (docs/coop-vs-ai-roadmap-s142.md + the S147 downstream survey) localised
+// WALL P's residual to two live hypotheses:
+//   H1  the valid-handle downstream body under InternalTryActivateAbility triggers the protector
+//       kill (0xDEAD ~51 s after activation) -- inference from two DARK pages 0x446bc60 and
+//       0x4480b30 on the valid-arm path.
+//   H2  input never reaches the BP K2Node -- either (H2a) BP bind never installed, or (H2b) ASC
+//       delegate consumed the action before BP could see it.
+// Neither is falsifiable offline. Move 3 is one live flight discriminating them via one knob
+// layered over the S147 flight-5 arm; no new activation call, no new module-image writes.
+//
+// The instrumentation:
+//   * a periodic READ-ONLY walk of UPlayerController->InputComponent->ActionBindings looking for
+//     "Ability3" and "Toggle Map" (Toggle Map is the positive control -- flight 5 fired it 2x).
+//   * a heartbeat line emitted from INSIDE FsDisarm at phase transitions (enter -> done or
+//     enter -> faulted). This is the only observation point where RUNNING is reachable -- every
+//     FsDisarm call site (:23647 etc.) is sequential-on-one-thread with FsHold, so a heartbeat
+//     scoped to FsHold cannot observe RUNNING (verifier catch during design).
+//   * an FsThunk QPC stamp so the heartbeat prints "age since last dispatch".
+//
+// SAFETY. KBFBINDCENSUS defaults to 0. Every write / call / helper below is `#if KBFBINDCENSUS`,
+// so non-DLP builds preprocess-strip cleanly and keep every existing regression gate byte-
+// identical (botai 5e47c13cf7f0a158, play 9bc10a4552c596e1, every RM_BOTFIGHT variant including
+// the flight-5 arm `botfight-castalive-dash-mana10-cdocharge1-naturalinput` when built without
+// this knob). Placed here (before FsThunk :1966) so the funcswap-machinery can reference the
+// helpers via forward declaration rather than importing them wholesale.
+//
+// KBFBINDCENSUS_AB_OFF = ActionBindings offset on UInputComponent. UNPINNED until derived from
+// live disassembly of UInputComponent::AddActionBinding in this build. When 0xFFFFFFFF the
+// census prints "AB_OFF UNPINNED" and refuses to walk (a wrong offset would silently return
+// nonsense num/max). Pass -DKBFBINDCENSUS_AB_OFF=0x?? once derived.
+// KBFBINDCENSUS_STRIDE and KBFBINDCENSUS_NAMEOFF = FInputActionBinding stride + ActionName
+// offset within a binding. Also TBD; per-entry walk is compiled OUT until both are pinned.
+// See docs/s147-move3-flight1-PREREGISTERED.txt for the flight plan + outcome mapping.
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+#ifndef KBFBINDCENSUS
+#define KBFBINDCENSUS 0
+#endif
+#ifndef KBFBINDCENSUS_AB_OFF
+#define KBFBINDCENSUS_AB_OFF 0xFFFFFFFFu   // TBD: derive from UInputComponent::AddActionBinding
+#endif
+#ifndef KBFBINDCENSUS_HBMS
+#define KBFBINDCENSUS_HBMS 500             // emit periodic BfBindHbEmit at most every N ms in the sampling loop
+#endif
+#if KBFBINDCENSUS
+// Forward decls so FsThunk (:1966) + FsDisarm (:2420) can call the helpers without pulling the
+// full definitions above WpQpc / SafeReadable / GetFNameStr. Full bodies live near BfS147CaptureRaw.
+static void BfBindStampFsHit();
+static void BfBindHbEmit(const char* tag);
+static void BfBindDisarmEnter();
+static void BfBindDisarmDone();
+static void BfBindDisarmFault();
+#endif
 constexpr uintptr_t FF_FLOWSTACK=0x48, FF_FLOW_MAX=0x74, FF_PREVFRAME=0x78, FF_CURNATIVEFN=0x90;
 constexpr uintptr_t FF_UNINIT_LEN=FF_OUTPARMS-FF_FLOWSTACK;   // 0x38: the whole bracketed never-init window
 enum FrameInitMode { FI_UNFIXED=0, FI_ZEROONLY=1, FI_S80=2 };
@@ -1991,6 +2046,13 @@ extern "C" void FsThunk(void* ctx,void* frame,void* result){
 #else
     InterlockedIncrement(&g_fsCalls);
 #endif
+#if KBFBINDCENSUS
+    // S147 MOVE 3: stamp the last-dispatch timestamp so the FsDisarm heartbeat can compute
+    // an "age since last dispatch" and distinguish "game thread still alive but activation
+    // hung" from "no dispatches at all". Any-thread; the counter and timestamp drift by less
+    // than one dispatch under normal load. Only fires under this arm's compile-time knob.
+    BfBindStampFsHit();
+#endif
 #if KBFBINDONLY
     if(s149RunSetup){
 #endif
@@ -2418,6 +2480,13 @@ static void FsHold(DWORD ms){
 // (one 5-byte restore), whereas this walk takes ~a second, and without the flag OnPI could still be
 // entered through a not-yet-restored target while the scan is in flight.
 static void FsDisarm(){
+#if KBFBINDCENSUS
+    // S147 MOVE 3: mark FsDisarm entry BEFORE any other work. The heartbeat's phase state moves
+    // 0 (IDLE) -> 1 (RUNNING); if the process dies during the disarm the last observation is
+    // "RUNNING", which is exactly the signal that discriminates H1's protector-integrity kill
+    // from a clean-then-die sequence.
+    BfBindDisarmEnter();
+#endif
 #if KBFSELFCAL
     BfS148DoneStore();
 #else
@@ -2454,6 +2523,12 @@ static void FsDisarm(){
 #endif
     Markerf("[FS] disarm: restored=%ld of %ld swapped (scan %lu ms, %ld UFunctions live)%s\r\n",
             back,g_fsSwapped,GetTickCount()-ts,ufn,restoreShortfall);
+#if KBFBINDCENSUS
+    // S147 MOVE 3: mark FsDisarm completion AFTER the scan message. Phase moves 1 (RUNNING) ->
+    // 2 (DONE). If a subsequent heartbeat still fires and phase reads DONE, disarm completed
+    // cleanly; if the process dies with phase still RUNNING, the kill happened during disarm.
+    BfBindDisarmDone();
+#endif
 #if KBFBINDONLY
     BfS149FinalizeFsCleanup(back);
 #elif KBFSELFCAL
@@ -2466,6 +2541,12 @@ static void BfS149FsDisarmGuarded(){
         FsDisarm();
     }
     __except(SEH_FILTER(GetExceptionInformation())){
+#if KBFBINDCENSUS
+        // Phase moves 1 (RUNNING) -> 3 (FAULTED). This branch is only reachable under the
+        // KBFBINDONLY SEH wrapper -- other variants let a mid-FsDisarm fault crash the process,
+        // in which case the last observed phase stays RUNNING (also a valid signal).
+        BfBindDisarmFault();
+#endif
         BfS149ContainCleanupFault();
     }
 }
@@ -17789,6 +17870,13 @@ static void DoBotSpawn(){
 #ifndef KBFSELFLATERMS
 #define KBFSELFLATERMS 250 // minimum return-to-game interval before the delayed durability read.
 #endif
+// KBFBINDCENSUS's own defines live earlier (near KFRAMEINIT) so FsThunk / FsDisarm can reference
+// the forward-declared helpers. The compile-time policy check for KBFHANDLEACT/KBFHANDLEMISS
+// (which are declared in this KBF block) stays here.
+#if KBFBINDCENSUS && (KBFHANDLEACT || KBFHANDLEMISS)
+#error KBFBINDCENSUS must not compile either S146 shim-originated native-handle arm
+#endif
+
 #if KBFNATURALINPUT && (KBFHANDLEACT || KBFHANDLEMISS)
 #error S147 natural input must not compile either S146 shim-originated native-handle arm
 #endif
@@ -20846,6 +20934,162 @@ static uintptr_t BfS147PrimaryFromFreshSpec(uintptr_t spec,uint32_t* issues){
     return primary;
 }
 
+#if KBFBINDCENSUS
+// ── S147 MOVE 3 helpers — FULL DEFINITIONS (forward-declared near line 100). ─────────────────
+// Placed here (below all Bf-family + Sxxx globals) so the census helper can call PropOffsetSuper,
+// ClassOf, SafeReadable, GetFNameStr etc. The heartbeat globals are `#if KBFBINDCENSUS` so they
+// occupy no BSS in variants that do not compile this block.
+static volatile LONG      g_fsDisarmPhase   = 0;    // 0=IDLE 1=RUNNING 2=DONE 3=FAULTED
+static volatile LONG64    g_fsLastQpc       = 0;    // last FsThunk dispatch QPC (any thread)
+static LARGE_INTEGER      g_qpcFreq         = {};   // lazy-inited by BfBindEnsureQpcFreq
+static volatile LONG      g_qpcFreqInited   = 0;
+static DWORD              g_bfBindLastHbTick= 0;    // wall-clock throttle for periodic sampling-loop HBs
+
+// Inline QPC helper for the KBFBINDCENSUS block -- WpQpc is inside `#if KWPROBE` and not visible
+// under the flight arm. Same shape, no dependency.
+static uint64_t BfBindQpc(){ LARGE_INTEGER li; li.QuadPart=0; QueryPerformanceCounter(&li); return (uint64_t)li.QuadPart; }
+
+static void BfBindEnsureQpcFreq(){
+    // Lazy init to avoid touching DllMain; every heartbeat calls it and it's a single Interlocked
+    // read on the fast path. Idempotent, safe from any thread.
+    if(InterlockedCompareExchange(&g_qpcFreqInited,0,0)) return;
+    LARGE_INTEGER f={}; if(QueryPerformanceFrequency(&f) && f.QuadPart > 0){
+        g_qpcFreq = f;
+        InterlockedExchange(&g_qpcFreqInited,1);
+    }
+}
+
+// FsThunk stamps here every dispatch. Used only for heartbeat "age since last dispatch".
+static void BfBindStampFsHit(){
+    InterlockedExchange64(&g_fsLastQpc,(LONG64)BfBindQpc());
+}
+
+// One-line heartbeat. Reads phase + freshness; writes ONE Markerf. Marker itself opens/writes/
+// closes per call (see :575), so every line commits to the kernel before we return -- no CRT
+// stream to flush, no batched output.
+static void BfBindHbEmit(const char* tag){
+    BfBindEnsureQpcFreq();
+    LONG64 now  = (LONG64)BfBindQpc();
+    LONG64 last = InterlockedCompareExchange64(&g_fsLastQpc,0,0);
+    LONG64 freq = g_qpcFreq.QuadPart;
+    LONG64 ageMs = (freq > 0 && last > 0) ? ((now - last) * 1000 / freq) : -1;
+    Markerf("[FS][HB] tag=%s phase=%ld qpc=%lld ageMs=%lld calls=%ld swapped=%ld\r\n",
+            tag ? tag : "?", (long)g_fsDisarmPhase,
+            (long long)now, (long long)ageMs, (long)g_fsCalls, (long)g_fsSwapped);
+}
+
+static void BfBindDisarmEnter(){
+    InterlockedExchange(&g_fsDisarmPhase,1);
+    BfBindHbEmit("FsDisarm-enter");
+}
+static void BfBindDisarmDone(){
+    InterlockedExchange(&g_fsDisarmPhase,2);
+    BfBindHbEmit("FsDisarm-done");
+}
+static void BfBindDisarmFault(){
+    InterlockedExchange(&g_fsDisarmPhase,3);
+    BfBindHbEmit("FsDisarm-fault");
+}
+
+// Read a UPlayerController's InputComponent -> ActionBindings TArray shape, and (when both stride
+// and FName offset are pinned) look for specific action names ("Ability3", "Toggle Map"). Read-
+// only, SEH-guarded. Called from the S147 sampling loop on the WORKER thread -- never from
+// OnPI/FsThunk (those are game-thread; a walk from there would violate the S147 hot-path rules).
+static void BfBindCensusOnce(uintptr_t pc, const char* tag){
+    if(!pc){ Markerf("[BIND][%s] pc=NULL\r\n", tag ? tag : "?"); return; }
+    __try {
+        uintptr_t pcCls = ClassOf(pc);
+        if(!pcCls){ Markerf("[BIND][%s] pc-class=NULL\r\n", tag ? tag : "?"); return; }
+        // InputComponent IS a reflected UPROPERTY on AActor (schema.txt:5180). PropOffsetSuper
+        // returns 0xFFFFFFFF on miss; 0 is a LEGAL offset (object header) -- do NOT test for zero.
+        uint32_t icOff = PropOffsetSuper(pcCls, "InputComponent");
+        if(icOff == 0xFFFFFFFFu){
+            Markerf("[BIND][%s] InputComponent property NOT ON CLASS\r\n", tag ? tag : "?"); return;
+        }
+        if(!SafeReadable((void*)(pc + icOff), 8)){
+            Markerf("[BIND][%s] pc+0x%X (InputComponent slot) UNREADABLE\r\n", tag ? tag : "?", (unsigned)icOff);
+            return;
+        }
+        uintptr_t ic = *(uintptr_t*)(pc + icOff);
+        if(!ic){ Markerf("[BIND][%s] ic=NULL (no InputComponent bound)\r\n", tag ? tag : "?"); return; }
+        // ActionBindings is NOT reflected on UInputComponent (schema.txt:21981 -- only
+        // CachedKeyToActionInfo is exposed). AB_OFF must be pinned via -DKBFBINDCENSUS_AB_OFF=
+        // once derived from live disassembly of UInputComponent::AddActionBinding in this build.
+        const uint32_t AB_OFF = (uint32_t)KBFBINDCENSUS_AB_OFF;
+        if(AB_OFF == 0xFFFFFFFFu){
+            Markerf("[BIND][%s] ic=0x%llX AB_OFF UNPINNED -- pass -DKBFBINDCENSUS_AB_OFF=0x?? "
+                    "at build time. Skipping walk (a wrong offset silently returns nonsense).\r\n",
+                    tag ? tag : "?", (unsigned long long)ic);
+            return;
+        }
+        if(!SafeReadable((void*)(ic + AB_OFF), 16)){
+            Markerf("[BIND][%s] ic=0x%llX AB@0x%X UNREADABLE (offset probably wrong)\r\n",
+                    tag ? tag : "?", (unsigned long long)ic, (unsigned)AB_OFF);
+            return;
+        }
+        uintptr_t data = *(uintptr_t*)(ic + AB_OFF);
+        int32_t   num  = *(int32_t*)(ic + AB_OFF + 8);
+        int32_t   max_ = *(int32_t*)(ic + AB_OFF + 12);
+        // TArray shape sanity: Num >= 0, Num <= Max, Data non-null if Num > 0. Reject shapes that
+        // could not be a live TArray -- these tell us AB_OFF landed on wrong bytes.
+        if(num < 0 || max_ < num || num > 4096){
+            Markerf("[BIND][%s] ic=0x%llX AB@0x%X shape-fail num=%d max=%d data=0x%llX\r\n",
+                    tag ? tag : "?", (unsigned long long)ic, (unsigned)AB_OFF, num, max_,
+                    (unsigned long long)data);
+            return;
+        }
+        if(num > 0 && !LooksLikePtr(data)){
+            Markerf("[BIND][%s] ic=0x%llX AB@0x%X data-shape-fail num=%d data=0x%llX\r\n",
+                    tag ? tag : "?", (unsigned long long)ic, (unsigned)AB_OFF, num,
+                    (unsigned long long)data);
+            return;
+        }
+        Markerf("[BIND][%s] ic=0x%llX AB@0x%X data=0x%llX num=%d max=%d\r\n",
+                tag ? tag : "?", (unsigned long long)ic, (unsigned)AB_OFF,
+                (unsigned long long)data, num, max_);
+#if defined(KBFBINDCENSUS_STRIDE) && defined(KBFBINDCENSUS_NAMEOFF)
+        // Per-entry walk. FName offset + stride must ALSO be pinned via -D. Match "Ability3"
+        // (the S147 target) and "Toggle Map" (the positive control -- flight 5 fired 2x).
+        const uint32_t STRIDE = (uint32_t)KBFBINDCENSUS_STRIDE;
+        const uint32_t NAMEOFF = (uint32_t)KBFBINDCENSUS_NAMEOFF;
+        int foundAbility3 = 0, foundToggleMap = 0;
+        for(int i = 0; i < num; ++i){
+            uintptr_t entry = data + (uintptr_t)i * (uintptr_t)STRIDE;
+            if(!SafeReadable((void*)(entry + NAMEOFF), 8)) continue;
+            uint32_t nameIdx = *(uint32_t*)(entry + NAMEOFF);
+            char nm[128] = {0};
+            GetFNameStr(nameIdx, nm, sizeof(nm));
+            if(strcmp(nm, "Ability3") == 0){
+                ++foundAbility3;
+                Markerf("[BIND][%s]   [%d] name=\"Ability3\"\r\n", tag ? tag : "?", i);
+            } else if(strcmp(nm, "Toggle Map") == 0){
+                ++foundToggleMap;
+                Markerf("[BIND][%s]   [%d] name=\"Toggle Map\"\r\n", tag ? tag : "?", i);
+            }
+        }
+        Markerf("[BIND][%s]   summary Ability3=%d Toggle_Map=%d\r\n",
+                tag ? tag : "?", foundAbility3, foundToggleMap);
+#else
+        Markerf("[BIND][%s]   per-entry walk SKIPPED (STRIDE + NAMEOFF unpinned)\r\n",
+                tag ? tag : "?");
+#endif
+    } __except(EXCEPTION_EXECUTE_HANDLER){
+        Markerf("[BIND][%s] SEH code=0x%08lX\r\n",
+                tag ? tag : "?", (unsigned long)GetExceptionCode());
+    }
+}
+
+// Called from the S147 sampling loop on each iteration. Rate-limited to KBFBINDCENSUS_HBMS so a
+// 5 ms sample cadence does not flood the marker with hundreds of writes per second.
+static void BfBindMaybeEmitPeriodicHb(){
+    DWORD now = GetTickCount();
+    DWORD last = g_bfBindLastHbTick;
+    if(last && (now - last) < (DWORD)KBFBINDCENSUS_HBMS) return;
+    g_bfBindLastHbTick = now;
+    BfBindHbEmit("worker-tick");
+}
+#endif // KBFBINDCENSUS
+
 // One S147 sample. Every dereference is within this SEH boundary. The two Items headers bracket the
 // unique Handle+CDO scan; a header change discards the sample before the spec is dereferenced.
 static bool BfS147CaptureRaw(BfS147Capture* out){
@@ -22448,6 +22692,31 @@ static void BfS147WorkerRun(){
     bool lastShiftDown=false;
     const char* reason="WINDOW_DONE";
     bool classifyInput=true;
+#if KBFBINDCENSUS
+    // S147 MOVE 3 setup: resolve BOTH the local PlayerController and the possessed hero pawn.
+    // Move-3's H2a discriminator needs to compare the two InputComponent instances:
+    //   * PAWN's InputComponent -- where the ASC delegate for Ability3 binds (S147 flight 5
+    //     observed the delegate firing: ActiveCount 0->1)
+    //   * PC's InputComponent   -- where the BP K2Node InpActEvt_Ability3_...
+    //     binds (S147 flight 5 observed 0 hits)
+    //   BP wired    <=> PC's ActionBindings has entries (Num > 0)
+    //   ASC wired   <=> PAWN's ActionBindings has entries (Num > 0)
+    //   H2a "BP never wired" <=> PAWN Num >= 1 (Ability3 delegate exists) AND PC Num == 0
+    //   H2b "ASC consumed"    <=> BOTH Num > 0; needs per-entry bConsumeInput to disambiguate.
+    //
+    // ONE GUObjectArray scan per class (~1-2 s each; acceptable at window-open, unacceptable
+    // per-sample). Cached across the whole hold; subsequent census calls just reuse the pointers.
+    uintptr_t bindPc = FindInstByClass("LokiPlayerController_Dev", nullptr);
+    if(!LooksLikePtr(bindPc)) bindPc = FindInstByClass("LokiPlayerController", nullptr);
+    uintptr_t bindPawn = FindInstByClass("BP_HERO_", nullptr);
+    Markerf("[BIND] resolved pc=0x%llX pawn=0x%llX (BP_HERO_*)\r\n",
+            (unsigned long long)bindPc, (unsigned long long)bindPawn);
+    // Two INITIAL censuses before any input arrives. Baseline reading: what's on each
+    // InputComponent RIGHT NOW, before the operator has pressed anything.
+    BfBindCensusOnce(bindPc,   "initial-pc");
+    BfBindCensusOnce(bindPawn, "initial-pawn");
+    BfBindHbEmit("worker-ready");
+#endif
     for(;;){
         ULONGLONG now=GetTickCount64();
         bool shiftDown=(GetAsyncKeyState(VK_LSHIFT)&0x8000)!=0;
@@ -22523,6 +22792,18 @@ static void BfS147WorkerRun(){
         if(S147WindowComplete(postShiftReceipt,deadlineReached,sawShiftDown,sawShiftUp,sampledAfterShiftUp)){
             break;
         }
+#if KBFBINDCENSUS
+        // MOVE 3 heartbeat: rate-limited (KBFBINDCENSUS_HBMS default 500 ms) so a 5 ms sample
+        // cadence does not flood the marker with hundreds of writes per second. Emits a
+        // [FS][HB] line with phase + freshness + call/swap counters. Also re-runs BOTH
+        // ActionBindings censuses when input transitions occur -- catches BP/ASC bindings
+        // that get installed dynamically in response to the key press.
+        BfBindMaybeEmitPeriodicHb();
+        if(logSample){
+            BfBindCensusOnce(bindPc,   "sample-pc");
+            BfBindCensusOnce(bindPawn, "sample-pawn");
+        }
+#endif
         Sleep((DWORD)KBFNATURALSAMPLEMS);
     }
     BfS147Finalize(reason,preShiftReceipt,postShiftReceipt,sawShiftDown,sawShiftUp,

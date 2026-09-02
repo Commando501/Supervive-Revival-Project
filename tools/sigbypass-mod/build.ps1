@@ -640,6 +640,29 @@ $Variants = @{
         # the real Ability3 input path with raw samples, restores the shared CDO, and disarms. No
         # reflected ByClass, native handle wrapper, InternalTry, or InternalDo activation call.
         'botfight-castalive-dash-mana10-cdocharge1-naturalinput' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE','-DKBFABIL=\"Ability3\"','-DKBFCHARGES=1','-DKBFGATES=1','-DKBFMANA=10','-DKBFCANACT=2','-DKBFCDOCHARGES=1','-DKBFINPUTID=5','-DKBFNATURALINPUT=1','-DKBFNATURALMS=30000','-DKBFNATURALPRESETUPMS=60000')
+        # ═════════════════════════════════════════════════════════════════════════════════════
+        # ★★★★★ S147 MOVE 3 -- KBFBINDCENSUS: instrumented re-fly of flight 5.
+        #   Same S147 CDO / gate / activation profile as the -naturalinput line above; the ONLY
+        #   delta is -DKBFBINDCENSUS=1, which adds READ-ONLY sampling of the PlayerController's
+        #   InputComponent -> ActionBindings TArray + FsDisarm phase-transition heartbeat.
+        #   ZERO new activation calls, ZERO module-image writes. See the KBFBINDCENSUS block at
+        #   the top of tutorial_launch.cpp and docs/s147-move3-flight1-PREREGISTERED.txt.
+        #
+        #   ⚠ Per-entry name matching ("Ability3", "Toggle Map") is compiled OUT until BOTH
+        #     KBFBINDCENSUS_AB_OFF and KBFBINDCENSUS_STRIDE/NAMEOFF are pinned via -D. Set them
+        #     once derived from live disassembly of UInputComponent::AddActionBinding. Without
+        #     them the census still emits [BIND] metadata (ic non-null, TArray num/max shape).
+        # ═════════════════════════════════════════════════════════════════════════════════════
+        # AB_OFF = 0xd0 is [M] from offline disassembly of UInputComponent's InternalConstructor
+        # at RVA 0x3616740: `mov qword ptr [rbx + 0xd0], rax` zero-init of ActionBindings.Data
+        # (adversarially verified against merged14.dump.exe bytes; positive control at the
+        # 4-qword thinner ctor 0x3616e30 confirms ActionBindings + AxisBindings are the FIRST
+        # TWO TArrays in the class layout). Same value in stock UE 5.4 (0xa0..0x100 range).
+        # STRIDE + NAMEOFF are not offline-derivable (FInputActionUnifiedDelegate size dominates
+        # and isn't reflected); left unpinned so per-entry name matching stays compiled OUT and
+        # the census emits only TArray metadata (num/max shape) -- which is enough for the H2a
+        # discriminator (PAWN Num > 0 AND PC Num == 0 => BP never wired).
+        'botfight-castalive-dash-mana10-cdocharge1-naturalinput-bindcensus' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xCE','-DKBFABIL=\"Ability3\"','-DKBFCHARGES=1','-DKBFGATES=1','-DKBFMANA=10','-DKBFCANACT=2','-DKBFCDOCHARGES=1','-DKBFINPUTID=5','-DKBFNATURALINPUT=1','-DKBFNATURALMS=30000','-DKBFNATURALPRESETUPMS=60000','-DKBFBINDCENSUS=1','-DKBFBINDCENSUS_AB_OFF=0xd0')
         # S146 first all-gates-open activation crossing: direct native handle-level TryActivateAbility,
         # only when Role==Authority and ActorInfo::IsLocallyControlled==true; allowRemote=false.
         # Reflected TryActivateAbilityByClass remains compiled out.
