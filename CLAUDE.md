@@ -4059,6 +4059,20 @@ blockers, neither about markers.**
   internal if/else flow, not a terminator — a naive walker that stops at any `jmp` misses the real
   tail call ~200 bytes later. **Only jmps whose target is OUTSIDE the wrapper's byte range are
   terminators.**
+  ★★ **S153 DARK PAGE-CLUSTER ANALYSIS: the 4,910 DARK entries cluster on 406 distinct pages, with
+  a heavy stock-UE tail. Read `docs/fk1-dark-pageclusters-s153.md`.** 16 of the top 20 all-page
+  clusters are stock UE modules that will never execute here (`UMovieScene*`, `UDiscord*`,
+  `UMedia*`, `UDynamicMesh*`, `UOptimus*`, editor grooming/media tools). **Filter to Loki-only
+  before choosing a fire target.** Top Loki DARK pages by verb count: `0x052CB000` (39, all
+  `ALokiBaseItem`), `0x0529E000` (29, `ALokiAirship`/`ALokiBaseItem`/`ALokiGameState`/`ALokiMinion
+  Character`), `0x05442000` (28, `ALokiPlayerState_Missions`/`_Stats`/`_XP` — ⚠ directly relevant
+  to CLAUDE.md missions/XP surfaces), `0x052B5000` + `0x052B4000` (49 total, `ULokiAttributeSet`
+  family — ⚠ S141 movement-wall class), `0x05422000` (16, `ALokiPlayerCheats`/`Controller`/`State`
+  — SAME page S153 coverage re-grade already flagged for 6 dark `Cheat*` exec verbs; two-birds-
+  with-one-stone target via Route B CheatManager call), `0x05483000` (21, `ALokiTeamState_TeamOnly`
+  — FK-1 register #3's class). **Reusable workflow post-fire: `dumpimage` the process, `mergedumps`
+  into `merged15.dump.exe`, change `DUMP = "..."` in `scratchpad/s153_native_ufunction_sweep.py`,
+  re-run in ~14 seconds → updated FK-1 map.** Each round could reduce DARK by 15-40 entries.
   ★ **Any future shim design proposing to call a UFunction on this list is a wasted injection.**
   Cross-check the full list at `docs/fk1-batch-hunt-s152.md` before building.
   Empty-impl base rate in this image is **1.2 % (78/6,669)**, so this is informative, not ambient.
