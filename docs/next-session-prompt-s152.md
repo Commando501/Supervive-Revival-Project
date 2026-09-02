@@ -205,3 +205,48 @@ If the fresh session's user disputes any claim above, verification paths:
 
 The docs/move4-external-poke-PREREGISTERED.txt file is the primary evidence
 document — everything above is a summary of it.
+
+
+---
+
+## 6. LATE ADDITION — post-commit FK-1 batch hunt (2026-09-02, still same session)
+
+After the main S152 commit was pushed, the user requested one more experiment
+on the still-alive process. Ran the FK-1 batch hunt described in section 2 above,
+plus two smaller probes:
+
+### FK-1 batch hunt (`scratchpad/move4_fk1_batch_hunt.py`)
+- Live disassembled 746 UFunctions matching `Auth*|Server*|Grant*|Kick*|Ban*|
+  Force*|Debug*|Broadcast*|Init*|*Cheat*` (v1+v2 sweeps)
+- **95 STRIPPED entries confirmed live** (12.7% rate — 11x the image-wide 1.2%
+  base rate for empty impls)
+- Fold distribution: 80 → `0xF7EC20` (void), 12 → `0xF7EB60` (LokiIsServer false),
+  2 → `0xF7EB50` (nullptr getter), 1 → `0xFC6CF0` (0.0f)
+- Full evidence: `docs/fk1-batch-hunt-s152.md`
+- CLAUDE.md FK-1 block updated with summary + tool pointer
+
+### Widget hunt (`scratchpad/move4_widget_hunt.py`)
+- Enumerated live UUserWidget instances; found multiple Health-related widgets:
+  `ProgressBar_Health`, `BAR_Health`, `WBP_HUD6_Healthbar`, `HealthBarWidget`
+  (world-space LokiWidgetComponent)
+- Widget infrastructure IS instantiated in the tutorial world; UMG binding
+  verification would need visual (screenshot) confirmation
+
+### Death probe (`scratchpad/move4_death_probe.py`)
+- Wrote Health.CurrentValue = 0.0 for 8s
+- **Zero game-side reaction**: no self-healing, no OnRep, no death path, no
+  log line about damage/dying/state change (18 new Loki.log lines during
+  window, all unrelated — Vivox/AccelByte/PartyManager)
+- Restored to 1000.0 cleanly
+
+### Key implication for fresh session
+The FK-1 batch hunt independently confirmed several CLAUDE.md open items
+(S131 rideable stubs, WALL E hostility stubs, dismount block). Any shim
+design that plans to call one of these 95 UFunctions is a wasted injection.
+**Cross-check the full list at `docs/fk1-batch-hunt-s152.md` before building
+ANY new shim.**
+
+### Notable new FK-1 entry from v2 sweep
+**`LokiCharacter::ForceDeath` is stripped** (Func RVA `0x05289020` →
+`0xF7EC20` void). Combined with the death-probe finding, the "kill hero"
+path is fully closed client-side by two independent mechanisms.

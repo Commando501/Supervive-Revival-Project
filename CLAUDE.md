@@ -3945,6 +3945,25 @@ blockers, neither about markers.**
   in the tail call, not the entry. Only full-body disassembly reveals it.
   Corroborates FK-1's "the enrichment is on `Auth*` naming, not on subsystem" — Cheat-family verb,
   no drop-phase relationship. Details: `docs/move4-external-poke-PREREGISTERED.txt`.
+  ★★★★★ **S152 BATCH HUNT (2026-09-02): 83 STRIPPED STUBS CONFIRMED LIVE IN ONE PASS. Read
+  `docs/fk1-batch-hunt-s152.md`.** Live disassembly of 624 UFunctions matching `Auth*`/`Server*`/
+  `*Cheat*` on the Move 4 process. **[M] STRIPPED=83 (13.3%), REAL=417, UNREADABLE=124** (PAGE_NOACCESS
+  = never demand-decrypted; latent candidates, could be REAL or STRIPPED). Fold distribution:
+  68 → `0xF7EC20` (void_ret), 12 → `0xF7EB60` (LokiIsServer FALSE), 2 → `0xF7EB50` (nullptr getter),
+  1 → `0xFC6CF0` (0.0f getter — `AuthGetTeamSurvivalTime`).
+  ★ Independent confirmation of prior FK-1 register entries (`AuthSetSpawnTeamLeader`,
+  `AuthCheatSetHealth`, `ServerSetHeroClass`) and of many CLAUDE.md rideable/drop-phase
+  claims: `AuthAddPlayer` / `AuthRemovePlayer` / `AuthSetCanJump` on `LokiRideableComponent` are
+  ALL stripped (matches the S131 mount-block finding); `AuthBeginGlideDiveFromDropPod` on
+  `LokiCharacterMovementComponent` stripped (matches the S131 dismount observation);
+  `AuthAnyVisibleEnemyHeroCharactersInRange` / `AuthUpdateEnemyList` /
+  `AuthUpdateNearbyVisibleEnemies` on `LokiMinionCharacter` all stripped (matches WALL E's "no
+  hostility mechanism" observation).
+  ★ **Tool `scratchpad/move4_fk1_batch_hunt.py` is REUSABLE** — parameterize the name filter to
+  hunt other verb families (Init*, Handle*, On*, etc.). Base rate for these targeted sweeps is
+  ~10× the image-wide 1.2% rate, meaning targeted hunts are highly efficient.
+  ★ **Any future shim design proposing to call a UFunction on this list is a wasted injection.**
+  Cross-check the full list at `docs/fk1-batch-hunt-s152.md` before building.
   Empty-impl base rate in this image is **1.2 % (78/6,669)**, so this is informative, not ambient.
   Likely `WITH_SERVER_CODE`-stripped [I]. **This explains ~7 failed spawn attempts
   across S68/S74 and CLOSES `AvatarActor = NULL`:** the design routes the whole GAS bind through
