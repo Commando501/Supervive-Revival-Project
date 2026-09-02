@@ -4024,6 +4024,41 @@ blockers, neither about markers.**
   truth without a second instrument. **The 17 STILL-DARK entries cluster on 7 distinct pages** —
   page `0x5422000` alone gates 6 `ALokiPlayerCheats::Cheat*` verbs; firing any one of them in a
   live session decrypts the whole page and unblocks the other 5 for offline re-grading.
+  ★★★★★ **S153 NATIVE-UFUNCTION SWEEP — 303 STRIPPED STUBS ACROSS 66 DISTINCT THUNK RVAs, purely
+  offline, 15,129 UFunctions in ~14 seconds. Read `docs/fk1-native-sweep-s153.md`.** Third and
+  broadest S153 sweep: source is `dumps/merged14.dump.exe` bytes + `tools/re/fk13natreg.py`'s
+  per-class native-registration enumerator (walks each class's `StaticRegisterNatives<Class>` array
+  in `.data`, populated at startup in `dumps/tutorial-hero`). Classifier is capstone-based (walks
+  instructions, distinguishes internal branches from genuine tail-jmps via target-outside-wrapper).
+  Two mandatory positive controls (`ULokiAbilitySystemComponent::AdjustHealth` must grade REAL,
+  `ALokiCharacter::AuthCheatSetHealth` must grade STRIPPED via its 9-way ICF-shared tail-call to
+  `0x0F7EC20`) — both passed. **Verdict counts on 15,129 native UFunctions: 303 STRIPPED (2.00%),
+  9,916 REAL (65.54%), 4,910 DARK (32.45%).** The 2.00% strip rate independently corroborates the
+  S131 lane-D image-wide 3.16% empty-impl baseline. **All 4/5 CLAUDE.md FK-1 register entries that
+  fk13natreg can enumerate are confirmed STRIPPED** (`AuthSetSpawnTeamLeader`, `SetDropLeader`,
+  `OverridePlaneLocations`, `AuthCheatSetHealth`); `ALokiGameMode::SpawnPlayer` is not enumerated
+  (fk13natreg's `<Class>::GetPrivateStaticClass` pattern doesn't match ALokiGameMode — an instrument
+  gap, not a contradiction). **Top classes by stripped count:** `ULokiTuningLibrary` 29/29 (100%,
+  entire dev API stripped), `ULokiReferenceGraph` 10/11 (91%), `ALokiTower` 7/17 (41%),
+  `ALokiOpeningClosingProp` 4/14 (29%), `ALokiPlayerState` 36/130, `ALokiCharacter` 34/238,
+  `ALokiPlayerCheats` 14/62, `ULokiRideableComponent` 4/18 (S131 mount block), `ULokiCharacterMovement
+  Component` 5/43 (S131 dismount block includes `AuthBeginGlideDiveFromDropPod`),
+  `ALokiMinionCharacter` 8/70 (WALL E hostility mechanism). **⚠ Any shim design that plans to call
+  one of these 303 UFunctions is a wasted injection** — cross-check `scratchpad/s153_native_ufunction_
+  sweep.csv` before building. **⚠ The 4,910 DARK entries are potential FK-1 candidates awaiting
+  demand-decryption** — a live sitting that fires any UFunction whose thunk sits on a dark page
+  decrypts it and unblocks offline grading of every UFunction on it.
+  ⚠⚠ **INSTRUMENT CAVEATS worth carrying forward (fold-detection is subtle):** (a) a byte-scan for
+  `E8`/`E9`/`C3` opcodes cannot detect stripped wrappers reliably — an early `E9` byte inside
+  another instruction's data breaks the scan loop (`AuthBeginGlideDiveFromDropPod` false-REAL before
+  capstone was added), and thunks that use tail-`jmp fold` with no `call` at all (like the 92-way
+  ICF-shared `0x5254180`) are missed if the scan only tracks `E8`. **Use a proper instruction walker.**
+  (b) The scan window must reach the tail call: `OverridePlaneLocations`'s tail call sits at
+  wrapper+0xD8; a 128-byte window misclassifies it as REAL. Use ≥ 0x400 (1 KiB). (c) Distinguish
+  internal branches from tail-jmps: `AuthCheatSetHealth`'s `jmp 0x52FD673` at wrapper+0x35 is an
+  internal if/else flow, not a terminator — a naive walker that stops at any `jmp` misses the real
+  tail call ~200 bytes later. **Only jmps whose target is OUTSIDE the wrapper's byte range are
+  terminators.**
   ★ **Any future shim design proposing to call a UFunction on this list is a wasted injection.**
   Cross-check the full list at `docs/fk1-batch-hunt-s152.md` before building.
   Empty-impl base rate in this image is **1.2 % (78/6,669)**, so this is informative, not ambient.
