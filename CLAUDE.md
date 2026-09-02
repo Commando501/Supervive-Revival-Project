@@ -3987,6 +3987,26 @@ blockers, neither about markers.**
   ★ **Tool `scratchpad/move4_fk1_batch_hunt.py` is REUSABLE** — parameterize the name filter to
   hunt other verb families (Init*, Handle*, On*, etc.). Base rate for these targeted sweeps is
   ~10× the image-wide 1.2% rate, meaning targeted hunts are highly efficient.
+  ★★★★ **S153 EXEC-SURFACE SWEEP: 32 MORE STRIPPED STUBS, purely offline against `merged14`. Read
+  `docs/fk1-exec-sweep-s153.md`.** No live process, no injection — the sweep is a re-analysis of
+  the S114/FK-13 `tools/re/out/exec_chain_grade.txt` file, which already resolves every one of
+  the 142 `FUNC_Exec` UFunctions' thunk→impl and grades against known folds. **32/142 = 22.5%
+  FOLDED-STUB (7× the image-wide 3.16% baseline)**, all tail-calling `0x0F7EC20` (universal
+  void_ret). Disjoint from CLAUDE.md's 5-entry FK-1 register (those are `FUNC_Net*` authority
+  functions, not exec verbs). Independently corroborates S152 `AuthCheatSetHealth`: its thunk
+  `0x52FD620` is 9-way ICF-shared with `DebugTimelineAdvanceTime`/`DebugTimelineSetTime` — spot-
+  check on `merged14` confirms the tail call at Func+0x6F resolves to `0x0F7EC20` exactly as S152
+  measured live. **Per-family enrichment:** `UGameInstance` 2/2 (100%), `UAbilitySystemGlobals`
+  2/2 (100%), `ALokiCharacter` 8/10 (80%), `UGameViewportClient` 2/3 (67%),
+  `ALokiPlayerController` 5/8 (62%), `ULokiTimelineManager` 3/5 (60%), `ALokiPlayerCheats` 6/25
+  (24%), `UCheatManager` 3/50 (6%), `APlayerController` 1/14 (7%). ⇒ **Route B (constructing
+  `UCheatManager`) is largely productive: 44/50 = 88% of its verbs REACH real bodies** — a
+  positive result for the FK-13 Route B channel. Loki cheat carriers show the opposite:
+  `ALokiCharacter`'s 10 exec verbs are all stripped or dark (0 REAL), so `InfiniteHealth`/
+  `Teleport*`/etc. require a data-poke approach, not a shim call.
+  ⚠ **Bumped count:** the 91-way ICF-shared thunk at `0x5254180` documented in S131 lane D is now
+  **92-way** in this analysis — one more UFunction landed on it since. Not material to any
+  conclusion, but future FK-1 register updates should quote the higher count.
   ★ **Any future shim design proposing to call a UFunction on this list is a wasted injection.**
   Cross-check the full list at `docs/fk1-batch-hunt-s152.md` before building.
   Empty-impl base rate in this image is **1.2 % (78/6,669)**, so this is informative, not ambient.
