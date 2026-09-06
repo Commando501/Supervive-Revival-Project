@@ -86,11 +86,22 @@ param(
                          # mapped in a ~13 s burst and EVERY death in the S109 series landed at or
                          # after it; >=10 s gaps cut the hazard ~71x. Pass 3 to restore the old burst.
                          # See docs/s109-dump-forensics.md sections 18-20.
-  [switch]$ResetCapture  # S149 capture-gen fix: before starting ags, archive any existing docs\capture.log
+  [switch]$ResetCapture, # S149 capture-gen fix: before starting ags, archive any existing docs\capture.log
                          # under a stamped name and CreateNew a fresh entry with CreationTimeUtc == UtcNow.
                          # Off by default -- byte-identical to today's primary launch when unset. Unblocks
                          # S149's bind-only flight and any successor gate that admits on capture generation
                          # (measured -10849 s stale in flight 1). See configs/capture-gate.ps1.
+  [switch]$CompanionWatch # S178 Move #1 (opt-in): arm scratchpad/s177/companion_watch.py in the background
+                         # to kill the runtime.dll companion process on sight. Defeats FK-32 without any
+                         # module-image write. Off by default: measured-safe for menu-only sessions and
+                         # for -NoHook (S177 flight 9 kept the game alive 240+ s vs the usual 30-70 s kill),
+                         # but flight 10 saw staging fail to load LVL_Tutorial with the watcher active --
+                         # cause unresolved (see docs/s177-fk32-mechanism-CONFIRMED-companion-process.md
+                         # section "Flight 10"). Recommendation: pass -CompanionWatch for menu/exploration
+                         # sessions; leave OFF when running fk24-stage.ps1 or any tutorial-staging flow
+                         # until we understand what the companion is contributing to the fo shim's LoadMap.
+                         # Filter is --only-name runtime.dll -- benign children (EpicWebHelper, conhost,
+                         # crashpad_handler) are ignored.
 )
 # DEFAULT (no flags): primary catalog_store_fix.dll (store + HUNTERS roster) is injected at launch, then
 # configs/inject-secondaries.ps1 injects the full secondary set once it settles � pick/refresh (pi8),
@@ -134,6 +145,9 @@ if (-not $isAdmin) {
   # S149 capture-gen fix: same forwarding rule -- silently dropping this across
   # elevation would leave the capture stale under a fresh backend.
   if ($ResetCapture) { $argList += "-ResetCapture" }
+  # S178 Move #1: same reason -- dropping this across elevation silently disables
+  # the FK-32 defeat, which reads exactly like "FK-32 came back on this launch."
+  if ($CompanionWatch) { $argList += "-CompanionWatch" }
   Start-Process powershell -Verb RunAs -ArgumentList $argList
   return
 }
@@ -372,6 +386,43 @@ if (-not $NoCrashWatch) {
     Write-Host "  idle until the game crashes; then suspends it and dumps before it exits." -ForegroundColor DarkGray
   } else {
     Write-Host "  (usmapdump.exe not found - crash capture NOT armed)" -ForegroundColor Yellow
+  }
+}
+
+# ---- arm the FK-32 companion-watcher (S178 Move #1, opt-in) ----------------------------------
+# The runtime.dll companion process is what fires FK-32 (0xDEAD kill). S178 Move #1 [M] captured
+# it via ETW: companion PID opens the game with NtOpenProcess(TERMINATE) at t+37 ms after spawn,
+# then does ~4.5 s of thread inspection + WinHTTP phone-home + DPAPI decode, then calls
+# NtTerminateProcess(game, 0xDEAD). companion_watch.py terminates the companion within ~220 ms
+# of its Process/Start (well within the 4.5 s window) — S177 flight 9 kept the game alive
+# 240+ seconds vs the usual 30-70 s kill window.
+#
+# --only-name runtime.dll is surgical: benign children (EpicWebHelper, conhost, crashpad_handler)
+# are IGNORED. The kill hits only the FK-32 dispatcher.
+#
+# Off by default. Flight 10 (S177) saw tutorial staging fail to LoadMap with the watcher active
+# (unresolved — could be that fo's LoadMap depends on state the companion sets up before the
+# kill decision). Until that's understood, do NOT arm this in a staging flow. For -NoHook /
+# menu / read-only exploration sessions where the FK-32 window matters, it's a clean win.
+if ($CompanionWatch) {
+  $cwPy = Join-Path $repoRoot "scratchpad\s177\companion_watch.py"
+  if (Test-Path $cwPy) {
+    $cwStamp2 = Get-Date -Format "yyyyMMdd-HHmmss"
+    $cwLog2   = Join-Path $repoRoot "docs\companion-watch.$cwStamp2.log"
+    # --wait-for-game 60: we're launching the game immediately after this block, so the
+    # watcher may briefly see no game before it appears. Give it a minute to attach.
+    # --duration 3600: 1 hour cap so a leftover watcher doesn't sit around forever.
+    # --interval 0.1: 100 ms poll matches S177 flight 9's tested cadence (killed companion
+    # ~220 ms after Process/Start).
+    $cwPyArgs = "`"$cwPy`" --wait-for-game 60 --kill-on-sight --only-name runtime.dll --interval 0.1 --duration 3600 --log `"$cwLog2`""
+    Start-Process -FilePath "python" -ArgumentList $cwPyArgs `
+        -WindowStyle Minimized `
+        -RedirectStandardOutput "$cwLog2.stdout" -RedirectStandardError "$cwLog2.stderr" | Out-Null
+    Write-Host "FK-32 companion-watch armed: kills runtime.dll on sight (log: docs\companion-watch.$cwStamp2.log)" -ForegroundColor Cyan
+    Write-Host "  S178 Move #1 [M]: game survives 240+ s vs the usual 30-70 s FK-32 window." -ForegroundColor DarkGray
+    Write-Host "  Do NOT combine with fk24-stage.ps1 (staging LoadMap unresolved — see doc)." -ForegroundColor Yellow
+  } else {
+    Write-Host "  (companion_watch.py not found at $cwPy - FK-32 watcher NOT armed)" -ForegroundColor Yellow
   }
 }
 

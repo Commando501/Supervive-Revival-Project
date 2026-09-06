@@ -1,0 +1,9 @@
+[cw] game pid=30436
+[cw] t=+  0.23s NEW CHILD pid=7712  name=conhost.exe  path=C:\Windows\System32\conhost.exe
+[cw] t=+  0.23s NEW CHILD pid=18740  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw] t=+  0.23s NEW CHILD pid=37352  name=crashpad_handler.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Plugins\SentrySDK\Binaries\Win64\crashpad_handler.exe
+[cw] t=+  0.23s NEW CHILD pid=37312  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw] t=+  0.23s NEW CHILD pid=33048  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw] t=+ 76.92s NEW CHILD pid=28248  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw] t=+ 77.83s CHILD EXITED pid=28248 name=EpicWebHelper.exe
+[cw] --duration reached, stopping cleanly. polls=788, children_seen=5

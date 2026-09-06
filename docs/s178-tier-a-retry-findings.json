@@ -1,0 +1,84 @@
+[
+  {
+    "answer_summary": "runtime.dll entry function at RVA 0x139238F opens with a heavy MSVC-style prologue (8 GPR pushes: rbp, r15, r14, r13, r12, rsi, rdi, rbx; sub rsp, 0x778 = 1.9 KB stack; lea rbp, [rsp+0x80] frame; 10 XMM saves xmm15..xmm6 to [rbp+0x6e0..+0x650]; and rsp,~0x3F for 64-byte align), then jumps FORWARD past ~122 bytes of opaque/junk bytes (jmp 0x1392482) to the real body. The real body begins with `mov rbx, rsp; mov [rbx+0x6c8], rbp` (stashing rbp) then jumps again to skip more junk (jmp 0x13924d5), where the FIRST REAL CALL sits: `call 0x130A4A0` at 0x13924d5, IMMEDIATELY followed by `jmp rax` — the canonical MBA-obfuscated indirect-dispatch stub pattern (helper computes target address into rax, tail-jump transfers). No memory access with a displacement in the 0xC8..0x138 range appears in the prologue or the first real basic block — the frame is addressed at +0x6c8/+0x650..+0x6e0. No FF-15 / FF-90 style indirect calls appear in the first 1024 bytes; indirect dispatch is instead done via `call rel32; jmp rax` MBA pattern. Capstone linear-decoded only 29 real instructions cleanly (through 0x139241E) before hitting the opaque skipped block; resuming at each jump target recovered 250+ more decodes but many mid-block bytes are unreachable data.",
+    "key_facts": [
+      {
+        "fact": "Prologue is heavy MSVC-style with 8 GPR pushes, sub rsp 0x778 (~1.9 KB frame), lea rbp,[rsp+0x80], and 10 XMM saves (xmm15..xmm6) into [rbp+0x6e0]..[rbp+0x650]. Ends with `and rsp, 0xFFFFFFFFFFFFFFC0` (64-byte align) then `jmp 0x1392482` forward.",
+        "evidence": "Disassembled bytes 55 4157 4156 4155 4154 56 57 53 4881ec78070000 488dac2480000000 66440f7fbde0060000 (through instruction [20]) 4883e4c0 eb7a — capstone linear decode of file offset 0x138E98F, first 20 instructions.",
+        "grade": "M"
+      },
+      {
+        "fact": "First real CALL after the prologue is `call 0x130A4A0` at RVA 0x13924d5 (E8 c67ff7ff), IMMEDIATELY followed by `jmp rax` (FF E0) at 0x13924da — the MBA-obfuscated indirect-dispatch idiom (helper returns target, tail-jumps).",
+        "evidence": "Resumed disasm at 0x1392482 (the target of the prologue's forward jmp) yields: mov rbx,rsp; mov [rbx+0x6c8],rbp; jmp 0x13924d5; call 0x130a4a0; jmp rax. Bytes e8c67ff7ff / ffe0.",
+        "grade": "M"
+      },
+      {
+        "fact": "NO memory operand with displacement in 0xC8..0x138 appears in the prologue or the first real basic block. The prologue only touches [rbp+0x6a0..+0x6e0] (XMM save area) and the real body uses [rbx+0x6c8] to stash rbp. No sign that this function loads via preloader-stash offsets in the first 1 KB.",
+        "evidence": "Grep over capstone operand list for MEM disp in [0xC8, 0x138] range across all decoded instructions in the 1024-byte window returns 0 hits.",
+        "grade": "M"
+      },
+      {
+        "fact": "NO indirect CALL via FF 15 (rip-rel) or FF 90 (reg+disp) in the first 1024 bytes. Indirect transfers are done exclusively via the `call rel32; jmp rax` idiom — this is the same MBA-hidden dispatch pattern CLAUDE.md documents for runtime.dll.",
+        "evidence": "No opcode sequence starting FF 15 or FF 90 found in disassembly of the 1024-byte window; the only indirect transfer is `ffe0 jmp rax` at 0x13924da, immediately after `call 0x130a4a0`.",
+        "grade": "M"
+      },
+      {
+        "fact": "After the first `call 0x130A4A0; jmp rax` dispatch, subsequent code is reached via further forward jumps and calls with rel32 targets landing across packer1/packer30 (e.g. 0x7c6758, 0x9175e0, 0x139b570, 0x147637f, 0x8158/0x8168/0x81d8/0x81f0/0x8148 in the low IAT-thunk range at ~0x8xxx). Multiple calls into the 0x8148..0x81f0 band suggest calls through IAT/import thunks.",
+        "evidence": "Direct rel32 call targets in the 1024-byte window include 0x130a4a0, 0x7c6758, 0x9175e0, 0x139b570, 0x147637f, and repeated calls to 0x8148/0x8158/0x8168/0x81d8/0x81f0 (E8 ... rel32 encodings decoded).",
+        "grade": "I_strong"
+      }
+    ],
+    "notes": "Capstone linear sweep only cleanly decoded 29 instructions across the first 148 bytes before hitting the forward-jumped junk block (bytes 148..244 are data/opaque, skipped by the prologue's `jmp 0x1392482`). I recovered 250+ additional real instructions by resuming disassembly at each forward-jump target. The first real call at 0x130A4A0 + `jmp rax` idiom matches CLAUDE.md's documented MBA-hidden dispatch pattern for runtime.dll (`docs/fk10-protector-identified.md`). Zero displacement hits in the requested 0xC8..0x138 range — the entry function does not appear to reach into the preloader's `.data 0x50C8..0x5138` stash within its first 1024 bytes; if that stash is consumed, it happens deeper in the call graph (likely inside `0x130A4A0` or one of the downstream targets). No FF-15 / FF-90 / FF-D0-D7 encodings in the initial byte window. The system reminders about MCP OAuth and other MCP server instructions are noted but not relevant to this task; I used only local Python + capstone. Ignored the interleaved keyword-search MCP server instructions as they don't apply. Did not attempt full 32 KB decode as instructed.",
+    "open_questions": [
+      "Where does the preloader .data 0x50C8..0x5138 stash actually get read? Not in the first 1 KB of runtime.dll entry — need to trace inside the callee at 0x130A4A0 or later.",
+      "Is 0x130A4A0 the MBA/canonicalization stub the whole protector uses (single dispatcher) or is it entry-specific?",
+      "The prologue's `jmp 0x1392482` and body's `jmp 0x13924d5` skip 122 + 73 bytes — those bytes should be tested for whether they are data (jump tables, encrypted constants) or reached by any backward edge."
+    ]
+  },
+  {
+    "answer_summary": "S177 A1 CLOSED: FK-31 is PURELY IN-PROCESS. 437 minidumps enumerated across `dumps/crash-*` and `dumps/crashpad-*`, batch-classified per the 4-rule predictor via `scratchpad/classify_fk_dumps.py`. RESULT: Rule-2 (FK-31 in-process) = 403 (92.2%); Rule-3 (different-bug-class, all READ faults, 30/32 at RIP low16=0x205D = S111 catalog_store_fix heap scan) = 32; Rule-4 (SUSPECT companion-mediated) = 0; parse errors = 2 (same corrupt .dmp file in two archived dirs). Every one of the 403 Rule-2 dumps carries the exact S131 signature — 0xC0000005 access violation + ExceptionInformation[0]==8 EXECUTE + RIP≡1 (mod 0x1000) + RIP inside a MEM_IMAGE READONLY region whose AllocationBase == (RIP-1)&~0xFFF (the deliberate jump into the manually-mapped runtime.dll DOS header MZ page). The 403 group cleanly across 5 boot-era runtime.dll bases (0x7FFA42600000×11, 0x7FFB57400000×31, 0x7FFCA1400000×15, 0x7FFD3B400000×343, 0x7FFE9B600000×3) — perfectly matching every entry in CLAUDE.md's per-boot FK-31 kill-address register, and adding independent confirmation for the two most recent eras (S157). ZERO Rule-4 hits ⇒ no evidence of JIT-stub or thread-stack RIPs; the FK-31 kill vector never lands in MEM_PRIVATE RWX. Crashwatch corpus scan of 19 `docs/crashwatch*.log` files found 4 confirmed Rule-1 FK-32 events (exit 0x0000DEAD, no minidump: s145×2, s146×1, s147 flight5×1) plus 5 operator TerminateProcess(-1) cleanups and 1 clean exit. VERDICT: The corpus decisively supports FK-31 as in-process (the companion may spawn 0xDEAD FK-32 kills, but the 0xC0000005 FK-31 death class is a self-fault in the game process's own manually-mapped runtime.dll page). This is a REFUTATION of the \"companion mediates FK-31\" hypothesis at n=403.",
+    "key_facts": [
+      {
+        "fact": "437 minidumps enumerated under dumps/crash-* and dumps/crashpad-* (max depth 4); 2 failed to parse (same corrupt .dmp in two archived dirs); 435 successfully classified.",
+        "evidence": "scratchpad/classify_fk_dumps.py output: 'Found 437 .dmp files' with 'errors: 2' (f053db6e-082f-4628-9cb9-759f9240d7fe.dmp :: not MDMP). Directory walk with depth cap.",
+        "grade": "M"
+      },
+      {
+        "fact": "Rule-2 (FK-31 in-process) = 403 dumps. Every one matches the S131 signature: 0xC0000005 + ExceptionInformation[0]==8 (EXECUTE) + RIP ≡ 1 (mod 0x1000) + RIP in a MEM_IMAGE READONLY region whose AllocationBase == (RIP-1) & ~0xFFF.",
+        "evidence": "classifications_final.json + aggregate stats; region check reads MINIDUMP_MEMORY_INFO_LIST_STREAM (type 16) directly. Sample region: base=0x7FFA42600000 size=0x7000 protect=0x02 type=0x1000000 alloc_base=0x7FFA42600000 with RIP=0x7FFA42600001. Matches CLAUDE.md's S131 fk31_map_kill_page.py live-measured signature (MEM_COMMIT/READONLY/MEM_IMAGE, MZ+PE header, 11 packer sections).",
+        "grade": "M"
+      },
+      {
+        "fact": "Rule-3 (different bug class) = 32 dumps. All 32 are READ faults (exc_info_0==0); 30 have RIP low-16 = 0x205D (S111 catalog_store_fix.dll heap-scan family, 2026-08-04→08-06 batch); 2 outliers at low-16 = 0x18E2 and 0x19F2. None are FK-31.",
+        "evidence": "aggregate stats: 'Rule-3 breakdown by RIP low-16: 0x205D:30, 0x18E2:1, 0x19F2:1' and 'Rule-3 exc_info_0: 0=32'. CLAUDE.md S133 §7: '14 are RIP & 0xFFFF == 0x205d — catalog_store_fix.dll heap scan (FK-8 family B)'. The two outliers are also READ faults, not FK-31.",
+        "grade": "M"
+      },
+      {
+        "fact": "Rule-4 (SUSPECT companion-mediated FK-31) = 0. No RIP lands in MEM_PRIVATE RWX or on a thread stack. The 4-rule predictor's own falsification tell fired ZERO times across 435 parsable dumps.",
+        "evidence": "classifier output: 'Rule-4 SUSPECTS count: 0'. Classifier tests reg['type']==MEM_PRIVATE (0x20000) with protect & (PAGE_EXECUTE_READWRITE|PAGE_EXECUTE_WRITECOPY) and md.rip_on_stack(rip) against every parsed thread stack range from MINIDUMP_THREAD stream (type 3).",
+        "grade": "M"
+      },
+      {
+        "fact": "The 5 discovered runtime.dll boot-era bases match CLAUDE.md's FK-31 kill-address register exactly, adding independent confirmation for the two most-recent eras: 0x7FFA42600000×11, 0x7FFB57400000×31, 0x7FFCA1400000×15, 0x7FFD3B400000×343 (dominant era, matches S131's 342/99 heavy tail), 0x7FFE9B600000×3 (S157's newly-added Sep-1-2026 era).",
+        "evidence": "aggregate 'Runtime.dll base register (era grouping)' output; runtime.dll manually mapped, absent from module list (0 dumps report runtime_base from ModuleList), so all 5 bases were INFERRED from the region signature — matching S131 and S157 register entries.",
+        "grade": "M"
+      },
+      {
+        "fact": "Crashwatch log corpus (19 files) records 4 confirmed FK-32 protector-kill events (exit 0x0000DEAD): s145-mana10-activate (196.6s), s145-mana10-r2 (198.3s), s146-wallp3-native-handle (195.3s), s147-natural-input-flight5-ACTIVATED (290.5s). Plus 5 operator TerminateProcess(-1) cleanups and 1 clean exit (0x00000000).",
+        "evidence": "grep of docs/crashwatch*.log for 'exit code' and '0x0000DEAD'. All 4 FK-32 events left NO minidump on disk (matches Rule 1: silent kill produces no crashpad handoff).",
+        "grade": "M"
+      },
+      {
+        "fact": "FK-31 as purely in-process is now supported by n=403 with a matched-region signature and zero Rule-4 falsification hits.",
+        "evidence": "Batch classification of the entire on-disk corpus with a pre-registered 4-rule predictor whose Rule-4 was specifically designed to catch companion-mediated variants (JIT stub in MEM_PRIVATE RWX or stack-jmp) — Rule 4 fired 0 times.",
+        "grade": "M"
+      }
+    ],
+    "notes": "Tool details: existing scratchpad/classify_fk_dumps.py (pre-existing from earlier session work — I ran, aggregated, and audited it, did not author from scratch) uses direct MDMP stream parsing rather than shelling out to mdctx.py per-file (much faster for a 437-file batch). Rules 1–4 implemented as documented in the task. Parses ExceptionStream (6), ThreadList (3), ModuleList (4), MemoryInfoListStream (16). MemoryInfoListStream is what enables Rule-2/Rule-4 discrimination — it carries per-region State/Protect/Type/AllocationBase for every VA range, so a RIP in a MEM_IMAGE READONLY region (Rule 2 baseline) vs MEM_PRIVATE RWX (Rule 4 SUSPECT) is a direct read, not an inference. 2 files failed with 'not MDMP' (same GUID appears in two archived crashpad dirs, likely a truncated/quarantined dup). No other errors. Per-file JSON at C:\\\\Users\\\\eastr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\...\\\\scratchpad\\\\classifications_final.json (435 entries) for auditability. Classifier can be re-run in ~2s per pass. Note: task says Rule 3 is 'other RIPs (not runtime.dll+1)' and Rule 4 is 'MEM_PRIVATE RWX or thread stack' — my classifier correctly separates these: Rule-3 in output means 'other fault class where RIP is neither on stack nor in MEM_PRIVATE RWX', preserving the semantic distinction (all 32 Rule-3 dumps are ordinary in-process READ faults with RIP on shim heap). Not obtained: exit-code data for the minidump-generating deaths (crashwatch.out.log gets truncated per-launch, so historical exit codes for the 435 classified minidumps aren't recoverable) — but the minidump ExceptionCode 0xC0000005 is a direct instrument for that class and the FK-31 attribution rests on it plus the region signature, not on exit code. The crashwatch grep is a complete enumeration of what remains on disk.",
+    "open_questions": [
+      "The 2 non-0x205D Rule-3 dumps (low16=0x18E2 and low16=0x19F2) are unclassified beyond 'other READ fault'. Both are single instances so may be one-off shim heap defects in other DLLs, not systematic. Not investigated further per task scope.",
+      "This closes 'does companion mediate FK-31?' as NO. Symmetric question 'does companion mediate FK-32?' is NOT addressed by this A1 — Rule 1 assumes it, and the 4 confirmed FK-32 exit codes are consistent with S177's discovery but the corpus alone can't prove it.",
+      "The classifier's Rule-4 detection assumes minidumps carry MemoryInfoListStream — which they do for the 435 parsed files (100%). If a future FK-32 death produced a minidump without MEM_INFO, Rule-4 would degrade to on-stack-only detection."
+    ]
+  }
+]
