@@ -146,6 +146,18 @@ $Variants = @{
         #   ⚠ May break the route (the strict native Login can fatal). All three outcomes inform --
         #   see the rationale block at the InstallCustomLogin call site in tutorial_launch.cpp.
         'fo-nologinvt' = @('-DKRUNMODE=RM_FORCEOPEN','-DKNOLOGINVT=1')            # -1 dim: no .rdata vtable write
+        # ★ S179 -- name the F10 bail predicate. F10 (2026-09-04) produced a 3-line fo marker
+        #   ([0] started + [0] command, then nothing) with the game process alive for 298 s,
+        #   zero Windows Application error events, and zero crashpad archives across the F10 window.
+        #   Direct source-read refuted every CFG-walk candidate (RANK1/2/3 in wf_7f899fdc-61d). The
+        #   3-line marker is consistent with fo entering the 120 s Resolve() polling loop and being
+        #   terminated before either the success emit (24631) or the timeout emit (24630). This
+        #   variant adds per-gate + per-Resolve-iter markers so a re-fly says which field cannot
+        #   resolve at the menu OR at which gate fo actually died.
+        #   ★ Byte-identical to `fo` when KFOVERBOSE=0 (default); flip only in the -verbose build.
+        #   ⚠ Do not fly this as `-Hook` in a default sitting: the marker file will grow with per-iter
+        #    lines and the point is diagnostic, not shippable.
+        'fo-verbose' = @('-DKRUNMODE=RM_FORCEOPEN','-DKFOVERBOSE=1')              # +1 dim: per-gate + per-Resolve-iter Marker
         'sp'         = @('-DKRUNMODE=RM_SPAWNPOSSESS')
         # ★ S111 — control arm for the ability-system GATE fix (KGASSTORAGE, default ON in 'sp').
         #   The fix writes the carrier's ASC into the hero's AbilitySystemComponentStorage@0xF00,

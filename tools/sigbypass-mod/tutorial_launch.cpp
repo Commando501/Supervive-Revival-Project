@@ -224,6 +224,7 @@ static void PatchLoginVtables(bool toStock);
 
 static uintptr_t g_modBase=0;
 static volatile PFN_PE g_tramp=nullptr;
+static PVOID g_vehHandle=nullptr;                 // S176: captured from AddVectoredExceptionHandler for matched cleanup at Worker exit (prevents accumulator on re-inject; see docs/s176-fk32-dispatch-hunt-offline.md)
 static uintptr_t g_worldCtx=0;                 // WorldContextObject (a live ProgressionManager)
 static uintptr_t g_kslCDO=0;                    // Default__KismetSystemLibrary (call context)
 static void* g_ecc=nullptr; static uintptr_t g_eccThunk=0, g_eccChild=0;   // ExecuteConsoleCommand
@@ -780,6 +781,34 @@ static void DumpCrashCtx(EXCEPTION_POINTERS* ep){
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 #ifndef KWPROBE
 #define KWPROBE 0        // ★ 0 = OFF (default) -> the `play` artifact is byte-unchanged.  1 = DR.  2 = page.
+#endif
+// S179 KFOVERBOSE — instrument the RM_FORCEOPEN Worker to name the F10 bail predicate.
+//
+// F10 (2026-09-04) produced a 3-line fo marker ([0] started + [0] command, then nothing) despite:
+//   * gft_ready_fix + tutorial_launch_fo injections both returning OK from DllMain
+//   * game process alive for 298s post-injection (per companion_watch_flight10.log)
+//   * ZERO Windows Application error events in the F10 window (H3 REFUTED [M])
+//   * ZERO crashpad archives between Sep 4 11:12 and Sep 5 21:42 (weakened by watcher killing crashpad_handler)
+//   * F10 was flown on the SAME game process as Flight 9 (DR install + companion kill + canary_probe WPM)
+//
+// Source-read refuted all three CFG-walk candidates (S179 workflow wf_7f899fdc-61d):
+//   * CrashVEH is a non-intercepting VEH (always returns CONTINUE_SEARCH) — no re-fault loop possible
+//   * WaitTid is a bounded GetTickCount poll — cannot hang unboundedly
+//   * Resolve() walks GUObjectArray, not runtime.dll — Flight 9's WPM to runtime.dll HIGH+0x949000 does not affect it
+//
+// The 3-line marker phenotype is consistent with fo entering the 120s Resolve polling loop and being
+// terminated externally before either Resolve success (line 24631 emit) or the 120s timeout (line 24630 emit)
+// could fire. This macro adds per-gate + per-iteration Marker calls so a re-fly names the exact point:
+//   [0v] AVEH installed; entering WaitTid budget=120s
+//   [0v] WaitTid ok gameTid=<N>
+//   [0v] entering Resolve polling loop budget=120s
+//   [0v] Resolve iter=<N> worldCtx=<addr> kslCDO=<addr> eccThunk=<addr> eccChild=<addr> offCmd=<off>  (first 20)
+//   [0v] Resolve loop exited after iter=<N> totalMs=<ms>
+//
+// Guarded by KFOVERBOSE=1; default 0 = existing `fo` build byte-identical.
+// Build with `build.ps1 -Name tutorial_launch -Variant fo-verbose`.
+#ifndef KFOVERBOSE
+#define KFOVERBOSE 0     // 0 = OFF (default) -> the `fo` artifact is byte-unchanged.  1 = per-gate + per-Resolve-iter markers.
 #endif
 #if KWPROBE
 #ifndef KWPARMAT
@@ -23730,7 +23759,14 @@ static DWORD WINAPI Worker(LPVOID){
     bool fromFile=LoadCommand();
     Markerf("[0] command %s: '%ls'\r\n", fromFile?"from tutorial-launch-cmd.txt":"(default fallback)", g_cmd);
     HMODULE hExe=GetModuleHandleA("SUPERVIVE-Win64-Shipping.exe"); if(!hExe){Marker("[0] FAIL module\r\n");return 1;}
-    g_modBase=(uintptr_t)hExe; AddVectoredExceptionHandler(1,CrashVEH);
+#if KFOVERBOSE
+    Marker("[0v] module OK; installing AVEH\r\n");
+#endif
+    g_modBase=(uintptr_t)hExe; g_vehHandle=AddVectoredExceptionHandler(1,CrashVEH);  // S176: capture handle; matched RemoveVectoredExceptionHandler at Worker exit
+#if KFOVERBOSE
+    Markerf("[0v] AVEH installed handle=0x%llX modBase=0x%llX; entering WaitTid budget=120s\r\n",
+        (unsigned long long)(uintptr_t)g_vehHandle,(unsigned long long)g_modBase);
+#endif
 #if KWPROBE
     // FK-24 probe threads. They only POLL until an arm request arrives (see KWPARMAT), so starting them
     // here is free; they must exist before VtResolve can fire the request. Neither ever runs on the game
@@ -23740,6 +23776,9 @@ static DWORD WINAPI Worker(LPVOID){
       HANDLE t2=CreateThread(nullptr,0,WpSelfWatch,nullptr,0,nullptr); if(t2)CloseHandle(t2); }
 #endif
     g_gameTid=WaitTid(120000); if(!g_gameTid){Marker("[1] FAIL gameTid\r\n");return 2;}
+#if KFOVERBOSE
+    Markerf("[0v] WaitTid ok gameTid=%lu; skipping RM_X branches for kRunMode=%d (0=RM_FORCEOPEN)\r\n",g_gameTid,(int)kRunMode);
+#endif
     if(kInvestigateOnly){
         Marker("[INV] investigate-only: dumping CoreGameManager/CoreGameMatchModel state + functions at the menu\r\n");
         DumpTutorialState(0); DumpPawns(0); DumpStartSpots(0);
@@ -24625,7 +24664,27 @@ static DWORD WINAPI Worker(LPVOID){
             (long)g_pslStep,(unsigned long long)g_spawnedPawn,pcn,(long)g_called,(long)g_hitsGT);
         return 0;
     }
+#if KFOVERBOSE
+    // S179: per-iter markers so a re-fly names which of the four fields fo cannot resolve at the menu.
+    // Cap emit to first 20 iterations to avoid marker flood; a summary follows the loop.
+    Marker("[0v] entering Resolve polling loop budget=120s\r\n");
+    DWORD kfovStart=GetTickCount(); int kfovIter=0;
+    DWORD dl=GetTickCount()+120000;
+    while(GetTickCount()<dl){
+        Resolve();
+        if(kfovIter<20) Markerf("[0v] Resolve iter=%d worldCtx=0x%llX kslCDO=0x%llX eccThunk=0x%llX eccChild=0x%llX offCmd=0x%X offWCO=0x%X offSP=0x%X\r\n",
+            kfovIter,(unsigned long long)g_worldCtx,(unsigned long long)g_kslCDO,
+            (unsigned long long)g_eccThunk,(unsigned long long)g_eccChild,g_offCmd,g_offWCO,g_offSP);
+        kfovIter++;
+        if(g_worldCtx&&g_eccThunk&&g_eccChild&&g_offCmd!=0xFFFFFFFF)break;
+        Sleep(500);
+    }
+    Markerf("[0v] Resolve loop exited after iter=%d totalMs=%lu (worldCtx=0x%llX eccThunk=0x%llX eccChild=0x%llX offCmd=0x%X)\r\n",
+        kfovIter,GetTickCount()-kfovStart,
+        (unsigned long long)g_worldCtx,(unsigned long long)g_eccThunk,(unsigned long long)g_eccChild,g_offCmd);
+#else
     DWORD dl=GetTickCount()+120000; while(GetTickCount()<dl){ Resolve(); if(g_worldCtx&&g_eccThunk&&g_eccChild&&g_offCmd!=0xFFFFFFFF)break; Sleep(500);}
+#endif
     if(!g_worldCtx||!g_eccThunk||g_offCmd==0xFFFFFFFF){Markerf("[2] FAIL resolve worldCtx=0x%llX kslCDO=0x%llX eccThunk=0x%llX child=0x%llX offWCO=0x%X offCmd=0x%X offSP=0x%X\r\n",(unsigned long long)g_worldCtx,(unsigned long long)g_kslCDO,(unsigned long long)g_eccThunk,(unsigned long long)g_eccChild,g_offWCO,g_offCmd,g_offSP);return 3;}
     Markerf("[2] worldCtx=0x%llX kslCDO=0x%llX eccThunk=0x%llX(rva 0x%llX) child=0x%llX offWCO=0x%X offCmd=0x%X offSP=0x%X gameTid=%lu cmd='%ls'\r\n",(unsigned long long)g_worldCtx,(unsigned long long)g_kslCDO,(unsigned long long)g_eccThunk,(unsigned long long)(g_eccThunk-g_modBase),(unsigned long long)g_eccChild,g_offWCO,g_offCmd,g_offSP,g_gameTid,g_cmd);
     g_pi=(uint8_t*)(g_modBase+kPiRva); if(!SafeReadable(g_pi,5)||memcmp(g_pi,kPiProlog,5)!=0){Marker("[2] FAIL PI prologue\r\n");return 4;}
@@ -24695,6 +24754,11 @@ static DWORD WINAPI Worker(LPVOID){
     InstallCustomLogin(false);  // restore slot-285 so the ~3-5min code-integrity check sees the vtables clean
     Marker("[5] done (vtable restored)\r\n");
 #endif
+    // S176: match the AddVectoredExceptionHandler and NearAlloc calls -- accumulator hazard on re-inject
+    // was implicated for S175's 2nd-fo FK-32 (docs/s176-fk32-dispatch-hunt-offline.md). Cleanup only
+    // runs when Worker reaches this exit (i.e. the RM_FORCEOPEN path); other run modes are unaffected.
+    if(g_vehHandle){ ULONG rem=RemoveVectoredExceptionHandler(g_vehHandle); Markerf("[6] VEH removed (rem=%lu)\r\n",(unsigned long)rem); g_vehHandle=nullptr; }
+    if(g_tramp){ BOOL vf=VirtualFree((void*)g_tramp,0,MEM_RELEASE); Markerf("[6] NearAlloc region freed at %p (vf=%d)\r\n",(void*)g_tramp,(int)vf); g_tramp=nullptr; }
     return 0;
 }
 BOOL APIENTRY DllMain(HMODULE h,DWORD r,LPVOID){if(r==DLL_PROCESS_ATTACH){DisableThreadLibraryCalls(h);HANDLE t=CreateThread(nullptr,0,Worker,nullptr,0,nullptr);if(t)CloseHandle(t);}return TRUE;}
