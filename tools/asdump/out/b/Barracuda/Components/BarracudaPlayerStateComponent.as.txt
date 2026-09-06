@@ -1,0 +1,550 @@
+// ============================================================================
+//  MODULE   Barracuda.Components.BarracudaPlayerStateComponent
+//  SOURCE   Barracuda/Components/BarracudaPlayerStateComponent.as
+//  CONTENT  2 class(es), 26 function(s), 0 enum(s), 1 global(s), 1516 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+event FNextRespawnTimeChanged;
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaPlayerStateComponent;
+
+UBarracudaPlayerStateComponent@ UBarracudaPlayerStateComponent()   // traits=0x20
+{
+    v2 = UBarracudaPlayerStateComponent();
+    return v2;
+}
+/* ---- UBarracudaPlayerStateComponent: 7 dwords / 4 instructions (cache offset 0x169cc) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84132 UBarracudaPlayerStateComponent        
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ UBarracudaPlayerStateComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UBarracudaPlayerStateComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x16a97) ----
+    0000  PshGPtr       __StaticType_UBarracudaPlayerStateComponent 
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UBarracudaPlayerStateComponent@ UBarracudaPlayerStateComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaPlayerStateComponent, v2, typeid(UBarracudaPlayerStateComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x16bdf) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972600                                    ; UBarracudaPlayerStateComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaPlayerStateComponent 
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaPlayerStateComponent@ UBarracudaPlayerStateComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaPlayerStateComponent, v2, typeid(UBarracudaPlayerStateComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x16d3f) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972600                                    ; UBarracudaPlayerStateComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaPlayerStateComponent 
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaPlayerStateComponent@ UBarracudaPlayerStateComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaPlayerStateComponent, v2, typeid(UBarracudaPlayerStateComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x16e9a) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972600                                    ; UBarracudaPlayerStateComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaPlayerStateComponent 
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaPlayerStateComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaPlayerStateComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_NextRespawnTime)
+    private float64 InternalNextRespawnTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FNextRespawnTimeChanged OnNextRespawnTimeChanged;
+
+    UBarracudaPlayerStateComponent()   // traits=0x21
+    {
+        this.OnNextRespawnTimeChanged.FNextRespawnTimeChanged();
+        v2 = 13830554455654793216;
+        this.InternalNextRespawnTime = v2;
+        return;
+    }
+    /* ---- UBarracudaPlayerStateComponent: 16 dwords / 9 instructions (cache offset 0x17d93) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         216 134230776                                 ; .OnNextRespawnTimeChanged
+        000C  CALL          84135                                         ; FNextRespawnTimeChanged::FNextRespawnTimeChanged
+        0014  SetV8         v2 0xbff0000000000000                       
+        0020  LoadThisR     208 134230776                                 ; this.InternalNextRespawnTime
+        0028  WRTV8         v2                                          
+        002C  PshVPtr       this                                        
+        0030  FinConstruct  UBarracudaPlayerStateComponent              
+        003C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod, meta.Category=Barracuda|PlayerState)
+    bool HasNextRespawnTime() const   // traits=0x24
+    {
+        v2 = this.InternalNextRespawnTime;
+        v4 = 0;
+        v5 = v2 > v4;
+        return v5;
+    }
+    /* ---- HasNextRespawnTime: 12 dwords / 8 instructions (cache offset 0x170ff) ----
+        0000  LoadThisR     208 134230776                                 ; this.InternalNextRespawnTime
+        0008  RDR8          v2                                          
+        000C  SetV8         v4 0x0                                      
+        0018  CMPd          v2 v4                                       
+        0020  TP                                                        
+        0024  CpyRtoV4      v5                                          
+        0028  CpyVtoR4      v5                                          
+        002C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent, meta.Category=Barracuda|PlayerState)
+    void ClearNextRespawnTime()   // traits=0x20
+    {
+        v2 = 13830554455654793216;
+        this.InternalNextRespawnTime = v2;
+        return;
+    }
+    /* ---- ClearNextRespawnTime: 7 dwords / 4 instructions (cache offset 0x1724a) ----
+        0000  SetV8         v2 0xbff0000000000000                       
+        000C  LoadThisR     208 134230776                                 ; this.InternalNextRespawnTime
+        0014  WRTV8         v2                                          
+        0018  RET           2                                           
+    */
+
+    void SetNextRespawnTime(const float64 InNextRespawnTime)   // traits=0x20
+    {
+        this.InternalNextRespawnTime = InNextRespawnTime;
+        this.NextRespawnTimeChanged();
+        return;
+    }
+    /* ---- SetNextRespawnTime: 7 dwords / 5 instructions (cache offset 0x173c3) ----
+        0000  LoadThisR     208 134230776                                 ; this.InternalNextRespawnTime
+        0008  WRTV8         InNextRespawnTime                           
+        000C  PshVPtr       this                                        
+        0010  CALLINTF      84130                                         ; UBarracudaPlayerStateComponent::NextRespawnTimeChanged
+        0018  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, meta.Category=Barracuda|PlayerState)
+    float64 GetNextRespawnTime()   // traits=0x20
+    {
+        v2 = this.InternalNextRespawnTime;
+        return v2;
+    }
+    /* ---- GetNextRespawnTime: 5 dwords / 4 instructions (cache offset 0x1746a) ----
+        0000  LoadThisR     208 134230776                                 ; this.InternalNextRespawnTime
+        0008  RDR8          v2                                          
+        000C  CpyVtoR8      v2                                          
+        0010  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, meta.Category=Barracuda|PlayerState)
+    float64 GetRespawnTimeRemaining()   // traits=0x20
+    {
+        v2 = this.InternalNextRespawnTime;
+        v4 = 0;
+        if (v2 <= v4) {
+            v2 = 13830554455654793216;
+            return v2;
+        } else {
+            v9 = Gameplay::GetServerTime(__WorldContext);
+            v4 = float64(v9);
+            v8 = v4;
+            v2 = this.InternalNextRespawnTime;
+            v4 = v2 - v8;
+            v2 = Math::Max(v4, 4607182418800017408);
+        }
+        return v2;
+    }
+    /* ---- GetRespawnTimeRemaining: 42 dwords / 22 instructions (cache offset 0x1759c) ----
+        0000  LoadThisR     208 134230776                                 ; this.InternalNextRespawnTime
+        0008  RDR8          v2                                          
+        000C  SetV8         v4 0x0                                      
+        0018  CMPd          v2 v4                                       
+        0020  JP            6                                             -> L0040
+        0028  SetV8         v2 0xbff0000000000000                       
+        0034  CpyVtoR8      v2                                          
+        0038  JMP           25                                            -> L00A4
+      L0040:
+        0040  PshGPtr       __WorldContext                              
+        004C  CALLSYS       GetServerTime                               
+        0058  CpyRtoV4      v9                                          
+        005C  fTOd          v4 v9                                       
+        0064  CpyVtoV8      v8 v4                                       
+        006C  PshC8         0x3ff0000000000000                          
+        0078  LoadThisR     208 134230776                                 ; this.InternalNextRespawnTime
+        0080  RDR8          v2                                          
+        0084  SUBd          v4 v2 v8                                    
+        008C  PshV8         v4                                          
+        0090  CALLSYS       Max                                         
+        009C  CpyRtoV8      v2                                          
+        00A0  CpyVtoR8      v2                                          
+      L00A4:
+        00A4  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, meta.Category=Barracuda|PlayerState)
+    int GetRespawnTimeRemainingForDisplay()   // traits=0x20
+    {
+        v1 = this.HasNextRespawnTime();
+        v1 = !v1;
+        if (v1) {
+            v2 = 0;
+            return v2;
+        } else {
+            v5 = Gameplay::GetServerTime(__WorldContext);
+            v8 = float64(v5);
+            v4 = v8;
+            v8 = this.InternalNextRespawnTime;
+            v8 = v8 - v4;
+            v2 = Math::RoundToInt(v8);
+            v11 = Math::Max(v2, 1);
+        }
+        return v11;
+    }
+    /* ---- GetRespawnTimeRemainingForDisplay: 43 dwords / 26 instructions (cache offset 0x17789) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84124                                         ; UBarracudaPlayerStateComponent::HasNextRespawnTime
+        000C  CpyRtoV4      v1                                          
+        0010  NOT           v1                                          
+        0014  CpyVtoR1      v1                                          
+        0018  JLowZ         5                                             -> L0034
+        0020  SetV4         v2 0                                        
+        0028  CpyVtoR4      v2                                          
+        002C  JMP           29                                            -> L00A8
+      L0034:
+        0034  PshGPtr       __WorldContext                              
+        0040  CALLSYS       GetServerTime                               
+        004C  CpyRtoV4      v5                                          
+        0050  fTOd          v8 v5                                       
+        0058  CpyVtoV8      v4 v8                                       
+        0060  PshC4         1                                           
+        0068  LoadThisR     208 134230776                                 ; this.InternalNextRespawnTime
+        0070  RDR8          v8                                          
+        0074  SUBd          v8 v8 v4                                    
+        007C  PshV8         v8                                          
+        0080  CALLSYS       RoundToInt                                  
+        008C  CpyRtoV4      v2                                          
+        0090  PshV4         v2                                          
+        0094  CALLSYS       Max                                         
+        00A0  CpyRtoV4      v11                                         
+        00A4  CpyVtoR4      v11                                         
+      L00A8:
+        00A8  RET           2                                           
+    */
+
+    private void NextRespawnTimeChanged()   // traits=0x28
+    {
+        v2 = this.GetOwner();
+        if (v2 != nullptr) {
+            v4 = cast<ALokiPlayerState@>(v2);
+        } else {
+            v4 = nullptr;
+        }
+        v6 = v4;
+        if (v6 == nullptr) {
+            return;
+        } else {
+            this.OnNextRespawnTimeChanged.Broadcast();
+            v10 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+            if (v10 != nullptr) {
+                v20 = FGameEvent_BarracudaRespawnTimeChanged_PlayerState();
+                v6 = v20.PlayerState;
+                v10.BroadcastEvent(v20, typeid(FGameEvent_BarracudaRespawnTimeChanged_PlayerState), v6);
+            }
+        }
+        return;
+    }
+    /* ---- NextRespawnTimeChanged: 63 dwords / 39 instructions (cache offset 0x17979) ----
+        0000  PshVPtr       this                                        
+        0004  CALLSYS       UActorComponent::GetOwner                   
+        0010  STOREOBJ      v2                                          
+        0014  CmpPtrNull    v2                                          
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1140857146                                    ; ALokiPlayerState@
+        0028  PSF           v4                                          
+        002C  PshVPtr       v2                                          
+        0030  CALLSYS       UObject::opCast                             
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v4                                          
+      L0048:
+        0048  PshVPtr       v4                                          
+        004C  RefCpyV       v6                                          
+        0050  CmpPtrNull    v6                                          
+        0054  JNZ           2                                             -> L0064
+        005C  JMP           37                                            -> L00F8
+      L0064:
+        0064  PshVPtr       this                                        
+        0068  ADDSi         216 134230776                                 ; .OnNextRespawnTimeChanged
+        0070  CALL          84138                                         ; FNextRespawnTimeChanged::Broadcast
+        0078  PshGPtr       __WorldContext                              
+        0084  CALLSYS       GetGlobalGameEventRouter                    
+        0090  STOREOBJ      v10                                         
+        0094  CmpPtrNull    v10                                         
+        0098  JZ            22                                            -> L00F8
+        00A0  PSF           v20                                         
+        00A4  CALLSYS       FGameEvent_BarracudaRespawnTimeChanged_PlayerState::$beh0
+        00B0  PshVPtr       v6                                          
+        00B4  PSF           v20                                         
+        00B8  ADDSi         8 67120881                                    ; .PlayerState
+        00C0  REFCPY                                                    
+        00C4  PopPtr                                                    
+        00C8  PshVPtr       v6                                          
+        00CC  TYPEID        67120881                                      ; FGameEvent_BarracudaRespawnTimeChanged_PlayerState
+        00D4  PSF           v20                                         
+        00D8  PshVPtr       v10                                         
+        00DC  CALLSYS       UGameEventRouterComponent::BroadcastEvent   
+        00E8  PSF           v20                                         
+        00EC  CALLSYS       FGameEvent_BarracudaRespawnTimeChanged_PlayerState::$beh2
+      L00F8:
+        00F8  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnRep_NextRespawnTime()   // traits=0x28
+    {
+        this.NextRespawnTimeChanged();
+        return;
+    }
+    /* ---- OnRep_NextRespawnTime: 4 dwords / 3 instructions (cache offset 0x17b9f) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84130                                         ; UBarracudaPlayerStateComponent::NextRespawnTimeChanged
+        000C  RET           2                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = true;
+        this.SetbReplicates(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 8 dwords / 5 instructions (cache offset 0x17ca0) ----
+        0000  SetV1         v1 1                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       UActorComponent::SetbReplicates             
+        001C  RET           2                                           
+    */
+
+    void ~UBarracudaPlayerStateComponent()   // traits=0x22
+    {
+        this.OnNextRespawnTimeChanged.~FNextRespawnTimeChanged();
+        return;
+    }
+    /* ---- ~UBarracudaPlayerStateComponent: 6 dwords / 4 instructions (cache offset 0x17eb7) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         216 134230776                                 ; .OnNextRespawnTimeChanged
+        000C  CALL          85460                                         ; FNextRespawnTimeChanged::~FNextRespawnTimeChanged
+        0014  RET           2                                           
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+class FNextRespawnTimeChanged
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FNextRespawnTimeChanged()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+    /* ---- FNextRespawnTimeChanged: 7 dwords / 4 instructions (cache offset 0x186b3) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230777                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::$beh0            
+        0018  RET           2                                           
+    */
+
+    FNextRespawnTimeChanged(const FNextRespawnTimeChanged& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+    /* ---- FNextRespawnTimeChanged: 11 dwords / 7 instructions (cache offset 0x18795) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230777                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::$beh0            
+        0018  PshVPtr       Other                                       
+        001C  PshVPtr       this                                        
+        0020  CALL          84137                                         ; FNextRespawnTimeChanged::opAssign
+        0028  RET           4                                           
+    */
+
+    FNextRespawnTimeChanged& opAssign(const FNextRespawnTimeChanged& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+    /* ---- opAssign: 12 dwords / 8 instructions (cache offset 0x1808f) ----
+        0000  PshVPtr       Other                                       
+        0004  ADDSi         0 134230777                                   ; ._Inner
+        000C  PshVPtr       this                                        
+        0010  ADDSi         0 134230777                                   ; ._Inner
+        0018  CALLSYS       _FMulticastScriptDelegate::opAssign         
+        0024  PshVPtr       this                                        
+        0028  PopRPtr                                                   
+        002C  RET           4                                           
+    */
+
+    void Broadcast() const   // traits=0x40024
+    {
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+    /* ---- Broadcast: 20 dwords / 12 instructions (cache offset 0x18141) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230777                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::IsBound          
+        0018  CpyRtoV4      v1                                          
+        001C  NOT           v1                                          
+        0020  CpyVtoR1      v1                                          
+        0024  JLowZ         2                                             -> L0034
+        002C  JMP           6                                             -> L004C
+      L0034:
+        0034  PshVPtr       this                                        
+        0038  ADDSi         0 134230777                                   ; ._Inner
+        0040  CALLSYS       __Evt_ExecuteDelegate                       
+      L004C:
+        004C  RET           2                                           
+    */
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        v2 = __DelegateSignature(this, typeid(FNextRespawnTimeChanged));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+    /* ---- AddUFunction: 17 dwords / 11 instructions (cache offset 0x1828a) ----
+        0000  TYPEID        134230777                                     ; FNextRespawnTimeChanged
+        0008  PshVPtr       this                                        
+        000C  CALLSYS       __DelegateSignature                         
+        0018  STOREOBJ      v2                                          
+        001C  PshVPtr       v2                                          
+        0020  PshVPtr       FunctionName                                
+        0024  PshVPtr       Object                                      
+        0028  PshVPtr       this                                        
+        002C  ADDSi         0 134230777                                   ; ._Inner
+        0034  CALLSYS       _FMulticastScriptDelegate::AddUFunction     
+        0040  RET           6                                           
+    */
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+    /* ---- Unbind: 9 dwords / 6 instructions (cache offset 0x183cd) ----
+        0000  PshVPtr       FunctionName                                
+        0004  PshVPtr       Object                                      
+        0008  PshVPtr       this                                        
+        000C  ADDSi         0 134230777                                   ; ._Inner
+        0014  CALLSYS       _FMulticastScriptDelegate::Unbind           
+        0020  RET           6                                           
+    */
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+    /* ---- UnbindObject: 8 dwords / 5 instructions (cache offset 0x184ad) ----
+        0000  PshVPtr       Object                                      
+        0004  PshVPtr       this                                        
+        0008  ADDSi         0 134230777                                   ; ._Inner
+        0010  CALLSYS       _FMulticastScriptDelegate::UnbindObject     
+        001C  RET           4                                           
+    */
+
+    bool IsBound() const   // traits=0x40024
+    {
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+    /* ---- IsBound: 9 dwords / 6 instructions (cache offset 0x1854d) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230777                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::IsBound          
+        0018  CpyRtoV4      v1                                          
+        001C  CpyVtoR4      v1                                          
+        0020  RET           2                                           
+    */
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+    /* ---- Clear: 7 dwords / 4 instructions (cache offset 0x185ef) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230777                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::Clear            
+        0018  RET           2                                           
+    */
+
+    void ~FNextRespawnTimeChanged()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~FNextRespawnTimeChanged: 7 dwords / 4 instructions (cache offset 0x18896) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230777                                   ; ._Inner
+        000C  CALLSYS       _FMulticastScriptDelegate::$beh2            
+        0018  RET           2                                           
+    */
+
+}
+

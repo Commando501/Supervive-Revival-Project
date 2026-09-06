@@ -15,24 +15,78 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
 
 // Logger writes a human-readable trace of every request to a file and stdout.
 type Logger struct {
-	mu  sync.Mutex
-	f   *os.File
-	seq int
+	mu   sync.Mutex
+	f    *os.File
+	seq  int
+	path string
+	size int64 // current file size, guarded by mu
+	max  int64 // rotate when a write would push size past this; 0 = no cap
 }
 
-// NewLogger opens (appending) the capture log at path.
-func NewLogger(path string) (*Logger, error) {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+// NewLogger opens the capture log at path, starting it FRESH each launch:
+// the previous run's log is kept once as path+".prev" instead of appended to.
+// Appending across launches let the file reach 12.9 GB (2026-07-06), too big
+// to grep or read, which defeats its purpose. maxBytes bounds the file
+// mid-run the same way (rotate to .prev, continue fresh); 0 disables the cap.
+func NewLogger(path string, maxBytes int64) (*Logger, error) {
+	rotate(path)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 	if err != nil {
 		return nil, err
 	}
-	return &Logger{f: f}, nil
+	return &Logger{f: f, path: path, max: maxBytes}, nil
+}
+
+// rotate preserves path as path+".prev" (replacing any older .prev) so the
+// most recent prior traffic stays available after a fresh start.
+func rotate(path string) {
+	if fi, err := os.Stat(path); err != nil || fi.Size() == 0 {
+		return
+	}
+	os.Remove(path + ".prev")
+	os.Rename(path, path+".prev")
+}
+
+// write appends s to the log, rotating first if it would exceed the cap.
+// Rotation keeps the full log as .prev rather than truncating in place: the
+// traffic just captured is usually exactly what an investigation needs, so
+// disk use is bounded at ~2x the cap instead of losing it.
+func (l *Logger) write(s string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.max > 0 && l.size+int64(len(s)) > l.max {
+		l.rotateLocked()
+	}
+	if l.f == nil {
+		return
+	}
+	n, _ := l.f.WriteString(s)
+	l.size += int64(n)
+	l.f.Sync()
+}
+
+func (l *Logger) rotateLocked() {
+	l.f.Close()
+	rotate(l.path)
+	f, err := os.OpenFile(l.path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
+	if err != nil {
+		// stdout still carries the compact trace; don't kill the server over it
+		fmt.Printf("capture: reopen after rotation failed, file logging disabled: %v\n", err)
+		l.f = nil
+		return
+	}
+	l.f = f
+	l.size = 0
+	n, _ := fmt.Fprintf(l.f, "* %s  rotated at size cap; earlier entries in %s.prev\n",
+		time.Now().Format("15:04:05.000"), filepath.Base(l.path))
+	l.size += int64(n)
 }
 
 // Middleware wraps next, logging method/path/query/headers/body and the
@@ -69,10 +123,7 @@ func (l *Logger) Middleware(next http.Handler) http.Handler {
 			fmt.Fprintf(&b, "    body: %s\n", string(body))
 		}
 
-		l.mu.Lock()
-		l.f.WriteString(b.String())
-		l.f.Sync()
-		l.mu.Unlock()
+		l.write(b.String())
 
 		// Compact line to stdout for live watching.
 		fmt.Printf("#%d %s %s -> %d\n", n, r.Method, r.URL.Path, rec.status)
@@ -84,10 +135,7 @@ func (l *Logger) Middleware(next http.Handler) http.Handler {
 // arrive on a long-lived hijacked connection.
 func (l *Logger) Event(format string, args ...any) {
 	line := fmt.Sprintf("\n* %s  %s\n", time.Now().Format("15:04:05.000"), fmt.Sprintf(format, args...))
-	l.mu.Lock()
-	l.f.WriteString(line)
-	l.f.Sync()
-	l.mu.Unlock()
+	l.write(line)
 	fmt.Print(line)
 }
 

@@ -1,0 +1,57 @@
+FK-15 — dsNotif AND the /lobby arrival test — LIVE RESULT, 2026-08-13 15:07-15:09 local
+=======================================================================================
+(log timestamps are UTC = local + 5 h)
+
+WHY dsNotif MATTERS: docs/dedicated-server-stub.md recorded "dsNotice" as ABSENT and
+concluded DS info must ride inside another envelope — which is why probes #3/#5 chose
+matchmakingNotif. The AccelByte v1 token is dsNotif, it IS in the image, and until now
+it had NEVER been sent. This is that frame.
+
+SENT (both on /lobby, via the push console)
+  15:07:59  probe 4  'type: messageNotif\ntopic: fk15-probe\npayload: {"notAField":1}'  61 B
+  15:08:40  dsNotif  'type: dsNotif\nstatus: READY\nip: 127.0.0.1\nport: 7777'          52 B
+
+★ DELIVERY IS CONFIRMED, 2 for 2, TO THE SECOND
+  20:07:59.559  LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::OnMessageReceived
+  20:08:40.768  LogAccelByte: Verbose: AccelByte::AccelByteWebSocket::OnMessageReceived
+  The previous receipt on that category was 09:40:34 — 10.5 h earlier. Two pushes,
+  two receipts, at the exact push seconds. The frames reached the client's SDK.
+
+  ⚠ I had predicted a null would be UNINTERPRETABLE because "LogAccelByteLobby is
+  pinned Warning". That was wrong in a useful way: the user ini currently carries
+  Preset=Gas, which sets LogAccelByte=Verbose, so OnMessageReceived WAS available as
+  a receipt. Check what the ini actually says before declaring an instrument absent.
+
+EFFECT: NONE OBSERVED
+  LogNet lines after the push        0   (the single "LogNet" hit is LogNetVersion from
+                                          09:33 startup — a SUBSTRING match, not a change.
+                                          Baseline used "LogNet:" and the result used
+                                          "LogNet"; comparing them would have manufactured
+                                          a false positive. Count tokens, not substrings.)
+  "7777"                             0
+  NetConnection / PendingNetGame     0
+  Travel                             unchanged (startup lines only)
+  LogAccelByteLobby                  0   (still muted — see below)
+  crashpad handoffs                  0   game and both sockets survived
+
+WHAT THIS DOES AND DOES NOT ESTABLISH
+  ESTABLISHED: dsNotif reaches the client's AccelByte WebSocket layer. It does NOT
+    produce a NetConnection to 127.0.0.1:7777, and does not crash or disturb the menu.
+  NOT ESTABLISHED: whether it reached Lobby::OnMessage and was dispatched. The line
+    that settles it is 'Type: %s' (site .text 0x04B0B12B) on LogAccelByteLobby, which
+    needs VeryVerbose. The ini has Preset=Gas, which does not include it.
+  ⇒ The remaining question is now NARROW and precisely stated: does the lobby
+    dispatcher route dsNotif, and does anything bind its delegate? Not "does push work"
+    — that is answered.
+
+★ BONUS, two-channel model confirmed by an absence that makes sense:
+  691 messenger TEXT hb replies produced ZERO OnMessageReceived, while both /lobby
+  pushes produced one each. The receipt belongs to the ACCELBYTE socket only;
+  UMessengerManager is a separate Theorycraft class that logs to LogMessenger. Exactly
+  as the two-channel RE predicted.
+
+NEXT (one launch, and it is now the ONLY thing blocking a clean answer)
+  configs/set-log-verbosity.ps1 -Preset Ws   (LogAccelByteLobby=VeryVerbose + friends)
+  then relaunch and re-push dsNotif. 'Type: dsNotif' printing = routed; absent = the
+  frame never reached OnMessage. Either way it is decisive, and the push console makes
+  the re-push a button press.

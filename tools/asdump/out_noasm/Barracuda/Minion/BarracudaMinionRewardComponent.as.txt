@@ -1,0 +1,197 @@
+// ============================================================================
+//  MODULE   Barracuda.Minion.BarracudaMinionRewardComponent
+//  SOURCE   Barracuda/Minion/BarracudaMinionRewardComponent.as
+//  CONTENT  1 class(es), 11 function(s), 1 enum(s), 1 global(s), 1040 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+enum EBarracudaMinionGoldRewardMethod
+{
+    LastHitterOnly = 0,
+    SplitBetweenLastHitterTeam = 1,
+}
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaMinionRewardComponent;
+
+UBarracudaMinionRewardComponent@ UBarracudaMinionRewardComponent()   // traits=0x20
+{
+    UBarracudaMinionRewardComponent v2;
+
+    v2 = UBarracudaMinionRewardComponent();
+    return v2;
+}
+
+UClass@ UBarracudaMinionRewardComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaMinionRewardComponent);
+    return v2;
+}
+
+UBarracudaMinionRewardComponent@ UBarracudaMinionRewardComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaMinionRewardComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaMinionRewardComponent, v2, typeid(UBarracudaMinionRewardComponent@), WithName);
+    return v2;
+}
+
+UBarracudaMinionRewardComponent@ UBarracudaMinionRewardComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaMinionRewardComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaMinionRewardComponent, v2, typeid(UBarracudaMinionRewardComponent@), WithName);
+    return v2;
+}
+
+UBarracudaMinionRewardComponent@ UBarracudaMinionRewardComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaMinionRewardComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaMinionRewardComponent, v2, typeid(UBarracudaMinionRewardComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class UBarracudaMinionRewardComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaMinionRewardComponent
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults)
+    EBarracudaMinionGoldRewardMethod GoldRewardMethod;
+    UPROPERTY(BlueprintReadable)
+    bool bGrantLoot;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    int LastHitGoldBonus;
+
+    UBarracudaMinionRewardComponent()   // traits=0x21
+    {
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void DisableAllRewards()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = false;
+        this.bGrantLoot = v1;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    int GetGoldBounty(AController@ KillerController)   // traits=0x20
+    {
+        ALokiMinionCharacter v2;
+        AActor v4;
+        ALokiMinionCharacter v6;
+        FMinionRewards v14;
+        auto v15;
+        float32 v16;
+        int v17;
+
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 != nullptr) {
+            v14 = FMinionRewards();
+            v16 = v2.GetLevel();
+            v17 = Math::RoundToInt(v16);
+            v2.GetRewardsForLevel(v17, v14);
+            v15 = v14.Gold;
+            return v15;
+        } else {
+            v15 = 0;
+        }
+        return v15;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    int GetXPBounty(AController@ KillerController)   // traits=0x20
+    {
+        ALokiMinionCharacter v2;
+        AActor v4;
+        ALokiMinionCharacter v6;
+        FMinionRewards v14;
+        float32 v15;
+        int v16;
+
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 != nullptr) {
+            v14 = FMinionRewards();
+            v15 = v2.GetLevel();
+            v16 = Math::RoundToInt(v15);
+            v2.GetRewardsForLevel(v16, v14);
+            v16 = v14.XP;
+            return v16;
+        } else {
+            v16 = 0;
+        }
+        return v16;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    int GetLastHitGoldBounty(AController@ KillerController)   // traits=0x20
+    {
+        ALokiMinionCharacter v2;
+        AActor v4;
+        ALokiMinionCharacter v6;
+        FMinionRewards v14;
+        float32 v15;
+        int v16;
+
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 != nullptr) {
+            v14 = FMinionRewards();
+            v15 = v2.GetLevel();
+            v16 = Math::RoundToInt(v15);
+            v2.GetRewardsForLevel(v16, v14);
+            v16 = v14.Gold;
+            return v16;
+        } else {
+            v16 = 0;
+        }
+        return v16;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        auto v3;
+
+        v1 = true;
+        this.bGrantLoot = v1;
+        v2 = 0;
+        this.LastHitGoldBonus = v2;
+        v3 = false;
+        this.GoldRewardMethod = v3;
+        return;
+    }
+
+}
+

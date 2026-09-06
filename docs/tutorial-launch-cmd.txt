@@ -1,0 +1,66 @@
+# tutorial_launch.dll reads the FIRST non-comment, non-blank line below as the console
+# command it force-issues via the ProcessInternal primitive. Lines starting with '#' (or
+# '//') and blank lines are ignored. Edit this file + REINJECT (no rebuild needed):
+#   tools\inject\inject.exe mmap SUPERVIVE-Win64-Shipping.exe tools\sigbypass-mod\tutorial_launch.dll
+# If this file is absent/empty, the DLL falls back to the KNOWN-GOOD BasicTraining render
+# (loads the island, never crashes) — see kDefaultCommand in tutorial_launch.cpp.
+#
+# GOAL: a PLAYABLE tutorial. Static S61 finding: LVL_Tutorial's intended DefaultGameMode is
+# BP_LokiGameMode_Tutorial (full machinery: BotSpawner/DropPlane/DeathCircle/ShopKeepers/
+# TutorialObjectives + LokiGameState). BasicTraining is a stock GameModeBase stub (no hero,
+# no game state). The wall is native ALokiGameMode::Login rejecting the force-open ("failed
+# to Login"). The candidates below are the CHEAP URL-option sweep to see if Login is
+# satisfiable by options (LOW-MEDIUM confidence — a Loki session/registration gate probably
+# is NOT URL-satisfiable; if all crash the same way, the real fix is the native Login-approve
+# shim / root-causing why native TryStartSoloMode bails — both need a live RE session).
+#
+# ---- RESULTS LOG ----
+# [S61 2026-07-10, LIVE] URL-OPTION SWEEP COMPLETE — ALL RULED OUT. Every candidate traveled, brought the
+#   world up (Game class BP_LokiGameMode_Tutorial_C), then hit the IDENTICAL fatal at the LOCAL PLAYER LOGIN
+#   step (SpawnPlayActor->GameMode->Login): "ALokiGameMode::Login failed to Login" (UnrealEngine.cpp:15551).
+#   InitGame/world-up always SUCCEEDS; only the player login is rejected, invariant to URL options =>
+#   the gate is a native Loki session/registration check, NOT URL-satisfiable. Tested:
+#     ?Name=Player                  -> fatal
+#     ?Name=Player?Team=0           -> fatal
+#     ?Name=Player?SplitscreenCount=1 -> fatal
+#   NEXT = native Login-approve shim (repoint ALokiGameMode's C++ vtable Login slot to engine
+#   AGameModeBase::Login, or patch its prologue to Super). See docs/session-61-tutorial-match-setup.txt.
+#
+# ---- NATIVE LOGIN-APPROVE ATTEMPT (S61) — vtable slot-176 patch FAILED, see results log below ----
+# The shim's built-in transient patch (PatchLoginVtables) swaps slot 176 strict->stock in the match-mode
+# vtables right before force-open. Confirmed applied (5/5, verified stayed stock, revertObserved=0) yet the
+# tutorial STILL crashed in strict ALokiGameMode::Login => slot 176 is NOT the login dispatch (the earlier
+# menu-vs-match correlation was coincidental) OR instances use a packer-shadowed vtable. The real strict-Login
+# page (base+0x560AFE0) is packer-hidden: never readable cross-thread even during travel (re-encrypting packer),
+# and the process Fatal-crashes ~2s after force-open, so it can't be captured externally or in-shim. Native
+# Login-approve is parked pending a deeper packer strategy (see docs/session-61-tutorial-match-setup.txt).
+#
+# ---- LOGIN CRACKED (S61): Login = GameMode C++ vtable SLOT 285. The shim's PatchLoginVtables de-overrides
+# slot 285 in the match vtables to stock AGameModeBase::Login (kOverrideSlots={285}), which BYPASSES the login
+# reject. Full-mode force-open then advances to a NEW gate: "PlayerState is null" (still a crash, next frontier).
+# To resume PlayerState work: set the active line to the full tutorial mode below + inject the shim.
+# ---- LOGIN CRACKED + PlayerState gate reached (S61). Login = GameMode C++ vtable SLOT 285; the shim's
+# PatchLoginVtables de-overrides it (kOverrideSlots={285}) to bypass the login reject. Full-mode force-open then
+# reaches "PlayerState is null" (the match-setup/session layer — see docs/session-61-tutorial-match-setup.txt).
+# To resume: set the active line to the full tutorial mode below + inject.
+# ---- ACTIVE LINE (S63): FULL tutorial mode. Login bypassed (slot-285 de-override) AND "PlayerState is
+#      null" SOLVED — the shim (FIX_TARGETED_INITPS) de-overrides the Loki PC's InitPlayerState (vtable
+#      slots 260+273) so BP_LokiPlayerController_Dev_C creates its BP_LokiPlayerState locally; login is
+#      APPROVED with the REAL Loki PC. The tutorial then runs + fires "Client is ready to play", then
+#      REVERTS to the lobby ("failed to get ULokiServerPlatformInstance" — the server-side match-
+#      orchestration gate; NOT backend-driven). Next frontier: make it STAY. See
+#      docs/session-63-playerstate-fix.txt + docs/next-session-prompt-s64.md. ----
+open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C
+# safe BasicTraining render (stock stub: loads island, spectator, never crashes):
+# open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_GameMode_BasicTraining.BP_GameMode_BasicTraining_C
+#
+# ---- RULED-OUT full-mode candidates (S61) ----
+# open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C?Name=Player
+# open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C?Name=Player?Team=0
+# open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C?Name=Player?SplitscreenCount=1
+# full mode + name + single local player hint:
+# open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C?Name=Player?SplitscreenCount=1
+# full mode, bare (S60 crash baseline — reproduces "ALokiGameMode::Login failed to Login"):
+# open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C
+# KNOWN-GOOD baseline (stock stub: loads + renders island, spectator at origin, no hero):
+# open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_GameMode_BasicTraining.BP_GameMode_BasicTraining_C

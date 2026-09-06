@@ -1,0 +1,203 @@
+FK-15 PROBE 3 — TARGETED PER-RESOURCE RESYNC — LIVE RESULT, 2026-08-13
+======================================================================
+
+CLAIM UNDER TEST: a pushed {"Resource":X,"Version":N,"Payload":""} frame makes the
+client re-issue the HTTP GET for X, with NO socket teardown.
+
+EXPERIMENTAL DESIGN — picking an attributable observable
+--------------------------------------------------------
+First measured which resources are POLLED vs RESYNC-ONLY, because a fetch after a
+push proves nothing if the client was going to fetch anyway. Over a 10-minute window:
+
+  /mailbox/config          POLLED every ~90s      -> unusable as a signal
+  /progression/players     3 moments only         -> resync-only
+  /inventory/players       3 moments only         -> resync-only
+  /mmr/player-ratings      3 moments only         -> resync-only
+  /match-history/players   3 moments only         -> resync-only
+  /party/parties           3 moments only         -> resync-only
+
+Those three moments were 03:53:13, 03:53:15 (two ags-restart reconnects) and
+03:58:50 (a deliberate admin drop). i.e. they fire ONLY on a messenger resync.
+A fetch with the connect-count unchanged is therefore unambiguous.
+
+RESULT A — /match-history/players, Version 7                        ★ CONFIRMED
+--------------------------------------------------------------------
+  push  04:06:31
+  GET   04:06:31.491   <- 491 ms later
+  messenger connects: 3 -> 3   (NO reconnect)
+  prior fetches of this resource: only the 3 resync moments
+=> One pushed frame caused a targeted client refetch with the socket kept up.
+
+RESULT B — /party/parties/party-<id>, Version 3                     IGNORED
+--------------------------------------------------------------------
+  no fetch at all. NOT a mechanism failure — the version gate working.
+  partyVer is seeded `time.Now().UnixMilli()` (~1.76e12, store.go:141), so the
+  client had long since cached a vastly larger version and 3 could not beat it.
+
+RESULT C — /party/parties/party-<id>, Version = now-millis      ⚠ REFETCH LOOP
+--------------------------------------------------------------------
+  push  04:10:49
+  GET   04:10:49.156, .270, .323, .388, .454, .521, .587, .658, ... 
+  46 fetches in ~4 s (~one per 70 ms) and NOT self-limiting.
+  messenger connects: 3 -> 3 (so the mechanism is confirmed a second time —
+  but pathologically).
+  CAUSE: pushed version > the version buildSoloParty actually serves. The client
+  caches the pushed value, refetches, receives a LOWER version, still considers
+  itself stale, and asks again forever.
+  CLEARED BY: restarting ags, which reseeds partyVer = now-millis (1786612281493)
+  above the poisoned cache (1786612248814). Post-restart: 1 fetch, no loop.
+
+THE RULE THIS ESTABLISHES
+-------------------------
+Pass the version the HTTP document will carry — NEITHER MORE NOR LESS.
+  too low  -> silently ignored, and the null is indistinguishable from
+              "the client does not handle this resource"
+  too high -> unbounded refetch loop
+The shipped lever is correct by construction: notifyPartyResources() passes
+interactive.Service.PartyVersion(), the same counter buildSoloParty is served with.
+The loop above was caused by a MANUAL probe using a wall-clock value instead.
+
+WHAT IS AND IS NOT PROVEN
+-------------------------
+PROVEN: a pushed version bump causes a targeted refetch, no teardown, sub-second.
+NOT PROVEN: that the client APPLIES the refetched party document. S85 measured the
+avatar card applying during the messenger-RECONNECT resync; the apply may be bound
+to the connection-state-changed broadcast rather than to a fetch completing.
+=> lobby.enableTargetedResync ships DEFAULT OFF. Flipping it needs one live check:
+   set it true, change an avatar, confirm the CARD updates (not merely that
+   GET /party/parties appears — that half is already proven above).
+
+
+==========================================================================
+ADDENDUM — THE AVATAR-APPLY CHECK WAS ATTEMPTED AND IS **INCONCLUSIVE**
+(2026-08-13 04:23-04:27). enableTargetedResync REVERTED TO false.
+==========================================================================
+
+WHAT WAS RUN
+  enableTargetedResync = true, deployed. Then two skin changes via the real
+  client-facing route POST /personalization/players/{id}/cosmeticsbundle
+  (Hero:reshealer): Default_ENC -> GuardianAngel -> CombatMedic.
+
+BACKEND HALF: FLAWLESS
+  TARGETED RESYNC events   0 -> 2      (the push path ran, not the drop)
+  messenger DROP events    0 -> 0      (no teardown)
+  messenger connects       1 -> 1      (no reconnect)
+  GET /party/parties       1 -> 3      (client refetched, twice)
+  GET /party/players      10 -> 15
+  messenger uptime      306s -> 533s   (continuous across both changes)
+  Both NOTIFY frames sent per change, versions from PartyVersion().
+
+VISUAL HALF: NO CHANGE — AND THE OBSERVABLE WAS INVALID
+  Three screenshots (baseline, after GuardianAngel, after CombatMedic) are
+  IDENTICAL per the operator.
+
+  ⚠ I initially reported that the model HAD changed, citing a "new chest
+  pendant" and "different shoulders". THAT WAS WRONG. Screenshot 1 was a
+  1220x719 window and 2-3 were 1458x854; I read extra detail visible at the
+  larger scale as a garment change. Corrected by the operator. Arguing a
+  result from subtle detail in differently-scaled images is not evidence.
+
+  ROOT CAUSE OF THE INVALID TEST, from the wire:
+    GET /revival/loadout   = 0   <- the loadout_fix shim is NOT INJECTED
+    GET /personalization   = 0   <- the client re-reads its loadout NEVER
+    all shim markers date 2026-08-05..08-07; this game session started 08-12.
+  The podium hero's skin is applied by tools/sigbypass-mod/loadout_fix.cpp
+  replaying equips through native calls on menu load. With no shim loaded,
+  NO backend skin change can render, by ANY resync mechanism. The podium is
+  not driven by PartyMember.PersonalizationLoadout at all.
+
+  ⇒ CONTROL ARM, answered from the wire without needing a screenshot: a plain
+  socket DROP (S85's known-working path) was fired while the stored bundle
+  differed from the rendered one. It produced a real reconnect (connects
+  1 -> 2) and a full resync (GET /party/parties -> 4) — and still could not
+  have rendered anything, for the same reason. So the null belongs to the
+  OBSERVABLE, not to the targeted-push mechanism.
+
+STATUS
+  PROVEN (probe 3):    a pushed version bump causes a targeted client refetch,
+                       sub-second, with no teardown. Unchanged by the above.
+  PROVEN (this run):   the client RECEIVES the new loadout — /party/parties
+                       was refetched and that document carries
+                       personalizationLoadout.
+  STILL UNPROVEN:      that the client APPLIES it from a targeted refetch.
+  ⇒ enableTargetedResync is BACK TO false. It ships off until the apply is
+    demonstrated, exactly as its comment requires.
+
+HOW TO FINISH IT PROPERLY (any one of these)
+  1. Launch WITH the shim set (configs/launch-redirect.ps1, not -NoHook) so
+     loadout_fix is present, then repeat. Cheapest.
+  2. Equip an AVATAR slot cosmetic first, so the PARTY panel's avatar square
+     has something to render — that square is the element S85 actually
+     measured, and it was blank/grey in all three screenshots, i.e. it could
+     never have shown a change.
+  3. Read the live party model by RPM instead of by eye (tools/re/*.py), which
+     removes the screenshot from the loop entirely.
+
+LESSON (method-rules §1 candidate)
+  An observable must be shown to be CAPABLE of moving before a null from it
+  means anything. The podium skin required a client-side shim that was not
+  loaded; its silence was guaranteed in advance, and no amount of correct
+  server-side work could have changed it. Check that the needle can move
+  BEFORE running the experiment — a "positive control" applies to the display
+  path, not just to the measuring instrument.
+
+
+==========================================================================
+★★★★★ RESOLVED — THE APPLY IS PROVEN. enableTargetedResync = TRUE, SHIPPED.
+(2026-08-13 04:31-04:41, relaunched WITH the full shim set)
+==========================================================================
+
+THE FIX TO THE PREVIOUS ATTEMPT: pick an observable the shim CANNOT touch.
+  loadout_fix.cpp calls exactly three setters — SetHeroCosmeticsBundlePreference,
+  SetLuxeSkinChromaPreference, SetSlotCosmetic — and it polls /revival/loadout
+  every ~175 ms. So ANY skin/slot change is applied by the shim within ~200 ms
+  and cannot discriminate. `grep -ci lobbyplatform loadout_fix.cpp` = **0**, while
+  loadout.go:411 puts `lobbyPlatformPreference` INSIDE the party document.
+  => the LOBBY PLATFORM (the podium under the hunter) is carried by the party doc
+     and is invisible to the shim. That is the clean observable.
+
+DESIGN — state change and push were separated on purpose:
+  handleSetLobbyPlatform (interactive.go:247) bumps LoadoutVersion but does NOT
+  call markLoadoutDirty. So changing the podium changes BACKEND STATE ONLY and
+  fires no push — giving a free control arm. The push was then triggered
+  separately with a no-op slot write (slot "FK15Probe", empty asset => deletes a
+  key that does not exist), which reaches markLoadoutDirty and carries the real
+  PartyVersion().
+
+THE ROUND-TRIP (operator-confirmed screenshots)
+  A  podium CYAN/BLUE   backend already LobbyPlatform:Collector, NO push fired
+                        TARGETED RESYNC 3, GET /party/parties 3
+     => a backend change alone moves nothing. Client provably unaware.
+  B  podium GOLD        push fired: TARGETED RESYNC 3->4, /party/parties 3->4
+     => refetched AND APPLIED.
+  C  podium CYAN/BLUE   reverted to Starter + push: RESYNC 4->5, parties 4->5
+     => applied again, in reverse.
+
+  Throughout: messenger DROP = 0, connects = 1, socket uptime continuous.
+  BLUE -> GOLD -> BLUE on command. No rendering coincidence or reading error
+  produces that sequence.
+
+CONCLUSION
+  A targeted per-resource version bump on the messenger causes the client to
+  REFETCH and APPLY the party document, with NO socket teardown.
+  => enableTargetedResync stays TRUE. MarkDirty no longer drops the socket.
+  => S85's socket-drop lever is RETIRED (kept as the fallback when no version
+     source or no live messenger is available).
+  => lobby.go's note that the "~1 s reconnect floor is not backend-controllable"
+     is OBSOLETE: there is no reconnect at all now.
+
+⚠ HONEST NOTE ON THE READING
+  On the FIRST run I claimed the hero skin had changed between two screenshots;
+  it had not — I read extra detail visible at a larger window size as a garment
+  change, and the operator corrected me. On THIS run the operator initially read
+  A/B as identical (watching the skin, which genuinely did not change) and I
+  flagged the podium colour shift. Rather than argue the image, the round-trip
+  was run as a tiebreaker and settled it objectively. THAT is the procedure to
+  copy: when two readings of a screenshot disagree, do not debate the pixels —
+  construct a reversible change and drive it back and forth.
+
+⚠ INCIDENTAL OBSERVATION, NOT CHASED
+  The rendered hunter outfit in this session does not match the stored bundle
+  (stored HeroCosmeticsBundle:ResHealerDefault_ENC; screen shows a green/pink
+  outfit). loadout_fix commits its own StyleScreen selection, so the two can
+  diverge. Worth a look independently of FK-15.

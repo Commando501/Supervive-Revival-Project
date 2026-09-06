@@ -1,0 +1,33 @@
+﻿base=0x7FF632800000
+num objects = 197988
+
+=== AS candidate object presence (live count per name) ===
+  LokiDropShip                             LIVE  count=1  (ASClass=1)
+  LokiDropPod                              LIVE  count=1  (ASClass=1)
+  LokiRespawnComponent                     LIVE  count=1  (ASClass=1)
+  LokiGem                                  LIVE  count=1  (ASClass=1)
+  FFABotSpawnerComponent                   LIVE  count=1  (ASClass=1)
+  LokiTutorialGameMode                     LIVE  count=1  (Class=1)
+  LokiCarry                                NOT LIVE  (0 instances)
+  LokiDropInGameMode                       LIVE  count=1  (Class=1)
+  LokiSpawner_Basics                       NOT LIVE  (0 instances)
+  BP_LokiSpawner_Basics                    NOT LIVE  (0 instances)
+  BP_Tutorial_JouleBotManager              NOT LIVE  (0 instances)
+  JouleBot                                 NOT LIVE  (0 instances)
+  LokiBarracuda                            NOT LIVE  (0 instances)
+  LokiBarracudaGameMode                    NOT LIVE  (0 instances)
+  LokiFFA                                  NOT LIVE  (0 instances)
+  LokiFFAGameMode                          NOT LIVE  (0 instances)
+  LokiFFAGameState                         NOT LIVE  (0 instances)
+  LokiDominationGameMode                   NOT LIVE  (0 instances)
+  LokiDomination                           NOT LIVE  (0 instances)
+  LokiArmory                               NOT LIVE  (0 instances)
+  LokiAirship                              LIVE  count=1  (Class=1)
+  SpawnDropPodForTeam                      LIVE  count=1  (ASFunction_NotThreadSafe_JIT=1)
+  Respawn                                  LIVE  count=1  (ASFunction_NotThreadSafe_JIT=1)
+  SpawnBot                                 LIVE  count=1  (Function=1)
+  BeginPlay                                LIVE  count=1  (Function=1)
+  InitializeDropPod                        NOT LIVE  (0 instances)
+  AuthPlayerEnterWorld                     LIVE  count=1  (Function=1)
+
+13/27 AS candidate names have LIVE instances at 12h uptime tutorial world

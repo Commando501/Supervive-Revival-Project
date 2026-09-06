@@ -1,0 +1,237 @@
+S147 MOVE 3 FLIGHT 1 — PRE-REGISTERED PREDICTIONS
+==================================================
+Written BEFORE launch, per the S147 Move-3 workflow's decision report.
+Do NOT edit after the flight; add a post-flight results section instead.
+
+Purpose
+-------
+Discriminate the two live WALL P hypotheses that offline analysis could not:
+  H1  the valid-handle downstream body under InternalTryActivateAbility triggers
+      the protector kill (0xDEAD ~51 s after activation) -- inference from two
+      DARK pages 0x446bc60 and 0x4480b30 on the valid-arm path.
+  H2  input never reaches the BP K2Node -- either (H2a) BP bind never
+      installed, or (H2b) ASC delegate consumed the action before BP could see
+      it.
+
+Move 3 is one live flight with a SINGLE-VARIABLE add over the S147 flight-5
+arm: KBFBINDCENSUS=1 adds READ-ONLY sampling of the PlayerController's
+InputComponent -> ActionBindings TArray + FsDisarm phase-transition heartbeat.
+Zero new activation calls; zero module-image writes.
+
+Artifact
+--------
+  build            : tools/sigbypass-mod/build/tutorial_launch_botfight_castalive_dash_mana10_cdocharge1_naturalinput_bindcensus.dll
+  .text sha256[:16]: RAW=f07e45f3c81cf948  VSIZE=c4f0845ba3cc2dda
+  file size        : 264,192 bytes
+  imports          : KERNEL32.dll (84), USER32.dll (1)
+  verify_dll.py    : PASS (no C++ exception machinery, no CRT import)
+  --dupes          : the bindcensus variant is NOT in any duplicate group (unique)
+  build.ps1 flags  : -DKRUNMODE=RM_BOTFIGHT -DKFSNAME="" -DKFRAMEINIT=1
+                     -DKFAULTINFO=1 -DKOUTPARMRET=1 -DKBFARMS=0xCE
+                     -DKBFABIL="Ability3" -DKBFCHARGES=1 -DKBFGATES=1
+                     -DKBFMANA=10 -DKBFCANACT=2 -DKBFCDOCHARGES=1
+                     -DKBFINPUTID=5 -DKBFNATURALINPUT=1
+                     -DKBFNATURALMS=30000 -DKBFNATURALPRESETUPMS=60000
+                     -DKBFBINDCENSUS=1 -DKBFBINDCENSUS_AB_OFF=0xd0
+
+AB_OFF pinned  = 0xd0  [M]
+  -- offline disassembly of UInputComponent::InternalConstructor at RVA 0x3616740:
+     `mov qword ptr [rbx + 0xd0], rax` zero-initializes ActionBindings.Data.
+     Positive control at the 4-qword thinner ctor 0x3616e30 confirms ActionBindings
+     and AxisBindings are the FIRST TWO TArrays in the class layout. Matches stock
+     UE 5.4's expected 0xa0..0x100 range.
+STRIDE + NAMEOFF  = UNPINNED  [S]
+  -- FInputActionUnifiedDelegate size (drives stride) is not offline-derivable.
+     Per-entry name matching for "Ability3" / "Toggle Map" is compiled OUT. The
+     census emits only TArray METADATA (num/max shape) -- which is enough for the
+     H2a discriminator via Num counts alone.
+
+Byte-identity audit (verified post-edit)
+----------------------------------------
+Every recorded regression gate reproduces byte-identical after the KBFBINDCENSUS
+scaffolding was added:
+    botai              5e47c13cf7f0a158  MATCH
+    play               9bc10a4552c596e1  MATCH
+    dropplane_b1only   dcb19157cf45f9aa  MATCH
+    droppod-pe-cdopoke 283c1692a2135680  MATCH
+    dismount           0fe6d7ae1f26e16b  MATCH
+    dismount-landstart 62f257c191027ee3  MATCH
+    mount-ride         9b7f88af3210c438  MATCH
+    mount-descend      c26e8831f45d7548  MATCH
+    mount-phaseb       d69642beacc5e7a8  MATCH
+    droplandplay       157795de805b8fbc  MATCH
+The S147 flight-5 arm `naturalinput` (which the bindcensus variant is layered
+over) has its own new digest RAW=366e8ef09afa8cb9 -- this variant was not
+previously gated so no earlier value exists to compare against, but the
+DIFFERENCE between it and `naturalinput-bindcensus` (RAW=9c699bd89453daf8) is
+the sole intended delta and demonstrates the A/B is single-variable.
+
+What the metadata-only census answers with just AB_OFF pinned
+------------------------------------------------------------
+With AB_OFF=0xd0 pinned but STRIDE/NAMEOFF unpinned, the census reads:
+  [BIND][initial-pc]   ic=<addr> AB@0xd0 data=<addr> num=N max=M
+  [BIND][initial-pawn] ic=<addr> AB@0xd0 data=<addr> num=N max=M
+This is enough to distinguish:
+  * PAWN has bindings (Num > 0)  vs  PAWN has none (Num == 0)
+  * PC   has bindings (Num > 0)  vs  PC   has none (Num == 0)
+The H2a case ("BP never wired") is decided by "PAWN Num > 0 AND PC Num == 0".
+The H2b case ("ASC consumed first") requires the per-entry `bConsumeInput`
+byte, which needs STRIDE + NAMEOFF pinned live. If Move 3's metadata reads
+land inconclusive between H2a and H2b, one live-process RPM pass suffices
+to derive STRIDE / NAMEOFF for a follow-up flight -- see "Case A" below.
+
+Flight prerequisites
+--------------------
+* ELEVATED PowerShell.
+* Steam running before launch.
+* server/internal/interactive/interactive.go `forceTutorialMatch = true`
+  (already set).
+* Fresh docs/capture.log (use `.\configs\launch-redirect.ps1 -ResetCapture`,
+  or ensure the S149 gate is running -- the Move 2 capture-gate.ps1 handles
+  this automatically when the flight helper passes -ResetCapture through).
+
+Flight recipe
+-------------
+    # Terminal 1 (elevated PowerShell). Steam must be running.
+    cd "G:\git\Supervive Revival Project"
+    # -ResetCapture applies the S149 fix (archives stale capture.log, stamps a fresh one)
+    $env:AGS_CAPTURE_LABEL = 'move3-flight1'
+    .\configs\launch-redirect.ps1 -NoHook -ResetCapture
+
+    # Terminal 2 (elevated PowerShell), once the game process appears.
+    # Stage the world with gft + fo + sp, then inject the bindcensus arm:
+    .\configs\fk24-stage.ps1 `
+      -Probe tools\sigbypass-mod\build\tutorial_launch_botfight_castalive_dash_mana10_cdocharge1_naturalinput_bindcensus.dll `
+      -Label move3-flight1 -AllowStale
+
+    # Terminal 3: run the S147 natural-input helper (drives Tab+Tab then LeftShift hold).
+    #   Or, if the flight helper is not run automatically, manually:
+    #     - Wait for `[S147] READY FOR INPUT` in docs/tutorial-launch-marker.txt
+    #     - Press Tab, wait 1s, press Tab again  (positive control -- flight 5 saw 2x)
+    #     - Hold LeftShift for 350 ms
+
+Per-hit sample fields (what the marker file will contain)
+---------------------------------------------------------
+Pre-existing [S147][*] lines still emit. New lines added by KBFBINDCENSUS:
+
+  [BIND] resolved pc=0x<addr> pawn=0x<addr> (BP_HERO_*)
+    -- one-time at worker-ready; if pc=NULL AND pawn=NULL the whole census is void.
+    -- if ONLY one is null, the OTHER's census still runs (asymmetric answers are useful).
+
+  [BIND][initial-pc]   ic=0x<addr> AB@0xd0 data=0x<addr> num=N max=M
+  [BIND][initial-pawn] ic=0x<addr> AB@0xd0 data=0x<addr> num=N max=M
+    -- baseline InputComponent state on PC and pawn BEFORE any input arrives.
+    -- ic=NULL means that actor has no InputComponent bound; the census skips it.
+    -- num=N max=M is the DECISIVE data for the H2a discriminator.
+
+  [FS][HB] tag=worker-ready phase=0 qpc=... ageMs=... calls=... swapped=...
+    -- one-time when the sampling loop enters.
+  [FS][HB] tag=worker-tick phase=0 qpc=... ageMs=... calls=... swapped=...
+    -- periodic (KBFBINDCENSUS_HBMS=500 ms) throughout the sampling window.
+  [FS][HB] tag=FsDisarm-enter phase=1 ...       -- FsDisarm just started.
+  [FS][HB] tag=FsDisarm-done phase=2 ...        -- FsDisarm completed cleanly.
+  [FS][HB] tag=FsDisarm-fault phase=3 ...       -- FsDisarm SEH-caught (only
+                                                    reachable via BfS149FsDisarmGuarded,
+                                                    which does not wrap FsDisarm
+                                                    under KBFNATURALINPUT; so this
+                                                    line is NOT expected on this arm).
+
+  [BIND][sample-pc]   ...
+  [BIND][sample-pawn] ...
+    -- ActionBindings censuses re-run on each sample-log transition. Catches
+       bindings that get installed dynamically in response to key presses (e.g.
+       a delegate that binds on first activation).
+
+Pre-registered outcome mapping (decisive on H2a; ambiguous H2b vs H1 without STRIDE)
+-----------------------------------------------------------------------------------
+The decisive PAWN vs PC comparison uses the Num field from AB@0xd0+0x8. All four
+cases below key off (PAWN Num, PC Num) at the "initial" (pre-input) and "sample"
+(post-input) censuses.
+
+CASE A -- INSTRUMENT VOID.
+  [BIND] resolved pc=NULL AND pawn=NULL, OR every subsequent census returns
+  ic=NULL / shape-fail / SEH.
+  ==> Do NOT interpret any counts. Retry with a different lookup strategy
+      (e.g. resolve pc via GameInstance->LocalPlayers, or pawn via
+      pc->AcknowledgedPawn); OR the AB_OFF pin is wrong (unlikely -- direct
+      byte read from the ctor).
+
+CASE H2a -- BP NEVER WIRED. [DECISIVE with just AB_OFF]
+  PAWN Num >= 1 (initial or sample) AND PC Num == 0 throughout.
+  ==> The BP K2Node `InpActEvt_Ability3_K2Node_InputActionEvent` is not
+      installed on the PC's InputComponent. The ASC delegate on the pawn is
+      the only Ability3 consumer -- input never reaches BP by design in
+      this build. S147's "BP hit count 0" is trivially explained; not a
+      coverage gap. WALL P residual is not an input problem.
+
+CASE BOTH-WIRED -- H2b OR H1. [AMBIGUOUS without per-entry walk]
+  Both PAWN Num >= 1 AND PC Num >= 1.
+  ==> Both consumers exist. Whether ASC consumed first (H2b) or downstream
+      code killed after both saw input (H1) requires reading the pawn-side
+      Ability3 binding's `bConsumeInput` byte -- STRIDE + NAMEOFF must be
+      pinned. FOLLOW-UP: derive STRIDE via live scan (walk PAWN's ActionBindings
+      data with candidate strides {0x50,0x58,0x60,0x68,0x70}; the stride that
+      produces `Num` valid FName ComparisonIndex values is correct); then
+      rebuild with -DKBFBINDCENSUS_STRIDE=0x?? -DKBFBINDCENSUS_NAMEOFF=0x??
+      and re-fly.
+
+CASE NEITHER-WIRED.
+  PAWN Num == 0 AND PC Num == 0.
+  ==> The InputComponent has no ActionBindings at all -- the game hasn't
+      wired input yet, or we're reading it at the wrong lifecycle moment.
+      Instrument-void; re-derive lookup strategy or timing.
+
+CASE H1 CORROBORATION (independent of PAWN/PC counts).
+  Regardless of the counts above: if
+  [FS][HB] tag=FsDisarm-done phase=2 line appears BEFORE the process dies
+  AND flight 5's activation state moves fire (ActiveCount 0->1, Mana 10->0)
+  ==> Input reached the ASC, activation body executed, disarm completed
+      cleanly, protector integrity sweep killed the process AFTER. WALL P
+      residual is the downstream activation body on the DARK page 0x4480000
+      area. Corroborates H1 whichever H2 outcome above holds.
+
+CASE FUNCSWAP-DISARM-KILL.
+  [FS][HB] tag=FsDisarm-enter phase=1 appears but no `-done phase=2`; process
+  dies with the last observed heartbeat still showing RUNNING.
+  ==> The funcswap disarm itself is the trigger. This is NOT H1 causally
+      -- fixing disarm would eliminate the 0xDEAD without addressing WALL P
+      root cause.
+
+Success (in the flight-5 sense)
+-------------------------------
+* [BIND] resolved pc=<non-null>
+* [BIND][initial] ic=<non-null> (with AB_OFF pinned, num > 0)
+* [BIND][initial] summary Toggle_Map>0 (positive control)
+* At least ONE [FS][HB] line after [S147] READY FOR INPUT
+* The pre-existing flight-5 activation receipts still fire:
+    [S147][SAMPLE] ActiveCount transition 0->1
+    [S147][SAMPLE] Mana 10 -> 0
+
+Fault (do not interpret further)
+--------------------------------
+* Client dies before [S147] READY FOR INPUT -> Preflight refused, no bind census run.
+* Client dies before any [FS][HB] emits -> Setup wait timeout; instrument-void.
+
+After-flight actions
+--------------------
+If SUCCESS (any of H1/H2a/H2b/FUNCSWAP-DISARM-KILL classified):
+  1. Preserve marker: `Copy-Item docs/tutorial-launch-marker.txt docs/s147-move3-flight1-marker.txt`
+  2. Late dumpimage: `usmapdump.exe dumpimage 'SUPERVIVE-Win64-Shipping.exe' dumps/s147-move3-flight1`
+  3. Terminate: `Get-Process SUPERVIVE-Win64-Shipping,ags | %{ $_.Kill() }`
+  4. Update docs/coop-vs-ai-roadmap-s142.md WALL P block with outcome.
+  5. Commit results.
+
+If VOID (case A):
+  1. Preserve marker as above.
+  2. Derive AB_OFF from a `dumpimage` of the live process (the PC + IC will
+     be resident; walk them offline afterwards).
+  3. Do NOT re-fly without pinning AB_OFF -- another void run doesn't help.
+
+Budget
+------
+ONE 0xDEAD kill expected (n=2 baseline for this arm class at ~290 s, 51 s
+post-activation). The heartbeat lines emit BEFORE the death; capture as they
+appear, not batched. Marker terminates before RESULT -- do not rely on the
+RESULT line.
+
+--- end of pre-registration ---

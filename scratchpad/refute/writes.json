@@ -1,0 +1,1964 @@
+[
+[
+"0x11cd551",
+"89be88040000",
+"mov",
+"dword ptr [rsi + 0x488], edi",
+"0x11cd0a0",
+"0x11cd704",
+"rsi"
+],
+[
+"0x11cedd3",
+"89b388040000",
+"mov",
+"dword ptr [rbx + 0x488], esi",
+"0x11cecc0",
+"0x11cf01f",
+"rbx"
+],
+[
+"0x12641ce",
+"898788040000",
+"mov",
+"dword ptr [rdi + 0x488], eax",
+"0x1264150",
+"0x12642a1",
+"rdi"
+],
+[
+"0x14723cf",
+"4c89b788040000",
+"mov",
+"qword ptr [rdi + 0x488], r14",
+"0x14720c0",
+"0x14724aa",
+"rdi"
+],
+[
+"0x14f06a2",
+"4889b788040000",
+"mov",
+"qword ptr [rdi + 0x488], rsi",
+"0x14f04f0",
+"0x14f08f2",
+"rdi"
+],
+[
+"0x1595ed7",
+"4489ae88040000",
+"mov",
+"dword ptr [rsi + 0x488], r13d",
+"0x1595b20",
+"0x1596531",
+"rsi"
+],
+[
+"0x159842d",
+"4489b788040000",
+"mov",
+"dword ptr [rdi + 0x488], r14d",
+"0x1598150",
+"0x1598821",
+"rdi"
+],
+[
+"0x1631f3c",
+"4889b788040000",
+"mov",
+"qword ptr [rdi + 0x488], rsi",
+"0x1631bc0",
+"0x163203b",
+"rdi"
+],
+[
+"0x1634c58",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x1634a80",
+"0x1634caf",
+"rbx"
+],
+[
+"0x1638939",
+"89af88040000",
+"mov",
+"dword ptr [rdi + 0x488], ebp",
+"0x16388f0",
+"0x1638cb2",
+"rdi"
+],
+[
+"0x167e1d7",
+"4889b788040000",
+"mov",
+"qword ptr [rdi + 0x488], rsi",
+"0x167dea0",
+"0x167e28c",
+"rdi"
+],
+[
+"0x167e5ca",
+"89b788040000",
+"mov",
+"dword ptr [rdi + 0x488], esi",
+"0x167e290",
+"0x167e6a9",
+"rdi"
+],
+[
+"0x167ea02",
+"4088b788040000",
+"mov",
+"byte ptr [rdi + 0x488], sil",
+"0x167e6b0",
+"0x167ec66",
+"rdi"
+],
+[
+"0x1680361",
+"c6878804000001",
+"mov",
+"byte ptr [rdi + 0x488], 1",
+"0x167ffd0",
+"0x168046b",
+"rdi"
+],
+[
+"0x16806e9",
+"4889b788040000",
+"mov",
+"qword ptr [rdi + 0x488], rsi",
+"0x1680470",
+"0x1680752",
+"rdi"
+],
+[
+"0x16806f7",
+"89b788040000",
+"mov",
+"dword ptr [rdi + 0x488], esi",
+"0x1680470",
+"0x1680752",
+"rdi"
+],
+[
+"0x1680949",
+"89b788040000",
+"mov",
+"dword ptr [rdi + 0x488], esi",
+"0x1680760",
+"0x168095e",
+"rdi"
+],
+[
+"0x16819ea",
+"89af88040000",
+"mov",
+"dword ptr [rdi + 0x488], ebp",
+"0x16816e0",
+"0x168201b",
+"rdi"
+],
+[
+"0x16833a3",
+"89af88040000",
+"mov",
+"dword ptr [rdi + 0x488], ebp",
+"0x16832b0",
+"0x1683a3d",
+"rdi"
+],
+[
+"0x168c6cc",
+"888688040000",
+"mov",
+"byte ptr [rsi + 0x488], al",
+"0x168c230",
+"0x168d839",
+"rsi"
+],
+[
+"0x16ee1e5",
+"0f118788040000",
+"movups",
+"xmmword ptr [rdi + 0x488], xmm0",
+"0x16edfc0",
+"0x16ee2f2",
+"rdi"
+],
+[
+"0x1714170",
+"4889b788040000",
+"mov",
+"qword ptr [rdi + 0x488], rsi",
+"0x1713f70",
+"0x171420b",
+"rdi"
+],
+[
+"0x1c2b014",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x1c2af20",
+"0x1c2b123",
+"rbx"
+],
+[
+"0x1d4d10f",
+"45888688040000",
+"mov",
+"byte ptr [r14 + 0x488], r8b",
+"0x1d4cdc0",
+"0x1d4d15e",
+"r14"
+],
+[
+"0x1d86ac6",
+"44888188040000",
+"mov",
+"byte ptr [rcx + 0x488], r8b",
+"0x1d866d0",
+"0x1d86ffa",
+"rcx"
+],
+[
+"0x1dac33b",
+"4c89b688040000",
+"mov",
+"qword ptr [rsi + 0x488], r14",
+"0x1dac070",
+"0x1dac701",
+"rsi"
+],
+[
+"0x1e7d941",
+"89b388040000",
+"mov",
+"dword ptr [rbx + 0x488], esi",
+"0x1e7d630",
+"0x1e7dbac",
+"rbx"
+],
+[
+"0x2133e4a",
+"4889af88040000",
+"mov",
+"qword ptr [rdi + 0x488], rbp",
+"0x2133ba0",
+"0x2133fee",
+"rdi"
+],
+[
+"0x219fb0a",
+"4889ae88040000",
+"mov",
+"qword ptr [rsi + 0x488], rbp",
+"0x219f9f0",
+"0x219fb94",
+"rsi"
+],
+[
+"0x236b935",
+"c7838804000000000000",
+"mov",
+"dword ptr [rbx + 0x488], 0",
+"0x236b8a0",
+"0x236b954",
+"rbx"
+],
+[
+"0x237535d",
+"898e88040000",
+"mov",
+"dword ptr [rsi + 0x488], ecx",
+"0x2375110",
+"0x2375504",
+"rsi"
+],
+[
+"0x238e06f",
+"ff8b88040000",
+"dec",
+"dword ptr [rbx + 0x488]",
+"0x238dff0",
+"0x238e08a",
+"rbx"
+],
+[
+"0x254bb36",
+"4889b388040000",
+"mov",
+"qword ptr [rbx + 0x488], rsi",
+"0x254ba70",
+"0x254bc1a",
+"rbx"
+],
+[
+"0x26976b5",
+"48898b88040000",
+"mov",
+"qword ptr [rbx + 0x488], rcx",
+"0x2696390",
+"0x2697e3a",
+"rbx"
+],
+[
+"0x26f88e9",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x26f86b0",
+"0x26f8988",
+"rax"
+],
+[
+"0x27051bb",
+"c78388040000ffffffff",
+"mov",
+"dword ptr [rbx + 0x488], 0xffffffff",
+"0x2704ff0",
+"0x2705264",
+"rbx"
+],
+[
+"0x2705743",
+"4889b388040000",
+"mov",
+"qword ptr [rbx + 0x488], rsi",
+"0x27055e0",
+"0x2706a4b",
+"rbx"
+],
+[
+"0x27070cd",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x2707040",
+"0x2707156",
+"rbx"
+],
+[
+"0x271c1c1",
+"89af88040000",
+"mov",
+"dword ptr [rdi + 0x488], ebp",
+"0x271c030",
+"0x271c31f",
+"rdi"
+],
+[
+"0x276a8c6",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x276a5d0",
+"0x276affa",
+"rbx"
+],
+[
+"0x284599d",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x28458c0",
+"0x2845c16",
+"rax"
+],
+[
+"0x2845a13",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x28458c0",
+"0x2845c16",
+"rax"
+],
+[
+"0x2845a89",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x28458c0",
+"0x2845c16",
+"rax"
+],
+[
+"0x2845aff",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x28458c0",
+"0x2845c16",
+"rax"
+],
+[
+"0x2845b75",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x28458c0",
+"0x2845c16",
+"rax"
+],
+[
+"0x2845beb",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x28458c0",
+"0x2845c16",
+"rax"
+],
+[
+"0x2845cee",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2845c20",
+"0x2845f61",
+"rax"
+],
+[
+"0x2845d64",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2845c20",
+"0x2845f61",
+"rax"
+],
+[
+"0x2845dda",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2845c20",
+"0x2845f61",
+"rax"
+],
+[
+"0x2845e50",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2845c20",
+"0x2845f61",
+"rax"
+],
+[
+"0x2845ec6",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2845c20",
+"0x2845f61",
+"rax"
+],
+[
+"0x2845f3c",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2845c20",
+"0x2845f61",
+"rax"
+],
+[
+"0x2846041",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2845f70",
+"0x28462b4",
+"rax"
+],
+[
+"0x28460b7",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2845f70",
+"0x28462b4",
+"rax"
+],
+[
+"0x284612d",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2845f70",
+"0x28462b4",
+"rax"
+],
+[
+"0x28461a3",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2845f70",
+"0x28462b4",
+"rax"
+],
+[
+"0x2846219",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2845f70",
+"0x28462b4",
+"rax"
+],
+[
+"0x284628f",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2845f70",
+"0x28462b4",
+"rax"
+],
+[
+"0x287c5c7",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x287c4b0",
+"0x287c62b",
+"rbx"
+],
+[
+"0x2b03a5d",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2b03870",
+"0x2b03e11",
+"rax"
+],
+[
+"0x2b03af3",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2b03870",
+"0x2b03e11",
+"rax"
+],
+[
+"0x2b03b8f",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2b03870",
+"0x2b03e11",
+"rax"
+],
+[
+"0x2b03c2b",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2b03870",
+"0x2b03e11",
+"rax"
+],
+[
+"0x2b03cc7",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2b03870",
+"0x2b03e11",
+"rax"
+],
+[
+"0x2b03d63",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2b03870",
+"0x2b03e11",
+"rax"
+],
+[
+"0x2b04041",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2b03e70",
+"0x2b042ef",
+"rax"
+],
+[
+"0x2b040aa",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2b03e70",
+"0x2b042ef",
+"rax"
+],
+[
+"0x2b04119",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2b03e70",
+"0x2b042ef",
+"rax"
+],
+[
+"0x2b04188",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2b03e70",
+"0x2b042ef",
+"rax"
+],
+[
+"0x2b041f7",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2b03e70",
+"0x2b042ef",
+"rax"
+],
+[
+"0x2b04266",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x2b03e70",
+"0x2b042ef",
+"rax"
+],
+[
+"0x2b42164",
+"4c89a388040000",
+"mov",
+"qword ptr [rbx + 0x488], r12",
+"0x2b41f70",
+"0x2b42824",
+"rbx"
+],
+[
+"0x2bd5b17",
+"48898f88040000",
+"mov",
+"qword ptr [rdi + 0x488], rcx",
+"0x2bd5a20",
+"0x2bd5e56",
+"rdi"
+],
+[
+"0x2c3dac2",
+"4c89af88040000",
+"mov",
+"qword ptr [rdi + 0x488], r13",
+"0x2c3d950",
+"0x2c3de8e",
+"rdi"
+],
+[
+"0x2d73d0f",
+"4c89a788040000",
+"mov",
+"qword ptr [rdi + 0x488], r12",
+"0x2d73c00",
+"0x2d73fcf",
+"rdi"
+],
+[
+"0x2d77c6b",
+"4d89bd88040000",
+"mov",
+"qword ptr [r13 + 0x488], r15",
+"0x2d77910",
+"0x2d77c9d",
+"r13"
+],
+[
+"0x2d9afa7",
+"4c89a788040000",
+"mov",
+"qword ptr [rdi + 0x488], r12",
+"0x2d9ad50",
+"0x2d9b3ad",
+"rdi"
+],
+[
+"0x2e11880",
+"4889b388040000",
+"mov",
+"qword ptr [rbx + 0x488], rsi",
+"0x2e11560",
+"0x2e11a84",
+"rbx"
+],
+[
+"0x2e12908",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x2e124f0",
+"0x2e12cc6",
+"rbx"
+],
+[
+"0x2ebd0b7",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x2ebccc0",
+"0x2ebd7e7",
+"rbx"
+],
+[
+"0x2ebdba7",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x2ebda40",
+"0x2ebdcaa",
+"rbx"
+],
+[
+"0x2ec0ea1",
+"4889ab88040000",
+"mov",
+"qword ptr [rbx + 0x488], rbp",
+"0x2ec0b70",
+"0x2ec1094",
+"rbx"
+],
+[
+"0x2f61265",
+"48898b88040000",
+"mov",
+"qword ptr [rbx + 0x488], rcx",
+"0x2f60ed0",
+"0x2f61355",
+"rbx"
+],
+[
+"0x2f61e19",
+"48898b88040000",
+"mov",
+"qword ptr [rbx + 0x488], rcx",
+"0x2f61a60",
+"0x2f61f2b",
+"rbx"
+],
+[
+"0x305963a",
+"66c783880400000404",
+"mov",
+"word ptr [rbx + 0x488], 0x404",
+"0x3059380",
+"0x3059a9b",
+"rbx"
+],
+[
+"0x30c8b26",
+"48898688040000",
+"mov",
+"qword ptr [rsi + 0x488], rax",
+"0x30c8a70",
+"0x30c8c1b",
+"rsi"
+],
+[
+"0x313fb41",
+"4889b788040000",
+"mov",
+"qword ptr [rdi + 0x488], rsi",
+"0x313fa00",
+"0x313fdc9",
+"rdi"
+],
+[
+"0x3158184",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x31580e0",
+"0x315821b",
+"rax"
+],
+[
+"0x31badb2",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x31bad50",
+"0x31badcb",
+"rbx"
+],
+[
+"0x31bc843",
+"4889b788040000",
+"mov",
+"qword ptr [rdi + 0x488], rsi",
+"0x31bc420",
+"0x31bc94b",
+"rdi"
+],
+[
+"0x3253a12",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x32539a0",
+"0x3253a5c",
+"rbx"
+],
+[
+"0x325a1ea",
+"49898688040000",
+"mov",
+"qword ptr [r14 + 0x488], rax",
+"0x325a180",
+"0x325a463",
+"r14"
+],
+[
+"0x32b1e19",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x32b09f0",
+"0x32b25b4",
+"rbx"
+],
+[
+"0x338ef03",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x338ee60",
+"0x338ef17",
+"rax"
+],
+[
+"0x33b4259",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x33b4190",
+"0x33b43d3",
+"rbx"
+],
+[
+"0x34de798",
+"4889ae88040000",
+"mov",
+"qword ptr [rsi + 0x488], rbp",
+"0x34de340",
+"0x34deba3",
+"rsi"
+],
+[
+"0x35c8803",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x35c8790",
+"0x35c8819",
+"rax"
+],
+[
+"0x3638ec0",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3638e00",
+"0x3638fee",
+"rax"
+],
+[
+"0x368b267",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x368af70",
+"0x368b37c",
+"rax"
+],
+[
+"0x37b50bd",
+"c7838804000000009643",
+"mov",
+"dword ptr [rbx + 0x488], 0x43960000",
+"0x37b4ff0",
+"0x37b50d7",
+"rbx"
+],
+[
+"0x37bb531",
+"48899f88040000",
+"mov",
+"qword ptr [rdi + 0x488], rbx",
+"0x37bb150",
+"0x37bc281",
+"rdi"
+],
+[
+"0x39d371c",
+"4889af88040000",
+"mov",
+"qword ptr [rdi + 0x488], rbp",
+"0x39d3690",
+"0x39d3afc",
+"rdi"
+],
+[
+"0x39f6b5b",
+"48898b88040000",
+"mov",
+"qword ptr [rbx + 0x488], rcx",
+"0x39f6740",
+"0x39f7082",
+"rbx"
+],
+[
+"0x3a0802f",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x3a07a80",
+"0x3a0810e",
+"rbx"
+],
+[
+"0x3a2c2e7",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3a2c130",
+"0x3a2c3bc",
+"rax"
+],
+[
+"0x3a2c2f6",
+"ff9288040000",
+"call",
+"qword ptr [rdx + 0x488]",
+"0x3a2c130",
+"0x3a2c3bc",
+"rdx"
+],
+[
+"0x3a3522f",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3a350a0",
+"0x3a35621",
+"rax"
+],
+[
+"0x3a42f75",
+"4c89b788040000",
+"mov",
+"qword ptr [rdi + 0x488], r14",
+"0x3a42d80",
+"0x3a43728",
+"rdi"
+],
+[
+"0x3a60439",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3a60420",
+"0x3a60471",
+"rax"
+],
+[
+"0x3a69819",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3a697e0",
+"0x3a699c2",
+"rax"
+],
+[
+"0x3a71706",
+"f20f118f88040000",
+"movsd",
+"qword ptr [rdi + 0x488], xmm1",
+"0x3a71560",
+"0x3a72309",
+"rdi"
+],
+[
+"0x3a7ef4c",
+"4889af88040000",
+"mov",
+"qword ptr [rdi + 0x488], rbp",
+"0x3a7ebb0",
+"0x3a7f505",
+"rdi"
+],
+[
+"0x3a87a81",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3a87990",
+"0x3a87b9d",
+"rax"
+],
+[
+"0x3c1f315",
+"898388040000",
+"mov",
+"dword ptr [rbx + 0x488], eax",
+"0x3c1f2a0",
+"0x3c1f382",
+"rbx"
+],
+[
+"0x3c1f345",
+"c787880400000000003f",
+"mov",
+"dword ptr [rdi + 0x488], 0x3f000000",
+"0x3c1f2a0",
+"0x3c1f382",
+"rdi"
+],
+[
+"0x3c573db",
+"0f118788040000",
+"movups",
+"xmmword ptr [rdi + 0x488], xmm0",
+"0x3c56e30",
+"0x3c5784d",
+"rdi"
+],
+[
+"0x3c7690e",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3c75fa0",
+"0x3c76ac4",
+"rax"
+],
+[
+"0x3cb9f67",
+"89b788040000",
+"mov",
+"dword ptr [rdi + 0x488], esi",
+"0x3cb9c80",
+"0x3cba08e",
+"rdi"
+],
+[
+"0x3cc9227",
+"4c89a988040000",
+"mov",
+"qword ptr [rcx + 0x488], r13",
+"0x3cc9080",
+"0x3cc9261",
+"rcx"
+],
+[
+"0x3cda751",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3cda5b0",
+"0x3cda87b",
+"rax"
+],
+[
+"0x3cdf32b",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3cdf160",
+"0x3cdf361",
+"rax"
+],
+[
+"0x3cfe075",
+"4189b688040000",
+"mov",
+"dword ptr [r14 + 0x488], esi",
+"0x3cfdf30",
+"0x3cfe497",
+"r14"
+],
+[
+"0x3cfe171",
+"41898688040000",
+"mov",
+"dword ptr [r14 + 0x488], eax",
+"0x3cfdf30",
+"0x3cfe497",
+"r14"
+],
+[
+"0x3d06358",
+"89a888040000",
+"mov",
+"dword ptr [rax + 0x488], ebp",
+"0x3d05f40",
+"0x3d063f9",
+"rax"
+],
+[
+"0x3d288a3",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x3d27560",
+"0x3d28fff",
+"rbx"
+],
+[
+"0x3d404c3",
+"898e88040000",
+"mov",
+"dword ptr [rsi + 0x488], ecx",
+"0x3d3f0f0",
+"0x3d422dd",
+"rsi"
+],
+[
+"0x3d718c8",
+"4889ab88040000",
+"mov",
+"qword ptr [rbx + 0x488], rbp",
+"0x3d716d0",
+"0x3d719fd",
+"rbx"
+],
+[
+"0x3dd6ee3",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3dd6d20",
+"0x3dd7158",
+"rax"
+],
+[
+"0x3e5b22a",
+"89bb88040000",
+"mov",
+"dword ptr [rbx + 0x488], edi",
+"0x3e5aed0",
+"0x3e5b41c",
+"rbx"
+],
+[
+"0x3e7a033",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3e79ed0",
+"0x3e7a057",
+"rax"
+],
+[
+"0x3eb0cac",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3eb0620",
+"0x3eb1614",
+"rax"
+],
+[
+"0x3eb1471",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x3eb0620",
+"0x3eb1614",
+"rax"
+],
+[
+"0x3f80cca",
+"48898688040000",
+"mov",
+"qword ptr [rsi + 0x488], rax",
+"0x3f80bd0",
+"0x3f8112b",
+"rsi"
+],
+[
+"0x3fc474d",
+"c7868804000000001644",
+"mov",
+"dword ptr [rsi + 0x488], 0x44160000",
+"0x3fc43d0",
+"0x3fc48ea",
+"rsi"
+],
+[
+"0x4388027",
+"4889b388040000",
+"mov",
+"qword ptr [rbx + 0x488], rsi",
+"0x4387f10",
+"0x43881dd",
+"rbx"
+],
+[
+"0x43b6e78",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x43b6d80",
+"0x43b6f68",
+"rbx"
+],
+[
+"0x441ceec",
+"48898188040000",
+"mov",
+"qword ptr [rcx + 0x488], rax",
+"0x441ceb0",
+"0x441cf6b",
+"rcx"
+],
+[
+"0x444c3a6",
+"89b788040000",
+"mov",
+"dword ptr [rdi + 0x488], esi",
+"0x444c030",
+"0x444c47d",
+"rdi"
+],
+[
+"0x4459ae5",
+"48898788040000",
+"mov",
+"qword ptr [rdi + 0x488], rax",
+"0x4459ab0",
+"0x4459af2",
+"rdi"
+],
+[
+"0x448fafd",
+"48898788040000",
+"mov",
+"qword ptr [rdi + 0x488], rax",
+"0x448fac0",
+"0x448fe2d",
+"rdi"
+],
+[
+"0x44ab074",
+"48898788040000",
+"mov",
+"qword ptr [rdi + 0x488], rax",
+"0x44ab020",
+"0x44ab0c1",
+"rdi"
+],
+[
+"0x44ae3b8",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x44ae170",
+"0x44ae605",
+"rbx"
+],
+[
+"0x4555127",
+"4c89a688040000",
+"mov",
+"qword ptr [rsi + 0x488], r12",
+"0x4555070",
+"0x4555627",
+"rsi"
+],
+[
+"0x4557ce6",
+"664489af88040000",
+"mov",
+"word ptr [rdi + 0x488], r13w",
+"0x45578c0",
+"0x4557ff4",
+"rdi"
+],
+[
+"0x455cce3",
+"888188040000",
+"mov",
+"byte ptr [rcx + 0x488], al",
+"0x455ccd0",
+"0x455ce0d",
+"rcx"
+],
+[
+"0x455e2a7",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x455e1f0",
+"0x455e3bc",
+"rax"
+],
+[
+"0x456fb2d",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x456f730",
+"0x456fe07",
+"rax"
+],
+[
+"0x4570619",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x4570120",
+"0x4570665",
+"rax"
+],
+[
+"0x45722b8",
+"898788040000",
+"mov",
+"dword ptr [rdi + 0x488], eax",
+"0x4572270",
+"0x4572347",
+"rdi"
+],
+[
+"0x45752d4",
+"4088a988040000",
+"mov",
+"byte ptr [rcx + 0x488], bpl",
+"0x45752b0",
+"0x45753eb",
+"rcx"
+],
+[
+"0x45d18b2",
+"838f8804000040",
+"or",
+"dword ptr [rdi + 0x488], 0x40",
+"0x45d17d0",
+"0x45d19db",
+"rdi"
+],
+[
+"0x45d19b3",
+"898f88040000",
+"mov",
+"dword ptr [rdi + 0x488], ecx",
+"0x45d17d0",
+"0x45d19db",
+"rdi"
+],
+[
+"0x45d19cf",
+"898f88040000",
+"mov",
+"dword ptr [rdi + 0x488], ecx",
+"0x45d17d0",
+"0x45d19db",
+"rdi"
+],
+[
+"0x45d5375",
+"41898e88040000",
+"mov",
+"dword ptr [r14 + 0x488], ecx",
+"0x45d4f90",
+"0x45d54bf",
+"r14"
+],
+[
+"0x46537e2",
+"49898088040000",
+"mov",
+"qword ptr [r8 + 0x488], rax",
+"0x4653420",
+"0x4653a74",
+"r8"
+],
+[
+"0x4953cf9",
+"89ae88040000",
+"mov",
+"dword ptr [rsi + 0x488], ebp",
+"0x4953c00",
+"0x4954073",
+"rsi"
+],
+[
+"0x4957313",
+"48898688040000",
+"mov",
+"qword ptr [rsi + 0x488], rax",
+"0x4956fc0",
+"0x4957348",
+"rsi"
+],
+[
+"0x497f883",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x497f790",
+"0x497f8d3",
+"rbx"
+],
+[
+"0x4981677",
+"898788040000",
+"mov",
+"dword ptr [rdi + 0x488], eax",
+"0x4981570",
+"0x49817eb",
+"rdi"
+],
+[
+"0x498877e",
+"898388040000",
+"mov",
+"dword ptr [rbx + 0x488], eax",
+"0x49886f0",
+"0x498895e",
+"rbx"
+],
+[
+"0x4988797",
+"898388040000",
+"mov",
+"dword ptr [rbx + 0x488], eax",
+"0x49886f0",
+"0x498895e",
+"rbx"
+],
+[
+"0x49b6538",
+"48898b88040000",
+"mov",
+"qword ptr [rbx + 0x488], rcx",
+"0x49b64a0",
+"0x49b6598",
+"rbx"
+],
+[
+"0x49b665c",
+"48898b88040000",
+"mov",
+"qword ptr [rbx + 0x488], rcx",
+"0x49b65c0",
+"0x49b66e3",
+"rbx"
+],
+[
+"0x4c203bb",
+"4889b788040000",
+"mov",
+"qword ptr [rdi + 0x488], rsi",
+"0x4c201f0",
+"0x4c2058b",
+"rdi"
+],
+[
+"0x4c6e55b",
+"898e88040000",
+"mov",
+"dword ptr [rsi + 0x488], ecx",
+"0x4c6e110",
+"0x4c6e821",
+"rsi"
+],
+[
+"0x4f74ab0",
+"48899388040000",
+"mov",
+"qword ptr [rbx + 0x488], rdx",
+"0x4f74750",
+"0x4f74b4b",
+"rbx"
+],
+[
+"0x4f74cc5",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x4f74b50",
+"0x4f74e06",
+"rbx"
+],
+[
+"0x5187440",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x5187400",
+"0x5187456",
+"rbx"
+],
+[
+"0x51a0f7d",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x51a0f40",
+"0x51a0f8e",
+"rax"
+],
+[
+"0x526fd6f",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x526fcf0",
+"0x526fe86",
+"rbx"
+],
+[
+"0x52702cb",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x5270180",
+"0x52702f9",
+"rbx"
+],
+[
+"0x5277aab",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x5277a30",
+"0x5277b8e",
+"rbx"
+],
+[
+"0x52ae1dd",
+"48898b88040000",
+"mov",
+"qword ptr [rbx + 0x488], rcx",
+"0x52ade00",
+"0x52ae54b",
+"rbx"
+],
+[
+"0x53435b9",
+"c78388040000ffffffff",
+"mov",
+"dword ptr [rbx + 0x488], 0xffffffff",
+"0x5343540",
+"0x53435c9",
+"rbx"
+],
+[
+"0x53444e1",
+"c78388040000ffffffff",
+"mov",
+"dword ptr [rbx + 0x488], 0xffffffff",
+"0x5344470",
+"0x53444f1",
+"rbx"
+],
+[
+"0x53a031a",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x53a0260",
+"0x53a0397",
+"rbx"
+],
+[
+"0x53a0885",
+"c78388040000ffffffff",
+"mov",
+"dword ptr [rbx + 0x488], 0xffffffff",
+"0x53a0720",
+"0x53a08c9",
+"rbx"
+],
+[
+"0x53a656e",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x53a6540",
+"0x53a66af",
+"rbx"
+],
+[
+"0x53ff1f8",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x53ff150",
+"0x53ff25d",
+"rbx"
+],
+[
+"0x5431f9b",
+"48898188040000",
+"mov",
+"qword ptr [rcx + 0x488], rax",
+"0x5431f40",
+"0x543239d",
+"rcx"
+],
+[
+"0x5432358",
+"48898788040000",
+"mov",
+"qword ptr [rdi + 0x488], rax",
+"0x5431f40",
+"0x543239d",
+"rdi"
+],
+[
+"0x554afaa",
+"c7878804000000001643",
+"mov",
+"dword ptr [rdi + 0x488], 0x43160000",
+"0x554ade0",
+"0x554b429",
+"rdi"
+],
+[
+"0x554b5a9",
+"83a788040000df",
+"and",
+"dword ptr [rdi + 0x488], 0xffffffdf",
+"0x554b430",
+"0x554b671",
+"rdi"
+],
+[
+"0x5598b87",
+"41ff9288040000",
+"call",
+"qword ptr [r10 + 0x488]",
+"0x5598a50",
+"0x5598bac",
+"r10"
+],
+[
+"0x55ee699",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x55ee5c0",
+"0x55ee75b",
+"rbx"
+],
+[
+"0x561998c",
+"899f88040000",
+"mov",
+"dword ptr [rdi + 0x488], ebx",
+"0x5619870",
+"0x5619d52",
+"rdi"
+],
+[
+"0x5649aaa",
+"48898788040000",
+"mov",
+"qword ptr [rdi + 0x488], rax",
+"0x56496f0",
+"0x5649d08",
+"rdi"
+],
+[
+"0x564d9a1",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x564d430",
+"0x564dcfa",
+"rbx"
+],
+[
+"0x5676b7e",
+"4c89a788040000",
+"mov",
+"qword ptr [rdi + 0x488], r12",
+"0x5676aa0",
+"0x5677405",
+"rdi"
+],
+[
+"0x5677471",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x5677410",
+"0x56774b3",
+"rbx"
+],
+[
+"0x5677639",
+"48898b88040000",
+"mov",
+"qword ptr [rbx + 0x488], rcx",
+"0x56774c0",
+"0x56776e8",
+"rbx"
+],
+[
+"0x5697969",
+"f20f118388040000",
+"movsd",
+"qword ptr [rbx + 0x488], xmm0",
+"0x56977e0",
+"0x5697bc7",
+"rbx"
+],
+[
+"0x569a7b7",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x569a780",
+"0x569a7ee",
+"rbx"
+],
+[
+"0x56aa491",
+"48898788040000",
+"mov",
+"qword ptr [rdi + 0x488], rax",
+"0x56aa410",
+"0x56aaa37",
+"rdi"
+],
+[
+"0x56aadd3",
+"4889b788040000",
+"mov",
+"qword ptr [rdi + 0x488], rsi",
+"0x56aac90",
+"0x56aaf02",
+"rdi"
+],
+[
+"0x56ab00b",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x56aaf10",
+"0x56ab11c",
+"rbx"
+],
+[
+"0x56ab29e",
+"4889ab88040000",
+"mov",
+"qword ptr [rbx + 0x488], rbp",
+"0x56ab190",
+"0x56ab52b",
+"rbx"
+],
+[
+"0x56c4180",
+"898788040000",
+"mov",
+"dword ptr [rdi + 0x488], eax",
+"0x56c4110",
+"0x56c4527",
+"rdi"
+],
+[
+"0x56d5555",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x56d5480",
+"0x56d5593",
+"rbx"
+],
+[
+"0x56d5c3c",
+"4889ae88040000",
+"mov",
+"qword ptr [rsi + 0x488], rbp",
+"0x56d5b70",
+"0x56d62f4",
+"rsi"
+],
+[
+"0x58fb7c7",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x58fb790",
+"0x58fb9b6",
+"rbx"
+],
+[
+"0x5bc784d",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x5bc73e0",
+"0x5bc789d",
+"rbx"
+],
+[
+"0x5bfe153",
+"ff9088040000",
+"call",
+"qword ptr [rax + 0x488]",
+"0x5bfe130",
+"0x5bfe3a4",
+"rax"
+],
+[
+"0x63180f5",
+"0f118388040000",
+"movups",
+"xmmword ptr [rbx + 0x488], xmm0",
+"0x6317ce0",
+"0x6318306",
+"rbx"
+],
+[
+"0x63f61ec",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x63f5f80",
+"0x63f6232",
+"rbx"
+],
+[
+"0x646291c",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x6462590",
+"0x6462b0f",
+"rbx"
+],
+[
+"0x6462956",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x6462590",
+"0x6462b0f",
+"rbx"
+],
+[
+"0x670cffb",
+"898388040000",
+"mov",
+"dword ptr [rbx + 0x488], eax",
+"0x670cf40",
+"0x670d056",
+"rbx"
+],
+[
+"0x67127ae",
+"c7818804000000000000",
+"mov",
+"dword ptr [rcx + 0x488], 0",
+"0x6712790",
+"0x67128b7",
+"rcx"
+],
+[
+"0x67f7b56",
+"c78788040000ffffffff",
+"mov",
+"dword ptr [rdi + 0x488], 0xffffffff",
+"0x67f7a40",
+"0x67f7bda",
+"rdi"
+],
+[
+"0x67f852c",
+"4889bb88040000",
+"mov",
+"qword ptr [rbx + 0x488], rdi",
+"0x67f8420",
+"0x67f8544",
+"rbx"
+],
+[
+"0x6854f72",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x6854f20",
+"0x6854f86",
+"rbx"
+],
+[
+"0x6abe4a6",
+"48898788040000",
+"mov",
+"qword ptr [rdi + 0x488], rax",
+"0x6abe260",
+"0x6abe56d",
+"rdi"
+],
+[
+"0x6cf16fe",
+"4c89b388040000",
+"mov",
+"qword ptr [rbx + 0x488], r14",
+"0x6cf1640",
+"0x6cf18b1",
+"rbx"
+],
+[
+"0x6cf422f",
+"899688040000",
+"mov",
+"dword ptr [rsi + 0x488], edx",
+"0x6cf41a0",
+"0x6cf45fd",
+"rsi"
+],
+[
+"0x6e5d8f3",
+"48898388040000",
+"mov",
+"qword ptr [rbx + 0x488], rax",
+"0x6e5d730",
+"0x6e5dcc1",
+"rbx"
+],
+[
+"0x6e5e089",
+"4889b788040000",
+"mov",
+"qword ptr [rdi + 0x488], rsi",
+"0x6e5dff0",
+"0x6e5e11f",
+"rdi"
+],
+[
+"0x7022cbb",
+"48898b88040000",
+"mov",
+"qword ptr [rbx + 0x488], rcx",
+"0x7022880",
+"0x7022e79",
+"rbx"
+]
+]

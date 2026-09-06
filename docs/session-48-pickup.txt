@@ -1,0 +1,194 @@
+SESSION 48 PICKUP — the ALL HUNTERS roster is SOLVED and heroes are OWNED. The remaining visible gap is
+the CENTER "?" for owned heroes: there is no SELECTED/active hunter, so the party-slot preview actor shows
+BP_LokiHeroSelectPreview_UnknownHero. NEXT = wire up the selected-hunter flow (pick an owned hero -> it
+becomes your active hero -> the party slot renders it), persisted in the client profile.
+Copy this whole file into a fresh Claude session's first message.
+Repo: G:\git\Supervive Revival Project — branch dedicated-server-stub. Today's baseline commit: 0351118.
+==============================================================================
+
+=========================== TL;DR (read twice) ==============================
+Sessions 47 + the follow-on CLOSED the ~13-session ALL HUNTERS roster blocker and made all the catalog-
+gated menu panels BUILD, then populated OWNED inventory. Concretely, now working + verified live:
+  * ALL HUNTERS grid renders the full 25-hero roster (tiles + portraits).
+  * The hero CONTENT streams enough that an UNOWNED hero's center PREVIEW model rendered (Beebo in 3D).
+  * STORE / CUSTOMIZATION / MISSIONS panels all BUILD (tabs/preview/modal render) — content empty is a
+    separate per-panel backend-data gap (storefront offers, owned cosmetics, progression missions).
+  * OWNED inventory: all 25 heroes are owned (roster tiles lost their padlocks + "Hunter not owned").
+
+=> ROOT CAUSE that was solved: the grid/store/cosmetics/missions were empty because
+   IsCatalogDataReady() returned FALSE — its native impl (+0x57BB700, rcx=CatalogManager) returns true only
+   if ALL FIVE bytes [CatMgr+0x350..+0x354] are nonzero, but the stub backend never sets the 5th
+   ([+0x354]==0). That gates WBP_HeroPicker's LoadCharacters off, so AllHunters is never built. FIX = force
+   IsCatalogDataReady true (see catalog_ready_fix.cpp below). This ALSO ungates the other catalog panels.
+
+NEXT (S48): the CENTER "?" for OWNED heroes. This is NOT a bug in the ownership change — it is intended
+game design (see "WHY THE ? PERSISTS" below). The center is a PARTY-SLOT actor showing your SELECTED hero;
+with no hero selected it shows the "?" placeholder. Implement the selected-hunter flow so picking an owned
+hero sets it active (and persists in the client profile). CAVEAT: once a hunter is selected, the party slot
+loads the FULL character model, which may hit the still-present ChangeBundleState "failed to find NameData"
+content-streaming wall — so this may reveal a second (content-load) fix. Don't assume it's one step.
+
+=========================== *** NEXT TASK: the selected-hunter flow *** ======
+GOAL: picking an owned hunter in the ALL HUNTERS roster sets it as your ACTIVE hero so the center /
+party-slot renders that hunter instead of the "?", and it persists across sessions.
+
+WHY THE ? PERSISTS (diagnosed S47, from BP bytecode — do NOT re-derive):
+  HeroPickerSelectable_CatalogEntryWithPreview (the roster tile) has two mutually-exclusive gates on the
+  hero's CatalogEntry:
+    IsUseable    (Selectable) = Entry.CanUse()                    -> TRUE when you OWN the hero
+    IsPreviewable            = (NOT Entry.CanUse()) AND (NOT Entry.IsDisabled())  -> TRUE only when UNOWNED
+  So: UNOWNED hero => previewable (center loads the hero model to entice a buy), not selectable. OWNED hero
+  => selectable (pick/play it), NOT previewable. Our owned-inventory change flipped all 25 to CanUse=true,
+  which CORRECTLY disabled the purchase-preview. The center for OWNED heroes is a DIFFERENT actor: the
+  party-slot spawner BP_MainMenuSpawner_MainMenu_PartySlot_C_0..3 (slot 0 = you). With no selected hero it
+  shows BP_LokiHeroSelectPreview_UnknownHero and logs `RequestAsyncLoad() called with empty or only null
+  assets` (no hero ref). => the "?" == "no active/selected hunter", the SAME state behind the main-menu "?".
+
+INVESTIGATION LEADS (start here):
+  1. What does clicking an OWNED (selectable) tile do? bpdump WBP_HeroPicker OnPortraitClicked /
+     HandlePortraitClicked / OnHeroSelected, and WBP_UI_PartyHeroSelect OnHeroSelected / ForceSelectHero /
+     TryPick / OnTryPickComplete / SetPreviewHero / RefreshContentPreview. Find where a selection sets the
+     PARTY-SLOT hero (the BP_MainMenuSpawner_MainMenu_PartySlot UpdateActor call) vs only the preview. When
+     clicking an owned tile at menu-load, the live Loki.log showed NO new load activity — so either the click
+     isn't wired to set the party slot for owned heroes, or it writes a "selected hero" that the stub backend
+     doesn't persist/echo. Watch the live log + ags capture on a click.
+  2. Where does the "selected/active hunter" persist? Track B: docs/trackb-notes.md (ClientProfileData model)
+     + server/internal/interactive/interactive.go (handleClientProfile / lobbyplatform write-backs). Likely a
+     "selected hero" / "last hero" field on the client profile (or a lobby party-hero set). Grep the usmap
+     schema (tools/usmapdump/schema.txt) for ClientProfile / PartyHero / SelectedHero / LastHero /
+     ActiveHero / LobbyHero fields, and check what GET the client reads at menu-load to seed slot 0.
+  3. The inventory AssetEntry has an IsDefault bool (we set it on alchemist). It did NOT resolve the "?", so
+     IsDefault is likely "default/free entitlement", NOT "the player's active hero". Confirm and don't rely
+     on it for selection.
+  4. CAVEAT / likely-second-step: even with a valid selected hero, the party slot loads the FULL character;
+     the live log STILL shows `ChangeBundleStateForPrimaryAssets failed to find NameData` + `RequestAsyncLoad
+     null` (the S44/S45 content-streaming issue, NOT fixed by the catalog-ready gate). If the party slot gets
+     a valid hero ref but still shows "?", the remaining wall is Hero-content NameData/bundle streaming. (The
+     UNOWNED preview used a lighter path that worked, so the model data exists; the party-slot full-load path
+     is the suspect.)
+
+APPROACH SUGGESTION: reproduce the running state (launch with catalog_ready_fix, owned inventory in ags),
+navigate to HUNTERS, CLICK an owned hero, and watch BOTH the client Loki.log and the ags capture log for
+what request/asset-load the click triggers. That tells you whether selection is (a) never wired for owned
+heroes, (b) a backend write ags must persist, or (c) a content-load that fails. Then implement the missing
+piece (most likely: a client-profile "selected hero" field ags returns + the party-slot reads).
+
+=========================== HOW TO LAUNCH (the current working recipe) =======
+Steam MUST be running first (else Auth Failure 14005). From the repo root:
+
+0) BACKEND (ags) — rebuilt from HEAD already includes the owned-inventory change:
+   & "$env:ProgramFiles\Go\bin\go.exe" build -C server -o ags.exe ./cmd/ags
+   Start it from the REPO ROOT (so `certs\` resolves), log redirected off the 10GB capture.log:
+   .\server\ags.exe -log "<scratchpad>\ags-capture.log"     (run in background)
+   *** CERT GOTCHA (WILL bite you): after (re)building ags, the game may reject its TLS with "self signed
+       certificate in certificate chain / unknown CA" and crash EARLY at menu-load (scanState stays 0). The
+       fresh ags serves certs\root.crt (fingerprint F0:9B:51...), which may NOT be in the game's cacert.pem
+       (<GameRoot>\Loki\Content\Certificates\cacert.pem) — the OLD ags-s45c served a DIFFERENT cert that IS
+       in the bundle. FIX: append certs\root.crt to that cacert.pem (idempotent — check first), OR re-run
+       configs\launch-redirect.ps1 (its cacert step restores-clean + re-appends). Verify the served cert's
+       fingerprint is in the bundle. See memory/supervive-ags-cert-rebuild-gotcha.md.
+
+1) THE ROSTER FIX (native, per-launch) — inject FIRST, before launching:
+   $dll="G:\git\Supervive Revival Project\tools\sigbypass-mod\catalog_ready_fix.dll"
+   tools\inject\inject.exe watch SUPERVIVE-Win64-Shipping.exe "$dll" 0x3EC57D0 40555356574154415541564157   # bg
+   (rebuild the dll if needed: clang++ -shared -O2 catalog_ready_fix.cpp -o catalog_ready_fix.dll -lkernel32
+    with clang at C:\Users\eastr\AppData\Local\Programs\Swift\Toolchains\6.3.2+Asserts\usr\bin\clang++.exe)
+
+2) LAUNCH the recon client (ABSOLUTE path):
+   powershell -ExecutionPolicy Bypass -File "G:\git\Supervive Revival Project\configs\launch-recon.ps1"      # bg
+
+3) Watch docs\catalog-ready-fix-marker.txt (expect: jz NOP'd -> scan Hero=25 -> live CatalogManager found ->
+   jz restored) and the client Loki.log at
+   C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log (expect "Refreshed player inventory",
+   "Unlockable heroes fetched: 25", NO cert errors).
+
+INTERMITTENT MENU-LOAD CRASH: there is a documented ~random crash at the Vivox/GameplayCue/InvalidateAllWidgets
+phase (~10s after LobbyV2 browse). It hits some fraction of launches regardless of our mods (the scan-only
+control + surviving runs prove it's not our fix). Just RELAUNCH until one boots to the menu. catalog_ready_fix
+has a read-only VEH crash logger -> docs\catalog-ready-fix-crash.txt (empty = not a code-fault we caused).
+
+=========================== catalog_ready_fix.cpp — how the roster fix works ==
+tools/sigbypass-mod/catalog_ready_fix.cpp (DLL gitignored — rebuild). On the game thread it:
+  (1) hooks GetPrimaryAssetIdList slot 110 + runs the 30-type ScanPathsForPrimaryAssets on the first call
+      (so Hero enumerates 25 — WITHOUT this GetHeroCharacterList returns 0);
+  (2) NOPs the `jz` at +0x57BB722 (74 0C -> 90 90) so IsCatalogDataReady ignores the never-set 5th flag and
+      returns TRUE once the 4 real catalog flags [+0x350..+0x353] are set -> the game broadcasts
+      OnCatalogDataReady -> WBP_HeroPicker.LoadCharacters runs -> AllHunters builds -> TileView renders;
+  (3) find-once the live CatalogManager (its +0x60 map Num>=50 == catalog loaded); ~6s later RESTORES the jz
+      (durable: no persistent .text mod => the ~3-5min code-integrity check never fires; a SURVIVING run
+      lasted 7m34s+ with the roster populated and jzRestored=1). Also read-only VEH crash logger.
+  A pure DATA poke of [+0x354]=1 (no code patch) is the truly-clean fix BUT needs the live instance set BEFORE
+  the readiness check, which required a continuous full-memory scan that aggravated the fragile menu-load and
+  crashed early — so find-once + jz + restore is the STABLE approach. (Truly injection-free = backend: make
+  ags complete whatever content-service data sets CatMgr+0x354 — an open, optional RE task.)
+
+=========================== READ FIRST, IN ORDER ============================
+1. CLAUDE.md — project rules, launch gotchas, DO-NOT list.
+2. docs/session-47-tile-widget-FOUND.txt — THE key doc: full grid chain, the IsCatalogDataReady root cause,
+   the SUCCESS fix-test, and the LOOSE-ENDS-RESOLVED section (durability + other panels).
+3. memory/supervive-hero-roster-blocker.md (top entries) + memory/supervive-ags-cert-rebuild-gotcha.md.
+4. docs/trackb-notes.md (ClientProfileData) + server/internal/interactive/interactive.go — for the
+   selected-hunter persistence (the S48 task).
+
+=========================== TOOLS (this build) ==============================
+clang++: C:\Users\eastr\AppData\Local\Programs\Swift\Toolchains\6.3.2+Asserts\usr\bin\clang++.exe
+  Build a DLL: clang++ -shared -O2 <f>.cpp -o <f>.dll -lkernel32
+- bpdump (tools/extractor/extractor/Program.cs): dump ANY packaged BP/widget function's Kismet bytecode
+  OFFLINE. `& "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release -- bpdump <asset-substr> <fn | * | @props>`
+  from tools/extractor/extractor. Outputs to tools/extractor/out (gitignored). THIS is how the whole grid +
+  selectable + IsPreviewable logic was read. Use it on the selection/party-hero widgets next.
+- tools/sigbypass-mod/catalog_ready_fix.cpp — the roster fix (scan + jz-NOP + self-restore + VEH). Reusable.
+- tools/sigbypass-mod/hero_resolve_probe.cpp — SAFE intra-function JIT capture (NearAlloc'd jmp stub, no
+  return interception) — reusable to read any live register/struct at a decrypted call site.
+- tools/re/catalog_hidden.py — ctypes RPM: walk the CatalogManager +0x60 catalog map, read/poke hero
+  CatalogEntry flags (hidden@+0xd3, name@+0xc8). Pattern for any live struct read/poke.
+- tools/usmapdump/usmapdump.exe — read-only live RPM (non-elevated): disasm/peek/findptr/nameid/vtdump/poke.
+  Proc name = "SUPERVIVE-Win64-Shipping.exe". schema.txt = full usmap struct/field dump (grep it for models).
+- tools/inject/inject.exe — manual-map DLL injector (no-throw payloads only).
+- tools/extractor/ — CUE4Parse extractor (enumerate/names/dump/schema/assetregistry/bpdump).
+
+=========================== GROUND-TRUTH OFFSETS (base 0x7FF682A80000, CONSTANT across runs) ===
+Heap ptrs (CatalogManager instance, etc.) are PER-RUN — re-derive each launch (findptr the vtable).
+  IsCatalogDataReady: exec thunk +0x5260DD0 -> impl +0x57BB700 (rcx=CatalogManager); returns true iff ALL of
+    [CatMgr+0x350,+0x351,+0x352,+0x353,+0x354] nonzero. The jz to NOP is at +0x57BB722 (74 0C -> 90 90).
+  CatalogEntry.IsHidden: exec +0x5260E60 / raw getter +0x525C210 = `movzx eax, byte[rcx+0xd3]`. (All 25 hero
+    entries have +0xd3==0 => not hidden; ruled out as the empty-grid cause.)
+  CatalogManager vtable RVA +0x8831758 (abs 0x7FF68B2B1758). Catalog map @inst+0x60 (Data@+0x60, Num@+0x68,
+    stride 0x20: key FPrimaryAssetId@0, value CatalogEntry*@+0x10). CatalogEntry: name FName@+0xc8, flags@+0xc,
+    hidden@+0xd3. The live instance = the vtable hit whose +0x60 map Num is large (~905); the other is the CDO.
+  Grid path: WBP_HeroPicker (/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Shared/) TileView_Hunters <- AllHunters
+    map <- LoadCharacters (GetHeroCharacterList +0x562EB7B -> per id GetHeroAssetFromPrimaryAssetId +0x562E9F6
+    -> DynamicCast BP_LokiHeroAsset_C -> LoadedHeroAssets; OnLoaded fires iff count==ids) -> UpdateFilteredList
+    (role filter + ShouldHideHero -> TileView.BP_SetListItems). LokiAssetManager vtable +0x888CB78,
+    ScanPathsForPrimaryAssets +0x34CF9F0 (slot 88), GetPrimaryAssetIdList slot 110, AssetTypeMap mgr+0x478,
+    Hero FName type id 0x1A568, GGameThreadId +0x9D49158, &FNamePool.Blocks[0] +0x9D81450. Browse gate RVA 0x3EC57D0.
+
+=========================== BACKEND (ags) STATE ============================
+- server/internal/menu/menu.go handleInventory: returns all 25 heroes as owned LokiPlatformInventoryAssetEntry
+  ({AssetId:"Hero:<codename>", IsOwned:true}, IsDefault on alchemist). Model: LokiPlatformInventory
+  {AssetEntries[], Version int64}; entry {AssetId PrimaryAssetId, IsFree, IsOwned, IsDefault, IsPremiumBenefit,
+  EntitlementIDs[], AdditionalDetails{}}. Verified: roster tiles unlock (owned). "Hero:<lower>" string form
+  parses into the AssetId PrimaryAssetId; FName match is case-insensitive.
+- handleContentManifest returns EMPTY Heroes for the ?nonEnabledOnly=true query (so heroes stay ENABLED).
+- Other menu content still empty by design: /storefront/offers (store), owned cosmetics in /inventory
+  (customization skins/armory), /progression (missions/passes). These are the per-panel content follow-ups.
+- Committed source is clean (branch dedicated-server-stub, through commit 0351118). Rebuild ags from HEAD.
+
+=========================== WHAT NOT TO DO ==================================
+- Don't treat the owned-hero "?" as a bug in the inventory change — IsPreviewable is (NOT CanUse), i.e. the
+  purchase-preview is BY DESIGN only for unowned heroes. The fix is the SELECTED-hunter flow, not un-owning.
+- Don't re-grind the solved roster root cause (IsCatalogDataReady / the grid tile path / resolution / the
+  IsHidden filter — all settled). Don't re-run the poke-only continuous-scan variant (crashes menu-load).
+- Don't forget the CERT re-append after rebuilding ags (early crash / TLS "unknown CA").
+- Don't hardcode per-run heap addrs (CatalogManager instance) — re-derive via findptr on the vtable.
+- Don't leave a .text patch installed long (integrity crash ~3-5min); catalog_ready_fix self-restores.
+- computer-use: grant the process by exact basename "supervive-win64-shipping.exe" (the Steam app-id grant
+  masks the direct-launched process). Menu input is laggy + Textinputhost/Claude's own window steal frontmost
+  — force focus via PowerShell AttachThreadInput + SetForegroundWindow on the game's MainWindowHandle, then
+  click. HUNTERS ~(295,240) on the main menu; back-arrow ~(302,147) on a sub-screen.
+
+=========================== WRAP-UP EXPECTATIONS ============================
+Write a docs/session-48-*.txt evidence log. Update memory/supervive-hero-roster-blocker.md (top) + MEMORY.md.
+Commit small single-purpose commits. If S48 makes selecting an owned hunter set it active and render in the
+center/party slot (client-profile persisted) — and handles any content-streaming second-step — that closes the
+last visible "?" and the hunter flow is end-to-end functional.

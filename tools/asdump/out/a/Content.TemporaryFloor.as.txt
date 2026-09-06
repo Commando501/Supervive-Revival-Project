@@ -1,0 +1,1891 @@
+==============================================================================
+MODULE   Content.TemporaryFloor
+SOURCE   Content/TemporaryFloor.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+enum ETemporaryFloorState
+{
+    Alive = 0,
+    Triggered = 1,
+    Fading = 2,
+    Dead = 3,
+    Respawning = 4,
+    Max = 5,
+}
+
+const TSubclassOf<UObject@> __StaticType_ATemporaryFloor;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ATemporaryFloor@ ATemporaryFloor()
+// 4 instr, 28 B bytecode, id=0xFCB79D13, varspace=2
+------------------------------------------------------------------------------
+{
+    ATemporaryFloor v2;
+
+    v2 = ATemporaryFloor();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84526 q:0x26e6ed75b00; new ATemporaryFloor   ctor=ATemporaryFloor::ATemporaryFloor
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x4D771C72, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ATemporaryFloor);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b37d8         ; __StaticType_ATemporaryFloor
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ATemporaryFloor@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0xC34371B0, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ATemporaryFloor v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ATemporaryFloor.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ATemporaryFloor>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6f1b37d8         ; __StaticType_ATemporaryFloor
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972655            ; ATemporaryFloor@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class ATemporaryFloor : ALokiTemporaryFloorBase
+// base /Script/Loki.LokiTemporaryFloorBase  ->  ../../../Loki/Source/Loki/Character/LokiTemporaryFloorBase.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True, RootComponent)) protected USceneComponent@ RootSceneComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True, Attach=RootSceneComponent)) protected UStaticMeshComponent@ StaticMeshComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True, Attach=RootSceneComponent)) protected UBoxComponent@ BackupMantleCollision;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Temporary Floor)) protected bool bGenerateBackupMantleCollision;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Temporary Floor)) protected UStaticMesh@ StaticMesh;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Temporary Floor)) float64 DefaultTriggeredDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Temporary Floor)) float64 DefaultFadingDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Temporary Floor)) float64 DefaultDeadDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Temporary Floor)) float64 DefaultRespawningDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Temporary Floor)) protected TMap<ETemporaryFloorState, UAkAudioEvent@> StateAudioEvents;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, meta=(Category=Temporary Floor | Debug)) protected bool bShowDebug;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) private ETemporaryFloorState LocalState;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient, Replicated, RepNotify, RepCond=0, meta=(ReplicatedUsing=OnRep_LastTriggerTime)) private float64 LastTriggerTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) private float64 LastHeightMapDirtyTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) private TMap<ETemporaryFloorState, float64> StateToCumulativeDurationMap;
+    private FTimerHandle NextUpdateTimerHandle;
+
+}
+
+------------------------------------------------------------------------------
+ATemporaryFloor() const
+// 39 instr, 296 B bytecode, id=0x290688AA, varspace=5
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+
+    this.StateAudioEvents = TMap<ETemporaryFloorState, UAkAudioEvent@>();
+    this.StateToCumulativeDurationMap = TMap<ETemporaryFloorState, float64>();
+    this.NextUpdateTimerHandle = FTimerHandle();
+    v1 = true;
+    this.bGenerateBackupMantleCollision = true;
+    v4 = 1;
+    this.DefaultTriggeredDuration = 1;
+    v4 = 1;
+    this.DefaultFadingDuration = 1;
+    v4 = 1;
+    this.DefaultDeadDuration = 1;
+    v4 = 1;
+    this.DefaultRespawningDuration = 1;
+    v1 = false;
+    this.bShowDebug = false;
+    this.LocalState = false;
+    v4 = -1;
+    this.LastTriggerTime = -1;
+    v4 = -1;
+    this.LastHeightMapDirtyTime = -1;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:992 d:134230831      ; ATemporaryFloor::StateAudioEvents  (+992)
+    //     3  CALLSYS        q:0x26e6ef20400         ; void TMap<ETemporaryFloorState, UAkAudioEvent@>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:1096 d:134230831     ; ATemporaryFloor::StateToCumulativeDurationMap  (+1096)
+    //     9  CALLSYS        q:0x26e6ef20240         ; void TMap<ETemporaryFloorState, float64>::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:1176 d:134230831     ; ATemporaryFloor::NextUpdateTimerHandle  (+1176)
+    //    15  CALLSYS        q:0x26e786b8e40         ; void FTimerHandle::$beh0()
+    //    18  SetV1          wW0:1 d:1
+    //    20  LoadThisR      W0:944 d:134230831      ; ATemporaryFloor::bGenerateBackupMantleCollision  (+944)
+    //    22  WRTV1          rW0:1
+    //    23  SetV8          wW0:4 q:0x3ff0000000000000
+    //    26  LoadThisR      W0:960 d:134230831      ; ATemporaryFloor::DefaultTriggeredDuration  (+960)
+    //    28  WRTV8          rW0:4
+    //    29  SetV8          wW0:4 q:0x3ff0000000000000
+    //    32  LoadThisR      W0:968 d:134230831      ; ATemporaryFloor::DefaultFadingDuration  (+968)
+    //    34  WRTV8          rW0:4
+    //    35  SetV8          wW0:4 q:0x3ff0000000000000
+    //    38  LoadThisR      W0:976 d:134230831      ; ATemporaryFloor::DefaultDeadDuration  (+976)
+    //    40  WRTV8          rW0:4
+    //    41  SetV8          wW0:4 q:0x3ff0000000000000
+    //    44  LoadThisR      W0:984 d:134230831      ; ATemporaryFloor::DefaultRespawningDuration  (+984)
+    //    46  WRTV8          rW0:4
+    //    47  SetV1          wW0:1 d:0
+    //    49  LoadThisR      W0:1072 d:134230831     ; ATemporaryFloor::bShowDebug  (+1072)
+    //    51  WRTV1          rW0:1
+    //    52  SetV1          wW0:5 d:0
+    //    54  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //    56  WRTV1          rW0:5
+    //    57  SetV8          wW0:4 q:0xbff0000000000000
+    //    60  LoadThisR      W0:1080 d:134230831     ; ATemporaryFloor::LastTriggerTime  (+1080)
+    //    62  WRTV8          rW0:4
+    //    63  SetV8          wW0:4 q:0xbff0000000000000
+    //    66  LoadThisR      W0:1088 d:134230831     ; ATemporaryFloor::LastHeightMapDirtyTime  (+1088)
+    //    68  WRTV8          rW0:4
+    //    69  PshVPtr        rW0:0
+    //    70  FinConstruct   q:0x26e6ed75b00         ; ATemporaryFloor
+    //    73  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, meta=(Category=Temporary Floor))
+ETemporaryFloorState GetLocalState()
+// 4 instr, 20 B bytecode, id=0x159964D1, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.LocalState;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //     2  RDR1           wW0:1
+    //     3  CpyVtoR4       rW0:1
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Const, meta=(Category=Temporary Floor))
+float64 GetLastTriggerTime()
+// 4 instr, 20 B bytecode, id=0xD1982F2E, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.LastTriggerTime;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1080 d:134230831     ; ATemporaryFloor::LastTriggerTime  (+1080)
+    //     2  RDR8           wW0:2
+    //     3  CpyVtoR8       rW0:2
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Const, meta=(Category=Temporary Floor))
+float64 GetLastHeightMapDirtyTime()
+// 4 instr, 20 B bytecode, id=0xA3E9B050, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.LastHeightMapDirtyTime;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1088 d:134230831     ; ATemporaryFloor::LastHeightMapDirtyTime  (+1088)
+    //     2  RDR8           wW0:2
+    //     3  CpyVtoR8       rW0:2
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Const, meta=(Category=Temporary Floor))
+float64 GetTimeUntilNextUpdate()
+// 18 instr, 124 B bytecode, id=0xBD931435, varspace=5
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+
+    v1 = System::IsValidTimerHandle(this.NextUpdateTimerHandle);
+    v1 = !v1;
+    if (!v1) {
+        v4 = float64(System::GetTimerRemainingTimeHandle(__WorldContext, this.NextUpdateTimerHandle));
+    } else {
+        v4 = -1;
+    }
+    return v4;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:1176 d:134230831     ; ATemporaryFloor::NextUpdateTimerHandle  (+1176)
+    //     3  CALLSYS        q:0x26e79b1cf00         ; bool System::IsValidTimerHandle(FTimerHandle)
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->17
+    //    11  SetV8          wW0:4 q:0xbff0000000000000
+    //    14  CpyVtoR8       rW0:4
+    //    15  JMP            ->30
+    //    17  PshVPtr        rW0:0
+    //    18  ADDSi          W0:1176 d:134230831     ; ATemporaryFloor::NextUpdateTimerHandle  (+1176)
+    //    20  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    23  CALLSYS        q:0x26e79b1dd00         ; float System::GetTimerRemainingTimeHandle(const UObject@, FTimerHandle)
+    //    26  CpyRtoV4       wW0:5
+    //    27  fTOd           wW0:4 rW1:5
+    //    29  CpyVtoR8       rW0:4
+    //    30  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: ConstructionScript
+void ConstructionScript_Implementation()
+// 118 instr, 784 B bytecode, id=0x066FE9C3, varspace=64
+------------------------------------------------------------------------------
+{
+    auto v1;
+    FBox v18;
+    FBox v32;
+    float64 v34;
+    float64 v36;
+    FVector v42;
+    float64 v44;
+    FVector v50;
+    float64 v58;
+    float64 v60;
+    auto v62;
+
+    this.StaticMeshComponent.SetStaticMesh(this.StaticMesh);
+    if (this.StaticMesh != null) {
+        v18 = FBox();
+        v32 = this.StaticMesh.GetBoundingBox();
+        v32 = v18;
+        v36 = v18.Max.Z;
+        v36 = -v36;
+        v42 = FVector(0, 0, v36);
+        this.StaticMeshComponent.SetRelativeLocation(v42);
+        v1 = this.bGenerateBackupMantleCollision;
+        if (!v1) {
+            v1 = true;
+            this.BackupMantleCollision.SetBoxExtent(FVector::ZeroVector, true);
+            this.BackupMantleCollision.SetRelativeLocation(FVector::ZeroVector);
+        } else {
+            v42 = FVector(v18.Max);
+            v44 = v18.Max.X;
+            v34 = v42.X;
+            v44 = v44 - v34;
+            v34 = v18.Max.Y;
+            v58 = v42.Y;
+            v34 = v34 - v58;
+            v62 = 3000;
+            v60 = 2;
+            v58 = 3000 / 2;
+            v1 = true;
+            v60 = v42.X;
+            v50 = FVector(v60, v42.Y, v58);
+            this.BackupMantleCollision.SetBoxExtent(v50, true);
+            v60 = v58;
+            v60 = -v58;
+            v50 = FVector(v44, v34, v60);
+            this.BackupMantleCollision.SetRelativeLocation(v50);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:952 d:134230831      ; ATemporaryFloor::StaticMesh  (+952)
+    //     3  RDSPtr
+    //     4  PshVPtr        rW0:0
+    //     5  ADDSi          W0:928 d:134230831      ; ATemporaryFloor::StaticMeshComponent  (+928)
+    //     7  RDSPtr
+    //     8  CALLSYS        q:0x26e7977dec0         ; bool UStaticMeshComponent::SetStaticMesh(UStaticMesh@)
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:952 d:134230831      ; ATemporaryFloor::StaticMesh  (+952)
+    //    14  RDSPtr
+    //    15  RefCpyV        wW0:4
+    //    16  CmpPtrNull     rW0:4
+    //    17  JZ             ->195
+    //    19  PSF            rW0:18
+    //    20  CALLSYS        q:0x26e69c48900         ; void FBox::$beh0()
+    //    23  PSF            rW0:32
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:952 d:134230831      ; ATemporaryFloor::StaticMesh  (+952)
+    //    27  RDSPtr
+    //    28  CALLSYS        q:0x26e79b5d0c0         ; FBox UStaticMesh::GetBoundingBox() const
+    //    31  PSF            rW0:32
+    //    32  PSF            rW0:18
+    //    33  COPY           W0:56 d:67117429        ; 56 dwords of FBox
+    //    35  PopPtr
+    //    36  PSF            rW0:18
+    //    37  ADDSi          W0:24 d:67117429        ; FBox::Max  (+24)
+    //    39  ADDSi          W0:16 d:67117444        ; FVector::Z  (+16)
+    //    41  PopRPtr
+    //    42  RDR8           wW0:36
+    //    43  NEGd           rW0:36
+    //    44  PshV8          rW0:36
+    //    45  PshC8          q:0x0
+    //    48  PshC8          q:0x0
+    //    51  PSF            rW0:42
+    //    52  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //    55  PSF            rW0:42
+    //    56  PshVPtr        rW0:0
+    //    57  ADDSi          W0:928 d:134230831      ; ATemporaryFloor::StaticMeshComponent  (+928)
+    //    59  RDSPtr
+    //    60  CALLSYS        q:0x26e79f61200         ; void USceneComponent::SetRelativeLocation(const FVector&)   [UFunction K2_SetRelativeLocation]
+    //    63  LoadThisR      W0:944 d:134230831      ; ATemporaryFloor::bGenerateBackupMantleCollision  (+944)
+    //    65  RDR1           wW0:1
+    //    66  CpyVtoR1       rW0:1
+    //    67  JLowZ          ->172
+    //    69  PSF            rW0:18
+    //    70  ADDSi          W0:24 d:67117429        ; FBox::Max  (+24)
+    //    72  PSF            rW0:42
+    //    73  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    76  PSF            rW0:18
+    //    77  ADDSi          W0:0 d:67117429         ; FBox::Min  (+0)
+    //    79  PSF            rW0:56
+    //    80  PSF            rW0:42
+    //    81  CALLSYS        q:0x26e69d00cc0         ; FVector FVector::opSub(const FVector&) const
+    //    84  PshC8          q:0x4000000000000000
+    //    87  PSF            rW0:42
+    //    88  PSF            rW0:56
+    //    89  CALLSYS        q:0x26e69d005c0         ; FVector FVector::opDiv(float64) const
+    //    92  PSF            rW0:18
+    //    93  ADDSi          W0:24 d:67117429        ; FBox::Max  (+24)
+    //    95  ADDSi          W0:0 d:67117444         ; FVector::X  (+0)
+    //    97  PopRPtr
+    //    98  RDR8           wW0:44
+    //    99  LoadVObjR      rW0:42 W1:0 DW2:67117444; FVector::X  (+0)
+    //   102  RDR8           wW0:34
+    //   103  SUBd           wW0:44 rW1:44 rW2:34
+    //   105  PSF            rW0:18
+    //   106  ADDSi          W0:24 d:67117429        ; FBox::Max  (+24)
+    //   108  ADDSi          W0:8 d:67117444         ; FVector::Y  (+8)
+    //   110  PopRPtr
+    //   111  RDR8           wW0:34
+    //   112  LoadVObjR      rW0:42 W1:8 DW2:67117444; FVector::Y  (+8)
+    //   115  RDR8           wW0:58
+    //   116  SUBd           wW0:34 rW1:34 rW2:58
+    //   118  SetV8          wW0:62 q:0x40a7700000000000
+    //   121  SetV8          wW0:60 q:0x4000000000000000
+    //   124  DIVd           wW0:58 rW1:62 rW2:60
+    //   126  SetV1          wW0:1 d:1
+    //   128  PshV4          rW0:1
+    //   129  PshV8          rW0:58
+    //   130  LoadVObjR      rW0:42 W1:8 DW2:67117444; FVector::Y  (+8)
+    //   133  RDR8           wW0:64
+    //   134  PshV8          rW0:64
+    //   135  LoadVObjR      rW0:42 W1:0 DW2:67117444; FVector::X  (+0)
+    //   138  RDR8           wW0:60
+    //   139  PshV8          rW0:60
+    //   140  PSF            rW0:50
+    //   141  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //   144  PSF            rW0:50
+    //   145  PshVPtr        rW0:0
+    //   146  ADDSi          W0:936 d:134230831      ; ATemporaryFloor::BackupMantleCollision  (+936)
+    //   148  RDSPtr
+    //   149  CALLSYS        q:0x26e799fc100         ; void UBoxComponent::SetBoxExtent(FVector, bool)
+    //   152  CpyVtoV8       wW0:60 rW1:58
+    //   154  NEGd           rW0:60
+    //   155  PshV8          rW0:60
+    //   156  PshV8          rW0:34
+    //   157  PshV8          rW0:44
+    //   158  PSF            rW0:50
+    //   159  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //   162  PSF            rW0:50
+    //   163  PshVPtr        rW0:0
+    //   164  ADDSi          W0:936 d:134230831      ; ATemporaryFloor::BackupMantleCollision  (+936)
+    //   166  RDSPtr
+    //   167  CALLSYS        q:0x26e79f61200         ; void USceneComponent::SetRelativeLocation(const FVector&)   [UFunction K2_SetRelativeLocation]
+    //   170  JMP            ->195
+    //   172  SetV1          wW0:1 d:1
+    //   174  PshV4          rW0:1
+    //   175  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //   178  PshVPtr        rW0:0
+    //   179  ADDSi          W0:936 d:134230831      ; ATemporaryFloor::BackupMantleCollision  (+936)
+    //   181  RDSPtr
+    //   182  CALLSYS        q:0x26e799fc100         ; void UBoxComponent::SetBoxExtent(FVector, bool)
+    //   185  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //   188  PshVPtr        rW0:0
+    //   189  ADDSi          W0:936 d:134230831      ; ATemporaryFloor::BackupMantleCollision  (+936)
+    //   191  RDSPtr
+    //   192  CALLSYS        q:0x26e79f61200         ; void USceneComponent::SetRelativeLocation(const FVector&)   [UFunction K2_SetRelativeLocation]
+    //   195  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 81 instr, 568 B bytecode, id=0x158C96A8, varspace=10
+------------------------------------------------------------------------------
+{
+    float64 v4;
+    auto v6;
+    ETemporaryFloorState v7;
+
+    if (Loki::LokiIsServer(__WorldContext)) {
+        this.StaticMeshComponent.OnComponentHit.AddUFunction(this, __STATIC_NAME(29));
+        this.BackupMantleCollision.OnComponentHit.AddUFunction(this, __STATIC_NAME(29));
+    }
+    v4 = 0;
+    v7 = 1;
+    this.StateToCumulativeDurationMap.Add(v7, v4);
+    v6 = this.GetTriggeredDuration();
+    v4 = v4 + v6;
+    v7 = 2;
+    this.StateToCumulativeDurationMap.Add(v7, v4);
+    v6 = this.GetFadingDuration();
+    v4 = v4 + v6;
+    v7 = 3;
+    this.StateToCumulativeDurationMap.Add(v7, v4);
+    v6 = this.GetDeadDuration();
+    v4 = v4 + v6;
+    v7 = 4;
+    this.StateToCumulativeDurationMap.Add(v7, v4);
+    v6 = this.GetRespawningDuration();
+    v4 = v4 + v6;
+    v7 = 0;
+    this.StateToCumulativeDurationMap.Add(v7, v4);
+    if (Loki::LokiIsClient(__WorldContext)) {
+        this.UpdateLocalState();
+        v6 = this.LastTriggerTime;
+        if (v6 != -1) {
+            this.DirtyHeightMap();
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->40
+    //     8  PshC4          d:29
+    //    10  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    13  PshRPtr
+    //    14  PshVPtr        rW0:0
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:928 d:134230831      ; ATemporaryFloor::StaticMeshComponent  (+928)
+    //    18  RDSPtr
+    //    19  ADDSi          W0:1632 d:67111354      ; UPrimitiveComponent::OnComponentHit  (+1632)
+    //    21  CALLSYS        q:0x26e77220940         ; void FComponentHitSignature::AddUFunction(UObject@, const FName&)
+    //    24  PshC4          d:29
+    //    26  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    29  PshRPtr
+    //    30  PshVPtr        rW0:0
+    //    31  PshVPtr        rW0:0
+    //    32  ADDSi          W0:936 d:134230831      ; ATemporaryFloor::BackupMantleCollision  (+936)
+    //    34  RDSPtr
+    //    35  ADDSi          W0:1632 d:67111354      ; UPrimitiveComponent::OnComponentHit  (+1632)
+    //    37  CALLSYS        q:0x26e77220940         ; void FComponentHitSignature::AddUFunction(UObject@, const FName&)
+    //    40  SetV8          wW0:4 q:0x0
+    //    43  PSF            rW0:4
+    //    44  SetV1          wW0:7 d:1
+    //    46  PSF            rW0:7
+    //    47  PshVPtr        rW0:0
+    //    48  ADDSi          W0:1096 d:134230831     ; ATemporaryFloor::StateToCumulativeDurationMap  (+1096)
+    //    50  CALLSYS        q:0x26e6ef21740         ; void TMap<ETemporaryFloorState, float64>::Add(const ETemporaryFloorState&, const float64&)
+    //    53  PshVPtr        rW0:0
+    //    54  CALLINTF       d:84499                 ; float64 ATemporaryFloor::GetTriggeredDuration() const
+    //    56  CpyRtoV8       wW0:6
+    //    57  ADDd           wW0:4 rW1:4 rW2:6
+    //    59  PSF            rW0:4
+    //    60  SetV1          wW0:7 d:2
+    //    62  PSF            rW0:7
+    //    63  PshVPtr        rW0:0
+    //    64  ADDSi          W0:1096 d:134230831     ; ATemporaryFloor::StateToCumulativeDurationMap  (+1096)
+    //    66  CALLSYS        q:0x26e6ef21740         ; void TMap<ETemporaryFloorState, float64>::Add(const ETemporaryFloorState&, const float64&)
+    //    69  PshVPtr        rW0:0
+    //    70  CALLINTF       d:84501                 ; float64 ATemporaryFloor::GetFadingDuration() const
+    //    72  CpyRtoV8       wW0:6
+    //    73  ADDd           wW0:4 rW1:4 rW2:6
+    //    75  PSF            rW0:4
+    //    76  SetV1          wW0:7 d:3
+    //    78  PSF            rW0:7
+    //    79  PshVPtr        rW0:0
+    //    80  ADDSi          W0:1096 d:134230831     ; ATemporaryFloor::StateToCumulativeDurationMap  (+1096)
+    //    82  CALLSYS        q:0x26e6ef21740         ; void TMap<ETemporaryFloorState, float64>::Add(const ETemporaryFloorState&, const float64&)
+    //    85  PshVPtr        rW0:0
+    //    86  CALLINTF       d:84503                 ; float64 ATemporaryFloor::GetDeadDuration() const
+    //    88  CpyRtoV8       wW0:6
+    //    89  ADDd           wW0:4 rW1:4 rW2:6
+    //    91  PSF            rW0:4
+    //    92  SetV1          wW0:7 d:4
+    //    94  PSF            rW0:7
+    //    95  PshVPtr        rW0:0
+    //    96  ADDSi          W0:1096 d:134230831     ; ATemporaryFloor::StateToCumulativeDurationMap  (+1096)
+    //    98  CALLSYS        q:0x26e6ef21740         ; void TMap<ETemporaryFloorState, float64>::Add(const ETemporaryFloorState&, const float64&)
+    //   101  PshVPtr        rW0:0
+    //   102  CALLINTF       d:84505                 ; float64 ATemporaryFloor::GetRespawningDuration() const
+    //   104  CpyRtoV8       wW0:6
+    //   105  ADDd           wW0:4 rW1:4 rW2:6
+    //   107  PSF            rW0:4
+    //   108  SetV1          wW0:7 d:0
+    //   110  PSF            rW0:7
+    //   111  PshVPtr        rW0:0
+    //   112  ADDSi          W0:1096 d:134230831     ; ATemporaryFloor::StateToCumulativeDurationMap  (+1096)
+    //   114  CALLSYS        q:0x26e6ef21740         ; void TMap<ETemporaryFloorState, float64>::Add(const ETemporaryFloorState&, const float64&)
+    //   117  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   120  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //   123  JLowZ          ->141
+    //   125  PshVPtr        rW0:0
+    //   126  CALLINTF       d:84523                 ; void ATemporaryFloor::UpdateLocalState()
+    //   128  LoadThisR      W0:1080 d:134230831     ; ATemporaryFloor::LastTriggerTime  (+1080)
+    //   130  RDR8           wW0:6
+    //   131  SetV8          wW0:10 q:0xbff0000000000000
+    //   134  CMPd           rW0:6 rW1:10
+    //   136  JZ             ->141
+    //   138  PshVPtr        rW0:0
+    //   139  CALLINTF       d:84517                 ; void ATemporaryFloor::DirtyHeightMap()
+    //   141  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 69 instr, 488 B bytecode, id=0x3E6BE017, varspace=18
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    auto v3;
+    auto v5;
+    auto v8;
+    float64 v10;
+    float64 v18;
+
+    // control flow not structured (structuring dropped 8 of 17 block(s)); flat form:
+        if (!Loki::LokiIsServer(__WorldContext)) goto L12; else goto L8;
+    L8:
+        v1 = true;
+        goto L23;
+    L12:
+        v2 = this.LocalState;
+        v3 = int(v2);
+        v5 = v3 == 0;
+        v1 = v5;
+    L23:
+        if (!v1) goto L35; else goto L26;
+    L26:
+        v5 = false;
+        this.SetActorTickEnabled(false);
+        goto L121;
+    L35:
+        v10 = this.LastTriggerTime;
+        v10 = float64(Loki::GetServerTimeSince(float(v10), __WorldContext));
+        v8 = v10;
+        v10 = this.StateToCumulativeDurationMap[this.LocalState];
+        v10 = v10 - v10;
+        v18 = Math::Abs(v10);
+        v2 = this.LocalState;
+        v3 = int(v2);
+        if (v3 > 4) goto L121; else goto L80;
+    L80:
+        if (v3 < 1) goto L121; else goto L84;
+    L84:
+        switch (v3 - 1) { /* computed jump */ }
+        // computed jump -- flow not reconstructed
+        goto L97;
+        goto L103;
+        goto L109;
+        goto L115;
+    L97:
+        this.ClientTickTriggered(v18);
+        goto L121;
+    L103:
+        this.ClientTickFading(v18);
+        goto L121;
+    L109:
+        this.ClientTickDead(v18);
+        goto L121;
+    L115:
+        this.ClientTickRespawning(v18);
+    L121:
+        return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->12
+    //     8  SetV1          wW0:1 d:1
+    //    10  JMP            ->23
+    //    12  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //    14  RDR1           wW0:2
+    //    15  sbTOi          wW0:3 rW1:2
+    //    17  CMPIi          rW0:3 d:0
+    //    19  TZ
+    //    20  CpyRtoV4       wW0:5
+    //    21  CpyVtoV4       wW0:1 rW1:5
+    //    23  CpyVtoR1       rW0:1
+    //    24  JLowZ          ->35
+    //    26  SetV1          wW0:5 d:0
+    //    28  PshV4          rW0:5
+    //    29  PshVPtr        rW0:0
+    //    30  CALLSYS        q:0x26e79715100         ; void AActor::SetActorTickEnabled(bool)
+    //    33  JMP            ->121
+    //    35  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    38  LoadThisR      W0:1080 d:134230831     ; ATemporaryFloor::LastTriggerTime  (+1080)
+    //    40  RDR8           wW0:10
+    //    41  dTOf           wW0:11 rW1:10
+    //    43  PshV4          rW0:11
+    //    44  CALLSYS        q:0x26e7a11cb80         ; float Loki::GetServerTimeSince(float, const UObject@)
+    //    47  CpyRtoV4       wW0:12
+    //    48  fTOd           wW0:10 rW1:12
+    //    50  CpyVtoV8       wW0:8 rW1:10
+    //    52  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //    54  PshRPtr
+    //    55  PshVPtr        rW0:0
+    //    56  ADDSi          W0:1096 d:134230831     ; ATemporaryFloor::StateToCumulativeDurationMap  (+1096)
+    //    58  CALLSYS        q:0x26e6ef213c0         ; float64& TMap<ETemporaryFloorState, float64>::opIndex(const ETemporaryFloorState&)
+    //    61  RDR8           wW0:10
+    //    62  CpyVtoV8       wW0:14 rW1:10
+    //    64  SUBd           wW0:10 rW1:8 rW2:14
+    //    66  PshV8          rW0:10
+    //    67  CALLSYS        q:0x26e70383500         ; float64 Math::Abs(float64)
+    //    70  CpyRtoV8       wW0:18
+    //    71  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //    73  RDR1           wW0:2
+    //    74  sbTOi          wW0:3 rW1:2
+    //    76  CMPIi          rW0:3 d:4
+    //    78  JP             ->121
+    //    80  CMPIi          rW0:3 d:1
+    //    82  JS             ->121
+    //    84  SUBIi          wW0:4 rW1:3 DW2:1
+    //    87  JMPP           rW0:4 d:3
+    //    89  JMP            ->97
+    //    91  JMP            ->103
+    //    93  JMP            ->109
+    //    95  JMP            ->115
+    //    97  PshV8          rW0:18
+    //    98  PshVPtr        rW0:0
+    //    99  CALLINTF       d:84507                 ; void ATemporaryFloor::ClientTickTriggered(const float64)
+    //   101  JMP            ->121
+    //   103  PshV8          rW0:18
+    //   104  PshVPtr        rW0:0
+    //   105  CALLINTF       d:84509                 ; void ATemporaryFloor::ClientTickFading(const float64)
+    //   107  JMP            ->121
+    //   109  PshV8          rW0:18
+    //   110  PshVPtr        rW0:0
+    //   111  CALLINTF       d:84511                 ; void ATemporaryFloor::ClientTickDead(const float64)
+    //   113  JMP            ->121
+    //   115  PshV8          rW0:18
+    //   116  PshVPtr        rW0:0
+    //   117  CALLINTF       d:84513                 ; void ATemporaryFloor::ClientTickRespawning(const float64)
+    //   119  JMP            ->121
+    //   121  RET            W0:4
+
+------------------------------------------------------------------------------
+float64 GetTriggeredDuration()
+// 10 instr, 76 B bytecode, id=0x35AA9DC3, varspace=5
+------------------------------------------------------------------------------
+{
+    float64 v2;
+
+    v2 = 0;
+    __Evt_PushArgumentRef__float(v2);
+    __Evt_Execute(this, __STATIC_NAME(116));
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x0
+    //     3  PSF            rW0:2
+    //     4  CALLSYS        q:0x26e77fcd980         ; void __Evt_PushArgumentRef__float(const float64&)
+    //     7  PshC4          d:116
+    //     9  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    12  PshRPtr
+    //    13  PshVPtr        rW0:0
+    //    14  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    17  CpyVtoR8       rW0:2
+    //    18  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, Const)
+// UFunction name: GetTriggeredDuration
+float64 GetTriggeredDuration_Implementation()
+// 4 instr, 20 B bytecode, id=0x11ABF559, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.DefaultTriggeredDuration;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:960 d:134230831      ; ATemporaryFloor::DefaultTriggeredDuration  (+960)
+    //     2  RDR8           wW0:2
+    //     3  CpyVtoR8       rW0:2
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+float64 GetFadingDuration()
+// 10 instr, 76 B bytecode, id=0xB2CA127B, varspace=5
+------------------------------------------------------------------------------
+{
+    float64 v2;
+
+    v2 = 0;
+    __Evt_PushArgumentRef__float(v2);
+    __Evt_Execute(this, __STATIC_NAME(117));
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x0
+    //     3  PSF            rW0:2
+    //     4  CALLSYS        q:0x26e77fcd980         ; void __Evt_PushArgumentRef__float(const float64&)
+    //     7  PshC4          d:117
+    //     9  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    12  PshRPtr
+    //    13  PshVPtr        rW0:0
+    //    14  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    17  CpyVtoR8       rW0:2
+    //    18  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, Const)
+// UFunction name: GetFadingDuration
+float64 GetFadingDuration_Implementation()
+// 4 instr, 20 B bytecode, id=0x7C028DCA, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.DefaultFadingDuration;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:968 d:134230831      ; ATemporaryFloor::DefaultFadingDuration  (+968)
+    //     2  RDR8           wW0:2
+    //     3  CpyVtoR8       rW0:2
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+float64 GetDeadDuration()
+// 10 instr, 76 B bytecode, id=0xEA880C45, varspace=5
+------------------------------------------------------------------------------
+{
+    float64 v2;
+
+    v2 = 0;
+    __Evt_PushArgumentRef__float(v2);
+    __Evt_Execute(this, __STATIC_NAME(118));
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x0
+    //     3  PSF            rW0:2
+    //     4  CALLSYS        q:0x26e77fcd980         ; void __Evt_PushArgumentRef__float(const float64&)
+    //     7  PshC4          d:118
+    //     9  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    12  PshRPtr
+    //    13  PshVPtr        rW0:0
+    //    14  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    17  CpyVtoR8       rW0:2
+    //    18  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, Const)
+// UFunction name: GetDeadDuration
+float64 GetDeadDuration_Implementation()
+// 4 instr, 20 B bytecode, id=0x66CBE7CB, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.DefaultDeadDuration;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:976 d:134230831      ; ATemporaryFloor::DefaultDeadDuration  (+976)
+    //     2  RDR8           wW0:2
+    //     3  CpyVtoR8       rW0:2
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+float64 GetRespawningDuration()
+// 10 instr, 76 B bytecode, id=0x2079C746, varspace=5
+------------------------------------------------------------------------------
+{
+    float64 v2;
+
+    v2 = 0;
+    __Evt_PushArgumentRef__float(v2);
+    __Evt_Execute(this, __STATIC_NAME(119));
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x0
+    //     3  PSF            rW0:2
+    //     4  CALLSYS        q:0x26e77fcd980         ; void __Evt_PushArgumentRef__float(const float64&)
+    //     7  PshC4          d:119
+    //     9  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    12  PshRPtr
+    //    13  PshVPtr        rW0:0
+    //    14  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    17  CpyVtoR8       rW0:2
+    //    18  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, Const)
+// UFunction name: GetRespawningDuration
+float64 GetRespawningDuration_Implementation()
+// 4 instr, 20 B bytecode, id=0xA02E9158, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.DefaultRespawningDuration;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:984 d:134230831      ; ATemporaryFloor::DefaultRespawningDuration  (+984)
+    //     2  RDR8           wW0:2
+    //     3  CpyVtoR8       rW0:2
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+void ClientTickTriggered(const float64 PhaseTime)
+// 8 instr, 60 B bytecode, id=0xF8CEE9BC, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(PhaseTime);
+    __Evt_Execute(this, __STATIC_NAME(120));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:120
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: ClientTickTriggered
+void ClientTickTriggered_Implementation(const float64 PhaseTime)
+// 1 instr, 4 B bytecode, id=0x3345FD7F, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientTickFading(const float64 PhaseTime)
+// 8 instr, 60 B bytecode, id=0x34DBBBE1, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(PhaseTime);
+    __Evt_Execute(this, __STATIC_NAME(121));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:121
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: ClientTickFading
+void ClientTickFading_Implementation(const float64 PhaseTime)
+// 1 instr, 4 B bytecode, id=0x35C82151, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientTickDead(const float64 PhaseTime)
+// 8 instr, 60 B bytecode, id=0xAA281D17, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(PhaseTime);
+    __Evt_Execute(this, __STATIC_NAME(122));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:122
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: ClientTickDead
+void ClientTickDead_Implementation(const float64 PhaseTime)
+// 1 instr, 4 B bytecode, id=0xA5F98B45, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientTickRespawning(const float64 PhaseTime)
+// 8 instr, 60 B bytecode, id=0xEB3D9212, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__float(PhaseTime);
+    __Evt_Execute(this, __STATIC_NAME(123));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //     4  PshC4          d:123
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: ClientTickRespawning
+void ClientTickRespawning_Implementation(const float64 PhaseTime)
+// 1 instr, 4 B bytecode, id=0xFF98BB0B, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+void BP_NewLocalState()
+// 6 instr, 44 B bytecode, id=0xE2550B03, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(124));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:124
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp, meta=(DisplayName=NewLocalState))
+// UFunction name: BP_NewLocalState
+void BP_NewLocalState_Implementation()
+// 1 instr, 4 B bytecode, id=0xE1D1F0FC, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:2
+
+------------------------------------------------------------------------------
+void DirtyHeightMap()
+// 36 instr, 252 B bytecode, id=0xC17E26D5, varspace=24
+------------------------------------------------------------------------------
+{
+    ALokiHeightMap v2;
+    TSubclassOf<ALokiHeightMap@> v6;
+    auto v7;
+    FVector v14;
+    FVector v20;
+
+    v2 = ALokiHeightMap::GetInstance(__WorldContext);
+    v6 = TSubclassOf<ALokiHeightMap@>();
+    v6 = __StaticType_ALokiHeightMap;
+    v7 = v6 == null;
+    v7 = !v7;
+    if (v7) {
+        v14 = this.StaticMeshComponent.GetBoundingBoxExtents();
+        v20 = this.StaticMeshComponent.GetWorldLocation();
+        v2.Dirty(v20, v14);
+        this.LastHeightMapDirtyTime = float64(Gameplay::GetServerTime(__WorldContext));
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a13d600         ; ALokiHeightMap@ ALokiHeightMap::GetInstance(const UObject@)
+    //     6  STOREOBJ       wW0:2
+    //     7  PSF            rW0:6
+    //     8  CALLSYS        q:0x26e6ef20b00         ; void TSubclassOf<ALokiHeightMap@>::$beh0()
+    //    11  PshGPtr        q:0x26e7ad80848         ; __StaticType_ALokiHeightMap
+    //    14  PSF            rW0:6
+    //    15  CALLSYS        q:0x26e6ef21200         ; TSubclassOf<ALokiHeightMap@>& TSubclassOf<ALokiHeightMap@>::opAssign(const TSubclassOf<ALokiHeightMap@>&)
+    //    18  PshNull
+    //    19  PSF            rW0:6
+    //    20  CALLSYS        q:0x26e6ef21040         ; bool TSubclassOf<ALokiHeightMap@>::opEquals(UClass@) const
+    //    23  CpyRtoV4       wW0:7
+    //    24  NOT            rW0:7
+    //    25  CpyVtoR1       rW0:7
+    //    26  JLowZ          ->62
+    //    28  PSF            rW0:14
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:928 d:134230831      ; ATemporaryFloor::StaticMeshComponent  (+928)
+    //    32  RDSPtr
+    //    33  CALLSYS        q:0x26e69d252c0         ; FVector UPrimitiveComponent::GetBoundingBoxExtents() const
+    //    36  PSF            rW0:14
+    //    37  PSF            rW0:20
+    //    38  PshVPtr        rW0:0
+    //    39  ADDSi          W0:928 d:134230831      ; ATemporaryFloor::StaticMeshComponent  (+928)
+    //    41  RDSPtr
+    //    42  CALLSYS        q:0x26e79752e00         ; FVector USceneComponent::GetWorldLocation() const   [UFunction K2_GetComponentLocation]
+    //    45  PSF            rW0:20
+    //    46  PshVPtr        rW0:2
+    //    47  CALLSYS        q:0x26e7a13db40         ; void ALokiHeightMap::Dirty(const FVector&, const FVector&)
+    //    50  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    53  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    56  CpyRtoV4       wW0:21
+    //    57  fTOd           wW0:24 rW1:21
+    //    59  LoadThisR      W0:1088 d:134230831     ; ATemporaryFloor::LastHeightMapDirtyTime  (+1088)
+    //    61  WRTV8          rW0:24
+    //    62  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, meta=(DisplayName=NewLocalState_Script))
+void NewLocalState()
+// 103 instr, 680 B bytecode, id=0xF5C43CF8, varspace=19
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    auto v3;
+    auto v5;
+    ECollisionEnabled v7;
+    ECollisionEnabled v8;
+    auto v9;
+    bool v10;
+    UAkAudioEvent v12;
+    FVector v18;
+
+    v2 = this.LocalState;
+    v3 = int(v2);
+    v5 = v3 != 3;
+    if (!v5) {
+        v8 = 0;
+        v7 = 0;
+    } else {
+        v8 = 3;
+        v7 = 3;
+    }
+    v1 = this.StaticMeshComponent.IsCollisionEnabled();
+    v1 = !v1;
+    v10 = v5;
+    v10 = !v5;
+    v1 = v1 != v10;
+    if (v1) {
+        this.StaticMeshComponent.SetCollisionEnabled(v7);
+        this.BackupMantleCollision.SetCollisionEnabled(v7);
+    }
+    if (v1) {
+        this.DirtyHeightMap();
+    }
+    v9 = false;
+    v10 = v5;
+    v10 = !v5;
+    this.StaticMeshComponent.SetHiddenInGame(v10, false);
+    if (!Loki::LokiIsClient(__WorldContext)) {
+        v2 = this.LocalState;
+        v3 = int(v2);
+        if (v3 == 0) {
+            this.SetNetDormancy(2);
+            this.ForceNetUpdate();
+        }
+    } else {
+        v2 = this.LocalState;
+        v3 = int(v2);
+        if (v3 != 0) {
+            v9 = true;
+            this.SetActorTickEnabled(true);
+        } else {
+            v10 = false;
+            this.SetActorTickEnabled(false);
+        }
+        v12 = this.StateAudioEvents[this.LocalState];
+        if (v12 != null) {
+            v9 = true;
+            v18 = this.GetActorLocation();
+            LokiAudio::PostEventLocation(__WorldContext, v12, v18, null, null, true);
+        }
+    }
+    this.BP_NewLocalState();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //     2  RDR1           wW0:2
+    //     3  sbTOi          wW0:3 rW1:2
+    //     5  CMPIi          rW0:3 d:3
+    //     7  TNZ
+    //     8  CpyRtoV4       wW0:5
+    //     9  CpyVtoR1       rW0:5
+    //    10  JLowZ          ->18
+    //    12  SetV1          wW0:8 d:3
+    //    14  CpyVtoV4       wW0:7 rW1:8
+    //    16  JMP            ->22
+    //    18  SetV1          wW0:8 d:0
+    //    20  CpyVtoV4       wW0:7 rW1:8
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:928 d:134230831      ; ATemporaryFloor::StaticMeshComponent  (+928)
+    //    25  RDSPtr
+    //    26  CALLSYS        q:0x26e79758200         ; bool UPrimitiveComponent::IsCollisionEnabled() const   [UFunction K2_IsCollisionEnabled]
+    //    29  CpyRtoV4       wW0:1
+    //    30  NOT            rW0:1
+    //    31  CpyVtoV4       wW0:10 rW1:5
+    //    33  NOT            rW0:10
+    //    34  CMPi           rW0:1 rW1:10
+    //    36  TNZ
+    //    37  CpyRtoV4       wW0:1
+    //    38  CpyVtoR1       rW0:1
+    //    39  JLowZ          ->57
+    //    41  PshV4          rW0:7
+    //    42  PshVPtr        rW0:0
+    //    43  ADDSi          W0:928 d:134230831      ; ATemporaryFloor::StaticMeshComponent  (+928)
+    //    45  RDSPtr
+    //    46  CALLSYS        q:0x26e7975cb80         ; void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled)
+    //    49  PshV4          rW0:7
+    //    50  PshVPtr        rW0:0
+    //    51  ADDSi          W0:936 d:134230831      ; ATemporaryFloor::BackupMantleCollision  (+936)
+    //    53  RDSPtr
+    //    54  CALLSYS        q:0x26e7975cb80         ; void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled)
+    //    57  CpyVtoR1       rW0:1
+    //    58  JLowZ          ->63
+    //    60  PshVPtr        rW0:0
+    //    61  CALLINTF       d:84517                 ; void ATemporaryFloor::DirtyHeightMap()
+    //    63  SetV1          wW0:9 d:0
+    //    65  PshV4          rW0:9
+    //    66  CpyVtoV4       wW0:10 rW1:5
+    //    68  NOT            rW0:10
+    //    69  PshV4          rW0:10
+    //    70  PshVPtr        rW0:0
+    //    71  ADDSi          W0:928 d:134230831      ; ATemporaryFloor::StaticMeshComponent  (+928)
+    //    73  RDSPtr
+    //    74  CALLSYS        q:0x26e79751580         ; void USceneComponent::SetHiddenInGame(bool, bool)
+    //    77  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    80  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //    83  JLowZ          ->146
+    //    85  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //    87  RDR1           wW0:2
+    //    88  sbTOi          wW0:3 rW1:2
+    //    90  CMPIi          rW0:3 d:0
+    //    92  JNZ            ->103
+    //    94  SetV1          wW0:10 d:0
+    //    96  PshV4          rW0:10
+    //    97  PshVPtr        rW0:0
+    //    98  CALLSYS        q:0x26e79715100         ; void AActor::SetActorTickEnabled(bool)
+    //   101  JMP            ->110
+    //   103  SetV1          wW0:9 d:1
+    //   105  PshV4          rW0:9
+    //   106  PshVPtr        rW0:0
+    //   107  CALLSYS        q:0x26e79715100         ; void AActor::SetActorTickEnabled(bool)
+    //   110  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //   112  PshRPtr
+    //   113  PshVPtr        rW0:0
+    //   114  ADDSi          W0:992 d:134230831      ; ATemporaryFloor::StateAudioEvents  (+992)
+    //   116  CALLSYS        q:0x26e6ef20780         ; UAkAudioEvent@& TMap<ETemporaryFloorState, UAkAudioEvent@>::opIndex(const ETemporaryFloorState&)
+    //   119  PshRPtr
+    //   120  RDSPtr
+    //   121  RefCpyV        wW0:12
+    //   122  CmpPtrNull     rW0:12
+    //   123  JZ             ->143
+    //   125  SetV1          wW0:9 d:1
+    //   127  PshV4          rW0:9
+    //   128  PshNull
+    //   129  PshNull
+    //   130  PSF            rW0:18
+    //   131  PshVPtr        rW0:0
+    //   132  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   135  PSF            rW0:18
+    //   136  PshVPtr        rW0:12
+    //   137  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   140  CALLSYS        q:0x26e7a0e3880         ; int LokiAudio::PostEventLocation(UObject@, UAkAudioEvent@, const FVector&, UAkSwitchValue@, UObject@, bool)
+    //   143  FreeNullV8     wW0:12
+    //   144  JMP            ->166
+    //   146  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //   148  RDR1           wW0:2
+    //   149  sbTOi          wW0:3 rW1:2
+    //   151  CMPIi          rW0:3 d:0
+    //   153  JNZ            ->166
+    //   155  SetV1          wW0:19 d:2
+    //   157  PshV4          rW0:19
+    //   158  PshVPtr        rW0:0
+    //   159  CALLSYS        q:0x26e79714840         ; void AActor::SetNetDormancy(ENetDormancy)
+    //   162  PshVPtr        rW0:0
+    //   163  CALLSYS        q:0x26e797083c0         ; void AActor::ForceNetUpdate()
+    //   166  PshVPtr        rW0:0
+    //   167  CALLINTF       d:84515                 ; void ATemporaryFloor::BP_NewLocalState()
+    //   169  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Script_BeginCharacterBase
+void Script_BeginCharacterBase_Implementation(ACharacter@ Character)
+// 7 instr, 52 B bytecode, id=0x34A7ECF0, varspace=1
+------------------------------------------------------------------------------
+{
+    if (Loki::LokiIsServer(__WorldContext)) {
+        this.AuthTryTrigger(Character);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->12
+    //     8  PshVPtr        rW0:-2
+    //     9  PshVPtr        rW0:0
+    //    10  CALLINTF       d:84521                 ; void ATemporaryFloor::AuthTryTrigger(AActor@)
+    //    12  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void AuthHandleBlockHit(UPrimitiveComponent@ HitComponent, AActor@ OtherActor, UPrimitiveComponent@ OtherComp, const FVector&inout NormalImpulse, const FHitResult&in Hit)
+// 11 instr, 64 B bytecode, id=0x9826E890, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = Hit.GetbBlockingHit();
+    v1 = !v1;
+    if (!v1) {
+        this.AuthTryTrigger(OtherActor);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-10
+    //     1  CALLSYS        q:0x26e79f66ec0         ; bool FHitResult::GetbBlockingHit() const
+    //     4  CpyRtoV4       wW0:1
+    //     5  NOT            rW0:1
+    //     6  CpyVtoR1       rW0:1
+    //     7  JLowZ          ->11
+    //     9  JMP            ->15
+    //    11  PshVPtr        rW0:-4
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84521                 ; void ATemporaryFloor::AuthTryTrigger(AActor@)
+    //    15  RET            W0:12
+
+------------------------------------------------------------------------------
+void AuthTryTrigger(AActor@ OtherActor)
+// 36 instr, 244 B bytecode, id=0x886C44B7, varspace=14
+------------------------------------------------------------------------------
+{
+    auto v4;
+    auto v9;
+
+    if (int(this.LocalState) == 0) {
+        if (OtherActor != null) {
+            v9 = OtherActor.IsA(ALokiCharacter::StaticClass());
+            v9 = !v9;
+            v4 = v9;
+        } else {
+            v4 = true;
+        }
+        if (!v4) {
+            this.SetNetDormancy(true);
+            this.LastTriggerTime = float64(Gameplay::GetServerTime(__WorldContext));
+            this.UpdateLocalState();
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //     2  RDR1           wW0:1
+    //     3  sbTOi          wW0:2 rW1:1
+    //     5  CMPIi          rW0:2 d:0
+    //     7  JZ             ->11
+    //     9  JMP            ->60
+    //    11  PshVPtr        rW0:-2
+    //    12  RefCpyV        wW0:6
+    //    13  CmpPtrNull     rW0:6
+    //    14  JNZ            ->20
+    //    16  SetV1          wW0:4 d:1
+    //    18  JMP            ->33
+    //    20  CALLSYS        q:0x26e7ad74f40         ; UClass@ ALokiCharacter::StaticClass()
+    //    23  STOREOBJ       wW0:8
+    //    24  PshVPtr        rW0:8
+    //    25  PshVPtr        rW0:-2
+    //    26  CALLSYS        q:0x26e7039ac00         ; bool UObject::IsA(const UClass@) const
+    //    29  CpyRtoV4       wW0:9
+    //    30  NOT            rW0:9
+    //    31  CpyVtoV4       wW0:4 rW1:9
+    //    33  CpyVtoR1       rW0:4
+    //    34  JLowZ          ->38
+    //    36  JMP            ->60
+    //    38  SetV1          wW0:10 d:1
+    //    40  PshV4          rW0:10
+    //    41  PshVPtr        rW0:0
+    //    42  CALLSYS        q:0x26e79714840         ; void AActor::SetNetDormancy(ENetDormancy)
+    //    45  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    48  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    51  CpyRtoV4       wW0:11
+    //    52  fTOd           wW0:14 rW1:11
+    //    54  LoadThisR      W0:1080 d:134230831     ; ATemporaryFloor::LastTriggerTime  (+1080)
+    //    56  WRTV8          rW0:14
+    //    57  PshVPtr        rW0:0
+    //    58  CALLINTF       d:84523                 ; void ATemporaryFloor::UpdateLocalState()
+    //    60  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnRep_LastTriggerTime()
+// 13 instr, 96 B bytecode, id=0x013DC9E4, varspace=5
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.LastTriggerTime;
+    if (v2 != -1) {
+        this.UpdateLocalState();
+        if (AkGameplay::IsEditor()) {
+            this.DirtyHeightMap();
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1080 d:134230831     ; ATemporaryFloor::LastTriggerTime  (+1080)
+    //     2  RDR8           wW0:2
+    //     3  SetV8          wW0:4 q:0xbff0000000000000
+    //     6  CMPd           rW0:2 rW1:4
+    //     8  JNZ            ->12
+    //    10  JMP            ->23
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84523                 ; void ATemporaryFloor::UpdateLocalState()
+    //    15  CALLSYS        q:0x26e79c1c480         ; bool AkGameplay::IsEditor()
+    //    18  JLowZ          ->23
+    //    20  PshVPtr        rW0:0
+    //    21  CALLINTF       d:84517                 ; void ATemporaryFloor::DirtyHeightMap()
+    //    23  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void UpdateLocalState()
+// 76 instr, 532 B bytecode, id=0x8FC664F7, varspace=22
+------------------------------------------------------------------------------
+{
+    ETemporaryFloorState v1;
+    auto v2;
+    auto v3;
+    ETemporaryFloorState v7;
+    auto v10;
+    auto v12;
+    FTimerHandle v22;
+
+    v2 = this.CalculateCurrentState();
+    v1 = this.LocalState;
+    v3 = int(v1);
+    if (v3 != int(v2)) {
+        this.LocalState = v2;
+        this.NewLocalState();
+    }
+    v1 = this.LocalState;
+    v3 = int(v1);
+    if (v3 != 0) {
+        v1 = this.LocalState;
+        v7 = this.GetNextState(v1);
+        v12 = this.StateToCumulativeDurationMap[v7];
+        v10 = v12;
+        v12 = this.LastTriggerTime;
+        v12 = float64(Loki::GetServerTimeSince(float(v12), __WorldContext));
+        v12 = v12 - v12;
+        if (v12 <= 0) {
+            v22 = System::SetTimerForNextTick(this, "UpdateLocalState");
+            this.NextUpdateTimerHandle = v22;
+        } else {
+            v22 = System::SetTimer(this, __STATIC_NAME(30), float(v12), false, false, 0, 0);
+            this.NextUpdateTimerHandle = v22;
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84525                 ; ETemporaryFloorState ATemporaryFloor::CalculateCurrentState()
+    //     3  CpyRtoV4       wW0:2
+    //     4  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //     6  RDR1           wW0:1
+    //     7  sbTOi          wW0:3 rW1:1
+    //     9  sbTOi          wW0:4 rW1:2
+    //    11  CMPi           rW0:3 rW1:4
+    //    13  JZ             ->21
+    //    15  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //    17  WRTV1          rW0:2
+    //    18  PshVPtr        rW0:0
+    //    19  CALLINTF       d:84518                 ; void ATemporaryFloor::NewLocalState()
+    //    21  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //    23  RDR1           wW0:1
+    //    24  sbTOi          wW0:3 rW1:1
+    //    26  CMPIi          rW0:3 d:0
+    //    28  JNZ            ->32
+    //    30  JMP            ->132
+    //    32  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //    34  RDR1           wW0:1
+    //    35  PshV4          rW0:1
+    //    36  PshVPtr        rW0:0
+    //    37  CALLINTF       d:84524                 ; ETemporaryFloorState ATemporaryFloor::GetNextState(const ETemporaryFloorState)
+    //    39  CpyRtoV4       wW0:7
+    //    40  PSF            rW0:7
+    //    41  PshVPtr        rW0:0
+    //    42  ADDSi          W0:1096 d:134230831     ; ATemporaryFloor::StateToCumulativeDurationMap  (+1096)
+    //    44  CALLSYS        q:0x26e6ef213c0         ; float64& TMap<ETemporaryFloorState, float64>::opIndex(const ETemporaryFloorState&)
+    //    47  RDR8           wW0:12
+    //    48  CpyVtoV8       wW0:10 rW1:12
+    //    50  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    53  LoadThisR      W0:1080 d:134230831     ; ATemporaryFloor::LastTriggerTime  (+1080)
+    //    55  RDR8           wW0:12
+    //    56  dTOf           wW0:15 rW1:12
+    //    58  PshV4          rW0:15
+    //    59  CALLSYS        q:0x26e7a11cb80         ; float Loki::GetServerTimeSince(float, const UObject@)
+    //    62  CpyRtoV4       wW0:16
+    //    63  fTOd           wW0:12 rW1:16
+    //    65  CpyVtoV8       wW0:14 rW1:12
+    //    67  SUBd           wW0:12 rW1:10 rW2:14
+    //    69  SetV8          wW0:18 q:0x0
+    //    72  CMPd           rW0:12 rW1:18
+    //    74  JNP            ->113
+    //    76  PshC4          d:0
+    //    78  PshC4          d:0
+    //    80  SetV1          wW0:5 d:0
+    //    82  PshV4          rW0:5
+    //    83  SetV1          wW0:19 d:0
+    //    85  PshV4          rW0:19
+    //    86  dTOf           wW0:20 rW1:12
+    //    88  PshV4          rW0:20
+    //    89  PshC4          d:30
+    //    91  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    94  PshRPtr
+    //    95  PshVPtr        rW0:0
+    //    96  PSF            rW0:22
+    //    97  CALLSYS        q:0x26e79b1c480         ; FTimerHandle System::SetTimer(UObject@, FName, float, bool, bool, float, float)
+    //   100  PSF            rW0:22
+    //   101  PshVPtr        rW0:0
+    //   102  ADDSi          W0:1176 d:134230831     ; ATemporaryFloor::NextUpdateTimerHandle  (+1176)
+    //   104  CALLSYS        q:0x26e786b8900         ; FTimerHandle& FTimerHandle::opAssign(const FTimerHandle&)
+    //   107  PSF            rW0:22
+    //   108  CALLSYS        q:0x26e786b8c80         ; void FTimerHandle::$beh2()
+    //   111  JMP            ->132
+    //   113  PGA            q:0x26e6f115d80         ; "UpdateLocalState"
+    //   116  PshVPtr        rW0:0
+    //   117  PSF            rW0:22
+    //   118  CALLSYS        q:0x26e79b1c800         ; FTimerHandle System::SetTimerForNextTick(UObject@, FString)
+    //   121  PSF            rW0:22
+    //   122  PshVPtr        rW0:0
+    //   123  ADDSi          W0:1176 d:134230831     ; ATemporaryFloor::NextUpdateTimerHandle  (+1176)
+    //   125  CALLSYS        q:0x26e786b8900         ; FTimerHandle& FTimerHandle::opAssign(const FTimerHandle&)
+    //   128  PSF            rW0:22
+    //   129  CALLSYS        q:0x26e786b8c80         ; void FTimerHandle::$beh2()
+    //   132  RET            W0:2
+
+------------------------------------------------------------------------------
+ETemporaryFloorState GetNextState(const ETemporaryFloorState CurrentState)
+// 11 instr, 80 B bytecode, id=0xFCD76BD5, varspace=5
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    auto v4;
+
+    v2 = int(CurrentState);
+    v2 = v2 + 1;
+    v4 = int8(v2);
+    if (int(v4) != 5) {
+    } else {
+        v1 = false;
+    }
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  sbTOi          wW0:2 rW1:-2
+    //     2  ADDIi          wW0:2 rW1:2 DW2:1
+    //     5  iTOb           wW0:4 rW1:2
+    //     7  sbTOi          wW0:3 rW1:4
+    //     9  CMPIi          rW0:3 d:5
+    //    11  JNZ            ->18
+    //    13  SetV1          wW0:1 d:0
+    //    15  CpyVtoR4       rW0:1
+    //    16  JMP            ->19
+    //    18  CpyVtoR4       rW0:4
+    //    19  RET            W0:3
+
+------------------------------------------------------------------------------
+ETemporaryFloorState CalculateCurrentState()
+// 61 instr, 412 B bytecode, id=0xF6154819, varspace=20
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v4;
+    auto v5;
+    ETemporaryFloorState v6;
+    auto v8;
+    auto v12;
+    auto v16;
+    ETemporaryFloorState v17;
+
+    v2 = this.LastTriggerTime;
+    v4 = 0;
+    if (v2 > 0) {
+        v2 = this.LastTriggerTime;
+        v4 = float64(Loki::GetServerTimeSince(float(v2), __WorldContext));
+        v8 = v4;
+        v6 = 0;
+        v4 = this.StateToCumulativeDurationMap[v6];
+        v12 = v4;
+        v6 = this.LocalState;
+        if (int(v6) == 0) {
+            v5 = v8 >= v12;
+        } else {
+            v5 = 0;
+        }
+        if (!v5) {
+            v6 = this.LocalState;
+            v17 = this.GetNextState(v6);
+            v2 = this.StateToCumulativeDurationMap[v17];
+            if (v8 < v2) {
+                v16 = this.LocalState;
+            } else {
+            }
+        } else {
+            v6 = 0;
+        }
+    } else {
+        v6 = 0;
+    }
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1080 d:134230831     ; ATemporaryFloor::LastTriggerTime  (+1080)
+    //     2  RDR8           wW0:2
+    //     3  SetV8          wW0:4 q:0x0
+    //     6  CMPd           rW0:2 rW1:4
+    //     8  JP             ->15
+    //    10  SetV1          wW0:6 d:0
+    //    12  CpyVtoR4       rW0:6
+    //    13  JMP            ->102
+    //    15  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    18  LoadThisR      W0:1080 d:134230831     ; ATemporaryFloor::LastTriggerTime  (+1080)
+    //    20  RDR8           wW0:2
+    //    21  dTOf           wW0:9 rW1:2
+    //    23  PshV4          rW0:9
+    //    24  CALLSYS        q:0x26e7a11cb80         ; float Loki::GetServerTimeSince(float, const UObject@)
+    //    27  CpyRtoV4       wW0:10
+    //    28  fTOd           wW0:4 rW1:10
+    //    30  CpyVtoV8       wW0:8 rW1:4
+    //    32  SetV1          wW0:6 d:0
+    //    34  PSF            rW0:6
+    //    35  PshVPtr        rW0:0
+    //    36  ADDSi          W0:1096 d:134230831     ; ATemporaryFloor::StateToCumulativeDurationMap  (+1096)
+    //    38  CALLSYS        q:0x26e6ef213c0         ; float64& TMap<ETemporaryFloorState, float64>::opIndex(const ETemporaryFloorState&)
+    //    41  RDR8           wW0:4
+    //    42  CpyVtoV8       wW0:12 rW1:4
+    //    44  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //    46  RDR1           wW0:6
+    //    47  sbTOi          wW0:13 rW1:6
+    //    49  CMPIi          rW0:13 d:0
+    //    51  JZ             ->57
+    //    53  SetV4          wW0:5 d:0
+    //    55  JMP            ->63
+    //    57  CMPd           rW0:8 rW1:12
+    //    59  TNS
+    //    60  CpyRtoV4       wW0:15
+    //    61  CpyVtoV4       wW0:5 rW1:15
+    //    63  CpyVtoR1       rW0:5
+    //    64  JLowZ          ->71
+    //    66  SetV1          wW0:6 d:0
+    //    68  CpyVtoR4       rW0:6
+    //    69  JMP            ->102
+    //    71  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //    73  RDR1           wW0:6
+    //    74  PshV4          rW0:6
+    //    75  PshVPtr        rW0:0
+    //    76  CALLINTF       d:84524                 ; ETemporaryFloorState ATemporaryFloor::GetNextState(const ETemporaryFloorState)
+    //    78  CpyRtoV4       wW0:17
+    //    79  PSF            rW0:17
+    //    80  PshVPtr        rW0:0
+    //    81  ADDSi          W0:1096 d:134230831     ; ATemporaryFloor::StateToCumulativeDurationMap  (+1096)
+    //    83  CALLSYS        q:0x26e6ef213c0         ; float64& TMap<ETemporaryFloorState, float64>::opIndex(const ETemporaryFloorState&)
+    //    86  RDR8           wW0:2
+    //    87  CpyVtoV8       wW0:20 rW1:2
+    //    89  CMPd           rW0:8 rW1:20
+    //    91  JS             ->96
+    //    93  CpyVtoR4       rW0:17
+    //    94  JMP            ->102
+    //    96  LoadThisR      W0:1073 d:134230831     ; ATemporaryFloor::LocalState  (+1073)
+    //    98  RDR1           wW0:16
+    //    99  CpyVtoR4       rW0:16
+    //   100  JMP            ->102
+    //   102  RET            W0:2
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 92 instr, 628 B bytecode, id=0x810882A1, varspace=11
+------------------------------------------------------------------------------
+{
+    TArray<FName> v4;
+    auto v6;
+    auto v8;
+    UAkAudioEvent@ const v10;
+    ETemporaryFloorState v11;
+
+    v4 = TArray<FName>();
+    this.Tags = v4;
+    this.Tags.Add(__STATIC_NAME(28));
+    v6 = false;
+    this.PrimaryActorTick.SetbStartWithTickEnabled(false);
+    v6 = false;
+    this.PrimaryActorTick.SetbAllowTickOnDedicatedServer(false);
+    v6 = true;
+    this.SetbReplicates(true);
+    this.SetNetDormancy(4);
+    v8 = 1048576000;
+    this.NetUpdateFrequency = 1048576000;
+    v8 = 1048576000;
+    this.MinNetUpdateFrequency = 1048576000;
+    v6 = true;
+    this.StaticMeshComponent.SetCollisionProfileName(__STATIC_NAME(28), true);
+    v6 = true;
+    this.BackupMantleCollision.SetCollisionProfileName(__STATIC_NAME(28), true);
+    v10 = null;
+    v11 = 0;
+    this.StateAudioEvents.Add(v11, v10);
+    v10 = null;
+    v11 = 1;
+    this.StateAudioEvents.Add(v11, v10);
+    v10 = null;
+    v11 = 2;
+    this.StateAudioEvents.Add(v11, v10);
+    v10 = null;
+    v11 = 3;
+    this.StateAudioEvents.Add(v11, v10);
+    v10 = null;
+    v11 = 4;
+    this.StateAudioEvents.Add(v11, v10);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e6ef20080         ; void TArray<FName>::$beh0()
+    //     4  PSF            rW0:4
+    //     5  PshVPtr        rW0:0
+    //     6  ADDSi          W0:496 d:67111343       ; AActor::Tags  (+496)
+    //     8  CALLSYS        q:0x26e7861ecc0         ; TArray<FName>& TArray<FName>::opAssign(const TArray<FName>&)
+    //    11  PSF            rW0:4
+    //    12  CALLSYS        q:0x26e7861ee80         ; void TArray<FName>::$beh2()
+    //    15  PshC4          d:28
+    //    17  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    20  PshRPtr
+    //    21  PshVPtr        rW0:0
+    //    22  ADDSi          W0:496 d:67111343       ; AActor::Tags  (+496)
+    //    24  CALLSYS        q:0x26e6ef27240         ; void TArray<FName>::Add(const FName&)
+    //    27  SetV1          wW0:6 d:0
+    //    29  PshV4          rW0:6
+    //    30  PshVPtr        rW0:0
+    //    31  ADDSi          W0:56 d:67111343        ; AActor::PrimaryActorTick  (+56)
+    //    33  CALLSYS        q:0x26e788b4680         ; void FActorTickFunction::SetbStartWithTickEnabled(bool)
+    //    36  SetV1          wW0:6 d:0
+    //    38  PshV4          rW0:6
+    //    39  PshVPtr        rW0:0
+    //    40  ADDSi          W0:56 d:67111343        ; AActor::PrimaryActorTick  (+56)
+    //    42  CALLSYS        q:0x26e788b44c0         ; void FActorTickFunction::SetbAllowTickOnDedicatedServer(bool)
+    //    45  SetV1          wW0:6 d:1
+    //    47  PshV4          rW0:6
+    //    48  PshVPtr        rW0:0
+    //    49  CALLSYS        q:0x26e7a6291c0         ; void AActor::SetbReplicates(bool)
+    //    52  SetV1          wW0:7 d:4
+    //    54  PshV4          rW0:7
+    //    55  PshVPtr        rW0:0
+    //    56  CALLSYS        q:0x26e79714840         ; void AActor::SetNetDormancy(ENetDormancy)
+    //    59  SetV4          wW0:8 d:1048576000
+    //    61  LoadThisR      W0:384 d:67111343       ; AActor::NetUpdateFrequency  (+384)
+    //    63  WRTV4          rW0:8
+    //    64  SetV4          wW0:8 d:1048576000
+    //    66  LoadThisR      W0:388 d:67111343       ; AActor::MinNetUpdateFrequency  (+388)
+    //    68  WRTV4          rW0:8
+    //    69  SetV1          wW0:6 d:1
+    //    71  PshV4          rW0:6
+    //    72  PshC4          d:28
+    //    74  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    77  PshRPtr
+    //    78  PshVPtr        rW0:0
+    //    79  ADDSi          W0:928 d:134230831      ; ATemporaryFloor::StaticMeshComponent  (+928)
+    //    81  RDSPtr
+    //    82  CALLSYS        q:0x26e7975c800         ; void UPrimitiveComponent::SetCollisionProfileName(FName, bool)
+    //    85  SetV1          wW0:6 d:1
+    //    87  PshV4          rW0:6
+    //    88  PshC4          d:28
+    //    90  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    93  PshRPtr
+    //    94  PshVPtr        rW0:0
+    //    95  ADDSi          W0:936 d:134230831      ; ATemporaryFloor::BackupMantleCollision  (+936)
+    //    97  RDSPtr
+    //    98  CALLSYS        q:0x26e7975c800         ; void UPrimitiveComponent::SetCollisionProfileName(FName, bool)
+    //   101  ClrVPtr        wW0:10
+    //   102  PSF            rW0:10
+    //   103  SetV1          wW0:11 d:0
+    //   105  PSF            rW0:11
+    //   106  PshVPtr        rW0:0
+    //   107  ADDSi          W0:992 d:134230831      ; ATemporaryFloor::StateAudioEvents  (+992)
+    //   109  CALLSYS        q:0x26e6ef27080         ; void TMap<ETemporaryFloorState, UAkAudioEvent@>::Add(const ETemporaryFloorState&, const UAkAudioEvent@ const&)
+    //   112  ClrVPtr        wW0:10
+    //   113  PSF            rW0:10
+    //   114  SetV1          wW0:11 d:1
+    //   116  PSF            rW0:11
+    //   117  PshVPtr        rW0:0
+    //   118  ADDSi          W0:992 d:134230831      ; ATemporaryFloor::StateAudioEvents  (+992)
+    //   120  CALLSYS        q:0x26e6ef27080         ; void TMap<ETemporaryFloorState, UAkAudioEvent@>::Add(const ETemporaryFloorState&, const UAkAudioEvent@ const&)
+    //   123  ClrVPtr        wW0:10
+    //   124  PSF            rW0:10
+    //   125  SetV1          wW0:11 d:2
+    //   127  PSF            rW0:11
+    //   128  PshVPtr        rW0:0
+    //   129  ADDSi          W0:992 d:134230831      ; ATemporaryFloor::StateAudioEvents  (+992)
+    //   131  CALLSYS        q:0x26e6ef27080         ; void TMap<ETemporaryFloorState, UAkAudioEvent@>::Add(const ETemporaryFloorState&, const UAkAudioEvent@ const&)
+    //   134  ClrVPtr        wW0:10
+    //   135  PSF            rW0:10
+    //   136  SetV1          wW0:11 d:3
+    //   138  PSF            rW0:11
+    //   139  PshVPtr        rW0:0
+    //   140  ADDSi          W0:992 d:134230831      ; ATemporaryFloor::StateAudioEvents  (+992)
+    //   142  CALLSYS        q:0x26e6ef27080         ; void TMap<ETemporaryFloorState, UAkAudioEvent@>::Add(const ETemporaryFloorState&, const UAkAudioEvent@ const&)
+    //   145  ClrVPtr        wW0:10
+    //   146  PSF            rW0:10
+    //   147  SetV1          wW0:11 d:4
+    //   149  PSF            rW0:11
+    //   150  PshVPtr        rW0:0
+    //   151  ADDSi          W0:992 d:134230831      ; ATemporaryFloor::StateAudioEvents  (+992)
+    //   153  CALLSYS        q:0x26e6ef27080         ; void TMap<ETemporaryFloorState, UAkAudioEvent@>::Add(const ETemporaryFloorState&, const UAkAudioEvent@ const&)
+    //   156  RET            W0:2
+
+------------------------------------------------------------------------------
+~ATemporaryFloor()
+// 10 instr, 76 B bytecode, id=0x4A2B1BB4, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:992 d:134230831      ; ATemporaryFloor::StateAudioEvents  (+992)
+    //     3  CALLSYS        q:0x26e6ed8e080         ; void TMap<ETemporaryFloorState, UAkAudioEvent@>::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:1096 d:134230831     ; ATemporaryFloor::StateToCumulativeDurationMap  (+1096)
+    //     9  CALLSYS        q:0x26e6ed8dd00         ; void TMap<ETemporaryFloorState, float64>::$beh2()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:1176 d:134230831     ; ATemporaryFloor::NextUpdateTimerHandle  (+1176)
+    //    15  CALLSYS        q:0x26e786b8c80         ; void FTimerHandle::$beh2()
+    //    18  RET            W0:2
+

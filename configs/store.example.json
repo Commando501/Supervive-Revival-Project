@@ -1,0 +1,31 @@
+{
+  "_comment": "Dedicated-server menu/store config. Copy to store.json and run: ags -config configs/store.json  (or pass any path). Every field is OPTIONAL — omit a field or leave a list empty to use the server's built-in defaults. NOTE: an empty list means 'use default', not 'advertise nothing'.",
+
+  "region": "us-east",
+
+  "_comment_wallet": "Currency balances shown in the top bar. 'vp' = Vive Points (purple). Theorycraft Coins (gold) is real-money premium and is not a virtual-wallet key.",
+  "wallet": { "vp": 2004 },
+
+  "_comment_heroes": "Enabled hero codenames (lowercase). Empty = all 25 built-in heroes. These are marked owned so the ALL HUNTERS grid unlocks.",
+  "heroes": [],
+
+  "store": {
+    "_comment": "SKUs advertised per storefront tab, keyed by the packed PrimaryAssetName. bundles=StoreOffer packs (BUNDLES + SUPPORTER PACKS), currency=real-money top-ups, featured=carousel, skins=HeroCosmeticsBundle, accessories=SlotCosmetics. Empty skins/accessories fall back to the full embedded lists (391 / 536).",
+    "bundles": [],
+    "currency": [],
+    "featured": [
+      "CyberpunkWukongPack",
+      "HuntressGodQueenPack",
+      "GodOfTimeVoidPack",
+      "OniHookguyPack",
+      "DemonessFlexPack"
+    ],
+    "skins": [],
+    "accessories": []
+  },
+
+  "prices": {
+    "CyberpunkWukongPack": { "price": 1350, "discountedPrice": 1000, "currency": "vp" },
+    "starter2024": { "price": 500, "discountedPrice": 0, "currency": "vp" }
+  }
+}

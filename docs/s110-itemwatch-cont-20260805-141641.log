@@ -1,0 +1,67 @@
+====================================================================================================
+item_watch  2026-08-05 14:16:41   pid=35340  base=0x7FF681610000
+log=G:\git\Supervive Revival Project\docs\s110-itemwatch-cont-20260805-141641.log
+csv=G:\git\Supervive Revival Project\docs\s110-itemwatch-cont-20260805-141641.csv
+====================================================================================================
+FUObjectArray @0x7FF68B448930  objects=0x213712499A0  numElements=189716
+chunks: 0x21371FD0008(65536), 0x21496AD0008(65536), 0x21498040008(58644)
+live objects: 177229 of 189716 slots
+
+--- CALIBRATION (400 sampled objects) --------------------------------------------------
+  InternalIndex @0x10  (matches the array slot for 400/400 objects)
+  ObjectFlags  @0x0C  (RF_ClassDefaultObject on 100% of 20 CDOs, 0% of 380 others)
+----------------------------------------------------------------------------------------------------
+decoys: 32 control objects (half uniform, half from the top 20% of indices, seed=1)
+scanning 177229 live objects for class~='AnimSequence' name~='A_Shared_Idle' ...
+  scan took 2.4 s, 1 hit(s)
+[t=   2.376] +TARGET AnimSequence/A_Shared_Idle#53781       obj=0x21410274800 item=0x2137210B200 idx=53781
+           baseline item{obj=0x21410274800 flags=00000002 [1:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53781, array slot is 53781 -> AGREE
+           from scan
+
+--- VERDICT TABLE, registered before the run (docs/next-session-prompt-s110.md S0) --------
+  A  item.SerialNumber changes, or item.Object -> a DIFFERENT object
+     => SLOT RECYCLED. The object was really destroyed and the index reissued.
+  B  item.Object -> 0 (and Flags -> 0), no recycle yet
+     => FreeUObjectIndex ran: ~UObjectBase executed. Real destruction.
+  C  a new item-flag bit appears before B, and that bit is the one the sweep sees spike
+     population-wide  => the REACHABILITY PASS marked it. If we rooted it, the poked bit
+     is NOT honoured by this build's GC.
+  D  neither the item nor the sweep moves, but the object's vtable/NamePrivate go bad
+     => OUT-OF-BAND teardown (package unload / stream-out / explicit destroy), or the
+     pointer was never the object we thought. GC was never involved.
+  VOID  no target event AND no decoy event => the watcher never showed it can see a change.
+----------------------------------------------------------------------------------------------------
+
+[t=   0.000] watching 1 target(s); interval=50 ms sweep=250 ms (stride 1/8)
+[t=   2.377] SWEEP#1  live~177216 free~12504  (1-in-8 sample, scaled)  bits: bit1 78%, bit24 1%, bit25 18%, bit30 22%
+           reachability flag currently = bit 1  (the bit most live objects carry; see the header note)
+           RootSet(bit30) vs reachability flag, over 22152 sampled live objects:
+             rooted       4915, of which      6 (  0%) carry the current flag
+             not rooted  17237, of which  17234 (100%) carry the current flag
+[t=   5.008] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000002 ser=0} obj{gcAlive}
+[t=   8.041] duration reached
+
+====================================================================================================
+SUMMARY  observed 8.0 s, 112 ticks, 23 sweeps, 396323 RPM calls
+  max observed sampling gap: 51 ms  <- ALIASING BOUND: any state shorter than this could
+     have been missed, and no 'X never happened' claim below is stronger than that.
+  decoy control: 0 event(s) across 32 control objects
+  GC PASSES: NONE. The population's reachability flag never flipped in 23 sweeps over 8 s,
+     so no completed GC reachability pass is visible in this window at all.
+  NO GC activity of either kind (no purge, no flag spike) in 23 sweeps over 8 s.
+  live-object count: start 177216, min 177216 @t=2.4, max 177216 @t=2.4, end 177216
+
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Shared_Idle#53781   acquired t=2.376 from scan
+  obj=0x21410274800  item=0x2137210B200  idx=53781
+  BASELINE item{obj=0x21410274800 flags=00000002 [1:?] cluster=0 serial=0}
+    (no change observed)
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 51 ms)
+
+*** VOID *** neither the targets nor the 32 decoys ever changed. The watcher never
+    demonstrated it can see a change, so 'nothing happened' is NOT a finding here.
+====================================================================================================
+log: G:\git\Supervive Revival Project\docs\s110-itemwatch-cont-20260805-141641.log
+csv: G:\git\Supervive Revival Project\docs\s110-itemwatch-cont-20260805-141641.csv

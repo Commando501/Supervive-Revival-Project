@@ -1,0 +1,109 @@
+playerstate_readout  PID=50272 BASE=0x7FF7A8B30000   *** CENSUS TIMESTAMP 2026-08-21 20:06:30 ***
+(read-only RPM. no injection, no write of any kind.)
+
+scanned 157387 live objects (192327 slots, 1479 distinct classes)
+  =AIController-chain  : 3
+  BotController-chain  : 1   (SUBSTRING over ancestor names. An EXACT '=BotController'
+                             test is DEGENERATE -- no class in this hierarchy is NAMED
+                             'BotController', so it reads 0 even with a live one, and it
+                             has no positive control. Use '=LokiBotController'.)
+  =PlayerState-chain   : 2
+  =Pawn-chain          : 7
+
+====================================================================================================
+POSITIVE CONTROL -- a known-good possession (player-controlled pawn with a real PlayerState)
+====================================================================================================
+--- CONTROL (player): controller 0x1E7FFF613C0 'BP_LokiPlayerController_Dev_C' number=2147471652 class=BP_LokiPlayerController_Dev_C
+      chain: BP_LokiPlayerController_Dev_C <- BP_LokiPlayerController_C <- BP_LokiPlayerController_Code_C <- LokiPlayerController_AS <- LokiPlayerController <- LokiBaseController <- PlayerController <- Controller <- LokiActor <- Actor <- Object
+      PlayerState @+0x3C0 (ObjectProperty) = 0x1E883E33340 'BP_LokiPlayerState_C' class=BP_LokiPlayerState_C   [offset AGREES with recorded +0x3C0]
+      Pawn @+0x3F8 (ObjectProperty) = 0x1E904775580 'BP_HERO_Ronin_C' class=BP_HERO_Ronin_C
+      Character @+0x408 (ObjectProperty) = 0x1E904775580 'BP_HERO_Ronin_C' class=BP_HERO_Ronin_C
+      bWantsPlayerState: NOT RESOLVED BY NAME   | fallback: recorded +0x488 dword=0x00000000, bit 0x20 is clear
+      >> PlayerState 0x1E883E33340 class=BP_LokiPlayerState_C chain=BP_LokiPlayerState_C <- LokiPlayerState <- PlayerState <- Info <- LokiActor <- Actor <- Object
+      >> pawn 0x1E904775580 'BP_HERO_Ronin_C' number=2147471154 class=BP_HERO_Ronin_C
+           PlayerState @+0x3D8 (ObjectProperty) = 0x1E883E33340 'BP_LokiPlayerState_C' class=BP_LokiPlayerState_C   [offset AGREES with recorded +0x3D8]
+           Controller @+0x400 (ObjectProperty) = 0x1E7FFF613C0 'BP_LokiPlayerController_Dev_C' class=BP_LokiPlayerController_Dev_C   [offset AGREES with recorded +0x400]
+           ControlInputVector +0x418 = (0.0000, 0.0000, 0.0000)   |v|=0.0000   (zero)
+           AIControllerClass @+0x3D0 (ClassProperty) = 0x1E77BD91280 'AIController' class=Class   [offset AGREES with recorded +0x3D0]
+           HANDSHAKE: pawn.Controller == this controller
+           PLAYERSTATE MATCH: pawn.PlayerState == controller.PlayerState
+
+====================================================================================================
+TREATMENT -- every AIController-derived object
+====================================================================================================
+--- AIController[0]: controller 0x1E8E8221780 'AIController' number=2147470754 class=AIController
+      chain: AIController <- Controller <- LokiActor <- Actor <- Object
+      PlayerState @+0x3C0 (ObjectProperty) = NULL   [offset AGREES with recorded +0x3C0]
+      Pawn @+0x3F8 (ObjectProperty) = 0x1E7E2BD2AE0 'BP_HERO_Ronin_C' class=BP_HERO_Ronin_C
+      Character @+0x408 (ObjectProperty) = 0x1E7E2BD2AE0 'BP_HERO_Ronin_C' class=BP_HERO_Ronin_C
+      bWantsPlayerState = false   [by name @+0x488 type=BoolProperty fs=1 bo=0 bm=0x20 fm=0x20; byte@0x1E8E8221C08=0x4A; dword@+0x488=0x0000004A]
+        cross-check vs recorded +0x488 bit 0x20: AGREE
+      BrainComponent @+0x498 (ObjectProperty) = NULL
+      Blackboard @+0x4B0 (ObjectProperty) = NULL
+      PerceptionComponent @+0x4A0 (ObjectProperty) = NULL
+      PathFollowingComponent @+0x490 (ObjectProperty) = 0x1E8E7662A80 'PathFollowingComponent' class=PathFollowingComponent
+      CachedGameplayTasksComponent @+0x4B8 (ObjectProperty) = 0x1E7F6A28C80 'GameplayTasksComponent' class=GameplayTasksComponent
+      >> pawn 0x1E7E2BD2AE0 'BP_HERO_Ronin_C' number=2147470822 class=BP_HERO_Ronin_C
+           PlayerState @+0x3D8 (ObjectProperty) = NULL   [offset AGREES with recorded +0x3D8]
+           Controller @+0x400 (ObjectProperty) = 0x1E8E8221780 'AIController' class=AIController   [offset AGREES with recorded +0x400]
+           ControlInputVector +0x418 = (0.0000, 0.0000, 0.0000)   |v|=0.0000   (zero)
+           AIControllerClass @+0x3D0 (ClassProperty) = 0x1E77BD91280 'AIController' class=Class   [offset AGREES with recorded +0x3D0]
+           HANDSHAKE: pawn.Controller == this controller
+           PLAYERSTATE MATCH: pawn.PlayerState == controller.PlayerState  (both NULL)
+
+--- AIController[1]: controller 0x1E89A2CC870 'LokiBotController' number=2147470840 class=LokiBotController
+      chain: LokiBotController <- LokiAIController <- AIController <- Controller <- LokiActor <- Actor <- Object
+      PlayerState @+0x3C0 (ObjectProperty) = 0x1E876D62230 'BP_LokiPlayerState_C' class=BP_LokiPlayerState_C   [offset AGREES with recorded +0x3C0]
+      Pawn @+0x3F8 (ObjectProperty) = 0x1E81C6DAAC0 'BP_HERO_Ronin_C' class=BP_HERO_Ronin_C
+      Character @+0x408 (ObjectProperty) = 0x1E81C6DAAC0 'BP_HERO_Ronin_C' class=BP_HERO_Ronin_C
+      bWantsPlayerState = false   [by name @+0x488 type=BoolProperty fs=1 bo=0 bm=0x20 fm=0x20; byte@0x1E89A2CCCF8=0x4A; dword@+0x488=0x0000004A]
+        cross-check vs recorded +0x488 bit 0x20: AGREE
+      BrainComponent @+0x498 (ObjectProperty) = 0x1E879D9CBC0 'BTComponent' class=BehaviorTreeComponent
+      Blackboard @+0x4B0 (ObjectProperty) = 0x1E879288E00 'BlackboardComponent' class=BlackboardComponent
+      PerceptionComponent @+0x4A0 (ObjectProperty) = NULL
+      PathFollowingComponent @+0x490 (ObjectProperty) = 0x1E8993F1580 'PathFollowingComponent' class=PathFollowingComponent
+      CachedGameplayTasksComponent @+0x4B8 (ObjectProperty) = 0x1E81C702200 'GameplayTasksComponent' class=GameplayTasksComponent
+      -- S138 motion chain (offsets from the ALokiBotController::Tick transcription) --
+      bCharacterControllable +0x6A0 = 0   <- THE GATE on the ONLY motion driver
+      ForceCharacterNotControllable +0x602 = 0   (forces the gate FALSE)
+      RandomMoveDirection +0x658 = (0.0000, 0.0000, 0.0000)   |v|=0.0000   [Z is 0 by construction -- horizontal unit vector, re-randomised every 2.0 s]
+      >> PlayerState 0x1E876D62230 class=BP_LokiPlayerState_C chain=BP_LokiPlayerState_C <- LokiPlayerState <- PlayerState <- Info <- LokiActor <- Actor <- Object
+      >> pawn 0x1E81C6DAAC0 'BP_HERO_Ronin_C' number=2147470748 class=BP_HERO_Ronin_C
+           PlayerState @+0x3D8 (ObjectProperty) = 0x1E876D62230 'BP_LokiPlayerState_C' class=BP_LokiPlayerState_C   [offset AGREES with recorded +0x3D8]
+           Controller @+0x400 (ObjectProperty) = 0x1E89A2CC870 'LokiBotController' class=LokiBotController   [offset AGREES with recorded +0x400]
+           ControlInputVector +0x418 = (0.0000, 0.0000, 0.0000)   |v|=0.0000   (zero)
+           AIControllerClass @+0x3D0 (ClassProperty) = 0x1E77C475100 'LokiBotController' class=Class   [offset AGREES with recorded +0x3D0]
+           HANDSHAKE: pawn.Controller == this controller
+           PLAYERSTATE MATCH: pawn.PlayerState == controller.PlayerState
+
+--- AIController[2]: controller 0x1E884922EC0 'AIController' number=2147470912 class=AIController
+      chain: AIController <- Controller <- LokiActor <- Actor <- Object
+      PlayerState @+0x3C0 (ObjectProperty) = NULL   [offset AGREES with recorded +0x3C0]
+      Pawn @+0x3F8 (ObjectProperty) = 0x1E883B90040 'BP_HERO_Ronin_C' class=BP_HERO_Ronin_C
+      Character @+0x408 (ObjectProperty) = 0x1E883B90040 'BP_HERO_Ronin_C' class=BP_HERO_Ronin_C
+      bWantsPlayerState = false   [by name @+0x488 type=BoolProperty fs=1 bo=0 bm=0x20 fm=0x20; byte@0x1E884923348=0x4A; dword@+0x488=0x0000004A]
+        cross-check vs recorded +0x488 bit 0x20: AGREE
+      BrainComponent @+0x498 (ObjectProperty) = NULL
+      Blackboard @+0x4B0 (ObjectProperty) = NULL
+      PerceptionComponent @+0x4A0 (ObjectProperty) = NULL
+      PathFollowingComponent @+0x490 (ObjectProperty) = 0x1E8D325CF00 'PathFollowingComponent' class=PathFollowingComponent
+      CachedGameplayTasksComponent @+0x4B8 (ObjectProperty) = 0x1E88802FD00 'GameplayTasksComponent' class=GameplayTasksComponent
+      >> pawn 0x1E883B90040 'BP_HERO_Ronin_C' number=2147470980 class=BP_HERO_Ronin_C
+           PlayerState @+0x3D8 (ObjectProperty) = NULL   [offset AGREES with recorded +0x3D8]
+           Controller @+0x400 (ObjectProperty) = 0x1E884922EC0 'AIController' class=AIController   [offset AGREES with recorded +0x400]
+           ControlInputVector +0x418 = (0.0000, 0.0000, 0.0000)   |v|=0.0000   (zero)
+           AIControllerClass @+0x3D0 (ClassProperty) = 0x1E77BD91280 'AIController' class=Class   [offset AGREES with recorded +0x3D0]
+           HANDSHAKE: pawn.Controller == this controller
+           PLAYERSTATE MATCH: pawn.PlayerState == controller.PlayerState  (both NULL)
+
+====================================================================================================
+THE CDOs -- what the arm pokes. `bWantsPlayerState` here is the CLASS DEFAULT.
+====================================================================================================
+class 0x1E77BD91280 AIController   CDO@+0x178 = 0x1E776E0D0B0 'Default__AIController'
+   bWantsPlayerState = false   [by name @+0x488 type=BoolProperty fs=1 bo=0 bm=0x20 fm=0x20; byte@0x1E776E0D538=0x4A; dword@+0x488=0x0000004A]
+        cross-check vs recorded +0x488 bit 0x20: AGREE
+
+class 0x1E77C475100 LokiBotController   CDO@+0x178 = 0x1E776EA1B00 'Default__LokiBotController'
+   bWantsPlayerState = false   [by name @+0x488 type=BoolProperty fs=1 bo=0 bm=0x20 fm=0x20; byte@0x1E776EA1F88=0x4A; dword@+0x488=0x0000004A]
+        cross-check vs recorded +0x488 bit 0x20: AGREE
+

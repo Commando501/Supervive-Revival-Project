@@ -1,0 +1,246 @@
+S140 TIER 2 -- PRE-REGISTRATION
+THE PAYLOAD-POISON / SENTINEL TEST: does ULokiCMC::StartNewPhysics 0x055C2430 actually run?
+
+Written and committed BEFORE the injection. Nothing below may be edited after the flight; the
+result goes in docs/s140-tier2-sentinel.md and cites this file.
+
+Date: 2026-08-23
+Arm:  tools/sigbypass-mod/build/tutorial_launch_gasattr_sentinel.dll
+      RAW .text digest ce56fd715de835a1   (VSIZE 7b0b8c9ef49e07a3)
+      build.ps1 -Name tutorial_launch -Variant gasattr-sentinel   (-DKBSPSARMS=0x3A0)
+Probe: tools/re/cmc_earlyout_readout.py <PID> <BASE>   (read-only RPM; the external 2nd instrument)
+
+
+=================================================================================================
+0. THE QUESTION, AND WHY THE OBVIOUS EXPERIMENT DOES NOT ANSWER IT
+=================================================================================================
+S139 recorded [M] "ULokiCMC::StartNewPhysics has NEVER run on either component", from CMC+0x16C8
+reading 0.  S140 Tier 1 RETRACTED that: +0x16C8 is not a sticky latch, it is a per-frame
+TOptional<FVector> validity flag -- SET inside StartNewPhysics at 0x055C2469 and CLEARED later in
+the SAME engine PerformMovement call by ULokiCMC vtable disp 0xA50 (0x0530ABF0), on a path the
+StartNewPhysics call site DOMINATES.  An off-thread reader observes 0 whether the step runs every
+frame or never runs at all.  The instrument was invalid; the question is still open.
+
+The DURABLE receipt is the PAYLOAD, not the flag:
+
+    0x055C2448  movups xmm0,[rcx+0xe8]        ; Velocity (3 doubles, UE5 LWC)
+    0x055C244F  movups [rcx+0x16b0], xmm0     ; snapshot X,Y   <-- the ONLY CMC-side payload writer
+    0x055C2456  movsd  xmm1,[rcx+0xf8]
+    0x055C245E  movsd  [rcx+0x16c0], xmm1     ; snapshot Z
+    0x055C2469  mov byte [rcx+0x16c8], 1      ; the flag
+    0x055C2470  jmp 0x3600990                 ; tail -> engine StartNewPhysics
+
+disp 0xA50 clears ONLY the flag byte; it never touches the payload.
+
+*** BUT THE HANDOFF'S SENTINEL-ONLY DESIGN IS DEGENERATE, AND TIER 1 SS7 SAYS SO. ***
+With Velocity resting at (0,0,0) and NewObject zero-filling the object, "snapshotted a zero
+Velocity" and "never written at all" are THE SAME BYTES.  S139 already banked
+    docs/s139-f1-BOT.txt:19       R1.velsnap@0x16B0 | (0.000,0.000,0.000)
+    docs/s139-f1-BASELINE.txt:20  R1.velsnap@0x16B0 | None | (0.000,0.000,0.000)
+and it means NOTHING.  It is not a second independent negative and must never be cited as one.
+
+=> THIS ARM PRE-POISONS THE PAYLOAD FIRST.  A distinctive value written into +0x16B0..+0x16C7
+makes never-written and written-with-zeros DIFFERENT BYTES -- and it does so WITHOUT touching
+Velocity at all.
+
+THE POISON IS PROVABLY UNREACHABLE BY ANY CONSUMER.  The payload's only reader is
+GetRecentVelocity (.data 0x09BC9AD0 -> impl 0x0530AC10; same cmove idiom at 0x0530C7FF and
+0x0559C59E):  cmp byte [rcx+0x16c8],0 / mov eax,0x16b0 / mov r8d,0xe8 / cmove eax,r8d
+-- it returns the PAYLOAD only when the flag is NON-ZERO, and the only writer of flag=1 writes the
+payload 0x1A bytes earlier in the same straight-line block.  So while the flag is 0 the poison
+cannot be read, and the instant the flag becomes 1 the poison is already gone.  The arm READS THE
+FLAG FIRST and REFUSES to poison if it is non-zero.
+
+
+=================================================================================================
+1. THE ARM -- exactly what it does, in order
+=================================================================================================
+Game thread (BsPsSentinel(), end of BsPsExperiment, inside the one-shot BsLadderStep):
+  1. print this outcome table into the marker BEFORE any write
+  2. resolve BOT CMC:    g_psLbCtl[1] -> +0x3F8 (pawn) -> CharacterMovement UPROPERTY BY NAME
+     resolve PLAYER CMC: g_bsPlayerHero            -> CharacterMovement UPROPERTY BY NAME
+     (+0x458 is printed as a cross-check only, NEVER used as a fallback: an unvalidated offset
+      that "agrees" is not corroboration when both can read zero -- the S138 +0xE0/+0xE8 lesson)
+  3. IDENTITY CONTROLS, both mandatory, REFUSE on failure:
+       CONTROL1  CMC+0x198 (CharacterOwner) == pawn
+       CONTROL2  CMC+0x68  (FTickFunction::Target) == cmc
+     ALokiCharacter has its OWN live bytes at +0x16B0/+0x16C8, so a probe aimed at the PAWN
+     decodes a plausible WRONG value.  A failure here is an INSTRUMENT statement, not a result.
+  4. THE THREE FREE READS (Tier 1 SS7 ranks 2/3/4, never taken live by anyone):
+       CMC+0xC0  WorldPrivate            -- engine PerformMovement exit 2's input
+       CMC+0x3E4 MaxSimulationIterations -- a FOURTH engine-StartNewPhysics early-out at 0x036009B5
+       *(uint64*)CMC vs base+0x088F8570  -- is this really a ULokiCMC?
+       (+0x3DC NumJumpApexAttempts and +0x3E0 MaxSimulationTimeStep ride along free)
+  5. raw hex dump of +0x16B0..+0x16C7 and +0xE8..+0xFF, BEFORE
+  6. read flag +0x16C8 on each; poison ONLY if it reads 0
+       BOT poison    = (-9876.5,  -8765.25,  -7654.125)
+       PLAYER poison = (-1234.5,  -2345.25,  -3456.125)     <- DIFFERENT ON PURPOSE
+  7. BOT ONLY: Velocity CMC+0xE8/F0/F8 = (0.0009765625, 0, 0) = 2^-10, exactly representable,
+     ~0.001 uu/s and therefore physically inert.  The PLAYER's Velocity is NOT TOUCHED.
+  8. raw hex dump AFTER; every write readback-verified.
+
+Worker thread (ShSampleLoop(), in the RM_BOTSPAWN branch, AFTER FsDisarm()):
+  samples at t = +250 / +750 / +2000 / +5000 / +10000 ms, each printing raw hex + decoded doubles
+  + flag + TimeSinceFallingStart(+0x12B0) + Acceleration(+0x328) + pawn location, then a VERDICT
+  computed from the OBSERVED bytes.  Finally: BOT Velocity restored to (0,0,0), readback-verified.
+
+*** WHY THE READ IS ON THE WORKER THREAD AND NOT IN THE ARM.  BsLadderStep runs ON THE GAME THREAD
+inside OnPI, so every Sleep() in it BLOCKS THE GAME THREAD AND NO FRAMES PASS.  A
+write-Sleep-read inside BsPsSentinel would be GUARANTEED to read the un-updated payload, and the
+result would have been written up as "StartNewPhysics does not run" -- a false negative
+manufactured entirely by the instrument.  The sampler therefore runs after FsDisarm, where the
+game thread is free (the RM_DROPPLANE B4 precedent).  This is the single most important design
+decision in the arm and it is why the handoff's one-line recipe would not have worked. ***
+
+
+=================================================================================================
+2. THE OUTCOME TABLE -- PRE-REGISTERED. DO NOT REINTERPRET AFTER THE FACT.
+=================================================================================================
+BOT   (payload poisoned AND Velocity = sentinel):
+  payload == SENTINEL (0.0009765625,0,0)
+        -> StartNewPhysics RAN, and the payload is a COPY OF VELOCITY.  Mechanism validated end
+           to end.                                                                          [M]
+  payload == (0,0,0) exactly
+        -> StartNewPhysics RAN and something ZEROED Velocity before the snapshot.  Read the
+           Velocity line: if +0xE8 is also 0, a Velocity writer exists and is itself a finding. [M]
+  payload == BOT POISON
+        -> StartNewPhysics did NOT run in the sampled window.                                [M]
+  payload == PLAYER POISON, or the player's payload holds the BOT poison/sentinel
+        -> *** THE RUN IS VOID: the CMC resolution is wrong. ***  (This is exactly why the two
+           poisons differ; it is a two-sided addressing control that can FAIL.)
+  anything else -> UNMODELLED.  Report the raw hex; do not interpret.
+
+PLAYER (payload poisoned, Velocity NOT touched -- the VELOCITY-WRITE-FREE arm):
+  payload == (0,0,0) exactly -> StartNewPhysics RAN.                                         [M]
+  payload == PLAYER POISON   -> StartNewPhysics did NOT run in the sampled window.           [M]
+  payload == BOT POISON/SENTINEL -> VOID, as above.
+
+AGREEMENT: the two arms MUST agree unless there is a real bot/player asymmetry -- and S139
+flight 1 measured them IDENTICAL on every structural field (UpdatedComponent, Mobility, Role,
+RF_Garbage, MovementMode, MaxAcceleration, tick state, bIsActive, ...), the sole difference being
+AbilitySystemComponentStorage@0xF00.  A DISAGREEMENT IS THEREFORE ITSELF THE RESULT and must be
+reported as one, not smoothed over.
+
+PROBE'S OWN CONTROLS, all of which can fail:
+  - poison readback verified at write time; if it did not land the arm prints UNINTERPRETABLE,
+    NOT a null.
+  - the two poisons are distinct (addressing control).
+  - CONTROL1/CONTROL2 identity asserts (wrong-object control).
+  - vptr == base+0x088F8570; if the live component were a plain engine UCharacterMovementComponent
+    then disp 0x720 is 0x03600990 and NOTHING touches +0x16C8/+0x16B0 -- the whole test would be
+    VOID and the probe says so.
+  - the flag must read 0 before poisoning; a non-zero flag is the Tier 1 SS4.4 "seventh bail" state
+    and is itself reportable.
+
+
+=================================================================================================
+3. PREDICTIONS ON THE THREE FREE READS (pre-registered so a null is interpretable)
+=================================================================================================
+P-A  CMC+0xC0 WorldPrivate is NON-NULL on both components.
+     Grade if it holds: exit 2 of engine PerformMovement moves [I,strong] -> [M].
+     If NULL: exit 2 bails and the whole downstream chain is explained. That would be the answer.
+P-B  CMC+0x3E4 MaxSimulationIterations > 0 (stock UE default is 8) on both.
+     If <= 0: the FOURTH engine-StartNewPhysics early-out at 0x036009B5 bails and THAT is the wall.
+P-C  vptr == base+0x088F8570 on both.  If not, the run is void (see above).
+P-D  TimeSinceFallingStart @+0x12B0 ADVANCES across the five samples on both components, at
+     roughly 1.0x real time (S139 measured bot 33.14->43.34 over 10.2 s).  This is the free
+     "ULokiCMC::PerformMovement is running" receipt and it is an INSTRUMENT CONTROL for this
+     flight: if it does NOT advance, the world is not ticking and a poison that survives means
+     nothing.
+P-E  BOT Acceleration @+0x328 is NON-ZERO and collinear with the wander direction (ARM G is in
+     this build; S139 flight 4 measured Acceleration = ControlInputVector x 50000).
+     PLAYER Acceleration stays (0,0,0) -- untreated, the within-run specificity control.
+P-F  Neither pawn translates.  If a pawn MOVES, the sentinel was not inert and the arm must say so.
+
+
+=================================================================================================
+4. WHAT WOULD MAKE THIS SITTING VOID
+=================================================================================================
+ - either identity control fails                          -> that side is void
+ - the poison readback fails                              -> that side is UNINTERPRETABLE
+ - a payload holds the OTHER object's poison              -> the WHOLE run is void
+ - vptr is not the ULokiCMC vtable                        -> the whole test is void
+ - TimeSinceFallingStart does not advance (P-D)           -> "the poison survived" is meaningless
+ - the client dies before the sampler completes           -> NOT OBTAINED; do not reinterpret
+ - [BS] done never appears                                -> read [FS]'s own verdict line first
+
+
+=================================================================================================
+5. ARTIFACT DIGESTS -- verified before the flight
+=================================================================================================
+tools/sigbypass-mod/text_digest.py, RAW recipe:
+
+  REGRESSION GATES, all reproduced EXACTLY from the edited source:
+    botai                5e47c13cf7f0a158   UNCHANGED  (recorded S136/S137/S138/S139)
+    gasattr              2fcc2536e21f18e3   UNCHANGED  (recorded S139 flight 4)
+    gasattr-ctrl         4465ebc4d7168c03   UNCHANGED  (recorded S139 flight 4)
+
+  NEW:
+    gasattr-sentinel     ce56fd715de835a1   ARM D + F + G + H   (KBSPSARMS 0x3A0)  <- THE ARM
+    sentinel-nogas       f62d3a9cc4cf0562   ARM D + F + H       (KBSPSARMS 0x2A0)
+                                            DISTINCT from the above -- verified, because an A/B
+                                            against a copy of itself has burned a live run here.
+                                            NOT NEEDED for flight 1: gasattr-sentinel already
+                                            contains a GAS-treated object (bot) and a GAS-
+                                            untreated one (player) in the SAME run.
+
+  *** driverecompute a2a952babfed256b IS NOT A VALID GATE AND MUST NOT BE USED AS ONE. ***
+  build.ps1 gives driverecompute -DKBSPSARMS=0xA0 and gasattr-ctrl -DKBSPSARMS=0x0A0 -- the SAME
+  VALUE -- so from ONE source state they MUST be byte-identical, and today both build to
+  4465ebc4d7168c03.  The recorded digests differ (a2a95... vs 4465e...) and the archived
+  driverecompute.dll has a different .text SIZE (134,144 vs 134,656), so THAT ARTIFACT WAS BUILT
+  FROM AN OLDER SOURCE REVISION AND WAS NEVER REBUILT.  It is the botspawn_readonly pattern again.
+  `text_digest.py --dupes` independently flags driverecompute|gasattr_ctrl as a HAZARD.
+  Pre-edit artifacts archived at dumps/s140-arms-pre/ and their digests recorded there.
+
+  S136 EMITTED-CODE CONTROL, two-sided, byte-scan over the shipped DLLs:
+                                 gasattr  ctrl  botai  driverec  SENTINEL  nogas
+    "ARM H: THE PAYLOAD-POISON..."     0     0      0        0         1      1
+    "StartNewPhysics did NOT run..."   0     0      0        0         1      1
+    "ARM H SAMPLER (worker thread..."  0     0      0        0         1      1
+    "ARM G: port the DS GAS recipe"    1     0      0        0         1      0   <- discriminating
+    "KERNEL32"                         1     1      1        1         1      1   <- always-present
+  ARM G's literal tracks bit 8 exactly (present in gasattr and gasattr-sentinel, absent in the four
+  builds with bit 8 clear), so the control DISCRIMINATES rather than merely passing.  S136 measured
+  clang -O2 folding an arm guard to a constant and DEAD-CODE-ELIMINATING the call, and a byte-scan
+  for the arm's own banner is the only thing that caught it.  ARM H is behind a PREPROCESSOR
+  #if (KBSPSARMS & 0x200), not a runtime if, so the folding mechanism cannot apply -- and the scan
+  is run anyway.
+
+
+=================================================================================================
+6. FLIGHT PROCEDURE
+=================================================================================================
+  ELEVATED PowerShell, Steam already running:
+    cd "G:\git\Supervive Revival Project"
+    .\configs\s138-autostage.ps1 -MaxAttempts 5 -Label s140t2
+
+  GATE ON [SP] done step=4 IN docs\tutorial-launch-marker.txt AND A LIVE PROCESS -- never on the
+  stager's own completion message.  "stage complete" means the stager finished INJECTING sp; sp
+  writes its receipt ~12 s later, and gating on the wrong thing Stop-Process'd three perfectly
+  staged clients in S138.
+
+  PID/BASE land in docs\s138-staged-pid.txt.
+
+  BASELINE READ FIRST (costs nothing, and gives an untreated two-sided reading):
+    python tools\re\cmc_earlyout_readout.py <PID> <BASE>
+
+  THEN:
+    tools\inject\inject.exe mmap <PID> "G:\git\Supervive Revival Project\tools\sigbypass-mod\build\tutorial_launch_gasattr_sentinel.dll"
+
+  WAIT FOR "[BS] done" in the marker before reading anything.  Then re-run the probe.
+
+  FK-32 BUDGET: clients die silently after roughly 4-7 manual-maps.  Staging spends 3
+  (gft/fo/sp), so gasattr-sentinel is #4.  CAPTURE EVERY RESULT AS YOU GO; do not batch reads to
+  the end.  Three S139 clients died mid-probe and only the un-taken reads were lost.
+
+
+=================================================================================================
+7. SCOPE -- what a positive result would and would NOT mean
+=================================================================================================
+A payload holding the sentinel would establish that ULokiCMC::StartNewPhysics EXECUTES.  It would
+NOT establish that the pawn can move, that PhysFalling does anything useful, or that anything is
+fixed.  The pawn still translates 0.00 uu.  This is still not a bot: ServerSetHeroClass
+(0x556DE43 -> 0xF7EC20) and SetPlayerTeam (0x556DE53 -> 0xF7EB60) remain stripped folds, nothing
+here went through SpawnBot, and ARM G is a process-wide CDO poke -- a diagnosis, not a shipping
+fix.  None of these arms belongs in the default shim set.

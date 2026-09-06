@@ -1,0 +1,156 @@
+SESSION 42 — STEP 7: fix-payload design + recon (the runtime scan-trigger)
+==============================================================================
+Date: 2026-07-02
+Goal: make LokiAssetManager populate its per-type AssetMaps from the (already-full,
+correct) in-game AssetRegistry, so the grids render. Root cause is FINAL (step 6):
+registry has all 103,841 entries incl. correctly-tagged heroes; manager registers
+type Info from config but never runs the directory-scan/AR-query that fills the
+per-type AssetMap. NOT an AR-patch problem.
+
+CHOSEN TRIGGER
+--------------
+UAssetManager::ScanPathsForPrimaryAssets(FPrimaryAssetType, const TArray<FString>&
+Paths, UClass* BaseClass, bool bHasBlueprintClasses, bool bIsEditorOnly=false,
+bool bForceSynchronousScan=true) -> int32.
+Call it once per grid type on the game thread. Because the registry is full, each
+call should find and register that type's assets. For Hero:
+  Type       = FName "Hero"        (FName id 0x1A568 in this build's pool)
+  Paths      = { "/Game/Loki/Characters/Heroes", "/Game/Skunkworks/Characters/Heroes" }
+  BaseClass  = /Script/Loki.LokiHeroAsset  (find its UClass* at runtime via the pool)
+  bHasBlueprintClasses = true, bIsEditorOnly = false, bForceSynchronousScan = true
+(These paths/class were read live from the Hero FPrimaryAssetTypeData.Info — obj+0x10
+= "/Script/Loki" + obj+0x18 = "LokiHeroAsset"; Info scan-paths array at obj+0x70.)
+DO NOT target ScanPrimaryAssetTypesFromConfig — documented __report_gsfailure crasher
+(CLAUDE.md), likely because SUPERVIVE modified a settings/state struct it reads.
+
+X64 ABI for the call: rcx=this(manager), rdx=FName(8 bytes, {index,number}), r8=&Paths
+(TArray<FString>*), r9=BaseClass(UClass*), [rsp+0x20]=bHasBlueprintClasses,
+[rsp+0x28]=bIsEditorOnly, [rsp+0x30]=bForceSynchronousScan. Standard __fastcall,
+no C++ exceptions (packer VEH kills them — keep payload no-throw).
+
+RECON DONE
+----------
+- Full ordered UAssetManager virtual list extracted from
+  H:\Unreal Engine\UE_5.4\...\Engine\Classes\Engine\AssetManager.h. ScanPathsForPrimary
+  Assets is the 1st NEW UAssetManager virtual (line 104), i.e. vtable slot =
+  (UObject vtable slot count). Nothing editor-only precedes it, so its slot is stable.
+- LokiAssetManager vtable = module RVA +0x888CB78 (stable). Base virtuals in slots
+  0..~87; the runtime UAssetManager virtuals Loki cares about are OVERRIDDEN and live
+  in the 0x12Cxxxx .text cluster (per the step-5 vtdump). ScanPathsForPrimaryAssets is
+  almost certainly one of these 0x12Cxxxx slots.
+- Manager singleton (this): re-find each launch via findptr on the LokiAssetManager
+  UClass (non-CDO vtable-match). This run it was 0x1C6E6EBEE90.
+
+*** BLOCKER SOLVED (2026-07-02) — ScanPathsForPrimaryAssets address PINNED + verified,
+and all call args are readable from each type's Info block (no construction needed). ***
+Method: vtable diff. Found the base UAssetManager CDO (Default__AssetManager id 0x6639AB
+-> CDO 0x1c66c8f4a30 -> vtable 0x7FF68A9EECB8) and UObject CDO (Default__Object id
+0x5A7ECC -> vtable 0x7FF68A16F490). Diffed UObject vs UAssetManager vtables: UObject's
+vtable is 88 slots; at slot 88 UAssetManager diverges permanently -> slot 88 =
+UAssetManager's 1st new virtual = ScanPathsForPrimaryAssets. LokiAssetManager INHERITS
+slot 88 (am==loki), confirming it is stock (not Loki-overridden).
+  ScanPathsForPrimaryAssets = module RVA +0x34CF9F0  (this build)
+  ScanPathForPrimaryAssets  = module RVA +0x34CF880  (slot 89, singular variant)
+VERIFIED by disasm at +0x34CF9F0: prologue saves rcx->this(r12), rdx->FName(rbx),
+r8->Paths TArray(r15), r9->BaseClass UClass(r14), and branches on a stack bool
+(cmp byte [rbp+0xd8]) — exactly the 6-param signature. Definitive.
+
+ALL ARGS ARE IN EACH TYPE'S Info BLOCK (FPrimaryAssetTypeData, from AssetTypeMap value):
+  Info+0x00 : FName PrimaryAssetType          (Hero = 0x1A568)
+  Info+0x30 : UClass* AssetBaseClassLoaded    (VERIFIED = LokiHeroAsset UClass
+              0x1c672435100, name id 0x268F02) -> pass directly as r9 BaseClass
+  Info+0x70 : TArray<FString> scan paths      (element size 0x10 = FString; holds
+              "/Game/Loki/Characters/Heroes" etc.) -> pass &(TypeData+0x70) as r8
+So the payload constructs NOTHING: for each type it reads Type=*(Info+0), BaseClass=
+*(Info+0x30), Paths=Info+0x70, and calls the scan. It can iterate ALL 30 types from the
+AssetTypeMap (manager+0x478) automatically.
+
+FINALIZED PAYLOAD LOGIC (no arg construction):
+  manager = LokiAssetManager singleton (find via findptr on its UClass, non-CDO).
+  typemap = manager + 0x478   (TMap<FName, TSharedRef<FPrimaryAssetTypeData>>, 30 entries,
+            element stride 0x20: key FName@+0x00, value.obj (FPrimaryAssetTypeData*)@+0x08)
+  for each populated element (or just the grid types Hero/Mission/StoreOffer/...):
+      td   = value.obj                      (FPrimaryAssetTypeData*)
+      type = *(FName*)(td + 0x00)
+      base = *(UClass**)(td + 0x30)
+      paths= td + 0x70                       (TArray<FString>*)
+      call (RVA +0x34CF9F0)(manager, type, paths, base, /*bHasBP*/1, /*bEditorOnly*/0, /*bForceSync*/1)
+  MUST run on the game thread (asset manager not thread-safe) -> use the mount_shim APC
+  game-thread dispatch (tools/sigbypass-mod).
+Then screenshot the ALL HUNTERS grid.
+
+THE BLOCKER (SOLVED — historical notes below)
+----------------------------------------
+Pin ScanPathsForPrimaryAssets's exact address. Two routes:
+  (1) DISASM-IDENTIFY in the game vtable (reliable, tedious): disasm the ~15 Loki-
+      override slots (0x12Cxxxx) in the runtime-virtual range and pick the one whose
+      body matches ScanPathsForPrimaryAssets: 6 params (rcx,rdx=FName,r8=TArray*,
+      r9=UClass*,+2 stack bools), early registers/looks-up the FPrimaryAssetType in
+      AssetTypeMap, then loops calling into the AssetRegistry (ScanPathsSynchronous /
+      EnumerateAssets) and inserts into a TMap. Distinctive vs the getters.
+      Cross-check: the sibling ScanPathForPrimaryAssets (singular, line 107) is the
+      very next slot and has an almost-identical body but takes a single FString&.
+  (2) Shipping-vtable diff: get a STOCK *shipping* UE5.4 UAssetManager vtable to diff
+      by slot. The LokiEditor stub is an EDITOR build -> its vtable has WITH_EDITOR
+      virtuals the game lacks, so it WON'T line up. Would need a shipping UE5.4 game.
+      Route (1) is more practical here.
+
+DISASM PROBE RESULT (2026-07-02)
+--------------------------------
+Disassembled the ~11 Loki-override vtable slots (0x12Cxxxx / 0x12Dxxxx / 0x12C3xxx)
+and filtered for a reference to the AssetTypeMap at this+0x478 (which ScanPaths must
+touch to find/add the type). ZERO of them reference +0x478 in their entry region. =>
+ScanPathsForPrimaryAssets is very likely NOT Loki-overridden. LokiAssetManager
+overrides the HIGH-LEVEL entry (StartInitialLoading / ScanPrimaryAssetTypesFromConfig)
+to SKIP scanning, but inherits the stock UAssetManager scan machinery. So
+ScanPathsForPrimaryAssets is the STOCK impl in the engine .text (NOT the 0x12Cxxxx Loki
+cluster) — it's a UNIQUE-but-base-impl vtable slot in an engine-code RVA band
+(candidates seen in the vtdump: 0x11Exxxx, 0x135xxxx, 0x136xxxx, 0x34xxxxx).
+NEXT-SESSION IDENTIFICATION (systematic): disasm ALL non-stub base-virtual slots
+(0..~87) and find ScanPathsForPrimaryAssets by: touches this+0x478 (AssetTypeMap),
+loops over an r8 TArray, references r9 UClass, and calls the AssetRegistry. Its sibling
+ScanPathForPrimaryAssets (singular, next slot) is a near-identical smaller body — the
+adjacent pair is a strong tell. Alternatively hook + log at each base-virtual slot to
+catch which fires during a forced re-scan. Note: since ScanPaths is the STOCK impl, a
+different, cleaner fix also opens up — patch LokiAssetManager's StartInitialLoading (or
+its scan-skip override) so the stock ScanPrimaryAssetTypesFromConfig->ScanPathsForPrimary
+Assets chain runs naturally at init (early vtable patch). But ScanPrimaryAssetTypesFrom
+Config crashes when force-called; whether it crashes when reached NATURALLY (correct
+init context) is untested and worth checking.
+
+PAYLOAD PLAN (once the address is known)
+----------------------------------------
+Reuse the proven browse_hook injection (tools/inject + a no-throw DLL, sessions 35-41).
+Payload steps (run on the game thread via the established APC/thread mechanism):
+  1. Resolve the LokiAssetManager singleton (vtable-scan / findptr-equivalent in-proc,
+     OR UAssetManager::Get() if its address is found).
+  2. Resolve LokiHeroAsset UClass* (walk GUObjectArray / FindObject).
+  3. Build a TArray<FString> Paths with the 2 hero directories (allocate FString wchar
+     buffers via FMemory::Malloc — GMalloc addr recon via `usmapdump pattern`), OR
+     REUSE the existing Info scan-paths TArray already in memory (pass its address as
+     &Paths) to avoid constructing containers.  <-- simplest; verify its element type
+     is FString not FDirectoryPath.
+  4. Call ScanPathsForPrimaryAssets(this, FName Hero, &Paths, LokiHeroAsset, 1,0,1).
+  5. Repeat per grid type (Mission, StoreOffer, HeroCosmeticsBundle, ...). Type FName
+     ids + BaseClass + dirs are all readable from each type's FPrimaryAssetTypeData.Info.
+  6. Observe: does the ALL HUNTERS grid populate? (screenshot).
+FALLBACK if the call crashes/hangs: (2) un-skip the native scan via early vtable patch
+of StartInitialLoading; (3) direct WPM populate of the AssetMap.
+
+RISK / OPEN QUESTIONS
+---------------------
+- The scan call may hit modified-struct issues like ScanPrimaryAssetTypesFromConfig
+  did. ScanPathsForPrimaryAssets is a different fn but reads the same manager state;
+  test on ONE type first.
+- Constructing TArray<FString> in-payload is fiddly; prefer reusing an in-memory paths
+  array. Confirm the Info scan-paths array (obj+0x70) is TArray<FString>.
+- Must run on the game thread (asset manager is not thread-safe) — the mount_shim APC
+  framework (tools/sigbypass-mod) already does game-thread dispatch.
+
+WHY THIS IS THE RIGHT FIX (recap)
+---------------------------------
+The registry is full + correct (103,841 entries, heroes tagged). Deployment routes
+(AR-patch, IoStore, pak-sign) are all aimed at the wrong layer. The only thing missing
+is the manager running its own scan against data that's already present — a runtime
+call, no data changes, no pak signing, no anti-cheat exposure (RPM/WPM + no-throw
+injection are all proven safe in this build).

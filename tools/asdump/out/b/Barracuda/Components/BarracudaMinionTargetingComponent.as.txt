@@ -1,0 +1,450 @@
+// ============================================================================
+//  MODULE   Barracuda.Components.BarracudaMinionTargetingComponent
+//  SOURCE   Barracuda/Components/BarracudaMinionTargetingComponent.as
+//  CONTENT  1 class(es), 13 function(s), 0 enum(s), 1 global(s), 1416 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaMinionTargetingComponent;
+
+UBarracudaMinionTargetingComponent@ UBarracudaMinionTargetingComponent()   // traits=0x20
+{
+    v2 = UBarracudaMinionTargetingComponent();
+    return v2;
+}
+/* ---- UBarracudaMinionTargetingComponent: 7 dwords / 4 instructions (cache offset 0x1517f) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84092 UBarracudaMinionTargetingComponent    
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ UBarracudaMinionTargetingComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UBarracudaMinionTargetingComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x1524e) ----
+    0000  PshGPtr       __StaticType_UBarracudaMinionTargetingComponent
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UBarracudaMinionTargetingComponent@ UBarracudaMinionTargetingComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaMinionTargetingComponent, v2, typeid(UBarracudaMinionTargetingComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x1539a) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972598                                    ; UBarracudaMinionTargetingComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaMinionTargetingComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaMinionTargetingComponent@ UBarracudaMinionTargetingComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaMinionTargetingComponent, v2, typeid(UBarracudaMinionTargetingComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x154fe) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972598                                    ; UBarracudaMinionTargetingComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaMinionTargetingComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaMinionTargetingComponent@ UBarracudaMinionTargetingComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaMinionTargetingComponent, v2, typeid(UBarracudaMinionTargetingComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x1565d) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972598                                    ; UBarracudaMinionTargetingComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaMinionTargetingComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable)
+class UBarracudaMinionTargetingComponent : ULokiMinionTargetingComponent
+// unreal base : /Script/Loki.LokiMinionTargetingComponent
+// C++ header  : ../../../Loki/Source/Loki/Character/Minion/LokiMinionTargetingComponent.h
+// static class global: __StaticType_UBarracudaMinionTargetingComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    ALokiCharacter@ HighPriorityEnemyCharacter;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    AActor@ CurrentTargetEnemy;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 ReleaseHighPriorityEnemyTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 HighPriorityEnemyMemory;
+
+    UBarracudaMinionTargetingComponent()   // traits=0x21
+    {
+        v2 = 13830554455654793216;
+        this.ReleaseHighPriorityEnemyTime = v2;
+        v2 = 4617315517961601024;
+        this.HighPriorityEnemyMemory = v2;
+        return;
+    }
+    /* ---- UBarracudaMinionTargetingComponent: 17 dwords / 9 instructions (cache offset 0x166b1) ----
+        0000  SetV8         v2 0xbff0000000000000                       
+        000C  LoadThisR     224 134230774                                 ; this.ReleaseHighPriorityEnemyTime
+        0014  WRTV8         v2                                          
+        0018  SetV8         v2 0x4014000000000000                       
+        0024  LoadThisR     232 134230774                                 ; this.HighPriorityEnemyMemory
+        002C  WRTV8         v2                                          
+        0030  PshVPtr       this                                        
+        0034  FinConstruct  UBarracudaMinionTargetingComponent          
+        0040  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void NotifyEnemyHeroHitAlliedHero(ALokiCharacter@ EnemyCharacter)   // traits=0x20
+    {
+        if (!this.IsActorInEnemyList(EnemyCharacter)) {
+            v11 = 0;
+        } else {
+            v4 = this.HighPriorityEnemyCharacter;
+            if (v4 == nullptr) {
+                v5 = true;
+            } else {
+                v8 = EnemyCharacter;
+                v10 = this.HighPriorityEnemyCharacter;
+                v11 = v8 == v10;
+                v5 = v11;
+            }
+            v11 = v5;
+        }
+        if (v11) {
+            v12 = Gameplay::GetServerTime(__WorldContext);
+            v16 = float64(v12);
+            v14 = this.HighPriorityEnemyMemory;
+            v16 = v16 + v14;
+            this.ReleaseHighPriorityEnemyTime = v16;
+            EnemyCharacter = this.HighPriorityEnemyCharacter;
+        }
+        return;
+    }
+    /* ---- NotifyEnemyHeroHitAlliedHero: 64 dwords / 42 instructions (cache offset 0x15a03) ----
+        0000  PshVPtr       EnemyCharacter                              
+        0004  PshVPtr       this                                        
+        0008  CALLINTF      84091                                         ; UBarracudaMinionTargetingComponent::IsActorInEnemyList
+        0010  JLowNZ        4                                             -> L0028
+        0018  SetV4         v11 0                                       
+        0020  JMP           27                                            -> L0094
+      L0028:
+        0028  PshVPtr       this                                        
+        002C  ADDSi         208 134230774                                 ; .HighPriorityEnemyCharacter
+        0034  RDSPtr                                                    
+        0038  RefCpyV       v4                                          
+        003C  CmpPtrNull    v4                                          
+        0040  JNZ           4                                             -> L0058
+        0048  SetV1         v5 1                                        
+        0050  JMP           13                                            -> L008C
+      L0058:
+        0058  PshVPtr       EnemyCharacter                              
+        005C  RefCpyV       v8                                          
+        0060  PshVPtr       this                                        
+        0064  ADDSi         208 134230774                                 ; .HighPriorityEnemyCharacter
+        006C  RDSPtr                                                    
+        0070  RefCpyV       v10                                         
+        0074  CmpPtr        v8 v10                                      
+        007C  TZ                                                        
+        0080  CpyRtoV4      v11                                         
+        0084  CpyVtoV4      v5 v11                                      
+      L008C:
+        008C  CpyVtoV4      v11 v5                                      
+      L0094:
+        0094  CpyVtoR1      v11                                         
+        0098  JLowZ         23                                            -> L00FC
+        00A0  PshGPtr       __WorldContext                              
+        00AC  CALLSYS       GetServerTime                               
+        00B8  CpyRtoV4      v12                                         
+        00BC  fTOd          v16 v12                                     
+        00C4  LoadThisR     232 134230774                                 ; this.HighPriorityEnemyMemory
+        00CC  RDR8          v14                                         
+        00D0  ADDd          v16 v16 v14                                 
+        00D8  LoadThisR     224 134230774                                 ; this.ReleaseHighPriorityEnemyTime
+        00E0  WRTV8         v16                                         
+        00E4  PshVPtr       EnemyCharacter                              
+        00E8  PshVPtr       this                                        
+        00EC  ADDSi         208 134230774                                 ; .HighPriorityEnemyCharacter
+        00F4  REFCPY                                                    
+        00F8  PopPtr                                                    
+      L00FC:
+        00FC  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=UpdateTargetEnemy, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    AActor@ UpdateTargetEnemy_Implementation()   // traits=0x20
+    {
+        this.UpdateCurrentTargetEnemy();
+        v2 = this.CurrentTargetEnemy;
+        return v2;
+    }
+    /* ---- UpdateTargetEnemy_Implementation: 10 dwords / 8 instructions (cache offset 0x15c49) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84088                                         ; UBarracudaMinionTargetingComponent::UpdateCurrentTargetEnemy
+        000C  PshVPtr       this                                        
+        0010  ADDSi         216 134230774                                 ; .CurrentTargetEnemy
+        0018  RDSPtr                                                    
+        001C  RefCpyV       v2                                          
+        0020  LOADOBJ       v2                                          
+        0024  RET           2                                           
+    */
+
+    void UpdateCurrentTargetEnemy()   // traits=0x20
+    {
+        __Evt_Execute(this, n"UpdateCurrentTargetEnemy");
+        return;
+    }
+    /* ---- UpdateCurrentTargetEnemy: 11 dwords / 6 instructions (cache offset 0x15d74) ----
+        0000  PshC4         99                                          
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=UpdateCurrentTargetEnemy, BlueprintEvent, CanOverrideEvent, NoOp)
+    void UpdateCurrentTargetEnemy_Implementation()
+    {
+        return;
+    }
+    /* ---- UpdateCurrentTargetEnemy_Implementation: 1 dwords / 1 instructions (cache offset 0x15e40) ----
+        0000  RET           2                                           
+    */
+
+    void DrawTargetingDebug() const   // traits=0x24
+    {
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 != nullptr) {
+            v4 = this.CurrentTargetEnemy;
+            if (v4 != nullptr) {
+                v20 = this.CurrentTargetEnemy.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v4 = this.GetOwner();
+                v14 = v4.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v26 = v20 - v14;
+                v39 = v2.AggroRange;
+                v42 = float64(v39);
+                v32 = v26.GetClampedToMaxSize2D(v42);
+                v48 = v14 + v32;
+                v4 = this.GetOwner();
+                v38 = v4.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                LokiGameplay::ServerDrawDebugLine(__WorldContext, v38, v48, FColor::Red, 1036831949);
+            }
+        }
+        return;
+    }
+    /* ---- DrawTargetingDebug: 97 dwords / 60 instructions (cache offset 0x15f3c) ----
+        0000  PshVPtr       this                                        
+        0004  CALLSYS       UActorComponent::GetOwner                   
+        0010  STOREOBJ      v4                                          
+        0014  CmpPtrNull    v4                                          
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1140857087                                    ; ALokiMinionCharacter@
+        0028  PSF           v6                                          
+        002C  PshVPtr       v4                                          
+        0030  CALLSYS       UObject::opCast                             
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v6                                          
+      L0048:
+        0048  PshVPtr       v6                                          
+        004C  RefCpyV       v2                                          
+        0050  CmpPtrNull    v2                                          
+        0054  JZ            73                                            -> L0180
+        005C  PshVPtr       this                                        
+        0060  ADDSi         216 134230774                                 ; .CurrentTargetEnemy
+        0068  RDSPtr                                                    
+        006C  RefCpyV       v4                                          
+        0070  CmpPtrNull    v4                                          
+        0074  JZ            65                                            -> L0180
+        007C  PSF           v20                                         
+        0080  PshVPtr       this                                        
+        0084  ADDSi         216 134230774                                 ; .CurrentTargetEnemy
+        008C  RDSPtr                                                    
+        0090  CALLSYS       AActor::GetActorLocation                    
+        009C  PSF           v14                                         
+        00A0  PshVPtr       this                                        
+        00A4  CALLSYS       UActorComponent::GetOwner                   
+        00B0  STOREOBJ      v4                                          
+        00B4  PshVPtr       v4                                          
+        00B8  CALLSYS       AActor::GetActorLocation                    
+        00C4  PSF           v14                                         
+        00C8  PSF           v26                                         
+        00CC  PSF           v20                                         
+        00D0  CALLSYS       FVector::opSub                              
+        00DC  LoadRObjR     v2 6592 67115263                              ; .AggroRange
+        00E8  RDR4          v39                                         
+        00EC  fTOd          v42 v39                                     
+        00F4  PshV8         v42                                         
+        00F8  PSF           v32                                         
+        00FC  PSF           v26                                         
+        0100  CALLSYS       FVector::GetClampedToMaxSize2D              
+        010C  PSF           v32                                         
+        0110  PSF           v48                                         
+        0114  PSF           v14                                         
+        0118  CALLSYS       FVector::opAdd                              
+        0124  PshC4         1036831949                                  
+        012C  PshGPtr       FColor::Red                                 
+        0138  PSF           v48                                         
+        013C  PSF           v38                                         
+        0140  PshVPtr       this                                        
+        0144  CALLSYS       UActorComponent::GetOwner                   
+        0150  STOREOBJ      v4                                          
+        0154  PshVPtr       v4                                          
+        0158  CALLSYS       AActor::GetActorLocation                    
+        0164  PSF           v38                                         
+        0168  PshGPtr       __WorldContext                              
+        0174  CALLSYS       ServerDrawDebugLine                         
+      L0180:
+        0180  RET           2                                           
+    */
+
+    bool IsActorInEnemyList(AActor@ TargetActor) const   // traits=0x24
+    {
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 == nullptr) {
+            v7 = false;
+            return v7;
+        } else {
+            v12 = v2.GetEnemyList();
+            v22 = v12.Iterator();
+            while (true) {
+                v7 = v22.CanProceed;
+                if (!v7) break;
+                v30 = v22.Proceed();
+                v32 = v30.Actor;
+                v34 = TargetActor;
+                if (v32 == v34) {
+                    v7 = true;
+                    return v7;
+                }
+            }
+            v7 = false;
+        }
+        return v7;
+    }
+    /* ---- IsActorInEnemyList: 81 dwords / 51 instructions (cache offset 0x162b3) ----
+        0000  PshVPtr       this                                        
+        0004  CALLSYS       UActorComponent::GetOwner                   
+        0010  STOREOBJ      v4                                          
+        0014  CmpPtrNull    v4                                          
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1140857087                                    ; ALokiMinionCharacter@
+        0028  PSF           v6                                          
+        002C  PshVPtr       v4                                          
+        0030  CALLSYS       UObject::opCast                             
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v6                                          
+      L0048:
+        0048  PshVPtr       v6                                          
+        004C  RefCpyV       v2                                          
+        0050  CmpPtrNull    v2                                          
+        0054  JNZ           5                                             -> L0070
+        005C  SetV1         v7 0                                        
+        0064  CpyVtoR4      v7                                          
+        0068  JMP           52                                            -> L0140
+      L0070:
+        0070  PSF           v12                                         
+        0074  PshVPtr       v2                                          
+        0078  CALLSYS       ALokiMinionCharacter::GetEnemyList          
+        0084  PSF           v22                                         
+        0088  PSF           v12                                         
+        008C  CALLSYS       TArray::Iterator                            
+        0098  JMP           26                                            -> L0108
+      L00A0:
+        00A0  SUSPEND                                                   
+        00A4  PSF           v22                                         
+        00A8  CALLSYS       TArrayIterator::Proceed                     
+        00B4  CpyRtoV8      v30                                         
+        00B8  PshVPtr       v30                                         
+        00BC  ADDSi         0 67121158                                    ; .Actor
+        00C4  RDSPtr                                                    
+        00C8  RefCpyV       v32                                         
+        00CC  PshVPtr       TargetActor                                 
+        00D0  RefCpyV       v34                                         
+        00D4  CmpPtr        v32 v34                                     
+        00DC  JNZ           9                                             -> L0108
+        00E4  SetV1         v7 1                                        
+        00EC  PSF           v12                                         
+        00F0  CALLSYS       TArray::$beh2                               
+        00FC  CpyVtoR4      v7                                          
+        0100  JMP           14                                            -> L0140
+      L0108:
+        0108  LoadVObjR     v22 16 268448503                              ; .CanProceed
+        0114  RDR1          v7                                          
+        0118  CpyVtoR1      v7                                          
+        011C  JLowNZ        -33                                           -> L00A0
+        0124  SetV1         v7 0                                        
+        012C  PSF           v12                                         
+        0130  CALLSYS       TArray::$beh2                               
+        013C  CpyVtoR4      v7                                          
+      L0140:
+        0140  RET           4                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        nullptr = this.HighPriorityEnemyCharacter;
+        return;
+    }
+    /* ---- __InitDefaults: 14 dwords / 10 instructions (cache offset 0x165aa) ----
+        0000  SetV1         v1 1                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       UActorComponent::SetbExcludeFromClient      
+        001C  PshNull                                                   
+        0020  PshVPtr       this                                        
+        0024  ADDSi         208 134230774                                 ; .HighPriorityEnemyCharacter
+        002C  REFCPY                                                    
+        0030  PopPtr                                                    
+        0034  RET           2                                           
+    */
+
+}
+

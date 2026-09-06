@@ -55,15 +55,19 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /inventory/free", handleFreeInventory)
 
 	// Real-money store (UStorefrontManager::GetRealMoneyStorefront) — drives the
-	// STORE tab. Valid-empty PlayerStore-shaped wrapper so the FEATURED carousel
-	// settles instead of spinning on the {} catch-all. (Populating real offers
-	// needs packed-config item SKUs.)
-	mux.HandleFunc("GET /storefront/real/offers/{id}", handlePlayerStore)
+	// currency top-up packs. Same FLokiStorefrontPlayerStore shape as the virtual
+	// store; now populated with the real Theorycraft Coin / Vive Point pack SKUs
+	// (storeoffers_summary.json). See handleRealMoneyStore.
+	mux.HandleFunc("GET /storefront/real/offers/{id}", handleRealMoneyStore)
 
 	// AccelByte per-player progression tracks (distinct from the storefront
 	// battlepass tracks). Model FAccelByteModelsListUserProgressionInfoPagingSliced
 	// Result — standard data/paging wrapper.
-	mux.HandleFunc("GET /progression/players/{id}/tracks", handleEmptyDataPaging)
+	mux.HandleFunc("GET /progression/players/{id}/tracks", handlePlayerProgressionTracks)
+	// S82: the ViewManager's OnUpdatedCurrentPublishedProgressionTracks handler (fired once the
+	// battlepass_adopt_fix shim forces adoption) issues GET .../tracks/rewards; its completion builds
+	// the pass view-models. Minimal empty wrapper for the first shim test — populate if the VM needs reward rows.
+	mux.HandleFunc("GET /progression/players/{id}/tracks/rewards", handleEmptyDataPaging)
 
 	// Content-service master manifest — the catalog of what EXISTS (heroes,
 	// cosmetics, offers, …). This is the lever for the HUNTERS grid / STORE /
@@ -89,114 +93,40 @@ func (s *Service) Register(mux *http.ServeMux) {
 // any "Invalid response"/"Deserialization failure" names the next fix; the HUNTERS
 // grid shows whether PrimaryAssetName alone resolves a card (likely needs AssetPath
 // next).
+// Reverted 2026-06-28 after probe #2 (populated HeroCosmeticsBundles with 25 entries
+// carrying PrimaryAssetType/PrimaryAssetName/AssetPath) produced ZERO observable
+// effect: grid still empty, "?" preview unchanged, no new ChangeBundleState log
+// activity for any of the registered bundle IDs. Combined with probe #3 (inventory
+// ownership entries — see handleInventory) and the prior session's RE, this confirms
+// `LokiAssetManager` registers manifest assets but the menu's grid/store enumeration
+// queries through `ScanPrimaryAssetTypesFromConfig` (deliberately bypassed in this
+// build), NOT through manifest registrations. Backend route closed; see
+// docs/hero-roster-attempts.md for the full attempt log.
 func handleContentManifest(w http.ResponseWriter, r *http.Request) {
-	// PROBE #3 (real assets, usmap-backed): each hero entry carries the real
-	// ContentServicePrimaryAsset data from BP_HeroAsset_<Hero> — PrimaryAssetType "Hero",
-	// PrimaryAssetName (the InternalName / codename, e.g. "assault"; the asset overrides
-	// GetPrimaryAssetId to a clean name, confirmed by the hero's DefaultCosmeticsBundle ref
-	// being "AssaultDefault" not the BP_ asset name), and the full AssetPath.
-	//   - PROBE #1 sent only PrimaryAssetName, no type -> AssetManager "Invalid Primary
-	//     Asset Type ... failed to find NameData" (every hunter = UnknownHero "?").
-	//   - PROBE #2 ("HeroAsset") and #3 ("Hero" as a flat string): SAME error. The manifest
-	//     DESERIALIZED fine each time, but the AssetManager never registered the type.
-	//   - PROBE #4 (current): the real cause is FIELD TYPES, not the value. The
-	//     BP_HeroAsset dump shows FPrimaryAssetType fields serialize as {"Name": ...} and
-	//     FSoftObjectPath fields as {"AssetPathName","SubPathString"}. We were sending flat
-	//     strings, which UE silently SKIPS (wrong type) -> type/path register EMPTY ->
-	//     "failed to find NameData". Now sent in the proper nested struct forms.
-	// GROUND TRUTH (extracted Loki/Config/DefaultGame.ini via the extractor's new `raw`
-	// mode): PrimaryAssetType="Hero", AssetBaseClass=/Script/Loki.LokiHeroAsset, scanned
-	// from /Game/Loki/Characters/Heroes — so "Hero" is the type and the AssetManager scans
-	// the heroes itself. Crucially [AssetManagerSettings] bShouldManagerDetermineTypeAndName
-	// =True, which means the manager DERIVES PrimaryAssetName from the asset's SHORT NAME
-	// ("BP_HeroAsset_Assault"), NOT the GetPrimaryAssetId override (so codename "assault"
-	// gave "Invalid Primary Asset Id"). PROBE #5: PrimaryAssetName = the BP_HeroAsset_<Hero>
-	// basename. Relaunch readback: HUNTERS grid / pedestal render real models (no "?").
+	// The client ALWAYS requests this with ?nonEnabledOnly=true — i.e. "which content
+	// is NOT enabled/released?". Anything we return here is therefore treated by the
+	// client as NON-enabled and HIDDEN. Prior sessions populated Heroes here, which
+	// (we now understand) marked all 25 heroes non-enabled — so the ALL HUNTERS grid
+	// filtered them out even once the AssetManager enumeration was populated
+	// (scan_on_enum: GetPrimaryAssetIdList(Hero) returns 25). Session 44: return an
+	// EMPTY heroes map for the nonEnabledOnly query so every hero stays ENABLED and the
+	// grid can render the enumerated roster. (Only the full-manifest form, which the
+	// client does not request, lists heroes.)
+	nonEnabledOnly := r.URL.Query().Get("nonEnabledOnly") == "true"
 	heroes := map[string]any{}
-	for sku, folder := range heroFolders {
-		asset := "BP_HeroAsset_" + folder
-		path := "/Game/Loki/Characters/Heroes/" + folder + "/" + asset + "." + asset + "_C"
-		heroes[sku] = map[string]any{
-			// EXACT ContentServicePrimaryAsset shape (usmap schema): all plain FStrings + bool.
-			// PrimaryAssetName = the hero codename / InternalName ("assault") — the config
-			// scan that would force the asset-short-name ("BP_HeroAsset_Assault") is NOT running
-			// in this build (Season:S2_Season also fails), so the runtime id comes from
-			// LokiHeroAsset's GetPrimaryAssetId override = InternalName, matching what
-			// /storefront/heroes ("Unlockable heroes fetched") uses. AssetPath still points at
-			// the real BP_HeroAsset file so the registered id resolves to the asset.
-			"PrimaryAssetType": "Hero",
-			"PrimaryAssetName": sku,
-			"AssetPath":        path,
-			"Status":           "Enabled",
-			"IsDefault":        false,
+	if !nonEnabledOnly {
+		for _, h := range heroCodenames {
+			heroes[h] = map[string]any{"PrimaryAssetName": h}
 		}
 	}
-	// MISSION PROBE #2 RESULT (2026-06-28): injecting a MissionPool entry into the proven-
-	// consumed Heroes map (per-entry PrimaryAssetType "MissionPool") STILL failed —
-	// "Invalid Primary Asset Id MissionPool:DA_MissionPoolDailyChallenge: failed to find
-	// NameData". So the manifest consumer keys the registered type off the MAP NAME, not the
-	// entry's PrimaryAssetType field. With no mission map in ContentServiceContentManifest, the
-	// manifest CANNOT register missions/pools — confirmed not backend-fixable. The fix is
-	// native (trigger LokiAssetManager's primary-asset scan). Probe reverted.
-	// HeroCosmeticsBundles: the hero's 3D model on the pedestal/grid is its DEFAULT
-	// cosmetics bundle, which the hero asset references as HeroCosmeticsBundle:<Hero>Default
-	// (e.g. "AssaultDefault"). With this map empty the client logs "SetHero with CosmeticsAssetId
-	// ( - true)" (empty) -> UnknownHero "?". We register each default bundle: key + name =
-	// "<Folder>Default" (the hero's hardcoded reference), AssetPath = the real bundle. Only the
-	// 14 heroes with a canonical BP_<Hero>_DefaultCosmeticsBundle are populated here; the rest
-	// use irregular names (added once this is validated).
-	cosmetics := map[string]any{}
-	for folder, assetBase := range heroDefaultBundles {
-		bpath := "/Game/Loki/Characters/Heroes/" + folder + "/Cosmetics/Default/" + assetBase + "." + assetBase + "_C"
-		sku := folder + "Default"
-		cosmetics[sku] = map[string]any{
-			"PrimaryAssetType": "HeroCosmeticsBundle",
-			"PrimaryAssetName": sku,
-			"AssetPath":        bpath,
-			"Status":           "Enabled",
-			"IsDefault":        true,
-		}
-	}
-
-	// MISSIONS: NOT backend-fixable via this manifest. MISSION PROBE #1 (2026-06-28) injected
-	// the 16 mission pools (each self-describing PrimaryAssetType "MissionPool") into the Powers
-	// map + pointed CurrentSeason at MissionPool:DA_MissionPoolDailyChallenge. Relaunch result:
-	// "Invalid Primary Asset Id MissionPool:DA_MissionPoolDailyChallenge: ... failed to find
-	// NameData" — so the manifest keys the registered type off the MAP NAME, not each entry's
-	// PrimaryAssetType field, and there is no Missions/MissionPool map in
-	// ContentServiceContentManifest. Missions are local UE primary assets the modal must
-	// ENUMERATE (LokiDataAsset_MissionPool/_Mission under /Game/Loki/Core/Missions); that
-	// enumeration is dead in this build (stripped AssetRegistry.bin + no runtime scan) — the
-	// SAME client-side blocker as the hunters grid. Fix is client-side (repack AssetRegistry.bin
-	// with primary-asset data, or AngelScript), not this server. Probe reverted below.
-
-	// Top-level ContentServiceContentManifest fields (usmap schema): ID, ETag, Version
-	// (Int64), CurrentSeason (FPrimaryAssetId), CurrentPatchVersion, PatchVersions, + the
-	// content maps. The earlier manifest omitted ID/ETag/Version/CurrentSeason — the client
-	// re-fetched it 3338x (a reject/retry loop, never processing it). ETag+Version drive
-	// change-detection, so we send stable values. CurrentSeason is an FPrimaryAssetId, which
-	// (unlike ContentServicePrimaryAsset.PrimaryAssetType) IS a nested struct:
-	// {PrimaryAssetType:{Name:"Season"}, PrimaryAssetName:"S2_Season"} (release 2.4 = S2).
 	writeJSON(w, map[string]any{
-		"ID":      "supervive-revival-manifest",
-		"ETag":    "1",
-		"Version": 1,
-		// CurrentSeason is eagerly loaded via ChangeBundleStateForPrimaryAssets. DIAGNOSTIC
-		// CONFIRMED (2026-06-27): pointing it at Hero:assault produced NO error — i.e. the
-		// manifest's Heroes map DOES register primary assets and "Hero:assault" (codename) is
-		// the valid id. Season has no map so it can't be registered; we leave it pointing at the
-		// real season (a harmless "no NameData" warning) rather than mis-registering it.
-		"CurrentSeason": map[string]any{
-			"PrimaryAssetType": map[string]any{"Name": "Season"},
-			"PrimaryAssetName": "S2_Season",
-		},
 		"CurrentPatchVersion":  r.PathValue("version"),
 		"PatchVersions":        []any{},
 		"Heroes":               heroes,
 		"Items":                map[string]any{},
 		"Emotes":               map[string]any{},
 		"PlayerTitles":         map[string]any{},
-		"HeroCosmeticsBundles": cosmetics,
+		"HeroCosmeticsBundles": map[string]any{},
 		"StoreOffers":          map[string]any{},
 		"SlotCosmetics":        map[string]any{},
 		"Minions":              map[string]any{},
@@ -216,6 +146,76 @@ func handleEmptyDataPaging(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handlePlayerProgressionTracks (GET /progression/players/{id}/tracks) — S82 lever A
+// part 2. This endpoint feeds the ProgressionManager's tracks TArray (@+0x5C8). The
+// account-track skeleton at PM+0x90 got its presence flag (PM+0x208) set by
+// /progression/players/{id} (handleGetProgression) but its CurrentTierIndex (track+0xEC)
+// stayed -1, so the account-pass predicate (game RVA 0x584B920) fails. Hypothesis: the
+// per-player tier/progress derives from THIS list (matched to the account track by
+// ProgressionId). Serve the HuntersJourney enrollment with a DISTINCTIVE CurrentTierIndex
+// (5) so a live PM+0x90.+0xEC readback tells us whether /tracks drives it. Same model as
+// handleGetProgression (FAccelByteModelsListUserProgressionInfoPagingSlicedResult). All
+// fields Str/Int/Bool/enum-Str/nested — can't wrong-type-reject. Not "-ranked".
+//
+// S82 RESULT: values did NOT land (track+0xEC stayed -1 across a fresh login), which the
+// project then read as "the backend route is exhausted". S83 shows that conclusion was too
+// strong: a native ingester DOES exist (0x585A570 -> 0x58061A0 writes track+0xEC @+5806363,
+// sets PM+0x208 AND PM+0x388, then Broadcasts PM+0x48). So the question is the SHAPE/keys,
+// not whether a route exists.
+//
+// S83 PROBE — ID FORM (single variable): ProgressionId "HuntersJourney" ->
+// "ProgressionTrack:HuntersJourney". Rationale: same class of bug as the S83 keystone — the
+// account view model only built once keyed by P->GetPrimaryAssetId().ToString() =
+// "ProgressionTrack:HuntersJourney" rather than the bare name, and the adopted published track's
+// ProgressionTrackID is now that form too, so an ID-string correlation would never have matched
+// the bare name. S82 tested this field while the adopted track was ALSO keyed bare, so the
+// mismatch would have been invisible then — i.e. the S82 negative did not actually rule this out.
+//
+// *** RESULT: NEGATIVE, and cleanly controlled — REVERTED (2026-07-18). ***
+// Hot-swapped ags; the client re-polled this route 4x (22:48:02, 22:49:03, 22:50:04, 22:51:05 —
+// it polls every ~61s) and received the new form. Across all 4 cycles, watching live:
+//   track+0xEC (PM+0x17C) stayed 0   (would have gone -> 5, the distinctive value below)
+//   byte[PM+0x388] (Gate C)  stayed 0
+//   tracks TArray count (PM+0x5D0) stayed 0
+// AND Loki.log shows NO "Deserialization failure" / "Invalid response received" => the response is
+// ACCEPTED and then simply NOT USED. Note especially that +0x5C8/+0x5D0 never populates, which is
+// independent of any ID matching: nothing from this endpoint reaches the ProgressionManager.
+// ⇒ CONCLUSION: GET /progression/players/{id}/tracks is NOT wired to the account-track ingest in
+// this build, for ANY ID form. Do not re-probe ID/name variants on THIS route — the route itself
+// is the dead end, not the field values. The real writer of track+0xEC is the native ingester
+// 0x585A570 -> 0x58061A0 (@+5806363); the open question is which of its four call sites
+// (0x5838DDD / 0x583CC24 / 0x5854B6C / 0x585C48C) is fed by HTTP, and by WHICH endpoint —
+// possibly none (progress may be client-generated, cf. RefreshTracks 0x57D0630 for mastery).
+func handlePlayerProgressionTracks(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	track := map[string]any{
+		"ID":              "supervive-hunters-journey",
+		"NameSpace":       "supervive",
+		"Name":            "HuntersJourney",
+		"ProgressionType": "PROGRESSION_TRACK",
+		"Status":          "PUBLISHED",
+		"Active":          true,
+	}
+	entry := map[string]any{
+		"ID":               "hunters-journey-" + id,
+		"NameSpace":        "supervive",
+		"UserId":           id,
+		"ProgressionId":    "HuntersJourney", // reverted: the Type:Name form changed nothing (see above)
+		"CurrentTierIndex": 5,
+		"LastTierIndex":    5,
+		"RequiredExp":      1000,
+		"CurrentExp":       450,
+		"Cleared":          false,
+		"ProgressionTrack": track,
+		"Active":           true,
+	}
+	writeJSON(w, map[string]any{
+		"data":   []any{entry},
+		"paging": map[string]any{"previous": "", "next": ""},
+		"total":  1,
+	})
+}
+
 // handleInventory returns LokiPlatformInventory { AssetEntries: [...] } — valid
 // empty. (A probe putting "heroToken" entries here parsed but did not satisfy the
 // hero-token read, so that count is tested via the wallet instead; see handleWallet.
@@ -231,70 +231,59 @@ var heroCodenames = []string{
 	"stalker", "storm", "succubus", "void", "wukong",
 }
 
-// heroFolders maps each hero SKU (lowercase InternalName, the content-manifest /
-// storefront key) to its PascalCase content folder + asset basename, recovered from the
-// usmap dump of BP_HeroAsset_<Hero> (path /Game/Loki/Characters/Heroes/<Folder>/
-// BP_HeroAsset_<Folder>). Used to build real ContentServicePrimaryAsset entries.
-var heroFolders = map[string]string{
-	"alchemist": "Alchemist", "assault": "Assault", "backlinehealer": "BacklineHealer",
-	"beebo": "Beebo", "bountyhunter": "BountyHunter", "burstcaster": "BurstCaster",
-	"earthtank": "Earthtank", "farshot": "FarShot", "firefox": "FireFox", "flex": "Flex",
-	"freeze": "Freeze", "gunner": "Gunner", "hookguy": "HookGuy", "huntress": "Huntress",
-	"reaper": "Reaper", "reshealer": "ResHealer", "rocketjumper": "RocketJumper",
-	"ronin": "Ronin", "shieldbot": "ShieldBot", "sniper": "Sniper", "stalker": "Stalker",
-	"storm": "Storm", "succubus": "Succubus", "void": "Void", "wukong": "Wukong",
-}
-
-// heroDefaultBundles maps a hero's content folder to the basename of its default cosmetics
-// bundle asset (usmap path enumeration). Only the 14 heroes with a canonical
-// BP_<Hero>_DefaultCosmeticsBundle are listed; note FireFox's asset is "Firefox" (lowercase f).
-var heroDefaultBundles = map[string]string{
-	"Assault": "BP_Assault_DefaultCosmeticsBundle", "BacklineHealer": "BP_BacklineHealer_DefaultCosmeticsBundle",
-	"FireFox": "BP_Firefox_DefaultCosmeticsBundle", "Flex": "BP_Flex_DefaultCosmeticsBundle",
-	"Freeze": "BP_Freeze_DefaultCosmeticsBundle", "Gunner": "BP_Gunner_DefaultCosmeticsBundle",
-	"HookGuy": "BP_HookGuy_DefaultCosmeticsBundle", "Huntress": "BP_Huntress_DefaultCosmeticsBundle",
-	"RocketJumper": "BP_RocketJumper_DefaultCosmeticsBundle", "Ronin": "BP_Ronin_DefaultCosmeticsBundle",
-	"ShieldBot": "BP_ShieldBot_DefaultCosmeticsBundle", "Sniper": "BP_Sniper_DefaultCosmeticsBundle",
-	"Storm": "BP_Storm_DefaultCosmeticsBundle", "Void": "BP_Void_DefaultCosmeticsBundle",
-}
-
-// handleInventory returns LokiPlatformInventory { AssetEntries: [...], Version } — now
-// granting ownership of every hero + its default cosmetics, so the hunters are PLAYable
-// (not "PURCHASE 20,000") and the hero-select preview can resolve an owned model.
-// Model (usmap schema): LokiPlatformInventoryAssetEntry { AssetId (FPrimaryAssetId, nested
-// {PrimaryAssetType:{Name},PrimaryAssetName}); bool IsOwned/IsFree/IsDefault/IsPremiumBenefit;
-// EntitlementIDs[] }. AssetIds match the content-manifest entries (Hero:BP_HeroAsset_<X>,
-// HeroCosmeticsBundle:<X>Default).
+// handleInventory returns owned items. Earlier probe (25 owned heroes keyed by
+// lowercase codename) triggered `LogAssetManager: Invalid Primary Asset Type`
+// because the field is interpreted as a typed PrimaryAssetId, not a plain SKU.
+//
+// 2026-06-28 probe #3 (the "ownership gates grid" hypothesis): returned 50 entries
+// of shape `{"AssetId": "Hero:<lower>"}` + `{"AssetId": "HeroCosmeticsBundle:<Pascal>Default"}`.
+// Result: parser accepted the payload (no deserialization error, `LogPlatformInventory:
+// Refreshed player inventory` succeeded), but UI was identical — grid empty, "?" preview,
+// zero new ChangeBundleState activity. That probe had TWO now-known problems: (a) it ran
+// BEFORE the IsCatalogDataReady gate was fixed (session 47 — the whole catalog UI was gated
+// off from building, so nothing could reflect ownership); (b) the entries carried NO
+// `IsOwned:true` — the real ownership signal per the recovered model.
+//
+// MODEL (usmap schema.txt): LokiPlatformInventory { AssetEntries: []LokiPlatformInventoryAssetEntry,
+// Version int64 }; LokiPlatformInventoryAssetEntry { AssetId PrimaryAssetId, IsFree bool, IsOwned
+// bool, IsDefault bool, IsPremiumBenefit bool, EntitlementIDs [], AdditionalDetails {} }. The
+// "Hero:<name>" string form parses into the AssetId PrimaryAssetId (custom text import); FName
+// match is case-insensitive so the lowercase codenames link to the mixed-case catalog names.
+//
+// Session 47 (post-gate-fix): own all 25 heroes with IsOwned=true so the ALL HUNTERS tiles unlock
+// (drop the "Hunter not owned" lock) and the menu can surface a default hunter instead of the "?"
+// empty-inventory placeholder. IsDefault marks a starting hunter.
 func handleInventory(w http.ResponseWriter, r *http.Request) {
-	entries := []any{}
-	now := time.Now().UTC().Format(time.RFC3339)
-	owned := func(typeName, assetName string, isDefault bool) map[string]any {
-		// Full OWNED entry: IsOwned alone didn't flip "PURCHASE 20,000", so we also supply a
-		// non-empty EntitlementIDs (entitlement-based ownership) + AdditionalDetails.PurchasedAt
-		// (TMap, confirmed by the PurchasedAt_Key companion) — the real "this was acquired"
-		// signal. EntitlementID is synthetic but non-empty.
-		entID := "ent-" + typeName + "-" + assetName
-		return map[string]any{
-			"AssetId": map[string]any{
-				"PrimaryAssetType": map[string]any{"Name": typeName},
-				"PrimaryAssetName": assetName,
-			},
-			"IsOwned":          true,
-			"IsFree":           false,
-			"IsDefault":        isDefault,
-			"IsPremiumBenefit": false,
-			"EntitlementIDs":   []any{entID},
-			"AdditionalDetails": map[string]any{
-				"PurchasedAt": map[string]any{entID: now},
-			},
+	// Heroes: 25 codenames, alchemist is the default. Cosmetics: mark all of them owned
+	// so the client CatalogManager sets CatalogEntry.IsOwned=1 → CanUse=1 → the browse-tab
+	// tiles in the STORE render (BUNDLES/SKINS/ACCESSORIES). A live RPM inspection of the
+	// CatalogEntries in the running client (2026-07-05) confirmed that Hero entries have
+	// CanUse=1/IsOwned=1 (grid renders), while store/cosmetic entries had CanUse=0/
+	// CannotUseReason=2/IsOwned=0 (blank tiles). The client re-derives CanUse from IsOwned
+	// each processing pass — a native shim that only poked CanUse=1 was reverted to 0
+	// within one game tick, while IsPurchasable=1 stuck; so the durable path is to make the
+	// server say we own them, not to fight the derivation.
+	cfg := current()
+	entries := make([]any, 0, 1000)
+	for i, h := range cfg.Heroes {
+		entries = append(entries, map[string]any{
+			"AssetId":   "Hero:" + h,
+			"IsOwned":   true,
+			"IsDefault": i == 0, // one starting hunter (alchemist) as the default
+		})
+	}
+	appendOwned := func(list []map[string]any) {
+		for _, e := range list {
+			entries = append(entries, e)
 		}
 	}
-	for codename := range heroFolders {
-		entries = append(entries, owned("Hero", codename, false))
-	}
-	for folder := range heroDefaultBundles {
-		entries = append(entries, owned("HeroCosmeticsBundle", folder+"Default", true))
-	}
+	appendOwned(ownedAssetEntries(cfg.Store.Bundles, "StoreOffer"))
+	appendOwned(ownedAssetEntries(cfg.Store.Skins, "HeroCosmeticsBundle"))
+	appendOwned(ownedAssetEntries(cfg.Store.Accessories, "SlotCosmetics"))
+	// S133: emotes, knob-gated (AGS_GRANT_EMOTES). Nil unless the knob is set, so the
+	// default document is byte-identical to the pre-S133 wire. See emotegrant.go for why
+	// the ids come from the shipped mastery-reward catalog and not from a guess.
+	appendOwned(emoteInventoryEntries())
 	writeJSON(w, map[string]any{"AssetEntries": entries, "Version": 1})
 }
 
@@ -326,15 +315,17 @@ func handleWallet(w http.ResponseWriter, r *http.Request) {
 	// Theorycraft Coins — the real-money premium currency; a fresh account has 0,
 	// so 0 is AUTHENTIC (and is why all 91 wallet-key candidates failed: premium
 	// balance isn't a virtual-wallet entry). Probe retired; real balances below.
-	writeJSON(w, map[string]any{
-		"Balances": map[string]any{
-			"vp": 2004, // Vive Points (purple counter) — the one wallet currency the
-			// menu surfaces. Gold counter = Theorycraft Coins = real-money premium,
-			// authentically 0. (Confirmed a "heroToken" wallet balance does NOT feed
-			// UBattlepassHeroUnlocker — the hero-token count comes from the battlepass
-			// reward-track claim state, which needs packed reward SKUs.)
-		},
-	})
+	// Balances come from cfg.Wallet (default {"vp":2004}). "vp" => Vive Points (purple
+	// counter). The gold counter = Theorycraft Coins = real-money premium, authentically
+	// 0 on a fresh account (not a virtual-wallet entry, which is why 91 key candidates
+	// failed). A "heroToken" balance does NOT feed UBattlepassHeroUnlocker — the hero-token
+	// count comes from the battlepass reward-track claim state (needs packed reward SKUs).
+	cfg := current()
+	balances := make(map[string]any, len(cfg.Wallet))
+	for code, amount := range cfg.Wallet {
+		balances[code] = amount
+	}
+	writeJSON(w, map[string]any{"Balances": balances})
 }
 
 // handleHeroes returns FLokiStorefrontHeroes. CONFIRMED last relaunch: the array
@@ -358,30 +349,189 @@ func handleHeroes(w http.ResponseWriter, r *http.Request) {
 	// sent (which rendered nothing). Sending all 25 lowercase codenames as the confirmed
 	// FLokiStorefrontHeroes { heroes: TArray<FString> } shape. Relaunch + LogPlatform
 	// Storefront ("Unlockable heroes fetched: %d") / the HUNTERS grid confirm the format.
-	// /storefront/heroes IS the HUNTERS grid source (confirmed: emptying it emptied the grid).
-	// It is NOT the ownership signal either (emptying it did not clear PURCHASE). So the grid
-	// lists all 25 here; ownership/PURCHASE is determined elsewhere (still unresolved).
-	heroes := []string{
-		"alchemist", "assault", "backlinehealer", "beebo", "bountyhunter",
-		"burstcaster", "earthtank", "farshot", "firefox", "flex",
-		"freeze", "gunner", "hookguy", "huntress", "reaper",
-		"reshealer", "rocketjumper", "ronin", "shieldbot", "sniper",
-		"stalker", "storm", "succubus", "void", "wukong",
-	}
-	writeJSON(w, map[string]any{"heroes": heroes})
+	writeJSON(w, map[string]any{"heroes": current().Heroes})
 }
 
-// handlePlayerStore returns FLokiStorefrontPlayerStore (the /storefront/offers/{id}
-// response): RotatingOffers, FeaturedItemOffers, TypeOffers (arrays) + NextRotation
-// (omitted — it's almost certainly an FDateTime and a bad string would reject the
-// doc; an absent field safely defaults). Empty arrays = valid container, empty shop
-// — no regression, and the correct shape to grow item offers into later.
+// handlePlayerStore returns FLokiStorefrontPlayerStore, the /storefront/offers/{id}
+// response (the virtual-currency store: cosmetic bundles/skins bought with vp/coins).
+//
+// SCHEMA CORRECTION (2026-07-05, schema.txt): the earlier stub sent empty
+// RotatingOffers/FeaturedItemOffers/TypeOffers and NEVER sent the field that actually
+// carries purchasable items. Per schema.txt LokiStorefrontPlayerStore has SIX fields:
+//
+//	Region             StrProperty
+//	ItemOffers         Array<LokiStorefrontPlayerItemOffer>   <- the real offer list
+//	RotatingOffers     Array<DateTime>   (rotation timestamps, NOT offers)
+//	NextRotation       DateTime
+//	FeaturedItemOffers Array<LokiStorefrontTypeOffer>  (AssetType+SlotName structs)
+//	TypeOffers         Array<Str>
+//
+// So the store has never actually been handed an offer array. PROBE #1: populate
+// ItemOffers with the real SKUs recovered by IoStore extraction
+// (tools/extractor/out/catalog/storeoffers_summary.json — 56 offers from the packed
+// BP_StoreOffer_* assets). This is only viable now that the catalog is loaded
+// client-side (catalog_ready_fix opens the IsCatalogDataReady gate → the 904-entry
+// CatalogManager map holds every one of these SKUs), so an advertised SKU can resolve
+// to its packed presentation (icon/name/price via LokiStorefrontOfferingCost baked in
+// the offer asset). RotatingOffers/NextRotation are omitted (Array<DateTime>/DateTime —
+// an absent field safely defaults; a bad datetime string would reject the whole doc).
+//
+// Validity: every LokiStorefrontPlayerItemOffer field is Str/Bool/Int/Array<Str>, so
+// nothing here can wrong-type-reject the doc. Costs is left empty on probe #1 (the
+// packed offer asset carries the real cost); NameSpace empty (a guessed namespace could
+// silently filter). If the relaunch shows offers parsed but priceless/hidden, the next
+// single variables in order are: Costs format, then Category routing, then NameSpace.
+// Readback: LogPlatformStorefront (the "…fetched" channel) should report the offer
+// count, and the STORE tab shows whether an advertised SKU resolves to a tile.
 func handlePlayerStore(w http.ResponseWriter, r *http.Request) {
+	// One ItemOffers array feeds every tab; each tab filters it by the offer's resolved
+	// PrimaryAssetType. StoreOffer packs -> BUNDLES/SUPPORTER PACKS; HeroCosmeticsBundle ->
+	// SKINS; SlotCosmetics -> ACCESSORIES. See cosmetics.go.
+	cfg := current()
+	items := storeItemOffers(cfg.Store.Bundles, "Bundles", "StoreOffer")
+	items = append(items, cosmeticOffers(cfg.Store.Skins, "HeroCosmeticsBundle", "Skins")...)
+	items = append(items, cosmeticOffers(cfg.Store.Accessories, "SlotCosmetics", "Accessories")...)
+	// S133: EMOTES. Their own PrimaryAssetType `Emote` -- NOT SlotCosmetics, despite the
+	// comment at cosmetics.go:13; the live 536-name SlotCosmetics map holds zero emotes.
+	// Inventory ownership alone was measured insufficient, so emotes get offers too, which
+	// is the structural half the working cosmetic tabs have. See emotegrant.go.
+	items = append(items, emoteOffers()...)
 	writeJSON(w, map[string]any{
-		"RotatingOffers":     []any{},
-		"FeaturedItemOffers": []any{},
-		"TypeOffers":         []any{},
+		"Region":             cfg.Region,
+		"ItemOffers":         items,
+		"FeaturedItemOffers": storeFeaturedOffers(cfg.Store.Featured),
 	})
+}
+
+// featuredStoreSKUs — offers highlighted in the FEATURED carousel. Bare offer names;
+// storeFeaturedOffers prefixes each into "StoreOffer:<name>" (the PrimaryAssetId string
+// the carousel's `Get Carousel Offers` filter requires).
+//
+// TWO conditions must BOTH hold for the carousel to render (learned live 2026-07-05):
+//  (1) SKU = "StoreOffer:<name>" so GetCatalogEntry(PrimaryAssetIDFromString(SKU)) is
+//      valid — else the offer is filtered out. (StoreOffer: prefix fixes this.)
+//  (2) the offer's asset must have a non-null WideSplashArt to async-load — else the
+//      carousel logs "RequestAsyncLoad() called with empty or only null assets!" and
+//      spins. The supporter packs (Starter/Superviver/Patron) resolved fine (1) but have
+//      NULL WideSplashArt (3x that warning at store-open) => spin. The cosmetic SKIN
+//      packs are authored WITH WideSplashArt for featuring, so switch to those.
+var featuredStoreSKUs = []string{
+	"CyberpunkWukongPack", "HuntressGodQueenPack", "GodOfTimeVoidPack",
+	"OniHookguyPack", "DemonessFlexPack",
+}
+
+// storeFeaturedOffers builds []LokiStorefrontTypeOffer for the FEATURED carousel.
+//
+// ROOT CAUSE (bpdump of WBP_UI_Storefront_Featured::"Get Carousel Offers"): the carousel
+// filters FeaturedItemOffers by
+//     id    = PrimaryAssetIDFromString(offer.SKU)     // parses "Type:Name", IGNORES AssetType
+//     entry = GetCatalogManager().GetCatalogEntry(id)
+//     keep iff IsValid(entry) && !IsHidden() && !IsDisabled()
+// So the SKU field must be the FULL PrimaryAssetId STRING "StoreOffer:<name>" (same
+// "Type:Name" form as the hero catalog key "Hero:assault"). Probes #1/#2 sent a BARE SKU
+// ("StarterPack") — FPrimaryAssetId::FromString finds no ':' => invalid id =>
+// GetCatalogEntry null => every offer filtered out => empty carousel => it SPINS forever
+// (and AssetType JSON shape was a red herring — the carousel never reads AssetType).
+// Probe #4 (this): prefix SKU with "StoreOffer:". AssetType is still sent as the
+// canonical string for any OTHER consumer, but the carousel filter uses SKU only.
+func storeFeaturedOffers(skus []string) []map[string]any {
+	offers := make([]map[string]any, 0, len(skus))
+	for _, sku := range skus {
+		offers = append(offers, map[string]any{
+			"SKU":       "StoreOffer:" + sku,
+			"Costs":     storeCosts(), // price probe — see storeCosts()
+			"AssetType": "StoreOffer",
+			"SlotName":  "",
+		})
+	}
+	return offers
+}
+
+// handleRealMoneyStore returns the /storefront/real/offers/{id} response
+// (UStorefrontManager::GetRealMoneyStorefront — the currency top-up packs bought with
+// real money). Same FLokiStorefrontPlayerStore shape as the virtual store; ItemOffers
+// carries the Theorycraft Coin / Vive Point packs. See handlePlayerStore for the
+// schema-correction and probe rationale.
+func handleRealMoneyStore(w http.ResponseWriter, r *http.Request) {
+	cfg := current()
+	writeJSON(w, map[string]any{
+		"Region":     cfg.Region,
+		"ItemOffers": storeItemOffers(cfg.Store.Currency, "Currency", ""),
+	})
+}
+
+// virtualStoreSKUs — cosmetic bundle/skin offers (bought with virtual currency).
+//
+// *** THESE ARE THE REAL PrimaryAssetNames, read LIVE from the game's own
+// LokiAssetLoader.StoreOfferAssets map (RPM of the running client, tools/re/probe). ***
+// The storeoffers_summary.json "id" field is NOT the catalog key — it's a display/config
+// name, and for many offers it DIFFERS from the actual PrimaryAssetName the loader keys
+// by (StarterPack→starter2024, SupporterPack→supporter2024, CollectorPack→collector2024,
+// EarlyBirdBundle→earlybirdob, EmotePack→t1emotepack, FreezeBrideOfSwordsPack→
+// BrideOfSwordsFreezePack, JTW_EpicsBundle→JTWEpicsPack, SpaceMarineAssaultPack→
+// SpaceMarineGhostPack; currency tiers → tp####/vp##). Using the summary "id" made
+// LokiAssetLoader::LoadStoreOfferAsset MISS on the map lookup ("Failed to load store
+// offer asset with ID StoreOffer:StarterPack") so the BUNDLES tab rendered blank even
+// though the map holds all 56 offers. The 25 below are the cosmetic/bundle subset we
+// advertise on the virtual store (currency tiers live in realMoneyStoreSKUs; token
+// variants omitted) — 25 virtual + 19 real-money = 44 of the loader map's 56 keys.
+var virtualStoreSKUs = []string{
+	"BackToSchoolPack", "BrideOfSwordsFreezePack", "ChinchillaPack", "CyberpunkWukongPack",
+	"CybertigerStalkerPack", "DarkOrderSniperPack", "DemonessFlexPack", "GAResHealerPack",
+	"GodOfTimeVoidPack", "HuntressGodQueenPack", "JTWEpicsPack", "MidAutumnPack",
+	"NecroGhostPack", "OniHookguyPack", "RatPack", "S1Special", "S2Special",
+	"SanctuarySentinelShieldBotPack", "SpaceMarineGhostPack", "Winter2025Pack",
+	"collector2024", "earlybirdob", "starter2024", "supporter2024", "t1emotepack",
+}
+
+// realMoneyStoreSKUs — currency top-up packs (real PrimaryAssetNames from the live map).
+var realMoneyStoreSKUs = []string{
+	"tp475", "tp600", "tp1000", "tp2000", "tp3650", "tp5350", "tp11000",
+	"vp10", "vp20", "vp30", "vp40", "vp50", "vp90", "vp100", "vp120",
+	"vp150", "vp240", "vp270", "vp480",
+}
+
+// storeItemOffers builds a []LokiStorefrontPlayerItemOffer for the given SKUs. All
+// fields are type-safe per schema.txt (Str/Bool/Int/Array<Str>). Costs empty (client
+// resolves price from the packed offer asset); Category is a best-guess routing hint.
+//
+// skuType: when non-empty, the SKU is emitted as the full PrimaryAssetId string
+// "<skuType>:<name>". The BUNDLES tab's native GetStoreOfferBundleListForStore resolves
+// the offer SKU the same way the FEATURED carousel does (PrimaryAssetIDFromString), so a
+// bare SKU produces an invalid id and the tab shows "No Results" — hence "StoreOffer".
+// (Currency/real-money store passes "" for the bare form.)
+func storeItemOffers(skus []string, category, skuType string) []map[string]any {
+	offers := make([]map[string]any, 0, len(skus))
+	for _, sku := range skus {
+		id := sku
+		if skuType != "" {
+			id = skuType + ":" + sku
+		}
+		offers = append(offers, map[string]any{
+			"SKU":         id,
+			"Category":    category,
+			"NameSpace":   "",
+			"Purchasable": true,
+			"PID":         sku,
+			"Costs":       storeCosts(),
+			"SteamItemID": 0,
+		})
+	}
+	return offers
+}
+
+// storeCosts — the offer price/discount. Returns EMPTY: the displayed price is read by
+// WBP_UI_Storefront_Item_Price from CatalogEntry.GetOffers() -> LokiStorefrontOfferingCost
+// {Price, DiscountedPrice, currency} (bpdump), NOT from this backend Costs field. PROBE
+// (2026-07-05, LIVE): sending each Cost as a JSON LokiStorefrontOfferingCost had ZERO
+// effect — the FEATURED banner still showed "(PercentOff)% OFF" and "UNAVAILABLE". The
+// cost is also NOT in the packed StoreOffer asset (no price field, r2-findings). So the
+// CatalogEntry offering cost comes from a source our stub doesn't populate (real
+// Theorycraft store pricing, gone), and we don't have the real prices anyway. Populating
+// price is a separate effort: RE how the CatalogManager fills a CatalogEntry's Offers
+// (native), then either inject via that path or a game-thread poke. Parked.
+func storeCosts() []string {
+	return []string{}
 }
 
 func handleProgressionTracks(w http.ResponseWriter, r *http.Request) {
@@ -410,16 +560,72 @@ func handleProgressionTracks(w http.ResponseWriter, r *http.Request) {
 	// If a relaunch shows the loop persists or a new "Invalid response"/
 	// "Deserialization failure" appears, the log names the next field to add or
 	// the wrong-typed one to drop.
+	//
+	// 2026-07-18 (S82): the one-published-track fix above did NOT stop the loop —
+	// the live client still tight-loops this endpoint at ~15 req/s. Ground truth
+	// from usmap schema.txt: the element struct is AccelByteModelsListProgressionTrackInfo
+	// (13 props) — ID/NameSpace/Name/ProgressionType/Start/End/DefaultLanguage/
+	// RewardTrackCodes/Status/PublishedAt/CreatedAt/UpdatedAt/**Active(bool)**. The
+	// prior response set Status=PUBLISHED but omitted Active (defaults false) and the
+	// Start/End DateTime window (defaults year-0), so BattlepassInfoManager's
+	// "current published" filter rejects it and re-queries. Enum serializations are
+	// verified against the live process:
+	//   EAccelByteProgressionTrackType::SEASON_PASS = 1 ("SEASON_PASS")
+	//   EAccelByteProgressionTrackStatus::PUBLISHED = 2 ("PUBLISHED")
+	// DateTime uses RFC3339 (proven-good elsewhere: the mission model's GrantedAt/
+	// Expiry are FDateTime StructProperties parsed cleanly by the client). Start is
+	// backdated, End is far future, so any now-in-[Start,End] window check passes.
+	now := time.Now().UTC()
+	start := now.Add(-24 * time.Hour).Format(time.RFC3339)
+	end := now.Add(180 * 24 * time.Hour).Format(time.RFC3339)
+	// 2026-07-18 (S82 part 6) — CONDITION B lever for the account pass. RE of RefreshTracks
+	// (game RVA 0x57D0630) + the WS finding (progress notifs are CLIENT-generated by the
+	// BattlepassProgressManager, not WS-pushed) showed the account track's tier stays -1
+	// because HuntersJourney isn't RECOGNIZED as a published progression track. The
+	// BattlepassInfoManager's OnUpdatedCurrentPublishedProgressionTracks feeds off THIS
+	// endpoint. So publish a SECOND track of ProgressionType=PROGRESSION_TRACK (the
+	// non-season/account type, enum value 2) named "HuntersJourney" — to correlate to the
+	// packed HuntersJourney_C asset (InternalName FName "HuntersJourney") so the ViewManager
+	// designates it as the published account pass (S[+0x238]) and builds/refreshes
+	// AccountPassViewModel. Same struct as the season entry; all fields Str/enum-Str/Bool/
+	// DateTime-RFC3339 — can't wrong-type-reject.
+	// S82: two published tracks (SEASON_PASS + PROGRESSION_TRACK/HuntersJourney). NOTE — none of the
+	// backend variants make the client's SDK converter adopt these (oracle BPIM+0x48 stays 0): tried
+	// Active/window/enum, PrimaryAssetId-form ID, dropping RewardTrackCodes, and millisecond-ISO dates.
+	// The reject is in obfuscated SDK converter code. Adoption requires the force-gate SHIM (call
+	// OnSuccess 0x57C8130 with a LokiPublishedProgressionTracks{Version:1}); see memory S82 part 8.
+	seasonTrack := map[string]any{
+		"ID":               "supervive-season-1",
+		"NameSpace":        "supervive",
+		"Name":             "SUPERVIVE Season 1",
+		"ProgressionType":  "SEASON_PASS",
+		"Start":            start,
+		"End":              end,
+		"DefaultLanguage":  "en",
+		"RewardTrackCodes": []string{"supervive-season-1-track"},
+		"Status":           "PUBLISHED",
+		"PublishedAt":      start,
+		"CreatedAt":        start,
+		"UpdatedAt":        start,
+		"Active":           true,
+	}
+	accountTrack := map[string]any{
+		"ID":               "HuntersJourney",
+		"NameSpace":        "supervive",
+		"Name":             "HuntersJourney",
+		"ProgressionType":  "PROGRESSION_TRACK",
+		"Start":            start,
+		"End":              end,
+		"DefaultLanguage":  "en",
+		"RewardTrackCodes": []string{"HuntersJourney"},
+		"Status":           "PUBLISHED",
+		"PublishedAt":      start,
+		"CreatedAt":        start,
+		"UpdatedAt":        start,
+		"Active":           true,
+	}
 	writeJSON(w, map[string]any{
-		"data": []any{
-			map[string]any{
-				"Id":               "supervive-season-1",
-				"Code":             "supervive-season-1",
-				"ProgressionType":  "SEASON_PASS",
-				"Status":           "PUBLISHED",
-				"RewardTrackCodes": []string{"supervive-season-1-track"},
-			},
-		},
+		"data":   []any{seasonTrack, accountTrack},
 		"paging": map[string]any{"previous": "", "next": ""},
 	})
 }

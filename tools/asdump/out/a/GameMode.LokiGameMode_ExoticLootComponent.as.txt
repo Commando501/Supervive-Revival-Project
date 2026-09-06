@@ -1,0 +1,542 @@
+==============================================================================
+MODULE   GameMode.LokiGameMode_ExoticLootComponent
+SOURCE   GameMode/LokiGameMode_ExoticLootComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiExoticLootComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiExoticLootComponent@ ULokiExoticLootComponent()
+// 4 instr, 28 B bytecode, id=0x9DCADD7B, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiExoticLootComponent v2;
+
+    v2 = ULokiExoticLootComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84919 q:0x26e6ed70a00; new ULokiExoticLootComponent   ctor=ULokiExoticLootComponent::ULokiExoticLootComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xD42D5D0A, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiExoticLootComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057ffd8         ; __StaticType_ULokiExoticLootComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ULokiExoticLootComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x65601A90, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiExoticLootComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiExoticLootComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972692            ; ULokiExoticLootComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057ffd8         ; __StaticType_ULokiExoticLootComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiExoticLootComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xD36627A4, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiExoticLootComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiExoticLootComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972692            ; ULokiExoticLootComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057ffd8         ; __StaticType_ULokiExoticLootComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiExoticLootComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x95816582, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiExoticLootComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiExoticLootComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972692            ; ULokiExoticLootComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057ffd8         ; __StaticType_ULokiExoticLootComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class ULokiExoticLootComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Loot)) TMap<int, TSubclassOf<ULokiLootTable@>> DayToLootTable;
+    TMap<int, FExoticItemList> DayToExotics;
+    private FRandomStream RandomSeed;
+
+}
+
+------------------------------------------------------------------------------
+ULokiExoticLootComponent() const
+// 12 instr, 92 B bytecode, id=0x440DBFDE, varspace=0
+------------------------------------------------------------------------------
+{
+    this.DayToLootTable = TMap<int, TSubclassOf<ULokiLootTable@>>();
+    this.DayToExotics = TMap<int, FExoticItemList>();
+    this.RandomSeed = FRandomStream();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:208 d:134230868      ; ULokiExoticLootComponent::DayToLootTable  (+208)
+    //     3  CALLSYS        q:0x26e6ef528c0         ; void TMap<int, TSubclassOf<ULokiLootTable@>>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:288 d:134230868      ; ULokiExoticLootComponent::DayToExotics  (+288)
+    //     9  CALLSYS        q:0x26e6ef52700         ; void TMap<int, FExoticItemList>::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:368 d:134230868      ; ULokiExoticLootComponent::RandomSeed  (+368)
+    //    15  CALLSYS        q:0x26e628a5640         ; void FRandomStream::$beh0()
+    //    18  PshVPtr        rW0:0
+    //    19  FinConstruct   q:0x26e6ed70a00         ; ULokiExoticLootComponent
+    //    22  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 23 instr, 160 B bytecode, id=0x3F3A9089, varspace=9
+------------------------------------------------------------------------------
+{
+    ALokiGameState v6;
+    FRandomStream v9;
+
+    if (Loki::LokiIsServer(__WorldContext)) {
+        v6 = Loki::GetLokiGameState(__WorldContext);
+        if (v6 != null) {
+            v9 = v6.GetRandomStream(false);
+            v9 = this.RandomSeed;
+            this.GenerateExotics();
+        } else {
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->39
+    //     8  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    11  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    14  STOREOBJ       wW0:6
+    //    15  CmpPtrNull     rW0:6
+    //    16  JNZ            ->20
+    //    18  JMP            ->39
+    //    20  SetV1          wW0:7 d:0
+    //    22  PshV4          rW0:7
+    //    23  PSF            rW0:9
+    //    24  PshVPtr        rW0:6
+    //    25  CALLSYS        q:0x26e7a2721c0         ; FRandomStream ALokiGameState::GetRandomStream(ELokiRandomStreamType)
+    //    28  PSF            rW0:9
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:368 d:134230868      ; ULokiExoticLootComponent::RandomSeed  (+368)
+    //    32  COPY           W0:8 d:67116385         ; 8 dwords of FRandomStream
+    //    34  PopPtr
+    //    35  PshVPtr        rW0:0
+    //    36  CALLINTF       d:84917                 ; void ULokiExoticLootComponent::GenerateExotics()
+    //    38  FreeNullV8     wW0:6
+    //    39  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+TSubclassOf<AActor@> GetOneExoticForCurrentDay()
+// 75 instr, 524 B bytecode, id=0xAB0D92CE, varspace=18
+------------------------------------------------------------------------------
+{
+    ALokiGameState v4;
+    TSubclassOf<AActor@> v8;
+    int v9;
+    FExoticItemList v14;
+    TSubclassOf<AActor@> v18;
+
+    v4 = Loki::GetLokiGameState(__WorldContext);
+    if (v4 != null) {
+        v9 = v4.GetCurrentDay();
+        v14.FExoticItemList();
+        if (this.DayToExotics.Find(v9, v14)) {
+            if (v14.Exotics.Num() == 0) {
+                this.GenerateLootForDay(v9);
+            }
+            if (v14.Exotics.Num() > 0) {
+                v18 = TSubclassOf<AActor@>(v14.Exotics[0]);
+                v14.Exotics.RemoveAt(0);
+                this.DayToExotics.Add(v9, v14);
+                __return = TSubclassOf<AActor@>();
+                __return = v18;
+                v14.~FExoticItemList();
+                goto L130;
+            }
+        }
+        __return = TSubclassOf<AActor@>();
+        v8 = TSubclassOf<AActor@>(null);
+        __return = v8;
+        v14.~FExoticItemList();
+    } else {
+        __return = TSubclassOf<AActor@>();
+        v8 = TSubclassOf<AActor@>(null);
+        __return = v8;
+    }
+    L130:
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //     6  STOREOBJ       wW0:4
+    //     7  CmpPtrNull     rW0:4
+    //     8  JNZ            ->26
+    //    10  PshVPtr        rW0:-2
+    //    11  CALLSYS        q:0x26e6ef0ee80         ; void TSubclassOf<AActor@>::$beh0()
+    //    14  PshNull
+    //    15  PSF            rW0:8
+    //    16  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    19  PSF            rW0:8
+    //    20  PshVPtr        rW0:-2
+    //    21  CALLSYS        q:0x26e78a17780         ; TSubclassOf<AActor@>& TSubclassOf<AActor@>::opAssign(const TSubclassOf<AActor@>&)
+    //    24  JMP            ->130
+    //    26  PshVPtr        rW0:4
+    //    27  CALLSYS        q:0x26e7a25f740         ; int ALokiGameState::GetCurrentDay() const
+    //    30  CpyRtoV4       wW0:9
+    //    31  PSF            rW0:14
+    //    32  CALL           d:84922                 ; void FExoticItemList::FExoticItemList()
+    //    34  PSF            rW0:14
+    //    35  PSF            rW0:9
+    //    36  PshVPtr        rW0:0
+    //    37  ADDSi          W0:288 d:134230868      ; ULokiExoticLootComponent::DayToExotics  (+288)
+    //    39  CALLSYS        q:0x26e6ef2f3c0         ; bool TMap<int, FExoticItemList>::Find(const int&, FExoticItemList&) const
+    //    42  JLowZ          ->113
+    //    44  PSF            rW0:14
+    //    45  ADDSi          W0:0 d:134230869        ; FExoticItemList::Exotics  (+0)
+    //    47  CALLSYS        q:0x26e6ef2f200         ; int TArray<TSubclassOf<AActor@>>::Num() const
+    //    50  CpyRtoV4       wW0:10
+    //    51  CMPIi          rW0:10 d:0
+    //    53  JNZ            ->59
+    //    55  PshV4          rW0:9
+    //    56  PshVPtr        rW0:0
+    //    57  CALLINTF       d:84918                 ; void ULokiExoticLootComponent::GenerateLootForDay(const int)
+    //    59  PSF            rW0:14
+    //    60  ADDSi          W0:0 d:134230869        ; FExoticItemList::Exotics  (+0)
+    //    62  CALLSYS        q:0x26e6ef2f200         ; int TArray<TSubclassOf<AActor@>>::Num() const
+    //    65  CpyRtoV4       wW0:15
+    //    66  CMPIi          rW0:15 d:0
+    //    68  JNP            ->113
+    //    70  PshC4          d:0
+    //    72  PSF            rW0:14
+    //    73  ADDSi          W0:0 d:134230869        ; FExoticItemList::Exotics  (+0)
+    //    75  Thiscall1      q:0x26e6ef2ee80         ; TSubclassOf<AActor@>& TArray<TSubclassOf<AActor@>>::opIndex(int)
+    //    78  PshRPtr
+    //    79  PSF            rW0:18
+    //    80  CALLSYS        q:0x26e6ef2ecc0         ; void TSubclassOf<AActor@>::$beh0(const TSubclassOf<AActor@>&)
+    //    83  PshC4          d:0
+    //    85  PSF            rW0:14
+    //    86  ADDSi          W0:0 d:134230869        ; FExoticItemList::Exotics  (+0)
+    //    88  CALLSYS        q:0x26e6ef2eb00         ; void TArray<TSubclassOf<AActor@>>::RemoveAt(int)
+    //    91  PSF            rW0:14
+    //    92  PSF            rW0:9
+    //    93  PshVPtr        rW0:0
+    //    94  ADDSi          W0:288 d:134230868      ; ULokiExoticLootComponent::DayToExotics  (+288)
+    //    96  CALLSYS        q:0x26e6ef2e940         ; void TMap<int, FExoticItemList>::Add(const int&, const FExoticItemList&)
+    //    99  PshVPtr        rW0:-2
+    //   100  CALLSYS        q:0x26e6ef0ee80         ; void TSubclassOf<AActor@>::$beh0()
+    //   103  PSF            rW0:18
+    //   104  PshVPtr        rW0:-2
+    //   105  CALLSYS        q:0x26e78a17780         ; TSubclassOf<AActor@>& TSubclassOf<AActor@>::opAssign(const TSubclassOf<AActor@>&)
+    //   108  PSF            rW0:14
+    //   109  CALL           d:85498                 ; void FExoticItemList::~FExoticItemList()
+    //   111  JMP            ->130
+    //   113  PshVPtr        rW0:-2
+    //   114  CALLSYS        q:0x26e6ef0ee80         ; void TSubclassOf<AActor@>::$beh0()
+    //   117  PshNull
+    //   118  PSF            rW0:8
+    //   119  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //   122  PSF            rW0:8
+    //   123  PshVPtr        rW0:-2
+    //   124  CALLSYS        q:0x26e78a17780         ; TSubclassOf<AActor@>& TSubclassOf<AActor@>::opAssign(const TSubclassOf<AActor@>&)
+    //   127  PSF            rW0:14
+    //   128  CALL           d:85498                 ; void FExoticItemList::~FExoticItemList()
+    //   130  RET            W0:4
+
+------------------------------------------------------------------------------
+void GenerateExotics()
+// 25 instr, 168 B bytecode, id=0xA8F1FC26, varspace=19
+------------------------------------------------------------------------------
+{
+    TArray<int> v4;
+    TArrayIterator<int> v10;
+    auto v17;
+
+    v4 = TArray<int>();
+    this.DayToLootTable.GetKeys(v4);
+    v10 = v4.Iterator();
+    while (true) {
+        v17 = v10.CanProceed;
+        if (!v17) break;
+        this.GenerateLootForDay(v10.Proceed());
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e6ee8f740         ; void TArray<int>::$beh0()
+    //     4  PSF            rW0:4
+    //     5  PshVPtr        rW0:0
+    //     6  ADDSi          W0:208 d:134230868      ; ULokiExoticLootComponent::DayToLootTable  (+208)
+    //     8  CALLSYS        q:0x26e6ef2e780         ; void TMap<int, TSubclassOf<ULokiLootTable@>>::GetKeys(TArray<int>&) const
+    //    11  PSF            rW0:10
+    //    12  PSF            rW0:4
+    //    13  CALLSYS        q:0x26e6ef53880         ; TArrayIterator<int> TArray<int>::Iterator()
+    //    16  JMP            ->30
+    //    18  SUSPEND
+    //    19  PSF            rW0:10
+    //    20  CALLSYS        q:0x26e6ef53500         ; int& TArrayIterator<int>::Proceed()
+    //    23  RDR4           wW0:19
+    //    24  CpyVtoV4       wW0:18 rW1:19
+    //    26  PshV4          rW0:18
+    //    27  PshVPtr        rW0:0
+    //    28  CALLINTF       d:84918                 ; void ULokiExoticLootComponent::GenerateLootForDay(const int)
+    //    30  LoadVObjR      rW0:10 W1:16 DW2:268448598; TArrayIterator::CanProceed  (+16)
+    //    33  RDR1           wW0:17
+    //    34  CpyVtoR1       rW0:17
+    //    35  JLowNZ         ->18
+    //    37  PSF            rW0:4
+    //    38  CALLSYS        q:0x26e70f352c0         ; void TArray<int>::$beh2()
+    //    41  RET            W0:2
+
+------------------------------------------------------------------------------
+void GenerateLootForDay(const int Day)
+// 58 instr, 412 B bytecode, id=0x0CB04BAA, varspace=30
+------------------------------------------------------------------------------
+{
+    TSubclassOf<ULokiLootTable@> v8;
+    TArray<TSubclassOf<ULokiLootTable@>> v12;
+    TArray<TSubclassOf<AActor@>> v16;
+    TArray<TSubclassOf<AActor@>> v20;
+    FExoticItemList v30;
+
+    if (Loki::GetLokiGameState(__WorldContext) != null) {
+        v8 = TSubclassOf<ULokiLootTable@>();
+        if (this.DayToLootTable.Find(Day, v8)) {
+            if (v8 != null) {
+                v12 = TArray<TSubclassOf<ULokiLootTable@>>();
+                v12.Add(v8);
+                v16 = LokiGameplay::GetAllLootFromLootTables(__WorldContext, v12);
+                v20 = ULokiLootTable::GenerateFromClassWithStream(__WorldContext, v8, this.RandomSeed, v16.Num());
+                v30.FExoticItemList();
+                v30.Exotics = v20;
+                this.DayToExotics.Add(Day, v30);
+                v30.~FExoticItemList();
+            } else {
+            }
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //     6  STOREOBJ       wW0:4
+    //     7  CmpPtrNull     rW0:4
+    //     8  JNZ            ->12
+    //    10  JMP            ->102
+    //    12  PSF            rW0:8
+    //    13  CALLSYS        q:0x26e6ee87e80         ; void TSubclassOf<ULokiLootTable@>::$beh0()
+    //    16  PSF            rW0:8
+    //    17  PSF            rW0:-2
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:208 d:134230868      ; ULokiExoticLootComponent::DayToLootTable  (+208)
+    //    21  CALLSYS        q:0x26e6ef53340         ; bool TMap<int, TSubclassOf<ULokiLootTable@>>::Find(const int&, TSubclassOf<ULokiLootTable@>&) const
+    //    24  JLowZ          ->102
+    //    26  PshNull
+    //    27  PSF            rW0:8
+    //    28  CALLSYS        q:0x26e6ef53180         ; bool TSubclassOf<ULokiLootTable@>::opEquals(UClass@) const
+    //    31  JLowZ          ->35
+    //    33  JMP            ->102
+    //    35  PSF            rW0:12
+    //    36  CALLSYS        q:0x26e6ef52e00         ; void TArray<TSubclassOf<ULokiLootTable@>>::$beh0()
+    //    39  PSF            rW0:8
+    //    40  PSF            rW0:12
+    //    41  CALLSYS        q:0x26e6ef52c40         ; void TArray<TSubclassOf<ULokiLootTable@>>::Add(const TSubclassOf<ULokiLootTable@>&)
+    //    44  PSF            rW0:12
+    //    45  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    48  PSF            rW0:16
+    //    49  CALLSYS        q:0x26e7a23fac0         ; TArray<TSubclassOf<AActor@>> LokiGameplay::GetAllLootFromLootTables(UObject@, TArray<TSubclassOf<ULokiLootTable@>>)
+    //    52  PSF            rW0:16
+    //    53  CALLSYS        q:0x26e6ef2f200         ; int TArray<TSubclassOf<AActor@>>::Num() const
+    //    56  CpyRtoV4       wW0:21
+    //    57  PshV4          rW0:21
+    //    58  PshVPtr        rW0:0
+    //    59  ADDSi          W0:368 d:134230868      ; ULokiExoticLootComponent::RandomSeed  (+368)
+    //    61  PSF            rW0:8
+    //    62  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    65  PSF            rW0:20
+    //    66  CALLSYS        q:0x26e7a2d3dc0         ; TArray<TSubclassOf<AActor@>> ULokiLootTable::GenerateFromClassWithStream(UObject@, TSubclassOf<ULokiLootTable@>, FRandomStream&, int)
+    //    69  PSF            rW0:30
+    //    70  CALL           d:84922                 ; void FExoticItemList::FExoticItemList()
+    //    72  PSF            rW0:20
+    //    73  PSF            rW0:30
+    //    74  ADDSi          W0:0 d:134230869        ; FExoticItemList::Exotics  (+0)
+    //    76  CALLSYS        q:0x26e7a110b00         ; TArray<TSubclassOf<AActor@>>& TArray<TSubclassOf<AActor@>>::opAssign(const TArray<TSubclassOf<AActor@>>&)
+    //    79  PSF            rW0:30
+    //    80  PSF            rW0:-2
+    //    81  PshVPtr        rW0:0
+    //    82  ADDSi          W0:288 d:134230868      ; ULokiExoticLootComponent::DayToExotics  (+288)
+    //    84  CALLSYS        q:0x26e6ef2e940         ; void TMap<int, FExoticItemList>::Add(const int&, const FExoticItemList&)
+    //    87  PSF            rW0:30
+    //    88  CALL           d:85498                 ; void FExoticItemList::~FExoticItemList()
+    //    90  PSF            rW0:20
+    //    91  CALLSYS        q:0x26e7a110cc0         ; void TArray<TSubclassOf<AActor@>>::$beh2()
+    //    94  PSF            rW0:16
+    //    95  CALLSYS        q:0x26e7a110cc0         ; void TArray<TSubclassOf<AActor@>>::$beh2()
+    //    98  PSF            rW0:12
+    //    99  CALLSYS        q:0x26e793f8c80         ; void TArray<TSubclassOf<ULokiLootTable@>>::$beh2()
+    //   102  RET            W0:3
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 9 instr, 60 B bytecode, id=0x590D0B6E, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.SetComponentTickEnabled(false);
+    v1 = true;
+    this.SetbExcludeFromClient(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7973d440         ; void UActorComponent::SetComponentTickEnabled(bool)
+    //     7  SetV1          wW0:1 d:1
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7a62bbc0         ; void UActorComponent::SetbExcludeFromClient(bool)
+    //    14  RET            W0:2
+
+------------------------------------------------------------------------------
+~ULokiExoticLootComponent()
+// 7 instr, 52 B bytecode, id=0x0396ECA1, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:208 d:134230868      ; ULokiExoticLootComponent::DayToLootTable  (+208)
+    //     3  CALLSYS        q:0x26e6ede4300         ; void TMap<int, TSubclassOf<ULokiLootTable@>>::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:288 d:134230868      ; ULokiExoticLootComponent::DayToExotics  (+288)
+    //     9  CALLSYS        q:0x26e6ede3f80         ; void TMap<int, FExoticItemList>::$beh2()
+    //    12  RET            W0:2
+
+==============================================================================
+UCLASS()
+class FExoticItemList
+==============================================================================
+{
+    UPROPERTY() TArray<TSubclassOf<AActor@>> Exotics;
+
+}
+
+------------------------------------------------------------------------------
+FExoticItemList() const
+// 4 instr, 28 B bytecode, id=0xA71F84C6, varspace=0
+------------------------------------------------------------------------------
+{
+    this.Exotics = TArray<TSubclassOf<AActor@>>();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230869        ; FExoticItemList::Exotics  (+0)
+    //     3  CALLSYS        q:0x26e6ee88040         ; void TArray<TSubclassOf<AActor@>>::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FExoticItemList()
+// 4 instr, 28 B bytecode, id=0x4AA2E743, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230869        ; FExoticItemList::Exotics  (+0)
+    //     3  CALLSYS        q:0x26e7a110cc0         ; void TArray<TSubclassOf<AActor@>>::$beh2()
+    //     6  RET            W0:2
+

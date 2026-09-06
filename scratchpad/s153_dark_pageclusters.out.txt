@@ -1,0 +1,663 @@
+Total UFunction rows: 15129
+DARK entries: 4910 on 406 distinct pages
+
+=== Distribution ===
+Pages with 1 dark UFunction:  2
+Pages with 2-4:               60
+Pages with 5-9:               115
+Pages with 10+:               229
+
+  top   10% of pages (  41) = 1257 dark UFunctions (25.6%)
+  top   25% of pages ( 102) = 2353 dark UFunctions (47.9%)
+  top   50% of pages ( 203) = 3615 dark UFunctions (73.6%)
+  top   75% of pages ( 305) = 4490 dark UFunctions (91.4%)
+  top   90% of pages ( 365) = 4799 dark UFunctions (97.7%)
+  top  100% of pages ( 406) = 4910 dark UFunctions (100.0%)
+
+=== Top 30 highest-yield DARK pages (fire ONE thunk on each -> N verbs graded) ===
+page         count  classes (unique on this page)
+----------------------------------------------------------------------------------------------------
+0x05D7B000      67  UMoviePipelineExecutorBase, UMovieSceneScriptingActorReferenceChannel, UMovie...
+0x04B8F000      49  UDiscordActivity, UDiscordActivityAssets, UDiscordActivityButton, UDiscordAct...
+0x04B8C000      47  UDiscordActivity, UDiscordActivityAssets, UDiscordActivityButton, UDiscordAct...
+0x052CB000      39  ALokiBaseItem
+0x0324B000      37  UCommonVisibilitySwitcher, UMediaComponent, UMediaPlayer, UMediaPlaylist, UMe...
+0x0324C000      37  ULokiDataAsset_Base, UMediaPlayer, UMediaPlaylist, UMediaSource, UMediaTextur...
+0x04F3C000      37  ADynamicMeshActor, UBaseDynamicMeshComponent, UDynamicMesh, UDynamicMeshCompo...
+0x05E8E000      37  UGroomAsset, UGroomBindingAsset, UGroomBlueprintLibrary, UMovieGraphConfig, U...
+0x04C73000      36  UCommonActivatableWidgetContainerBase, UCommonButtonBase, UCommonButtonGroupB...
+0x04B8B000      35  UDiscordActivity, UDiscordActivityInvite, UDiscordAdditionalContent, UDiscord...
+0x06456000      33  UHoleFillToolActions, UMeshGroupPaintToolFreezeActions, UMeshSelectionEditAct...
+0x02D6D000      32  UAgonesComponent, UBuiltInDynamicBindingResolverLibrary, UMovieSceneMetaData,...
+0x04AAA000      32  UAccelByteBlueprintsSettings
+0x04C72000      31  UCommonActionWidget, UCommonActivatableWidget, UCommonButtonBase, UCommonButt...
+0x05D88000      31  UMovieSceneScriptingEventKey, UMovieSceneScriptingFloatChannel, UMovieSceneSc...
+0x04A9A000      30  UAccelByteBlueprintsServerSettings
+0x04B8D000      30  UDiscordActivity, UDiscordAdditionalContent, UDiscordAudioDevice, UDiscordCal...
+0x04B90000      29  UDiscordActivity, UDiscordActivityInvite, UDiscordActivityParty, UDiscordAudi...
+0x04B98000      29  UDiscordActivity, UDiscordActivityAssets, UDiscordActivityInvite, UDiscordAct...
+0x0529E000      29  ALokiAirship, ALokiBaseItem, ALokiGameState, ALokiMinionCharacter, ULokiActor...
+0x038AB000      28  AClusterUnionActor, ADynamicMeshActor, AGameplayCameraActor, AGameplayCameraS...
+0x052CE000      28  ALokiBaseGameplayImportantEffect, ALokiBaseItem
+0x05442000      28  ALokiPlayerState_Missions, ALokiPlayerState_Stats, ALokiPlayerState_XP, ALoki...
+0x05DE4000      28  UDFLDebugFL
+0x044FC000      27  USentryBreadcrumb, USentryEvent, USentryLibrary, USentryScope, USentryUser, U...
+0x02DD3000      26  AGeometryCollectionActor, UChaosDestructionListener, UGeometryCollectionCompo...
+0x04B93000      26  UDiscordActivity, UDiscordActivityInvite, UDiscordActivityParty, UDiscordActi...
+0x05288000      26  UHeistInteractionPlayerComponent, UHeistPlayerUsableComponent, UHeistUsableAc...
+0x05FA2000      26  UOptimusDeformer, UOptimusDeformerInstance, UOptimusFunctionNodeGraph, UOptim...
+0x06072000      26  UMoviePipelineConfigBase, UMoviePipelineExecutorBase, UMoviePipelineExecutorJ...
+
+=== Top 10 pages — full verb list (highest-yield fire targets) ===
+
+PAGE 0x05D7B000  (67 dark UFunctions, 19 classes)
+  UMoviePipelineExecutorBase:
+    Execute                                             thunk=0x5D7BCF0
+  UMovieSceneScriptingActorReferenceChannel:
+    GetDefault                                          thunk=0x5D7B480
+    GetKeysByIndex                                      thunk=0x5D7B610
+    HasDefault                                          thunk=0x5D7BBB0
+    RemoveDefault                                       thunk=0x5D7BC70
+    RemoveKey                                           thunk=0x5D7BCF0
+    SetDefault                                          thunk=0x5D7BE80
+  UMovieSceneScriptingActorReferenceKey:
+    GetTime                                             thunk=0x5D7BA10
+    GetValue                                            thunk=0x5D7BAB0
+  UMovieSceneScriptingBoolChannel:
+    ComputeEffectiveRange                               thunk=0x5D7B040
+    EvaluateKeys                                        thunk=0x5D7B0C0
+    GetDefault                                          thunk=0x5D7B520
+    GetKeysByIndex                                      thunk=0x5D7B610
+    GetNumKeys                                          thunk=0x5D7B7D0
+    HasDefault                                          thunk=0x5D7BBE0
+    RemoveDefault                                       thunk=0x5D7BC90
+    RemoveKey                                           thunk=0x5D7BCF0
+    SetDefault                                          thunk=0x5D7BF40
+  UMovieSceneScriptingBoolKey:
+    GetTime                                             thunk=0x5D7BA10
+    GetValue                                            thunk=0x5D7BAF0
+  UMovieSceneScriptingByteChannel:
+    GetDefault                                          thunk=0x5D7B550
+    GetKeysByIndex                                      thunk=0x5D7B610
+    HasDefault                                          thunk=0x5D7BC10
+    RemoveDefault                                       thunk=0x5D7BCB0
+    RemoveKey                                           thunk=0x5D7BCF0
+    SetDefault                                          thunk=0x5D7BFD0
+  UMovieSceneScriptingByteKey:
+    GetTime                                             thunk=0x5D7BA10
+    GetValue                                            thunk=0x5D7BB20
+  UMovieSceneScriptingDoubleChannel:
+    ComputeEffectiveRange                               thunk=0x5D7B080
+    EvaluateKeys                                        thunk=0x5D7B240
+    GetDefault                                          thunk=0x5D7B580
+    GetKeysByIndex                                      thunk=0x5D7B610
+    GetNumKeys                                          thunk=0x5D7B830
+    GetPostInfinityExtrapolation                        thunk=0x5D7B890
+    GetPreInfinityExtrapolation                         thunk=0x5D7B8F0
+    HasDefault                                          thunk=0x5D7BC40
+    RemoveDefault                                       thunk=0x5D7BCD0
+    RemoveKey                                           thunk=0x5D7BCF0
+  UMovieSceneScriptingDoubleKey:
+    GetArriveTangent                                    thunk=0x5D7B3C0
+    GetArriveTangentWeight                              thunk=0x5D7B420
+    GetInterpolationMode                                thunk=0x5D7B5B0
+    GetLeaveTangent                                     thunk=0x5D7B710
+    GetLeaveTangentWeight                               thunk=0x5D7B770
+    GetTangentMode                                      thunk=0x5D7B950
+    GetTangentWeightMode                                thunk=0x5D7B9B0
+    GetTime                                             thunk=0x5D7BA10
+    GetValue                                            thunk=0x5D7BB50
+    SetArriveTangent                                    thunk=0x5D7BD80
+    SetArriveTangentWeight                              thunk=0x5D7BE00
+  UMovieSceneScriptingEventChannel:
+    GetKeysByIndex                                      thunk=0x5D7B610
+    RemoveKey                                           thunk=0x5D7BCF0
+  UMovieSceneScriptingEventKey:
+    GetTime                                             thunk=0x5D7BA10
+  UMovieSceneScriptingFloatChannel:
+    GetKeysByIndex                                      thunk=0x5D7B610
+    RemoveKey                                           thunk=0x5D7BCF0
+  UMovieSceneScriptingFloatKey:
+    GetTime                                             thunk=0x5D7BA10
+  UMovieSceneScriptingIntegerChannel:
+    GetKeysByIndex                                      thunk=0x5D7B610
+    GetNumKeys                                          thunk=0x5D7B830
+    RemoveKey                                           thunk=0x5D7BCF0
+  UMovieSceneScriptingIntegerKey:
+    GetTime                                             thunk=0x5D7BA10
+  UMovieSceneScriptingObjectPathChannel:
+    GetKeysByIndex                                      thunk=0x5D7B610
+    RemoveDefault                                       thunk=0x5D7BC70
+    RemoveKey                                           thunk=0x5D7BCF0
+  UMovieSceneScriptingObjectPathKey:
+    GetTime                                             thunk=0x5D7BA10
+  UMovieSceneScriptingStringChannel:
+    GetKeysByIndex                                      thunk=0x5D7B610
+    RemoveDefault                                       thunk=0x5D7BCD0
+    RemoveKey                                           thunk=0x5D7BCF0
+  UMovieSceneScriptingStringKey:
+    GetTime                                             thunk=0x5D7BA10
+
+PAGE 0x04B8F000  (49 dark UFunctions, 25 classes)
+  UDiscordActivity:
+    Init                                                thunk=0x4B8F820
+  UDiscordActivityAssets:
+    Init                                                thunk=0x4B8F840
+    LargeImage                                          thunk=0x4B8FD00
+    LargeText                                           thunk=0x4B8FD80
+  UDiscordActivityButton:
+    Init                                                thunk=0x4B8F860
+    Label                                               thunk=0x4B8FC80
+  UDiscordActivityInvite:
+    Init                                                thunk=0x4B8F880
+    IsValid                                             thunk=0x4B8FBA0
+  UDiscordActivityParty:
+    Id                                                  thunk=0x4B8F4E0
+    Init                                                thunk=0x4B8F8A0
+  UDiscordActivitySecrets:
+    Init                                                thunk=0x4B8F8C0
+    Join                                                thunk=0x4B8FC00
+  UDiscordActivityTimestamps:
+    Init                                                thunk=0x4B8F8E0
+  UDiscordAdditionalContent:
+    Init                                                thunk=0x4B8F900
+  UDiscordAudioDevice:
+    Id                                                  thunk=0x4B8F560
+    IsDefault                                           thunk=0x4B8FB10
+  UDiscordAuthorizationArgs:
+    Init                                                thunk=0x4B8F920
+  UDiscordAuthorizationCodeChallenge:
+    Init                                                thunk=0x4B8F940
+  UDiscordCall:
+    GetVADThreshold                                     thunk=0x4B8F180
+    GetVoiceStateHandle                                 thunk=0x4B8F2C0
+  UDiscordCallInfoHandle:
+    GetVoiceStateHandle                                 thunk=0x4B8F350
+    GuildId                                             thunk=0x4B8F460
+  UDiscordChannelHandle:
+    Id                                                  thunk=0x4B8F5E0
+  UDiscordClient:
+    GetUser                                             thunk=0x4B8F040
+    GetUserGuilds                                       thunk=0x4B8F0D0
+    GetVersionHash                                      thunk=0x4B8F1B0
+    GetVersionMajor                                     thunk=0x4B8F230
+    GetVersionMinor                                     thunk=0x4B8F260
+    GetVersionPatch                                     thunk=0x4B8F290
+    Init                                                thunk=0x4B8F960
+    InitWithBases                                       thunk=0x4B8F9C0
+    IsAuthenticated                                     thunk=0x4B8FAE0
+    LeaveLobby                                          thunk=0x4B8FE00
+    LinkChannelToLobby                                  thunk=0x4B8FF00
+  UDiscordDeviceAuthorizationArgs:
+    Init                                                thunk=0x4B8F980
+  UDiscordGuildChannel:
+    Id                                                  thunk=0x4B8F620
+    IsLinkable                                          thunk=0x4B8FB40
+    IsViewableAndWriteableByAllMembers                  thunk=0x4B8FBD0
+  UDiscordGuildMinimal:
+    Id                                                  thunk=0x4B8F660
+  UDiscordLinkedChannel:
+    GuildId                                             thunk=0x4B8F4A0
+    Id                                                  thunk=0x4B8F6A0
+  UDiscordLinkedLobby:
+    Init                                                thunk=0x4B8F9A0
+  UDiscordLobbyHandle:
+    Id                                                  thunk=0x4B8F6E0
+  UDiscordLobbyMemberHandle:
+    Id                                                  thunk=0x4B8F720
+  UDiscordMessageHandle:
+    Id                                                  thunk=0x4B8F760
+  UDiscordRelationshipHandle:
+    Id                                                  thunk=0x4B8F7A0
+  UDiscordUserHandle:
+    GlobalName                                          thunk=0x4B8F3E0
+    Id                                                  thunk=0x4B8F7E0
+    IsProvisional                                       thunk=0x4B8FB70
+
+PAGE 0x04B8C000  (47 dark UFunctions, 31 classes)
+  UDiscordActivity:
+    Details                                             thunk=0x4B8C5B0
+    Drop                                                thunk=0x4B8C750
+    Equals                                              thunk=0x4B8CFD0
+  UDiscordActivityAssets:
+    Drop                                                thunk=0x4B8C770
+  UDiscordActivityButton:
+    Drop                                                thunk=0x4B8C790
+  UDiscordActivityInvite:
+    Drop                                                thunk=0x4B8C7B0
+  UDiscordActivityParty:
+    CurrentSize                                         thunk=0x4B8C430
+    Drop                                                thunk=0x4B8C7D0
+  UDiscordActivitySecrets:
+    Drop                                                thunk=0x4B8C7F0
+  UDiscordActivityTimestamps:
+    Drop                                                thunk=0x4B8C810
+    End                                                 thunk=0x4B8CCE0
+  UDiscordAdditionalContent:
+    Drop                                                thunk=0x4B8C830
+  UDiscordAudioDevice:
+    Drop                                                thunk=0x4B8C850
+  UDiscordAuthorizationArgs:
+    Drop                                                thunk=0x4B8C870
+  UDiscordAuthorizationCodeChallenge:
+    Drop                                                thunk=0x4B8C890
+  UDiscordAuthorizationCodeVerifier:
+    Drop                                                thunk=0x4B8C8B0
+  UDiscordCall:
+    Drop                                                thunk=0x4B8C8D0
+  UDiscordCallInfoHandle:
+    Drop                                                thunk=0x4B8C8F0
+  UDiscordChannelHandle:
+    Drop                                                thunk=0x4B8C910
+  UDiscordClient:
+    CreateAuthorizationCodeVerifier                     thunk=0x4B8C010
+    CreateOrJoinLobby                                   thunk=0x4B8C040
+    CreateOrJoinLobbyWithMetadata                       thunk=0x4B8C170
+    DeleteUserMessage                                   thunk=0x4B8C460
+    Disconnect                                          thunk=0x4B8C660
+    Drop                                                thunk=0x4B8C930
+    EditUserMessage                                     thunk=0x4B8CAF0
+    EndCall                                             thunk=0x4B8CD20
+    EndCalls                                            thunk=0x4B8CE20
+  UDiscordClientResult:
+    Drop                                                thunk=0x4B8C950
+  UDiscordDeviceAuthorizationArgs:
+    Drop                                                thunk=0x4B8C970
+  UDiscordGuildChannel:
+    Drop                                                thunk=0x4B8C990
+  UDiscordGuildMinimal:
+    Drop                                                thunk=0x4B8C9B0
+  UDiscordLinkedChannel:
+    Drop                                                thunk=0x4B8C9D0
+  UDiscordLinkedLobby:
+    Drop                                                thunk=0x4B8C9F0
+  UDiscordLobbyHandle:
+    Drop                                                thunk=0x4B8CA10
+  UDiscordLobbyMemberHandle:
+    Drop                                                thunk=0x4B8CA30
+  UDiscordLocalPlayerSubsystem:
+    Disconnect                                          thunk=0x4B8C680
+  UDiscordMessageHandle:
+    DisclosureType                                      thunk=0x4B8C630
+    Drop                                                thunk=0x4B8CA50
+    EditedTimestamp                                     thunk=0x4B8CCA0
+  UDiscordRelationshipHandle:
+    DiscordRelationshipType                             thunk=0x4B8C6A0
+    Drop                                                thunk=0x4B8CA70
+  UDiscordUniqueIDFunctionLibrary:
+    EqualEqual_DiscordUniqueIDDiscordUniqueID           thunk=0x4B8CED0
+  UDiscordUserHandle:
+    DisplayName                                         thunk=0x4B8C6D0
+    Drop                                                thunk=0x4B8CA90
+  UDiscordVADThresholdSettings:
+    Drop                                                thunk=0x4B8CAB0
+  UDiscordVoiceStateHandle:
+    Drop                                                thunk=0x4B8CAD0
+
+PAGE 0x052CB000  (39 dark UFunctions, 1 classes)
+  ALokiBaseItem:
+    AuthTryRemoveFromInventory                          thunk=0x52CB080
+    AuthUpgradedFromDupe                                thunk=0x52CB110
+    AuthUpgradedFromItemXp                              thunk=0x52CB1A0
+    AuthUseItem                                         thunk=0x52CB230
+    CanConsumeItemForDuping                             thunk=0x52CB260
+    CanGroundUseItem                                    thunk=0x52CB300
+    CanHaveAnyArmoryUniqueEffects                       thunk=0x52CB3A0
+    CanStack                                            thunk=0x52CB3D0
+    CanStackOrCharge                                    thunk=0x52CB400
+    CanUseItem                                          thunk=0x52CB430
+    ConsumeStacks                                       thunk=0x52CB460
+    DebugGetAllItems                                    thunk=0x52CB530
+    DecreaseTier                                        thunk=0x52CB5B0
+    DirtyDupeVisuals                                    thunk=0x52CB680
+    DisplayStacks                                       thunk=0x52CB400
+    GetAllowUpgradesFromDupes                           thunk=0x52CB6A0
+    GetArmoryUniqueEffectDescriptionAtIndex             thunk=0x52CB6D0
+    GetAttributesForDisplay                             thunk=0x52CB790
+    GetBaseClass                                        thunk=0x52CB8E0
+    GetBaseTier                                         thunk=0x52CB960
+    GetCanStack                                         thunk=0x52CB400
+    GetCurrentInventoryComponent                        thunk=0x52CB990
+    GetCurrentOwningPawn                                thunk=0x52CB9C0
+    GetCurrentStacks                                    thunk=0x52CB9E0
+    GetCurrentXp                                        thunk=0x52CBA10
+    GetDescriptionForStaticData                         thunk=0x52CBA40
+    GetDestroyOnDeath                                   thunk=0x52CBA90
+    GetDropAsFullStack                                  thunk=0x52CBAC0
+    GetDropOnDeath                                      thunk=0x52CBAF0
+    GetDupeXPValue                                      thunk=0x52CBB20
+    GetEffectDescriptionForStarLevel                    thunk=0x52CBB50
+    GetEffectsForAttributeDisplay                       thunk=0x52CBC10
+    GetEnchantmentEffect                                thunk=0x52CBD00
+    GetEvolveTier                                       thunk=0x52CBD80
+    GetGameplayEffectText                               thunk=0x52CBDB0
+    GetGameplayEffectTextFromClass                      thunk=0x52CBE00
+    GetGoldValue                                        thunk=0x52CBEC0
+    GetInputIDForSlot                                   thunk=0x52CBEF0
+    GetInventoryAbilitySystem                           thunk=0x52CBFF0
+
+PAGE 0x0324B000  (37 dark UFunctions, 8 classes)
+  UCommonVisibilitySwitcher:
+    GetActiveWidgetIndex                                thunk=0x324B3E0
+  UMediaComponent:
+    GetMediaPlayer                                      thunk=0x324B5C0
+    GetMediaTexture                                     thunk=0x324B660
+  UMediaPlayer:
+    GetAudioTrackSampleRate                             thunk=0x324B060
+    GetAudioTrackType                                   thunk=0x324B130
+    GetDesiredPlayerName                                thunk=0x324B250
+    GetDisplayTime                                      thunk=0x324B280
+    GetDisplayTimeStamp                                 thunk=0x324B2E0
+    GetDuration                                         thunk=0x324B360
+    GetHorizontalFieldOfView                            thunk=0x324B400
+    GetMediaMetadataItems                               thunk=0x324B480
+    GetMediaName                                        thunk=0x324B570
+    GetNumTrackFormats                                  thunk=0x324B7E0
+    GetNumTracks                                        thunk=0x324B8B0
+    GetPlaybackTimeRange                                thunk=0x324B940
+    GetPlayerName                                       thunk=0x324B9E0
+    GetPlaylist                                         thunk=0x324BA20
+    GetPlaylistIndex                                    thunk=0x324BA50
+    GetRate                                             thunk=0x324BC00
+    GetSelectedTrack                                    thunk=0x324BC40
+    GetSupportedRates                                   thunk=0x324BD50
+    GetTime                                             thunk=0x324BE70
+    GetTimeDelay                                        thunk=0x324BEB0
+    GetTimeStamp                                        thunk=0x324BEE0
+    GetTrackDisplayName                                 thunk=0x324BF60
+  UMediaPlaylist:
+    GetNext                                             thunk=0x324B680
+    GetPrevious                                         thunk=0x324BA70
+    GetRandom                                           thunk=0x324BB50
+  UMediaSoundComponent:
+    GetEnvelopeValue                                    thunk=0x324B3A0
+    GetMediaPlayer                                      thunk=0x324B5E0
+    GetNormalizedSpectralData                           thunk=0x324B760
+    GetSpectralData                                     thunk=0x324BCD0
+  UMediaTexture:
+    GetHeight                                           thunk=0x324B3E0
+    GetMediaPlayer                                      thunk=0x324B620
+    GetTextureNumMips                                   thunk=0x324BE50
+  UPhysicsHandleComponent:
+    GetGrabbedComponent                                 thunk=0x324B660
+  USubstanceGraphInstance:
+    GetConstantMaterial                                 thunk=0x324B660
+
+PAGE 0x0324C000  (37 dark UFunctions, 15 classes)
+  ULokiDataAsset_Base:
+    GetPurchasingPrerequisites                          thunk=0x324C270
+  UMediaPlayer:
+    GetTrackFormat                                      thunk=0x324C050
+    GetTrackLanguage                                    thunk=0x324C120
+    GetUrl                                              thunk=0x324C240
+    GetVerticalFieldOfView                              thunk=0x324C2F0
+    GetVideoTrackAspectRatio                            thunk=0x324C370
+    GetVideoTrackDimensions                             thunk=0x324C440
+    GetVideoTrackFrameRate                              thunk=0x324C520
+    GetVideoTrackFrameRates                             thunk=0x324C5F0
+    GetVideoTrackType                                   thunk=0x324C6D0
+    GetViewRotation                                     thunk=0x324C7F0
+    HasError                                            thunk=0x324C890
+    IsBuffering                                         thunk=0x324CA20
+    IsClosed                                            thunk=0x324CA60
+    IsConnecting                                        thunk=0x324CAA0
+    IsLooping                                           thunk=0x324CAE0
+    IsPaused                                            thunk=0x324CB20
+    IsPlaying                                           thunk=0x324CB60
+    IsPreparing                                         thunk=0x324CBA0
+    IsReady                                             thunk=0x324CBE0
+    Next                                                thunk=0x324CC10
+    OpenFile                                            thunk=0x324CC60
+    OpenPlaylist                                        thunk=0x324CD10
+  UMediaPlaylist:
+    Insert                                              thunk=0x324C8D0
+    Num                                                 thunk=0x324CC40
+  UMediaSource:
+    GetUrl                                              thunk=0x324C270
+  UMediaTexture:
+    GetWidth                                            thunk=0x324C870
+  UMovieSceneScriptingActorReferenceChannel:
+    GetKeys                                             thunk=0x324C270
+  UMovieSceneScriptingBoolChannel:
+    GetKeys                                             thunk=0x324C270
+  UMovieSceneScriptingByteChannel:
+    GetKeys                                             thunk=0x324C270
+  UMovieSceneScriptingDoubleChannel:
+    GetKeys                                             thunk=0x324C270
+  UMovieSceneScriptingEventChannel:
+    GetKeys                                             thunk=0x324C270
+  UMovieSceneScriptingFloatChannel:
+    GetKeys                                             thunk=0x324C270
+  UMovieSceneScriptingIntegerChannel:
+    GetKeys                                             thunk=0x324C270
+  UMovieSceneScriptingObjectPathChannel:
+    GetKeys                                             thunk=0x324C270
+  UMovieSceneScriptingStringChannel:
+    GetKeys                                             thunk=0x324C270
+  UOptimusNodeGraph:
+    GetGraphType                                        thunk=0x324CC40
+
+PAGE 0x04F3C000  (37 dark UFunctions, 5 classes)
+  ADynamicMeshActor:
+    FreeAllComputeMeshes                                thunk=0x4F3C0E0
+    GetComputeMeshPool                                  thunk=0x4F3C1E0
+    ReleaseAllComputeMeshes                             thunk=0x4F3C770
+    ReleaseComputeMesh                                  thunk=0x4F3C7B0
+  UBaseDynamicMeshComponent:
+    GetColorOverrideMode                                thunk=0x4F3C1B0
+    GetConstantOverrideColor                            thunk=0x4F3C210
+    GetDynamicMesh                                      thunk=0x4F3C250
+    GetEnableRaytracing                                 thunk=0x4F3C280
+    GetEnableWireframeRenderPass                        thunk=0x4F3C2B0
+    GetFlatShadingEnabled                               thunk=0x4F3C2E0
+    GetOverrideRenderMaterial                           thunk=0x4F3C310
+    GetSecondaryBuffersVisibility                       thunk=0x4F3C3B0
+    GetSecondaryRenderMaterial                          thunk=0x4F3C3E0
+    GetShadowsEnabled                                   thunk=0x4F3C410
+    GetVertexColorSpaceTransformMode                    thunk=0x4F3C4A0
+    GetViewModeOverridesEnabled                         thunk=0x4F3C4D0
+    HasOverrideRenderMaterial                           thunk=0x4F3C500
+    SetColorOverrideMode                                thunk=0x4F3CB40
+    SetConstantOverrideColor                            thunk=0x4F3CC90
+    SetEnableFlatShading                                thunk=0x4F3CF60
+    SetEnableRaytracing                                 thunk=0x4F3CFF0
+  UDynamicMesh:
+    GetTriangleCount                                    thunk=0x4F3C470
+    IsEmpty                                             thunk=0x4F3C5A0
+    Reset                                               thunk=0x4F3C960
+    ResetToCube                                         thunk=0x4F3C990
+  UDynamicMeshComponent:
+    EnableComplexAsSimpleCollision                      thunk=0x4F3C070
+    GetTangentsType                                     thunk=0x4F3C440
+    GetTangentsTypePure                                 thunk=0x4F3C440
+    NotifyMeshModified                                  thunk=0x4F3C5D0
+    NotifyMeshVertexAttributesModified                  thunk=0x4F3C5F0
+    SetComplexAsSimpleCollisionEnabled                  thunk=0x4F3CBC0
+    SetDeferredCollisionUpdatesEnabled                  thunk=0x4F3CD10
+    SetDynamicMesh                                      thunk=0x4F3CE00
+  UDynamicMeshPool:
+    FreeAllMeshes                                       thunk=0x4F3C150
+    RequestMesh                                         thunk=0x4F3C930
+    ReturnAllMeshes                                     thunk=0x4F3C9C0
+    ReturnMesh                                          thunk=0x4F3C9E0
+
+PAGE 0x05E8E000  (37 dark UFunctions, 6 classes)
+  UGroomAsset:
+    GetDeformedGroupSections                            thunk=0x5E8E250
+    GetEnableGlobalInterpolation                        thunk=0x5E8E280
+    GetEnableSimulationCache                            thunk=0x5E8E2A0
+    GetHairGroupsCards                                  thunk=0x5E8E2F0
+    GetHairGroupsInterpolation                          thunk=0x5E8E320
+    GetHairGroupsLOD                                    thunk=0x5E8E350
+    GetHairGroupsMaterials                              thunk=0x5E8E380
+    GetHairGroupsMeshes                                 thunk=0x5E8E3B0
+    GetHairGroupsPhysics                                thunk=0x5E8E3E0
+    GetHairGroupsRendering                              thunk=0x5E8E410
+    GetHairInterpolationType                            thunk=0x5E8E440
+    GetRiggedSkeletalMesh                               thunk=0x5E8E480
+    SetDeformedGroupSections                            thunk=0x5E8E4C0
+    SetEnableGlobalInterpolation                        thunk=0x5E8E570
+    SetEnableSimulationCache                            thunk=0x5E8E600
+    SetHairGroupsCards                                  thunk=0x5E8E860
+    SetHairGroupsInterpolation                          thunk=0x5E8E950
+    SetHairGroupsLOD                                    thunk=0x5E8EA00
+    SetHairGroupsMaterials                              thunk=0x5E8EAE0
+    SetHairGroupsMeshes                                 thunk=0x5E8EB90
+    SetHairGroupsPhysics                                thunk=0x5E8EC80
+    SetHairGroupsRendering                              thunk=0x5E8EDC0
+    SetHairInterpolationType                            thunk=0x5E8EE70
+    SetRiggedSkeletalMesh                               thunk=0x5E8EFF0
+  UGroomBindingAsset:
+    GetGroupInfos                                       thunk=0x5E8E2C0
+    GetMatchingSection                                  thunk=0x5E8E460
+    GetSourceSkeletalMesh                               thunk=0x5E8E4A0
+    SetGroom                                            thunk=0x5E8E690
+    SetGroomBindingType                                 thunk=0x5E8E730
+    SetGroupInfos                                       thunk=0x5E8E7B0
+    SetMatchingSection                                  thunk=0x5E8EEF0
+    SetNumInterpolationPoints                           thunk=0x5E8EF70
+  UGroomBlueprintLibrary:
+    CreateNewGeometryCacheGroomBindingAssetWithPath     thunk=0x5E8E090
+    CreateNewGroomBindingAssetWithPath                  thunk=0x5E8E090
+  UMovieGraphConfig:
+    GetInputNode                                        thunk=0x5E8E4A0
+  UMovieGraphPipeline:
+    GetCurrentJob                                       thunk=0x5E8E480
+  UMoviePipeline:
+    GetPreviewTexture                                   thunk=0x5E8E480
+
+PAGE 0x04C73000  (36 dark UFunctions, 10 classes)
+  UCommonActivatableWidgetContainerBase:
+    GetTransitionDuration                               thunk=0x4C73900
+  UCommonButtonBase:
+    GetSelected                                         thunk=0x4C73050
+    GetShouldSelectUponReceivingFocus                   thunk=0x4C735F0
+    GetSingleMaterialStyleMID                           thunk=0x4C73620
+    GetStyle                                            thunk=0x4C73730
+    HandleButtonClicked                                 thunk=0x4C73920
+    HandleButtonPressed                                 thunk=0x4C73A40
+    HandleButtonReleased                                thunk=0x4C73A60
+    HandleFocusReceived                                 thunk=0x4C73A80
+    HandleTriggeringActionCommited                      thunk=0x4C73F10
+    HoldReset                                           thunk=0x4C73FE0
+  UCommonButtonGroupBase:
+    GetSelectedButtonBase                               thunk=0x4C73170
+    HasAnyButtons                                       thunk=0x4C73FB0
+  UCommonButtonStyle:
+    GetSelectedBaseBrush                                thunk=0x4C73080
+    GetSelectedHoveredBrush                             thunk=0x4C731D0
+    GetSelectedHoveredTextStyle                         thunk=0x4C732C0
+    GetSelectedPressedBrush                             thunk=0x4C73310
+    GetSelectedTextStyle                                thunk=0x4C734A0
+  UCommonNumericTextBlock:
+    GetTargetValue                                      thunk=0x4C738C0
+  UCommonRotator:
+    GetSelectedIndex                                    thunk=0x4C732F0
+    GetSelectedText                                     thunk=0x4C73440
+  UCommonTabListWidgetBase:
+    GetSelectedTabId                                    thunk=0x4C73400
+    GetTabButtonBaseByID                                thunk=0x4C73760
+    GetTabCount                                         thunk=0x4C73800
+    GetTabIdAtIndex                                     thunk=0x4C73830
+    HandleNextTabInputAction                            thunk=0x4C73AA0
+    HandlePreviousTabInputAction                        thunk=0x4C73C10
+    HandleTabButtonSelected                             thunk=0x4C73CA0
+    HandleTabCreation                                   thunk=0x4C73D70
+    HandleTabRemoval                                    thunk=0x4C73E40
+  UCommonTextStyle:
+    GetShadowColor                                      thunk=0x4C734D0
+    GetShadowOffset                                     thunk=0x4C73560
+    GetStrikeBrush                                      thunk=0x4C73640
+  UCommonWidgetCarouselNavBar:
+    HandleButtonClicked                                 thunk=0x4C73940
+    HandlePageChanged                                   thunk=0x4C73B30
+  UDEPRECATED_UCommonVisibilityWidgetBase:
+    GetRegisteredPlatforms                              thunk=0x4C73010
+
+PAGE 0x04B8B000  (35 dark UFunctions, 16 classes)
+  UDiscordActivity:
+    ApplicationId                                       thunk=0x4B8B220
+    Assets                                              thunk=0x4B8B2E0
+  UDiscordActivityInvite:
+    ApplicationId                                       thunk=0x4B8B260
+    ChannelId                                           thunk=0x4B8BBC0
+  UDiscordAdditionalContent:
+    Count                                               thunk=0x4B8BFE0
+  UDiscordAuthorizationArgs:
+    ClientId                                            thunk=0x4B8BCA0
+    CodeChallenge                                       thunk=0x4B8BD40
+  UDiscordAuthorizationCodeChallenge:
+    Challenge                                           thunk=0x4B8BAE0
+  UDiscordAuthorizationCodeVerifier:
+    Challenge                                           thunk=0x4B8BB60
+  UDiscordCallInfoHandle:
+    ChannelId                                           thunk=0x4B8BC00
+  UDiscordClient:
+    AddVoiceLogCallback                                 thunk=0x4B8B0F0
+    Authorize                                           thunk=0x4B8B380
+    BlockUser                                           thunk=0x4B8B720
+    CanOpenMessageInDiscord                             thunk=0x4B8B850
+    CancelDiscordFriendRequest                          thunk=0x4B8B8E0
+    CancelGameFriendRequest                             thunk=0x4B8B9E0
+    ClearRichPresence                                   thunk=0x4B8BC80
+    CloseAuthorizeDeviceScreen                          thunk=0x4B8BD20
+    Connect                                             thunk=0x4B8BD70
+  UDiscordDeviceAuthorizationArgs:
+    ClientId                                            thunk=0x4B8BCE0
+  UDiscordLinkedLobby:
+    ApplicationId                                       thunk=0x4B8B2A0
+  UDiscordLobbyMemberHandle:
+    CanLinkLobby                                        thunk=0x4B8B820
+    Connected                                           thunk=0x4B8BE40
+  UDiscordLocalPlayerSubsystem:
+    Connect                                             thunk=0x4B8BD90
+  UDiscordMessageHandle:
+    AdditionalContent                                   thunk=0x4B8B1F0
+    Author                                              thunk=0x4B8B310
+    AuthorId                                            thunk=0x4B8B340
+    Channel                                             thunk=0x4B8BB90
+    ChannelId                                           thunk=0x4B8BC40
+    Content                                             thunk=0x4B8BE70
+  UDiscordUniqueIDFunctionLibrary:
+    Conv_DiscordUniqueIDToString                        thunk=0x4B8BEF0
+  UDiscordUserHandle:
+    Avatar                                              thunk=0x4B8B4B0
+    AvatarTypeToString                                  thunk=0x4B8B530
+    AvatarUrl                                           thunk=0x4B8B600
+  UDiscordVADThresholdSettings:
+    Automatic                                           thunk=0x4B8B480
+
+=== Top 20 Loki-only DARK pages (excludes UEngine/UnrealEd/etc.) ===
+page          loki / total  loki classes
+----------------------------------------------------------------------------------------------------
+0x052CB000      39 /    39  ALokiBaseItem
+0x0529E000      29 /    29  ALokiAirship, ALokiBaseItem, ALokiGameState, ALokiMinionCharacter, ULokiActorTra
+0x052CE000      28 /    28  ALokiBaseGameplayImportantEffect, ALokiBaseItem
+0x05442000      28 /    28  ALokiPlayerState_Missions, ALokiPlayerState_Stats, ALokiPlayerState_XP, ALokiPre
+0x052B5000      25 /    25  ULokiAttributeSet, ULokiAttributeSetHealth
+0x052B4000      24 /    24  ULokiAttributeSet
+0x053BB000      22 /    22  ULokiInventoryComponentComboItems, ULokiInventoryOperations, ULokiItemGlobals
+0x05404000      22 /    22  ALokiMinionCharacter, ULokiMenuGlobals, ULokiMinimapVisionGranterRenderer, ULoki
+0x052FE000      21 /    21  ALokiCapturePoint, ALokiCharacter, ULokiCaptorInterface
+0x05441000      21 /    21  ALokiProjectile, ALokiTeamState, ULokiPlayerStatePawnComponent, ULokiProgressBar
+0x05483000      21 /    21  ALokiTeamState_TeamOnly, ALokiTimelineEvent, ALokiTrainingSkill, ULokiTeamVaultD
+0x053B1000      19 /    20  ULokiHUDStatsPanel, ULokiHyperlinkRichTextBlockDecorator, ULokiInputDisplayStati
+0x053BC000      19 /    19  ULokiInventoryComponentComboItems, ULokiInventoryContextLibrary, ULokiInventoryI
+0x052D5000      16 /    16  ALokiBattleRoyaleSpawner, ALokiBiome, ALokiBiomeVolume, ULokiBiomeManagerCompone
+0x0540E000      16 /    16  ALokiOpeningClosingProp, ULokiMusicManagerSubsystem, ULokiNavLineRendererCompone
+0x05422000      16 /    16  ALokiPlayerCheats, ALokiPlayerController, ALokiPlayerState
+0x05423000      15 /    15  ALokiPlayerCheats, ALokiPlayerController
+0x05351000      14 /    14  ALokiGameModeDefusal, ALokiGameModeLastManOnTheHill, ALokiGameplayAbilityTargetA
+0x052D6000      13 /    13  ALokiBasePersistentCue, ALokiBattleRoyaleSpawner, ALokiBiomeVolume, ULokiBiomeMa
+0x053C3000      12 /    14  ALokiLaneMinionManager, ALokiLaser, ULokiLaunchCharacterTask, ULokiLeveledProgre
+
+=== SINGLE-FIRE RECOMMENDATIONS (fire ONE UFunction to unblock N more) ===
+
+Top page overall: 0x05D7B000 — 67 dark verbs
+  Recommend firing: UMovieSceneScriptingDoubleKey::GetArriveTangent  thunk=0x5D7B3C0
+  Expected yield:  ~67 verbs offline-gradable after decryption
+  Requires:        live game process, S55 CallNativeGuarded primitive
+
+Top LOKI-only page: 0x052CB000 — 39 dark loki verbs
+  Recommend firing: ALokiBaseItem::GetAllowUpgradesFromDupes  thunk=0x52CB6A0
+  Expected yield:  ~39 verbs total (39 loki-family)

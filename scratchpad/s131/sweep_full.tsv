@@ -1,0 +1,113 @@
+class	func	in_setC	verdict	impl	thunk	thunk_pg	impl_pg	flags	note	bytes12
+ALokiDropPlane	AddPlayerToPlane	C	EMPTY	0xf7ec20	0x2c2ce30	s129,merged2,tuthero	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public	FOLD ret0(c2 00 00)	
+ALokiDropPlane	AuthLaunchDropPodForTeam	C	REAL	0x55cb1d0	0x5335b50	s129,merged2,tuthero	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable		4883ec28e8b717dcfd4883c4
+ALokiDropPlane	AuthStart	C	EMPTY	0xf7ec20	0x52fd620	s129,merged2,tuthero	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable	FOLD ret0(c2 00 00)	
+ALokiDropPlane	BP_AuthLaunchDropPodForTeam	C	NO-RECORD	-	-	-	-	Event|Public|BlueprintEvent		
+ALokiDropPlane	CanJump	C	REAL	0x55cf390	0x53361f0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		80b92404000000750d80b925
+ALokiDropPlane	GetDropPlaneMapIcon	C	REAL	0x5333e10	0x377c3a0	s129,merged2,tuthero	s129,merged2,tuthero	Native|Event|Public|BlueprintCallable|BlueprintEvent|BlueprintPure		48895c2410574883ec20488b
+ALokiDropPlane	GetDropPosition	C	REAL	0x5333e60	0x53364f0	s129,merged2,tuthero	s129,merged2,tuthero	Native|Event|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintEvent|BlueprintPure|Const		48895c240848897424105748
+ALokiDropPlane	GetDropZoneBorders	C	REAL	0x5333ed0	0x5336590	s129,merged2,tuthero	s129,merged2,tuthero	Native|Event|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintEvent|BlueprintPure		488bc4488958084889681048
+ALokiDropPlane	GetPlayerDropState	C	REAL	0x55d9ac0	0x5336940	s129,merged2,tuthero	merged2	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		4c8bc94c8bc249c1e8044c8b
+ALokiDropPlane	HasEverContainedPlayer	C	REAL	0x55dca90	0x53369e0	s129,merged2,tuthero	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable|BlueprintPure|Const		488b89c8030000e904000000
+ALokiDropPlane	IsPlayerInPlane	C	REAL	0x55dda10	0x5336b20	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		4c8b81c8030000498b802001
+ALokiDropPlane	IsReadyToSetDropPodDestination	C	REAL	0x5334140	0x5336bc0	s129,merged2,tuthero	s129,merged2,tuthero	Native|Event|Public|BlueprintCallable|BlueprintEvent|BlueprintPure		48895c2410574883ec20488b
+ALokiDropPlane	IsValidDropPodDestination	C	REAL	0x55ddc90	0x5336bf0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintPure		48895c2408574883ec40488b
+ALokiDropPlane	IsWithinDropPlanePath	C	REAL	0x5334190	0x5336ce0	s129,merged2,tuthero	s129,merged2,tuthero	Native|Event|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintEvent|BlueprintPure		488bc4488958084889701048
+ALokiDropPlane	IsWithinMaxDropPodDistance	C	REAL	0x5334220	0x5336e30	s129,merged2,tuthero	s129,merged2,tuthero	Native|Event|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintEvent|BlueprintPure		48895c2408574883ec400f10
+ALokiDropPlane	OnPlayerEnteredRideable	C	REAL	0x55e0910	0x5337000	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Private		41b001e9989d00004883ec28
+ALokiDropPlane	OnPlayerExitedRideable	C	REAL	0x55e0920	0x5337090	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Private		41b002e9889d00004883c428
+ALokiDropPlane	OnRep_EndLocation	C	NO-RECORD	-	-	-	-	Event|Protected|BlueprintEvent		
+ALokiDropPlane	OnRep_StartLocation	C	NO-RECORD	-	-	-	-	Event|Protected|BlueprintEvent		
+ALokiDropPlane	OnRep_StartTime	C	REAL	0x55e0fe0	0x5337140	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Protected		c68124040000014881c19803
+ALokiDropPlane	OnTeamDropped	C	NO-RECORD	-	-	-	-	Event|Public|HasDefaults|BlueprintEvent		
+ALokiDropPlane	OverridePlaneLocations	C	EMPTY	0xf7ec20	0x53372a0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|HasDefaults|BlueprintCallable	FOLD ret0(c2 00 00)	
+ALokiDropPlane	RemovePlayerFromPlane	C	EMPTY	0xf7ec20	0x2c2ce30	s129,merged2,tuthero	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public	FOLD ret0(c2 00 00)	
+ALokiDropPlane	SetCanJump	C	EMPTY	0xf7ec20	0x5296f30	s129,merged2	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable	FOLD ret0(c2 00 00)	
+ALokiDropPlane	UpdatePlaneMovementAndCheckDone	C	REAL	0x53357d0	0x3872fe0	s129,merged2,tuthero	s129,merged2,tuthero	Native|Event|Public|BlueprintCallable|BlueprintEvent		48895c2410574883ec20488b
+ULokiPlayerDropPlaneComponent	AuthEnterDropPlane	C	REAL	0x56dbe60	0x542d580	s129,merged2,tuthero	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable		48899108010000c340534883
+ULokiPlayerDropPlaneComponent	AuthSetCurrentRideable	C	EMPTY	0xf7ec20	0x2c2ce30	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public	FOLD ret0(c2 00 00)	
+ULokiPlayerDropPlaneComponent	AuthSetDropComplete	C	REAL	0x2e09510	0x542d610	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public		c681d000000001c3488d8d38
+ULokiPlayerDropPlaneComponent	BP_OnDropPodLaunched	C	NO-RECORD	-	-	-	-	Event|Protected|BlueprintEvent		
+ULokiPlayerDropPlaneComponent	BroadcastEventRouterReady	C	REAL	0x56dd340	0x542d650	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Protected		4885d20f8527e0d4ffc34883
+ULokiPlayerDropPlaneComponent	CanLaunchDropPod	C	REAL	0x56deb00	0x542d6e0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		48895c2410574883ec20488b
+ULokiPlayerDropPlaneComponent	ClearSelectDropPodInputBinding	C	REAL	0x56df010	0x542d710	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Private		48895c241048897c24185548
+ULokiPlayerDropPlaneComponent	ClearSelectedDropPodDestination	C	REAL	0x542b040	0x365bf40	s129,merged2,tuthero	s129,merged2,tuthero	Native|Event|Public|BlueprintCallable|BlueprintEvent		48895c2408574883ec20488b
+ULokiPlayerDropPlaneComponent	FindValidDropLocationInRadius	C	IMPL-PAGE-DARK	0x5605b90	0x542de10	s129,merged2,tuthero	DARK-ALL3	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable	impl page dark in all 3 images	
+ULokiPlayerDropPlaneComponent	ForwardMovementInput	C	REAL	0x56e5db0	0x542df50	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public		e9fb55d4ff418d5030807c24
+ULokiPlayerDropPlaneComponent	GetDropComplete	C	REAL	0x3edb490	0x525f3e0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|BlueprintCallable|BlueprintPure		0fb681d0000000c333d2488b
+ULokiPlayerDropPlaneComponent	GetDropPod	C	REAL	0x3078470	0x542e160	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public		488b8110010000c34883ec38
+ULokiPlayerDropPlaneComponent	GetSelectedDropPodDestination	C	REAL	0x56eba30	0x542e2e0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintPure|Const		0f1081180100000f1102f20f
+ULokiPlayerDropPlaneComponent	IsLocalPlayerStateComp	C	REAL	0x56ef2b0	0x542e430	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Private		40534883ec20488b99b80000
+ULokiPlayerDropPlaneComponent	MulticastOnDropPodLaunched	C	REAL/RPC-SEND-STUB	0x542b2b0	0x53bd130	s129,merged2,tuthero	s129,merged2,tuthero	Net|NetReliable|Native|Event|NetMulticast|Public|BlueprintCallable		48895c2410574883ec20488b
+ULokiPlayerDropPlaneComponent	OnDropPodEnded	C	NO-RECORD	-	-	-	-	Event|Protected|BlueprintEvent		
+ULokiPlayerDropPlaneComponent	OnDropPodStarted	C	NO-RECORD	-	-	-	-	Event|Protected|BlueprintEvent		
+ULokiPlayerDropPlaneComponent	OnEventRouterReady	C	NO-RECORD	-	-	-	-	Event|Protected|BlueprintEvent		
+ULokiPlayerDropPlaneComponent	OnForwardMovementInput	C	NO-RECORD	-	-	-	-	Event|Protected|BlueprintEvent		
+ULokiPlayerDropPlaneComponent	OnPlayerExitedDropPod	C	EMPTY	0xf7ec20	0x542e4a0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Protected|HasOutParms	FOLD ret0(c2 00 00)	
+ULokiPlayerDropPlaneComponent	OnRep_CurrentRideableObject	C	REAL	0x56f54d0	0x542e580	s129,merged2,tuthero	merged2	Final|Native|Private		48895c2408574883ec20488b
+ULokiPlayerDropPlaneComponent	OnRep_DropLocationSelected	C	REAL	0x56f5620	0x542e5a0	s129,merged2,tuthero	merged2	Final|Native|Private		488b89b8000000b201e9a28e
+ULokiPlayerDropPlaneComponent	OnRep_DropPlane	C	REAL	0x56f5630	0x542e5c0	s129,merged2,tuthero	merged2	Final|Native|Private		4883b908010000000f85525e
+ULokiPlayerDropPlaneComponent	OnRep_DropPod	C	REAL	0x56f5640	0x542e5e0	s129,merged2,tuthero	merged2	Final|Native|Private		48895c2408574883ec20488b
+ULokiPlayerDropPlaneComponent	OnRightMovementInput	C	NO-RECORD	-	-	-	-	Event|Protected|BlueprintEvent		
+ULokiPlayerDropPlaneComponent	OnSelectDropLocationEnded	C	NO-RECORD	-	-	-	-	Event|Protected|BlueprintEvent		
+ULokiPlayerDropPlaneComponent	OnSelectDropLocationStarted	C	NO-RECORD	-	-	-	-	Event|Protected|BlueprintEvent		
+ULokiPlayerDropPlaneComponent	RightMovementInput	C	REAL	0x56f9650	0x542e8c0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public		e9ab1dd3ff4181f80000800f
+ULokiPlayerDropPlaneComponent	SelectDropPodDestination	C	IMPL-PAGE-DARK	0x56fa590	0x542e940	s129,merged2,tuthero	DARK-ALL3	Final|Native|Protected	impl page dark in all 3 images	
+ULokiPlayerDropPlaneComponent	ServerLaunchDropPod	C	REAL/RPC-SEND-STUB	0x542b530	0x3f74b90	s129,merged2,tuthero	s129,merged2,tuthero	Final|Net|NetReliable|Native|Event|Private|NetServer		48895c2408574883ec20488b
+ULokiPlayerDropPlaneComponent	ServerPassDropLeader	C	REAL/RPC-SEND-STUB	0x542b570	0x3c651a0	s129,merged2,tuthero	s129,merged2,tuthero	Net|NetReliable|Native|Event|Public|NetServer|BlueprintCallable		48895c2408574883ec20488b
+ULokiPlayerDropPlaneComponent	ServerSetDropPodDestination	C	REAL/RPC-SEND-STUB	0x542b600	0x542e9f0	s129,merged2,tuthero	s129,merged2,tuthero	Net|NetReliable|Native|Event|Public|NetServer|HasDefaults|BlueprintCallable		48895c2408574883ec400f10
+ULokiPlayerDropPlaneComponent	SetDropPodDestination	C	REAL	0x542b970	0x542ee20	s129,merged2,tuthero	s129,merged2,tuthero	Native|Event|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintEvent		48895c2408574883ec400f10
+ULokiPlayerDropPlaneComponent	TryLaunchDropPod	C	IMPL-PAGE-DARK	0x56ff1d0	0x542eef0	s129,merged2,tuthero	DARK-ALL3	Final|Native|Protected|BlueprintCallable	impl page dark in all 3 images	
+ULokiRideableComponent	AuthAddPlayer	C	EMPTY	0xf7ec20	0x2c2ce30	s129,merged2,tuthero	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public	FOLD ret0(c2 00 00)	
+ULokiRideableComponent	AuthPlayerDetachPlayerFromRidable	C	REAL	0x55cccb0	0x5456100	DARK-ALL3	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable		4885d20f84ae010000488954
+ULokiRideableComponent	AuthPlayerEnterWorld	C	REAL	0x55cce70	0x54561d0	DARK-ALL3	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|HasOutParms|HasDefaults|BlueprintCallable		4885d20f848c060000555741
+ULokiRideableComponent	AuthPlayerEnterWorldAttachedToRidable	C	REAL	0x55cd510	0x5456380	DARK-ALL3	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|HasOutParms|HasDefaults|BlueprintCallable		4885d20f847a02000048895c
+ULokiRideableComponent	AuthPlayerEnterWorldNew	C	EMPTY	0xf7ec20	0x5456460	DARK-ALL3	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|HasOutParms|HasDefaults|BlueprintCallable	FOLD ret0(c2 00 00)	
+ULokiRideableComponent	AuthPlayerPreSpawnOnAddToPlane	C	REAL	0x55cd800	0x5456540	DARK-ALL3	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable		4885d20f84e601000048895c
+ULokiRideableComponent	AuthRemovePlayer	C	EMPTY	0xf7ec20	0x2c2ce30	s129,merged2,tuthero	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public	FOLD ret0(c2 00 00)	
+ULokiRideableComponent	AuthSetCanJump	C	EMPTY	0xf7ec20	0x5296f30	s129,merged2	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable	FOLD ret0(c2 00 00)	
+ULokiRideableComponent	CanExit	C	REAL	0x525c240	0x5260ec0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		0fb68118010000c34883ec20
+ULokiRideableComponent	ContainsPlayer	C	REAL	0x55d0270	0x5456700	DARK-ALL3	s129,merged2,tuthero	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		488b81200100004863892801
+ULokiRideableComponent	GetLandingTeleportLocation	C	REAL	0x55d89f0	0x5456c80	DARK-ALL3	s129,merged2,tuthero	Final|Native|Public|HasDefaults|BlueprintCallable		40555356574157488dac2420
+ULokiRideableComponent	GetRidePosition	C	REAL	0x55dab50	0x5457070	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintPure|Const		48895c240848897424105748
+ULokiRideableComponent	HasEverContainedPlayer	C	REAL	0x55dcaa0	0x5457280	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		488b81200100004c8bca4c63
+ULokiRideableComponent	MulticastOnPlayerEntered	C	REAL/RPC-SEND-STUB	0x5453780	0x53bd130	s129,merged2,tuthero	s129,merged2,tuthero	Final|Net|NetReliable|Native|Event|NetMulticast|Private		48895c2410574883ec20488b
+ULokiRideableComponent	MulticastOnPlayerEnteredWorld	C	REAL/RPC-SEND-STUB	0x54537c0	0x3bcd5b0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Net|NetReliable|Native|Event|NetMulticast|Private		48895c2410574883ec20488b
+ULokiRideableComponent	MulticastOnPlayerExited	C	REAL/RPC-SEND-STUB	0x5453800	0x54573b0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Net|NetReliable|Native|Event|NetMulticast|Private		48895c2408574883ec30488b
+ULokiRideableComponent	OnRep_PlayersInsideCount	C	REAL	0x55e0fc0	0x5457730	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Private		8b911c0100004881c1e00000
+ULokiRideableComponent	OnRep_bCanExit	C	REAL	0x55e1000	0x54577b0	s129,merged2,tuthero	merged2	Final|Native|Private		0fb691180100004881c1d000
+ALokiTeamState_TeamOnly	GetByTeamIndex	C	REAL	0x56e6740	0x5483940	DARK-ALL3	s129,merged2,tuthero	Final|Native|Static|Public|BlueprintCallable|BlueprintPure		48895c2408574883ec208bfa
+ALokiTeamState_TeamOnly	GetDropLeader	C	IMPL-PAGE-DARK	0x3259330	0x5483c00	DARK-ALL3	DARK-ALL3	Final|Native|Public|BlueprintCallable|BlueprintPure|Const	impl page dark in all 3 images	
+ALokiTeamState_TeamOnly	GetFuzzyPlayerLocationComponentByTeamIndex	C	REAL	0x56e7b90	0x5483db0	DARK-ALL3	s129,merged2,tuthero	Final|Native|Static|Public|BlueprintCallable		48895c2408574883ec208bfa
+ALokiTeamState_TeamOnly	GetTeamVaultDataComponentByTeamIndex	C	REAL	0x56ec410	0x54841f0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Static|Public|BlueprintCallable		48895c2408574883ec208bfa
+ALokiTeamState_TeamOnly	OnRep_DropLeader	C	REAL	0x56f5610	0x5484fe0	s129,merged2,tuthero	merged2	Final|Native|Private		e9fb5000004883ec38e8f7ff
+ALokiTeamState_TeamOnly	OnRep_ReplicatedBarkData	C	REAL	0x56f5ea0	0x5485020	s129,merged2,tuthero	merged2	Final|Native|Private		48895c2410574881ec900100
+ALokiTeamState_TeamOnly	SetDropLeader	C	EMPTY	0xf7ec20	0x2c2ce30	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|BlueprintCallable	FOLD ret0(c2 00 00)	
+ALokiDropPodBase	GetDropAboveAmount	C	REAL	0x55d7b70	0x5336430	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|BlueprintCallable		f30f100568914602c3488b0b
+ALokiDropPodBase	OnPilotPlayerStateReplicated	C	NO-RECORD	-	-	-	-	Event|Protected|BlueprintEvent		
+ALokiDropPodBase	OnRep_PilotPlayerState	C	REAL	0x55e0fb0	0x5337120	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Protected		e91b33d5ff488b5c24404889
+ALokiDropPodBase	SetPilotPlayerState	C	REAL	0x55e59e0	0x53375e0	s129,merged2,tuthero	merged2	Final|Native|Public		488991c003000041b80b0000
+ALokiDropPodBase	StartPlayerPodSteering	C	REAL	0x55e6a70	0x5337670	s129,merged2,tuthero	merged2	Final|Native|Public		40534883ec3080b9b8030000
+ALokiDropPodBase	StopPlayerPodSteering	C	REAL	0x55e7050	0x5337690	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public		40534883ec2080b9b8030000
+ULokiGameModeDropPlaneComponent	AddPlayerToDropPlane	C	REAL	0x55cbb60	0x5350630	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Protected|BlueprintCallable|Const		4056574883ec38488bf1488b
+ULokiGameModeDropPlaneComponent	GeneratePlanePoints	C	REAL	0x55d4940	0x5350bd0	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable|Const		488bc4488958084889701057
+ULokiGameModeDropPlaneComponent	SetDropPlane	C	REAL	0x55e55e0	0x5352f20	DARK-ALL3	merged2	Final|Native|Protected|BlueprintCallable		48895c240848897424104889
+ULokiGameModeDropPlaneComponent	SpawnPlane	C	NO-RECORD	-	-	-	-	Event|Protected|BlueprintEvent		
+ULokiDropPhaseLibrary	BroadcastDropPodCrewDetachEvent	C	REAL	0x55ce3a0	0x5335d10	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Static|Public|HasOutParms		4885c90f847801000048895c
+ULokiDropPhaseLibrary	BroadcastDropPodDirectionChangeEvent	C	REAL	0x55ce530	0x5335e30	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Static|Public|HasOutParms		4885c90f847801000048895c
+ULokiDropPhaseLibrary	BroadcastDropPodLeaderDetachEvent	C	REAL	0x55ce6c0	0x5335f30	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Static|Public|HasOutParms		4885c90f847801000048895c
+ULokiDropPhaseLibrary	BroadcastDropPodStateChangeEvent	C	REAL	0x55ce850	0x5336060	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Static|Public|HasOutParms		4885c90f847801000048895c
+ULokiDropPhaseDebuggingTool	OverrideDropPlaneLocations	C	REAL	0x55e1020	0x5337160	s129,merged2,tuthero	merged2	Final|Native|Static|Public|HasDefaults|BlueprintCallable		48895c240848897424105748
+ULokiDropPhaseDebuggingTool	PaintDotOnMouse	C	REAL	0x55e10a0	0x5337390	s129,merged2,tuthero	merged2	Final|Native|Static|Public|HasOutParms|HasDefaults|BlueprintCallable		4883ec68f20f10224c8d1561
+ULokiDropOnDeathComponent	AddDropItemOnDeath	-	REAL	0x564bb00	0x5335a70	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Static|Public|BlueprintCallable		4885c90f843d010000488974
+ULokiDropOnDeathComponent	DeathEvent	-	VTABLE-FWD	0x32f79fc	0x3f74b90	s129,merged2,tuthero	s129,merged2,tuthero	Native|Public|BlueprintCallable	mov rax,[rcx]; jmp [rax+0x4c0]	488b01ffa0c004000033d2c3
+ULokiDropOnDeathComponent	DropItems	-	NO-RECORD	-	-	-	-	Event|Public|BlueprintEvent		
+ULokiDropOnDeathComponent	GetDropOnDeathComponent	-	REAL	0x565c730	0x5336460	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Static|Public|BlueprintCallable|BlueprintPure		40534883ec20488bd94885c9
+ULokiRideableInterface	GetRidePosition	-	NO-RECORD	-	-	-	-	Native|Event|Public|HasOutParms|HasDefaults|BlueprintEvent|Const		
+ALokiDropHidableActor	ClientOnPlayerControllerReceived	-	REAL	0x564fd60	0x5336220	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Private		488bc2488bd1488bc8e9127f
+ALokiGameMode	SpawnPlayer	-	EMPTY	0xf7eb50	0x534c070	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable	FOLD xor eax;ret	
+ALokiPlayerState	AuthSetSpawnTeamLeader	-	EMPTY	0xf7ec20	0x5254180	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|BlueprintCallable	FOLD ret0(c2 00 00)	
+ULokiCharacterMovementComponent	AuthBeginGlideDiveFromDropPod	-	EMPTY	0xf7ec20	0x530bfd0	s129,merged2,tuthero	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|HasOutParms|HasDefaults|BlueprintCallable	FOLD ret0(c2 00 00)	
+ULokiCharacterMovementComponent	AuthBeginGlideDive	-	EMPTY	0xf7ec20	0x5254180	s129,merged2,tuthero	s129,merged2,tuthero	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable	FOLD ret0(c2 00 00)	
+ULokiCharacterMovementComponent	EndGlideDive	-	REAL	0x55a8580	0x530c500	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|BlueprintCallable		c7814c120000000080bfc341
+ALokiServerAnalyticsManager	AddTeamDropEvent	-	REAL	0x557eae0	0x5463350	s129,merged2,tuthero	s129,merged2,tuthero	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable		488bc4488958104889701855

@@ -1,0 +1,87 @@
+{
+ "lane": "ActorPoolManagerPrimingConfig — is the actor-pool feature config/ini-drivable with no injection?",
+ "headline": "The lead is INERT for ini: `ActorPoolManagerPrimingConfig` is a USTRUCT with ZERO UPROPERTIES and no reflected consumer — but the hunt is not wasted, because the same pass identified the gate exactly: `ULokiActorPoolManager`'s slot-90 override returns `Cast<ALokiGameState>(GetWorld()->GameState)->bSupportsActorPoolPriming` (a native bool at +0x898), which the C++ ctor sets to TRUE and which `BP_LokiGameState_Tutorial`'s CDO explicitly serializes as **False**.",
+ "claims": [
+  {
+   "claim": "`ActorPoolManagerPrimingConfig` is a USTRUCT (UScriptStruct), NOT a UClass — so it cannot be a UDeveloperSettings and has no ini section of its own.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "`vtables.py classes \"ActorPool\"` -> only `UActorPoolManager vtable 0x07DE3618` and `ULokiActorPoolManager vtable 0x08877A80`; `classes \"Priming\"` -> `0 class(es)`. The registrar 0x32A7AC0 (s129) is the GetStaticStruct shape: `0x032A7AD0 call 0x98B4A0` (package) / `0x032A7AD8 4c8d054150b304  lea r8,[rip+0x4b35041]` -> 0x07DDCB20 U 'ActorPoolManagerPrimingConfig' / `0x032A7ADF 488d0d8a400000 lea rcx,[rip+0x408a]` -> 0x32ABB70 (the Z_Construct) / `call 0x9A35E00`. Its ICppStructOps factory 0x32A5590 does `mov ecx,0x10; call alloc; mov dword ptr [rax+8], 0xa8` — a 168-byte struct ops record."
+  },
+  {
+   "claim": "The struct declares ZERO reflected properties: its FStructParams has PropertyArray = NULL and NumProperties = 0, SizeOf = 0xA8 (168 bytes). Nothing exists for GConfig to bind, with or without a config flag.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "Z_Construct 0x32ABB70 does `0x032ABB80 488d1561f67806  lea rdx,[rip+0x678f661]` = .data 0x09A3B1E8 (params) and `lea rcx,[rip+0x6cc9782]` = 0x9F75310 (singleton) then `call 0x9A2FA90`. Hexdump of the params (s129, single-state image, NOT merged): 0x09A3B1E8 OuterFunc=0x098B4A0 | +0x08 SuperFunc=0 | +0x10 StructOps=0x32A5590 | +0x18 NameUTF8=0x07DDD098 'ActorPoolManagerPrimingConfig' | +0x20 PropertyArray=`00 00 00 00 00 00 00 00` | +0x28 `00 00 a8 00` = NumProperties 0, SizeOf 0xA8. Calibrated on the adjacent record 0x09A3B220 (NameUTF8 0x07DDDAD8 'ActorPool', PropertyArray 0x07DDD148, `02 00 18 00` = 2 props / 0x18 B) whose array at 0x07DDD148 verifiably holds exactly 2 entries (0x07DDD0D0, 0x07DDD110). Size 0xA8 independently corroborated by the ICppStructOps store above."
+  },
+  {
+   "claim": "No reflected property ANYWHERE in the image has this struct as its type — the struct is registered but has no UHT consumer.",
+   "grade": "M",
+   "load_bearing": false,
+   "evidence": "`fkdis.py findptr 0x32A7AC0 --dump s129` -> exactly one hit, `.rdata 0x07DDDE80` (the compiled-in registration record; the same single hit reproduces in `--dump merged2`). `findptr 0x32ABB70` -> zero hits in both images. A UHT FStructPropertyParams stores one of those two function pointers, so both being unreferenced outside the registration table means no StructProperty of this type exists. (.rdata/.data are not demand-decrypted, so this data scan is not coverage-limited; caveat: 33 of 9,085 .rdata pages are all-zero image-wide.)"
+  },
+  {
+   "claim": "Neither pool-manager UCLASS is a config class. CLASS_Config / CLASS_DefaultConfig / CLASS_ProjectUserConfig / CLASS_GlobalUserConfig are all clear on both.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "UActorPoolManager::GetPrivateStaticClass 0x32A8570: `0x032A85EE c744243000000010 mov dword ptr [rsp+0x30], 0x10000000` (InClassFlags = CLASS_Intrinsic only), InSize `[rsp+0x20]=0xf0`, InConfigName = `lea rax,[rip+0x4411c76]` @0x032A85DB -> 0x076BA258 U 'Engine' (5017 refs — the inherited default, inert without CLASS_Config), PackageName -> 0x0773DBE0 '/Script/Engine', Name = 0x07DDDB60+2 (skips the 'U'). ULokiActorPoolManager 0x52975D0: same `mov dword ptr [rsp+0x30], 0x10000000`, InSize 0x1a8, InConfigName `lea rax,[rip+0x2422c0f]` @0x05297642 -> 0x076BA258 'Engine'."
+  },
+  {
+   "claim": "THE GATE IS `ALokiGameState::bSupportsActorPoolPriming`, a native bool at offset 0x898 — and it carries NO config flag.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "(a) the gate reads it: image-wide regex for `0f b6 80 98 08 00 00` finds ONE site, rva 0x05636438 `movzx eax, byte ptr [rax+0x898]` (bytes `0fb680980800004883`) — the ULokiActorPoolManager slot-90 override's return value. (b) 0x5380690 is `ALokiGameState::GetPrivateStaticClass`: `0x053806D6 lea rdx,[rip+0x3601595]` = 0x08981C72 = 0x08981C70 U 'ALokiGameState' + 2, InSize `[rsp+0x20]=0xb20`, flags 0x10000004. (c) image-wide regex for `c6 81 98 08 00 00 01 c3` (`mov byte[rcx+0x898],1; ret`, the UHT SetBitFunc shape) finds ONE site: rva 0x053800D0. (d) `findptr 0x053800D0` -> .rdata 0x08983A88, i.e. the FBoolPropertyParams record at 0x08983A50: NameUTF8=0x08986178 'bSupportsActorPoolPriming', GenFlags 0x4C (NativeBool), ObjFlags 0x45, ArrayDim 1, ElementSize 1, SizeOfOuter 0xB20 (== ALokiGameState's InSize), SetBitFunc 0x053800D0. (e) that record is entry 106 of the 155-entry PropertyArray at .rdata 0x089847A0, whose FClassParams at .rdata 0x08985450 has ClassNoRegisterFunc = 0x00007FF7BDA50690 = rva 0x5380690 = ALokiGameState::StaticClass, ClassConfigNameUTF8 = 'Game'. (f) PropertyFlags = 0x0010040000010001 = CPF_Edit | CPF_DisableEditOnInstance | CPF_AdvancedDisplay | CPF_NativeAccessSpecifierPublic. CPF_Config (0x4000) and CPF_GlobalConfig (0x40000) are CLEAR."
+  },
+  {
+   "claim": "0 of ALokiGameState's 155 reflected properties carry CPF_Config or CPF_GlobalConfig — so the `[/Script/Loki.LokiGameState]` section in Game.ini has nothing to bind, despite the class carrying CLASS_Config (inherited from AActor, config=Engine).",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "Script walk of PropertyArray .rdata 0x089847A0 x 155 entries, testing `PropertyFlags & 0x4000` and `& 0x40000` at record+0x10: output `config-flagged properties on this class: 0`. ClassConfigNameUTF8 read from FClassParams+0x08 -> rva 0x76bc138 -> 'Game'."
+  },
+  {
+   "claim": "The C++ default of bSupportsActorPoolPriming is TRUE, and the tutorial game state's shipped asset explicitly turns it OFF — which is exactly the observed 'Feature is not enabled, skipping.'",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "Constructor chain: UActorPoolManager-style InClassConstructor arg of ALokiGameState::GetPrivateStaticClass = `lea rax,[rip+0x27d2]` @0x053806F7 -> 0x5382ED0, which is `mov rax,[rcx]; test rax,rax; je; mov rdx,rcx; mov rcx,rax; jmp 0x5676AA0` (the FObjectInitializer -> T::T(this=Obj) thunk). At 0x5676AA0 the prologue does `0x05676AC8 488bf9  mov rdi, rcx` (this->rdi); at `0x05676F10 c6879808000001  mov byte ptr [rdi+0x898], 1`, inside a contiguous run of member inits at +0x878/+0x880/+0x888/+0x890/**+0x898**/+0x8a0/+0x8a8/+0x8c0. Shipped asset: `tools/extractor/out/bpdump_BP_LokiGameState_Tutorial_PROPS.txt:52` -> `- bSupportsActorPoolPriming (BoolProperty) = False (BoolProperty)`; identical line in `bpdump_BP_LokiGameState_PvE_Holdout_PROPS.txt`; `grep -l` across all `bpdump_*PROPS.txt` matches ONLY those two (BP_LokiGameState, BP_LokiGameStateRounds, BP_LokiGameState_Battlefield do not serialize it)."
+  },
+  {
+   "claim": "No enable-shaped cvar or ini key exists anywhere in the pooling subsystem; PrimePools itself reads no config literal.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "`strxref.py find \"Pooling\\.\" --regex` -> 1 match image-wide: 0x07F0B108 U 'Pooling.PrimingFrameBudget' (a frame budget, not an enable). `find \"ActorPool\"` -> 18 matches, none cvar/ini-shaped. `strxref.py func 0x3356000` (UActorPoolManager::PrimePools, .pdata EXACT extent 0x3356000..0x3356504, 1284 B, page present) lists 7 string references and ALL are log format strings ('Feature is not enabled, skipping.', 'Called while priming is already in progress.', 'PoolableActorClasses were not generated ahead of time…', '%d actor classes found for priming.', '%d actor classes passed filtering…', 'Classes for actor pool priming') — zero ini/cvar literals."
+  },
+  {
+   "claim": "Whether `Pooling.PrimingFrameBudget` is a live registered cvar (and therefore settable from the user Engine.ini `[ConsoleVariables]`) is NOT established — its registration site is coverage-blocked.",
+   "grade": "I",
+   "load_bearing": false,
+   "evidence": "`strxref.py xref 0x07F0B108` -> `0 code references` with the tool's own warning: 'NOT proof of absence: the referencing page may simply not be decrypted in this dump (.text is 52.87% readable by page)'. `fkdis.py findptr 0x07F0B108` -> no data pointer either. Even if live, it is a budget knob, not the feature gate."
+  },
+  {
+   "claim": "`bEnablePooling` — the other pooling-shaped name — is a per-actor-class AssetRegistry TAG on AActor, not a global switch and not config.",
+   "grade": "M",
+   "load_bearing": false,
+   "evidence": "FBoolPropertyParams at .rdata 0x07F21160: NameUTF8 0x07F237D0 'bEnablePooling', flags 0x0020090000010015 (Edit|BlueprintVisible|BlueprintReadOnly|DisableEditOnInstance|AssetRegistrySearchable|Protected|NativeAccessSpecifierProtected — no 0x4000), GenFlags 0x4C, ArrayDim 1, ElemSize 1, SizeOfOuter 0x390, SetBitFunc 0x03368BE0 = `c681d202000001 c3` = `mov byte ptr [rcx+0x2d2],1; ret`. Consumer fn 0x3359D20 (.pdata EXACT, 3737 B) references 'AssetRegistry', '/Game/Loki', '/Game/Skunkworks', 'True', 'bEnablePooling', 'GeneratedClass', 'Adding %s to list of poolable actors.' — i.e. it discovers poolable classes by reading the asset tag."
+  },
+  {
+   "claim": "ANSWER TO THE LANE: the pooling feature is NOT config/ini-drivable. There is no injection-free ini fix.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "Composition of the five [M] claims above: the priming config struct has 0 UPROPERTIES and no consumer; both manager classes are CLASS_Intrinsic with no config flag; the single gate value is a non-config CPF_Edit bool baked into the game-state Blueprint CDO; ALokiGameState has 0 config properties out of 155; and no enable cvar exists. UE's GConfig only binds properties carrying CPF_Config/CPF_GlobalConfig, so no section/key in `%LOCALAPPDATA%\\SUPERVIVE\\Saved\\Config\\WindowsClient\\{Engine,Game}.ini` can reach any of this."
+  },
+  {
+   "claim": "The cheapest actual lever is a ONE-BYTE DATA POKE, this project's safest write class: `<ALokiGameState instance or BP CDO> + 0x898 = 1` (reflected UPROPERTY `bSupportsActorPoolPriming`, so the offset can be re-resolved BY NAME at runtime rather than hardcoded).",
+   "grade": "I",
+   "load_bearing": false,
+   "evidence": "Offset and property identity are [M] (claim 5). The poke itself is untested — graded [I] because I have not verified (a) that the spawn path re-reads this gate rather than an already-empty pool, nor (b) that PrimePools has not already passed its one-shot point by the time a shim could write. Hazard ladder from CLAUDE.md: nothing 0/22, bytecode 0/9, transient .text 4/12, standing .text 7/8 — a data poke is in the 0/22 class."
+  }
+ ],
+ "open_questions": [
+  "Does `SpawnPoolableActorFromClass{,Deferred}` returning NULL actually follow from this gate? I did not trace those functions. If they consult the same slot-90 virtual, poking +0x898 fixes them directly; if they merely find an empty pool, the poke must land BEFORE PrimePools runs (or PrimePools must be re-invoked).",
+  "PrimePools has two further early-outs after the feature gate ('Called while priming is already in progress.' and 'PoolableActorClasses were not generated ahead of time, looking for them now…'). Flipping the bool opens gate 1 only; the third path does a live AssetRegistry scan over /Game/Loki + /Game/Skunkworks for `bEnablePooling == True` tags, whose cost/behaviour at runtime is unknown.",
+  "Is FActorPoolManagerPrimingConfig used at all? It has zero reflected consumers, but a plain (non-UPROPERTY) C++ member of that type inside UActorPoolManager (0xF0 B) or ULokiActorPoolManager (0x1A8 B) would be invisible to every scan I ran. 168 bytes does not fit in 0xF0 alongside a UObject header, so if it is held anywhere it is by pointer or in a third class.",
+  "Why do exactly BP_LokiGameState_Tutorial and BP_LokiGameState_PvE_Holdout override it to False while the BR/Rounds/Battlefield states do not? If UE delta-serialisation semantics hold, that is a deliberate designer decision to disable pooling on the small/scripted maps — worth knowing before assuming enabling it is safe on LVL_Tutorial.",
+  "Is `Pooling.PrimingFrameBudget` a live registered cvar? Its registration page is undecrypted. If it is, it is settable with zero injection via `[ConsoleVariables]` in the user Engine.ini — useless as an enable, but it would be a free probe that the subsystem's cvar channel exists."
+ ],
+ "traps_hit": "\"Three, two caught mid-flight. (1) I scanned the whole image for `call [reg+0x2D0]` hoping to enumerate every slot-90 call site — that is meaningless: displacement 0x2D0 is an ordinary vtable slot for hundreds of unrelated classes and the scan returned ~450 hits. Caught because the one site I already knew (0x33560C5, the PrimePools gate) was buried among them with nothing to distinguish it. A raw displacement scan cannot identify a CLASS's vtable slot; discarded, and no claim rests on it. (2) I first decoded FStructParams' scalar tail as int32 fields, which made NumProperties read 0x00A80000 — nonsense. Caught by calibrating against a neighbouring record (FActorPool: `02 00 18 00`) and then VERIFYING that its PropertyArray really holds exactly 2 entries, plus the independent ICppStructOps `dword[rax+8]=0xa8` size store. The correct split is two 16-bit fields. (3) `vtables.py classes \\\"Priming\\\"` returned 0 — the handoff's trap #1 in a new dress. I did NOT record it as 'class absent / coverage-blocked'; suspecting the query led straight to the real answer, that it is not a class at all. Also worth flagging for the parent: I read the FStructParams out of .data, so I used the single-state s129 image and never merged2, per the mutable-globals rule; the one .rdata fact I did cross-check (the registration record at 0x07DDDE80) reproduces identically in merged2.\"",
+ "next_experiment": "\"Grade `ULokiActorPoolManager::SpawnPoolableActorFromClass` / `…Deferred` offline (same image, s129 — the pooling code ran in that process): disassemble them and answer one binary question — do they call the slot-90 virtual (`call qword ptr [r+0x2D0]` on a ULokiActorPoolManager `this`) or do they only test pool contents? That single read decides whether the fix is 'poke ALokiGameState+0x898 = 1 at any time' or 'poke it before PrimePools runs, then force PrimePools'. It costs zero launches and it is the only thing standing between this lane's result and an executable recipe. Second, cheaper still: `bpdump BP_LokiGameState_Battlefield`/`Rounds` CDO props to confirm the delta-serialisation reading that the BR states inherit TRUE — that establishes that pooling is expected to work on a game state that does not override it.\""
+}

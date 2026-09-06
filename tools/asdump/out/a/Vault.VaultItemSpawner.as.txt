@@ -1,0 +1,223 @@
+==============================================================================
+MODULE   Vault.VaultItemSpawner
+SOURCE   Vault/VaultItemSpawner.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_AVaultItemSpawner;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+AVaultItemSpawner@ AVaultItemSpawner()
+// 4 instr, 28 B bytecode, id=0x53ACE161, varspace=2
+------------------------------------------------------------------------------
+{
+    AVaultItemSpawner v2;
+
+    v2 = AVaultItemSpawner();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85451 q:0x26e6ed7f700; new AVaultItemSpawner   ctor=AVaultItemSpawner::AVaultItemSpawner
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x6FF1D716, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_AVaultItemSpawner);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e7b045058         ; __StaticType_AVaultItemSpawner
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+AVaultItemSpawner@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0x924DF116, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    AVaultItemSpawner v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_AVaultItemSpawner.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<AVaultItemSpawner>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e7b045058         ; __StaticType_AVaultItemSpawner
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972733            ; AVaultItemSpawner@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS(Abstract, meta=(IsBlueprintBase=true, Blueprintable=true))
+class AVaultItemSpawner : AActor
+// base /Script/Engine.Actor  ->  ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+==============================================================================
+{
+}
+
+------------------------------------------------------------------------------
+AVaultItemSpawner() const
+// 3 instr, 20 B bytecode, id=0xE0BBCA3F, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  FinConstruct   q:0x26e6ed7f700         ; AVaultItemSpawner
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+TArray<TSubclassOf<ALokiBaseItem@>> GetItemsForUAV()
+// 18 instr, 136 B bytecode, id=0x22AAE537, varspace=5
+------------------------------------------------------------------------------
+{
+    TArray<TSubclassOf<ALokiBaseItem@>> v4;
+
+    v4 = TArray<TSubclassOf<ALokiBaseItem@>>();
+    __Evt_PushArgumentRef(v4);
+    __Evt_Execute(this, __STATIC_NAME(206));
+    __return = TArray<TSubclassOf<ALokiBaseItem@>>();
+    __return = v4;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e6ee89a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh0()
+    //     4  TYPEID         d:268448653             ; TArray<TSubclassOf<ALokiBaseItem@>>
+    //     6  PSF            rW0:4
+    //     7  CALLSYS        q:0x26e7861c480         ; void __Evt_PushArgumentRef(const ?&)
+    //    10  PshC4          d:206
+    //    12  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    15  PshRPtr
+    //    16  PshVPtr        rW0:0
+    //    17  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    20  PshVPtr        rW0:-2
+    //    21  CALLSYS        q:0x26e6ee89a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh0()
+    //    24  PSF            rW0:4
+    //    25  PshVPtr        rW0:-2
+    //    26  CALLSYS        q:0x26e793c98c0         ; TArray<TSubclassOf<ALokiBaseItem@>>& TArray<TSubclassOf<ALokiBaseItem@>>::opAssign(const TArray<TSubclassOf<ALokiBaseItem@>>&)
+    //    29  PSF            rW0:4
+    //    30  CALLSYS        q:0x26e793c9a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh2()
+    //    33  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: GetItemsForUAV
+TArray<TSubclassOf<ALokiBaseItem@>> GetItemsForUAV_Implementation()
+// 10 instr, 72 B bytecode, id=0xE3DEC3D2, varspace=4
+------------------------------------------------------------------------------
+{
+    TArray<TSubclassOf<ALokiBaseItem@>> v4;
+
+    __return = TArray<TSubclassOf<ALokiBaseItem@>>();
+    v4 = TArray<TSubclassOf<ALokiBaseItem@>>();
+    __return = v4;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e6ee89a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh0()
+    //     4  PSF            rW0:4
+    //     5  CALLSYS        q:0x26e6ee89a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh0()
+    //     8  PSF            rW0:4
+    //     9  PshVPtr        rW0:-2
+    //    10  CALLSYS        q:0x26e793c98c0         ; TArray<TSubclassOf<ALokiBaseItem@>>& TArray<TSubclassOf<ALokiBaseItem@>>::opAssign(const TArray<TSubclassOf<ALokiBaseItem@>>&)
+    //    13  PSF            rW0:4
+    //    14  CALLSYS        q:0x26e793c9a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh2()
+    //    17  RET            W0:4
+
+------------------------------------------------------------------------------
+ALokiDestructible@ GetDoor()
+// 9 instr, 64 B bytecode, id=0x0F62F0A3, varspace=3
+------------------------------------------------------------------------------
+{
+    ALokiDestructible v2;
+
+    __Evt_PushArgumentRef__ALokiDestructible(v2);
+    __Evt_Execute(this, __STATIC_NAME(207));
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  CALLSYS        q:0x26e77bc0e80         ; void __Evt_PushArgumentRef__ALokiDestructible(const ALokiDestructible@&)
+    //     4  PshC4          d:207
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  LOADOBJ        rW0:2
+    //    15  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: GetDoor
+ALokiDestructible@ GetDoor_Implementation()
+// 3 instr, 12 B bytecode, id=0x644CF895, varspace=2
+------------------------------------------------------------------------------
+{
+    ALokiDestructible v2;
+
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  FreeNullV8     wW0:2
+    //     1  LOADOBJ        rW0:2
+    //     2  RET            W0:2
+

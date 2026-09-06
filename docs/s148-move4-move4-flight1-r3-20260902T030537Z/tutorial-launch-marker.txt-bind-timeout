@@ -1,0 +1,55 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[S149] BIND_ONLY pid=41816 run=00000000139BC48C arms=0x02 forbidden=0xFD naturalInput=0 selfCal=0 ownerMode=0
+[S149] bind-only setup is persistent by design: WireAbilitySystem may create/cache the carrier ASC and InitAbilityActorInfo mutates actor-info state; no spawn, grant, activation, damage, bot wiring, Alive poke, GAS borrow, natural input, or S148 call.
+[BF] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF633B454A0 stub=0x15F8D7B1170 funcCls=0x15E389FB000 gameTid=43952
+[FS] arm: swapped=17563 BP UFunctions  (scan 3046 ms over 154931 objects, 34253 UFunctions total) -- NO .text WRITE
+[FS] hot: 0 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   (none -- the swapped functions are not being dispatched on the game thread)
+[FS] *** ARMED AND LIVE: hitsGT=1 allThreadCalls=1 after 8000 ms (~0 game-thread dispatches/s) ***
+[S149] PRESELECT_READY pc=0x15E8C480010 hero=0x15FF153D560 playerState=0x15F20767780 uniqueLocalOwner=1 reciprocalPossession=1 sameWorld=1
+[S149] ---- K_BIND ONLY: WireAbilitySystem + exactly one InitAbilityActorInfo ----
+[GAS] ===== S101: driving LokiPlayerState's own ability-system wiring chain =====
+[GAS] PlayerState @0x3C0 = 0x15F20767780 (BP_LokiPlayerState_C)
+[GAS] BEFORE AbilitySystemComponentStorage  @0xF00 = 0x15FA0D19A00 (LokiAbilitySystemComponent)
+[GAS] BEFORE AttributeSetStorage            @0xF08 = 0x0 (NULL)
+[GAS] BEFORE AttributeSetHealthStorage      @0xF10 = 0x0 (NULL)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[GAS] BEFORE IsAbilitySystemInitialized -> parm@0x0=0 res=0
+[GAS] HeroAffiliatedObject@0x4F8 = 0x15F8E94A950
+[GAS] BEFORE ASC 0x15FA0D19A00 Owner@0x408=0x15F8E94A950(LokiPlayerState_HeroAffiliated) Avatar@0x410=0x0(NULL)
+[GAS] cache: already populated (0x15FA0D19A00) -> leaving it alone
+[GAS] step1 heroClass(BP_HERO_Ronin_C)=0x15E44E18DD0
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[GAS] step1 ServerSetHeroClass(NewClass@0x0) ok
+[GAS] step1 HeroClass@0x620 = 0x15E44E18DD0 (already set)
+[GAS] PlayerState Role@0x160=3 RemoteRole@0x72=1  (3=ROLE_Authority)
+[GAS] hero Role@0x160=3
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[GAS] GetHeroAsset -> 0x15E0ACD6C80 (BP_HeroAsset_Ronin_C)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[FOW] GAS step2: OnRep_HeroClass (native) ok
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[FOW] GAS step3: TryUpdateAbilitySystem (native) ok
+[GAS] AFTER  AbilitySystemComponentStorage  @0xF00 = 0x15FA0D19A00 (LokiAbilitySystemComponent)
+[GAS] AFTER  AttributeSetStorage            @0xF08 = 0x0 (NULL)
+[GAS] AFTER  AttributeSetHealthStorage      @0xF10 = 0x0 (NULL)
+[GAS] AFTER  ASC 0x15FA0D19A00 Owner@0x408=0x15F8E94A950(LokiPlayerState_HeroAffiliated) Avatar@0x410=0x0(NULL)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[GAS] AFTER  IsAbilitySystemInitialized -> parm@0x0=0 res=0
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[GAS] GetLokiAbilitySystem_BP -> 0x15FA0D19A00 (LokiAbilitySystemComponent)
+[GAS] ===== RESULT: initialised 0 -> 0  *** STILL NOT INITIALISED *** =====
+[FS] t=+15s hitsGT=1 called=0 allThreadCalls=1 swapped=17563
+[S149] CALL_ISSUED pid=41816 run=00000000139BC48C callCount=1 asc=0x15FA0D19A00 owner=0x15F8E94A950 avatar=0x15FF153D560 persistentSetup=yes
+[BF] InitAbilityActorInfo returned ok
+[S149] funcswap drain complete; no admitted FsThunk body/OnPI overlaps restoration; new/prefetched roots parked at gate
+[FS] disarm: restored=17563 of 17563 swapped (scan 3000 ms, 34253 UFunctions live)
+[S149] callbacks SEALED; delayed prefetched thunk roots are no-dispatch
+[S149] CLEANUP restoreCountExact=1 repairScanComplete=1 verifyScanComplete=1 callbacksSealed=1 cleanupFaulted=0 postRestoreQuiesced=1 swapped=17563 restored=17563 residualRepaired=0 residualRemaining=0 postRestoreEntries=1 entryPendingRemaining=0 parkedRemaining=0 activeRemaining=0 mutationRootsRemaining=0
+[S149] terminal witness collected after sealed callback drain
+[S149] POST_BIND pid=41816 run=00000000139BC48C callCount=1 setupFaulted=0 initFaulted=0 terminalRevalidated=1 localAuthorityStable=0 pcLive=1 possessedHeroStable=1 heroLive=1 ascLive=1 ascStorageResolved=1 ascStorageReadable=1 ascStable=1 avatarPropertyResolved=1 avatarSlotReadable=1 avatarLive=1 avatarMatchesHero=1 pc=0x15E8C480010 hero=0x15FF153D560 asc=0x15FA0D19A00 avatar=0x15FF153D560
+[S149] POST_BIND_OWNER pid=41816 run=00000000139BC48C ownerPropertyResolved=1 ownerSlotReadable=1 ownerLive=1 ownerMatchesCarrier=1 carrierPropertyResolved=1 carrierSlotReadable=1 carrierLive=1 carrierStable=1 carrierAscPropertyResolved=1 carrierAscSlotReadable=1 carrierAscStable=1 carrier=0x15F8E94A950 owner=0x15F8E94A950
+[S149] RESULT pid=41816 run=00000000139BC48C outcome=BIND_REFUSED issues=0x00080000 funcsRestoreVerified=yes postRestoreQuiesced=yes residualRemaining=0 postRestoreEntries=1
+[BF] worker done (hits=1 hitsGT=1)

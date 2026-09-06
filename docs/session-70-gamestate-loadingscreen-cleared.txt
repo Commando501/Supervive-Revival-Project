@@ -1,0 +1,74 @@
+SESSION 70 — DS ROUTE: ALokiGameState schema-injected → CLIENT LEAVES THE LOADING SCREEN into the live tutorial world
+====================================================================================================================
+Date: 2026-07-11 (autonomous, log-driven). Continues S69 (loading-screen stall diagnosed + LokiGameState rep schema
+captured live). Goal: write + wire + live-test the ALokiGameState mirror so the client hydrates a real GameState and
+leaves the loading screen. RESULT: ★ ACHIEVED. ★ The client accepts the replicated GameState (no desync), enters its
+own LokiGameState, runs ALokiGameState::BeginPlay, primes gameplay actor pools, and sits stable IN LVL_Tutorial 2+ min
+(spectator; connection healthy, no timeout). The S62/S69 loading-screen wall is DOWN. Next gate = a possessed hero pawn.
+
+WHAT WAS BUILT (unreal-stub/Source/Loki/)
+-----------------------------------------
+- LokiGameStateStub.{h,cpp}: ALokiGameState : AGameStateBase (UCLASS → path /Script/Loki.LokiGameState, by-path bind
+  like LokiPlayerState_Missions). Mirrors all 43 replicated LokiGameState props in the exact S69 field order + nested
+  USTRUCTs FLokiSharedMatchStartDetails / FSharedMatchStartParticipant (engine FPrimaryAssetId) + mirror enums
+  ELokiRoundPhase (=SUPERVIVE ERoundPhase, EGP_*) + ELokiDayNightStateMirror. Derives straight from AGameStateBase
+  (LokiGameStateBase adds 0 net props).
+- LokiStubGameMode: GameStateClass = ALokiGameState + InitGameState() seeds a PLAYING state
+  (CurrentPhase=EGP_SpawnSelect(4), RoundStartTime, NumTeams=1, MatchStartDetails.MatchID).
+- LokiNetDriver::IsClassNetCacheDivergent: AGameStateBase un-suppressed (WorldSettings/DefaultPawn stay).
+- Loki.cpp: boot DumpClassNetCacheLayout(ALokiGameState) + a new StripReplicatedFlag() helper (below).
+
+THE THREE BUGS FOUND + FIXED (all via the boot DumpClassNetCacheLayout + the crash asserts — headless, no guessing)
+--------------------------------------------------------------------------------------------------------------------
+1. GameStateBase 5-vs-4 rep misalignment (boot dump). Stock UE5.4 AGameStateBase replicates the DEPRECATED float
+   ReplicatedWorldTimeSeconds AND the Double; SUPERVIVE replicates ONLY the Double (S69: 4 net props). The extra float
+   at RepIndex 14 shifted EVERY LokiGameState RepIndex by 1. FIX: Loki.cpp StripReplicatedFlag(AGameStateBase,
+   "ReplicatedWorldTimeSeconds") clears its CPF_Net before the ClassReps rebuild → GameStateBase yields 4 reps,
+   LokiGameState starts at RepIndex 15 (boot-dump verified: matches the client).
+2. bIsPushBased assert #1 (server crash on GameState replicate): "Assertion failed: bIsPushBased == Other.bIsPushBased
+   [CoreNet.h:331]". FLifetimeProperty RepIndex collision — the stripped float kept a stale RepIndex colliding with the
+   Double (different push settings). Parking its RepIndex at a sentinel + RemoveAll was NOT enough (below).
+3. bIsPushBased assert #2 (ROOT). AGameStateBase::GetLifetimeReplicatedProps registers its props PUSH-BASED
+   (DOREPLIFETIME_WITH_PARAMS_FAST); our runtime ClassReps rebuild (ForceSetUpReplicationData) + non-push DOREPLIFETIME
+   props are inconsistent with push model → the assert. Disabling push model via net.IsPushModelEnabled=0 in
+   DefaultEngine.ini [ConsoleVariables] did NOT take (log still: "PushModel HandleCreation is now enabled"). *** THE FIX
+   THAT WORKED: *** ALokiGameState::GetLifetimeReplicatedProps DELIBERATELY does NOT call AGameStateBase's Super. It
+   calls AActor::GetLifetimeReplicatedProps, then registers the 4 GameStateBase props BY NAME, NON-PUSH
+   (AddGSBaseLifetimeProp: FindFProperty → OutLifetimeProps.Add(FLifetimeProperty(RepIndex))), then our 43 (non-push).
+   All-non-push + float-free → the lifetime list is internally consistent → no assert. Push is a server dirty-tracking
+   optimization only; the WIRE is identical. (The strip #1 is still required for ClassReps alignment.)
+
+REUSABLE LESSONS (for the next mirror — pawn/PlayerState/etc.)
+-------------------------------------------------------------
+- To mirror an ENGINE-derived replicated class in this runtime-ClassReps-rebuild stub, do NOT call the engine base's
+  GetLifetimeReplicatedProps (push-based FAST macros clash). Register the base's replicated props BY NAME, non-push,
+  via FindFProperty + FLifetimeProperty(RepIndex), then your own via plain DOREPLIFETIME. Call AActor::Get... for the
+  AActor tier.
+- Watch for stock engine props the SUPERVIVE client DOESN'T replicate (deprecated float ReplicatedWorldTimeSeconds).
+  StripReplicatedFlag(Class, "Prop") before the rep-data rebuild aligns the count. Verify with the boot
+  DumpClassNetCacheLayout BEFORE launching a client — it caught the 5-vs-4 shift with zero wasted launches.
+- net.IsPushModelEnabled=0 via ini [ConsoleVariables] did NOT disable push model here (still logged enabled). Don't
+  rely on it; control the lifetime list directly instead.
+
+LIVE EVIDENCE (client Loki.log; stub docs/ds-server.log)
+--------------------------------------------------------
+Stub: InitGameState seeded ALokiGameState LokiGameState_0 CurrentPhase=EGP_SpawnSelect(4); Join succeeded; NO
+  Assertion/Critical error; stub stays alive.
+Client: TravelCompleted → NO "Invalid replicated field" → "LogLokiGameState: Entering game state LokiGameState_<n>"
+  (the REAL LokiGameState replica, not BP_LoginGameState) → "[ALokiGameState::BeginPlay] Default HeightMapType: Built"
+  → LogActorPooling primes minions/projectiles/gems ("Creation of primed actors is complete") → skips heroes "not
+  picked in the current match" (reads match state) → "Sending performance snapshot (Map: LVL_Tutorial, Mode: None)"
+  every minute → [UIREADY] TryUIReady SUCCESS. Stable 2+ min, NO timeout/disconnect (the S69→earlier-S70 15s
+  ConnectionTimeout is GONE now that the server survives + streams the GameState).
+
+STATE / NEXT (handoff)
+----------------------
+The client is a SPECTATOR in the live tutorial world (LogLokiBlueprint: "GetLocalLokiPlayerState failed to get a
+player state" — no hero pawn yet). NEXT GATE (handoff plan step 3, where the DS route pays off): the SERVER spawns +
+possesses a hero pawn for the connecting PC and triggers the tutorial drop-in (LokiStubGameMode PostLogin/RestartPlayer;
+DefaultPawn currently suppressed in IsClassNetCacheDivergent — a hero pawn will need the same un-suppress +
+schema-inject treatment, OR use the real round gamemode's spawn once the server runs it). Also: the seed used
+RoundStartTime=0 (InitGameState fires at world time 0) — fine for the loading-screen exit; refine with real times when
+wiring the round. Config unchanged (ags address 127.0.0.1:7777; stub ModifyClientTravelLevelURL→LVL_Tutorial). At
+handoff the game + stub were LEFT RUNNING (client spectating LVL_Tutorial) so the result can be viewed; kill both
+before the next rebuild/test.

@@ -1,0 +1,633 @@
+// ============================================================================
+//  MODULE   Barracuda.Shop.BarracudaShopItemListWidget
+//  SOURCE   Barracuda/Shop/BarracudaShopItemListWidget.as
+//  CONTENT  1 class(es), 15 function(s), 0 enum(s), 1 global(s), 2280 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaShopItemListWidget;
+
+UBarracudaShopItemListWidget@ UBarracudaShopItemListWidget()   // traits=0x20
+{
+    v2 = UBarracudaShopItemListWidget();
+    return v2;
+}
+/* ---- UBarracudaShopItemListWidget: 7 dwords / 4 instructions (cache offset 0x34e75) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84376 UBarracudaShopItemListWidget          
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ UBarracudaShopItemListWidget::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UBarracudaShopItemListWidget);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x34f3e) ----
+    0000  PshGPtr       __StaticType_UBarracudaShopItemListWidget   
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaShopItemListWidget : UUserWidget
+// unreal base : /Script/UMG.UserWidget
+// C++ header  : ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+// static class global: __StaticType_UBarracudaShopItemListWidget
+{
+    UBarracudaShopItemListWidget()   // traits=0x21
+    {
+        return;
+    }
+    /* ---- UBarracudaShopItemListWidget: 5 dwords / 3 instructions (cache offset 0x36935) ----
+        0000  PshVPtr       this                                        
+        0004  FinConstruct  UBarracudaShopItemListWidget                
+        0010  RET           2                                           
+    */
+
+    void ClearItemContainer()   // traits=0x20
+    {
+        __Evt_Execute(this, n"ClearItemContainer");
+        return;
+    }
+    /* ---- ClearItemContainer: 11 dwords / 6 instructions (cache offset 0x35032) ----
+        0000  PshC4         108                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=ClearItemContainer, BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+    void ClearItemContainer_Implementation()   // traits=0x20
+    {
+        return;
+    }
+    /* ---- ClearItemContainer_Implementation: 1 dwords / 1 instructions (cache offset 0x350f8) ----
+        0000  RET           2                                           
+    */
+
+    void AddItemToContainer(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        __Evt_PushArgument(ItemClass, typeid(TSubclassOf));
+        __Evt_Execute(this, n"AddItemToContainer");
+        return;
+    }
+    /* ---- AddItemToContainer: 17 dwords / 9 instructions (cache offset 0x35228) ----
+        0000  TYPEID        268448387                                     ; TSubclassOf
+        0008  PshVPtr       ItemClass                                   
+        000C  CALLSYS       __Evt_PushArgument                          
+        0018  PshC4         109                                         
+        0020  CALLSYS       __STATIC_NAME                               
+        002C  PshRPtr                                                   
+        0030  PshVPtr       this                                        
+        0034  CALLSYS       __Evt_Execute                               
+        0040  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=AddItemToContainer, BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+    void AddItemToContainer_Implementation(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        return;
+    }
+    /* ---- AddItemToContainer_Implementation: 1 dwords / 1 instructions (cache offset 0x35340) ----
+        0000  RET           4                                           
+    */
+
+    void EventFinishedAddingItems()   // traits=0x20
+    {
+        __Evt_Execute(this, n"EventFinishedAddingItems");
+        return;
+    }
+    /* ---- EventFinishedAddingItems: 11 dwords / 6 instructions (cache offset 0x3543c) ----
+        0000  PshC4         110                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=EventFinishedAddingItems, BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+    void EventFinishedAddingItems_Implementation()   // traits=0x20
+    {
+        return;
+    }
+    /* ---- EventFinishedAddingItems_Implementation: 1 dwords / 1 instructions (cache offset 0x35508) ----
+        0000  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=Construct, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Construct_Implementation()   // traits=0x20
+    {
+        v4 = UGameEventRouterSubsystem::GetUIGameEventRouter(__WorldContext);
+        if (v4 != nullptr) {
+            v11 = false;
+            v10 = FUIEvent_Barracuda_Shop_ToggleVisibility();
+            v24 = v4.RegisterForEvent(this, v10, typeid(FUIEvent_Barracuda_Shop_ToggleVisibility), nullptr, n"OnToggleVisibility", v11);
+            v11 = false;
+            v26 = FUIEvent_Barracuda_Shop_FilterUpdated();
+            v24 = v4.RegisterForEvent(this, v26, typeid(FUIEvent_Barracuda_Shop_FilterUpdated), nullptr, n"OnFilterUpdated", v11);
+        }
+        this.UpdateVisuals();
+        return;
+    }
+    /* ---- Construct_Implementation: 76 dwords / 44 instructions (cache offset 0x3560a) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetUIGameEventRouter                        
+        0018  STOREOBJ      v4                                          
+        001C  CmpPtrNull    v4                                          
+        0020  JZ            62                                            -> L0120
+        0028  SetV1         v11 0                                       
+        0030  PshV4         v11                                         
+        0034  PshC4         18                                          
+        003C  CALLSYS       __STATIC_NAME                               
+        0048  PshRPtr                                                   
+        004C  PshNull                                                   
+        0050  TYPEID        67121338                                      ; FUIEvent_Barracuda_Shop_ToggleVisibility
+        0058  PSF           v10                                         
+        005C  CALLSYS       FUIEvent_Barracuda_Shop_ToggleVisibility::$beh0
+        0068  PSF           v10                                         
+        006C  PshVPtr       this                                        
+        0070  PSF           v24                                         
+        0074  PshVPtr       v4                                          
+        0078  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        0084  PSF           v10                                         
+        0088  CALLSYS       FUIEvent_Barracuda_Shop_ToggleVisibility::$beh2
+        0094  PSF           v24                                         
+        0098  CALLSYS       FGameEventListenerHandle::$beh2             
+        00A4  SetV1         v11 0                                       
+        00AC  PshV4         v11                                         
+        00B0  PshC4         19                                          
+        00B8  CALLSYS       __STATIC_NAME                               
+        00C4  PshRPtr                                                   
+        00C8  PshNull                                                   
+        00CC  TYPEID        67121335                                      ; FUIEvent_Barracuda_Shop_FilterUpdated
+        00D4  PSF           v26                                         
+        00D8  CALLSYS       FUIEvent_Barracuda_Shop_FilterUpdated::$beh0
+        00E4  PSF           v26                                         
+        00E8  PshVPtr       this                                        
+        00EC  PSF           v24                                         
+        00F0  PshVPtr       v4                                          
+        00F4  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        0100  PSF           v26                                         
+        0104  CALLSYS       FUIEvent_Barracuda_Shop_FilterUpdated::$beh2
+        0110  PSF           v24                                         
+        0114  CALLSYS       FGameEventListenerHandle::$beh2             
+      L0120:
+        0120  PshVPtr       this                                        
+        0124  CALLINTF      84371                                         ; UBarracudaShopItemListWidget::UpdateVisuals
+        012C  RET           2                                           
+    */
+
+    void UpdateVisuals()   // traits=0x20
+    {
+        this.ClearItemContainer();
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        v2 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+        if (v2 == nullptr) {
+            return;
+        } else {
+            v10 = v2.Shop;
+            if (v10 == nullptr) {
+                return;
+            } else {
+                v14 = TArray();
+                v22 = v10.ItemGraphNodes.Iterator();
+                while (true) {
+                    v7 = v22.CanProceed;
+                    if (!v7) break;
+                    v32 = v22.Proceed();
+                    v34 = v32.GetValue();
+                    v32.GetValue();
+                    if (this.DoesItemPassFilter(v10, v34)) {
+                        v14.Add(v34);
+                    }
+                }
+                v42 = this.SortItemNodesByTotalCost(v14);
+                v48 = v42.Iterator();
+                while (true) {
+                    v7 = v48.CanProceed;
+                    if (!v7) break;
+                    v34 = v48.Proceed();
+                    v48.Proceed();
+                    this.AddItemToContainer(v34.Item);
+                }
+                this.EventFinishedAddingItems();
+            }
+        }
+        return;
+    }
+    /* ---- UpdateVisuals: 124 dwords / 78 instructions (cache offset 0x358d2) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84364                                         ; UBarracudaShopItemListWidget::ClearItemContainer
+        000C  PshGPtr       NAME_None                                   
+        0018  PshGPtr       __WorldContext                              
+        0024  CALLSYS       GetLokiGameState                            
+        0030  STOREOBJ      v4                                          
+        0034  PshVPtr       v4                                          
+        0038  CALL          84255                                         ; Get
+        0040  STOREOBJ      v2                                          
+        0044  CmpPtrNull    v2                                          
+        0048  JNZ           2                                             -> L0058
+        0050  JMP           101                                           -> L01EC
+      L0058:
+        0058  PshVPtr       v2                                          
+        005C  ADDSi         392 134230778                                 ; .Shop
+        0064  RDSPtr                                                    
+        0068  RefCpyV       v10                                         
+        006C  CmpPtrNull    v10                                         
+        0070  JNZ           2                                             -> L0080
+        0078  JMP           91                                            -> L01EC
+      L0080:
+        0080  PSF           v14                                         
+        0084  CALLSYS       TArray::$beh0                               
+        0090  PSF           v22                                         
+        0094  PshVPtr       v10                                         
+        0098  ADDSi         936 134230802                                 ; .ItemGraphNodes
+        00A0  CALLSYS       TMap::Iterator                              
+        00AC  JMP           26                                            -> L011C
+      L00B4:
+        00B4  SUSPEND                                                   
+        00B8  PSF           v22                                         
+        00BC  CALLSYS       TMapIterator::Proceed                       
+        00C8  CpyRtoV8      v32                                         
+        00CC  PshVPtr       v32                                         
+        00D0  CALLSYS       TMapIterator::GetValue                      
+        00DC  PshRPtr                                                   
+        00E0  RDSPtr                                                    
+        00E4  RefCpyV       v34                                         
+        00E8  PshVPtr       v34                                         
+        00EC  PshVPtr       v10                                         
+        00F0  PshVPtr       this                                        
+        00F4  CALLINTF      84373                                         ; UBarracudaShopItemListWidget::DoesItemPassFilter
+        00FC  JLowZ         5                                             -> L0118
+        0104  PSF           v34                                         
+        0108  PSF           v14                                         
+        010C  CALLSYS       TArray::Add                                 
+      L0118:
+        0118  FreeNullV8    v34                                         
+      L011C:
+        011C  LoadVObjR     v22 24 268448536                              ; .CanProceed
+        0128  RDR1          v7                                          
+        012C  CpyVtoR1      v7                                          
+        0130  JLowNZ        -33                                           -> L00B4
+        0138  PSF           v14                                         
+        013C  PSF           v42                                         
+        0140  PshVPtr       this                                        
+        0144  CALLINTF      84372                                         ; UBarracudaShopItemListWidget::SortItemNodesByTotalCost
+        014C  PSF           v48                                         
+        0150  PSF           v42                                         
+        0154  CALLSYS       TArray::Iterator                            
+        0160  JMP           15                                            -> L01A4
+      L0168:
+        0168  SUSPEND                                                   
+        016C  PSF           v48                                         
+        0170  CALLSYS       TArrayIterator::Proceed                     
+        017C  PshRPtr                                                   
+        0180  RDSPtr                                                    
+        0184  RefCpyV       v34                                         
+        0188  PshVPtr       v34                                         
+        018C  ADDSi         48 134230800                                  ; .Item
+        0194  PshVPtr       this                                        
+        0198  CALLINTF      84366                                         ; UBarracudaShopItemListWidget::AddItemToContainer
+        01A0  FreeNullV8    v34                                         
+      L01A4:
+        01A4  LoadVObjR     v48 16 268448537                              ; .CanProceed
+        01B0  RDR1          v7                                          
+        01B4  CpyVtoR1      v7                                          
+        01B8  JLowNZ        -22                                           -> L0168
+        01C0  PshVPtr       this                                        
+        01C4  CALLINTF      84368                                         ; UBarracudaShopItemListWidget::EventFinishedAddingItems
+        01CC  PSF           v42                                         
+        01D0  CALLSYS       TArray::$beh2                               
+        01DC  PSF           v14                                         
+        01E0  CALLSYS       TArray::$beh2                               
+      L01EC:
+        01EC  RET           2                                           
+    */
+
+    TArray<UBarracudaShopItemGraphNode@> SortItemNodesByTotalCost(const TArray<UBarracudaShopItemGraphNode@>& ItemNodes)   // traits=0x20
+    {
+        v4 = TArray();
+        v4 = arg_m4;
+        v8 = TArray();
+        v9 = v4.IsEmpty();
+        v9 = !v9;
+        while (v9) {
+            v10 = 0;
+            v12 = 0;
+            v13 = 0;
+            while (true) {
+                v14 = v4.Num();
+                if (v13 >= v14) break;
+                v14 = v4[v13].TotalCost;
+                v15 = v14;
+                if (v15 > v12) {
+                    v10 = v13;
+                    v12 = v15;
+                }
+                v13++;
+            }
+            v8.Add(v4[v10]);
+            v4.RemoveAtSwap(v10);
+            continue;
+        }
+        ItemNodes = TArray();
+        ItemNodes = v8;
+        return;
+    }
+    /* ---- SortItemNodesByTotalCost: 98 dwords / 58 instructions (cache offset 0x35cf5) ----
+        0000  PshVPtr       arg_m4                                      
+        0004  PSF           v4                                          
+        0008  CALLSYS       TArray::$beh0                               
+        0014  PSF           v4                                          
+        0018  CALLSYS       TArray::opAssign                            
+        0024  PSF           v8                                          
+        0028  CALLSYS       TArray::$beh0                               
+      L0034:
+        0034  PSF           v4                                          
+        0038  CALLSYS       TArray::IsEmpty                             
+        0044  CpyRtoV4      v9                                          
+        0048  NOT           v9                                          
+        004C  CpyVtoR1      v9                                          
+        0050  JLowZ         58                                            -> L0140
+        0058  SUSPEND                                                   
+        005C  SetV4         v10 0                                       
+        0064  SetV4         v12 0                                       
+        006C  SetV4         v13 0                                       
+        0074  JMP           23                                            -> L00D8
+      L007C:
+        007C  SUSPEND                                                   
+        0080  PshV4         v13                                         
+        0084  PSF           v4                                          
+        0088  Thiscall1     TArray::opIndex                             
+        0094  PshRPtr                                                   
+        0098  RDSPtr                                                    
+        009C  ADDSi         60 134230800                                  ; .TotalCost
+        00A4  PopRPtr                                                   
+        00A8  RDR4          v14                                         
+        00AC  CpyVtoV4      v15 v14                                     
+        00B4  CMPi          v15 v12                                     
+        00BC  JNP           4                                             -> L00D4
+        00C4  CpyVtoV4      v10 v13                                     
+        00CC  CpyVtoV4      v12 v15                                     
+      L00D4:
+        00D4  IncVi         v13                                         
+      L00D8:
+        00D8  PSF           v4                                          
+        00DC  CALLSYS       TArray::Num                                 
+        00E8  CpyRtoV4      v14                                         
+        00EC  CMPi          v13 v14                                     
+        00F4  JS            -32                                           -> L007C
+        00FC  PshV4         v10                                         
+        0100  PSF           v4                                          
+        0104  Thiscall1     TArray::opIndex                             
+        0110  PshRPtr                                                   
+        0114  PSF           v8                                          
+        0118  CALLSYS       TArray::Add                                 
+        0124  PshV4         v10                                         
+        0128  PSF           v4                                          
+        012C  CALLSYS       TArray::RemoveAtSwap                        
+        0138  JMP           -67                                           -> L0034
+      L0140:
+        0140  PshVPtr       ItemNodes                                   
+        0144  CALLSYS       TArray::$beh0                               
+        0150  PSF           v8                                          
+        0154  PshVPtr       ItemNodes                                   
+        0158  CALLSYS       TArray::opAssign                            
+        0164  PSF           v8                                          
+        0168  CALLSYS       TArray::$beh2                               
+        0174  PSF           v4                                          
+        0178  CALLSYS       TArray::$beh2                               
+        0184  RET           6                                           
+    */
+
+    bool DoesItemPassFilter(ABarracudaShop@ Shop, UBarracudaShopItemGraphNode@ ItemNode)   // traits=0x20
+    {
+        v4 = ItemNode.Item.GetDefaultObject();
+        if (v4 == nullptr) {
+            v5 = false;
+            return v5;
+        } else {
+            v10 = FString(Shop.ClientNameFilterString);
+            v5 = v10.IsEmpty();
+            v5 = !v5;
+            if (v5) {
+                v18 = v4.GetPlayerFacingName();
+                v22 = v18.ToString();
+                v24 = false;
+                v25 = true;
+                v5 = v22.Contains(v10, v25, v24);
+                v23 = false;
+                v26 = v23;
+                v32 = v4.ShopMetaData.MetaTags.Iterator();
+                while (true) {
+                    v23 = v32.CanProceed;
+                    if (!v23) break;
+                    v40 = v32.Proceed();
+                    v14 = v40.ToString();
+                    v24 = false;
+                    v25 = true;
+                    v23 = v14.Contains(v10, v25, v24);
+                    v26 = v23;
+                    if (v26) {
+                        break;
+                    }
+                }
+                v23 = v5;
+                v23 = !v23;
+                if (!v23) {
+                    v23 = 0;
+                } else {
+                    v45 = v26;
+                    v45 = !v45;
+                    v23 = v45;
+                }
+                if (v23) {
+                    v45 = false;
+                    return v45;
+                }
+            }
+            v62 = FGameplayTagContainer();
+            v62.GameplayTags.Append(Shop.ClientTagFilters);
+            v23 = Loki::HasAllMatchingGameplayTags(v4, v62);
+            v23 = !v23;
+            if (v23) {
+                v45 = false;
+                return v45;
+            } else {
+                v23 = true;
+            }
+        }
+        return v23;
+    }
+    /* ---- DoesItemPassFilter: 200 dwords / 118 instructions (cache offset 0x3601e) ----
+        0000  PshVPtr       ItemNode                                    
+        0004  ADDSi         48 134230800                                  ; .Item
+        000C  CALLSYS       TSubclassOf::GetDefaultObject               
+        0018  STOREOBJ      v4                                          
+        001C  CmpPtrNull    v4                                          
+        0020  JNZ           5                                             -> L003C
+        0028  SetV1         v5 0                                        
+        0030  CpyVtoR4      v5                                          
+        0034  JMP           184                                           -> L031C
+      L003C:
+        003C  PshVPtr       Shop                                        
+        0040  ADDSi         1016 134230802                                ; .ClientNameFilterString
+        0048  PSF           v10                                         
+        004C  CALLSYS       FString::$beh0                              
+        0058  PSF           v10                                         
+        005C  CALLSYS       FString::IsEmpty                            
+        0068  CpyRtoV4      v5                                          
+        006C  NOT           v5                                          
+        0070  CpyVtoR1      v5                                          
+        0074  JLowZ         121                                           -> L0260
+        007C  PSF           v22                                         
+        0080  PSF           v18                                         
+        0084  PshVPtr       v4                                          
+        0088  CALLSYS       ALokiBaseItem::GetPlayerFacingName          
+        0094  PSF           v18                                         
+        0098  CALLSYS       FText::ToString                             
+        00A4  PSF           v18                                         
+        00A8  CALLSYS       FText::$beh2                                
+        00B4  SetV1         v24 0                                       
+        00BC  PshV4         v24                                         
+        00C0  SetV1         v25 1                                       
+        00C8  PshV4         v25                                         
+        00CC  PSF           v10                                         
+        00D0  PSF           v22                                         
+        00D4  CALLSYS       FString::Contains                           
+        00E0  CpyRtoV4      v5                                          
+        00E4  SetV1         v23 0                                       
+        00EC  CpyVtoV4      v26 v23                                     
+        00F4  PSF           v32                                         
+        00F8  PshVPtr       v4                                          
+        00FC  ADDSi         1224 67114958                                 ; .ShopMetaData
+        0104  ADDSi         0 67121025                                    ; .MetaTags
+        010C  CALLSYS       TArray::Iterator                            
+        0118  JMP           38                                            -> L01B8
+      L0120:
+        0120  SUSPEND                                                   
+        0124  PSF           v32                                         
+        0128  CALLSYS       TArrayIterator::Proceed                     
+        0134  CpyRtoV8      v40                                         
+        0138  PSF           v14                                         
+        013C  PshVPtr       v40                                         
+        0140  CALLSYS       FText::ToString                             
+        014C  SetV1         v24 0                                       
+        0154  PshV4         v24                                         
+        0158  SetV1         v25 1                                       
+        0160  PshV4         v25                                         
+        0164  PSF           v10                                         
+        0168  PSF           v14                                         
+        016C  CALLSYS       FString::Contains                           
+        0178  CpyRtoV4      v23                                         
+        017C  CpyVtoV4      v26 v23                                     
+        0184  CpyVtoR1      v26                                         
+        0188  JLowZ         6                                             -> L01A8
+        0190  PSF           v14                                         
+        0194  CALLSYS       FString::$beh2                              
+        01A0  JMP           11                                            -> L01D4
+      L01A8:
+        01A8  PSF           v14                                         
+        01AC  CALLSYS       FString::$beh2                              
+      L01B8:
+        01B8  LoadVObjR     v32 16 268448539                              ; .CanProceed
+        01C4  RDR1          v23                                         
+        01C8  CpyVtoR1      v23                                         
+        01CC  JLowNZ        -45                                           -> L0120
+      L01D4:
+        01D4  CpyVtoV4      v23 v5                                      
+        01DC  NOT           v23                                         
+        01E0  CpyVtoR1      v23                                         
+        01E4  JLowNZ        4                                             -> L01FC
+        01EC  SetV4         v23 0                                       
+        01F4  JMP           5                                             -> L0210
+      L01FC:
+        01FC  CpyVtoV4      v45 v26                                     
+        0204  NOT           v45                                         
+        0208  CpyVtoV4      v23 v45                                     
+      L0210:
+        0210  CpyVtoR1      v23                                         
+        0214  JLowZ         13                                            -> L0250
+        021C  SetV1         v45 0                                       
+        0224  PSF           v22                                         
+        0228  CALLSYS       FString::$beh2                              
+        0234  PSF           v10                                         
+        0238  CALLSYS       FString::$beh2                              
+        0244  CpyVtoR4      v45                                         
+        0248  JMP           51                                            -> L031C
+      L0250:
+        0250  PSF           v22                                         
+        0254  CALLSYS       FString::$beh2                              
+      L0260:
+        0260  PSF           v62                                         
+        0264  CALLSYS       FGameplayTagContainer::$beh0                
+        0270  PshVPtr       Shop                                        
+        0274  ADDSi         1032 134230802                                ; .ClientTagFilters
+        027C  PSF           v62                                         
+        0280  ADDSi         0 67117741                                    ; .GameplayTags
+        0288  CALLSYS       TArray::Append                              
+        0294  PSF           v62                                         
+        0298  PshVPtr       v4                                          
+        029C  CALLSYS       HasAllMatchingGameplayTags                  
+        02A8  CpyRtoV4      v23                                         
+        02AC  NOT           v23                                         
+        02B0  CpyVtoR1      v23                                         
+        02B4  JLowZ         13                                            -> L02F0
+        02BC  SetV1         v45 0                                       
+        02C4  PSF           v62                                         
+        02C8  CALLSYS       FGameplayTagContainer::$beh2                
+        02D4  PSF           v10                                         
+        02D8  CALLSYS       FString::$beh2                              
+        02E4  CpyVtoR4      v45                                         
+        02E8  JMP           11                                            -> L031C
+      L02F0:
+        02F0  SetV1         v23 1                                       
+        02F8  PSF           v62                                         
+        02FC  CALLSYS       FGameplayTagContainer::$beh2                
+        0308  PSF           v10                                         
+        030C  CALLSYS       FString::$beh2                              
+        0318  CpyVtoR4      v23                                         
+      L031C:
+        031C  RET           6                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnToggleVisibility(const FUIEvent_Barracuda_Shop_ToggleVisibility& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.UpdateVisuals();
+        return;
+    }
+    /* ---- OnToggleVisibility: 4 dwords / 3 instructions (cache offset 0x36677) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84371                                         ; UBarracudaShopItemListWidget::UpdateVisuals
+        000C  RET           6                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnFilterUpdated(const FUIEvent_Barracuda_Shop_FilterUpdated& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.UpdateVisuals();
+        return;
+    }
+    /* ---- OnFilterUpdated: 4 dwords / 3 instructions (cache offset 0x367e4) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84371                                         ; UBarracudaShopItemListWidget::UpdateVisuals
+        000C  RET           6                                           
+    */
+
+}
+

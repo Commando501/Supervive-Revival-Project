@@ -1,0 +1,194 @@
+SESSION 53 — DEDICATED-SERVER MISSIONS: GATING RE-TEST (do today's fixes unblock the DS menu crash?)
+=====================================================================================================
+Date: 2026-07-06/07. Branch: dedicated-server-stub. Goal: before expanding the DS to replicate
+LokiPlayerState_Missions, re-test whether the DS-connected client still crashes at menu-load — since
+that crash (sessions 39-44) predates the roster/store client-side fixes that now work on the NORMAL client.
+
+SETUP (all reproduced cleanly with TODAY's build)
+-------------------------------------------------
+- Stub server: module UnrealEditor-Loki.dll is CURRENT (2026-07-02, session-41 PC-replication fixes;
+  `Build.bat LokiEditor Win64 Development` reported "Target is up to date", source tree clean).
+  Launched: UnrealEditor-Cmd.exe Loki.uproject /Engine/Maps/Entry?listen -game -server -Port=7777
+  -nullrhi -NoSplash -Unattended -abslog=docs\ds-server-s53.log.
+  Server came up: "LokiNetDriver ... listening on port 7777", NetworkChecksumMode=None,
+  LokiStatelessConnect handler, "Bringing World LVL_LobbyV2_Persistent up for play". UDP 0.0.0.0:7777 confirmed.
+- Client: launch-redirect.ps1 -Hook browse_hook.dll (today's ags rebuilt + run).
+
+RESULT — THE DS CONNECTION WORKS END-TO-END (reproduced session-41 state on today's build)
+------------------------------------------------------------------------------------------
+Client Loki.log:
+  UEngine::Browse "127.0.0.1/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent"   (browse_hook redirect OK)
+  StatelessConnectHandlerComponent + Stateless Handshake (GameNetDriver)
+  LoadMap 127.0.0.1/.../LVL_LobbyV2_Persistent?game=/Script/Loki.LokiStubGameMode  + LoadMap complete
+  UPendingNetGame::TravelCompleted
+  LogPlatformStorefront: Unlockable heroes fetched: 25 heroes   (at login AND again ~57s into the lobby)
+Stub server log:
+  NotifyAcceptingConnection accepted from 127.0.0.1  -> AddClientConnection -> Client netspeed 100000
+  -> "Join succeeded: 9b9d2c..."  -> PC replicates -> ShouldReplicateActor SUPPRESSING PlayerState_1 /
+     DefaultPawn_1 / GameplayDebuggerCategoryReplicator_1 -> ServerVerifyViewTarget LiveReplay -> Cleanup.
+
+BUT THE CLIENT STILL CRASHES AT MENU-CONTENT LOAD — today's client-side fixes DO NOT unblock it
+------------------------------------------------------------------------------------------------
+Crash signature (client Loki.log, right at TravelCompleted): a burst of
+  LogSlate: InvalidateAllWidgets triggered. All widgets were invalidated  (xN)
+then ~30-71s later: LogSentrySdk: flushing session and queue before crashpad handler -> process gone.
+This is the SAME hero-content-load / widget-invalidation crash sessions 39-44 documented.
+  STAGE 1 (browse_hook only, today's ags):      crash ~71s after TravelCompleted.
+  STAGE 2 (browse_hook + catalog_store_fix):    catalog_store_fix injected + working (jz=1/1 unhook=1,
+    purchIters climbing) -> crash SOONER, ~30s. Opening the IsCatalogDataReady gate makes the roster
+    BUILD, which triggers the hero-content load, which is what CRASHES — so the roster fix ACCELERATES
+    the crash rather than preventing it. Exactly session-44's "the instant the heroes resolve and load,
+    the client crashes loading their content."
+
+CONCLUSION (the gating question is answered: NO)
+------------------------------------------------
+Today's ags + the roster/store client-side shims do NOT make the DS-connected client survive menu load.
+The crash is the pre-existing sessions-39-44 blocker, and it is a NETWORKED-SESSION crash (fatal here,
+non-fatal on the standalone/normal client where the roster now renders). Root-cause candidates, both
+from prior sessions, still both live:
+  (a) UNDER-REPLICATION: the stub SUPPRESSES PlayerState/DefaultPawn/GameState/etc. (to avoid
+      FClassNetCache divergence). Session 39 hypothesis: this leaves a client UObject without its
+      initial replicated state -> TArray::Add on a never-populated buffer (+0x2976FF0). Fixable via
+      B-lite full schema-injection (replicate those classes with SUPERVIVE's exact field layout so
+      NetIndices match + client hydrates). Session 40 estimate: 8-15h.
+  (b) D3D12 RENDER WALL: sessions 40-42 attributed it to FD3D12CommandContext; renderer workarounds
+      (NullRHI/DX11/Vulkan) were blocked by anti-cheat. Session 41 noted "proper PC replication did NOT
+      unwedge the D3D12 crash" — evidence it may be (at least partly) independent of replication.
+The two haven't been cleanly separated. THAT separation is the cheapest decision-relevant next step.
+
+=> The DS route for a VISIBLE missions page is STILL blocked by this menu-load crash. Adding
+   LokiPlayerState_Missions replication cannot deliver a visible result until the client survives the
+   connected menu load. Missions replication is additive C++ (schema = TArray<FMissionProgress>; the
+   FMissionProgress layout is RE'd in session-52 doc) but UNTESTABLE-to-visible until the crash is solved.
+
+RECOMMENDED NEXT STEP
+---------------------
+CHARACTERIZE THE CRASH DEFINITIVELY before investing in B-lite: capture a fresh minidump of the DS-
+connected crash and resolve the faulting module/address (D3D12 RHI class => render wall (a); a
+SUPERVIVE game/UObject TArray => under-replication (b)). If (b): B-lite full schema-injection is the
+path (and it doubles as the primitive needed for LokiPlayerState_Missions). If (a): the DS route is
+render-blocked and missions needs a different idea. Tooling: scratchpad/parse-any-dump.py (session 40).
+
+ARTIFACTS: docs/ds-server-s53.log (stub), docs/ds-client-s53*.out.log, docs/browse-hook-marker.txt.
+Client menu is DOWN after this test (was killed for the retest); relaunch normally (launch-redirect.ps1)
+to restore the working standalone menu.
+
+CRASH CHARACTERIZED (Stage-2 Sentry minidump, tools/re/parse_minidump.py)
+------------------------------------------------------------------------
+Sentry crashpad writes to <GameRoot>\Loki\.sentry-native\reports\<uuid>.dmp (NOT a UECC dir, and no
+Windows WER event — the game suppresses both). Parsed the fresh Stage-2 dump:
+  ExceptionCode = 0xC0000005  (ACCESS_VIOLATION)
+  ExceptionInformation[0] = 8  => **DEP / EXECUTE violation** (0=read,1=write,8=execute)
+  ExceptionAddress = RIP = 0x7FF8F0400001   (the address it tried to EXECUTE)
+  SUPERVIVE-Win64-Shipping.exe base = 0x7FF682A80000 (range .. ~0x7FF68D461000)
+  => the fault address 0x7FF8F0400001 is FAR ABOVE the exe and sits in a GAP above every loaded module
+     (highest system DLLs ~0x7FF8EDxxxxxx; d3d12.dll @0x7FF8EC05xxxx does NOT contain it). The odd
+     `...0001` low bits are not a valid instruction start.
+DECISIVE READ: this is a **corrupted-function-pointer / bad-vtable EXECUTE-AV** — the code CALLED
+through a garbage pointer into unmapped memory. It is NOT a D3D12 RHI internal crash (those fault
+INSIDE d3d12.dll / the exe's RHI code with a read/write AV), and NOT session-40's +0x2976FF0 write-AV.
+This is the classic signature of a **partially-initialized / corrupted UObject** (a vtable or delegate
+field left as garbage) being invoked — i.e. it FAVORS the UNDER-REPLICATION hypothesis (a): the client
+spawns a replica but never receives the full initial state we SUPPRESS, so a method/delegate call on it
+jumps to garbage. => the B-lite schema-injection path (properly replicate the suppressed classes) is the
+indicated fix, and it doubles as the LokiPlayerState_Missions replication primitive.
+CAVEATS (why a confirming capture is prudent before the 8-15h B-lite investment): (1) this is ONE dump,
+from the catalog_store_fix (roster-building) variant; (2) Sentry's dump did NOT include the faulting
+thread's stack, so the CALLER (which code jumped to the bad ptr) is unknown; (3) sessions 40-42
+attributed a (possibly different) crash to D3D12. A VEH crash-capture (tools/sigbypass-mod/
+scan_on_enum_veh.cpp pattern — logs RIP + module + module_RVA + GP regs + return addr BEFORE Sentry)
+injected into the DS-connected client would name the caller and confirm the object, definitively
+separating (a) from (b). tools/re/parse_minidump.py added for future Sentry-dump reads.
+
+VEH-CAPTURE FOLLOW-UP (the caller, via minidump stack walk)
+-----------------------------------------------------------
+Built tools/sigbypass-mod/veh_capture.cpp (pure read-only AddVectoredExceptionHandler(1) logger) and
+injected it into the DS-connected client. IT DID NOT FIRE — the crash bypasses the in-process VEH chain
+(Sentry's crashpad out-of-process handler / a __fastfail pre-empts first-chance VEH). So VEH is NOT a
+usable capture path for this crash. INSTEAD, parse_minidump.py was extended to read the crashing
+thread's STACK from the ThreadList (stream 3) — crashpad DOES include it. Results:
+  - Clean STAGE-1 dump (browse_hook + veh only, NO catalog_store_fix; 22:21 run):
+      0xC0000005  av_op=8 (EXECUTE)  RIP=fault=0x7FF8F0400001 (not in any module)  RSP=0x7C817DFC78
+      stack: [rsp+0x00]=KERNEL32.DLL+0x17374 (BaseThreadInitThunk)
+             [rsp+0x30]=ntdll.dll+0x4CC91   (RtlUserThreadStart)
+    => The shallow kernel32-thread-init -> ntdll-thread-start frame with the fault AT the target means a
+       WORKER THREAD WAS CREATED WITH A GARBAGE START-ROUTINE POINTER (0x7FF8F0400001) and the OS
+       thread-launch path called it. A corrupted function pointer spun into a thread. DETERMINISTIC
+       (same address in the 21:46 Stage-2 dump too).
+  - NOTE the catalog_store_fix variant ALSO produces a SECOND, DIFFERENT crash: read-AV INSIDE
+    catalog_store_fix.dll (RIP in its manual-mapped region) — its 300ms CatalogEntry poke loop reads a
+    bad entry in the DS-session catalog state. So DO NOT inject catalog_store_fix for DS-crash RE; it
+    adds noise. (Also means catalog_store_fix is unsafe in the DS-connected context as-is.)
+
+WHAT THE CALLER TELLS US (and its limit)
+----------------------------------------
+The crash is UNAMBIGUOUSLY a MEMORY-CORRUPTION crash — a garbage function pointer used as a thread
+start routine — NOT a D3D12 "can't render" wall (the fault target is unmapped garbage, not inside
+d3d12.dll/RHI). This KEEPS the B-lite under-replication fix viable (a corrupted/partially-initialized
+replicated object, or a use-after-free of one, yields a garbage callback that gets threaded). BUT the
+stack manifests at thread-START (kernel32/ntdll frames only) — DOWNSTREAM of the corruption — so it
+does NOT pin the exact corrupted UObject. Caveats remain: (1) prior sessions 40-42 attributed a
+DIFFERENT address (+0x2976FF0, D3D12-adjacent) to this crash => there is run/state variation;
+(2) the specific corrupt object is unidentified. Pinning it needs deeper RE (e.g. break on the
+CreateThread whose lpStartAddress==0x7FF8F0400001, or a full symbolized stack walk).
+
+NET FOR THE DECISION: the crash is corruption, not a render wall => B-lite (properly replicate the
+suppressed PlayerState/GameState/etc. so the client's objects fully hydrate) is the indicated,
+still-viable path to BOTH the crash fix and LokiPlayerState_Missions replication — but it is a real
+multi-session bet (session-40 est. 8-15h) whose success hinges on the corruption being the
+under-replication we suppress. Tools added: tools/sigbypass-mod/veh_capture.cpp,
+tools/re/parse_minidump.py (now reads exception + thread-stack caller chain).
+
+PIN-THE-OBJECT ATTEMPT -> BLOCKED BY ANTI-TAMPER (2026-07-07)
+------------------------------------------------------------
+Built tools/sigbypass-mod/createthread_probe.cpp to hook ntdll!NtCreateThreadEx and log any thread
+creation whose StartRoutine is UNMAPPED (== the crash), with caller + Argument-object class. On inject
+it found **NtCreateThreadEx IS ALREADY HOOKED**: prologue = `90 E9 AA 5C A1 00` (nop; jmp +0xA15CAA to
+an allocated region ~0x7FF8F0C8xxxx above ntdll) instead of the stock syscall stub `4C 8B D1 B8 ..`.
+The probe correctly BAILED (did not double-hook). => the game's ANTI-TAMPER / packer owns thread
+creation. Only non-Windows module in the dump = **preloader.dll** (0x9000, a loader/anti-tamper shim);
+the NtCreateThreadEx hook handler lives in VirtualAlloc'd memory (no module) — classic packer behavior.
+REFRAME: the crash's garbage thread-start 0x7FF8F0400001 sits JUST ABOVE ntdll (ntdll ~0x7FF8F01D0000..
+0x7FF8F03D0000), i.e. in the SAME anti-tamper memory neighborhood as its NtCreateThreadEx hook. So the
+crash may be ENTANGLED WITH THE ANTI-TAMPER (its thread-monitoring reacting to our abnormal
+DS-connected + injected-hook state), NOT purely the under-replication we suppress. This WEAKENS the
+B-lite bet (B-lite fixes replication; it would NOT fix an anti-tamper-induced crash).
+CONSEQUENCE: pinning the exact corrupted object is BLOCKED without first defeating/working-around the
+anti-tamper's own hooks (a separate hard problem). Two cheaper forward tests that SIDESTEP both the
+pin and the anti-tamper:
+  (i) SERVER-SIDE incremental un-suppress: in LokiNetDriver::IsClassNetCacheDivergent, un-suppress ONE
+      class at a time (PlayerState, then GameState, ...) and observe whether the crash MOVES/CHANGES/
+      clears. If un-suppressing a class changes the crash => under-replication of THAT class is real =>
+      B-lite on it is warranted. If the crash is identical regardless => it's NOT our suppression (more
+      likely anti-tamper / the injected browse_hook itself) => B-lite won't help.
+  (ii) CONTROL: launch the DS-connected client with browse_hook ONLY (already done — crashes) vs. the
+      NORMAL standalone client with the SAME injected DLL set (browse_hook) but no DS — if the normal
+      client with browse_hook also crashes, browse_hook/anti-tamper is implicated, not the DS.
+Tools added: tools/sigbypass-mod/createthread_probe.cpp (bails if target pre-hooked),
+tools/re/dump_all_threads.py (all-thread stack walker; noisy without unwind info).
+
+*** INCREMENTAL UN-SUPPRESS TEST — *** BREAKTHROUGH: THE CRASH IS OUR PlayerState SUPPRESSION *** ***
+(2026-07-07) Single-variable change: removed `Actor->IsA<APlayerState>()` from
+LokiNetDriver::IsClassNetCacheDivergent (unreal-stub/Source/Loki/LokiNetDriver.cpp), rebuilt LokiEditor
+(Build.bat, ~240s), restarted the stub, reconnected the client (browse_hook ONLY — no catalog_store_fix,
+no probes). RESULT:
+  - Stub NO LONGER suppresses PlayerState (NetCacheDump: [11] PlayerState RepIndex=11; replicates it).
+    Still suppresses GameStateBase / DefaultPawn / WorldSettings / GameplayDebuggerCategoryReplicator.
+  - CLIENT SURVIVED **7+ MINUTES** connected (alive_sec=428 and counting), **ZERO crashes**
+    (grep crashpad/Fatal = 0), connection stays open (Join succeeded, no Close/Cleanup), and it reaches
+    **`LogLokiPlayerState: [UIREADY] ALokiBaseController::TryUIReady SUCCESS`** + fetches "25 heroes"
+    repeatedly (6x over 6 min) + normal Vivox activity = a healthy, stable DS-connected menu.
+  - vs BASELINE (PlayerState suppressed): crashed in ~30-71s with the garbage-thread execute-AV.
+=> DEFINITIVE: the DS menu-load crash was the client operating on an UNDER-HYDRATED PlayerState replica
+   (spawned because we opened its channel, but never given ANY property bunch because we suppressed it, so
+   a CDO-default/garbage field — the callback that got threaded to 0x7FF8F0400001 — was used). Letting
+   PlayerState REPLICATE (even with STOCK UE5.4 schema — NetworkChecksumMode=None makes the client tolerate
+   the field divergence rather than fatally reject) hydrates the object and the crash is GONE.
+   The anti-tamper/browse_hook worry is FALSIFIED. B-lite is not just viable — a big chunk of it
+   (PlayerState) works with ZERO schema-injection, just by un-suppressing.
+
+STATE NOW: a LIVE, STABLE, DS-connected client sitting at a working menu (PID this run = 6896), stub up
+(PID 61312). This is the platform to (1) un-suppress the remaining classes as needed for full stability,
+then (2) ADD LokiPlayerState_Missions replication (TArray<FMissionProgress>) + populate from
+missions_catalog.json -> client OnPSMissionsUpdated -> MissionsModel -> the Missions modal renders.
+The DS route for missions is UNBLOCKED.

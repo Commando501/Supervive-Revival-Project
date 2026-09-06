@@ -1,0 +1,227 @@
+{
+"Alchemist": {
+"0": "Emote:AlchemistHi",
+"1": "SlotCosmetics:AVATAR_AlchemistHM",
+"2": "HeroCosmeticsBundle:AlchemistDefault_MAS",
+"3": "PlayerTitle:Alchemist",
+"4": "Emote:AlchemistBye",
+"5": "PlayerTitle:Mercury",
+"6": "SlotCosmetics:AVATAR_AlchemistHM2"
+},
+"BacklineHealer": {
+"0": "Emote:FlowHi",
+"1": "SlotCosmetics:AVATAR_FlowHM",
+"2": "HeroCosmeticsBundle:BacklineHealerDefault_MAS",
+"3": "PlayerTitle:Flow",
+"4": "Emote:FlowBye",
+"5": "PlayerTitle:Zeph",
+"6": "SlotCosmetics:AVATAR_FlowHM2"
+},
+"BountyHunter": {
+"0": "Emote:BountyHunterHi",
+"1": "SlotCosmetics:AVATAR_BountyHunterHM",
+"2": "HeroCosmeticsBundle:BountyHunterDefault_MAS",
+"3": "PlayerTitle:BountyHunter",
+"4": "Emote:BountyHunterBye",
+"5": "PlayerTitle:Carbine",
+"6": "SlotCosmetics:AVATAR_BountyHunterHM2"
+},
+"BurstCaster": {
+"0": "Emote:BurstCasterHi",
+"1": "SlotCosmetics:AVATAR_BurstCasterHM",
+"2": "HeroCosmeticsBundle:BurstCasterDefault_MAS",
+"3": "PlayerTitle:BustCaster",
+"4": "Emote:BurstCasterBye",
+"5": "PlayerTitle:Crysta",
+"6": "SlotCosmetics:AVATAR_BurstCasterHM2"
+},
+"Earthtank": {
+"0": "Emote:EarthtankHi",
+"1": "SlotCosmetics:AVATAR_EarthtankHM",
+"2": "HeroCosmeticsBundle:EarthtankDefault_MAS",
+"3": "PlayerTitle:Earthtank",
+"4": "Emote:EarthtankBye",
+"5": "PlayerTitle:Tetra",
+"6": "SlotCosmetics:AVATAR_EarthtankHM2"
+},
+"FarShot": {
+"0": "Emote:FarshotHi",
+"1": "SlotCosmetics:AVATAR_FarshotHM",
+"2": "HeroCosmeticsBundle:FarShotDefault_MAS",
+"3": "PlayerTitle:Farshot",
+"4": "Emote:FarshotBye",
+"5": "PlayerTitle:Saros",
+"6": "SlotCosmetics:AVATAR_FarshotHM2"
+},
+"Huntress": {
+"0": "Emote:HuntressHi",
+"1": "SlotCosmetics:AVATAR_HuntressHM",
+"2": "HeroCosmeticsBundle:HuntressDefault_MAS",
+"3": "PlayerTitle:Huntress",
+"4": "Emote:HuntressBye",
+"5": "PlayerTitle:Myth",
+"6": "SlotCosmetics:AVATAR_HuntressHM2"
+},
+"RONIN": {
+"0": "Emote:RoninHi",
+"1": "SlotCosmetics:AVATAR_RoninHM",
+"2": "HeroCosmeticsBundle:RoninDefault_MAS",
+"3": "PlayerTitle:Ronin",
+"4": "Emote:RoninBye",
+"5": "PlayerTitle:Brall",
+"6": "SlotCosmetics:AVATAR_RoninHM2"
+},
+"Reaper": {
+"0": "Emote:ReaperHi",
+"1": "SlotCosmetics:AVATAR_ReaperHM",
+"2": "HeroCosmeticsBundle:ReaperDefault_MAS",
+"3": "PlayerTitle:Reaper",
+"4": "Emote:ReaperBye",
+"5": "PlayerTitle:Nyx",
+"6": "SlotCosmetics:AVATAR_ReaperHM2"
+},
+"SHIELDBOT": {
+"0": "Emote:ShieldbotHi",
+"1": "SlotCosmetics:AVATAR_ShieldbotHM",
+"2": "HeroCosmeticsBundle:ShieldBotDefault_MAS",
+"3": "PlayerTitle:SHIELDBOT",
+"4": "Emote:ShieldbotBye",
+"5": "PlayerTitle:Oath",
+"6": "SlotCosmetics:AVATAR_ShieldbotHM2"
+},
+"Storm": {
+"0": "Emote:StormHi",
+"1": "SlotCosmetics:AVATAR_StormHM",
+"2": "HeroCosmeticsBundle:StormDefault_MAS",
+"3": "PlayerTitle:Storm",
+"4": "Emote:StormBye",
+"5": "PlayerTitle:Joule",
+"6": "SlotCosmetics:AVATAR_StormHM2"
+},
+"Succubus": {
+"0": "Emote:SuccubusHi",
+"1": "SlotCosmetics:AVATAR_SuccubusHM",
+"2": "HeroCosmeticsBundle:SuccubusDefault_MAS",
+"3": "PlayerTitle:Succubus",
+"4": "Emote:SuccubusBye",
+"5": "PlayerTitle:Eva",
+"6": "SlotCosmetics:AVATAR_SuccubusHM2"
+},
+"Wukong": {
+"0": "Emote:WukongHi",
+"1": "SlotCosmetics:AVATAR_WukongHM",
+"2": "HeroCosmeticsBundle:WukongDefault_MAS",
+"3": "PlayerTitle:Monkey",
+"4": "Emote:WukongBye",
+"5": "PlayerTitle:Wukong",
+"6": "SlotCosmetics:AVATAR_WukongHM2"
+},
+"assault": {
+"0": "Emote:AssaultHi",
+"1": "SlotCosmetics:AVATAR_AssaultHM",
+"2": "HeroCosmeticsBundle:AssaultDefault_MAS",
+"3": "PlayerTitle:assault",
+"4": "Emote:AssaultBye",
+"5": "PlayerTitle:Ghost",
+"6": "SlotCosmetics:AVATAR_AssaultHM2"
+},
+"beebo": {
+"0": "Emote:BeeboHi",
+"1": "SlotCosmetics:AVATAR_BeeboHM",
+"2": "HeroCosmeticsBundle:BeeboDefault_MAS",
+"3": "PlayerTitle:Penguin",
+"4": "Emote:BeeboBye",
+"5": "PlayerTitle:Beebo",
+"6": "SlotCosmetics:AVATAR_BeeboHM2"
+},
+"firefox": {
+"0": "Emote:OHaiThere",
+"1": "SlotCosmetics:AVATAR_FirefoxHM",
+"2": "HeroCosmeticsBundle:FireFoxDefault_MAS",
+"3": "PlayerTitle:Firefox",
+"4": "Emote:FirefoxBye",
+"5": "PlayerTitle:Felix",
+"6": "SlotCosmetics:AVATAR_FirefoxHM2"
+},
+"flex": {
+"0": "Emote:FlexHi",
+"1": "SlotCosmetics:AVATAR_FlexHM",
+"2": "HeroCosmeticsBundle:FlexDefault_MAS",
+"3": "PlayerTitle:Flex",
+"4": "Emote:FlexBye",
+"5": "PlayerTitle:Shiv",
+"6": "SlotCosmetics:AVATAR_FlexHM2"
+},
+"freeze": {
+"0": "Emote:FreezeHi",
+"1": "SlotCosmetics:AVATAR_FreezeHM",
+"2": "HeroCosmeticsBundle:FreezeDefault_MAS",
+"3": "PlayerTitle:freeze",
+"4": "Emote:FreezeBye",
+"5": "PlayerTitle:Celeste",
+"6": "SlotCosmetics:AVATAR_FreezeHM2"
+},
+"gunner": {
+"0": "Emote:GunnerHi",
+"1": "SlotCosmetics:AVATAR_GunnerHM",
+"2": "HeroCosmeticsBundle:GunnerDefault_MAS",
+"3": "PlayerTitle:Gunner",
+"4": "Emote:GunnerBye",
+"5": "PlayerTitle:Hudson",
+"6": "SlotCosmetics:AVATAR_GunnerHM2"
+},
+"hookguy": {
+"0": "Emote:HookguyHi",
+"1": "SlotCosmetics:AVATAR_HookguyHM",
+"2": "HeroCosmeticsBundle:HookGuyDefault_MAS",
+"3": "PlayerTitle:Hookguy",
+"4": "Emote:HookguyBye",
+"5": "PlayerTitle:Kingpin",
+"6": "SlotCosmetics:AVATAR_HookguyHM2"
+},
+"reshealer": {
+"0": "Emote:SeraphHi",
+"1": "SlotCosmetics:AVATAR_Avatar_EllunasEmbrace",
+"2": "HeroCosmeticsBundle:ResHealerDefault_MAS",
+"3": "PlayerTitle:Seraph",
+"4": "Emote:SeraphBye",
+"5": "PlayerTitle:Elluna",
+"6": "SlotCosmetics:AVATAR_SeraphHM2"
+},
+"rocketjumper": {
+"0": "Emote:RocketJumperHi",
+"1": "SlotCosmetics:AVATAR_RocketJumperHM",
+"2": "HeroCosmeticsBundle:RocketJumperDefault_MAS",
+"3": "PlayerTitle:Rocket_Jumper",
+"4": "Emote:RocketJumperBye",
+"5": "PlayerTitle:Bishop",
+"6": "SlotCosmetics:AVATAR_RocketJumperHM2"
+},
+"sniper": {
+"0": "Emote:SniperHi",
+"1": "SlotCosmetics:AVATAR_SniperHM",
+"2": "HeroCosmeticsBundle:SniperDefault_MAS",
+"3": "PlayerTitle:Sniper",
+"4": "Emote:SniperBye",
+"5": "PlayerTitle:Shrike",
+"6": "SlotCosmetics:AVATAR_SniperHM2"
+},
+"stalker": {
+"0": "Emote:StalkerHi",
+"1": "SlotCosmetics:AVATAR_StalkerHM",
+"2": "HeroCosmeticsBundle:StalkerDefault_MAS",
+"3": "PlayerTitle:Stalker",
+"4": "Emote:StalkerBye",
+"5": "PlayerTitle:Jin",
+"6": "SlotCosmetics:AVATAR_StalkerHM2"
+},
+"void": {
+"0": "Emote:BedeHi",
+"1": "SlotCosmetics:AVATAR_BedeHM",
+"2": "HeroCosmeticsBundle:VoidDefault_MAS",
+"3": "PlayerTitle:Bede",
+"4": "Emote:BedeBye",
+"5": "PlayerTitle:Void",
+"6": "SlotCosmetics:AVATAR_BedeHM2"
+}
+}

@@ -1,0 +1,17 @@
+livingstate_poke  PID=52212 BASE=0x7FF6CFF90000  *** DRY RUN -- NOTHING WILL BE WRITTEN ***   2026-08-23 02:48:52
+
+LokiBotController-chain objects : 1
+LokiHeroCharacter-chain objects : 4
+
+TARGET   bot controller 0x25B16DBA0C0  ->  pawn 0x259F4E1AAC0 'BP_HERO_Ronin_C'
+CONTROLS 3 other hero pawn(s), NONE of which will be written: 0x25B4EBB8020, 0x259A2A1AAC0, 0x25AFF78D560
+
+================================================================================================
+A -- BASELINE (before any write)
+================================================================================================
+  [A        ] botLivingState=0     GATE+0x6A0=0     force+0x602=0   
+              RandomMoveDir=(0.000,0.000,0.000)   ControlInputVector=(0.000,0.000,0.000)
+              pawn loc=(600.0,0.0,13240.0)
+              CONTROL other heroes LivingState=0, 0, 0
+
+--dry given: would write 1 to 0x259F4E1BB50 (pawn+0x1090). NOTHING WRITTEN. Exiting.

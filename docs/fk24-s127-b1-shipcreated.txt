@@ -1,0 +1,292 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[DP] drop-plane mode (S125/FK-22): resolve the live DropPlane component -> BEFORE census ->
+[DP] B0c POSITIVE CONTROL (GetAutoDropLocation, 0 push/0 pop) -> SpawnPlane() -> both phase
+[DP] handlers direct -> AFTER census + delta table.
+[DP] Inject into the STAGED TUTORIAL WORLD (gft -> fo -> sp -> this). Not meaningful at the menu.
+[DP] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[DP] FFrame preparation: KFRAMEINIT=1 (ZEROONLY -- zeroes, strictly inside the [M] 0x48..0x80 bracket). This is the single variable the S93 reproduction A/B turns.
+[DP] dp-cand[00] 0x1DBB9CFA020 'Default__LokiDropPlane' cls=LokiDropPlane  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=LokiDropPlane<-Actor<-Object
+[DP] dp-cand[01] 0x1DBB9D02FA0 'Default__LokiGameModeDropPlaneComponent' cls=LokiGameModeDropPlaneComponent  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[DP] dp-cand[02] 0x1DBB9D3D710 'Default__LokiPlayerControllerDropPlaneComponent' cls=LokiPlayerControllerDropPlaneComponent  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=LokiPlayerControllerDropPlaneComponent<-LokiPlayerControllerComponent<-ActorComponent<-Object
+[DP] dp-cand[03] 0x1DBB9D3D7F0 'Default__LokiPlayerDropPlaneComponent' cls=LokiPlayerDropPlaneComponent  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=LokiPlayerDropPlaneComponent<-ActorComponent<-Object
+[DP] dp-cand[04] 0x1DBB9E3B250 'Default__LokiDropPhase_PlayerStateComponent' cls=LokiDropPhase_PlayerStateComponent  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=LokiDropPhase_PlayerStateComponent<-LokiPlayerDropPlaneComponent<-ActorComponent<-Object
+[DP] dp-cand[05] 0x1DBB9E3C2F0 'Default__LokiDropShip' cls=LokiDropShip  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] dp-cand[06] 0x1DCFCCA52C0 'Comp_GameMode_DropPlane_Tutorial' cls=Comp_GameMode_DropPlane_Tutorial_C  <== QUALIFIES (chain declares LokiGameModeDropPlaneComponent)  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[DP] dp-cand[07] 0x1DD7360A3C0 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE' cls=Comp_GameMode_DropPlane_Tutorial_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[DP] dp-cand[08] 0x1DD81920640 'Default__Comp_GameMode_DropPlane_Tutorial_C' cls=Comp_GameMode_DropPlane_Tutorial_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[DP] dp-cand[09] 0x1DD01ABADE0 'WBP_UI_DropPlane_Slice' cls=WBP_UI_DropPlane_Slices_C  chain=WBP_UI_DropPlane_Slices_C<-UserWidget<-Widget<-Visual<-Object
+[DP] dp-cand[10] 0x1DD85AD0700 'WBP_UI_DropPlane_SpinningDonut' cls=WBP_UI_DropPlane_SpinningDonut_C  chain=WBP_UI_DropPlane_SpinningDonut_C<-UserWidget<-Widget<-Visual<-Object
+[DP] dp-cand[11] 0x1DD85ADAC00 'Default__Comp_PlayerState_DropPlane_Tutorial_C' cls=Comp_PlayerState_DropPlane_Tutorial_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=Comp_PlayerState_DropPlane_Tutorial_C<-Comp_PlayerState_DropPlane_C<-LokiDropPhase_PlayerStateComponent<-LokiPlayerDropPlaneComponent<-ActorComponent<-Object
+[DP] dp-cand[12] 0x1DD85ADD600 'Default__Comp_PlayerState_DropPlane_C' cls=Comp_PlayerState_DropPlane_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=Comp_PlayerState_DropPlane_C<-LokiDropPhase_PlayerStateComponent<-LokiPlayerDropPlaneComponent<-ActorComponent<-Object
+[DP] dp-cand[13] 0x1DD85ADEB00 'Default__WBP_UI_DropPlane_SpinningDonut_C' cls=WBP_UI_DropPlane_SpinningDonut_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=WBP_UI_DropPlane_SpinningDonut_C<-UserWidget<-Widget<-Visual<-Object
+[DP] dp-cand[14] 0x1DCF5E00DC0 'Default__BP_DropPlane_MultiStationary_C' cls=BP_DropPlane_MultiStationary_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_MultiStationary_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] dp-cand[15] 0x1DD104AB890 'Default__BP_DropPlane_SpinningDonut_C' cls=BP_DropPlane_SpinningDonut_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_SpinningDonut_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] dp-cand[16] 0x1DCF0C26D60 'Default__BP_DropPlane_Straight_Tutorial_C' cls=BP_DropPlane_Straight_Tutorial_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Straight_Tutorial_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] dp-cand[17] 0x1DCF0C24720 'Default__BP_DropPlane_Shrinking_C' cls=BP_DropPlane_Shrinking_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Shrinking_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] dp-cand[18] 0x1DCF0C240C0 'Default__BP_DropPlane_Expanding_C' cls=BP_DropPlane_Expanding_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Expanding_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] dp-cand[19] 0x1DCF0C2D360 'Default__BP_DropPlane_Straight_C' cls=BP_DropPlane_Straight_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Straight_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] dp-cand[20] 0x1DCF0C2E680 'Default__BP_DropPlane_PieSlices_C' cls=BP_DropPlane_PieSlices_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_PieSlices_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] dp-cand[21] 0x1DCF0C26700 'Default__BP_DropPlane_Stationary_C' cls=BP_DropPlane_Stationary_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Stationary_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] dp-cand[22] 0x1DCF0C260A0 'Default__BP_DropPlane_Flop_C' cls=BP_DropPlane_Flop_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Flop_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] dp-cand[23] 0x1DCF0C253E0 'Default__BP_DropPlane_Base_C' cls=BP_DropPlane_Base_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] dp-cand[24] 0x1DD7F619280 'Default__WBP_UI_DropPlane_Slices_C' cls=WBP_UI_DropPlane_Slices_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=WBP_UI_DropPlane_Slices_C<-UserWidget<-Widget<-Visual<-Object
+[DP] dp-cand[25] 0x1DD17D2E470 'Default__BP_DropPlane_PlaneIcon_C' cls=BP_DropPlane_PlaneIcon_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_DropPlane_PlaneIcon_C<-Actor<-Object
+[DP] dp-cand[26] 0x1DD86395D40 'Default__DropPlaneCameraPawn_C' cls=DropPlaneCameraPawn_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=DropPlaneCameraPawn_C<-Pawn<-LokiActor<-Actor<-Object
+[DP] dp-cand[27] 0x1DC84EE4980 'Default__BP_SkyVisual_DropPlaneIcon_HotZone_C' cls=BP_SkyVisual_DropPlaneIcon_HotZone_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_SkyVisual_DropPlaneIcon_HotZone_C<-BP_SkyVisual_DropPlaneIcon_C<-Actor<-Object
+[DP] dp-cand[28] 0x1DD82B89280 'Default__BP_SkyVisual_DropPlaneIcon_C' cls=BP_SkyVisual_DropPlaneIcon_C  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=BP_SkyVisual_DropPlaneIcon_C<-Actor<-Object
+[DP] dp enumeration: 29 object(s) whose chain names DropPlane (26 excluded as archetype/_GEN_VARIABLE), 1 qualify as a LokiGameModeDropPlaneComponent instance
+[DP] component selection: 0x1DCFCCA52C0  reason: the ONLY live instance deriving from LokiGameModeDropPlaneComponent (the class that DECLARES SpawnPlane)
+[DP] component 0x1DCFCCA52C0 'Comp_GameMode_DropPlane_Tutorial'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[DP] resolve: SpawnPlane=0x1DD7F58C900(owner Comp_GameMode_DropPlane_Tutorial_C)  OnRoundPhaseChanged=0x1DD7F587200(owner Comp_GameMode_DropPlane_Tutorial_C)  'On Round Phase Changed'=0x1DD7F583D00(owner Comp_GameMode_DropPlane_Tutorial_C)  GetAutoDropLocation=0x1DD7F583A00(owner Comp_GameMode_DropPlane_Tutorial_C)
+[DP] sig SpawnPlane: fn=0x1DD7F58C900 thunk=0x7FF7B9A154A0(ProcessInternal => BYTECODE) PropertiesSize=440 ScriptNum=1551 localsBuf=2048
+[DP] sig SpawnPlane [00] ReturnValue                    @0x0    flags=0x0008001000000780  RETURN
+[DP] sig SpawnPlane [01] PlaneCenteredLocation          @0x8    flags=0x0008001040000205  local
+[DP] sig SpawnPlane [02] SelectedDropPlaneType          @0x20   flags=0x0008001000000205  local
+[DP] sig SpawnPlane [03] EndPos                         @0x28   flags=0x0008001040000205  local
+[DP] sig SpawnPlane [04] StartPos                       @0x40   flags=0x0008001040000205  local
+[DP] sig SpawnPlane [05] LocDropPlane                   @0x58   flags=0x0008001000000A05  local
+[DP] sig SpawnPlane [06] CallFunc_GetAllActorsWithTag_OutActors @0x60   flags=0x0000000008000000  local
+[DP] sig SpawnPlane [07] CallFunc_GetAllActorsWithTag_OutActors @0x70   flags=0x0000000008000000  local
+[DP] sig SpawnPlane [08] CallFunc_Array_Get_Item        @0x80   flags=0x0008001000000200  local
+[DP] sig SpawnPlane [09] CallFunc_Array_Get_Item        @0x88   flags=0x0008001000000200  local
+[DP] sig SpawnPlane [10] CallFunc_K2_GetActorLocation_ReturnValue @0x90   flags=0x0008001040000200  local
+[DP] sig SpawnPlane [11] CallFunc_K2_GetActorLocation_ReturnValue @0xA8   flags=0x0008001040000200  local
+[DP] sig SpawnPlane [12] CallFunc_GetAllActorsWithTag_OutActors @0xC0   flags=0x0000000008000000  local
+[DP] sig SpawnPlane [13] CallFunc_Array_Get_Item        @0xD0   flags=0x0008001000000200  local
+[DP] sig SpawnPlane [14] CallFunc_K2_GetActorLocation_ReturnValue @0xD8   flags=0x0008001040000200  local
+[DP] sig SpawnPlane [15] CallFunc_GetServerTime_ReturnValue @0xF0   flags=0x0008001040000200  local
+[DP] sig SpawnPlane [16] CallFunc_Add_DoubleDouble_ReturnValue @0xF8   flags=0x0008001040000200  local
+[DP] sig SpawnPlane [17] CallFunc_MakeTransform_ReturnValue @0x100  flags=0x0008001040000000  local
+[DP] sig SpawnPlane [18] CallFunc_BeginDeferredActorSpawnFromClass_ReturnValue @0x160  flags=0x0008001000000200  local
+[DP] sig SpawnPlane [19] K2Node_CreateDelegate_OutputDelegate @0x168  flags=0x0008001000000200  local
+[DP] sig SpawnPlane [20] CallFunc_FinishSpawningActor_ReturnValue @0x178  flags=0x0008001000000200  local
+[DP] sig SpawnPlane [21] CallFunc_GetLokiGameState_ReturnValue @0x180  flags=0x0008001000000200  local
+[DP] sig SpawnPlane [22] CallFunc_GetCurrentPhase_ReturnValue @0x188  flags=0x0008001040000200  local
+[DP] sig SpawnPlane [23] K2Node_CreateDelegate_OutputDelegate @0x18C  flags=0x0008001000000200  local
+[DP] sig SpawnPlane [24] K2Node_CreateDelegate_OutputDelegate @0x19C  flags=0x0008001000000200  local
+[DP] sig SpawnPlane [25] CallFunc_Add_DoubleDouble_A_ImplicitCast @0x1B0  flags=0x0008001040000200  local
+[DP] SpawnPlane signature READ AT RUNTIME: inputs=0 outParams=0 return@0x0 (NOT assumed no-arg)
+[DP] sig OnRoundPhaseChanged: fn=0x1DD7F587200 thunk=0x7FF7B9A154A0(ProcessInternal => BYTECODE) PropertiesSize=1 ScriptNum=36 localsBuf=2048
+[DP] sig OnRoundPhaseChanged [00] NewPhase                       @0x0    flags=0x0008001040000294  PARAM-IN
+[DP] sig On Round Phase Changed: fn=0x1DD7F583D00 thunk=0x7FF7B9A154A0(ProcessInternal => BYTECODE) PropertiesSize=1 ScriptNum=36 localsBuf=2048
+[DP] sig On Round Phase Changed [00] NewPhase                       @0x0    flags=0x0008001040000294  PARAM-IN
+[DP] sig GetAutoDropLocation(B0c CONTROL): fn=0x1DD7F583A00 thunk=0x7FF7B9A154A0(ProcessInternal => BYTECODE) PropertiesSize=320 ScriptNum=1085 localsBuf=2048
+[DP] sig GetAutoDropLocation(B0c CONTROL) [00] DropPlane                      @0x0    flags=0x0008001000000294  PARAM-IN
+[DP] sig GetAutoDropLocation(B0c CONTROL) [01] RandomLocation                 @0x8    flags=0x0008001040000380  PARAM-OUT
+[DP] sig GetAutoDropLocation(B0c CONTROL) [02] MaxRetries                     @0x20   flags=0x0008001040000205  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [03] NumRetries                     @0x24   flags=0x0008001040000205  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [04] CallFunc_GetCurrentLokiDeathCircleBounds_OutCircle @0x28   flags=0x0000001000000000  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [05] CallFunc_GetCurrentLokiDeathCircleBounds_ReturnValue @0x48   flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [06] CallFunc_K2_GetRandomLocationInNavigableRadius_RandomLocation @0x50   flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [07] CallFunc_K2_GetRandomLocationInNavigableRadius_ReturnValue @0x68   flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [08] CallFunc_IsValidPositionForCapsule_OutHitActor @0x70   flags=0x0008001000000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [09] CallFunc_IsValidPositionForCapsule_ReturnValue @0x78   flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [10] CallFunc_Vector_Distance2D_ReturnValue @0x80   flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [11] CallFunc_Less_DoubleDouble_ReturnValue @0x88   flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [12] CallFunc_Add_IntInt_ReturnValue @0x8C   flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [13] CallFunc_Less_IntInt_ReturnValue @0x90   flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [14] CallFunc_GetAllActorsOfClass_OutActors @0x98   flags=0x0000000008000000  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [15] CallFunc_K2_GetActorLocation_ReturnValue @0xA8   flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [16] CallFunc_FindNearestActor_Distance @0xC0   flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [17] CallFunc_FindNearestActor_ReturnValue @0xC8   flags=0x0008001000000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [18] CallFunc_K2_GetActorLocation_ReturnValue @0xD0   flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [19] CallFunc_K2_GetActorLocation_ReturnValue @0xE8   flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [20] CallFunc_GetAllActorsOfClass_OutActors @0x100  flags=0x0000000008000000  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [21] CallFunc_Array_IsNotEmpty_ReturnValue @0x110  flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [22] CallFunc_FindNearestActor_Distance @0x114  flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [23] CallFunc_FindNearestActor_ReturnValue @0x118  flags=0x0008001000000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [24] CallFunc_K2_GetActorLocation_ReturnValue @0x120  flags=0x0008001040000200  local
+[DP] sig GetAutoDropLocation(B0c CONTROL) [25] CallFunc_Less_DoubleDouble_B_ImplicitCast @0x138  flags=0x0008001040000200  local
+[DP] gs-cand[0] 0x1DBB9E3DE30 'UAVComponent' chain=LokiGameStateUAVComponent<-ActorComponent<-Object
+[DP] gs-cand[1] 0x1DBFF282B80 'UAVComponent' chain=LokiGameStateUAVComponent<-ActorComponent<-Object
+[DP] gs-cand[2] 0x1DBEFEE7090 'BP_LokiGameState_Tutorial_C' chain=BP_LokiGameState_Tutorial_C<-BP_LokiGameStateRounds_C<-BP_LokiGameState_C<-BP_LokiGameState_Code_C<-LokiGameState_AS<-LokiGameState<-LokiGameStateBase<-GameStateBase<-Info<-LokiActor<-Actor<-Object
+[DP] gs-cand[3] 0x1DCEF180EC0 'UAVComponent' chain=LokiGameStateUAVComponent<-ActorComponent<-Object
+[DP] gs-cand[4] 0x1DCEF18AB00 'UAVComponent' chain=LokiGameStateUAVComponent<-ActorComponent<-Object
+[DP] gs-cand[5] 0x1DD0A6DD940 'UAVComponent' chain=LokiGameStateUAVComponent<-ActorComponent<-Object
+[DP] gs-cand[6] 0x1DD0A6DBA00 'UAVComponent' chain=LokiGameStateUAVComponent<-ActorComponent<-Object
+[DP] gs-cand[7] 0x1DD0A6DB640 'UAVComponent' chain=LokiGameStateUAVComponent<-ActorComponent<-Object
+[DP] delegate receipt: 8 live LokiGameState candidates -- REFUSING to guess. INSTRUMENT UNAVAILABLE (this does not affect any arm).
+[DP] B0-BEFORE      0x1DBB9CFA020 'Default__LokiDropPlane' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DBB9CFA860 'Default__LokiDropPodBase' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DBB9D02FA0 'Default__LokiGameModeDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DBB9D3D710 'Default__LokiPlayerControllerDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DBB9D3D7F0 'Default__LokiPlayerDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DBB9E3B250 'Default__LokiDropPhase_PlayerStateComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DBB9E3B4F0 'Default__LokiDropPod' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DBB9E3BB50 'Default__LokiDropPodImpactIndicator' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DBB9E3BF30 'Default__LokiDropPodLaser' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DBB9E3C2F0 'Default__LokiDropShip' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DB8A9DA300 'Default__BP_Avatar_DropPod2_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DBFF279400 'Default__BP_Avatar_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DB8A6DCD00 'Default__BP_Avatar_DropPod3_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE       0x1DCFCCA52C0 'Comp_GameMode_DropPlane_Tutorial'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[DP] B0-BEFORE      0x1DD7360A3C0 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE       0x1DCD113A4C0 'WBP_UI_DropPodControls'  chain=WBP_UI_DropPodControls_C<-UserWidget<-Widget<-Visual<-Object
+[DP] B0-BEFORE      0x1DD81920640 'Default__Comp_GameMode_DropPlane_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE       0x1DD01ABADE0 'WBP_UI_DropPlane_Slice'  chain=WBP_UI_DropPlane_Slices_C<-UserWidget<-Widget<-Visual<-Object
+[DP] B0-BEFORE       0x1DD85AD0700 'WBP_UI_DropPlane_SpinningDonut'  chain=WBP_UI_DropPlane_SpinningDonut_C<-UserWidget<-Widget<-Visual<-Object
+[DP] B0-BEFORE      0x1DD85ADAC00 'Default__Comp_PlayerState_DropPlane_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DD85ADD600 'Default__Comp_PlayerState_DropPlane_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCED14DB80 'Default__GIE_DropPod_Aim_Indicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE       0x1DCF01FD980 'WBP_UI_DropPodIndicator_Animated'  chain=WBP_UI_DropPodIndicator_Animated_C<-UserWidget<-Widget<-Visual<-Object
+[DP] B0-BEFORE      0x1DCED142990 'Default__WBP_Minimap_DropPod_Aim_Indicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DD85ADEB00 'Default__WBP_UI_DropPlane_SpinningDonut_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCF5E00DC0 'Default__BP_DropPlane_MultiStationary_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DD104AB890 'Default__BP_DropPlane_SpinningDonut_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCF0C26D60 'Default__BP_DropPlane_Straight_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DD104AE040 'Default__BP_DropPod_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCF0C24720 'Default__BP_DropPlane_Shrinking_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCF0C240C0 'Default__BP_DropPlane_Expanding_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCF0C2D360 'Default__BP_DropPlane_Straight_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCF0C2E680 'Default__BP_DropPlane_PieSlices_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCF0C26700 'Default__BP_DropPlane_Stationary_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCF0C260A0 'Default__BP_DropPlane_Flop_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCF0C253E0 'Default__BP_DropPlane_Base_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DD10454970 'Default__BP_DropPod_Child_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DD7D9419D0 'Default__BP_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DB8428EDC0 'Default__ABP_DropPod_Child_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DB8A560510 'Default__GIE_DropPod_Impact_WASDIndicator_Baby_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DB8A560080 'Default__GIE_DropPod_Impact_WASDIndicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCF0B013C0 'Default__BP_DropPodLaser_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCF04A8080 'Default__ABP_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DD7E9BF580 'Default__WBP_UI_DropPodIndicator_Animated_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DCF32D7720 'Default__WBP_UI_DropPodControls_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DD7F619280 'Default__WBP_UI_DropPlane_Slices_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DD17D2E470 'Default__BP_DropPlane_PlaneIcon_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DD86395D40 'Default__DropPlaneCameraPawn_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DD74C0A4C0 'Default__GIE_DropPod_Aim_Indicator_Live_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DC84EE4980 'Default__BP_SkyVisual_DropPlaneIcon_HotZone_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE      0x1DD82B89280 'Default__BP_SkyVisual_DropPlaneIcon_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B0-BEFORE CENSUS summary: DropPlane=3 DropPod=2 DropShip=0 objects=5 new=0 gone=0 archetypesExcluded=46 (memo classes=10115 overflow=1235) elapsed=1484 ms
+[DP] marker scan: AActor.Tags @0x1F0 (resolved by name off a live actor class)
+[DP] MARKER 'TrainingStart' FOUND on 0x1DD74751750 'BP_LokiPlayerStart_C_UAID_709CD165B93A7B4E02' (BP_LokiPlayerStart_C)
+[DP] marker scan summary: TrainingStart=1 PlaneStartPoint=0 PlaneEndPoint=0 (actors scanned=2878, of which tagged=676). A ZERO here means NOT STREAMED IN RIGHT NOW; S125 established offline that all three exist in LVL_Tutorial's packages.
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7B9A154A0 stub=0x1DC5A201140 funcCls=0x1DBAA00B000 gameTid=23428
+[DP] ================ RM_DROPPLANE: FK-22 arms B0/B0c/B1/B3a/B3b/B4 ================
+[DP] cfg arms=0x33 phase=6 stepMs=500 settleMs=4000 modeHoldMs=120000 miniCensus=1 markers=1 frameInit=1 faultInfo=1 forceParams=0
+[DP] target: component 0x1DCFCCA52C0 'Comp_GameMode_DropPlane_Tutorial'
+[DP] delegate baseline: UNAVAILABLE (not a measurement)
+[FS] arm: swapped=17563 BP UFunctions  (scan 3547 ms over 154773 objects, 34253 UFunctions total) -- NO .text WRITE
+[DP] --- B0c (POSITIVE CONTROL): GetAutoDropLocation() -- 36 bytecode entries, 0 EX_PushExecutionFlow / 0 EX_PopExecutionFlow, so it CANNOT be affected by the FFrame flow-stack window. It is also the exact call S93 made (RM_DROPIN case 4, zeroed locals) and recorded as 'ran clean'. IT MUST BEHAVE IDENTICALLY IN THE FIXED AND UNFIXED ARMS. If it faults, the primitive is broken in this build and B1's result is VOID. declaredInputs=1 (a fault WITH inputs>0 is not attributable to the callee). ---
+[DP] B0c GetAutoDropLocation dispatchability: script=0x1DD01ABA4C0 scriptNum=1085 propsSize=320 localsBuf=2048 thunk=0x1DC5A201140 -> DISPATCHABLE
+[DP] B0c GetAutoDropLocation BEFORE: calling on component 0x1DCFCCA52C0, fn=0x1DD7F583A00
+[DP] B0c GetAutoDropLocation BEFORE: no parameter written (signature declares none)
+[FF] CallBP frame=ZEROONLY (0x48..0x80 zeroed)
+[DP] B0c GetAutoDropLocation AFTER:  returned without fault  fault=-  res0=0x0
+[DP]        ^ 'returned without fault' IS NOT A RESULT. Only the census delta below is.
+[DP] B0c control passed: the BP-call primitive dispatches and returns cleanly in this build. B1's outcome is now attributable to SpawnPlane.
+[DP] --- B1 (HEADLINE): SpawnPlane() on the FFrame-REPAIRED primitive. S2.1 measured this body BRANCHLESS with 3 unguarded Array_Get(...,0) after 3 GetAllActorsWithTag, and S125 measured all three markers PRESENT in LVL_Tutorial's packages -- so the S93 fault should NOT reproduce here. ---
+[DP] B1 SpawnPlane dispatchability: script=0x1DCF5E0E020 scriptNum=1551 propsSize=440 localsBuf=2048 thunk=0x1DC5A201140 -> DISPATCHABLE
+[DP] B1 SpawnPlane BEFORE: calling on component 0x1DCFCCA52C0, fn=0x1DD7F58C900
+[DP] B1 SpawnPlane BEFORE: no parameter written (signature declares none)
+[FF] CallBP frame=ZEROONLY (0x48..0x80 zeroed)
+[NULL] (via SEH)
+[NULL] fatal 0xC0000005 RIP=0x7FF7B9A195DD rva=0x13495DD access=READ addr=0x0 inHook=1
+[NULL] RAX=0 RBX=1DC5A22F9F0 RCX=1DCF291BB80 RDX=1DC5A22F9F0 RSI=1DCFCCA52C0 RDI=1DC5A22F9F0 RBP=7FF7C25072A0 RSP=A129BDE618
+[NULL] R8=0 R9=0 R10=0 R11=A129BDE560 R12=7FF7C25072A0 R13=1DCFCCA52C0 R14=1DD7F58C900 R15=2
+[NULL] cls RAX=- RBX=Comp_GameMode_DropPlane_Tutorial RCX=PlaneCenteredLocation RDX=Comp_GameMode_DropPlane_Tutorial RSI=Comp_GameMode_DropPlane_Tutorial_C RDI=Comp_GameMode_DropPlane_Tutorial R8=- R9=-
+[NULL] code@RIP:    48 39 08 74 09 48 8B 40 10 48 39 08 75 F7 4C 8B 40 08 4C 89 42 38 4D 85 
+[NULL] code@RIP-24: 8B C8 48 8B 08 48 83 C0 08 48 89 42 20 48 8B 82 80 00 00 00 48 89 4A 30 
+[FLT] CallBP faulted: code=0xC0000005 READ addr=0x0 rip=0x7FF7B9A195DD rva=0x13495DD
+[DP] B1 SpawnPlane AFTER:  *** FAULTED (SEH-captured) ***  fault=code=0xC0000005 READ addr=0x0 rip=0x7FF7B9A195DD rva=0x13495DD  res0=0x0
+[DP]        ^ 'returned without fault' IS NOT A RESULT. Only the census delta below is.
+[DP] B1 return value @0x0 = 0x0  live=0 name='-' class=-
+[DP] after-B1 *** NEW *** 0x1DC8E5CA060 'BP_DropPlane_Straight_Tutorial_C'  chain=BP_DropPlane_Straight_Tutorial_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] after-B1 CENSUS summary: DropPlane=4 DropPod=2 DropShip=1 objects=6 new=1 gone=0 archetypesExcluded=46 (memo classes=10115 overflow=3705) elapsed=1390 ms
+[DP] delegate after-B1: UNAVAILABLE (not a measurement)
+[DP] B3a disabled by KDPARMS -> skipped
+[DP] after-B3a census SKIPPED: B3a never dispatched
+[DP] delegate after-B3a: UNAVAILABLE (not a measurement)
+[DP] B3b disabled by KDPARMS -> skipped
+[DP] after-B3b census SKIPPED: B3b never dispatched
+[DP] delegate after-B3b: UNAVAILABLE (not a measurement)
+[FS] hot: 19 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   hot[00] hits=78      ABP_ResBeacon_C::BlueprintUpdateAnimation  (0x1DD7AC13400)   <- candidate for -DKFSNAME
+[FS]   hot[01] hits=1       Comp_GameMode_DropPlane_Tutorial_C::GetAutoDropLocation  (0x1DD7F583A00)   <- candidate for -DKFSNAME
+[FS]   hot[02] hits=79      BP_LokiPlayerController_C::ReceiveTick  (0x1DD7E13F400)   <- candidate for -DKFSNAME
+[FS]   hot[03] hits=79      BP_HERO_Ronin_C::ReceiveTick  (0x1DD7229D800)   <- candidate for -DKFSNAME
+[FS]   hot[04] hits=79      BP_LokiHeroCharacter_C::ReceiveTickClient  (0x1DD7E063D00)   <- candidate for -DKFSNAME
+[FS]   hot[05] hits=78      BP_LokiHeroCharacter_C::ReceiveTickVisible  (0x1DD7E063E00)   <- candidate for -DKFSNAME
+[FS]   hot[06] hits=79      Comp_PlayerController_Shop_Skylands_C::OnCharacterMoved  (0x1DD8000E700)   <- candidate for -DKFSNAME
+[FS]   hot[07] hits=79      BP_HeroHeightIndicator_C::ReceiveUpdateHeightOffset  (0x1DB89613600)   <- candidate for -DKFSNAME
+[FS]   hot[08] hits=79      BP_LineOfSightRendering_Component_C::ReceiveTick  (0x1DD84EE7600)   <- candidate for -DKFSNAME
+[FS]   hot[09] hits=79      Comp_GameMode_EoGFinisher_C::ReceiveTick  (0x1DD815A5E00)   <- candidate for -DKFSNAME
+[FS]   hot[10] hits=79      Comp_PlayerController_DamageNumbers_C::ReceiveTick  (0x1DD805FA300)   <- candidate for -DKFSNAME
+[FS]   hot[11] hits=30      BP_LokiGameMode_Tutorial_C::ReceiveTick  (0x1DCF4C1C000)   <- candidate for -DKFSNAME
+[FS]   hot[12] hits=30      Comp_PlayerController_Pings_C::ReceiveTick  (0x1DD7CF63E00)   <- candidate for -DKFSNAME
+[FS]   hot[13] hits=13      Comp_PlayerController_Stats_C::ExecuteUbergraph_Comp_PlayerController_Stats  (0x1DB8A4B2100)   <- candidate for -DKFSNAME
+[FS]   hot[14] hits=3       Comp_PlayerController_Camera_C::ReceiveTick  (0x1DD85CBA100)   <- candidate for -DKFSNAME
+[FS]   hot[15] hits=1       Comp_GameMode_DropPlane_Tutorial_C::SpawnPlane  (0x1DD7F58C900)   <- candidate for -DKFSNAME
+[FS]   hot[16] hits=1       BP_DropPlane_Base_C::ReceiveBeginPlay  (0x1DD7C572200)   <- candidate for -DKFSNAME
+[FS]   hot[17] hits=1       BP_DropPlane_Base_C::OnController  (0x1DD7C579300)   <- candidate for -DKFSNAME
+[FS]   hot[18] hits=64      BP_DropPlane_Base_C::ReceiveTick  (0x1DD7C572400)   <- candidate for -DKFSNAME
+[DP] ================ game-thread arms COMPLETE (B4 runs on the worker after a settle) ================
+[FS] disarm: restored=17563 of 17563 swapped (scan 3547 ms, 34253 UFunctions live)
+[DP] settling 4000 ms before the AFTER census...
+[DP] B4-AFTER      0x1DBB9CFA020 'Default__LokiDropPlane' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DBB9CFA860 'Default__LokiDropPodBase' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DBB9D02FA0 'Default__LokiGameModeDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DBB9D3D710 'Default__LokiPlayerControllerDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DBB9D3D7F0 'Default__LokiPlayerDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DBB9E3B250 'Default__LokiDropPhase_PlayerStateComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DBB9E3B4F0 'Default__LokiDropPod' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DBB9E3BB50 'Default__LokiDropPodImpactIndicator' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DBB9E3BF30 'Default__LokiDropPodLaser' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DBB9E3C2F0 'Default__LokiDropShip' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DB8A9DA300 'Default__BP_Avatar_DropPod2_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DBFF279400 'Default__BP_Avatar_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DB8A6DCD00 'Default__BP_Avatar_DropPod3_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER       0x1DCFCCA52C0 'Comp_GameMode_DropPlane_Tutorial'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[DP] B4-AFTER      0x1DD7360A3C0 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER       0x1DCD113A4C0 'WBP_UI_DropPodControls'  chain=WBP_UI_DropPodControls_C<-UserWidget<-Widget<-Visual<-Object
+[DP] B4-AFTER      0x1DD81920640 'Default__Comp_GameMode_DropPlane_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER       0x1DD01ABADE0 'WBP_UI_DropPlane_Slice'  chain=WBP_UI_DropPlane_Slices_C<-UserWidget<-Widget<-Visual<-Object
+[DP] B4-AFTER       0x1DD85AD0700 'WBP_UI_DropPlane_SpinningDonut'  chain=WBP_UI_DropPlane_SpinningDonut_C<-UserWidget<-Widget<-Visual<-Object
+[DP] B4-AFTER      0x1DD85ADAC00 'Default__Comp_PlayerState_DropPlane_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DD85ADD600 'Default__Comp_PlayerState_DropPlane_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCED14DB80 'Default__GIE_DropPod_Aim_Indicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER       0x1DCF01FD980 'WBP_UI_DropPodIndicator_Animated'  chain=WBP_UI_DropPodIndicator_Animated_C<-UserWidget<-Widget<-Visual<-Object
+[DP] B4-AFTER      0x1DCED142990 'Default__WBP_Minimap_DropPod_Aim_Indicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DD85ADEB00 'Default__WBP_UI_DropPlane_SpinningDonut_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCF5E00DC0 'Default__BP_DropPlane_MultiStationary_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DD104AB890 'Default__BP_DropPlane_SpinningDonut_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCF0C26D60 'Default__BP_DropPlane_Straight_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DD104AE040 'Default__BP_DropPod_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCF0C24720 'Default__BP_DropPlane_Shrinking_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCF0C240C0 'Default__BP_DropPlane_Expanding_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCF0C2D360 'Default__BP_DropPlane_Straight_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCF0C2E680 'Default__BP_DropPlane_PieSlices_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCF0C26700 'Default__BP_DropPlane_Stationary_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCF0C260A0 'Default__BP_DropPlane_Flop_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCF0C253E0 'Default__BP_DropPlane_Base_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DD10454970 'Default__BP_DropPod_Child_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DD7D9419D0 'Default__BP_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DB8428EDC0 'Default__ABP_DropPod_Child_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DB8A560510 'Default__GIE_DropPod_Impact_WASDIndicator_Baby_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DB8A560080 'Default__GIE_DropPod_Impact_WASDIndicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCF0B013C0 'Default__BP_DropPodLaser_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCF04A8080 'Default__ABP_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DD7E9BF580 'Default__WBP_UI_DropPodIndicator_Animated_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DCF32D7720 'Default__WBP_UI_DropPodControls_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DD7F619280 'Default__WBP_UI_DropPlane_Slices_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DD17D2E470 'Default__BP_DropPlane_PlaneIcon_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DD86395D40 'Default__DropPlaneCameraPawn_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DD74C0A4C0 'Default__GIE_DropPod_Aim_Indicator_Live_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DC84EE4980 'Default__BP_SkyVisual_DropPlaneIcon_HotZone_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER      0x1DD82B89280 'Default__BP_SkyVisual_DropPlaneIcon_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] B4-AFTER *** NEW *** 0x1DC8E5CA060 'BP_DropPlane_Straight_Tutorial_C'  chain=BP_DropPlane_Straight_Tutorial_C<-BP_DropPlane_Base_C<-LokiDropShip<-LokiDropPlane<-Actor<-Object
+[DP] B4-AFTER CENSUS summary: DropPlane=4 DropPod=2 DropShip=1 objects=6 new=1 gone=0 archetypesExcluded=46 (memo classes=10115 overflow=4940) elapsed=1547 ms
+[DP] ---------------- DELTA TABLE (this is the result) ----------------
+[DP]   bucket      BEFORE   afterB1   afterB3a  afterB3b   AFTER   delta
+[DP]   DropPlane        3         4          0         0       4      +1
+[DP]   DropPod          2         2          0         0       2      +0
+[DP]   DropShip         0         1          0         0       1      +1
+[DP]   objects          5         6          0         0       6      +1   (new=1 gone=0)
+[DP]   archetypes      46        46          0         0      46      +0   (EXCLUDED from the rows above)
+[DP] delegate B4-AFTER: UNAVAILABLE (not a measurement)
+[DP] call status codes: -1 = NOT CALLED (never dispatched) | 0 = called, no fault | 1 = called and FAULTED. -1 is NOT a clean run.
+[DP] ran: B0c=1(status=0) B1=1(status=1) B3a=0(status=-1) B3b=0(status=-1)  b1Ret=0x0  markerScanOk=1 markersFound=1  component=0x1DCFCCA52C0 'Comp_GameMode_DropPlane_Tutorial'
+[DP] VERDICT: control PASSED (B0c status 0), so B1's status 1 is attributable to SpawnPlane under this build's KFRAMEINIT=1.
+[DP] ⚠ NOTHING IS UNDONE. If B1 spawned a plane it is still in the world, still ticking, with its delegates bound and whatever SetDropPlane stored on the component still stored. This probe deliberately does not destroy it (a destroy is another call into an object we have not graded). Recovery = restart the client.
+[DP] done (step=8 resolved=1 b1=1 b3a=0 b3b=0 called=1176 hitsGT=1176)

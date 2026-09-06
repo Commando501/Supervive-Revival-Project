@@ -1,0 +1,175 @@
+========================================================================================================
+Q1c  HIDDEN-IMAGE CENSUS (MEM_IMAGE allocations absent from ModuleList)
+     unit: distinct crashpad reports (124)
+========================================================================================================
+
+CONTROL  MEM_IMAGE allocations that ARE in the ModuleList: 26965 over 124 reports  (mean 217.5/report; ModuleList has 221 entries/report)
+         MEM_IMAGE allocations that are NOT: 371 over 124 reports (mean 2.99/report)
+
+--- hidden-image SHAPES (span, region-count) -> reports ---
+   span 0xA9E1000    regions 1     seen in 124 reports
+   span 0x4066000    regions 15    seen in 124 reports
+   span 0x4066000    regions 10    seen in 123 reports
+
+--- hidden-image BASES -> reports (top 20) ---
+   0xFF760000          123 reports
+   0x7FFD3B400000      113 reports
+   0x7FFA42600000      6 reports
+   0x7FFB57400000      5 reports
+   0x1F71BED0000       1 reports
+   0x25D80000000       1 reports
+   0x1C83D870000       1 reports
+   0x2308CB50000       1 reports
+   0x14BA7BD0000       1 reports
+   0x18314E10000       1 reports
+   0x1B35B230000       1 reports
+   0x215554B0000       1 reports
+   0x20281280000       1 reports
+   0x24F4ABA0000       1 reports
+   0x1F7B66B0000       1 reports
+   0x18AE1220000       1 reports
+   0x1A460950000       1 reports
+   0x1CC59DC0000       1 reports
+   0x23781290000       1 reports
+   0x22500000000       1 reports
+
+--- per boot session: which hidden bases, and are they stable? ---
+
+  boot ntdll=0x7FFD3B150000  reports=113
+     0x7FFD3B400000     span 0x4066000     in 113/113 reports
+     0xFF760000         span 0x4066000     in 112/113 reports
+     0x1F71BED0000      span 0xA9E1000     in 1/113 reports
+     0x25D80000000      span 0xA9E1000     in 1/113 reports
+     0x1C83D870000      span 0xA9E1000     in 1/113 reports
+     0x2308CB50000      span 0xA9E1000     in 1/113 reports
+     0x14BA7BD0000      span 0xA9E1000     in 1/113 reports
+     0x18314E10000      span 0xA9E1000     in 1/113 reports
+     0x1B35B230000      span 0xA9E1000     in 1/113 reports
+     0x215554B0000      span 0xA9E1000     in 1/113 reports
+     0x20281280000      span 0xA9E1000     in 1/113 reports
+     0x24F4ABA0000      span 0xA9E1000     in 1/113 reports
+     0x1F7B66B0000      span 0xA9E1000     in 1/113 reports
+     0x18AE1220000      span 0xA9E1000     in 1/113 reports
+     0x1A460950000      span 0xA9E1000     in 1/113 reports
+     0x1CC59DC0000      span 0xA9E1000     in 1/113 reports
+     0x23781290000      span 0xA9E1000     in 1/113 reports
+     0x22500000000      span 0xA9E1000     in 1/113 reports
+     0x27911E90000      span 0xA9E1000     in 1/113 reports
+     0x2B1AEE00000      span 0xA9E1000     in 1/113 reports
+     0x2164A110000      span 0xA9E1000     in 1/113 reports
+     0x1E3F2310000      span 0xA9E1000     in 1/113 reports
+     0x1F3906E0000      span 0xA9E1000     in 1/113 reports
+     0x2AB18F10000      span 0xA9E1000     in 1/113 reports
+     0x1FD17530000      span 0xA9E1000     in 1/113 reports
+     0x19CC0500000      span 0xA9E1000     in 1/113 reports
+     0x22A4F440000      span 0xA9E1000     in 1/113 reports
+     0x27A6EA70000      span 0xA9E1000     in 1/113 reports
+     0x24D47120000      span 0xA9E1000     in 1/113 reports
+     0x249A05C0000      span 0xA9E1000     in 1/113 reports
+     0x1E34BD60000      span 0xA9E1000     in 1/113 reports
+     0x1EC350F0000      span 0xA9E1000     in 1/113 reports
+     0x1ECC1730000      span 0xA9E1000     in 1/113 reports
+     0x23C604B0000      span 0xA9E1000     in 1/113 reports
+     0x215BE060000      span 0xA9E1000     in 1/113 reports
+     0x1CF215C0000      span 0xA9E1000     in 1/113 reports
+     0x2A36FAA0000      span 0xA9E1000     in 1/113 reports
+     0x1AC80000000      span 0xA9E1000     in 1/113 reports
+     0x242B3130000      span 0xA9E1000     in 1/113 reports
+     0x18335B20000      span 0xA9E1000     in 1/113 reports
+     0x26E80000000      span 0xA9E1000     in 1/113 reports
+     0x17400000000      span 0xA9E1000     in 1/113 reports
+     0x142AC360000      span 0xA9E1000     in 1/113 reports
+     0x2C81F3B0000      span 0xA9E1000     in 1/113 reports
+     0x25B80000000      span 0xA9E1000     in 1/113 reports
+     0x1E4EAF10000      span 0xA9E1000     in 1/113 reports
+     0x181BB7B0000      span 0xA9E1000     in 1/113 reports
+     0x1BAF3B30000      span 0xA9E1000     in 1/113 reports
+     0x29DAE3D0000      span 0xA9E1000     in 1/113 reports
+     0x27899A90000      span 0xA9E1000     in 1/113 reports
+     0x2645D900000      span 0xA9E1000     in 1/113 reports
+     0x1BFD9FC0000      span 0xA9E1000     in 1/113 reports
+     0x1173F4B0000      span 0xA9E1000     in 1/113 reports
+     0x1CDF4EB0000      span 0xA9E1000     in 1/113 reports
+     0x2C928A70000      span 0xA9E1000     in 1/113 reports
+     0x2D5EFE10000      span 0xA9E1000     in 1/113 reports
+     0x1CA852F0000      span 0xA9E1000     in 1/113 reports
+     0x2493D200000      span 0xA9E1000     in 1/113 reports
+     0x180E41E0000      span 0xA9E1000     in 1/113 reports
+     0x2023A160000      span 0xA9E1000     in 1/113 reports
+     0x2066A730000      span 0xA9E1000     in 1/113 reports
+     0x235A3B20000      span 0xA9E1000     in 1/113 reports
+     0x1E7D53B0000      span 0xA9E1000     in 1/113 reports
+     0x2D8C6020000      span 0xA9E1000     in 1/113 reports
+     0x21A00000000      span 0xA9E1000     in 1/113 reports
+     0x1ABC75F0000      span 0xA9E1000     in 1/113 reports
+     0x218B4EC0000      span 0xA9E1000     in 1/113 reports
+     0x1FEADD70000      span 0xA9E1000     in 1/113 reports
+     0x1B553810000      span 0xA9E1000     in 1/113 reports
+     0x1C219F40000      span 0xA9E1000     in 1/113 reports
+     0x1E05D1B0000      span 0xA9E1000     in 1/113 reports
+     0x25014500000      span 0xA9E1000     in 1/113 reports
+     0x18BB4C60000      span 0xA9E1000     in 1/113 reports
+     0x1BB66660000      span 0xA9E1000     in 1/113 reports
+     0x2023B590000      span 0xA9E1000     in 1/113 reports
+     0x16C4C670000      span 0xA9E1000     in 1/113 reports
+     0x1C0CA000000      span 0xA9E1000     in 1/113 reports
+     0x1BC4D1A0000      span 0xA9E1000     in 1/113 reports
+     0x21048BF0000      span 0xA9E1000     in 1/113 reports
+     0x1DAB9C10000      span 0xA9E1000     in 1/113 reports
+     0x1F301290000      span 0xA9E1000     in 1/113 reports
+     0x1DB88EA0000      span 0xA9E1000     in 1/113 reports
+     0x2378A900000      span 0xA9E1000     in 1/113 reports
+     0x1E9E4870000      span 0xA9E1000     in 1/113 reports
+     0x28205500000      span 0xA9E1000     in 1/113 reports
+     0x21DBAD60000      span 0xA9E1000     in 1/113 reports
+     0x196082C0000      span 0xA9E1000     in 1/113 reports
+     0x1DC225F0000      span 0xA9E1000     in 1/113 reports
+     0x21046E30000      span 0xA9E1000     in 1/113 reports
+     0x1FF2C2B0000      span 0xA9E1000     in 1/113 reports
+     0x22694920000      span 0xA9E1000     in 1/113 reports
+     0x21258B40000      span 0xA9E1000     in 1/113 reports
+     0x24126A10000      span 0xA9E1000     in 1/113 reports
+     0x227D9830000      span 0xA9E1000     in 1/113 reports
+     0x29C375C0000      span 0xA9E1000     in 1/113 reports
+     0x2E0D6FE0000      span 0xA9E1000     in 1/113 reports
+     0x27521510000      span 0xA9E1000     in 1/113 reports
+     0x2C1A7F60000      span 0xA9E1000     in 1/113 reports
+     0x17844C70000      span 0xA9E1000     in 1/113 reports
+     0x1FCC2760000      span 0xA9E1000     in 1/113 reports
+     0x1C7DA820000      span 0xA9E1000     in 1/113 reports
+     0x22298210000      span 0xA9E1000     in 1/113 reports
+     0x1A4AD610000      span 0xA9E1000     in 1/113 reports
+     0x2539EF50000      span 0xA9E1000     in 1/113 reports
+     0x1DA8D6A0000      span 0xA9E1000     in 1/113 reports
+     0x2508F500000      span 0xA9E1000     in 1/113 reports
+     0x1F6E0B10000      span 0xA9E1000     in 1/113 reports
+     0x1DBE4190000      span 0xA9E1000     in 1/113 reports
+     0x1B93EFA0000      span 0xA9E1000     in 1/113 reports
+     0x20985300000      span 0xA9E1000     in 1/113 reports
+     0x21ED5C10000      span 0xA9E1000     in 1/113 reports
+     0x1B2A5A20000      span 0xA9E1000     in 1/113 reports
+     0x24D0B1B0000      span 0xA9E1000     in 1/113 reports
+     0x13A070E0000      span 0xA9E1000     in 1/113 reports
+     0x23880000000      span 0xA9E1000     in 1/113 reports
+
+  boot ntdll=0x7FFA422D0000  reports=6
+     0xFF760000         span 0x4066000     in 6/6 reports
+     0x7FFA42600000     span 0x4066000     in 6/6 reports
+     0x1EB285F0000      span 0xA9E1000     in 1/6 reports
+     0x26000000000      span 0xA9E1000     in 1/6 reports
+     0x2B100000000      span 0xA9E1000     in 1/6 reports
+     0x1D569580000      span 0xA9E1000     in 1/6 reports
+     0x1AD99F50000      span 0xA9E1000     in 1/6 reports
+     0x1A337CB0000      span 0xA9E1000     in 1/6 reports
+
+  boot ntdll=0x7FFB57050000  reports=5
+     0xFF760000         span 0x4066000     in 5/5 reports
+     0x7FFB57400000     span 0x4066000     in 5/5 reports
+     0x2971E930000      span 0xA9E1000     in 1/5 reports
+     0x1F5346A0000      span 0xA9E1000     in 1/5 reports
+     0x16481290000      span 0xA9E1000     in 1/5 reports
+     0x2B1677E0000      span 0xA9E1000     in 1/5 reports
+     0x1DB52F90000      span 0xA9E1000     in 1/5 reports
+
+--- the report(s) MISSING the fixed 0xFF760000 mapping ---
+   2026-08-06T14:21:00  9317ebe9  ntdll=0x7FFD3B150000  addr=0x7FFD3B400001  hidden=[('0x2c928a70000', '0xa9e1000'), ('0x7ffd3b400000', '0x4066000')]

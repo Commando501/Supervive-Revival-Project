@@ -1,0 +1,5 @@
+exec(open('scratchpad/s139b/h.py').read())
+print('page 35EC000 nz=%d' % nz(0x35EC000))
+show(0x035EC850, end=0x035EC8A0)
+print('--- jb target 0x35EE577 ---')
+show(0x035EE577, end=0x035EE5A0)

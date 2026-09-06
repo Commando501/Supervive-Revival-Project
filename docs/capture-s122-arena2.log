@@ -1,0 +1,3143 @@
+
+* 23:55:22.837  WS connected /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 (subproto="wss") envelope=[""..""]
+
+#1 23:55:22.930  GET /inventory/free
+    -> 200  (0s)
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+
+#4 23:55:22.938  GET /mailbox/config/version
+    -> 200  (0s)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#2 23:55:22.931  GET /referral/player/9b9d2c887e2524f918e383a895f2f1c2
+    -> 200  (0s)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#9 23:55:23.031  GET /party/matchmaking/info
+    -> 200  (1ms)
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+
+#3 23:55:22.930  GET /progression/players/9b9d2c887e2524f918e383a895f2f1c2/tracks
+    -> 200  (1ms)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#6 23:55:22.953  GET /party/matchmaking/customGameModes
+    -> 200  (0s)
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Accept: */*
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+
+#7 23:55:22.953  GET /party/players/9b9d2c887e2524f918e383a895f2f1c2?defaultQueue=tutorialNew
+    -> 200  (1ms)
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+
+#5 23:55:22.938  GET /party/parties/party-9b9d2c887e2524f918e383a895f2f1c2
+    -> 200  (0s)
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+
+#8 23:55:22.974  GET /storefront/heroes
+    -> 200  (0s)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#10 23:55:23.032  GET /mmr/player-ratings/9b9d2c887e2524f918e383a895f2f1c2/rank
+    -> 200  (0s)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#11 23:55:23.035  GET /core-game/regions
+    -> 200  (0s)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#12 23:55:22.930  GET /inventory/players/9b9d2c887e2524f918e383a895f2f1c2
+    -> 200  (107ms)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#13 23:55:22.928  GET /progression/players/9b9d2c887e2524f918e383a895f2f1c2
+    -> 200  (110ms)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#14 23:55:23.057  GET /core-game/players/9b9d2c887e2524f918e383a895f2f1c2
+    -> 200  (0s)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#15 23:55:23.038  GET /match-history/players/9b9d2c887e2524f918e383a895f2f1c2
+    -> 200  (36ms)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#16 23:55:23.111  GET /referral/player/9b9d2c887e2524f918e383a895f2f1c2/points
+    -> 200  (0s)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#18 23:55:23.295  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#17 23:55:23.238  POST /game-telemetry/v1/protected/events
+    -> 200  (0s)
+    Accept: application/json
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    Game-Client-Version: 1.0.0.0
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Content-Type: application/json
+    body: [
+	{
+		"EventNamespace": "loki",
+		"EventName": "client_network_samples_snapshot",
+		"Payload":
+		{
+			"sessionId": "96103a7341a019677b2c239ad381e488",
+			"PlayerId": "9b9d2c887e2524f918e383a895f2f1c2",
+			"timestamp": "2026-08-16T04:54:23.166Z",
+			"inAveragePacketLoss": 0,
+			"outAveragePacketLoss": 0,
+			"HardwareId": "c1795a173f53c6f72e8b0125f11309c6"
+		},
+		"ClientTimestamp": "2026-08-16T04:54:56.905Z",
+		"flightId": "fe0275c749fce947c3902a860f491a1d",
+		"DeviceType": "Windows"
+	}
+]
+
+#19 23:55:23.546  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#20 23:55:23.734  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#21 23:55:23.906  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#22 23:55:23.912  GET /configuration/client?language=en
+    -> 200  (1ms)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#23 23:55:24.077  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#24 23:55:24.252  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#25 23:55:24.257  GET /storefront/wallet/9b9d2c887e2524f918e383a895f2f1c2
+    -> 200  (0s)
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+
+#26 23:55:24.257  GET /storefront/real/offers/9b9d2c887e2524f918e383a895f2f1c2
+    -> 200  (0s)
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+
+#27 23:55:24.423  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#28 23:55:24.598  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#29 23:55:24.769  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#30 23:55:24.943  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#31 23:55:25.110  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#32 23:55:25.282  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#33 23:55:25.452  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#34 23:55:25.622  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#35 23:55:25.792  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#36 23:55:25.857  GET /configuration/client
+    -> 200  (0s)
+    User-Agent: s122-verify-NOT-the-game
+
+#37 23:55:25.964  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#38 23:55:26.004  GET /content-service/manifest/release2.4.live-156430-shipping?nonEnabledOnly=true
+    -> 200  (0s)
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+
+#39 23:55:26.140  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#40 23:55:26.314  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#41 23:55:26.484  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#42 23:55:26.655  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#43 23:55:26.826  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#44 23:55:26.998  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#45 23:55:27.168  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#46 23:55:27.341  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#47 23:55:27.513  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#48 23:55:27.683  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#49 23:55:27.857  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#50 23:55:28.025  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#51 23:55:28.197  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#52 23:55:28.368  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#53 23:55:28.538  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#54 23:55:28.715  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#55 23:55:28.957  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#56 23:55:29.147  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#57 23:55:29.316  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#58 23:55:29.488  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#59 23:55:29.663  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#60 23:55:29.841  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#61 23:55:30.014  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#62 23:55:30.182  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#63 23:55:30.356  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#64 23:55:30.443  GET /party/players/9b9d2c887e2524f918e383a895f2f1c2/voice
+    -> 200  (0s)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#65 23:55:30.525  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#66 23:55:30.691  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#67 23:55:30.863  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#68 23:55:31.032  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#69 23:55:31.206  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#70 23:55:31.373  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#71 23:55:31.547  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#72 23:55:31.716  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#73 23:55:31.888  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#74 23:55:32.058  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#75 23:55:32.230  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#76 23:55:32.398  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#77 23:55:32.571  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#78 23:55:32.741  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#79 23:55:32.913  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#80 23:55:33.083  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#81 23:55:33.257  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#82 23:55:33.430  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#83 23:55:33.646  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#84 23:55:33.824  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#85 23:55:33.990  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#86 23:55:34.162  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#87 23:55:34.331  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#88 23:55:34.504  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#89 23:55:34.682  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#90 23:55:34.853  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#91 23:55:35.022  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#92 23:55:35.195  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#93 23:55:35.364  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#94 23:55:35.537  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#95 23:55:35.705  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#96 23:55:35.879  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#97 23:55:36.047  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#98 23:55:36.220  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#99 23:55:36.389  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#100 23:55:36.556  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#101 23:55:36.729  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#102 23:55:36.897  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#103 23:55:37.069  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#104 23:55:37.239  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#105 23:55:37.413  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#106 23:55:37.579  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#107 23:55:37.752  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#108 23:55:37.921  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#109 23:55:38.095  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#110 23:55:38.263  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#111 23:55:38.435  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#112 23:55:38.606  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#113 23:55:38.780  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#114 23:55:38.947  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#115 23:55:39.118  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#116 23:55:39.287  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#117 23:55:39.460  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#118 23:55:39.635  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#119 23:55:39.804  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#120 23:55:39.977  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#121 23:55:40.154  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#122 23:55:40.327  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#123 23:55:40.494  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#124 23:55:40.667  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#125 23:55:40.837  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#126 23:55:41.010  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:55:41.166  WS connected /lobby (subproto="wss") envelope=["LbS".."LbE"]
+
+#127 23:55:41.179  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#128 23:55:41.362  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#129 23:55:41.528  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:55:41.601  WS <- /lobby TEXT "type: listIncomingFriendsRequest\nid: friends-7489"
+
+* 23:55:41.618  WS -> /lobby TEXT "type: listIncomingFriendsResponse\nid: friends-7489\ncode: 0\nfriendsId: []"
+
+* 23:55:41.641  WS <- /lobby TEXT "type: listOutgoingFriendsRequest\nid: friends-4065"
+
+* 23:55:41.659  WS -> /lobby TEXT "type: listOutgoingFriendsResponse\nid: friends-4065\ncode: 0\nfriendsId: []"
+
+* 23:55:41.682  WS <- /lobby TEXT "type: listOfFriendsRequest\nid: friends-6965"
+
+* 23:55:41.701  WS -> /lobby TEXT "type: listOfFriendsResponse\nid: friends-6965\ncode: 0\nfriendsId: []"
+
+#130 23:55:41.701  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#131 23:55:41.894  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:55:41.973  WS <- /lobby TEXT "type: setUserStatusRequest\nid: presence-8289\navailability: online\nactivity: eyJhIjoiTWVudXMiLCJjViI6InJlbGVhc2UyLjQubGl2ZS0xNTY0MzAtc2hpcHBpbmciLCJwSWQiOiJwYXJ0eS05YjlkMmM4ODdlMjUyNGY5MThlMzgzYTg5NWYyZjFjMiIsInBRcyI6WyJkZWZhdWx0Il0sInBPIjowLCJwUyI6MSwibVBTIjozLCJyayI6MTIsInJrUCI6MTg1MCwiciI6W3sicSI6InR1dG9yaWFsTmV3IiwicmsiOjEyLCJya1AiOjE4NTB9XSwiYXZJZCI6IiIsInQiOltdLCJkc0lkIjoiIn0=\n"
+
+* 23:55:41.992  WS -> /lobby TEXT "type: setUserStatusResponse\nid: presence-8289\ncode: 0"
+
+#132 23:55:42.068  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:55:42.106  WS <- /lobby TEXT ""
+
+* 23:55:42.139  WS <- /lobby TEXT "type: friendsStatusRequest\nid: presence-2661"
+
+#133 23:55:42.236  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#134 23:55:42.410  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#135 23:55:42.578  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#136 23:55:42.751  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#137 23:55:42.919  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#138 23:55:43.092  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#139 23:55:43.261  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#140 23:55:43.433  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#141 23:55:43.602  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#142 23:55:43.775  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#143 23:55:43.944  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#144 23:55:44.116  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#145 23:55:44.285  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#146 23:55:44.459  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#147 23:55:44.635  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#148 23:55:44.808  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#149 23:55:44.978  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#150 23:55:45.150  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#151 23:55:45.326  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#152 23:55:45.499  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#153 23:55:45.681  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#154 23:55:45.857  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#155 23:55:46.033  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#156 23:55:46.201  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#157 23:55:46.374  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#158 23:55:46.544  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#159 23:55:46.717  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#160 23:55:46.885  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#161 23:55:47.057  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#162 23:55:47.226  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#163 23:55:47.399  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#164 23:55:47.567  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#165 23:55:47.740  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#166 23:55:47.910  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#167 23:55:48.082  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#168 23:55:48.257  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#169 23:55:48.300  POST /party/parties/party-9b9d2c887e2524f918e383a895f2f1c2/members/9b9d2c887e2524f918e383a895f2f1c2/latencies
+    -> 200  (0s)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    Content-Type: application/json
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    body: {"latencies":[{"host":"127.0.0.1","region":"us-east-1","route":"default","avgLatency":1}]}
+
+#170 23:55:48.431  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#171 23:55:48.607  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#172 23:55:48.775  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#173 23:55:48.950  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#174 23:55:49.117  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#175 23:55:49.290  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#176 23:55:49.459  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#177 23:55:49.632  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#178 23:55:49.806  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#179 23:55:49.975  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#180 23:55:50.147  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#181 23:55:50.317  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#182 23:55:50.489  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#183 23:55:50.658  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#184 23:55:50.833  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#185 23:55:51.003  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#186 23:55:51.183  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#187 23:55:51.358  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#188 23:55:51.533  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#189 23:55:51.769  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#190 23:55:51.961  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#191 23:55:52.140  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#192 23:55:52.307  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#193 23:55:52.482  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#194 23:55:52.657  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#195 23:55:52.833  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:55:52.877  WS -> /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 BINARY hb (proactive 30s keepalive)
+
+#196 23:55:52.886  GET /party/matchmaking/info
+    -> 200  (0s)
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Accept: */*
+
+#197 23:55:53.007  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#198 23:55:53.182  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#199 23:55:53.357  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#200 23:55:53.532  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#201 23:55:53.707  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#202 23:55:53.882  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#203 23:55:53.912  GET /configuration/client?language=en
+    -> 200  (0s)
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+
+#204 23:55:53.980  GET /content-service/manifest/release2.4.live-156430-shipping?nonEnabledOnly=true
+    -> 200  (0s)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#205 23:55:54.050  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#206 23:55:54.222  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#207 23:55:54.390  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#208 23:55:54.565  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#209 23:55:54.731  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#210 23:55:54.907  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#211 23:55:55.074  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#212 23:55:55.248  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#213 23:55:55.423  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#214 23:55:55.599  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#215 23:55:55.773  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#216 23:55:55.949  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#217 23:55:56.122  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#218 23:55:56.298  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#219 23:55:56.472  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#220 23:55:56.639  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#221 23:55:56.814  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#222 23:55:56.991  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#223 23:55:57.164  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#224 23:55:57.339  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#225 23:55:57.514  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#226 23:55:57.689  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#227 23:55:57.864  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#228 23:55:58.039  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#229 23:55:58.214  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#230 23:55:58.307  POST /game-telemetry/v1/protected/events
+    -> 200  (0s)
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Game-Client-Version: 1.0.0.0
+    body: [
+	{
+		"EventNamespace": "loki",
+		"EventName": "client_network_samples_snapshot",
+		"Payload":
+		{
+			"sessionId": "96103a7341a019677b2c239ad381e488",
+			"PlayerId": "9b9d2c887e2524f918e383a895f2f1c2",
+			"timestamp": "2026-08-16T04:55:23.038Z",
+			"inAveragePacketLoss": 0,
+			"outAveragePacketLoss": 0,
+			"HardwareId": "c1795a173f53c6f72e8b0125f11309c6"
+		},
+		"ClientTimestamp": "2026-08-16T04:55:56.906Z",
+		"flightId": "fe0275c749fce947c3902a860f491a1d",
+		"DeviceType": "Windows"
+	}
+]
+
+#231 23:55:58.389  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#232 23:55:58.563  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#233 23:55:58.738  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#234 23:55:58.914  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#235 23:55:59.088  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#236 23:55:59.263  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#237 23:55:59.438  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#238 23:55:59.614  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#239 23:55:59.787  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#240 23:55:59.963  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#241 23:56:00.138  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#242 23:56:00.312  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#243 23:56:00.488  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#244 23:56:00.662  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#245 23:56:00.821  GET /party/players/9b9d2c887e2524f918e383a895f2f1c2/voice
+    -> 200  (0s)
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+
+#246 23:56:00.837  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#247 23:56:01.021  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#248 23:56:01.196  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#249 23:56:01.371  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#250 23:56:01.546  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#251 23:56:01.721  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#252 23:56:02.045  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#253 23:56:02.221  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#254 23:56:02.386  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#255 23:56:02.562  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#256 23:56:02.737  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#257 23:56:02.912  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#258 23:56:03.086  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#259 23:56:03.261  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#260 23:56:03.437  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#261 23:56:03.612  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#262 23:56:03.786  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#263 23:56:03.967  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#264 23:56:04.146  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#265 23:56:04.320  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#266 23:56:04.494  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#267 23:56:04.670  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#268 23:56:04.844  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#269 23:56:05.020  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#270 23:56:05.194  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#271 23:56:05.369  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#272 23:56:05.544  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#273 23:56:05.719  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#274 23:56:05.894  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#275 23:56:06.069  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#276 23:56:06.245  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#277 23:56:06.418  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#278 23:56:06.594  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#279 23:56:06.769  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#280 23:56:06.945  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#281 23:56:07.118  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#282 23:56:07.294  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#283 23:56:07.468  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#284 23:56:07.644  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#285 23:56:07.811  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#286 23:56:07.977  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#287 23:56:08.152  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#288 23:56:08.318  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#289 23:56:08.494  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#290 23:56:08.670  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#291 23:56:08.848  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#292 23:56:09.027  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#293 23:56:09.203  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#294 23:56:09.376  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#295 23:56:09.551  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#296 23:56:09.726  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#297 23:56:09.901  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#298 23:56:10.076  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#299 23:56:10.251  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#300 23:56:10.426  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#301 23:56:10.593  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#302 23:56:10.767  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#303 23:56:10.942  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#304 23:56:11.117  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#305 23:56:11.291  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#306 23:56:11.467  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#307 23:56:11.641  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#308 23:56:11.817  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#309 23:56:11.992  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:56:12.084  WS <- /lobby TEXT ""
+
+#310 23:56:12.167  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#311 23:56:12.342  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#312 23:56:12.516  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#313 23:56:12.691  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#314 23:56:12.867  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#315 23:56:13.043  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#316 23:56:13.217  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#317 23:56:13.392  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#318 23:56:13.567  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#319 23:56:13.742  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#320 23:56:13.917  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#321 23:56:14.091  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#322 23:56:14.266  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#323 23:56:14.443  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#324 23:56:14.624  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#325 23:56:14.799  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#326 23:56:15.016  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#327 23:56:15.201  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#328 23:56:15.374  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#329 23:56:15.550  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#330 23:56:15.724  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#331 23:56:15.899  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#332 23:56:16.073  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#333 23:56:16.248  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#334 23:56:16.424  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#335 23:56:16.606  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#336 23:56:16.782  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#337 23:56:16.956  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#338 23:56:17.131  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#339 23:56:17.306  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#340 23:56:17.481  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#341 23:56:17.656  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#342 23:56:17.827  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:56:17.878  WS <- /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 BINARY (2 bytes) 6862
+
+* 23:56:17.904  WS -> /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 TEXT hb reply {"Resource":"hb","Version":0,"Payload":""}
+
+#343 23:56:18.006  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#344 23:56:18.181  POST /party/parties/party-9b9d2c887e2524f918e383a895f2f1c2/members/9b9d2c887e2524f918e383a895f2f1c2/latencies
+    -> 200  (0s)
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    Content-Type: application/json
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    body: {"latencies":[{"host":"127.0.0.1","region":"us-east-1","route":"default","avgLatency":1}]}
+
+#345 23:56:18.181  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#346 23:56:18.382  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#347 23:56:18.556  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#348 23:56:18.731  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#349 23:56:18.906  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#350 23:56:19.073  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#351 23:56:19.248  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#352 23:56:19.423  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#353 23:56:19.598  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#354 23:56:19.765  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#355 23:56:19.939  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#356 23:56:20.115  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#357 23:56:20.289  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#358 23:56:20.464  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#359 23:56:20.639  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#360 23:56:20.814  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#361 23:56:20.989  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#362 23:56:21.163  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#363 23:56:21.338  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#364 23:56:21.514  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#365 23:56:21.688  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#366 23:56:21.863  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#367 23:56:22.030  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#368 23:56:22.255  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#369 23:56:22.429  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#370 23:56:22.604  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#371 23:56:22.780  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#372 23:56:22.887  GET /party/matchmaking/info
+    -> 200  (0s)
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+
+#373 23:56:22.887  GET /core-game/regions
+    -> 200  (1ms)
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+
+#374 23:56:22.955  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#375 23:56:23.130  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#376 23:56:23.304  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#377 23:56:23.479  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#378 23:56:23.654  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#379 23:56:23.829  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#380 23:56:23.881  GET /configuration/client?language=en
+    -> 200  (1ms)
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+
+#381 23:56:23.950  GET /content-service/manifest/release2.4.live-156430-shipping?nonEnabledOnly=true
+    -> 200  (0s)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#382 23:56:24.004  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#383 23:56:24.180  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#384 23:56:24.354  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#385 23:56:24.529  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#386 23:56:24.705  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#387 23:56:24.879  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#388 23:56:25.053  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#389 23:56:25.237  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#390 23:56:25.412  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#391 23:56:25.587  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#392 23:56:25.831  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#393 23:56:26.013  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#394 23:56:26.186  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#395 23:56:26.353  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#396 23:56:26.528  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#397 23:56:26.703  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#398 23:56:26.878  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#399 23:56:27.052  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#400 23:56:27.227  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#401 23:56:27.395  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#402 23:56:27.569  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#403 23:56:27.744  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#404 23:56:27.920  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#405 23:56:28.095  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#406 23:56:28.269  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#407 23:56:28.445  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#408 23:56:28.619  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#409 23:56:28.794  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#410 23:56:28.969  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#411 23:56:29.152  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#412 23:56:29.327  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#413 23:56:29.502  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#414 23:56:29.677  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#415 23:56:29.844  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#416 23:56:30.018  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#417 23:56:30.194  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#418 23:56:30.368  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#419 23:56:30.543  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#420 23:56:30.718  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#421 23:56:30.893  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#422 23:56:31.069  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#423 23:56:31.231  GET /party/players/9b9d2c887e2524f918e383a895f2f1c2/voice
+    -> 200  (0s)
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+
+#424 23:56:31.242  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#425 23:56:31.434  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#426 23:56:31.601  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#427 23:56:31.776  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#428 23:56:31.959  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#429 23:56:32.143  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#430 23:56:32.314  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#431 23:56:32.495  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#432 23:56:32.668  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#433 23:56:32.842  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#434 23:56:33.020  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#435 23:56:33.196  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#436 23:56:33.376  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#437 23:56:33.552  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#438 23:56:33.725  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#439 23:56:33.821  POST /party/parties/party-9b9d2c887e2524f918e383a895f2f1c2/setTargetQueues
+    -> 200  (1ms)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    Content-Type: application/json
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    body: {"queueIds":["default","deathmatch"]}
+
+#440 23:56:33.901  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#441 23:56:34.076  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#442 23:56:34.252  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#443 23:56:34.426  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#444 23:56:34.601  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#445 23:56:34.783  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#446 23:56:34.959  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#447 23:56:35.148  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#448 23:56:35.317  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#449 23:56:35.508  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#450 23:56:35.676  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#451 23:56:35.853  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#452 23:56:36.033  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#453 23:56:36.210  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#454 23:56:36.391  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#455 23:56:36.568  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#456 23:56:36.744  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#457 23:56:36.918  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#458 23:56:37.092  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#459 23:56:37.266  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#460 23:56:37.457  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#461 23:56:37.636  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#462 23:56:37.817  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#463 23:56:37.988  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#464 23:56:38.169  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#465 23:56:38.341  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#466 23:56:38.517  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#467 23:56:38.705  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#468 23:56:38.882  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#469 23:56:39.057  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#470 23:56:39.232  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#471 23:56:39.407  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#472 23:56:39.582  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#473 23:56:39.782  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#474 23:56:39.950  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#475 23:56:40.132  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#476 23:56:40.306  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#477 23:56:40.481  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#478 23:56:40.656  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#479 23:56:40.831  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#480 23:56:40.998  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#481 23:56:41.171  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#482 23:56:41.347  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#483 23:56:41.523  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#484 23:56:41.698  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#485 23:56:41.872  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#486 23:56:42.047  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:56:42.202  WS <- /lobby TEXT ""
+
+#487 23:56:42.222  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#488 23:56:42.405  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#489 23:56:42.573  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#490 23:56:42.747  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#491 23:56:42.914  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#492 23:56:43.088  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#493 23:56:43.264  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#494 23:56:43.439  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#495 23:56:43.613  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#496 23:56:43.788  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#497 23:56:43.963  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#498 23:56:44.138  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#499 23:56:44.313  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#500 23:56:44.488  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#501 23:56:44.663  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#502 23:56:44.838  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#503 23:56:45.013  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#504 23:56:45.187  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#505 23:56:45.362  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#506 23:56:45.537  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#507 23:56:45.713  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#508 23:56:45.887  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#509 23:56:46.062  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#510 23:56:46.238  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#511 23:56:46.411  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#512 23:56:46.587  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#513 23:56:46.762  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#514 23:56:46.937  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#515 23:56:47.112  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#516 23:56:47.287  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#517 23:56:47.462  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#518 23:56:47.637  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#519 23:56:47.812  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:56:47.930  WS -> /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 BINARY hb (proactive 30s keepalive)
+
+#520 23:56:47.989  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#521 23:56:48.109  POST /party/parties/party-9b9d2c887e2524f918e383a895f2f1c2/members/9b9d2c887e2524f918e383a895f2f1c2/latencies
+    -> 200  (0s)
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    Content-Type: application/json
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    body: {"latencies":[{"host":"127.0.0.1","region":"us-east-1","route":"default","avgLatency":0}]}
+
+#522 23:56:48.162  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#523 23:56:48.345  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#524 23:56:48.520  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#525 23:56:48.686  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#526 23:56:48.861  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#527 23:56:49.037  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#528 23:56:49.210  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#529 23:56:49.387  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#530 23:56:49.561  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#531 23:56:49.735  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#532 23:56:49.911  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#533 23:56:50.086  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#534 23:56:50.261  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#535 23:56:50.434  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#536 23:56:50.610  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#537 23:56:50.785  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#538 23:56:50.960  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#539 23:56:51.136  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#540 23:56:51.310  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#541 23:56:51.486  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#542 23:56:51.652  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#543 23:56:51.819  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#544 23:56:51.994  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#545 23:56:52.168  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#546 23:56:52.343  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#547 23:56:52.519  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#548 23:56:52.694  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#549 23:56:52.860  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#550 23:56:52.910  GET /party/matchmaking/info
+    -> 200  (0s)
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+
+#551 23:56:52.910  GET /mailbox/config/version
+    -> 200  (0s)
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+
+#552 23:56:53.034  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#553 23:56:53.210  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#554 23:56:53.384  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#555 23:56:53.560  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#556 23:56:53.734  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#557 23:56:53.869  GET /configuration/client?language=en
+    -> 200  (0s)
+    Accept: */*
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+
+#558 23:56:53.909  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#559 23:56:53.936  GET /content-service/manifest/release2.4.live-156430-shipping?nonEnabledOnly=true
+    -> 200  (0s)
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+
+#560 23:56:54.084  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#561 23:56:54.260  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#562 23:56:54.435  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#563 23:56:54.610  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#564 23:56:54.784  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#565 23:56:54.959  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#566 23:56:55.134  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#567 23:56:55.308  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#568 23:56:55.484  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#569 23:56:55.659  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#570 23:56:55.834  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#571 23:56:56.008  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#572 23:56:56.184  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#573 23:56:56.358  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#574 23:56:56.532  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#575 23:56:56.758  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#576 23:56:56.934  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#577 23:56:57.134  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#578 23:56:57.317  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#579 23:56:57.501  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#580 23:56:57.682  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#581 23:56:57.859  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#582 23:56:58.033  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#583 23:56:58.208  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#584 23:56:58.307  POST /game-telemetry/v1/protected/events
+    -> 200  (0s)
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    Game-Client-Version: 1.0.0.0
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    body: [
+	{
+		"EventNamespace": "loki",
+		"EventName": "client_network_samples_snapshot",
+		"Payload":
+		{
+			"sessionId": "96103a7341a019677b2c239ad381e488",
+			"PlayerId": "9b9d2c887e2524f918e383a895f2f1c2",
+			"timestamp": "2026-08-16T04:56:23.024Z",
+			"inAveragePacketLoss": 0,
+			"outAveragePacketLoss": 0,
+			"HardwareId": "c1795a173f53c6f72e8b0125f11309c6"
+		},
+		"ClientTimestamp": "2026-08-16T04:56:56.906Z",
+		"flightId": "fe0275c749fce947c3902a860f491a1d",
+		"DeviceType": "Windows"
+	}
+]
+
+#585 23:56:58.383  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#586 23:56:58.557  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#587 23:56:58.733  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#588 23:56:58.907  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#589 23:56:59.082  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#590 23:56:59.258  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#591 23:56:59.432  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#592 23:56:59.607  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#593 23:56:59.782  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#594 23:56:59.957  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#595 23:57:00.132  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#596 23:57:00.307  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#597 23:57:00.482  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#598 23:57:00.657  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#599 23:57:00.831  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#600 23:57:01.007  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#601 23:57:01.182  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#602 23:57:01.357  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#603 23:57:01.532  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#604 23:57:01.697  GET /party/players/9b9d2c887e2524f918e383a895f2f1c2/voice
+    -> 200  (0s)
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Accept: */*
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+
+#605 23:57:01.706  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#606 23:57:01.898  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#607 23:57:02.072  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#608 23:57:02.281  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#609 23:57:02.457  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#610 23:57:02.631  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#611 23:57:02.806  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#612 23:57:02.981  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#613 23:57:03.156  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#614 23:57:03.331  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#615 23:57:03.506  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#616 23:57:03.672  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#617 23:57:03.848  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#618 23:57:04.023  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#619 23:57:04.198  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#620 23:57:04.372  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#621 23:57:04.547  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#622 23:57:04.722  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#623 23:57:04.897  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#624 23:57:05.072  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#625 23:57:05.248  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#626 23:57:05.427  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#627 23:57:05.606  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#628 23:57:05.783  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#629 23:57:05.964  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#630 23:57:06.137  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#631 23:57:06.313  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#632 23:57:06.488  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#633 23:57:06.663  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#634 23:57:06.838  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#635 23:57:07.012  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#636 23:57:07.188  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#637 23:57:07.363  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#638 23:57:07.538  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#639 23:57:07.712  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#640 23:57:07.896  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#641 23:57:08.072  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#642 23:57:08.245  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#643 23:57:08.421  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#644 23:57:08.596  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#645 23:57:08.770  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#646 23:57:08.945  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#647 23:57:09.121  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#648 23:57:09.295  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#649 23:57:09.470  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#650 23:57:09.645  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#651 23:57:09.821  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#652 23:57:09.995  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#653 23:57:10.170  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#654 23:57:10.345  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#655 23:57:10.520  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#656 23:57:10.695  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#657 23:57:10.870  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#658 23:57:11.044  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#659 23:57:11.220  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#660 23:57:11.394  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#661 23:57:11.570  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#662 23:57:11.752  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#663 23:57:11.927  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#664 23:57:12.103  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:57:12.225  WS <- /lobby TEXT ""
+
+#665 23:57:12.278  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#666 23:57:12.452  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#667 23:57:12.627  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#668 23:57:12.802  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:57:12.899  WS <- /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 BINARY (2 bytes) 6862
+
+* 23:57:12.926  WS -> /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 TEXT hb reply {"Resource":"hb","Version":0,"Payload":""}
+
+#669 23:57:12.978  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#670 23:57:13.152  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#671 23:57:13.327  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#672 23:57:13.494  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#673 23:57:13.668  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#674 23:57:13.844  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#675 23:57:14.019  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#676 23:57:14.194  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#677 23:57:14.368  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#678 23:57:14.544  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#679 23:57:14.718  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#680 23:57:14.894  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#681 23:57:15.068  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#682 23:57:15.234  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#683 23:57:15.410  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#684 23:57:15.585  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#685 23:57:15.760  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#686 23:57:15.935  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#687 23:57:16.109  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#688 23:57:16.285  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#689 23:57:16.477  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#690 23:57:16.651  GET /revival/loadout
+    -> 200  (1ms)
+    User-Agent: supervive-loadout-shim
+
+#691 23:57:16.834  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#692 23:57:17.009  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#693 23:57:17.185  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#694 23:57:17.351  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#695 23:57:17.525  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#696 23:57:17.701  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#697 23:57:17.875  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#698 23:57:18.051  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#699 23:57:18.225  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#700 23:57:18.401  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:57:18.586  WS <- /lobby TEXT "type: setUserStatusRequest\nid: presence-1242\navailability: offline\nactivity: \n"
+
+#701 23:57:18.597  DELETE /party/players/9b9d2c887e2524f918e383a895f2f1c2
+    -> 200  (0s)
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Content-Type: application/x-www-form-urlencoded
+    Accept: */*
+
+* 23:57:18.606  WS -> /lobby TEXT "type: setUserStatusResponse\nid: presence-1242\ncode: 0"
+
+* 23:57:18.654  WS <- /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 CLOSE
+
+#702 23:57:18.608  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+* 23:57:18.687  WS <- /lobby CLOSE
+
+* 23:57:18.689  WS closed /notifications/players/9b9d2c887e2524f918e383a895f2f1c2
+
+#703 23:57:18.680  POST /iam/v3/logout
+    -> 200  (0s)
+    Game-Client-Version: 1.0.0.0
+    Content-Type: application/x-www-form-urlencoded
+    Accept: application/json
+    User-Agent: Loki/UE5-CL-0 (http-legacy) Windows/10.0.19045.1.256.64bit
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+
+* 23:57:18.748  WS closed /lobby
+
+#704 23:55:22.837  GET /notifications/players/9b9d2c887e2524f918e383a895f2f1c2
+    -> 101  (1m55.936s)
+    X-Theorycraft-Clientversion: release2.4.live-156430-shipping
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+
+#705 23:55:41.166  GET /lobby
+    -> 101  (1m37.657s)
+    Game-Client-Version: 1.0.0.0
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InN1cGVydml2ZS1yZXZpdmFsLWtleS0xIiwidHlwIjoiSldUIn0.eyJiYW5zIjpbXSwiY2xpZW50X2lkIjoiYmE4ZmI1OWEzNGJiNDgxYWJjYTA4YzQ2YmE0ODgwMjUiLCJjb3VudHJ5IjoiVVMiLCJkaXNwbGF5X25hbWUiOiJSZXZpdmVyIiwiZXhwIjoxNzg2OTI5MjgzLCJpYXQiOjE3ODY4NDI4ODMsImlzX2NvbXBseSI6dHJ1ZSwiamZsZ3MiOjAsIm5hbWVzcGFjZSI6InN1cGVydml2ZSIsIm5iZiI6MTc4Njg0MjgyMywicGVybWlzc2lvbnMiOlt7IkFjdGlvbiI6MTUsIlJlc291cmNlIjoiTkFNRVNQQUNFOnN1cGVydml2ZToqIn0seyJBY3Rpb24iOjE1LCJSZXNvdXJjZSI6IkFETUlOOk5BTUVTUEFDRTpzdXBlcnZpdmU6KiJ9XSwicm9sZXMiOltdLCJzY29wZSI6ImNvbW1lcmNlIGFjY291bnQgc29jaWFsIHB1Ymxpc2hpbmcgYW5hbHl0aWNzIiwic3ViIjoiOWI5ZDJjODg3ZTI1MjRmOTE4ZTM4M2E4OTVmMmYxYzIiLCJ1bmlxdWVEaXNwbGF5TmFtZSI6IlJldml2ZXIjMDAwMSIsInVuaXF1ZV9kaXNwbGF5X25hbWUiOiJSZXZpdmVyIzAwMDEifQ.fv8xRcCKsGH-kO-Yy5UkjIPChaqt0XYnodWf6hdS9uvwgLBx_Gpa6LtecHNO-sBxhNPFiTKP9dX9Vt7yMu-Z2L8x2NIYZSvJXh40Ti4JY4OCIKzNCZ-YroW2-mPGnTu0jObkHPxrOs8nMbQ1S2Hi3HfrJfBHW0DD2Mm_lj8eplsA1NBAf-F9J2DlvHPr9kizT9wglS9ihvwZNO1BzZRUmktpPOIJ9CVv6co8pPXv-Wflq_6jaSTwOMwqVFHrCD8lO4aYOVGBrPvv5hex5JJgstKYqepEYKv8fxQNbyzSoWGDQOqnxcv5hsjkdXZI29YJnzEWQdRhUjt3Y6Bxnjgp-A
+
+#706 23:57:18.875  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#707 23:57:19.058  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#708 23:57:19.242  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#709 23:57:19.417  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#710 23:57:19.591  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#711 23:57:19.766  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#712 23:57:19.942  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#713 23:57:20.116  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#714 23:57:20.291  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#715 23:57:20.466  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#716 23:57:20.641  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#717 23:57:20.816  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#718 23:57:21.000  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#719 23:57:21.175  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#720 23:57:21.349  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#721 23:57:21.532  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim
+
+#722 23:57:21.716  GET /revival/loadout
+    -> 200  (0s)
+    User-Agent: supervive-loadout-shim

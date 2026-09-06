@@ -1,0 +1,1140 @@
+==============================================================================
+MODULE   Content.Train.TrainMovableBaseComponent
+SOURCE   Content/Train/TrainMovableBaseComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_UTrainAnchor;
+const TSubclassOf<UObject@> __StaticType_UBackTrainAnchor;
+const TSubclassOf<UObject@> __StaticType_UFrontTrainAnchor;
+const TSubclassOf<UObject@> __StaticType_UTrainMovableBaseComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UTrainAnchor@ UTrainAnchor()
+// 4 instr, 28 B bytecode, id=0x98E596D9, varspace=4
+------------------------------------------------------------------------------
+{
+    UTrainAnchor v4;
+
+    v4 = UTrainAnchor();
+    return v4;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  ALLOC          DW3:84535 q:0x26e6ed75800; new UTrainAnchor   ctor=UTrainAnchor::UTrainAnchor
+    //     5  LOADOBJ        rW0:4
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UBackTrainAnchor@ UBackTrainAnchor()
+// 4 instr, 28 B bytecode, id=0x7E7B7040, varspace=4
+------------------------------------------------------------------------------
+{
+    UBackTrainAnchor v4;
+
+    v4 = UBackTrainAnchor();
+    return v4;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  ALLOC          DW3:84538 q:0x26e6ed75500; new UBackTrainAnchor   ctor=UBackTrainAnchor::UBackTrainAnchor
+    //     5  LOADOBJ        rW0:4
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UFrontTrainAnchor@ UFrontTrainAnchor()
+// 4 instr, 28 B bytecode, id=0x42E90644, varspace=4
+------------------------------------------------------------------------------
+{
+    UFrontTrainAnchor v4;
+
+    v4 = UFrontTrainAnchor();
+    return v4;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  ALLOC          DW3:84540 q:0x26e6ed75200; new UFrontTrainAnchor   ctor=UFrontTrainAnchor::UFrontTrainAnchor
+    //     5  LOADOBJ        rW0:4
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UTrainMovableBaseComponent@ UTrainMovableBaseComponent()
+// 4 instr, 28 B bytecode, id=0x95ACB112, varspace=2
+------------------------------------------------------------------------------
+{
+    UTrainMovableBaseComponent v2;
+
+    v2 = UTrainMovableBaseComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84547 q:0x26e6ed74f00; new UTrainMovableBaseComponent   ctor=UTrainMovableBaseComponent::UTrainMovableBaseComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x1A1E9E57, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UTrainAnchor);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b3a58         ; __StaticType_UTrainAnchor
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x0956AF02, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBackTrainAnchor);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b3bd8         ; __StaticType_UBackTrainAnchor
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x7397E337, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UFrontTrainAnchor);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b3b58         ; __StaticType_UFrontTrainAnchor
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x774F3B08, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UTrainMovableBaseComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b3c58         ; __StaticType_UTrainMovableBaseComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UTrainAnchor@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x4DB7EF89, varspace=2
+------------------------------------------------------------------------------
+{
+    UTrainAnchor v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UTrainAnchor, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972659            ; UTrainAnchor@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3a58         ; __StaticType_UTrainAnchor
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UTrainAnchor@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x92994B20, varspace=2
+------------------------------------------------------------------------------
+{
+    UTrainAnchor v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UTrainAnchor, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972659            ; UTrainAnchor@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3a58         ; __StaticType_UTrainAnchor
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UTrainAnchor@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x64DC7E2E, varspace=2
+------------------------------------------------------------------------------
+{
+    UTrainAnchor v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UTrainAnchor, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972659            ; UTrainAnchor@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3a58         ; __StaticType_UTrainAnchor
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBackTrainAnchor@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x25340213, varspace=2
+------------------------------------------------------------------------------
+{
+    UBackTrainAnchor v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBackTrainAnchor, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972656            ; UBackTrainAnchor@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3bd8         ; __StaticType_UBackTrainAnchor
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBackTrainAnchor@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xF3C9E9BB, varspace=2
+------------------------------------------------------------------------------
+{
+    UBackTrainAnchor v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBackTrainAnchor, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972656            ; UBackTrainAnchor@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3bd8         ; __StaticType_UBackTrainAnchor
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBackTrainAnchor@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x891B515E, varspace=2
+------------------------------------------------------------------------------
+{
+    UBackTrainAnchor v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBackTrainAnchor, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972656            ; UBackTrainAnchor@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3bd8         ; __StaticType_UBackTrainAnchor
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UFrontTrainAnchor@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x14C99F41, varspace=2
+------------------------------------------------------------------------------
+{
+    UFrontTrainAnchor v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UFrontTrainAnchor, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972657            ; UFrontTrainAnchor@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3b58         ; __StaticType_UFrontTrainAnchor
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UFrontTrainAnchor@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x9659241C, varspace=2
+------------------------------------------------------------------------------
+{
+    UFrontTrainAnchor v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UFrontTrainAnchor, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972657            ; UFrontTrainAnchor@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3b58         ; __StaticType_UFrontTrainAnchor
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UFrontTrainAnchor@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x8B6E5E6D, varspace=2
+------------------------------------------------------------------------------
+{
+    UFrontTrainAnchor v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UFrontTrainAnchor, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972657            ; UFrontTrainAnchor@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3b58         ; __StaticType_UFrontTrainAnchor
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UTrainMovableBaseComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x68183716, varspace=2
+------------------------------------------------------------------------------
+{
+    UTrainMovableBaseComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UTrainMovableBaseComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972658            ; UTrainMovableBaseComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3c58         ; __StaticType_UTrainMovableBaseComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UTrainMovableBaseComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xE483D9EF, varspace=2
+------------------------------------------------------------------------------
+{
+    UTrainMovableBaseComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UTrainMovableBaseComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972658            ; UTrainMovableBaseComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3c58         ; __StaticType_UTrainMovableBaseComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UTrainMovableBaseComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x079A0EAF, varspace=2
+------------------------------------------------------------------------------
+{
+    UTrainMovableBaseComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UTrainMovableBaseComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972658            ; UTrainMovableBaseComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3c58         ; __StaticType_UTrainMovableBaseComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS(Abstract, meta=(IsBlueprintBase=true, Blueprintable=true))
+class UTrainAnchor : USceneComponent
+// base /Script/Engine.SceneComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/SceneComponent.h
+==============================================================================
+{
+}
+
+------------------------------------------------------------------------------
+UTrainAnchor() const
+// 3 instr, 20 B bytecode, id=0x94529509, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  FinConstruct   q:0x26e6ed75800         ; UTrainAnchor
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 5 instr, 32 B bytecode, id=0x3343D1FD, varspace=1
+------------------------------------------------------------------------------
+{
+    this.SetbHiddenInGame(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a62f580         ; void USceneComponent::SetbHiddenInGame(bool)
+    //     7  RET            W0:2
+
+==============================================================================
+UCLASS(meta=(IsBlueprintBase=true, Blueprintable=true))
+class UBackTrainAnchor : UTrainAnchor
+==============================================================================
+{
+}
+
+------------------------------------------------------------------------------
+UBackTrainAnchor() const
+// 5 instr, 32 B bytecode, id=0x8BEF3D2E, varspace=0
+------------------------------------------------------------------------------
+{
+    this.UTrainAnchor();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALL           d:84535                 ; void UTrainAnchor::UTrainAnchor()
+    //     3  PshVPtr        rW0:0
+    //     4  FinConstruct   q:0x26e6ed75500         ; UBackTrainAnchor
+    //     7  RET            W0:2
+
+==============================================================================
+UCLASS(meta=(IsBlueprintBase=true, Blueprintable=true))
+class UFrontTrainAnchor : UTrainAnchor
+==============================================================================
+{
+}
+
+------------------------------------------------------------------------------
+UFrontTrainAnchor() const
+// 5 instr, 32 B bytecode, id=0x48FF3100, varspace=0
+------------------------------------------------------------------------------
+{
+    this.UTrainAnchor();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALL           d:84535                 ; void UTrainAnchor::UTrainAnchor()
+    //     3  PshVPtr        rW0:0
+    //     4  FinConstruct   q:0x26e6ed75200         ; UFrontTrainAnchor
+    //     7  RET            W0:2
+
+==============================================================================
+UCLASS(Abstract, meta=(IsBlueprintBase=true, Blueprintable=true))
+class UTrainMovableBaseComponent : UMovableBaseComponent
+// base /Script/Engine.MovableBaseComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, RepCond=0) float64 InitialOffset;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, RepCond=0) float64 Speed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) USplineComponent@ TrackSpline;
+
+}
+
+------------------------------------------------------------------------------
+UTrainMovableBaseComponent() const
+// 3 instr, 20 B bytecode, id=0x58DACABC, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  FinConstruct   q:0x26e6ed74f00         ; UTrainMovableBaseComponent
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Const)
+float64 GetLength()
+// 70 instr, 444 B bytecode, id=0x6B3F2267, varspace=34
+------------------------------------------------------------------------------
+{
+    UBackTrainAnchor v2;
+    AActor v4;
+    UClass v6;
+    TSubclassOf<UActorComponent@> v8;
+    UActorComponent v10;
+    UBackTrainAnchor v12;
+    UFrontTrainAnchor v14;
+    UFrontTrainAnchor v16;
+    auto v17;
+    auto v20;
+    FVector v26;
+    FVector v32;
+
+    v6 = UBackTrainAnchor::StaticClass();
+    v8 = TSubclassOf<UActorComponent@>(v6);
+    v4 = this.GetOwner();
+    v10 = v4.GetComponentByClass(v8);
+    if (v10 == null) {
+        v12 = null;
+    } else {
+        v12 = cast<UBackTrainAnchor>(v10);
+    }
+    v2 = v12;
+    v6 = UFrontTrainAnchor::StaticClass();
+    v8 = TSubclassOf<UActorComponent@>(v6);
+    v4 = this.GetOwner();
+    v10 = v4.GetComponentByClass(v8);
+    if (v10 == null) {
+        v16 = null;
+    } else {
+        v16 = cast<UFrontTrainAnchor>(v10);
+    }
+    v14 = v16;
+    if (v2 != null) {
+        v17 = v14 == null;
+    } else {
+        v17 = true;
+    }
+    if (!v17) {
+        v26 = v14.GetRelativeLocation();
+        v20 = v26.X;
+        v32 = v2.GetRelativeLocation();
+        v20 = v20 - v32.X;
+    } else {
+        v20 = 0;
+    }
+    return v20;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84551                 ; UClass@ UBackTrainAnchor::StaticClass()
+    //     2  STOREOBJ       wW0:6
+    //     3  PshVPtr        rW0:6
+    //     4  PSF            rW0:8
+    //     5  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //     8  PSF            rW0:8
+    //     9  PshVPtr        rW0:0
+    //    10  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    13  STOREOBJ       wW0:4
+    //    14  PshVPtr        rW0:4
+    //    15  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //    18  STOREOBJ       wW0:10
+    //    19  CmpPtrNull     rW0:10
+    //    20  JZ             ->31
+    //    22  TYPEID         d:1207972656            ; UBackTrainAnchor@
+    //    24  PSF            rW0:12
+    //    25  PshVPtr        rW0:10
+    //    26  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    29  JMP            ->32
+    //    31  ClrVPtr        wW0:12
+    //    32  PshVPtr        rW0:12
+    //    33  RefCpyV        wW0:2
+    //    34  CALL           d:84552                 ; UClass@ UFrontTrainAnchor::StaticClass()
+    //    36  STOREOBJ       wW0:6
+    //    37  PshVPtr        rW0:6
+    //    38  PSF            rW0:8
+    //    39  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //    42  PSF            rW0:8
+    //    43  PshVPtr        rW0:0
+    //    44  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    47  STOREOBJ       wW0:4
+    //    48  PshVPtr        rW0:4
+    //    49  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //    52  STOREOBJ       wW0:10
+    //    53  CmpPtrNull     rW0:10
+    //    54  JZ             ->65
+    //    56  TYPEID         d:1207972657            ; UFrontTrainAnchor@
+    //    58  PSF            rW0:16
+    //    59  PshVPtr        rW0:10
+    //    60  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    63  JMP            ->66
+    //    65  ClrVPtr        wW0:16
+    //    66  PshVPtr        rW0:16
+    //    67  RefCpyV        wW0:14
+    //    68  CmpPtrNull     rW0:2
+    //    69  JNZ            ->75
+    //    71  SetV1          wW0:17 d:1
+    //    73  JMP            ->80
+    //    75  CmpPtrNull     rW0:14
+    //    76  TZ
+    //    77  CpyRtoV4       wW0:18
+    //    78  CpyVtoV4       wW0:17 rW1:18
+    //    80  CpyVtoR1       rW0:17
+    //    81  JLowZ          ->89
+    //    83  SetV8          wW0:20 q:0x0
+    //    86  CpyVtoR8       rW0:20
+    //    87  JMP            ->110
+    //    89  PSF            rW0:26
+    //    90  PshVPtr        rW0:14
+    //    91  CALLSYS        q:0x26e79f621c0         ; FVector USceneComponent::GetRelativeLocation() const
+    //    94  LoadVObjR      rW0:26 W1:0 DW2:67117444; FVector::X  (+0)
+    //    97  RDR8           wW0:20
+    //    98  PSF            rW0:32
+    //    99  PshVPtr        rW0:2
+    //   100  CALLSYS        q:0x26e79f621c0         ; FVector USceneComponent::GetRelativeLocation() const
+    //   103  LoadVObjR      rW0:32 W1:0 DW2:67117444; FVector::X  (+0)
+    //   106  RDR8           wW0:34
+    //   107  SUBd           wW0:20 rW1:20 rW2:34
+    //   109  CpyVtoR8       rW0:20
+    //   110  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent, Const)
+// UFunction name: GetRootTransformAtTime
+bool GetRootTransformAtTime_Implementation(const float64 Timestamp, FTransform&inout OutTransform)
+// 158 instr, 1004 B bytecode, id=0x7788BBB3, varspace=152
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v5;
+    float v6;
+    auto v7;
+    float64 v10;
+    AActor v12;
+    UBackTrainAnchor v14;
+    UClass v16;
+    TSubclassOf<UActorComponent@> v18;
+    UActorComponent v20;
+    UBackTrainAnchor v22;
+    UFrontTrainAnchor v24;
+    UFrontTrainAnchor v26;
+    auto v27;
+    FVector v34;
+    FVector v40;
+    auto v42;
+    auto v44;
+    FVector v50;
+    auto v51;
+    FVector v60;
+    FRotator v78;
+    FTransform v104;
+    FTransform v128;
+    FTransform v152;
+
+    if (this.TrackSpline == null) {
+        v7 = 0;
+    } else {
+        v6 = this.TrackSpline.GetSplineLength();
+        v7 = v6;
+    }
+    v10 = float64(v7);
+    v2 = v10;
+    v10 = 0;
+    if (v10 > 0) {
+        v16 = UBackTrainAnchor::StaticClass();
+        v18 = TSubclassOf<UActorComponent@>(v16);
+        v12 = this.GetOwner();
+        v20 = v12.GetComponentByClass(v18);
+        if (v20 == null) {
+            v22 = null;
+        } else {
+            v22 = cast<UBackTrainAnchor>(v20);
+        }
+        v14 = v22;
+        v16 = UFrontTrainAnchor::StaticClass();
+        v18 = TSubclassOf<UActorComponent@>(v16);
+        v12 = this.GetOwner();
+        v20 = v12.GetComponentByClass(v18);
+        if (v20 == null) {
+            v26 = null;
+        } else {
+            v26 = cast<UFrontTrainAnchor>(v20);
+        }
+        v24 = v26;
+        if (v14 != null) {
+            v27 = v24 == null;
+            v5 = v27;
+        } else {
+            v5 = true;
+        }
+        if (!v5) {
+            v40 = v24.GetRelativeLocation();
+            v44 = this.GetDistanceAlongSpline(Timestamp, 0);
+            v51 = true;
+            v6 = float(v44);
+            v34 = this.TrackSpline.GetLocationAtDistanceAlongSpline(v6, true);
+            v10 = this.GetLength();
+            v10 = -v10;
+            v42 = this.GetDistanceAlongSpline(Timestamp, v10);
+            v51 = true;
+            v6 = float(v42);
+            v50 = this.TrackSpline.GetLocationAtDistanceAlongSpline(v6, true);
+            v78 = FRotator::MakeFromX(v60);
+            v128 = FTransform(v78, v34, FVector::OneVector);
+            v104 = v24.GetRelativeTransform();
+            v152 = v104.Inverse();
+            OutTransform = v104;
+            v27 = true;
+        } else {
+            v12 = this.GetOwner();
+            OutTransform = v12.GetActorTransform();
+            v5 = true;
+        }
+    } else {
+        v12 = this.GetOwner();
+        OutTransform = v12.GetActorTransform();
+        v5 = true;
+    }
+    return v27;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:232 d:134230834      ; UTrainMovableBaseComponent::TrackSpline  (+232)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JZ             ->20
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:232 d:134230834      ; UTrainMovableBaseComponent::TrackSpline  (+232)
+    //    11  RDSPtr
+    //    12  CALLSYS        q:0x26e79a2e240         ; float USplineComponent::GetSplineLength() const
+    //    15  CpyRtoV4       wW0:6
+    //    16  CpyVtoV4       wW0:7 rW1:6
+    //    18  JMP            ->22
+    //    20  SetV4          wW0:7 d:0
+    //    22  fTOd           wW0:10 rW1:7
+    //    24  CpyVtoV8       wW0:2 rW1:10
+    //    26  SetV8          wW0:10 q:0x0
+    //    29  CMPd           rW0:2 rW1:10
+    //    31  JP             ->52
+    //    33  PshVPtr        rW0:0
+    //    34  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    37  STOREOBJ       wW0:12
+    //    38  PshVPtr        rW0:12
+    //    39  CALLSYS        q:0x26e7970adc0         ; const FTransform& AActor::GetActorTransform() const   [UFunction GetTransform]
+    //    42  PshRPtr
+    //    43  PshVPtr        rW0:-4
+    //    44  CALLSYS        q:0x26e70615100         ; FTransform& FTransform::opAssign(const FTransform&)
+    //    47  SetV1          wW0:5 d:1
+    //    49  CpyVtoR4       rW0:5
+    //    50  JMP            ->250
+    //    52  CALL           d:84551                 ; UClass@ UBackTrainAnchor::StaticClass()
+    //    54  STOREOBJ       wW0:16
+    //    55  PshVPtr        rW0:16
+    //    56  PSF            rW0:18
+    //    57  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //    60  PSF            rW0:18
+    //    61  PshVPtr        rW0:0
+    //    62  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    65  STOREOBJ       wW0:12
+    //    66  PshVPtr        rW0:12
+    //    67  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //    70  STOREOBJ       wW0:20
+    //    71  CmpPtrNull     rW0:20
+    //    72  JZ             ->83
+    //    74  TYPEID         d:1207972656            ; UBackTrainAnchor@
+    //    76  PSF            rW0:22
+    //    77  PshVPtr        rW0:20
+    //    78  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    81  JMP            ->84
+    //    83  ClrVPtr        wW0:22
+    //    84  PshVPtr        rW0:22
+    //    85  RefCpyV        wW0:14
+    //    86  CALL           d:84552                 ; UClass@ UFrontTrainAnchor::StaticClass()
+    //    88  STOREOBJ       wW0:16
+    //    89  PshVPtr        rW0:16
+    //    90  PSF            rW0:18
+    //    91  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //    94  PSF            rW0:18
+    //    95  PshVPtr        rW0:0
+    //    96  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    99  STOREOBJ       wW0:12
+    //   100  PshVPtr        rW0:12
+    //   101  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //   104  STOREOBJ       wW0:20
+    //   105  CmpPtrNull     rW0:20
+    //   106  JZ             ->117
+    //   108  TYPEID         d:1207972657            ; UFrontTrainAnchor@
+    //   110  PSF            rW0:26
+    //   111  PshVPtr        rW0:20
+    //   112  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   115  JMP            ->118
+    //   117  ClrVPtr        wW0:26
+    //   118  PshVPtr        rW0:26
+    //   119  RefCpyV        wW0:24
+    //   120  CmpPtrNull     rW0:14
+    //   121  JNZ            ->127
+    //   123  SetV1          wW0:5 d:1
+    //   125  JMP            ->132
+    //   127  CmpPtrNull     rW0:24
+    //   128  TZ
+    //   129  CpyRtoV4       wW0:27
+    //   130  CpyVtoV4       wW0:5 rW1:27
+    //   132  CpyVtoR1       rW0:5
+    //   133  JLowZ          ->154
+    //   135  PshVPtr        rW0:0
+    //   136  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //   139  STOREOBJ       wW0:12
+    //   140  PshVPtr        rW0:12
+    //   141  CALLSYS        q:0x26e7970adc0         ; const FTransform& AActor::GetActorTransform() const   [UFunction GetTransform]
+    //   144  PshRPtr
+    //   145  PshVPtr        rW0:-4
+    //   146  CALLSYS        q:0x26e70615100         ; FTransform& FTransform::opAssign(const FTransform&)
+    //   149  SetV1          wW0:5 d:1
+    //   151  CpyVtoR4       rW0:5
+    //   152  JMP            ->250
+    //   154  PSF            rW0:40
+    //   155  PshVPtr        rW0:24
+    //   156  CALLSYS        q:0x26e79f621c0         ; FVector USceneComponent::GetRelativeLocation() const
+    //   159  PshC8          q:0x0
+    //   162  PshV8          rW0:-2
+    //   163  PshVPtr        rW0:0
+    //   164  CALLINTF       d:84545                 ; float64 UTrainMovableBaseComponent::GetDistanceAlongSpline(const float64, const float64) const
+    //   166  CpyRtoV8       wW0:44
+    //   167  SetV1          wW0:51 d:1
+    //   169  PshV4          rW0:51
+    //   170  dTOf           wW0:6 rW1:44
+    //   172  PshV4          rW0:6
+    //   173  PSF            rW0:34
+    //   174  PshVPtr        rW0:0
+    //   175  ADDSi          W0:232 d:134230834      ; UTrainMovableBaseComponent::TrackSpline  (+232)
+    //   177  RDSPtr
+    //   178  CALLSYS        q:0x26e79a29540         ; FVector USplineComponent::GetLocationAtDistanceAlongSpline(float, ESplineCoordinateSpace) const
+    //   181  PshVPtr        rW0:0
+    //   182  CALLINTF       d:84542                 ; float64 UTrainMovableBaseComponent::GetLength() const
+    //   184  CpyRtoV8       wW0:10
+    //   185  NEGd           rW0:10
+    //   186  PshV8          rW0:10
+    //   187  PshV8          rW0:-2
+    //   188  PshVPtr        rW0:0
+    //   189  CALLINTF       d:84545                 ; float64 UTrainMovableBaseComponent::GetDistanceAlongSpline(const float64, const float64) const
+    //   191  CpyRtoV8       wW0:42
+    //   192  SetV1          wW0:51 d:1
+    //   194  PshV4          rW0:51
+    //   195  dTOf           wW0:6 rW1:42
+    //   197  PshV4          rW0:6
+    //   198  PSF            rW0:50
+    //   199  PshVPtr        rW0:0
+    //   200  ADDSi          W0:232 d:134230834      ; UTrainMovableBaseComponent::TrackSpline  (+232)
+    //   202  RDSPtr
+    //   203  CALLSYS        q:0x26e79a29540         ; FVector USplineComponent::GetLocationAtDistanceAlongSpline(float, ESplineCoordinateSpace) const
+    //   206  PSF            rW0:50
+    //   207  PSF            rW0:60
+    //   208  PSF            rW0:34
+    //   209  CALLSYS        q:0x26e69d00cc0         ; FVector FVector::opSub(const FVector&) const
+    //   212  PSF            rW0:60
+    //   213  PSF            rW0:78
+    //   214  CALLSYS        q:0x26e78653500         ; FRotator FRotator::MakeFromX(const FVector&)
+    //   217  PshGPtr        q:0x26e7681a548         ; FVector::OneVector
+    //   220  PSF            rW0:34
+    //   221  PSF            rW0:78
+    //   222  PSF            rW0:128
+    //   223  CALLSYS        q:0x26e70615640         ; void FTransform::$beh0(const FRotator&, const FVector&, const FVector&)
+    //   226  PSF            rW0:152
+    //   227  PSF            rW0:104
+    //   228  PshVPtr        rW0:24
+    //   229  CALLSYS        q:0x26e7973af80         ; FTransform USceneComponent::GetRelativeTransform() const
+    //   232  PSF            rW0:104
+    //   233  CALLSYS        q:0x26e70614f40         ; FTransform FTransform::Inverse() const
+    //   236  PSF            rW0:128
+    //   237  PSF            rW0:104
+    //   238  PSF            rW0:152
+    //   239  CALLSYS        q:0x26e70614a00         ; FTransform FTransform::opMul(const FTransform&) const
+    //   242  PSF            rW0:104
+    //   243  PshVPtr        rW0:-4
+    //   244  CALLSYS        q:0x26e70615100         ; FTransform& FTransform::opAssign(const FTransform&)
+    //   247  SetV1          wW0:27 d:1
+    //   249  CpyVtoR4       rW0:27
+    //   250  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent, Const)
+// UFunction name: GetRootVelocityAtTime
+bool GetRootVelocityAtTime_Implementation(const float64 Timestamp, FVector&inout OutVelocity)
+// 39 instr, 260 B bytecode, id=0xB8D552F4, varspace=48
+------------------------------------------------------------------------------
+{
+    FTransform v24;
+    auto v26;
+    FVector v32;
+    FQuat v40;
+    FVector v46;
+
+    v24 = FTransform(FTransform::Identity);
+    v26 = this.GetRootTransformAtTime(float(Timestamp), v24);
+    v26 = !v26;
+    if (!v26) {
+        v40 = v24.GetRotation();
+        v46 = v40.GetForwardVector();
+        v32 = FVector(v46);
+        OutVelocity = v46;
+        v26 = true;
+    } else {
+        OutVelocity = FVector::ZeroVector;
+        v26 = false;
+    }
+    return v26;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e7681ccc8         ; FTransform::Identity
+    //     3  PSF            rW0:24
+    //     4  CALLSYS        q:0x26e69d0d440         ; void FTransform::$beh0(const FTransform&)
+    //     7  PSF            rW0:24
+    //     8  dTOf           wW0:25 rW1:-2
+    //    10  PshV4          rW0:25
+    //    11  PshVPtr        rW0:0
+    //    12  CALLSYS        q:0x26e799ff3c0         ; bool UMovableBaseComponent::GetRootTransformAtTime(const float, FTransform&) const
+    //    15  CpyRtoV4       wW0:26
+    //    16  NOT            rW0:26
+    //    17  CpyVtoR1       rW0:26
+    //    18  JLowZ          ->32
+    //    20  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    23  PshVPtr        rW0:-4
+    //    24  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    27  SetV1          wW0:26 d:0
+    //    29  CpyVtoR4       rW0:26
+    //    30  JMP            ->64
+    //    32  PSF            rW0:46
+    //    33  PSF            rW0:40
+    //    34  PSF            rW0:24
+    //    35  CALLSYS        q:0x26e70617e80         ; FQuat FTransform::GetRotation() const
+    //    38  PSF            rW0:40
+    //    39  CALLSYS        q:0x26e703a0b00         ; FVector FQuat::GetForwardVector() const
+    //    42  PSF            rW0:46
+    //    43  PSF            rW0:32
+    //    44  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    47  LoadThisR      W0:224 d:134230834      ; UTrainMovableBaseComponent::Speed  (+224)
+    //    49  RDR8           wW0:48
+    //    50  PshV8          rW0:48
+    //    51  PSF            rW0:46
+    //    52  PSF            rW0:32
+    //    53  CALLSYS        q:0x26e69d00780         ; FVector FVector::opMul(float64) const
+    //    56  PSF            rW0:46
+    //    57  PshVPtr        rW0:-4
+    //    58  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    61  SetV1          wW0:26 d:1
+    //    63  CpyVtoR4       rW0:26
+    //    64  RET            W0:6
+
+------------------------------------------------------------------------------
+float64 GetDistanceAlongSpline(const float64 Timestamp, const float64 OffsetDistance = 0)
+// 32 instr, 220 B bytecode, id=0xD512F636, varspace=12
+------------------------------------------------------------------------------
+{
+    auto v6;
+    auto v8;
+    auto v12;
+
+    if (this.TrackSpline != null) {
+        v6 = float64(this.TrackSpline.GetSplineLength());
+        v8 = v6;
+        v6 = 0;
+        if (v6 > 0) {
+            v6 = this.InitialOffset;
+            v6 = v6 + OffsetDistance;
+            v12 = this.Speed;
+            v12 = Timestamp * v12;
+            v6 = v6 + v12;
+            v12 = v6 % v8;
+        } else {
+            v6 = 0;
+        }
+    } else {
+        v6 = 0;
+    }
+    return v12;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:232 d:134230834      ; UTrainMovableBaseComponent::TrackSpline  (+232)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JNZ            ->14
+    //     8  SetV8          wW0:6 q:0x0
+    //    11  CpyVtoR8       rW0:6
+    //    12  JMP            ->54
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:232 d:134230834      ; UTrainMovableBaseComponent::TrackSpline  (+232)
+    //    17  RDSPtr
+    //    18  CALLSYS        q:0x26e79a2e240         ; float USplineComponent::GetSplineLength() const
+    //    21  CpyRtoV4       wW0:9
+    //    22  fTOd           wW0:6 rW1:9
+    //    24  CpyVtoV8       wW0:8 rW1:6
+    //    26  SetV8          wW0:6 q:0x0
+    //    29  CMPd           rW0:8 rW1:6
+    //    31  JP             ->39
+    //    33  SetV8          wW0:6 q:0x0
+    //    36  CpyVtoR8       rW0:6
+    //    37  JMP            ->54
+    //    39  LoadThisR      W0:216 d:134230834      ; UTrainMovableBaseComponent::InitialOffset  (+216)
+    //    41  RDR8           wW0:6
+    //    42  ADDd           wW0:6 rW1:6 rW2:-4
+    //    44  LoadThisR      W0:224 d:134230834      ; UTrainMovableBaseComponent::Speed  (+224)
+    //    46  RDR8           wW0:12
+    //    47  MULd           wW0:12 rW1:-2 rW2:12
+    //    49  ADDd           wW0:6 rW1:6 rW2:12
+    //    51  MODd           wW0:12 rW1:6 rW2:8
+    //    53  CpyVtoR8       rW0:12
+    //    54  RET            W0:6
+
+------------------------------------------------------------------------------
+bool GetBackAnchorLocation(FVector&inout OutBackLocation)
+// 36 instr, 224 B bytecode, id=0x1629FE79, varspace=20
+------------------------------------------------------------------------------
+{
+    UBackTrainAnchor v2;
+    TSubclassOf<UActorComponent@> v8;
+    UActorComponent v10;
+    UBackTrainAnchor v12;
+    auto v13;
+    FVector v20;
+
+    v8 = TSubclassOf<UActorComponent@>(UBackTrainAnchor::StaticClass());
+    v10 = this.GetOwner().GetComponentByClass(v8);
+    if (v10 == null) {
+        v12 = null;
+    } else {
+        v12 = cast<UBackTrainAnchor>(v10);
+    }
+    v2 = v12;
+    if (v12 != null) {
+        v20 = v2.GetRelativeLocation();
+        OutBackLocation = v20;
+        v13 = true;
+    } else {
+        v13 = false;
+    }
+    return v13;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84551                 ; UClass@ UBackTrainAnchor::StaticClass()
+    //     2  STOREOBJ       wW0:6
+    //     3  PshVPtr        rW0:6
+    //     4  PSF            rW0:8
+    //     5  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //     8  PSF            rW0:8
+    //     9  PshVPtr        rW0:0
+    //    10  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    13  STOREOBJ       wW0:4
+    //    14  PshVPtr        rW0:4
+    //    15  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //    18  STOREOBJ       wW0:10
+    //    19  CmpPtrNull     rW0:10
+    //    20  JZ             ->31
+    //    22  TYPEID         d:1207972656            ; UBackTrainAnchor@
+    //    24  PSF            rW0:12
+    //    25  PshVPtr        rW0:10
+    //    26  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    29  JMP            ->32
+    //    31  ClrVPtr        wW0:12
+    //    32  PshVPtr        rW0:12
+    //    33  RefCpyV        wW0:2
+    //    34  CmpPtrNull     rW0:2
+    //    35  JNZ            ->42
+    //    37  SetV1          wW0:13 d:0
+    //    39  CpyVtoR4       rW0:13
+    //    40  JMP            ->55
+    //    42  PSF            rW0:20
+    //    43  PshVPtr        rW0:2
+    //    44  CALLSYS        q:0x26e79f621c0         ; FVector USceneComponent::GetRelativeLocation() const
+    //    47  PSF            rW0:20
+    //    48  PshVPtr        rW0:-2
+    //    49  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    52  SetV1          wW0:13 d:1
+    //    54  CpyVtoR4       rW0:13
+    //    55  RET            W0:4
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 4 instr, 28 B bytecode, id=0x2D84B322, varspace=2
+------------------------------------------------------------------------------
+{
+    this.Speed = 1000;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x408f400000000000
+    //     3  LoadThisR      W0:224 d:134230834      ; UTrainMovableBaseComponent::Speed  (+224)
+    //     5  WRTV8          rW0:2
+    //     6  RET            W0:2
+

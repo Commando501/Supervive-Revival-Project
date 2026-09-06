@@ -1,0 +1,186 @@
+// ============================================================================
+//  MODULE   GameMode.DropPhase.LokiDropPodImpactIndicator
+//  SOURCE   GameMode/DropPhase/LokiDropPodImpactIndicator.as
+//  CONTENT  1 class(es), 15 function(s), 0 enum(s), 1 global(s), 816 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiDropPodImpactIndicator;
+
+ALokiDropPodImpactIndicator@ ALokiDropPodImpactIndicator()   // traits=0x20
+{
+    ALokiDropPodImpactIndicator v2;
+
+    v2 = ALokiDropPodImpactIndicator();
+    return v2;
+}
+
+UClass@ ALokiDropPodImpactIndicator::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiDropPodImpactIndicator);
+    return v2;
+}
+
+ALokiDropPodImpactIndicator@ ALokiDropPodImpactIndicator::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiDropPodImpactIndicator v8;
+
+    v2 = __StaticType_ALokiDropPodImpactIndicator.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiDropPodImpactIndicator@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ALokiDropPodImpactIndicator : ALokiActor
+// unreal base : /Script/Engine.LokiActor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/LokiActor.h
+// static class global: __StaticType_ALokiDropPodImpactIndicator
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_OwningDropPod)
+    protected ALokiDropPod@ OwningDropPod;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    protected ALokiPlayerState@ OwningPlayerState;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    float64 LandingRadius;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bIsIndicatorInitialized;
+
+    ALokiDropPodImpactIndicator()   // traits=0x21
+    {
+        auto v2;
+        auto v3;
+
+        v2 = 0;
+        this.LandingRadius = v2;
+        v3 = false;
+        this.bIsIndicatorInitialized = v3;
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        this.CheckIndicatorReady();
+        return;
+    }
+
+    void InitializeIndicator(ALokiDropPod@ DropPod)   // traits=0x20
+    {
+        ALokiPlayerState v2;
+
+        this.OwningDropPod = DropPod;
+        v2 = DropPod.GetPilotPlayerState();
+        this.OwningPlayerState = v2;
+        this.SetOwner(this.OwningPlayerState);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool IsIndicatorReadyToDisplay()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = this.bIsIndicatorInitialized;
+        return v1;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v1;
+
+        v1 = this.bIsIndicatorInitialized;
+        if (v1) {
+            if (Loki::LokiIsServer(__WorldContext)) {
+                v1 = IsValid(this.OwningDropPod);
+                v1 = !v1;
+                if (v1) {
+                    this.DestroyActor()  /* UFunction K2_DestroyActor */;
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRep_OwningDropPod()   // traits=0x20
+    {
+        this.CheckIndicatorReady();
+        this.OnDropPodReplicated();
+        return;
+    }
+
+    void CheckIndicatorReady()   // traits=0x20
+    {
+        auto v1;
+        ALokiDropPod v4;
+
+        v1 = this.bIsIndicatorInitialized;
+        if (v1) {
+            return;
+        } else {
+            v4 = this.OwningDropPod;
+            if (v4 != nullptr) {
+                v1 = true;
+                this.bIsIndicatorInitialized = v1;
+            }
+        }
+        return;
+    }
+
+    void SetLandingRangeRadius(const float64 Radius)   // traits=0x20
+    {
+        auto v2;
+
+        v2 = this.LandingRadius;
+        if (Radius != v2) {
+            this.LandingRadius = Radius;
+            this.OnLandingRadiusChanged();
+        }
+        return;
+    }
+
+    void OnDropPodReplicated()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnDropPodReplicated");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnDropPodReplicated, BlueprintEvent, CanOverrideEvent, NoOp)
+    void OnDropPodReplicated_Implementation()   // traits=0x20
+    {
+        return;
+    }
+
+    void OnLandingRadiusChanged()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnLandingRadiusChanged");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnLandingRadiusChanged, BlueprintEvent, CanOverrideEvent, NoOp)
+    void OnLandingRadiusChanged_Implementation()   // traits=0x20
+    {
+        return;
+    }
+
+}
+

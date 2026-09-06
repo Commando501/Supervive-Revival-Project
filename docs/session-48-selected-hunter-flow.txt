@@ -1,0 +1,177 @@
+SESSION 48 — THE SELECTED-HUNTER FLOW (the center "?" for owned heroes)
+==============================================================================
+Date: 2026-07-04 (branch dedicated-server-stub; continuous with session 47)
+Method: OFFLINE Blueprint bytecode read (bpdump) + usmap schema + backend implementation.
+        NO injection, NO game relaunch this session (a live client + old ags were running;
+        per CLAUDE.md the live session was NOT disrupted).
+
+*** RESULT: implemented the selected-hunter flow in the backend. The main-menu center "?" and
+    the hunter-select preview are BOTH driven by the local party member's HeroAssetID, which our
+    /party stub was leaving empty. Seeding it (persisted, default = owned "alchemist") makes the
+    center render a real hunter; a hero pick persists via the party member-update endpoint. Code
+    is committed + unit-tested; LIVE VALIDATION is the one remaining step (recipe at the bottom). ***
+
+=========================== TL;DR ==========================================
+The center "?" for OWNED heroes is NOT a bug in the owned-inventory change. It is "no selected
+hunter": the party-slot / center preview actor renders the LOCAL PARTY MEMBER'S HeroAssetID, and
+our synthesized solo party (interactive.buildSoloParty) sent NO hero on the member, so the member's
+HeroAssetID was empty -> the actor showed BP_LokiHeroSelectPreview_UnknownHero (the "?").
+
+FIX (this session, backend-only, no native patch):
+  1. SEED: buildSoloParty's member now carries heroAssetId = the player's persisted selected hero,
+     defaulting to "Hero:alchemist" (the inventory's IsDefault owned hunter). => on load the center
+     renders that hunter instead of "?".
+  2. PERSIST: a party member-update endpoint stores the picked hero and echoes it back, so a
+     selection survives the ~1s /party poll (no revert) and a relaunch.
+
+Both center visuals (main-menu slot 0 AND the WBP_UI_PartyHeroSelect preview) read the SAME party
+member, so the single seed fixes both. Confirmed entirely from bytecode (below).
+
+=========================== THE CENTER PREVIEW CHAIN (read from bytecode) =====
+Two distinct widgets show the "you" hero; BOTH read the local party member's HeroAssetID:
+
+A. MAIN-MENU CENTER SLOT (the visible "?" on the main menu):
+   BP_MainMenuSpawner_MainMenu_PartySlot  (/Game/Loki/UI/MainMenu/)
+     -> reacts to OnPartyUpdated / OnCosmeticUpdated
+     -> Comp_MainMenu_PartySlotSubject (component): Determine Slot Party Model -> Get Members on Team
+        -> DetermineCosmeticToShow -> **Resolve Cosmetics Bundle For Hero(member.HeroAssetID,
+           member.CosmeticsAssetID)** -> OutCosmeticAsset + ShowUnknownForEmpty.
+   Resolve Cosmetics Bundle For Hero (BPFL_Cosmetics) bytecode:
+     [0] if IsValidPrimaryAssetId(InCosmeticAsset) -> OutCosmeticAsset = InCosmeticAsset
+     [4] else if IsValidPrimaryAssetId(InHeroAsset) ->
+     [6]   GetHeroAssetFromPrimaryAssetId(InHeroAsset) -> heroAsset
+     [~]   **OutCosmeticAsset = heroAsset.DefaultCosmeticsBundle**   (derive the hero's DEFAULT skin)
+     else -> empty -> ShowUnknownForEmpty = true -> BP_LokiHeroSelectPreview_UnknownHero ("?")
+   => A VALID member.HeroAssetID with an EMPTY member.CosmeticsAssetID resolves to the hero's
+      DefaultCosmeticsBundle -> a valid preview -> the real hero renders. So seeding heroAssetId
+      ALONE is sufficient; no cosmetic id needed. Per-hero preview actors exist and are packaged
+      (assetregistry namemap: BP_LokiHeroSelectPreview_Alchemist_Default, ..._Assault, etc.).
+
+B. HUNTER-SELECT SCREEN PREVIEW (WBP_UI_PartyHeroSelect, when you open HUNTERS):
+   ExecuteUbergraph_WBP_UI_PartyHeroSelect:
+     GetPartyManager -> GetPartyModel -> **GetSelf** (the local PartyMemberModel = "me")
+     -> BindDelegate(OnPartyHeroUpdated) to member.OnHeroAssetIDChanged
+     -> RefreshContentPreview (reads the member's HeroAssetID -> HeroPicker.Update Hero Selection +
+        ContentPreview_GotoScene to spawn the preview actor).
+   Selecting an OWNED tile: OnHeroSelected -> TryPick -> **PartyManager.TryPickMyHeroAndCosmetics(
+     HeroAssetId, CosmeticsAssetId, delegate)** (native). That sets the local member's HeroAssetID
+     (fires OnHeroAssetIDChanged -> RefreshContentPreview) AND writes the member to the /party service.
+
+WHY THE "?" PERSISTED (settled, do not re-derive): the roster tile's two exclusive gates are
+  IsUseable(Selectable) = Entry.CanUse()  -> TRUE when OWNED
+  IsPreviewable         = (NOT CanUse) AND (NOT IsDisabled) -> TRUE only when UNOWNED
+Our owned-inventory change flipped all 25 to CanUse=true, which CORRECTLY disabled the unowned
+purchase-preview. The center for OWNED heroes is the party-slot actor above, which needs a SELECTED
+hero on the party member — which the stub never provided. Hence the "?".
+
+=========================== THE BACKEND CHANGE ==============================
+server/internal/interactive/store.go
+  + playerState.SelectedHeroAssetId string  (json "selectedHeroAssetId") — persisted per player.
+
+server/internal/interactive/interactive.go
+  * buildSoloParty(id, display, heroAssetId string): member now includes
+      "heroAssetId"/"heroAssetID": heroAssetId   (both spellings; UE matches case-insensitively;
+      PrimaryAssetId accepts the "Type:Name" string form, proven by the owned-inventory AssetIds).
+  + const defaultHeroAssetId = "Hero:alchemist"     (the inventory's IsDefault owned hero)
+  + (*Service).selectedHero(id): persisted SelectedHeroAssetId, else defaultHeroAssetId.
+  * handleGetParty / handleGetPartyDetail: pass s.selectedHero(id) into buildSoloParty.
+  + handleSetPartyMember + routes:
+      POST /party/parties/{partyId}/members/{memberId}
+      PUT  /party/parties/{partyId}/members/{memberId}
+    Persists the posted HeroAssetID (tolerant parse: string "Hero:x" OR UE struct-object form,
+    either key spelling; an absent/empty hero is a no-op so a partial update never wipes the
+    selection) and echoes the updated solo party.
+
+Tests: server/internal/interactive/party_hero_test.go — heroAssetIDFromBody (10 cases: string/
+  object/both spellings/empty/malformed), selectedHero seed+persist, buildSoloParty carries the
+  hero through JSON round-trip. `go test ./internal/interactive/` = ok. `go vet` clean. ags builds.
+
+=========================== PROBE / UNCONFIRMED ============================
+The member-update WRITE path (verb+route) is a BEST GUESS. The one party write ever captured is
+POST /party/parties/{partyId}/setIsOpen/True, so operations hang off /party/parties/{partyId}/, and
+the exe's party endpoint table (trackb-notes) lists a /members/ operation; SetPartyMemberRequest
+{ID, HeroAssetID, CosmeticsAssetID, IsReady, ...} is the body model. TryPickMyHeroAndCosmetics is
+native (not bytecode) so its exact call was never captured — heroes only became selectable this
+session. If the real path differs, handleSetPartyMember simply never fires and the write falls
+through to {} as before (NO regression); the SEED still renders the default hunter. Confirm/trim
+the route from a live capture of an owned-hero click, then narrow it.
+
+CAVEAT (possible second step): if the seeded/selected hero renders in the center, done. If the
+center still shows "?" with a valid member.HeroAssetID, the remaining wall is Hero-content streaming
+(the live log's ChangeBundleStateForPrimaryAssets "failed to find NameData" — a DIFFERENT subsystem
+than the BP_HeroAsset objects). S47 showed the preview model DID stream (Beebo rendered), so this is
+unlikely, but the party-slot full-load path is not yet live-verified with an owned hero.
+
+=========================== *** LIVE VALIDATION RESULT (2026-07-04, this session) *** ==========
+Validated live WITHOUT computer-use (the OS approval dialog timed out unclicked twice), entirely from
+the ags + client logs — which is stronger than a screenshot here because the client LOGS the exact
+actor class it loads for the party slot.
+
+1. BACKEND SERVES THE SEED (curl replay of the client's own token against the running ags):
+     GET /party/parties/party-<id> -> members[0].heroAssetId = "Hero:alchemist" (+ heroAssetID). CONFIRMED.
+   Server-only ags restart was cert-safe (EnsureCert reuses certs/, so the running client's TLS trust
+   held; it reconnected and resumed polling with 200s). The ALREADY-RUNNING client did NOT re-render
+   from the late REST poll (its party slot was built at menu-load with the empty hero; it fetched the
+   seeded party 3x but the hero-change from a REST poll doesn't retrigger the slot — expected: live
+   hero changes come from local TryPick, and the /party member hero is applied at MENU-LOAD).
+
+2. FRESH MENU-LOAD RENDERS THE HERO (the faithful test — relaunched the client with catalog_ready_fix +
+   the new ags). Loki.log, slot 0 (= you), at menu-load:
+     MENUSPAWNER BP_MainMenuSpawner_MainMenu_PartySlot_C_0: Entering SetHero ... (HeroCosmeticsBundle:AlchemistDefault - true)
+     ...: SetHero is setting target cosmetic HeroCosmeticsBundle:AlchemistDefault
+     ...: Changing TargetAssetID from  to HeroCosmeticsBundle:AlchemistDefault
+     ...: Beginning async load of HeroCosmeticsBundle:AlchemistDefault...
+     ...: Completed async load of HeroCosmeticsBundle:AlchemistDefault...
+     ...: UpdateActor switching Actor from None to **BP_LokiHeroSelectPreview_Alchemist_Default_C**
+   => the center now loads the REAL hero actor (Alchemist default skin), NOT BP_LokiHeroSelectPreview_
+      UnknownHero. The "?" is GONE. This EXACTLY matches the bytecode chain: the empty HeroAssetID was
+      the whole cause, and a valid HeroAssetID with EMPTY cosmetic resolves the hero's DefaultCosmetics
+      Bundle (HeroCosmeticsBundle:AlchemistDefault) via Resolve Cosmetics Bundle For Hero — no cosmetic
+      id needed, as predicted. Client STABLE (survived 2+ min past menu-load, no Fatal/crash; the
+      earlier-launch "SetHero clearing TargetAssetId because incoming id was not valid -> UnknownHero"
+      lines are the BEFORE state and no longer occur for slot 0). NO content-streaming 2nd-step wall —
+      the party-slot full-load succeeded (async load Completed).
+
+3. WRITE-BACK PERSISTENCE (server-side round-trip against the running ags):
+     POST /party/parties/party-<id>/members/<id>  body {"id":...,"heroAssetId":"Hero:wukong"} ->
+       response member.heroAssetId = "Hero:wukong"; subsequent GET = "Hero:wukong";
+       server/state/interactive.json gains "selectedHeroAssetId":"Hero:wukong".
+   => handleSetPartyMember persists + echoes correctly, and the seed reads it back on next menu-load
+      (so a pick survives relaunch). Reset to Hero:alchemist afterward (the Wukong was just a test).
+
+STILL UNCONFIRMED (needs a live hero CLICK, which needs computer-use — dialog was not approved): the
+exact client route/verb/body TryPickMyHeroAndCosmetics emits. handleSetPartyMember is proven correct
+for the guessed route (POST .../members/<id> with heroAssetId); if the client uses a different path it
+no-ops (falls through to {} -> no regression; the seed still renders). To finish: at the menu, click an
+owned hunter and grep the ags log for the request that fires (path + body), then narrow the route.
+
+=========================== LIVE VALIDATION RECIPE ==========================
+The client + an OLD ags were running this session and were NOT disrupted. To validate:
+  1. Rebuild ags from HEAD (includes the seed):
+       & "$env:ProgramFiles\Go\bin\go.exe" build -C server -o ags.exe ./cmd/ags
+     Re-append certs\root.crt to <GameRoot>\Loki\Content\Certificates\cacert.pem if you relaunch
+     the client (cert gotcha — memory/supervive-ags-cert-rebuild-gotcha.md).
+  2. EITHER (fast) restart ONLY ags while the client is at the menu — the client re-polls
+     GET /party/parties/{partyId} continuously, so the seeded member.heroAssetId arrives within ~1s
+     and OnPartyUpdated should re-render the center to Alchemist WITHOUT a relaunch;
+     OR relaunch the client fresh (catalog_ready_fix inject + launch-recon.ps1, per session-47).
+  3. EXPECT: the main-menu center shows the Alchemist model (default skin), not "?". Open HUNTERS;
+     the preview should also show the selected hunter. CLICK a different owned hunter and watch:
+       - client Loki.log for OnHeroAssetIDChanged / SetHero + any content load,
+       - the ags capture log for the member-update request (CONFIRM the exact verb+path+body here —
+         that's the one unknown; adjust handleSetPartyMember's routes to match).
+     Then verify the picked hunter STICKS (no revert on the next poll) and survives a relaunch
+     (state/interactive.json gains "selectedHeroAssetId").
+
+=========================== FILES / REFS ===================================
+- server/internal/interactive/{interactive.go,store.go,party_hero_test.go}
+- Bytecode dumps (tools/extractor/out/, gitignored): bpdump_ExecuteUbergraph_WBP_UI_PartyHeroSelect.txt
+  (GetSelf/TryPick/TryPickMyHeroAndCosmetics/RefreshContentPreview),
+  bpdump_BP_MainMenuSpawner_MainMenu_PartySlot_ALL.txt, bpdump_Comp_MainMenu_PartySlotSubject_ALL.txt,
+  bpdump_ExecuteUbergraph_Comp_MainMenu_PartySlotSubject.txt, bpdump_DetermineCosmeticToShow.txt,
+  "bpdump_Resolve Cosmetics Bundle For Hero.txt".
+- usmap models (tools/usmapdump/schema.txt): PartyMember/PartyMemberModel (HeroAssetID,
+  OnHeroAssetIDChanged), SetPartyMemberRequest{ID, HeroAssetID, CosmeticsAssetID, ...},
+  PersonalizationLoadout (HeroCosmeticsBundlePreferences).
+- Prior: docs/session-47-tile-widget-FOUND.txt (roster fix + IsPreviewable), docs/trackb-notes.md
+  (party model + endpoints), memory/supervive-hero-roster-blocker.md.

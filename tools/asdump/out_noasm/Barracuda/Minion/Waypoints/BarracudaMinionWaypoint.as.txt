@@ -1,0 +1,144 @@
+// ============================================================================
+//  MODULE   Barracuda.Minion.Waypoints.BarracudaMinionWaypoint
+//  SOURCE   Barracuda/Minion/Waypoints/BarracudaMinionWaypoint.as
+//  CONTENT  1 class(es), 8 function(s), 0 enum(s), 1 global(s), 908 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaMinionWaypoint;
+
+ABarracudaMinionWaypoint@ ABarracudaMinionWaypoint()   // traits=0x20
+{
+    ABarracudaMinionWaypoint v2;
+
+    v2 = ABarracudaMinionWaypoint();
+    return v2;
+}
+
+UClass@ ABarracudaMinionWaypoint::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ABarracudaMinionWaypoint);
+    return v2;
+}
+
+ABarracudaMinionWaypoint@ ABarracudaMinionWaypoint::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ABarracudaMinionWaypoint v8;
+
+    v2 = __StaticType_ABarracudaMinionWaypoint.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ABarracudaMinionWaypoint@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ABarracudaMinionWaypoint : AActor
+// unreal base : /Script/Engine.Actor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+// static class global: __StaticType_ABarracudaMinionWaypoint
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int InitialLaneIndex;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    ABarracudaMinionWaypoint@ WaypointTowardTeam0;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    ABarracudaMinionWaypoint@ WaypointTowardTeam1;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.RootComponent)
+    UBoxComponent@ TriggerComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UBarracudaLaneComponent@ LaneComponent;
+
+    ABarracudaMinionWaypoint()   // traits=0x21
+    {
+        return;
+    }
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        int v1;
+        UBarracudaGameStateComponent v4;
+        ALokiGameState v6;
+
+        v1 = this.InitialLaneIndex;
+        this.LaneComponent.SetLaneIndex(v1);
+        this.TriggerComponent.OnComponentBeginOverlap.AddUFunction(this, n"HandleTriggerOverlap");
+        v6 = Loki::GetLokiGameState(__WorldContext);
+        v4 = UBarracudaGameStateComponent::Get(v6, NAME_None);
+        if (v4 != nullptr) {
+            v4.MinionWaypoints.Add(this);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void HandleTriggerOverlap(UPrimitiveComponent@ OverlappedComponent, AActor@ OtherActor, UPrimitiveComponent@ OtherComp, const int OtherBodyIndex, const bool bFromSweep, const FHitResult&in SweepResult)   // traits=0x20
+    {
+        UBarracudaMinionWaypointFollowerComponent v4;
+
+        v4 = UBarracudaMinionWaypointFollowerComponent::Get(OtherActor, NAME_None);
+        if (v4 != nullptr) {
+            v4.ReachedWaypoint(this);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    ABarracudaMinionWaypoint@ GetNextWaypoint(AActor@ Actor)   // traits=0x20
+    {
+        auto v2;
+        ABarracudaMinionWaypoint v6;
+
+        v2 = LokiTeam::GetTeamFromActor(Actor);
+        if (v2 == 0) {
+            v6 = this.WaypointTowardTeam1;
+            return v6;
+        } else {
+            v6 = this.WaypointTowardTeam0;
+        }
+        return v6;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+        FVector v8;
+
+        v1 = false;
+        this.SetbReplicates(v1);
+        v2 = -1;
+        this.InitialLaneIndex = v2;
+        v1 = true;
+        this.SetActorHiddenInGame(v1);
+        v1 = false;
+        this.SetbNetLoadOnClient(v1);
+        v1 = true;
+        v8 = FVector(200.0, 200.0, 200.0);
+        this.TriggerComponent.SetBoxExtent(v8, v1);
+        v1 = true;
+        this.TriggerComponent.SetCollisionProfileName(n"Trigger", v1);
+        v1 = true;
+        this.TriggerComponent.SetNotifyRigidBodyCollision(v1);
+        return;
+    }
+
+}
+

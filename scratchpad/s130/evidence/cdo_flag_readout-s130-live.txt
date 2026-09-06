@@ -1,0 +1,27 @@
+GUObjectArray @0x7FF7CDE88930  ObjObjects=0x240597B99A0  NumElements=190085
+
+Default__ objects live in this process: 10025 (unit: CDOs) -- so a NOT LOADED row means that class is genuinely absent, not that the walk failed
+
+object                               role                                          +0x6C     +0x2D3
+----------------------------------------------------------------------------------------------------
+Default__BP_DropPod_Tutorial_C       BP TARGET  (cooked true)                          -          -
+Default__BP_GemV2_C                  BP TARGET  (cooked true)                          1          1   obj=0x2412CF9A570
+                                                                                predicted 1 -> PASS         predicted 1 -> PASS
+Default__BP_HeroHeightIndicator_C    BP CONTROL (cooked false)                         0          1   obj=0x241FF3D8020
+                                                                                predicted 0 -> PASS         predicted 1 -> PASS
+Default__BP_DropPod_C                BP TARGET  (cooked true)                          1          1   obj=0x241BA0290E0
+                                                                                predicted 1 -> PASS         predicted 1 -> PASS
+Default__LokiDropPod                 NATIVE TARGET  (AActor ctor default; AS sets neither flag)          1          1   obj=0x2405A49B4F0
+                                                                                predicted 1 -> PASS         predicted -1 -> (no prediction)
+Default__LokiGem                     NATIVE TARGET  (LokiGem.as sets bEnablePooling=true)          1          1   obj=0x2405A49E170
+                                                                                predicted 1 -> PASS         predicted 1 -> PASS
+Default__LokiHeroHeightIndicator     NATIVE CONTROL (its ctor 0x56774C0: mov [rbx+0x6c],dl dl=0; mov [rbx+0x2d3],1)          0          1   obj=0x2405A380AC0
+                                                                                predicted 0 -> PASS         predicted 1 -> PASS
+Default__LokiDropPodBase             NATIVE (ancestor, for the chain)                  1          1   obj=0x2405A35A860
+                                                                                predicted 1 -> PASS         predicted -1 -> (no prediction)
+Default__Actor                       NATIVE ROOT CONTROL (AActor::AActor 0x03371841 mov byte [rdi+0x6c],1)          1          0   obj=0x2405A16E4F0
+                                                                                predicted 1 -> PASS         predicted -1 -> (no prediction)
+
+--- instrument check ---
+targets differ ([0, 1]) -- the probe discriminates, so the values are real reads.
+PID 17736 base 0x7FF7C4050000, clean -NoHook menu launch, 2026-08-20T05:25:36Z

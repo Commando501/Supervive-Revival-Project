@@ -1,0 +1,63 @@
+===== result 5 =====
+## VERDICT
+
+### DEFECTS FOUND — 4 fixed in place, `docs/s131-pod-functionality-settled.md` (now 74 insertions / **0 deletions**)
+
+1. **Wrong internal cross-reference (line 11).** The forward pointer credited "THE RECIPE **§12/§14** PROPOSED". §12 does not propose it — §12.2 is titled *"and it removes the lever"* and §12.3 says *"there is no sibling left to try"*; Lever #1 (append + detach) is named at §14.1:692 and specified at §14.3. This repo has a recorded 23-session mis-citation injury (`coverage-audit-s101.md:229` vs `:269`). **FIXED → `§14.1/§14.3`.**
+2. **Over-claim on what was logged (§14.3).** Wrote *"the predicted `NewMax = 4` / 32 bytes is exactly what the arm logged."* The arm logged `Max=4` (`marker-6-DISMOUNT.txt:75` and 6 other markers). **`32 bytes` was never logged** — it is the offline derivation `NewMax*8`; `s132-dismount-settled.md:219` states it as a prediction, and the agent collapsed prediction into measurement. **FIXED** — `NewMax = 4` attributed to the log, 32 bytes explicitly marked as derivation.
+3. **Folded RVA printed without its multiplicity (§12.1).** `AuthAddPlayer` thunk `0x2C2CE30` is **23-way ICF-folded** — recorded as such in `CLAUDE.md`, `fk1-angelscript-settled.md:229-231`, `angelscript-dropphase.md:838-840`, `fk22-dropphase-reachability.md:3202-3204` — and FK-1's standing rule is *"always print fold multiplicity next to a folded RVA"* (the rule exists because `0x5254180` produced a false conflict). The fact sheet also omits it; the repo supplies it. **FIXED** — `⚠ 23-way ICF, NON-IDENTIFYING` added; `AuthRemovePlayer` clarified to *same thunk, same impl*.
+4. **The fifth wall listed as plain "REAL" (§12.1).** `AuthPlayerEnterWorldAttachedToRidable 0x55CD510` was put in a REAL list with the fact sheet's `(always-fail)` qualifier dropped — in a file whose §10 exists to establish it always fails. **FIXED** — annotated `(REAL but ALWAYS-FAILS — §10)`.
+
+### STILL WRONG / JUDGEMENT CALLS — reported, not changed
+
+- **The forward pointe
+===== result 6 =====
+VERDICT — `docs/next-session-prompt-s132.md` (the only file matching the report: 258+/1− before my fixes, 268+/1− after)
+
+## DEFECTS FOUND AND FIXED (4)
+
+**1. WRONG TALLY — the report's own file contradicted itself, the fact sheet, and the settled doc.** §C annotation, line 153: *"fire four times in one window and **three more across two later flights**"* = 7 dismounts. But the file's own §1 header says "two more (flights 2 and 3)" = 6, and its §6 ladder says "6 dismounts / 3 flights". `docs/s132-dismount-settled.md` §8 is authoritative and explicitly re-derived: **7 calls across 4 launches, 6 of which moved the hero** (flight 5's call faulted). FIXED to that tally, with the unit stated (`6 dismounts, 7 calls, 4 launches`) and the flight-5 exception named. This was the only outright factual error.
+
+**2. FOLD MULTIPLICITY OMITTED on a NON-IDENTIFYING RVA.** The new §2 stub table printed `AuthAddPlayer` / `AuthRemovePlayer` thunk `0x2C2CE30` bare. That address is **23-way ICF-folded** (settled doc line 165; CLAUDE.md's standing rule is "always print fold multiplicity next to a folded RVA", and its FK-1 entry flags this exact address). FIXED — both rows now carry the ICF warning.
+
+**3. GRADE SLIPPAGE IN A HEADLINE (the S131 §13 failure mode, repeated).** Line 535 read *"AND THE ARCHITECTURE **EXPLAINS THE FAULT SHAPE** ANYWAY **[M]**"* while the body correctly marks the explanation `[I]`. The `[M]` belongs to the architecture measurement (4,769/18,580 tail jumps), not to the explanatory consequence. FIXED — split into "architecture is [M], the explanation of the fault shape is [I]".
+
+**4. UNGRADED, UNSUPPORTED CAUSAL CLAIM.** *"Injection count **is itself** a hazard variable. Seven injections into one PID is well past this project's **measured comfort**"* — no count-dependence has ever been measured; S111 measured injection-at-all and S109 measured injection *spacing*. "measured comfort" asserts an instrument that does not exist. FIXED — marked `[I]`, cited what S111/S
+===== result 7 =====
+## VERDICT
+
+### DEFECTS FOUND — 1 substantive (FIXED), 2 minor (FIXED), 3 flagged
+
+**1. FIXED — the §5.1 structural-corroboration argument was INVERTED.** `docs/fk1-angelscript-settled.md` §5.1 wrote: *"the rows sit inside the same contiguous **alphabetical thunk block** as that class's other `Auth*` entries, which corroborates the ownership."* The primary evidence says the opposite (`docs/s132-dismount-settled.md`:185-188): the block runs `0x5455F40 AddGameplayEffect … 0x5457940 SetPlayerDisassociationFromPhase`, `AuthAddPlayer` **would** sort at ~`0x5456050` where the bytes are **real code, not a thunk**, and **its thunk is ABSENT from the block** — the absence is the corroboration, because it was ICF-folded onto `0x2C2CE30`, which is what a stripped impl does. The agent's version also can't be true on its face: `0x2C2CE30` and `0x5296F30` are both outside the block range. Rewritten to state it the correct way round, with an explicit "do not restate this as 'the rows sit inside the block'" marker.
+
+**2. FIXED — instrument scope over-stated in the same paragraph.** *"the **only** class in the image declaring any of them"* → the primary doc says *only class in `binds_members.csv` declaring **either**"* (2 names, one instrument). Narrowed. Also dropped the unsupported *"in the whole **16,277**-record table"* — the primary doc says "the whole table"; 16,277 is S131's census count, not attached to that claim.
+
+**3. FIXED — flight-2 numbers attributed to both landing-actor flights** (`coverage-audit-s101.md`:269). *"then twice more with a `LokiPlayerStart` **1,488,146 uu away**… held position bit-for-bit for **9 s**"* — both figures are flight 2 only; flight 3 fired with the pod at `X = 1,256,845`. Re-scoped per flight. (`twice more` itself is CORRECT — primary doc: *"Flights 2 and 3 each added one more"*.) Also filled `AuthPlayerEnterWorldNew`'s thunk `0x5456460` (was `—`; it is known).
+
+**4. FIXED (mine, then also the agent's) — both files had been rewritten CRLF → LF
+===== result 8 =====
+VERDICT — the report is accurate. Both files landed as described; no invented facts; no deletions.
+
+## DEFECTS FOUND
+
+**1. FIXED — `docs/fk31-fk32-successors.md:140`, the new `mechanism` table row over-claimed FK-31.**
+The agent wrote `| mechanism | protector, runtime.dll+1 EXECUTE fault | …`, which reads as "FK-31's mechanism is known". That contradicts **line 30 of the same file** ("What is open here is the **mechanism** and its removal") and the agent's own S132 subsection, which grades the mechanism class **[I]**. Replaced with an explicit **OPEN** cell that separates the [M] *fault signature* from the [I] *mechanism class*, and added the `NtTerminateProcess`-identity-is-[I] caveat to the FK-32 half of the same row (it was caveated in the TL;DR of fk10 but not here).
+
+**2. FIXED (out of scope, but verified-refuted) — `docs/next-session-prompt-s133.md:192-204` carries three claims at [M] that the lane's own verifier refuted.** This is the file the next session reads first. Annotated in place, originals preserved:
+- *"That defeats the constant-search method"* → **H2b REFUTED**, with the count (a few dozen bit-33 sites, each adjudicable; the search ran and was decisive).
+- *"All 13 candidate sites are individually refuted"* → **H3 REFUTED** by `packer31 0x03C8EDF2`, which computes `[rsp+0x158] + ImageBase + 1` (2000/2000) and dereferences it at `0x03C8EFF3`; carried the **[S]** role note (MSVC inline-buffer idiom ⇒ likelier a biased pointer, not the kill).
+- *`0x80F7F0` **is** `NtTerminateProcess`* at [M] → **H7c UNSUPPORTED at [M]**; on-disk cookie `0x10BFA9CE` yields `0xFFFFFFFF`.
+
+**3. NOT FIXED, needs a judgement call — `CLAUDE.md`'s FK-31 lead is now a measured dead end and nobody annotated it.** It still says *"Search it for code that computes its own image base + 1 and jumps there… **Start in `packer30`.**"* S132 refutes both halves: no literal `±(ImageBase+1)` survives adjudication over 48,129,536 bytes, and **`packer30` has 0 of the 4,769 computed tails** 
+===== result 9 =====
+VERDICT
+
+## DEFECTS FOUND
+
+**1. STALE COUNT — "five" where the canonical tally is six (FIXED).** `docs/angelscript-dropphase.md` claimed the dismount was "flown five times" in three places while `docs/angelscript-layer.md`, edited in the same pass, said "six" — a contradiction between the two files the agent reports as its own work. `docs/s132-dismount-settled.md:35` is unambiguous: **7 detach calls across 4 launches · 6 moved the hero · 1 faulted**, and line 36 explicitly retracts the earlier "five calls across two launches" with *"Re-derive counts from the artifacts; never carry them."* The agent carried the retracted number. **Note: a concurrent process corrected 3 of the 5 instances at 16:37:04, between my first diff and my first grep; I fixed the 2 survivors** (`:996`, `:1081`). All seven count statements across both files now read six. `:474`'s "six dismounts over three flights (seven calls over four; the seventh faulted at GATE 5)" is exact and correct — flights 1/2/3 produced the six, flight 5 the fault.
+
+**2. MISATTRIBUTED BYTECODE ADDRESS (FIXED).** `:461` printed `` `0x0000 CALLSYS LokiIsClient` ``. In `scratchpad/s132/lanes/L1-detach-transcription.md:563`, `0x0000` is `PshGPtr __WorldContext`; the `CALLSYS` is at `0x000C`. Exactly the S115-d failure this repo names ("never print a byte string next to an address it did not come from"). Corrected to the full four-op sequence with its real offsets.
+
+**3. FABRICATED "retry" (FIXED).** `:1085` said the playability arm's *"retry died to an unrelated protector kill."* No retry exists — `play-atlanding-walk` is built (`944a27728053359e`) and per `next-session-prompt-s133.md:71` is S133's arm A, never flown. The `0x0000DEAD` kill hit *that same* degenerate arm's own init (doc `:437`). Rewritten to say so and to record that the corrected arm has never flown.
+
+**4. MECHANISM ERROR IN ROUTE C (FIXED).** `angelscript-layer.md` said the S55 primitive *"**bypasses** the guard rather than satisfying it."* It does not — 

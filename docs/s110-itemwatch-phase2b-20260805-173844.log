@@ -1,0 +1,114 @@
+====================================================================================================
+item_watch  2026-08-05 17:38:44   pid=23240  base=0x7FF681610000
+log=G:\git\Supervive Revival Project\docs\s110-itemwatch-phase2b-20260805-173844.log
+csv=G:\git\Supervive Revival Project\docs\s110-itemwatch-phase2b-20260805-173844.csv
+====================================================================================================
+FUObjectArray @0x7FF68B448930  objects=0x1F3B3A399A0  numElements=58077
+chunks: 0x1F3B5C00008(58077)
+live objects: 52372 of 58077 slots
+
+--- CALIBRATION (400 sampled objects) --------------------------------------------------
+  InternalIndex @0x10  (matches the array slot for 400/400 objects)
+  ObjectFlags  @0x0C  (RF_ClassDefaultObject on 100% of 52 CDOs, 0% of 348 others)
+----------------------------------------------------------------------------------------------------
+decoys: 256 control objects (half uniform, half from the top 20% of indices, seed=1)
+marker: G:\git\Supervive Revival Project\docs\tutorial-launch-marker.txt
+  marker is 235 s old (previous run): skipping its 8 existing lines; only pointers written from now on are adopted
+
+--- VERDICT TABLE, registered before the run (docs/next-session-prompt-s110.md S0) --------
+  A  item.SerialNumber changes, or item.Object -> a DIFFERENT object
+     => SLOT RECYCLED. The object was really destroyed and the index reissued.
+  B  item.Object -> 0 (and Flags -> 0), no recycle yet
+     => FreeUObjectIndex ran: ~UObjectBase executed. Real destruction.
+  C  a new item-flag bit appears before B, and that bit is the one the sweep sees spike
+     population-wide  => the REACHABILITY PASS marked it. If we rooted it, the poked bit
+     is NOT honoured by this build's GC.
+  D  neither the item nor the sweep moves, but the object's vtable/NamePrivate go bad
+     => OUT-OF-BAND teardown (package unload / stream-out / explicit destroy), or the
+     pointer was never the object we thought. GC was never involved.
+  VOID  no target event AND no decoy event => the watcher never showed it can see a change.
+----------------------------------------------------------------------------------------------------
+
+[t=   0.000] watching 0 target(s); interval=50 ms sweep=250 ms (stride 1/8)
+[t=   0.033] SWEEP#1  live~52376 free~5704  (1-in-8 sample, scaled)  bits: bit2 25%, bit25 61%, bit26 2%, bit30 75%
+           reachability flag currently = bit None  (the bit most live objects carry; see the header note)
+           RootSet(bit30) vs reachability flag, over 6547 sampled live objects:
+             rooted       4915, of which      0 (  0%) carry the current flag
+             not rooted   1632, of which      0 (  0%) carry the current flag
+[t=   3.818] *** PURGE VISIBLE *** live 52384 -> 51520 (-864 objects destroyed since the previous sweep)
+[t=   3.818] decoy control: 164 slot(s) changed (#48133 flags 00000004->00100002; #50694 flags 00000004->00000002; #47627 flags 00000004->00000002)
+[t=   4.071] *** POPULATION FLAG MOVE *** live~71528  bit20(LoaderImport?) +12pp, bit25(Native) -17pp, bit26(Async?) +27pp, bit27(AsyncLoading?) +27pp, bit30(RootSet) -21pp
+[t=   4.071] decoy control: 14 slot(s) changed (#54407 obj 0x0->0x1F4DCD9BDC0 flags 00000000->0C100002; #54420 obj 0x0->0x1F4DCD9C220 flags 00000000->0C100002; #54446 obj 0x0->0x1F4DCD9C860 flags 00000000->0C100002)
+[t=   4.325] *** POPULATION FLAG MOVE *** live~85096  bit25(Native) -7pp, bit26(Async?) +11pp, bit27(AsyncLoading?) +11pp, bit30(RootSet) -9pp
+[t=   4.325] decoy control: 1 slot(s) changed (#32914 serial 0->9457)
+[t=   4.578] *** POPULATION FLAG MOVE *** live~86272  bit20(LoaderImport?) -21pp, bit26(Async?) -40pp, bit27(AsyncLoading?) -40pp
+[t=   4.578] decoy control: 57 slot(s) changed (#48133 flags 00100002->00000002; #56857 flags 0C000002->00000002; #55871 flags 0C100002->00000002)
+[t=   4.831] *** POPULATION FLAG MOVE *** live~115520  bit20(LoaderImport?) +6pp, bit25(Native) -9pp, bit30(RootSet) -12pp
+[t=   4.831] decoy control: 14 slot(s) changed (#48133 flags 00000002->00100002; #48180 flags 00000002->00100002; #53245 flags 00000002->00100002)
+[t=   5.085] *** POPULATION FLAG MOVE *** live~130352  bit20(LoaderImport?) +6pp, bit26(Async?) +9pp, bit27(AsyncLoading?) +9pp
+[t=   5.337] *** POPULATION FLAG MOVE *** live~161408  bit26(Async?) +7pp, bit27(AsyncLoading?) +7pp, bit30(RootSet) -6pp
+[t=   5.590] *** POPULATION FLAG MOVE *** live~181368  bit26(Async?) +6pp, bit27(AsyncLoading?) +6pp
+[t=   5.843] decoy control: 1 slot(s) changed (#54586 flags 00000002->00100002)
+[t=   6.851] decoy control: 1 slot(s) changed (#54592 flags 00100002->00000002)
+[t=   8.617] decoy control: 1 slot(s) changed (#53935 flags 00100002->00000002)
+[t=   8.870] decoy control: 2 slot(s) changed (#53577 flags 00100002->00000002; #54111 flags 00100002->00000002)
+[t=  10.385] decoy control: 2 slot(s) changed (#53245 flags 00100002->00000002; #48379 flags 00100002->00000002)
+[t=  10.890] decoy control: 2 slot(s) changed (#55023 flags 00100002->00000002; #45514 flags 00100002->00000002)
+[t=  11.143] *** POPULATION FLAG MOVE *** live~184480  bit20(LoaderImport?) -7pp
+[t=  11.143] decoy control: 10 slot(s) changed (#48133 flags 00100002->00000002; #48180 flags 00100002->00000002; #48760 flags 00100002->00000002)
+[t=  58.110] *** GC PASS #1 *** reachability flag bit1 -> bit0 (live~185144, +0 objects)
+[t=  58.110] decoy control: 163 slot(s) changed (#48133 flags 00000002->00000001; #50694 flags 00000002->00000001; #47627 flags 00000002->00000001)
+[t=  59.118] *** PURGE VISIBLE *** live 185144 -> 180024 (-5120 objects destroyed since the previous sweep)
+[t=  59.118] decoy control: 1 slot(s) changed (#57068 obj 0x1F47F10DF00->0x0 flags 00000002->00000000)
+[t=  59.371] *** PURGE VISIBLE *** live 180024 -> 177160 (-2864 objects destroyed since the previous sweep)
+[t= 119.259] *** GC PASS #2 *** reachability flag bit0 -> bit2 (live~177160, -16 objects)
+[t= 119.259] decoy control: 163 slot(s) changed (#48133 flags 00000001->00000004; #50694 flags 00000001->00000004; #47627 flags 00000001->00000004)
+  marker TRUNCATED (FK-25: a new injection reopened it CREATE_ALWAYS) -- rewinding
+[t= 147.796] decoy control: 122 slot(s) changed (#48133 flags 00000004->00000002; #50694 flags 00000004->00000002; #47627 flags 00000004->00000002)
+[t= 148.048] *** PURGE VISIBLE *** live 177176 -> 52528 (-124648 objects destroyed since the previous sweep)
+[t= 148.048] *** POPULATION FLAG MOVE *** live~52528  bit20(LoaderImport?) +6pp, bit25(Native) +43pp, bit30(RootSet) +53pp
+[t= 148.048] decoy control: 61 slot(s) changed (#48133 flags 00000002->00100002; #56857 obj 0x1F3B20ACDD0->0x0 flags 00000004->00000000; #48180 flags 00000002->00100002)
+[t= 148.301] *** POPULATION FLAG MOVE *** live~63808  bit20(LoaderImport?) +14pp, bit25(Native) -11pp, bit26(Async?) +17pp, bit27(AsyncLoading?) +17pp, bit30(RootSet) -13pp
+[t= 148.555] *** GC PASS #3 *** reachability flag bit2 -> bit1 (live~77960, +14152 objects)
+[t= 148.555] *** POPULATION FLAG MOVE *** live~77960  bit20(LoaderImport?) +9pp, bit25(Native) -9pp, bit26(Async?) +14pp, bit27(AsyncLoading?) +15pp, bit30(RootSet) -11pp
+[t= 148.807] *** POPULATION FLAG MOVE *** live~98736  bit25(Native) -9pp, bit26(Async?) +14pp, bit27(AsyncLoading?) +14pp, bit30(RootSet) -11pp
+[t= 149.060] *** POPULATION FLAG MOVE *** live~113328  bit26(Async?) +7pp, bit27(AsyncLoading?) +7pp, bit30(RootSet) -5pp
+[t= 150.074] *** POPULATION FLAG MOVE *** live~119768  bit26(Async?) -39pp, bit27(AsyncLoading?) -38pp
+[t= 150.326] *** POPULATION FLAG MOVE *** live~119904  bit20(LoaderImport?) -39pp, bit26(Async?) -17pp, bit27(AsyncLoading?) -17pp
+[t= 150.326] decoy control: 20 slot(s) changed (#48133 flags 00100002->00000002; #48180 flags 00100002->00000002; #47695 flags 00100002->00000002)
+[t= 154.375] decoy control: 4 slot(s) changed (#48133 flags 00000002->00100002; #48273 flags 01000002->01100002; #48104 flags 00000002->00100002)
+[t= 154.627] decoy control: 1 slot(s) changed (#53577 flags 00000002->00100002)
+[t= 154.881] decoy control: 1 slot(s) changed (#53577 flags 00100002->00000002)
+[t= 155.134] decoy control: 2 slot(s) changed (#53935 flags 00000002->00100002; #48379 flags 00000002->00100002)
+[t= 155.387] decoy control: 1 slot(s) changed (#48379 flags 00100002->00000002)
+[t= 155.640] decoy control: 3 slot(s) changed (#53935 flags 00100002->00000002; #48379 flags 00000002->00100002; #54111 flags 00000002->00100002)
+[t= 155.892] decoy control: 6 slot(s) changed (#48133 flags 00100002->00000002; #48273 flags 01100002->01000002; #48379 flags 00100002->00000002)
+[t= 158.928] decoy control: 5 slot(s) changed (#48133 flags 00000002->00100002; #48273 flags 01000002->01100002; #48379 flags 00000002->00100002)
+[t= 159.687] decoy control: 4 slot(s) changed (#48133 flags 00100002->00000002; #48273 flags 01100002->01000002; #48104 flags 00100002->00000002)
+[t= 159.940] decoy control: 1 slot(s) changed (#48379 flags 00100002->00000002)
+[t= 160.699] decoy control: 2 slot(s) changed (#48273 flags 01000002->01100002; #48379 flags 00000002->00100002)
+[t= 161.205] decoy control: 2 slot(s) changed (#48273 flags 01100002->01000002; #48379 flags 00100002->00000002)
+  marker TRUNCATED (FK-25: a new injection reopened it CREATE_ALWAYS) -- rewinding
+[t= 180.421] *** GC PASS #4 *** reachability flag bit1 -> bit0 (live~158088, +0 objects)
+[t= 180.421] decoy control: 122 slot(s) changed (#48133 flags 00000002->00000001; #50694 flags 00000002->00000001; #47627 flags 00000002->00000001)
+[t= 181.180] *** PURGE VISIBLE *** live 157376 -> 152496 (-4880 objects destroyed since the previous sweep)
+[t= 181.433] *** PURGE VISIBLE *** live 152496 -> 151208 (-1288 objects destroyed since the previous sweep)
+  marker TRUNCATED (FK-25: a new injection reopened it CREATE_ALWAYS) -- rewinding
+[t= 241.545] *** GC PASS #5 *** reachability flag bit0 -> bit2 (live~151208, +0 objects)
+[t= 241.545] decoy control: 122 slot(s) changed (#48133 flags 00000001->00000004; #50694 flags 00000001->00000004; #47627 flags 00000001->00000004)
+[t= 274.511] *** THE GAME PROCESS EXITED *** (watch ends here; this is not a target event)
+
+====================================================================================================
+SUMMARY  observed 274.5 s, 5433 ticks, 1087 sweeps, 284835 RPM calls
+  max observed sampling gap: 58 ms  <- ALIASING BOUND: any state shorter than this could
+     have been missed, and no 'X never happened' claim below is stronger than that.
+  decoy control: 1075 event(s) across 256 control objects
+  GC PASSES (reachability-flag flips): 5 in 275 s  ->  t = 58.1, 119.3, 148.6, 180.4, 241.5
+     final reachable-flag bit: 2
+  GC activity seen at t = 3.8(purge), 4.1(flagmove), 4.3(flagmove), 4.6(flagmove), 4.8(flagmove), 5.1(flagmove), 5.3(flagmove), 5.6(flagmove), 11.1(flagmove), 58.1(reach-flip), 59.1(purge), 59.4(purge), 119.3(reach-flip), 148.0(purge), 148.0(flagmove), 148.3(flagmove), 148.6(reach-flip), 148.6(flagmove), 148.8(flagmove), 149.1(flagmove), 150.1(flagmove), 150.3(flagmove), 180.4(reach-flip), 181.2(purge), 181.4(purge), 241.5(reach-flip)
+  live-object count: start 52376, min 51520 @t=3.8, max 185144 @t=30.3, end 151216
+
+NO TARGETS WERE EVER ACQUIRED -- nothing was watched. This run measures nothing.
+====================================================================================================
+log: G:\git\Supervive Revival Project\docs\s110-itemwatch-phase2b-20260805-173844.log
+csv: G:\git\Supervive Revival Project\docs\s110-itemwatch-phase2b-20260805-173844.csv

@@ -1,0 +1,1047 @@
+==============================================================================
+MODULE   Barracuda.Minion.Waypoints.BarracudaMinionWaypointFollowerComponent
+SOURCE   Barracuda/Minion/Waypoints/BarracudaMinionWaypointFollowerComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaMinionWaypointFollowerComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaMinionWaypointFollowerComponent@ UBarracudaMinionWaypointFollowerComponent()
+// 4 instr, 28 B bytecode, id=0x36EF84F2, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionWaypointFollowerComponent v2;
+
+    v2 = UBarracudaMinionWaypointFollowerComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84312 q:0x26e6865dc00; new UBarracudaMinionWaypointFollowerComponent   ctor=UBarracudaMinionWaypointFollowerComponent::UBarracudaMinionWaypointFollowerComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x44F66D31, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaMinionWaypointFollowerComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b1358         ; __StaticType_UBarracudaMinionWaypointFollowerComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UBarracudaMinionWaypointFollowerComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x0FB19C0E, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionWaypointFollowerComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaMinionWaypointFollowerComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972621            ; UBarracudaMinionWaypointFollowerComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b1358         ; __StaticType_UBarracudaMinionWaypointFollowerComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaMinionWaypointFollowerComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xD18155E3, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionWaypointFollowerComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaMinionWaypointFollowerComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972621            ; UBarracudaMinionWaypointFollowerComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b1358         ; __StaticType_UBarracudaMinionWaypointFollowerComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaMinionWaypointFollowerComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x33197AE1, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionWaypointFollowerComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaMinionWaypointFollowerComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972621            ; UBarracudaMinionWaypointFollowerComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b1358         ; __StaticType_UBarracudaMinionWaypointFollowerComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class UBarracudaMinionWaypointFollowerComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) float64 LastWaypointTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) bool bDrawDebug;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 DebugDrawPathDurationWarningThreshold;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 DebugDrawPathDurationErrorThreshold;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) ABarracudaMinionWaypoint@ CurrentWaypoint;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) ABarracudaMinionWaypoint@ LastWaypoint;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) float64 LastCombatTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) FVector CachedLocation;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) float64 TimeFirstArrivedAtCachedLocation;
+
+}
+
+------------------------------------------------------------------------------
+UBarracudaMinionWaypointFollowerComponent() const
+// 15 instr, 116 B bytecode, id=0x615ED62F, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    this.CachedLocation = FVector();
+    v2 = 0;
+    this.LastWaypointTime = 0;
+    v2 = 30;
+    this.DebugDrawPathDurationWarningThreshold = 30;
+    v2 = 90;
+    this.DebugDrawPathDurationErrorThreshold = 90;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:264 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::CachedLocation  (+264)
+    //     3  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //     6  SetV8          wW0:2 q:0x0
+    //     9  LoadThisR      W0:208 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::LastWaypointTime  (+208)
+    //    11  WRTV8          rW0:2
+    //    12  SetV8          wW0:2 q:0x403e000000000000
+    //    15  LoadThisR      W0:224 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::DebugDrawPathDurationWarningThreshold  (+224)
+    //    17  WRTV8          rW0:2
+    //    18  SetV8          wW0:2 q:0x4056800000000000
+    //    21  LoadThisR      W0:232 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::DebugDrawPathDurationErrorThreshold  (+232)
+    //    23  WRTV8          rW0:2
+    //    24  PshVPtr        rW0:0
+    //    25  FinConstruct   q:0x26e6865dc00         ; UBarracudaMinionWaypointFollowerComponent
+    //    28  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: LokiBeginPlay
+void LokiBeginPlay_Implementation()
+// 21 instr, 124 B bytecode, id=0x738F6307, varspace=7
+------------------------------------------------------------------------------
+{
+    ABarracudaMinionWaypoint v6;
+
+    this.LastWaypointTime = float64(Gameplay::GetServerTime(__WorldContext));
+    v6 = this.CurrentWaypoint;
+    if (v6 == null) {
+        v6 = this.GetInitialWaypoint();
+        this.CurrentWaypoint = v6;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //     6  CpyRtoV4       wW0:1
+    //     7  fTOd           wW0:4 rW1:1
+    //     9  LoadThisR      W0:208 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::LastWaypointTime  (+208)
+    //    11  WRTV8          rW0:4
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:240 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::CurrentWaypoint  (+240)
+    //    15  RDSPtr
+    //    16  RefCpyV        wW0:6
+    //    17  CmpPtrNull     rW0:6
+    //    18  JNZ            ->30
+    //    20  PshVPtr        rW0:0
+    //    21  CALLINTF       d:84309                 ; ABarracudaMinionWaypoint@ UBarracudaMinionWaypointFollowerComponent::GetInitialWaypoint()
+    //    23  STOREOBJ       wW0:6
+    //    24  PshVPtr        rW0:6
+    //    25  PshVPtr        rW0:0
+    //    26  ADDSi          W0:240 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::CurrentWaypoint  (+240)
+    //    28  REFCPY
+    //    29  PopPtr
+    //    30  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 106 instr, 760 B bytecode, id=0xA2A27F54, varspace=46
+------------------------------------------------------------------------------
+{
+    auto v1;
+    AActor v4;
+    AActor v6;
+    auto v8;
+    auto v12;
+    UAbilitySystemComponent v16;
+    FVector v22;
+    FVector v28;
+    FVector v34;
+    FColor v41;
+    auto v44;
+
+    v1 = this.HasCurrentWaypoint();
+    v1 = !v1;
+    if (!v1) {
+        v4 = this.GetOwner();
+        if (v4 != null) {
+            v12 = float64(Gameplay::GetServerTime(__WorldContext));
+            v8 = v12;
+            v6 = this.GetOwner();
+            v16 = AbilitySystem::GetAbilitySystemComponent(v6);
+            if (v16 != null) {
+                if (v16.HasMatchingGameplayTag(GameplayTags::State_Combat_InCombat)) {
+                    this.LastCombatTime = v8;
+                }
+            }
+            v28 = v4.GetActorLocation();
+            v1 = v28 == this.CachedLocation;
+            v1 = !v1;
+            if (!v1) {
+                if (this.IsStuck()) {
+                    this.TryRescue();
+                }
+            } else {
+                this.CachedLocation = v28;
+                this.TimeFirstArrivedAtCachedLocation = v8;
+            }
+            v1 = this.bDrawDebug;
+            if (v1) {
+                v6 = this.GetOwner();
+                v22 = v6.GetActorLocation();
+                v34 = this.GetTargetLocationForCurrentWaypoint();
+                v41 = FColor(FColor::Green);
+                v12 = this.LastWaypointTime;
+                v12 = v8 - v12;
+                v44 = this.DebugDrawPathDurationErrorThreshold;
+                if (v12 <= v44) {
+                    v44 = this.DebugDrawPathDurationWarningThreshold;
+                    if (v12 > v44) {
+                        v41 = FColor::Yellow;
+                    }
+                } else {
+                    v41 = FColor::Red;
+                    LokiGameplay::ServerDrawDebugCapsule(__WorldContext, v22, 500, 100, FQuat::Identity, FColor::Red, 0);
+                }
+                LokiGameplay::ServerDrawDebugLine(__WorldContext, v22, v34, v41, 0);
+            }
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84306                 ; bool UBarracudaMinionWaypointFollowerComponent::HasCurrentWaypoint()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->10
+    //     8  JMP            ->189
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    14  STOREOBJ       wW0:4
+    //    15  CmpPtrNull     rW0:4
+    //    16  JNZ            ->20
+    //    18  JMP            ->189
+    //    20  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    23  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    26  CpyRtoV4       wW0:9
+    //    27  fTOd           wW0:12 rW1:9
+    //    29  CpyVtoV8       wW0:8 rW1:12
+    //    31  PshVPtr        rW0:0
+    //    32  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    35  STOREOBJ       wW0:6
+    //    36  PshVPtr        rW0:6
+    //    37  CALLSYS        q:0x26e79e99000         ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+    //    40  STOREOBJ       wW0:16
+    //    41  CmpPtrNull     rW0:16
+    //    42  JZ             ->56
+    //    44  PshGPtr        q:0x26e705b7ac8         ; GameplayTags::State_Combat_InCombat
+    //    47  PshVPtr        rW0:16
+    //    48  CALLSYS        q:0x26e79e78740         ; bool UAbilitySystemComponent::HasMatchingGameplayTag(FGameplayTag) const   [UFunction Script_HasMatchingGameplayTag]
+    //    51  JLowZ          ->56
+    //    53  LoadThisR      W0:256 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::LastCombatTime  (+256)
+    //    55  WRTV8          rW0:8
+    //    56  PSF            rW0:28
+    //    57  PshVPtr        rW0:4
+    //    58  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    61  PshVPtr        rW0:0
+    //    62  ADDSi          W0:264 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::CachedLocation  (+264)
+    //    64  PSF            rW0:28
+    //    65  CALLSYS        q:0x26e69d067c0         ; bool FVector::opEquals(const FVector&) const
+    //    68  CpyRtoV4       wW0:1
+    //    69  NOT            rW0:1
+    //    70  CpyVtoR1       rW0:1
+    //    71  JLowZ          ->85
+    //    73  PSF            rW0:28
+    //    74  PshVPtr        rW0:0
+    //    75  ADDSi          W0:264 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::CachedLocation  (+264)
+    //    77  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    80  LoadThisR      W0:288 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::TimeFirstArrivedAtCachedLocation  (+288)
+    //    82  WRTV8          rW0:8
+    //    83  JMP            ->93
+    //    85  PshVPtr        rW0:0
+    //    86  CALLINTF       d:84310                 ; bool UBarracudaMinionWaypointFollowerComponent::IsStuck()
+    //    88  JLowZ          ->93
+    //    90  PshVPtr        rW0:0
+    //    91  CALLINTF       d:84311                 ; void UBarracudaMinionWaypointFollowerComponent::TryRescue()
+    //    93  LoadThisR      W0:216 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::bDrawDebug  (+216)
+    //    95  RDR1           wW0:1
+    //    96  CpyVtoR1       rW0:1
+    //    97  JLowZ          ->189
+    //    99  PSF            rW0:22
+    //   100  PshVPtr        rW0:0
+    //   101  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //   104  STOREOBJ       wW0:6
+    //   105  PshVPtr        rW0:6
+    //   106  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   109  PSF            rW0:34
+    //   110  PshVPtr        rW0:0
+    //   111  CALLINTF       d:84307                 ; FVector UBarracudaMinionWaypointFollowerComponent::GetTargetLocationForCurrentWaypoint()
+    //   113  PshGPtr        q:0x26e7065a6c8         ; FColor::Green
+    //   116  PSF            rW0:41
+    //   117  CALLSYS        q:0x26e78657cc0         ; void FColor::$beh0(const FColor&)
+    //   120  LoadThisR      W0:208 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::LastWaypointTime  (+208)
+    //   122  RDR8           wW0:12
+    //   123  SUBd           wW0:12 rW1:8 rW2:12
+    //   125  LoadThisR      W0:232 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::DebugDrawPathDurationErrorThreshold  (+232)
+    //   127  RDR8           wW0:44
+    //   128  CMPd           rW0:12 rW1:44
+    //   130  JNP            ->160
+    //   132  PshGPtr        q:0x26e7065a748         ; FColor::Red
+    //   135  PSF            rW0:41
+    //   136  CALLSYS        q:0x26e78657b00         ; FColor& FColor::opAssign(const FColor&)
+    //   139  PshC4          d:0
+    //   141  PshGPtr        q:0x26e7065a748         ; FColor::Red
+    //   144  PshGPtr        q:0x26e76e4a248         ; FQuat::Identity
+    //   147  PshC4          d:1120403456
+    //   149  PshC4          d:1140457472
+    //   151  PSF            rW0:22
+    //   152  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   155  CALLSYS        q:0x26e7a2583c0         ; void LokiGameplay::ServerDrawDebugCapsule(UObject@, const FVector&, float, float, FQuat, FColor, float)
+    //   158  JMP            ->174
+    //   160  LoadThisR      W0:224 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::DebugDrawPathDurationWarningThreshold  (+224)
+    //   162  RDR8           wW0:44
+    //   163  CMPd           rW0:12 rW1:44
+    //   165  JNP            ->174
+    //   167  PshGPtr        q:0x26e7065a5c8         ; FColor::Yellow
+    //   170  PSF            rW0:41
+    //   171  CALLSYS        q:0x26e78657b00         ; FColor& FColor::opAssign(const FColor&)
+    //   174  PshC4          d:0
+    //   176  PSF            rW0:41
+    //   177  PSF            rW0:34
+    //   178  PSF            rW0:22
+    //   179  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   182  CALLSYS        q:0x26e7a258200         ; void LokiGameplay::ServerDrawDebugLine(UObject@, const FVector&, const FVector&, FColor, float)
+    //   185  PSF            rW0:41
+    //   186  CALLSYS        q:0x26e78657e80         ; void FColor::$beh2()
+    //   189  RET            W0:4
+
+------------------------------------------------------------------------------
+bool HasCurrentWaypoint()
+// 9 instr, 40 B bytecode, id=0xA8E3AB3D, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v3;
+
+    v3 = this.CurrentWaypoint != null;
+    return v3;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:240 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::CurrentWaypoint  (+240)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  TNZ
+    //     7  CpyRtoV4       wW0:3
+    //     8  CpyVtoR4       rW0:3
+    //     9  RET            W0:2
+
+------------------------------------------------------------------------------
+FVector GetTargetLocationForCurrentWaypoint()
+// 40 instr, 268 B bytecode, id=0xBE598CB5, varspace=22
+------------------------------------------------------------------------------
+{
+    auto v1;
+    FVector v8;
+    FVector v14;
+    FVector v20;
+    TSubclassOf<UNavigationQueryFilter@> v22;
+
+    v1 = this.HasCurrentWaypoint();
+    v1 = !v1;
+    if (!v1) {
+        v14 = this.CurrentWaypoint.GetActorLocation();
+        v20 = FVector(FVector::ZeroVector);
+        v8 = FVector();
+        v22 = TSubclassOf<UNavigationQueryFilter@>(null);
+        v1 = UNavigationSystemV1::ProjectPointToNavigation(__WorldContext, v14, v20, null, v22, v8);
+        if (v1) {
+            v14 = v20;
+        }
+        __return = FVector(v14);
+    } else {
+        __return = FVector(FVector::ZeroVector);
+    }
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84306                 ; bool UBarracudaMinionWaypointFollowerComponent::HasCurrentWaypoint()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->17
+    //     8  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    11  PshVPtr        rW0:-2
+    //    12  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    15  JMP            ->66
+    //    17  PSF            rW0:14
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:240 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::CurrentWaypoint  (+240)
+    //    21  RDSPtr
+    //    22  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    25  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    28  PSF            rW0:20
+    //    29  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    32  PSF            rW0:8
+    //    33  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //    36  PSF            rW0:8
+    //    37  PshNull
+    //    38  PSF            rW0:22
+    //    39  CALLSYS        q:0x26e6ef00e80         ; void TSubclassOf<UNavigationQueryFilter@>::$beh0(UClass@)
+    //    42  PSF            rW0:22
+    //    43  PshNull
+    //    44  PSF            rW0:20
+    //    45  PSF            rW0:14
+    //    46  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    49  CALLSYS        q:0x26e797ebbc0         ; bool UNavigationSystemV1::ProjectPointToNavigation(UObject@, const FVector&, FVector&, ANavigationData@, TSubclassOf<UNavigationQueryFilter@>, const FVector)
+    //    52  CpyRtoV4       wW0:1
+    //    53  CpyVtoR1       rW0:1
+    //    54  JLowZ          ->61
+    //    56  PSF            rW0:20
+    //    57  PSF            rW0:14
+    //    58  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    61  PSF            rW0:14
+    //    62  PshVPtr        rW0:-2
+    //    63  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    66  RET            W0:4
+
+------------------------------------------------------------------------------
+void ReachedWaypoint(ABarracudaMinionWaypoint@ Waypoint)
+// 28 instr, 148 B bytecode, id=0xD08E5977, varspace=10
+------------------------------------------------------------------------------
+{
+    ABarracudaMinionWaypoint v2;
+
+    v2 = this.CurrentWaypoint;
+    if (v2 == Waypoint) {
+        this.LastWaypoint = this.CurrentWaypoint;
+        this.CurrentWaypoint = Waypoint.GetNextWaypoint(this.GetOwner());
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:240 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::CurrentWaypoint  (+240)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  PshVPtr        rW0:-2
+    //     6  RefCpyV        wW0:4
+    //     7  CmpPtr         rW0:2 rW1:4
+    //     9  JNZ            ->36
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:240 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::CurrentWaypoint  (+240)
+    //    14  RDSPtr
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:248 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::LastWaypoint  (+248)
+    //    18  REFCPY
+    //    19  PopPtr
+    //    20  PshVPtr        rW0:0
+    //    21  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    24  STOREOBJ       wW0:8
+    //    25  PshVPtr        rW0:8
+    //    26  PshVPtr        rW0:-2
+    //    27  CALLINTF       d:84298                 ; ABarracudaMinionWaypoint@ ABarracudaMinionWaypoint::GetNextWaypoint(AActor@)
+    //    29  STOREOBJ       wW0:10
+    //    30  PshVPtr        rW0:10
+    //    31  PshVPtr        rW0:0
+    //    32  ADDSi          W0:240 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::CurrentWaypoint  (+240)
+    //    34  REFCPY
+    //    35  PopPtr
+    //    36  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+ABarracudaMinionWaypoint@ GetInitialWaypoint()
+// 103 instr, 640 B bytecode, id=0xE9BC78E9, varspace=41
+------------------------------------------------------------------------------
+{
+    AActor v2;
+    UBarracudaLaneComponent v6;
+    auto v7;
+    ABarracudaMinionWaypoint v10;
+    auto v11;
+    auto v12;
+    auto v14;
+    UBarracudaGameStateComponent v16;
+    TSetIterator<ABarracudaMinionWaypoint@> v28;
+    ABarracudaMinionWaypoint v38;
+    UBarracudaLaneComponent v40;
+    auto v41;
+
+    v2 = this.GetOwner();
+    v6 = UBarracudaLaneComponent::Get(v2, NAME_None);
+    if (v6 != null) {
+        v12 = v6.LaneIndex;
+        v11 = v12;
+        v2 = this.GetOwner();
+        v12 = LokiTeam::GetTeamFromActor(v2);
+        v7 = v12 == 0;
+        v16 = UBarracudaGameStateComponent::Get(Loki::GetLokiGameState(__WorldContext), NAME_None);
+        if (v16 != null) {
+            v28 = v16.MinionWaypoints.Iterator();
+            while (true) {
+                v14 = v28.CanProceed;
+                if (!v14) break;
+                v38 = v28.Proceed();
+                v40 = UBarracudaLaneComponent::Get(v38, NAME_None);
+                if (v40 == null) {
+                    continue;
+                }
+                if (v11 != v40.LaneIndex) {
+                    continue;
+                }
+                if (v7) {
+                    v10 = v38.WaypointTowardTeam0;
+                    v14 = v10 == null;
+                    v41 = v14;
+                } else {
+                    v41 = 0;
+                }
+                if (!v41) {
+                    v14 = v7;
+                    v14 = !v7;
+                    if (!v14) {
+                        v14 = 0;
+                        goto L142;
+                    }
+                    v10 = v38.WaypointTowardTeam1;
+                    v41 = v10 == null;
+                    v14 = v41;
+                    L142:
+                    if (v14) {
+                        goto L159;
+                    }
+                    continue;
+                } else {
+                    goto L159;
+                }
+            }
+        }
+    } else {
+    }
+    L159:
+    return v10;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     7  STOREOBJ       wW0:2
+    //     8  PshVPtr        rW0:2
+    //     9  CALL           d:84114                 ; UBarracudaLaneComponent@ UBarracudaLaneComponent::Get(const AActor@, const FName&)
+    //    11  STOREOBJ       wW0:6
+    //    12  CmpPtrNull     rW0:6
+    //    13  JNZ            ->19
+    //    15  FreeNullV8     wW0:10
+    //    16  LOADOBJ        rW0:10
+    //    17  JMP            ->159
+    //    19  LoadRObjR      rW0:6 W1:208 DW2:134230771; UBarracudaLaneComponent::LaneIndex  (+208)
+    //    22  RDR4           wW0:12
+    //    23  CpyVtoV4       wW0:11 rW1:12
+    //    25  PshVPtr        rW0:0
+    //    26  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    29  STOREOBJ       wW0:2
+    //    30  PshVPtr        rW0:2
+    //    31  CALLSYS        q:0x26e7a4113c0         ; int LokiTeam::GetTeamFromActor(const AActor@)
+    //    34  CpyRtoV4       wW0:12
+    //    35  CMPIi          rW0:12 d:0
+    //    37  TZ
+    //    38  CpyRtoV4       wW0:7
+    //    39  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    42  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    45  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    48  STOREOBJ       wW0:18
+    //    49  PshVPtr        rW0:18
+    //    50  CALL           d:84255                 ; UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Get(const AActor@, const FName&)
+    //    52  STOREOBJ       wW0:16
+    //    53  CmpPtrNull     rW0:16
+    //    54  JZ             ->157
+    //    56  PSF            rW0:28
+    //    57  PshVPtr        rW0:16
+    //    58  ADDSi          W0:304 d:134230778      ; UBarracudaGameStateComponent::MinionWaypoints  (+304)
+    //    60  CALLSYS        q:0x26e6ef00940         ; TSetIterator<ABarracudaMinionWaypoint@> TSet<ABarracudaMinionWaypoint@>::Iterator()
+    //    63  JMP            ->150
+    //    65  SUSPEND
+    //    66  PSF            rW0:28
+    //    67  CALLSYS        q:0x26e6ef005c0         ; ABarracudaMinionWaypoint@ const& TSetIterator<ABarracudaMinionWaypoint@>::Proceed()
+    //    70  PshRPtr
+    //    71  RDSPtr
+    //    72  RefCpyV        wW0:38
+    //    73  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    76  PshVPtr        rW0:38
+    //    77  CALL           d:84114                 ; UBarracudaLaneComponent@ UBarracudaLaneComponent::Get(const AActor@, const FName&)
+    //    79  STOREOBJ       wW0:40
+    //    80  CmpPtrNull     rW0:40
+    //    81  JNZ            ->87
+    //    83  FreeNullV8     wW0:40
+    //    84  FreeNullV8     wW0:38
+    //    85  JMP            ->150
+    //    87  LoadRObjR      rW0:40 W1:208 DW2:134230771; UBarracudaLaneComponent::LaneIndex  (+208)
+    //    90  RDR4           wW0:13
+    //    91  CMPi           rW0:11 rW1:13
+    //    93  JZ             ->99
+    //    95  FreeNullV8     wW0:40
+    //    96  FreeNullV8     wW0:38
+    //    97  JMP            ->150
+    //    99  CpyVtoR1       rW0:7
+    //   100  JLowNZ         ->106
+    //   102  SetV4          wW0:41 d:0
+    //   104  JMP            ->116
+    //   106  PshVPtr        rW0:38
+    //   107  ADDSi          W0:920 d:134230796      ; ABarracudaMinionWaypoint::WaypointTowardTeam0  (+920)
+    //   109  RDSPtr
+    //   110  RefCpyV        wW0:10
+    //   111  CmpPtrNull     rW0:10
+    //   112  TZ
+    //   113  CpyRtoV4       wW0:14
+    //   114  CpyVtoV4       wW0:41 rW1:14
+    //   116  CpyVtoR1       rW0:41
+    //   117  JLowZ          ->122
+    //   119  LOADOBJ        rW0:38
+    //   120  JMP            ->159
+    //   122  CpyVtoV4       wW0:14 rW1:7
+    //   124  NOT            rW0:14
+    //   125  CpyVtoR1       rW0:14
+    //   126  JLowNZ         ->132
+    //   128  SetV4          wW0:14 d:0
+    //   130  JMP            ->142
+    //   132  PshVPtr        rW0:38
+    //   133  ADDSi          W0:928 d:134230796      ; ABarracudaMinionWaypoint::WaypointTowardTeam1  (+928)
+    //   135  RDSPtr
+    //   136  RefCpyV        wW0:10
+    //   137  CmpPtrNull     rW0:10
+    //   138  TZ
+    //   139  CpyRtoV4       wW0:41
+    //   140  CpyVtoV4       wW0:14 rW1:41
+    //   142  CpyVtoR1       rW0:14
+    //   143  JLowZ          ->148
+    //   145  LOADOBJ        rW0:38
+    //   146  JMP            ->159
+    //   148  FreeNullV8     wW0:40
+    //   149  FreeNullV8     wW0:38
+    //   150  LoadVObjR      rW0:28 W1:24 DW2:268448526; TSetIterator::CanProceed  (+24)
+    //   153  RDR1           wW0:14
+    //   154  CpyVtoR1       rW0:14
+    //   155  JLowNZ         ->65
+    //   157  FreeNullV8     wW0:10
+    //   158  LOADOBJ        rW0:10
+    //   159  RET            W0:2
+
+------------------------------------------------------------------------------
+bool IsStuck()
+// 90 instr, 620 B bytecode, id=0x76801BEE, varspace=28
+------------------------------------------------------------------------------
+{
+    auto v2;
+    float64 v6;
+    auto v8;
+    auto v10;
+    auto v12;
+    auto v13;
+    auto v14;
+    auto v15;
+    ALokiCharacter v18;
+    AActor v20;
+    ALokiCharacter v22;
+    ULokiCharacterMovementComponent v24;
+    auto v25;
+
+    v6 = float64(Gameplay::GetServerTime(__WorldContext));
+    v2 = v6;
+    v6 = this.TimeFirstArrivedAtCachedLocation;
+    v6 = v6 - v6;
+    v12 = Math::Max(v6, 0);
+    v10 = 5;
+    v14 = v12 > 5;
+    v13 = false;
+    v15 = false;
+    v20 = this.GetOwner();
+    if (v20 == null) {
+        v22 = null;
+    } else {
+        v22 = cast<ALokiCharacter>(v20);
+    }
+    v18 = v22;
+    if (v22 != null) {
+        v24 = v18.GetLokiCharacterMovement();
+        v25 = v24 != null;
+        v13 = v25;
+    } else {
+        v13 = 0;
+    }
+    if (v13) {
+        v24 = v18.GetLokiCharacterMovement();
+        v25 = v24.CurrentFloor.GetbWalkableFloor();
+        v25 = !v25;
+        v13 = v25;
+    } else {
+        v13 = 0;
+    }
+    if (v13) {
+        v25 = true;
+        v15 = true;
+    }
+    if (v14) {
+        v13 = v15;
+    } else {
+        v13 = 0;
+    }
+    if (!v13) {
+        v8 = this.LastCombatTime;
+        v6 = v2 - v8;
+        v8 = Math::Max(v6, 0);
+        v10 = 5;
+        if (v8 >= 5) {
+            if (!v14) {
+                v13 = false;
+            } else {
+                v25 = true;
+            }
+        } else {
+            v13 = false;
+        }
+    } else {
+        v25 = true;
+    }
+    return !v14 ? v13 : v25;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //     6  CpyRtoV4       wW0:3
+    //     7  fTOd           wW0:6 rW1:3
+    //     9  CpyVtoV8       wW0:2 rW1:6
+    //    11  PshC8          q:0x0
+    //    14  LoadThisR      W0:288 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::TimeFirstArrivedAtCachedLocation  (+288)
+    //    16  RDR8           wW0:6
+    //    17  SUBd           wW0:6 rW1:2 rW2:6
+    //    19  PshV8          rW0:6
+    //    20  CALLSYS        q:0x26e70382000         ; float64 Math::Max(float64, float64)
+    //    23  CpyRtoV8       wW0:12
+    //    24  SetV8          wW0:10 q:0x4014000000000000
+    //    27  CMPd           rW0:12 rW1:10
+    //    29  TP
+    //    30  CpyRtoV4       wW0:14
+    //    31  SetV1          wW0:13 d:0
+    //    33  CpyVtoV4       wW0:15 rW1:13
+    //    35  PshVPtr        rW0:0
+    //    36  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    39  STOREOBJ       wW0:20
+    //    40  CmpPtrNull     rW0:20
+    //    41  JZ             ->52
+    //    43  TYPEID         d:1140856817            ; ALokiCharacter@
+    //    45  PSF            rW0:22
+    //    46  PshVPtr        rW0:20
+    //    47  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    50  JMP            ->53
+    //    52  ClrVPtr        wW0:22
+    //    53  PshVPtr        rW0:22
+    //    54  RefCpyV        wW0:18
+    //    55  CmpPtrNull     rW0:18
+    //    56  JNZ            ->62
+    //    58  SetV4          wW0:13 d:0
+    //    60  JMP            ->72
+    //    62  PshVPtr        rW0:18
+    //    63  CALLSYS        q:0x26e7a188580         ; ULokiCharacterMovementComponent@ ALokiCharacter::GetLokiCharacterMovement() const
+    //    66  STOREOBJ       wW0:24
+    //    67  CmpPtrNull     rW0:24
+    //    68  TNZ
+    //    69  CpyRtoV4       wW0:25
+    //    70  CpyVtoV4       wW0:13 rW1:25
+    //    72  CpyVtoR1       rW0:13
+    //    73  JLowNZ         ->79
+    //    75  SetV4          wW0:13 d:0
+    //    77  JMP            ->94
+    //    79  PshVPtr        rW0:18
+    //    80  CALLSYS        q:0x26e7a188580         ; ULokiCharacterMovementComponent@ ALokiCharacter::GetLokiCharacterMovement() const
+    //    83  STOREOBJ       wW0:24
+    //    84  PshVPtr        rW0:24
+    //    85  ADDSi          W0:1080 d:67113152      ; UCharacterMovementComponent::CurrentFloor  (+1080)
+    //    87  CALLSYS        q:0x26e78a1adc0         ; bool FFindFloorResult::GetbWalkableFloor() const
+    //    90  CpyRtoV4       wW0:25
+    //    91  NOT            rW0:25
+    //    92  CpyVtoV4       wW0:13 rW1:25
+    //    94  CpyVtoR1       rW0:13
+    //    95  JLowZ          ->101
+    //    97  SetV1          wW0:25 d:1
+    //    99  CpyVtoV4       wW0:15 rW1:25
+    //   101  CpyVtoR1       rW0:14
+    //   102  JLowNZ         ->108
+    //   104  SetV4          wW0:13 d:0
+    //   106  JMP            ->110
+    //   108  CpyVtoV4       wW0:13 rW1:15
+    //   110  CpyVtoR1       rW0:13
+    //   111  JLowZ          ->118
+    //   113  SetV1          wW0:25 d:1
+    //   115  CpyVtoR4       rW0:25
+    //   116  JMP            ->154
+    //   118  PshC8          q:0x0
+    //   121  LoadThisR      W0:256 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::LastCombatTime  (+256)
+    //   123  RDR8           wW0:8
+    //   124  SUBd           wW0:6 rW1:2 rW2:8
+    //   126  PshV8          rW0:6
+    //   127  CALLSYS        q:0x26e70382000         ; float64 Math::Max(float64, float64)
+    //   130  CpyRtoV8       wW0:8
+    //   131  SetV8          wW0:10 q:0x4014000000000000
+    //   134  CMPd           rW0:8 rW1:10
+    //   136  JNS            ->143
+    //   138  SetV1          wW0:13 d:0
+    //   140  CpyVtoR4       rW0:13
+    //   141  JMP            ->154
+    //   143  CpyVtoR1       rW0:14
+    //   144  JLowZ          ->151
+    //   146  SetV1          wW0:25 d:1
+    //   148  CpyVtoR4       rW0:25
+    //   149  JMP            ->154
+    //   151  SetV1          wW0:13 d:0
+    //   153  CpyVtoR4       rW0:13
+    //   154  RET            W0:2
+
+------------------------------------------------------------------------------
+void TryRescue()
+// 67 instr, 448 B bytecode, id=0xE94B6F27, varspace=37
+------------------------------------------------------------------------------
+{
+    FVector v6;
+    AActor v8;
+    FVector v14;
+    FRotator v20;
+    auto v27;
+    auto v28;
+    FVector v34;
+
+    v8 = this.GetOwner();
+    v14 = v8.GetActorLocation();
+    v8 = this.GetOwner();
+    v20 = v8.GetActorRotation();
+    v28 = false;
+    v27 = false;
+    v34 = FVector();
+    if (this.LastWaypoint == null) {
+        if (this.HasCurrentWaypoint()) {
+            v28 = true;
+            v27 = true;
+            v6 = this.GetTargetLocationForCurrentWaypoint();
+            v34 = v6;
+        }
+    } else {
+        v28 = true;
+        v27 = true;
+        v6 = this.LastWaypoint.GetActorLocation();
+        v34 = v6;
+    }
+    if (v27) {
+        v8 = this.GetOwner();
+        v8.Teleport(v34, v20);
+    }
+    v28 = this.bDrawDebug;
+    if (v28) {
+        if (v27) {
+            LokiGameplay::ServerDrawDebugLine(__WorldContext, v14, v34, FColor::Purple, 10);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:14
+    //     1  PshVPtr        rW0:0
+    //     2  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     5  STOREOBJ       wW0:8
+    //     6  PshVPtr        rW0:8
+    //     7  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    10  PSF            rW0:20
+    //    11  PshVPtr        rW0:0
+    //    12  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    15  STOREOBJ       wW0:8
+    //    16  PshVPtr        rW0:8
+    //    17  CALLSYS        q:0x26e79712c40         ; FRotator AActor::GetActorRotation() const   [UFunction K2_GetActorRotation]
+    //    20  SetV1          wW0:28 d:0
+    //    22  CpyVtoV4       wW0:27 rW1:28
+    //    24  PSF            rW0:34
+    //    25  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //    28  PshVPtr        rW0:0
+    //    29  ADDSi          W0:248 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::LastWaypoint  (+248)
+    //    31  RDSPtr
+    //    32  RefCpyV        wW0:36
+    //    33  CmpPtrNull     rW0:36
+    //    34  JZ             ->55
+    //    36  SetV1          wW0:28 d:1
+    //    38  CpyVtoV4       wW0:27 rW1:28
+    //    40  PSF            rW0:6
+    //    41  PshVPtr        rW0:0
+    //    42  ADDSi          W0:248 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::LastWaypoint  (+248)
+    //    44  RDSPtr
+    //    45  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    48  PSF            rW0:6
+    //    49  PSF            rW0:34
+    //    50  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    53  JMP            ->73
+    //    55  PshVPtr        rW0:0
+    //    56  CALLINTF       d:84306                 ; bool UBarracudaMinionWaypointFollowerComponent::HasCurrentWaypoint()
+    //    58  JLowZ          ->73
+    //    60  SetV1          wW0:28 d:1
+    //    62  CpyVtoV4       wW0:27 rW1:28
+    //    64  PSF            rW0:6
+    //    65  PshVPtr        rW0:0
+    //    66  CALLINTF       d:84307                 ; FVector UBarracudaMinionWaypointFollowerComponent::GetTargetLocationForCurrentWaypoint()
+    //    68  PSF            rW0:6
+    //    69  PSF            rW0:34
+    //    70  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    73  CpyVtoR1       rW0:27
+    //    74  JLowZ          ->87
+    //    76  PSF            rW0:20
+    //    77  PSF            rW0:34
+    //    78  PshVPtr        rW0:0
+    //    79  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    82  STOREOBJ       wW0:8
+    //    83  PshVPtr        rW0:8
+    //    84  CALLSYS        q:0x26e797113c0         ; bool AActor::Teleport(FVector, FRotator)   [UFunction K2_TeleportTo]
+    //    87  LoadThisR      W0:216 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::bDrawDebug  (+216)
+    //    89  RDR1           wW0:28
+    //    90  CpyVtoR1       rW0:28
+    //    91  JLowZ          ->111
+    //    93  CpyVtoR1       rW0:27
+    //    94  JLowZ          ->111
+    //    96  PshC4          d:1092616192
+    //    98  PshGPtr        q:0x26e7065c4c8         ; FColor::Purple
+    //   101  PSF            rW0:34
+    //   102  PSF            rW0:14
+    //   103  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   106  CALLSYS        q:0x26e7a258200         ; void LokiGameplay::ServerDrawDebugLine(UObject@, const FVector&, const FVector&, FColor, float)
+    //   109  JMP            ->111
+    //   111  RET            W0:2
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 25 instr, 180 B bytecode, id=0xA928CAF1, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+
+    v1 = false;
+    this.SetbReplicates(false);
+    v1 = true;
+    this.SetComponentTickEnabled(true);
+    v1 = true;
+    this.SetbExcludeFromClient(true);
+    v4 = 0;
+    this.LastCombatTime = 0;
+    v4 = 0;
+    this.TimeFirstArrivedAtCachedLocation = 0;
+    v4 = 0;
+    this.LastWaypointTime = 0;
+    v1 = false;
+    this.bDrawDebug = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a62c640         ; void UActorComponent::SetbReplicates(bool)
+    //     7  SetV1          wW0:1 d:1
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7973d440         ; void UActorComponent::SetComponentTickEnabled(bool)
+    //    14  SetV1          wW0:1 d:1
+    //    16  PshV4          rW0:1
+    //    17  PshVPtr        rW0:0
+    //    18  CALLSYS        q:0x26e7a62bbc0         ; void UActorComponent::SetbExcludeFromClient(bool)
+    //    21  SetV8          wW0:4 q:0x0
+    //    24  LoadThisR      W0:256 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::LastCombatTime  (+256)
+    //    26  WRTV8          rW0:4
+    //    27  SetV8          wW0:4 q:0x0
+    //    30  LoadThisR      W0:288 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::TimeFirstArrivedAtCachedLocation  (+288)
+    //    32  WRTV8          rW0:4
+    //    33  SetV8          wW0:4 q:0x0
+    //    36  LoadThisR      W0:208 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::LastWaypointTime  (+208)
+    //    38  WRTV8          rW0:4
+    //    39  SetV1          wW0:1 d:0
+    //    41  LoadThisR      W0:216 d:134230797      ; UBarracudaMinionWaypointFollowerComponent::bDrawDebug  (+216)
+    //    43  WRTV1          rW0:1
+    //    44  RET            W0:2
+

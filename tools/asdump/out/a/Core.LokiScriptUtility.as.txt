@@ -1,0 +1,251 @@
+==============================================================================
+MODULE   Core.LokiScriptUtility
+SOURCE   Core/LokiScriptUtility.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+// statics class: Module_Core_LokiScriptUtilityStatics
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+FVector LinearColorToVector(const FLinearColor&inout Color)
+// 18 instr, 124 B bytecode, id=0x51176F21, varspace=14
+------------------------------------------------------------------------------
+{
+    FVector v6;
+    auto v7;
+
+    v7 = Color.B;
+    v7 = Color.G;
+    v7 = Color.R;
+    v6 = FVector(float64(v7), float64(v7), float64(v7));
+    __return = FVector(v6);
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadRObjR      rW0:-2 W1:8 DW2:67117434; FLinearColor::B  (+8)
+    //     3  RDR4           wW0:7
+    //     4  fTOd           wW0:10 rW1:7
+    //     6  PshV8          rW0:10
+    //     7  LoadRObjR      rW0:-2 W1:4 DW2:67117434; FLinearColor::G  (+4)
+    //    10  RDR4           wW0:7
+    //    11  fTOd           wW0:12 rW1:7
+    //    13  PshV8          rW0:12
+    //    14  LoadRObjR      rW0:-2 W1:0 DW2:67117434; FLinearColor::R  (+0)
+    //    17  RDR4           wW0:7
+    //    18  fTOd           wW0:14 rW1:7
+    //    20  PshV8          rW0:14
+    //    21  PSF            rW0:6
+    //    22  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //    25  PSF            rW0:6
+    //    26  PshVPtr        rW0:0
+    //    27  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    30  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+ULokiAimingVisComponentScript@ GetOwnerAimingVisComponent(ULokiDisplayableAbility@ Ability)
+// 33 instr, 212 B bytecode, id=0x20546F5F, varspace=12
+------------------------------------------------------------------------------
+{
+    ALokiCharacter v6;
+    ALokiHeroCharacter v8;
+    ALokiHeroCharacter v10;
+    ULokiAimingVisComponentScript v12;
+
+    if (IsValid(Ability)) {
+        v6 = Ability.GetAvatarLokiCharacterFromActorInfo();
+        if (IsValid(Ability)) {
+            if (v6 == null) {
+                v8 = null;
+            } else {
+                v8 = cast<ALokiHeroCharacter>(v6);
+            }
+            v10 = v8;
+            if (IsValid(v8)) {
+                v12 = ULokiAimingVisComponentScript::Get(v10, NAME_None);
+            }
+        }
+    }
+    return v12;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //     4  JLowZ          ->50
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7a1b5800         ; ALokiCharacter@ ULokiDisplayableAbility::GetAvatarLokiCharacterFromActorInfo() const
+    //    10  STOREOBJ       wW0:6
+    //    11  PshVPtr        rW0:0
+    //    12  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    15  JLowZ          ->49
+    //    17  CmpPtrNull     rW0:6
+    //    18  JZ             ->29
+    //    20  TYPEID         d:1140857000            ; ALokiHeroCharacter@
+    //    22  PSF            rW0:8
+    //    23  PshVPtr        rW0:6
+    //    24  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    27  JMP            ->30
+    //    29  ClrVPtr        wW0:8
+    //    30  PshVPtr        rW0:8
+    //    31  RefCpyV        wW0:10
+    //    32  PshVPtr        rW0:10
+    //    33  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    36  JLowZ          ->48
+    //    38  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    41  PshVPtr        rW0:10
+    //    42  CALL           d:84727                 ; ULokiAimingVisComponentScript@ ULokiAimingVisComponentScript::Get(const AActor@, const FName&)
+    //    44  STOREOBJ       wW0:12
+    //    45  LOADOBJ        rW0:12
+    //    46  JMP            ->52
+    //    48  FreeNullV8     wW0:10
+    //    49  FreeNullV8     wW0:6
+    //    50  FreeNullV8     wW0:12
+    //    51  LOADOBJ        rW0:12
+    //    52  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+float64 GetRelicCountForPlayer(ALokiCharacter@ Character)
+// 43 instr, 288 B bytecode, id=0x49729FB3, varspace=22
+------------------------------------------------------------------------------
+{
+    auto v6;
+    ULokiInventoryComponentComboItems v10;
+    TArray<ALokiBaseItem@> v14;
+    ALokiBaseItem v20;
+    ALokiBaseItem v22;
+
+    if (Character != null) {
+        v10 = Character.GetInventoryComboItems();
+        if (v10 != null) {
+            v14 = TArray<ALokiBaseItem@>();
+            if (v10.GetPowerItem(0) != null) {
+                v14.Add(v20);
+            }
+            if (v10.GetPowerItem(1) != null) {
+                v14.Add(v22);
+            }
+            v6 = float64(v14.Num());
+        } else {
+            v6 = 0;
+        }
+    } else {
+        v6 = 0;
+    }
+    return v6;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  RefCpyV        wW0:2
+    //     2  CmpPtrNull     rW0:2
+    //     3  JNZ            ->11
+    //     5  SetV8          wW0:6 q:0x0
+    //     8  CpyVtoR8       rW0:6
+    //     9  JMP            ->71
+    //    11  PshVPtr        rW0:0
+    //    12  CALLSYS        q:0x26e7a189700         ; ULokiInventoryComponentComboItems@ ALokiCharacter::GetInventoryComboItems() const
+    //    15  STOREOBJ       wW0:10
+    //    16  CmpPtrNull     rW0:10
+    //    17  JNZ            ->25
+    //    19  SetV8          wW0:6 q:0x0
+    //    22  CpyVtoR8       rW0:6
+    //    23  JMP            ->71
+    //    25  PSF            rW0:14
+    //    26  CALLSYS        q:0x26e6ef07080         ; void TArray<ALokiBaseItem@>::$beh0()
+    //    29  PshC4          d:0
+    //    31  PshVPtr        rW0:10
+    //    32  CALLSYS        q:0x26e7a2ad600         ; ALokiBaseItem@ ULokiInventoryComponentComboItems::GetPowerItem(int) const
+    //    35  STOREOBJ       wW0:20
+    //    36  CmpPtrNull     rW0:20
+    //    37  JZ             ->44
+    //    39  PSF            rW0:20
+    //    40  PSF            rW0:14
+    //    41  CALLSYS        q:0x26e6ef26d00         ; void TArray<ALokiBaseItem@>::Add(const ALokiBaseItem@ const&)
+    //    44  PshC4          d:1
+    //    46  PshVPtr        rW0:10
+    //    47  CALLSYS        q:0x26e7a2ad600         ; ALokiBaseItem@ ULokiInventoryComponentComboItems::GetPowerItem(int) const
+    //    50  STOREOBJ       wW0:22
+    //    51  CmpPtrNull     rW0:22
+    //    52  JZ             ->59
+    //    54  PSF            rW0:22
+    //    55  PSF            rW0:14
+    //    56  CALLSYS        q:0x26e6ef26d00         ; void TArray<ALokiBaseItem@>::Add(const ALokiBaseItem@ const&)
+    //    59  PSF            rW0:14
+    //    60  CALLSYS        q:0x26e6ef26b40         ; int TArray<ALokiBaseItem@>::Num() const
+    //    63  CpyRtoV4       wW0:15
+    //    64  iTOd           wW0:6 rW1:15
+    //    66  PSF            rW0:14
+    //    67  CALLSYS        q:0x26e7a0eb680         ; void TArray<ALokiBaseItem@>::$beh2()
+    //    70  CpyVtoR8       rW0:6
+    //    71  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+float64 GetArmorLevelForPlayer(ALokiCharacter@ Character)
+// 28 instr, 188 B bytecode, id=0x5DFD24BB, varspace=15
+------------------------------------------------------------------------------
+{
+    auto v6;
+    ULokiInventoryComponentComboItems v10;
+    ALokiBaseItem v14;
+
+    if (Character != null) {
+        v10 = Character.GetInventoryComboItems();
+        if (v10 != null) {
+            v14 = v10.GetArmorItem();
+            if (v14 != null) {
+                v6 = float64(v14.TierNumber);
+            } else {
+                v6 = 0;
+            }
+        } else {
+            v6 = 0;
+        }
+    } else {
+        v6 = 0;
+    }
+    return v6;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  RefCpyV        wW0:2
+    //     2  CmpPtrNull     rW0:2
+    //     3  JNZ            ->11
+    //     5  SetV8          wW0:6 q:0x0
+    //     8  CpyVtoR8       rW0:6
+    //     9  JMP            ->46
+    //    11  PshVPtr        rW0:0
+    //    12  CALLSYS        q:0x26e7a189700         ; ULokiInventoryComponentComboItems@ ALokiCharacter::GetInventoryComboItems() const
+    //    15  STOREOBJ       wW0:10
+    //    16  CmpPtrNull     rW0:10
+    //    17  JNZ            ->25
+    //    19  SetV8          wW0:6 q:0x0
+    //    22  CpyVtoR8       rW0:6
+    //    23  JMP            ->46
+    //    25  PshVPtr        rW0:10
+    //    26  CALLSYS        q:0x26e7a2a7b00         ; ALokiBaseItem@ ULokiInventoryComponentComboItems::GetArmorItem() const
+    //    29  STOREOBJ       wW0:14
+    //    30  CmpPtrNull     rW0:14
+    //    31  JNZ            ->39
+    //    33  SetV8          wW0:6 q:0x0
+    //    36  CpyVtoR8       rW0:6
+    //    37  JMP            ->46
+    //    39  LoadRObjR      rW0:14 W1:1120 DW2:67114958; ALokiBaseItem::TierNumber  (+1120)
+    //    42  RDR4           wW0:15
+    //    43  iTOd           wW0:6 rW1:15
+    //    45  CpyVtoR8       rW0:6
+    //    46  RET            W0:2
+

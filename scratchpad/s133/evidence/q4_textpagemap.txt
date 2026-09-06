@@ -1,0 +1,59 @@
+========================================================================================================
+Q4  .text DECRYPTION BITMAP FROM MemoryInfoList  (unit: 4 KiB pages; .text has 30281)
+========================================================================================================
+reports analysed: 124
+.text EXECUTABLE pages per report: min=9759  median=15433  max=16214  mean=14883
+.text pct        : min=32.23%  max=53.55%
+
+[CONTROL] never-encrypted sections must read ~100%% ACCESSIBLE:
+   .rdata   accessible: min 100.00%  max 100.00%  (n=124 reports)
+   .data    accessible: min 100.00%  max 100.00%  (n=124 reports)
+   .pdata   accessible: min 100.00%  max 100.00%  (n=124 reports)
+   _RDATA   accessible: min 100.00%  max 100.00%  (n=124 reports)
+   .text    accessible: min 32.23%  max 53.55%   <- the discriminator
+
+========================================================================================================
+[POSITIVE CONTROL] matched pair: same PID, dumpimage 65 s before the crashpad report
+========================================================================================================
+   crashpad report 4c2b7a2d  PID 16944  game_base 0x7FF7A5A20000
+   .text executable pages at death : 15695  (51.83%)
+   sibling dumps/crash-20260820-142858 manifest says .text 51.8%% readable BYTES
+   (byte-% and page-% are DIFFERENT metrics -- see the merged manifest's own
+    warning; the comparison below is page-vs-page against merged6.)
+
+========================================================================================================
+UNION over the corpus vs dumps/merged6.dump.exe
+========================================================================================================
+union of .text EXECUTABLE pages over 124 crash reports: 16434 / 30281 = 54.27%
+merged image .text non-zero pages: 16694 / 30281 = 55.13%
+
+  decrypted in >=1 crash AND non-zero in merged : 16393 pages
+  decrypted in >=1 crash BUT ALL-ZERO in merged : 41 pages   <-- bytes never captured
+  non-zero in merged BUT never decrypted in any crash: 301 pages
+  best-case union (merged pages OR crash-decrypted): 16735 / 30281 = 55.27%
+  -> RVA runs written to scratchpad/s133/evidence/text_pages_crashonly.txt (29 runs)
+
+========================================================================================================
+PER-REPORT .text decrypted-page counts (top 15 and bottom 5)
+========================================================================================================
+   2026-08-07T15:39:11 92eec4e0  pages=16214  53.55%  pid=29568   dir=crashpad-20260807-154458-s112-ctl-02
+   2026-08-05T18:14:06 2432183f  pages=16208  53.53%  pid=18536   dir=crashpad-20260805-182113-animref-SUCCESS
+   2026-08-05T01:36:27 89a0d1aa  pages=16203  53.51%  pid=30772   dir=crashpad-20260805-014523-tut1-DEATH
+   2026-08-07T16:21:52 2820dd71  pages=16192  53.47%  pid=14348   dir=crashpad-20260807-162715-s112c-ctl-06
+   2026-08-05T02:01:52 e744eeea  pages=16191  53.47%  pid=40396   dir=crashpad-20260805-020627-tut4-DEATH
+   2026-08-05T02:18:52 f6b5e184  pages=16191  53.47%  pid=42216   dir=crashpad-20260805-022400-tuta1-DEATH
+   2026-08-07T15:56:58 55cc813f  pages=16189  53.46%  pid=52644   dir=crashpad-20260807-160235-s112c-ctl-01
+   2026-08-07T17:01:09 bdb58e25  pages=16189  53.46%  pid=55312   dir=crashpad-20260807-170619-s112c-ctl-14
+   2026-08-07T17:54:18 5e795b99  pages=16188  53.46%  pid=14160   dir=crashpad-20260807-180351-s112c-ctl-21
+   2026-08-07T20:43:34 eaf9b644  pages=16188  53.46%  pid=37100   dir=crashpad-20260807-204928-s112c-ctl-37
+   2026-08-07T20:58:28 58f9652a  pages=16187  53.46%  pid=50252   dir=crashpad-20260807-210330-s112c-ctl-39
+   2026-08-05T03:00:27 c9a85003  pages=16184  53.45%  pid=42124   dir=crashpad-20260805-030527-tutr3-DEATH
+   2026-08-05T02:28:45 1fa9d51c  pages=16182  53.44%  pid=42192   dir=crashpad-20260805-023322-tuta3-DEATH
+   2026-08-05T14:20:55 b869ecda  pages=16180  53.43%  pid=48092   dir=crashpad-20260805-143222-s110itemwatch
+   2026-08-05T02:50:25 b726dea8  pages=16175  53.42%  pid=21140   dir=crashpad-20260805-025508-tutr1-DEATH
+   ...
+   2026-08-06T22:20:44 df6dbec2  pages=10130  33.45%  pid=57024   dir=crashpad-20260806-222109-s111ab-P2r5
+   2026-08-07T00:13:52 94f62fec  pages=10130  33.45%  pid=57072   dir=crashpad-20260807-001439-s111pi-I11_1
+   2026-08-04T18:18:36 3e17e732  pages=9764   32.24%  pid=4388    dir=crashpad-20260804-181909-shimrun2-DEATH
+   2026-08-06T13:54:46 42d05faa  pages=9763   32.24%  pid=31440   dir=crashpad-20260806-135511-s111ab-C1r6
+   2026-08-15T16:08:01 e8ad47c2  pages=9759   32.23%  pid=19620   dir=crashpad-20260815-161345

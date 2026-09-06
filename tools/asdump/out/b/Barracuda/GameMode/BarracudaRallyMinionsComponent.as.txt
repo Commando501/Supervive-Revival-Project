@@ -1,0 +1,402 @@
+// ============================================================================
+//  MODULE   Barracuda.GameMode.BarracudaRallyMinionsComponent
+//  SOURCE   Barracuda/GameMode/BarracudaRallyMinionsComponent.as
+//  CONTENT  1 class(es), 10 function(s), 0 enum(s), 1 global(s), 1316 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaRallyMinionsComponent;
+
+UBarracudaRallyMinionsComponent@ UBarracudaRallyMinionsComponent()   // traits=0x20
+{
+    v2 = UBarracudaRallyMinionsComponent();
+    return v2;
+}
+/* ---- UBarracudaRallyMinionsComponent: 7 dwords / 4 instructions (cache offset 0x21cd3) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84211 UBarracudaRallyMinionsComponent       
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ UBarracudaRallyMinionsComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UBarracudaRallyMinionsComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x21d9f) ----
+    0000  PshGPtr       __StaticType_UBarracudaRallyMinionsComponent
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UBarracudaRallyMinionsComponent@ UBarracudaRallyMinionsComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaRallyMinionsComponent, v2, typeid(UBarracudaRallyMinionsComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x21ee8) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972610                                    ; UBarracudaRallyMinionsComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaRallyMinionsComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaRallyMinionsComponent@ UBarracudaRallyMinionsComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaRallyMinionsComponent, v2, typeid(UBarracudaRallyMinionsComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x22049) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972610                                    ; UBarracudaRallyMinionsComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaRallyMinionsComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaRallyMinionsComponent@ UBarracudaRallyMinionsComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaRallyMinionsComponent, v2, typeid(UBarracudaRallyMinionsComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x221a5) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972610                                    ; UBarracudaRallyMinionsComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaRallyMinionsComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaRallyMinionsComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaRallyMinionsComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 RallyAggroRange;
+
+    UBarracudaRallyMinionsComponent()   // traits=0x21
+    {
+        v2 = 4656510908468559872;
+        this.RallyAggroRange = v2;
+        return;
+    }
+    /* ---- UBarracudaRallyMinionsComponent: 11 dwords / 6 instructions (cache offset 0x22e26) ----
+        0000  SetV8         v2 0x409f400000000000                       
+        000C  LoadThisR     208 134230786                                 ; this.RallyAggroRange
+        0014  WRTV8         v2                                          
+        0018  PshVPtr       this                                        
+        001C  FinConstruct  UBarracudaRallyMinionsComponent             
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        v87 = false;
+        v86 = FGameEvent_OnDamaged_Character();
+        v100 = v2.RegisterForEvent(this, v86, typeid(FGameEvent_OnDamaged_Character), nullptr, n"OnCharacterDamaged", v87);
+        return;
+    }
+    /* ---- LokiBeginPlay_Implementation: 39 dwords / 22 instructions (cache offset 0x22342) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetGlobalGameEventRouter                    
+        0018  STOREOBJ      v2                                          
+        001C  SetV1         v87 0                                       
+        0024  PshV4         v87                                         
+        0028  PshC4         11                                          
+        0030  CALLSYS       __STATIC_NAME                               
+        003C  PshRPtr                                                   
+        0040  PshNull                                                   
+        0044  TYPEID        67120919                                      ; FGameEvent_OnDamaged_Character
+        004C  PSF           v86                                         
+        0050  CALLSYS       FGameEvent_OnDamaged_Character::$beh0       
+        005C  PSF           v86                                         
+        0060  PshVPtr       this                                        
+        0064  PSF           v100                                        
+        0068  PshVPtr       v2                                          
+        006C  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        0078  PSF           v86                                         
+        007C  CALLSYS       FGameEvent_OnDamaged_Character::$beh2       
+        0088  PSF           v100                                        
+        008C  CALLSYS       FGameEventListenerHandle::$beh2             
+        0098  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnCharacterDamaged(const FGameEvent_OnDamaged_Character& Event, const ALokiCharacter@ ContextCharacter)   // traits=0x28
+    {
+        if (ContextCharacter != nullptr) {
+            v2 = cast<ALokiHeroCharacter@>(ContextCharacter);
+        } else {
+            v2 = nullptr;
+        }
+        v4 = v2;
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v8 = Event.DamageStatistic.SourceCharacter;
+            if (v8 != nullptr) {
+                v2 = cast<ALokiHeroCharacter@>(v8);
+            } else {
+                v2 = nullptr;
+            }
+            v10 = v2;
+            if (v10 == nullptr) {
+                return;
+            } else {
+                if (LokiTeam::IsEnemyTeam(v4, v10)) {
+                    this.RallyAlliedMinionsForHelp(v4, v10);
+                }
+            }
+        }
+        return;
+    }
+    /* ---- OnCharacterDamaged: 60 dwords / 40 instructions (cache offset 0x225ae) ----
+        0000  CmpPtrNull    ContextCharacter                            
+        0004  JZ            9                                             -> L0030
+        000C  TYPEID        1140857000                                    ; ALokiHeroCharacter@
+        0014  PSF           v2                                          
+        0018  PshVPtr       ContextCharacter                            
+        001C  CALLSYS       UObject::opCast                             
+        0028  JMP           1                                             -> L0034
+      L0030:
+        0030  ClrVPtr       v2                                          
+      L0034:
+        0034  PshVPtr       v2                                          
+        0038  RefCpyV       v4                                          
+        003C  CmpPtrNull    v4                                          
+        0040  JNZ           2                                             -> L0050
+        0048  JMP           39                                            -> L00EC
+      L0050:
+        0050  PshVPtr       Event                                       
+        0054  ADDSi         16 67120919                                   ; .DamageStatistic
+        005C  ADDSi         80 67120736                                   ; .SourceCharacter
+        0064  RDSPtr                                                    
+        0068  RefCpyV       v8                                          
+        006C  CmpPtrNull    v8                                          
+        0070  JZ            9                                             -> L009C
+        0078  TYPEID        1140857000                                    ; ALokiHeroCharacter@
+        0080  PSF           v2                                          
+        0084  PshVPtr       v8                                          
+        0088  CALLSYS       UObject::opCast                             
+        0094  JMP           1                                             -> L00A0
+      L009C:
+        009C  ClrVPtr       v2                                          
+      L00A0:
+        00A0  PshVPtr       v2                                          
+        00A4  RefCpyV       v10                                         
+        00A8  CmpPtrNull    v10                                         
+        00AC  JNZ           2                                             -> L00BC
+        00B4  JMP           12                                            -> L00EC
+      L00BC:
+        00BC  PshVPtr       v10                                         
+        00C0  PshVPtr       v4                                          
+        00C4  CALLSYS       IsEnemyTeam                                 
+        00D0  JLowZ         5                                             -> L00EC
+        00D8  PshVPtr       v10                                         
+        00DC  PshVPtr       v4                                          
+        00E0  PshVPtr       this                                        
+        00E4  CALLINTF      84210                                         ; UBarracudaRallyMinionsComponent::RallyAlliedMinionsForHelp
+      L00EC:
+        00EC  RET           6                                           
+    */
+
+    private void RallyAlliedMinionsForHelp(ALokiHeroCharacter@ Victim, ALokiHeroCharacter@ Attacker)   // traits=0x28
+    {
+        v1 = LokiTeam::GetTeamFromActor(Victim);
+        v6 = ALokiTeamState::GetTeamStateByTeamIndex(__WorldContext, v1);
+        if (v6 == nullptr) {
+            return;
+        } else {
+            v20 = Victim.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v14 = Attacker.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v46 = v6.GetCachedCharacters();
+            v74 = v46.Iterator();
+            while (true) {
+                v7 = v74.CanProceed;
+                if (!v7) break;
+                v84 = v74.Proceed();
+                v74.Proceed();
+                if (v84 != nullptr) {
+                    v86 = cast<ALokiMinionCharacter@>(v84);
+                } else {
+                    v86 = nullptr;
+                }
+                v88 = v86;
+                if (v88 != nullptr) {
+                    v26 = v88.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v98 = this.RallyAggroRange;
+                    v100 = Math::Square(v98);
+                    v98 = v20.DistSquared2D(v26);
+                    if (v98 > v100) {
+                        v7 = true;
+                    } else {
+                        v98 = v14.DistSquared2D(v26);
+                        v101 = v98 > v100;
+                        v7 = v101;
+                    }
+                    if (!v7) {
+                        v106 = UBarracudaMinionTargetingComponent::Get(v84, NAME_None);
+                        if (v106 != nullptr) {
+                            v106.NotifyEnemyHeroHitAlliedHero(Attacker);
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- RallyAlliedMinionsForHelp: 145 dwords / 92 instructions (cache offset 0x2287f) ----
+        0000  PshVPtr       Victim                                      
+        0004  CALLSYS       GetTeamFromActor                            
+        0010  CpyRtoV4      v1                                          
+        0014  PshV4         v1                                          
+        0018  PshGPtr       __WorldContext                              
+        0024  CALLSYS       GetTeamStateByTeamIndex                     
+        0030  STOREOBJ      v6                                          
+        0034  CmpPtrNull    v6                                          
+        0038  JNZ           2                                             -> L0048
+        0040  JMP           126                                           -> L0240
+      L0048:
+        0048  PSF           v20                                         
+        004C  PshVPtr       Victim                                      
+        0050  CALLSYS       AActor::GetActorLocation                    
+        005C  PSF           v14                                         
+        0060  PshVPtr       Attacker                                    
+        0064  CALLSYS       AActor::GetActorLocation                    
+        0070  PSF           v46                                         
+        0074  PshVPtr       v6                                          
+        0078  CALLSYS       ALokiTeamState::GetCachedCharacters         
+        0084  PSF           v74                                         
+        0088  PSF           v46                                         
+        008C  CALLSYS       TSet::Iterator                              
+        0098  JMP           93                                            -> L0214
+      L00A0:
+        00A0  SUSPEND                                                   
+        00A4  PSF           v74                                         
+        00A8  CALLSYS       TSetIterator::Proceed                       
+        00B4  PshRPtr                                                   
+        00B8  RDSPtr                                                    
+        00BC  RefCpyV       v84                                         
+        00C0  CmpPtrNull    v84                                         
+        00C4  JZ            9                                             -> L00F0
+        00CC  TYPEID        1140857087                                    ; ALokiMinionCharacter@
+        00D4  PSF           v86                                         
+        00D8  PshVPtr       v84                                         
+        00DC  CALLSYS       UObject::opCast                             
+        00E8  JMP           1                                             -> L00F4
+      L00F0:
+        00F0  ClrVPtr       v86                                         
+      L00F4:
+        00F4  PshVPtr       v86                                         
+        00F8  RefCpyV       v88                                         
+        00FC  CmpPtrNull    v88                                         
+        0100  JNZ           4                                             -> L0118
+        0108  FreeNullV8    v88                                         
+        010C  FreeNullV8    v84                                         
+        0110  JMP           63                                            -> L0214
+      L0118:
+        0118  PSF           v26                                         
+        011C  PshVPtr       v88                                         
+        0120  CALLSYS       AActor::GetActorLocation                    
+        012C  LoadThisR     208 134230786                                 ; this.RallyAggroRange
+        0134  RDR8          v98                                         
+        0138  PshV8         v98                                         
+        013C  CALLSYS       Square                                      
+        0148  CpyRtoV8      v100                                        
+        014C  PSF           v26                                         
+        0150  PSF           v20                                         
+        0154  CALLSYS       FVector::DistSquared2D                      
+        0160  CpyRtoV8      v98                                         
+        0164  CMPd          v98 v100                                    
+        016C  JNP           4                                             -> L0184
+        0174  SetV1         v7 1                                        
+        017C  JMP           12                                            -> L01B4
+      L0184:
+        0184  PSF           v26                                         
+        0188  PSF           v14                                         
+        018C  CALLSYS       FVector::DistSquared2D                      
+        0198  CpyRtoV8      v98                                         
+        019C  CMPd          v98 v100                                    
+        01A4  TP                                                        
+        01A8  CpyRtoV4      v101                                        
+        01AC  CpyVtoV4      v7 v101                                     
+      L01B4:
+        01B4  CpyVtoR1      v7                                          
+        01B8  JLowZ         4                                             -> L01D0
+        01C0  FreeNullV8    v88                                         
+        01C4  FreeNullV8    v84                                         
+        01C8  JMP           17                                            -> L0214
+      L01D0:
+        01D0  PshGPtr       NAME_None                                   
+        01DC  PshVPtr       v84                                         
+        01E0  CALL          84096                                         ; Get
+        01E8  STOREOBJ      v106                                        
+        01EC  CmpPtrNull    v106                                        
+        01F0  JZ            4                                             -> L0208
+        01F8  PshVPtr       Attacker                                    
+        01FC  PshVPtr       v106                                        
+        0200  CALLINTF      84086                                         ; UBarracudaMinionTargetingComponent::NotifyEnemyHeroHitAlliedHero
+      L0208:
+        0208  FreeNullV8    v106                                        
+        020C  FreeNullV8    v88                                         
+        0210  FreeNullV8    v84                                         
+      L0214:
+        0214  LoadVObjR     v74 24 268448513                              ; .CanProceed
+        0220  RDR1          v7                                          
+        0224  CpyVtoR1      v7                                          
+        0228  JLowNZ        -100                                          -> L00A0
+        0230  PSF           v46                                         
+        0234  CALLSYS       TSet::$beh2                                 
+      L0240:
+        0240  RET           6                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = false;
+        this.SetbReplicates(v1);
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 15 dwords / 9 instructions (cache offset 0x22d2a) ----
+        0000  SetV1         v1 0                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       UActorComponent::SetbReplicates             
+        001C  SetV1         v1 1                                        
+        0024  PshV4         v1                                          
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       UActorComponent::SetbExcludeFromClient      
+        0038  RET           2                                           
+    */
+
+}
+

@@ -1,0 +1,95 @@
+[MoveI4] target pid=32364  interval=3.0s  reinstall=False
+[MoveI4] targets:
+  Dr0 = 0x7FFCA1C0F7F0
+  Dr1 = 0x7FFCA10CDB80
+  Dr2 = 0x0
+  Dr3 = 0x0
+  Dr7 = 0x5
+[MoveI4] install: ok=139 fail=0 on 139 threads
+[MoveI4] entering poll loop @ t=0 (install complete)
+[MoveI4] t=+   3.0s poll#1: 51 DRIFTED (new), 88 clean, 0 read-fail
+    tid=16932: Dr7: expected 0x5 observed 0x405
+    tid=36384: Dr7: expected 0x5 observed 0x405
+    tid=13860: Dr7: expected 0x5 observed 0x405
+    tid=32736: Dr7: expected 0x5 observed 0x405
+    tid=16572: Dr7: expected 0x5 observed 0x405
+    tid=34524: Dr7: expected 0x5 observed 0x405
+    tid=28824: Dr7: expected 0x5 observed 0x405
+    tid=34112: Dr7: expected 0x5 observed 0x405
+    tid=17416: Dr7: expected 0x5 observed 0x405
+    tid=18360: Dr7: expected 0x5 observed 0x405
+    tid=34424: Dr7: expected 0x5 observed 0x405
+    tid=37176: Dr7: expected 0x5 observed 0x405
+    tid=30260: Dr7: expected 0x5 observed 0x405
+    tid=18860: Dr7: expected 0x5 observed 0x405
+    tid=28152: Dr7: expected 0x5 observed 0x405
+    tid=24196: Dr7: expected 0x5 observed 0x405
+    tid=26768: Dr7: expected 0x5 observed 0x405
+    tid=2968: Dr7: expected 0x5 observed 0x405
+    tid=4972: Dr7: expected 0x5 observed 0x405
+    tid=18280: Dr7: expected 0x5 observed 0x405
+    tid=35024: Dr7: expected 0x5 observed 0x405
+    tid=30356: Dr7: expected 0x5 observed 0x405
+    tid=16228: Dr7: expected 0x5 observed 0x405
+    tid=27204: Dr7: expected 0x5 observed 0x405
+    tid=14356: Dr7: expected 0x5 observed 0x405
+    tid=21252: Dr7: expected 0x5 observed 0x405
+    tid=30508: Dr7: expected 0x5 observed 0x405
+    tid=19768: Dr7: expected 0x5 observed 0x405
+    tid=16924: Dr7: expected 0x5 observed 0x405
+    tid=34252: Dr7: expected 0x5 observed 0x405
+    tid=34500: Dr7: expected 0x5 observed 0x405
+    tid=24236: Dr7: expected 0x5 observed 0x405
+    tid=5220: Dr7: expected 0x5 observed 0x405
+    tid=19596: Dr7: expected 0x5 observed 0x405
+    tid=24996: Dr7: expected 0x5 observed 0x405
+    tid=25968: Dr7: expected 0x5 observed 0x405
+    tid=10992: Dr7: expected 0x5 observed 0x405
+    tid=31056: Dr7: expected 0x5 observed 0x405
+    tid=35640: Dr7: expected 0x5 observed 0x405
+    tid=15028: Dr7: expected 0x5 observed 0x405
+    tid=16484: Dr7: expected 0x5 observed 0x405
+    tid=2324: Dr7: expected 0x5 observed 0x405
+    tid=20416: Dr7: expected 0x5 observed 0x405
+    tid=32612: Dr7: expected 0x5 observed 0x405
+    tid=31684: Dr7: expected 0x5 observed 0x405
+    tid=8660: Dr7: expected 0x5 observed 0x405
+    tid=36536: Dr7: expected 0x5 observed 0x405
+    tid=11216: Dr7: expected 0x5 observed 0x405
+    tid=36228: Dr7: expected 0x5 observed 0x405
+    tid=28908: Dr7: expected 0x5 observed 0x405
+    tid=23704: Dr7: expected 0x5 observed 0x405
+[MoveI4] t=+  33.4s poll#11: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+  63.7s poll#21: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+  94.1s poll#31: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 124.5s poll#41: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 154.8s poll#51: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 185.2s poll#61: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 215.6s poll#71: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 245.9s poll#81: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 276.3s poll#91: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 306.6s poll#101: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 337.0s poll#111: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 367.4s poll#121: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 397.8s poll#131: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 428.2s poll#141: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 458.7s poll#151: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] --duration reached; stopping cleanly.
+
+============================================================
+[MoveI4] SESSION SUMMARY
+============================================================
+  polls: 158
+  reads_ok: 139
+  reads_fail: 0
+  threads_clean: 88
+  threads_drifted: 51
+  threads_new_no_dr: 0
+  reinstall_ok: 0
+  reinstall_fail: 0
+  drifted_tids_ever: 51
+
+VERDICT: DRIFT observed on MULTIPLE THREADS.
+  Protector sweeps DRs periodically. Candidate C confirmed for the sweep;
+  race the poll interval against sweep frequency to determine feasibility of
+  keeping DRs installed long enough to catch a kill.

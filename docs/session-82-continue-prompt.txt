@@ -1,0 +1,38 @@
+Continue the SUPERVIVE revival PASSES (battlepass) route.
+
+CONTEXT (read these two first, in order):
+  1. docs/session-82-passes-battlepass-shim.txt  — full handoff: mechanism, the working shim, all
+     addresses/offsets/structs, reproduce recipe, and the open problem.
+  2. memory supervive-passes-battlepass-status    — the chronological RE trail (S82 parts 1-13).
+
+WHERE WE ARE: the passes keystone is CRACKED. The 15/s progressiontracks tight-loop is fixed and the
+Hunter's Journey ACCOUNT-pass view model is built + bound to its packed 85-tier asset in memory, via a
+native shim (tools/sigbypass-mod/battlepass_adopt_fix.cpp) + backend edits. Backend adoption is
+impossible (obfuscated SDK converter drops our tracks; the UFunction setter is a compiled-out no-op) —
+the shim force-calls the real OnSuccess sink 0x57C8130 with a constructed LokiPublishedProgressionTracks
+{Version:100} and directly binds AccountPassViewModel+0xE8 = HuntersJourney_C.
+
+THE GOAL NOW: make the tier GRID actually render. AccountPassViewModel.Levels (+0xC8) is still 0 — the
+tiles come from that array, populated by 0x57DF4B0 on display. A shim force-call of 0x57DF4B0 with zeroed
+args CRASHED (it needs real per-tier progress args). So:
+
+FIRST STEPS:
+  1. Get the game to a stable menu with the shim applied and confirm the baseline with the oracle:
+       - If nothing's running: elevated `.\configs\launch-redirect.ps1`, wait for menu, then
+         build+inject battlepass_adopt_fix.dll (recipe in §5 of the handoff doc).
+       - Confirm: `python tools/re/battlepass_oracle.py`  -> loop_stopped=True, AccountPassViewModel
+         non-null (ID=HuntersJourney), ProgressionTrackAsset bound, 85 tiers, Levels=0.
+  2. Then push the tier grid, EITHER:
+       (A) If computer-use/screenshots are available: open PASSES -> Hunter's Journey tab and see if the
+           grid draws (the widget may populate Levels on Construct). This is the quickest confirmation.
+       (B) RE the REAL caller of 0x57DF4B0 in dumps/vmbuild (callxref via tools/re/offline_disasm.py) to
+           learn how it builds rdx (per-tier progress TArray) and r8 (progress struct) from the
+           /progression/.../tracks/rewards data; construct those and call it from the shim so Levels>0
+           (oracle-verifiable without a screenshot).
+       (C) Or RE the build-time +0xE8 resolver (near 0x57BF050) so the game's own build binds the asset
+           AND populates Levels natively.
+
+WORKING STYLE: single-variable changes, verify each via the oracle (tools/re/battlepass_oracle.py) or the
+marker (docs/battlepass-adopt-marker.txt); the game boot-crashes ~half of launches (just re-run); RVAs are
+build-specific (regenerate from dumps if the game updated). Don't re-litigate the backend-adoption route
+(exhausted) or calling the no-op setter 0x5256880.

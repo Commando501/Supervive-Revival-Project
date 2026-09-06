@@ -1,0 +1,187 @@
+==============================================================================
+MODULE   Barracuda.GameState.BarracudaTeamState
+SOURCE   Barracuda/GameState/BarracudaTeamState.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+// statics class: Module_Barracuda_GameState_BarracudaTeamStateStatics
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaTeamState;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ABarracudaTeamState@ ABarracudaTeamState()
+// 4 instr, 28 B bytecode, id=0x234A439D, varspace=2
+------------------------------------------------------------------------------
+{
+    ABarracudaTeamState v2;
+
+    v2 = ABarracudaTeamState();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84268 q:0x26e6865cd00; new ABarracudaTeamState   ctor=ABarracudaTeamState::ABarracudaTeamState
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+ABarracudaTeamState@ GetBarracudaTeamState(const int TeamIndex)
+// 22 instr, 140 B bytecode, id=0x2066A3C6, varspace=12
+------------------------------------------------------------------------------
+{
+    ALokiGameState v4;
+    ABarracudaTeamState v8;
+    ALokiTeamState v12;
+
+    v4 = Loki::GetLokiGameState(__WorldContext);
+    if (v4 != null) {
+        v12 = v4.GetTeamState(TeamIndex);
+        if (v12 == null) {
+            v8 = null;
+        } else {
+            v8 = cast<ABarracudaTeamState>(v12);
+        }
+    } else {
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //     6  STOREOBJ       wW0:4
+    //     7  CmpPtrNull     rW0:4
+    //     8  JNZ            ->14
+    //    10  FreeNullV8     wW0:8
+    //    11  LOADOBJ        rW0:8
+    //    12  JMP            ->34
+    //    14  PshV4          rW0:0
+    //    15  PshVPtr        rW0:4
+    //    16  CALLSYS        q:0x26e7a271580         ; ALokiTeamState@ ALokiGameState::GetTeamState(int) const
+    //    19  STOREOBJ       wW0:12
+    //    20  CmpPtrNull     rW0:12
+    //    21  JZ             ->32
+    //    23  TYPEID         d:1207972615            ; ABarracudaTeamState@
+    //    25  PSF            rW0:8
+    //    26  PshVPtr        rW0:12
+    //    27  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    30  JMP            ->33
+    //    32  ClrVPtr        wW0:8
+    //    33  LOADOBJ        rW0:8
+    //    34  RET            W0:1
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x98E23FA8, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ABarracudaTeamState);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b49d8         ; __StaticType_ABarracudaTeamState
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ABarracudaTeamState@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0x8AD84E8D, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ABarracudaTeamState v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ABarracudaTeamState.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ABarracudaTeamState>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6f1b49d8         ; __StaticType_ABarracudaTeamState
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972615            ; ABarracudaTeamState@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class ABarracudaTeamState : ALokiTeamState
+// base /Script/Loki.LokiTeamState  ->  ../../../Loki/Source/Loki/LokiTeamState.h
+==============================================================================
+{
+}
+
+------------------------------------------------------------------------------
+ABarracudaTeamState() const
+// 3 instr, 20 B bytecode, id=0x95B3FCC3, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  FinConstruct   q:0x26e6865cd00         ; ABarracudaTeamState
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 7 instr, 44 B bytecode, id=0xF1ADE890, varspace=2
+------------------------------------------------------------------------------
+{
+    this.TeamStateTeamOnlyClass = ABarracudaTeamState_TeamOnly::StaticClass();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84280                 ; UClass@ ABarracudaTeamState_TeamOnly::StaticClass()
+    //     2  STOREOBJ       wW0:2
+    //     3  PshVPtr        rW0:2
+    //     4  PshVPtr        rW0:0
+    //     5  ADDSi          W0:960 d:67115442       ; ALokiTeamState::TeamStateTeamOnlyClass  (+960)
+    //     7  CALLSYS        q:0x26e6ef01900         ; void TSubclassOf<ALokiTeamState_TeamOnly@>::opAssign(UClass@)
+    //    10  RET            W0:2
+

@@ -1,0 +1,26 @@
+=== PlayerHeroStats   (1 FStructParams candidates)
+   params@09c41520  name@08ad79c8  NumProperties=24  SizeOf=0xa8  AlignOf=8  StructFlags=0x45
+      +0x000  GamesPlayed                Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6a48
+      +0x001  Placements                 Int          dim=1 flags=0x0000000000000000 gen=0x00000003 @08ad6a80
+      +0x000  Placements_Key             Int          dim=1 flags=0x0000000000000000 gen=0x00000003 @08ad6ab8
+      +0x008  Placements                 Map          dim=1 flags=0x0010000080000014 gen=0x00000017 @08ad6af0
+      +0x058  TimePlayedSeconds          Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6b28
+      +0x05c  Kills                      Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6b60
+      +0x060  MaxKills                   Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6b98
+      +0x064  MaxKillStreak              Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6bd0
+      +0x068  Knocks                     Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6c08
+      +0x06c  MaxKnocks                  Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6c40
+      +0x070  Revives                    Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6c78
+      +0x074  MaxRevives                 Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6cb0
+      +0x078  Revived                    Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6ce8
+      +0x07c  Resurrects                 Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6d20
+      +0x080  MaxResurrects              Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6d58
+      +0x084  Resurrected                Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6d90
+      +0x088  CreepKills                 Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6dc8
+      +0x08c  GoldEarned                 Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6e00
+      +0x090  HeroDamageDealt            Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6e38
+      +0x094  MaxHeroDamageDealt         Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6e70
+      +0x098  HeroDamageTaken            Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6ea8
+      +0x09c  MaxHeroDamageTaken         Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6ee0
+      +0x0a0  HealingGiven               Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6f18
+      +0x0a4  MaxHealingGiven            Int          dim=1 flags=0x0010000000000014 gen=0x00000003 @08ad6f50

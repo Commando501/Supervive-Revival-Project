@@ -1,0 +1,170 @@
+// ============================================================================
+//  MODULE   GameMode.DropPhase.LokiDropShip
+//  SOURCE   GameMode/DropPhase/LokiDropShip.as
+//  CONTENT  1 class(es), 6 function(s), 0 enum(s), 1 global(s), 1352 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiDropShip;
+
+ALokiDropShip@ ALokiDropShip()   // traits=0x20
+{
+    ALokiDropShip v2;
+
+    v2 = ALokiDropShip();
+    return v2;
+}
+
+UClass@ ALokiDropShip::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiDropShip);
+    return v2;
+}
+
+ALokiDropShip@ ALokiDropShip::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiDropShip v8;
+
+    v2 = __StaticType_ALokiDropShip.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiDropShip@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ALokiDropShip : ALokiDropPlane
+// unreal base : /Script/Loki.LokiDropPlane
+// C++ header  : ../../../Loki/Source/Loki/DropPhase/LokiDropPlane.h
+// static class global: __StaticType_ALokiDropShip
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    protected TSubclassOf<ALokiDropPod@> TeamDropPodClass;
+
+    ALokiDropShip()   // traits=0x21
+    {
+        this.TeamDropPodClass = TSubclassOf<ALokiDropPod@>();
+        this.TeamDropPodClass = nullptr;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    protected bool SpawnDropPodForTeam(const int TeamIndex, const FVector& SpawnLocation, const FVector& LandingLocation)   // traits=0x30
+    {
+        TSubclassOf<ALokiDropPod@> v2;
+        bool v3;
+        ALokiDropPod v6;
+        FTransform v32;
+        ESpawnActorScaleMethod v33;
+        ESpawnActorCollisionHandlingMethod v34;
+        ALokiDropPod v36;
+        ALokiPlayerState v38;
+        ULokiRideableComponent v42;
+        ULokiPlayerDropPlaneComponent v46;
+        ALokiServerAnalyticsManager v50;
+
+        v2 = TSubclassOf<ALokiDropPod@>();
+        v2 = this.TeamDropPodClass;
+        v3 = v2 == nullptr;
+        if (v3) {
+            v3 = false;
+            return v3;
+        } else {
+            v33 = ESpawnActorScaleMethod::MultiplyWithRoot;
+            v34 = ESpawnActorCollisionHandlingMethod::Undefined;
+            v32 = FTransform(SpawnLocation);
+            v36 = LokiGameplay::SpawnPoolableActorFromClassDeferred(__WorldContext, this.TeamDropPodClass, v32, nullptr, nullptr, v34, v33);
+            v6 = v36;
+            if (v6 == nullptr) {
+                v3 = false;
+                return v3;
+            } else {
+                v38 = this.GetTeamDropLeader(TeamIndex);
+                v3 = true;
+                v6.InitializeDropPod(TeamIndex, v38, LandingLocation, v3, this, nullptr);
+                v32 = FTransform(SpawnLocation);
+                FinishSpawningActor(v6, v32);
+                this.RemovePlayerFromPlane(v38);
+                v42 = ULokiRideableComponent::Get(v6, NAME_None);
+                if (v42 != nullptr) {
+                    v42.AuthPlayerEnterWorldAttachedToRidable(v38, LandingLocation);
+                }
+                if (v38 != nullptr) {
+                    v46 = ULokiPlayerDropPlaneComponent::Get(v38, NAME_None);
+                    if (v46 != nullptr) {
+                        v46.MulticastOnDropPodLaunched(v6);
+                    }
+                }
+                v50 = ALokiServerAnalyticsManager::GetFromContext(__WorldContext);
+                if (v50 != nullptr) {
+                    v50.AddTeamDropEvent(TeamIndex, LandingLocation, v38);
+                }
+                v3 = true;
+            }
+        }
+        return v3;
+    }
+
+    ALokiPlayerState@ GetTeamDropLeader(const int TeamIndex)   // traits=0x20
+    {
+        TArray<ALokiPlayerState@> v8;
+        auto v9;
+        auto v11;
+        TArrayIterator<ALokiPlayerState@> v18;
+        TArrayIterator<ALokiPlayerState@> v24;
+        ALokiPlayerState v26;
+        auto v27;
+        ALokiPlayerState v30;
+
+        v8 = LokiGameplay::GetPlayerStatesOnTeam(__WorldContext, TeamIndex);
+        v9 = v8.Num();
+        if (v9 > 0) {
+            v18 = v8.Iterator();
+            while (true) {
+                v11 = v18.CanProceed;
+                if (!v11) break;
+                v26 = v18.Proceed();
+                v18.Proceed();
+                if (v26 == nullptr) {
+                    v11 = 0;
+                } else {
+                    v27 = v26.IsSpawnTeamLeader();
+                    v11 = v27;
+                }
+                if (v11) {
+                    return v26;
+                }
+            }
+            v24 = v8.Iterator();
+            while (true) {
+                v27 = v24.CanProceed;
+                if (!v27) break;
+                v26 = v24.Proceed();
+                v24.Proceed();
+                if (v26 != nullptr) {
+                    if (!v26.IsSpectator()) {
+                    }
+                }
+            }
+        }
+        return v30;
+    }
+
+}
+

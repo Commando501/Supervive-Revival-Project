@@ -1,0 +1,1179 @@
+==============================================================================
+MODULE   FFA.LokiPlayerRespawnComponent
+SOURCE   FFA/LokiPlayerRespawnComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiPlayerRespawnComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiPlayerRespawnComponent@ ULokiPlayerRespawnComponent()
+// 4 instr, 28 B bytecode, id=0xF2B63A3A, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiPlayerRespawnComponent v2;
+
+    v2 = ULokiPlayerRespawnComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84878 q:0x26e6ed71300; new ULokiPlayerRespawnComponent   ctor=ULokiPlayerRespawnComponent::ULokiPlayerRespawnComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x254B6ECB, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiPlayerRespawnComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057e058         ; __StaticType_ULokiPlayerRespawnComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ULokiPlayerRespawnComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x7918120D, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiPlayerRespawnComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiPlayerRespawnComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972687            ; ULokiPlayerRespawnComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057e058         ; __StaticType_ULokiPlayerRespawnComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiPlayerRespawnComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x3C68241D, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiPlayerRespawnComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiPlayerRespawnComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972687            ; ULokiPlayerRespawnComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057e058         ; __StaticType_ULokiPlayerRespawnComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiPlayerRespawnComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xC1375358, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiPlayerRespawnComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiPlayerRespawnComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972687            ; ULokiPlayerRespawnComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057e058         ; __StaticType_ULokiPlayerRespawnComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class ULokiPlayerRespawnComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, RepNotify, RepCond=0, meta=(ReplicatedUsing=OnRep_RespawnTime)) float64 RespawnTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) ALokiPlayerController@ LocalPC;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 LocalRespawnTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FOnUpdated OnRespawnTimeUpdated;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 InitialSpawnDelay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 SpawnDelay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool IsCombatPhase;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) bool bOnlyScheduleRespawnsDuringCombatPhase;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) bool bStartTimerOnlyOnKill;
+
+}
+
+------------------------------------------------------------------------------
+ULokiPlayerRespawnComponent() const
+// 27 instr, 200 B bytecode, id=0x18DD6159, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v3;
+
+    this.OnRespawnTimeUpdated = FOnUpdated();
+    v2 = -1;
+    this.RespawnTime = -1;
+    v2 = -1;
+    this.LocalRespawnTime = -1;
+    v2 = 10;
+    this.InitialSpawnDelay = 10;
+    v2 = 10;
+    this.SpawnDelay = 10;
+    v3 = false;
+    this.IsCombatPhase = false;
+    v3 = false;
+    this.bOnlyScheduleRespawnsDuringCombatPhase = false;
+    v3 = false;
+    this.bStartTimerOnlyOnKill = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:232 d:134230863      ; ULokiPlayerRespawnComponent::OnRespawnTimeUpdated  (+232)
+    //     3  CALLSYS        q:0x26e6540d600         ; void FOnUpdated::$beh0()
+    //     6  SetV8          wW0:2 q:0xbff0000000000000
+    //     9  LoadThisR      W0:208 d:134230863      ; ULokiPlayerRespawnComponent::RespawnTime  (+208)
+    //    11  WRTV8          rW0:2
+    //    12  SetV8          wW0:2 q:0xbff0000000000000
+    //    15  LoadThisR      W0:224 d:134230863      ; ULokiPlayerRespawnComponent::LocalRespawnTime  (+224)
+    //    17  WRTV8          rW0:2
+    //    18  SetV8          wW0:2 q:0x4024000000000000
+    //    21  LoadThisR      W0:248 d:134230863      ; ULokiPlayerRespawnComponent::InitialSpawnDelay  (+248)
+    //    23  WRTV8          rW0:2
+    //    24  SetV8          wW0:2 q:0x4024000000000000
+    //    27  LoadThisR      W0:256 d:134230863      ; ULokiPlayerRespawnComponent::SpawnDelay  (+256)
+    //    29  WRTV8          rW0:2
+    //    30  SetV1          wW0:3 d:0
+    //    32  LoadThisR      W0:264 d:134230863      ; ULokiPlayerRespawnComponent::IsCombatPhase  (+264)
+    //    34  WRTV1          rW0:3
+    //    35  SetV1          wW0:3 d:0
+    //    37  LoadThisR      W0:265 d:134230863      ; ULokiPlayerRespawnComponent::bOnlyScheduleRespawnsDuringCombatPhase  (+265)
+    //    39  WRTV1          rW0:3
+    //    40  SetV1          wW0:3 d:0
+    //    42  LoadThisR      W0:266 d:134230863      ; ULokiPlayerRespawnComponent::bStartTimerOnlyOnKill  (+266)
+    //    44  WRTV1          rW0:3
+    //    45  PshVPtr        rW0:0
+    //    46  FinConstruct   q:0x26e6ed71300         ; ULokiPlayerRespawnComponent
+    //    49  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnRep_RespawnTime()
+// 8 instr, 52 B bytecode, id=0x010C12D1, varspace=2
+------------------------------------------------------------------------------
+{
+    this.LocalRespawnTime = this.RespawnTime;
+    this.OnRespawnTimeUpdated.Broadcast();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:208 d:134230863      ; ULokiPlayerRespawnComponent::RespawnTime  (+208)
+    //     2  RDR8           wW0:2
+    //     3  LoadThisR      W0:224 d:134230863      ; ULokiPlayerRespawnComponent::LocalRespawnTime  (+224)
+    //     5  WRTV8          rW0:2
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:232 d:134230863      ; ULokiPlayerRespawnComponent::OnRespawnTimeUpdated  (+232)
+    //     9  CALLSYS        q:0x26e7719e080         ; void FOnUpdated::Broadcast() const
+    //    12  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 95 instr, 648 B bytecode, id=0x10879539, varspace=30
+------------------------------------------------------------------------------
+{
+    auto v1;
+    AActor v4;
+    ALokiPlayerState v6;
+    ALokiPlayerState v8;
+    ALokiGameState v14;
+    auto v15;
+    ALokiGameMode v20;
+    TSubclassOf<UActorComponent@> v24;
+    UActorComponent v26;
+    ULokiRespawnComponent v28;
+    ULokiRespawnComponent v30;
+
+    if (!Loki::LokiIsClient(__WorldContext)) {
+        v4 = this.GetOwner();
+        if (v4 == null) {
+            v6 = null;
+        } else {
+            v6 = cast<ALokiPlayerState>(v4);
+        }
+        v8 = v6;
+        if (v6 != null) {
+            v8.OnDisconnected.AddUFunction(this, __STATIC_NAME(53));
+        }
+        v14 = Loki::GetLokiGameState(__WorldContext);
+        if (v14 != null) {
+            v15 = v14.GetCurrentPhase();
+            if (int(v15) != 7) {
+                v14.OnRoundPhaseChanged.AddUFunction(this, __STATIC_NAME(54));
+            } else {
+                v15 = 7;
+                this.OnRoundPhaseChanged(7);
+            }
+        }
+        v20 = Loki::GetLokiGameMode(__WorldContext);
+        v24 = TSubclassOf<UActorComponent@>(ULokiRespawnComponent::StaticClass());
+        v26 = v20.GetComponentByClass(v24);
+        if (v26 == null) {
+            v28 = null;
+        } else {
+            v28 = cast<ULokiRespawnComponent>(v26);
+        }
+        v30 = v28;
+        if (v28 != null) {
+            v1 = v30.HasCreatedPlayerStarts;
+            if (!v1) {
+                v30.OnPlayerStartsCreated.AddUFunction(this, __STATIC_NAME(55));
+            } else {
+                this.OnPlayerStartsCreated();
+            }
+        }
+        this.CheckSetInitialRespawn();
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowZ          ->10
+    //     8  JMP            ->161
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    14  STOREOBJ       wW0:4
+    //    15  CmpPtrNull     rW0:4
+    //    16  JZ             ->27
+    //    18  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //    20  PSF            rW0:6
+    //    21  PshVPtr        rW0:4
+    //    22  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    25  JMP            ->28
+    //    27  ClrVPtr        wW0:6
+    //    28  PshVPtr        rW0:6
+    //    29  RefCpyV        wW0:8
+    //    30  CmpPtrNull     rW0:8
+    //    31  JZ             ->46
+    //    33  PshC4          d:53
+    //    35  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    38  PshRPtr
+    //    39  PshVPtr        rW0:0
+    //    40  PshVPtr        rW0:8
+    //    41  ADDSi          W0:1928 d:67115322      ; ALokiPlayerState::OnDisconnected  (+1928)
+    //    43  CALLSYS        q:0x26e7719e5c0         ; void FOnUpdated::AddUFunction(const UObject@, const FName&)
+    //    46  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    49  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    52  STOREOBJ       wW0:14
+    //    53  CmpPtrNull     rW0:14
+    //    54  JZ             ->88
+    //    56  PshVPtr        rW0:14
+    //    57  CALLSYS        q:0x26e7a25f580         ; ERoundPhase ALokiGameState::GetCurrentPhase() const
+    //    60  CpyRtoV4       wW0:15
+    //    61  sbTOi          wW0:9 rW1:15
+    //    63  CMPIi          rW0:9 d:7
+    //    65  JNZ            ->75
+    //    67  SetV1          wW0:15 d:7
+    //    69  PshV4          rW0:15
+    //    70  PshVPtr        rW0:0
+    //    71  CALLINTF       d:84865                 ; void ULokiPlayerRespawnComponent::OnRoundPhaseChanged(const ERoundPhase)
+    //    73  JMP            ->88
+    //    75  PshC4          d:54
+    //    77  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    80  PshRPtr
+    //    81  PshVPtr        rW0:0
+    //    82  PshVPtr        rW0:14
+    //    83  ADDSi          W0:1424 d:67115161      ; ALokiGameState::OnRoundPhaseChanged  (+1424)
+    //    85  CALLSYS        q:0x26e711e98c0         ; void FNewRoundPhase::AddUFunction(const UObject@, const FName&)
+    //    88  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    91  CALLSYS        q:0x26e7a11d440         ; ALokiGameMode@ Loki::GetLokiGameMode(UObject@)
+    //    94  STOREOBJ       wW0:20
+    //    95  CALL           d:84901                 ; UClass@ ULokiRespawnComponent::StaticClass()
+    //    97  STOREOBJ       wW0:22
+    //    98  PshVPtr        rW0:22
+    //    99  PSF            rW0:24
+    //   100  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //   103  PSF            rW0:24
+    //   104  PshVPtr        rW0:20
+    //   105  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //   108  STOREOBJ       wW0:26
+    //   109  CmpPtrNull     rW0:26
+    //   110  JZ             ->121
+    //   112  TYPEID         d:1207972688            ; ULokiRespawnComponent@
+    //   114  PSF            rW0:28
+    //   115  PshVPtr        rW0:26
+    //   116  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   119  JMP            ->122
+    //   121  ClrVPtr        wW0:28
+    //   122  PshVPtr        rW0:28
+    //   123  RefCpyV        wW0:30
+    //   124  CmpPtrNull     rW0:30
+    //   125  JZ             ->154
+    //   127  LoadRObjR      rW0:30 W1:348 DW2:134230864; ULokiRespawnComponent::HasCreatedPlayerStarts  (+348)
+    //   130  RDR1           wW0:1
+    //   131  CpyVtoR1       rW0:1
+    //   132  JLowZ          ->139
+    //   134  PshVPtr        rW0:0
+    //   135  CALLINTF       d:84864                 ; void ULokiPlayerRespawnComponent::OnPlayerStartsCreated()
+    //   137  JMP            ->152
+    //   139  PshC4          d:55
+    //   141  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   144  PshRPtr
+    //   145  PshVPtr        rW0:0
+    //   146  PshVPtr        rW0:30
+    //   147  ADDSi          W0:352 d:134230864      ; ULokiRespawnComponent::OnPlayerStartsCreated  (+352)
+    //   149  CALLSYS        q:0x26e7719e5c0         ; void FOnUpdated::AddUFunction(const UObject@, const FName&)
+    //   152  JMP            ->154
+    //   154  PshVPtr        rW0:0
+    //   155  CALLINTF       d:84866                 ; void ULokiPlayerRespawnComponent::CheckSetInitialRespawn()
+    //   157  FreeNullV8     wW0:30
+    //   158  FreeNullV8     wW0:20
+    //   159  FreeNullV8     wW0:14
+    //   160  FreeNullV8     wW0:8
+    //   161  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnPlayerStartsCreated()
+// 3 instr, 16 B bytecode, id=0x89F3CB14, varspace=0
+------------------------------------------------------------------------------
+{
+    this.CheckSetInitialRespawn();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84866                 ; void ULokiPlayerRespawnComponent::CheckSetInitialRespawn()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnRoundPhaseChanged(const ERoundPhase NewPhase)
+// 20 instr, 144 B bytecode, id=0x1A7D9E95, varspace=8
+------------------------------------------------------------------------------
+{
+    if (int(NewPhase) == 7) {
+        this.IsCombatPhase = true;
+        this.CheckSetInitialRespawn();
+        Loki::GetLokiGameState(__WorldContext).OnRoundPhaseChanged.Unbind(this, __STATIC_NAME(54));
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  sbTOi          wW0:1 rW1:-2
+    //     2  CMPIi          rW0:1 d:7
+    //     4  JNZ            ->35
+    //     6  SetV1          wW0:3 d:1
+    //     8  LoadThisR      W0:264 d:134230863      ; ULokiPlayerRespawnComponent::IsCombatPhase  (+264)
+    //    10  WRTV1          rW0:3
+    //    11  PshVPtr        rW0:0
+    //    12  CALLINTF       d:84866                 ; void ULokiPlayerRespawnComponent::CheckSetInitialRespawn()
+    //    14  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    17  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    20  STOREOBJ       wW0:8
+    //    21  PshC4          d:54
+    //    23  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    26  PshRPtr
+    //    27  PshVPtr        rW0:0
+    //    28  PshVPtr        rW0:8
+    //    29  ADDSi          W0:1424 d:67115161      ; ALokiGameState::OnRoundPhaseChanged  (+1424)
+    //    31  CALLSYS        q:0x26e711e9700         ; void FNewRoundPhase::Unbind(UObject@, const FName&)
+    //    34  FreeNullV8     wW0:8
+    //    35  RET            W0:3
+
+------------------------------------------------------------------------------
+void CheckSetInitialRespawn()
+// 58 instr, 376 B bytecode, id=0xF39B1F75, varspace=20
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiGameMode v6;
+    TSubclassOf<UActorComponent@> v10;
+    UActorComponent v12;
+    ULokiRespawnComponent v14;
+    ULokiRespawnComponent v16;
+    auto v17;
+
+    v1 = Loki::LokiIsServer(__WorldContext);
+    v1 = !v1;
+    if (!v1) {
+        v1 = this.IsCombatPhase;
+        if (v1) {
+            v6 = Loki::GetLokiGameMode(__WorldContext);
+            v10 = TSubclassOf<UActorComponent@>(ULokiRespawnComponent::StaticClass());
+            v12 = v6.GetComponentByClass(v10);
+            if (v12 == null) {
+                v14 = null;
+            } else {
+                v14 = cast<ULokiRespawnComponent>(v12);
+            }
+            v16 = v14;
+            if (v14 != null) {
+                v17 = v16.HasCreatedPlayerStarts;
+                v1 = v17;
+            } else {
+                v1 = 0;
+            }
+            if (v1) {
+                v17 = this.ShouldScheduleRespawn();
+                v1 = v17;
+            } else {
+                v1 = 0;
+            }
+            if (v1) {
+                this.SetRespawnTime(this.InitialSpawnDelay);
+            }
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->93
+    //    13  LoadThisR      W0:264 d:134230863      ; ULokiPlayerRespawnComponent::IsCombatPhase  (+264)
+    //    15  RDR1           wW0:1
+    //    16  CpyVtoR1       rW0:1
+    //    17  JLowZ          ->93
+    //    19  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    22  CALLSYS        q:0x26e7a11d440         ; ALokiGameMode@ Loki::GetLokiGameMode(UObject@)
+    //    25  STOREOBJ       wW0:6
+    //    26  CALL           d:84901                 ; UClass@ ULokiRespawnComponent::StaticClass()
+    //    28  STOREOBJ       wW0:8
+    //    29  PshVPtr        rW0:8
+    //    30  PSF            rW0:10
+    //    31  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //    34  PSF            rW0:10
+    //    35  PshVPtr        rW0:6
+    //    36  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //    39  STOREOBJ       wW0:12
+    //    40  CmpPtrNull     rW0:12
+    //    41  JZ             ->52
+    //    43  TYPEID         d:1207972688            ; ULokiRespawnComponent@
+    //    45  PSF            rW0:14
+    //    46  PshVPtr        rW0:12
+    //    47  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    50  JMP            ->53
+    //    52  ClrVPtr        wW0:14
+    //    53  PshVPtr        rW0:14
+    //    54  RefCpyV        wW0:16
+    //    55  CmpPtrNull     rW0:16
+    //    56  JNZ            ->62
+    //    58  SetV4          wW0:1 d:0
+    //    60  JMP            ->68
+    //    62  LoadRObjR      rW0:16 W1:348 DW2:134230864; ULokiRespawnComponent::HasCreatedPlayerStarts  (+348)
+    //    65  RDR1           wW0:17
+    //    66  CpyVtoV4       wW0:1 rW1:17
+    //    68  CpyVtoR1       rW0:1
+    //    69  JLowNZ         ->75
+    //    71  SetV4          wW0:1 d:0
+    //    73  JMP            ->81
+    //    75  PshVPtr        rW0:0
+    //    76  CALLINTF       d:84869                 ; bool ULokiPlayerRespawnComponent::ShouldScheduleRespawn()
+    //    78  CpyRtoV4       wW0:17
+    //    79  CpyVtoV4       wW0:1 rW1:17
+    //    81  CpyVtoR1       rW0:1
+    //    82  JLowZ          ->91
+    //    84  LoadThisR      W0:248 d:134230863      ; ULokiPlayerRespawnComponent::InitialSpawnDelay  (+248)
+    //    86  RDR8           wW0:20
+    //    87  PshV8          rW0:20
+    //    88  PshVPtr        rW0:0
+    //    89  CALLINTF       d:84873                 ; void ULokiPlayerRespawnComponent::SetRespawnTime(const float64)
+    //    91  FreeNullV8     wW0:16
+    //    92  FreeNullV8     wW0:6
+    //    93  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnPlayerDisconnected()
+// 44 instr, 280 B bytecode, id=0x1AD1A204, varspace=17
+------------------------------------------------------------------------------
+{
+    AActor v2;
+    ALokiPlayerState v4;
+    ALokiPlayerState v6;
+    auto v7;
+    ALokiCharacter v12;
+    auto v13;
+    auto v17;
+
+    v2 = this.GetOwner();
+    if (v2 == null) {
+        v4 = null;
+    } else {
+        v4 = cast<ALokiPlayerState>(v2);
+    }
+    v6 = v4;
+    if (v4 != null) {
+        v12 = v6.GetLokiCharacter();
+        v7 = v6.bDisconnected;
+        v7 = !v7;
+        if (v7) {
+            if (v12 != null) {
+                v17 = int(v12.GetLivingState()) != 1;
+                v13 = v17;
+            } else {
+                v13 = true;
+            }
+            v17 = v13;
+        } else {
+            v17 = 0;
+        }
+        if (v17) {
+            this.ScheduleRespawn();
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //    10  PSF            rW0:4
+    //    11  PshVPtr        rW0:2
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:4
+    //    18  PshVPtr        rW0:4
+    //    19  RefCpyV        wW0:6
+    //    20  CmpPtrNull     rW0:6
+    //    21  JZ             ->69
+    //    23  PshVPtr        rW0:6
+    //    24  CALLSYS        q:0x26e7a390b00         ; ALokiCharacter@ ALokiPlayerState::GetLokiCharacter() const
+    //    27  STOREOBJ       wW0:12
+    //    28  LoadRObjR      rW0:6 W1:1944 DW2:67115322; ALokiPlayerState::bDisconnected  (+1944)
+    //    31  RDR1           wW0:7
+    //    32  NOT            rW0:7
+    //    33  CpyVtoR1       rW0:7
+    //    34  JLowNZ         ->40
+    //    36  SetV4          wW0:17 d:0
+    //    38  JMP            ->62
+    //    40  CmpPtrNull     rW0:12
+    //    41  JNZ            ->47
+    //    43  SetV1          wW0:13 d:1
+    //    45  JMP            ->60
+    //    47  PshVPtr        rW0:12
+    //    48  CALLSYS        q:0x26e7a188ac0         ; ELivingState ALokiCharacter::GetLivingState() const
+    //    51  CpyRtoV4       wW0:14
+    //    52  sbTOi          wW0:15 rW1:14
+    //    54  CMPIi          rW0:15 d:1
+    //    56  TNZ
+    //    57  CpyRtoV4       wW0:17
+    //    58  CpyVtoV4       wW0:13 rW1:17
+    //    60  CpyVtoV4       wW0:17 rW1:13
+    //    62  CpyVtoR1       rW0:17
+    //    63  JLowZ          ->68
+    //    65  PshVPtr        rW0:0
+    //    66  CALLINTF       d:84872                 ; void ULokiPlayerRespawnComponent::ScheduleRespawn()
+    //    68  FreeNullV8     wW0:12
+    //    69  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 32 instr, 236 B bytecode, id=0x496C3826, varspace=6
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v4;
+    auto v5;
+
+    v2 = this.LocalRespawnTime;
+    v4 = 0;
+    if (v2 > 0) {
+        v2 = this.LocalRespawnTime;
+        v4 = v2 - DeltaSeconds;
+        this.LocalRespawnTime = v4;
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v4 = this.LocalRespawnTime;
+            v2 = 0;
+            v5 = v4 <= 0;
+        } else {
+            v5 = 0;
+        }
+        if (v5) {
+            this.Respawn();
+            v4 = 0;
+            this.RespawnTime = 0;
+            v2 = 0;
+            this.LocalRespawnTime = 0;
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:224 d:134230863      ; ULokiPlayerRespawnComponent::LocalRespawnTime  (+224)
+    //     2  RDR8           wW0:2
+    //     3  SetV8          wW0:4 q:0x0
+    //     6  CMPd           rW0:2 rW1:4
+    //     8  JNP            ->58
+    //    10  LoadThisR      W0:224 d:134230863      ; ULokiPlayerRespawnComponent::LocalRespawnTime  (+224)
+    //    12  RDR8           wW0:2
+    //    13  SUBd           wW0:4 rW1:2 rW2:-2
+    //    15  WRTV8          rW0:4
+    //    16  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    19  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //    22  JLowNZ         ->28
+    //    24  SetV4          wW0:5 d:0
+    //    26  JMP            ->40
+    //    28  LoadThisR      W0:224 d:134230863      ; ULokiPlayerRespawnComponent::LocalRespawnTime  (+224)
+    //    30  RDR8           wW0:4
+    //    31  SetV8          wW0:2 q:0x0
+    //    34  CMPd           rW0:4 rW1:2
+    //    36  TNP
+    //    37  CpyRtoV4       wW0:6
+    //    38  CpyVtoV4       wW0:5 rW1:6
+    //    40  CpyVtoR1       rW0:5
+    //    41  JLowZ          ->58
+    //    43  PshVPtr        rW0:0
+    //    44  CALLINTF       d:84875                 ; void ULokiPlayerRespawnComponent::Respawn()
+    //    46  SetV8          wW0:4 q:0x0
+    //    49  LoadThisR      W0:208 d:134230863      ; ULokiPlayerRespawnComponent::RespawnTime  (+208)
+    //    51  WRTV8          rW0:4
+    //    52  SetV8          wW0:2 q:0x0
+    //    55  LoadThisR      W0:224 d:134230863      ; ULokiPlayerRespawnComponent::LocalRespawnTime  (+224)
+    //    57  WRTV8          rW0:2
+    //    58  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool ShouldScheduleRespawn()
+// 78 instr, 508 B bytecode, id=0xD10B90B8, varspace=21
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiGameState v6;
+    auto v8;
+    auto v10;
+    AActor v12;
+    ALokiPlayerState v14;
+    ALokiPlayerState v16;
+    ALokiCharacter v20;
+
+    // control flow not structured (structuring dropped 1 of 21 block(s)); flat form:
+        v1 = this.bOnlyScheduleRespawnsDuringCombatPhase;
+        if (!v1) goto L45; else goto L6;
+    L6:
+        v6 = Loki::GetLokiGameState(__WorldContext);
+        if (IsValid(v6)) goto L23; else goto L19;
+    L19:
+        v1 = 0;
+        goto L36;
+    L23:
+        v8 = int(v6.GetCurrentPhase());
+        v10 = v8 != 7;
+        v1 = v10;
+    L36:
+        if (!v1) goto L44; else goto L39;
+    L39:
+        v10 = false;
+        goto L126;
+    L44:
+    L45:
+        v12 = this.GetOwner();
+        if (v12 == null) goto L62; else goto L53;
+    L53:
+        v14 = cast<ALokiPlayerState>(v12);
+        goto L63;
+    L62:
+        v14 = null;
+    L63:
+        v16 = v14;
+        if (!IsValid(v14)) goto L123; else goto L71;
+    L71:
+        v20 = v16.GetLokiCharacter();
+        v10 = IsValid(v20);
+        v10 = !v10;
+        if (!v10) goto L90; else goto L85;
+    L85:
+        v1 = true;
+        goto L126;
+    L90:
+        v10 = this.bStartTimerOnlyOnKill;
+        v10 = !v10;
+        if (!v10) goto L101; else goto L97;
+    L97:
+        v10 = true;
+        goto L114;
+    L101:
+        v8 = int(v20.GetLivingState());
+        v1 = v8 == 0;
+        v10 = v1;
+    L114:
+        if (!v10) goto L122; else goto L117;
+    L117:
+        v1 = true;
+        goto L126;
+    L122:
+    L123:
+        v10 = false;
+    L126:
+        return v10;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:265 d:134230863      ; ULokiPlayerRespawnComponent::bOnlyScheduleRespawnsDuringCombatPhase  (+265)
+    //     2  RDR1           wW0:1
+    //     3  CpyVtoR1       rW0:1
+    //     4  JLowZ          ->45
+    //     6  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     9  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    12  STOREOBJ       wW0:6
+    //    13  PshVPtr        rW0:6
+    //    14  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    17  JLowNZ         ->23
+    //    19  SetV4          wW0:1 d:0
+    //    21  JMP            ->36
+    //    23  PshVPtr        rW0:6
+    //    24  CALLSYS        q:0x26e7a25f580         ; ERoundPhase ALokiGameState::GetCurrentPhase() const
+    //    27  CpyRtoV4       wW0:7
+    //    28  sbTOi          wW0:8 rW1:7
+    //    30  CMPIi          rW0:8 d:7
+    //    32  TNZ
+    //    33  CpyRtoV4       wW0:10
+    //    34  CpyVtoV4       wW0:1 rW1:10
+    //    36  CpyVtoR1       rW0:1
+    //    37  JLowZ          ->44
+    //    39  SetV1          wW0:10 d:0
+    //    41  CpyVtoR4       rW0:10
+    //    42  JMP            ->126
+    //    44  FreeNullV8     wW0:6
+    //    45  PshVPtr        rW0:0
+    //    46  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    49  STOREOBJ       wW0:12
+    //    50  CmpPtrNull     rW0:12
+    //    51  JZ             ->62
+    //    53  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //    55  PSF            rW0:14
+    //    56  PshVPtr        rW0:12
+    //    57  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    60  JMP            ->63
+    //    62  ClrVPtr        wW0:14
+    //    63  PshVPtr        rW0:14
+    //    64  RefCpyV        wW0:16
+    //    65  PshVPtr        rW0:16
+    //    66  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    69  JLowZ          ->123
+    //    71  PshVPtr        rW0:16
+    //    72  CALLSYS        q:0x26e7a390b00         ; ALokiCharacter@ ALokiPlayerState::GetLokiCharacter() const
+    //    75  STOREOBJ       wW0:20
+    //    76  PshVPtr        rW0:20
+    //    77  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    80  CpyRtoV4       wW0:10
+    //    81  NOT            rW0:10
+    //    82  CpyVtoR1       rW0:10
+    //    83  JLowZ          ->90
+    //    85  SetV1          wW0:1 d:1
+    //    87  CpyVtoR4       rW0:1
+    //    88  JMP            ->126
+    //    90  LoadThisR      W0:266 d:134230863      ; ULokiPlayerRespawnComponent::bStartTimerOnlyOnKill  (+266)
+    //    92  RDR1           wW0:10
+    //    93  NOT            rW0:10
+    //    94  CpyVtoR1       rW0:10
+    //    95  JLowZ          ->101
+    //    97  SetV1          wW0:10 d:1
+    //    99  JMP            ->114
+    //   101  PshVPtr        rW0:20
+    //   102  CALLSYS        q:0x26e7a188ac0         ; ELivingState ALokiCharacter::GetLivingState() const
+    //   105  CpyRtoV4       wW0:21
+    //   106  sbTOi          wW0:8 rW1:21
+    //   108  CMPIi          rW0:8 d:0
+    //   110  TZ
+    //   111  CpyRtoV4       wW0:1
+    //   112  CpyVtoV4       wW0:10 rW1:1
+    //   114  CpyVtoR1       rW0:10
+    //   115  JLowZ          ->122
+    //   117  SetV1          wW0:1 d:1
+    //   119  CpyVtoR4       rW0:1
+    //   120  JMP            ->126
+    //   122  FreeNullV8     wW0:20
+    //   123  SetV1          wW0:10 d:0
+    //   125  CpyVtoR4       rW0:10
+    //   126  RET            W0:2
+
+------------------------------------------------------------------------------
+float64 GetSpawnDelay()
+// 10 instr, 76 B bytecode, id=0x4E3FD75F, varspace=5
+------------------------------------------------------------------------------
+{
+    float64 v2;
+
+    v2 = 0;
+    __Evt_PushArgumentRef__float(v2);
+    __Evt_Execute(this, __STATIC_NAME(174));
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x0
+    //     3  PSF            rW0:2
+    //     4  CALLSYS        q:0x26e77fcd980         ; void __Evt_PushArgumentRef__float(const float64&)
+    //     7  PshC4          d:174
+    //     9  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    12  PshRPtr
+    //    13  PshVPtr        rW0:0
+    //    14  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    17  CpyVtoR8       rW0:2
+    //    18  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: GetSpawnDelay
+float64 GetSpawnDelay_Implementation()
+// 4 instr, 20 B bytecode, id=0x3DD1A25C, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.SpawnDelay;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:256 d:134230863      ; ULokiPlayerRespawnComponent::SpawnDelay  (+256)
+    //     2  RDR8           wW0:2
+    //     3  CpyVtoR8       rW0:2
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ScheduleRespawn()
+// 23 instr, 136 B bytecode, id=0x90BD9F23, varspace=10
+------------------------------------------------------------------------------
+{
+    AActor v2;
+    ALokiPlayerState v4;
+    ALokiPlayerState v6;
+
+    v2 = this.GetOwner();
+    if (v2 == null) {
+        v4 = null;
+    } else {
+        v4 = cast<ALokiPlayerState>(v2);
+    }
+    v6 = v4;
+    if (this.ShouldScheduleRespawn()) {
+        this.SetRespawnTime(this.GetSpawnDelay());
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //    10  PSF            rW0:4
+    //    11  PshVPtr        rW0:2
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:4
+    //    18  PshVPtr        rW0:4
+    //    19  RefCpyV        wW0:6
+    //    20  PshVPtr        rW0:0
+    //    21  CALLINTF       d:84869                 ; bool ULokiPlayerRespawnComponent::ShouldScheduleRespawn()
+    //    23  JLowZ          ->33
+    //    25  PshVPtr        rW0:0
+    //    26  CALLINTF       d:84870                 ; float64 ULokiPlayerRespawnComponent::GetSpawnDelay()
+    //    28  CpyRtoV8       wW0:10
+    //    29  PshV8          rW0:10
+    //    30  PshVPtr        rW0:0
+    //    31  CALLINTF       d:84873                 ; void ULokiPlayerRespawnComponent::SetRespawnTime(const float64)
+    //    33  RET            W0:2
+
+------------------------------------------------------------------------------
+void SetRespawnTime(const float64 Time)
+// 11 instr, 84 B bytecode, id=0xE2EB1589, varspace=1
+------------------------------------------------------------------------------
+{
+    if (Loki::LokiIsServer(__WorldContext)) {
+        this.RespawnTime = Time;
+        this.LocalRespawnTime = Time;
+    }
+    this.OnRespawnTimeUpdated.Broadcast();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->14
+    //     8  LoadThisR      W0:208 d:134230863      ; ULokiPlayerRespawnComponent::RespawnTime  (+208)
+    //    10  WRTV8          rW0:-2
+    //    11  LoadThisR      W0:224 d:134230863      ; ULokiPlayerRespawnComponent::LocalRespawnTime  (+224)
+    //    13  WRTV8          rW0:-2
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:232 d:134230863      ; ULokiPlayerRespawnComponent::OnRespawnTimeUpdated  (+232)
+    //    17  CALLSYS        q:0x26e7719e080         ; void FOnUpdated::Broadcast() const
+    //    20  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsRespawnTimeSet()
+// 8 instr, 48 B bytecode, id=0x416BF9F4, varspace=5
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v5;
+
+    v2 = this.RespawnTime;
+    v5 = v2 > 0;
+    return v5;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:208 d:134230863      ; ULokiPlayerRespawnComponent::RespawnTime  (+208)
+    //     2  RDR8           wW0:2
+    //     3  SetV8          wW0:4 q:0x0
+    //     6  CMPd           rW0:2 rW1:4
+    //     8  TP
+    //     9  CpyRtoV4       wW0:5
+    //    10  CpyVtoR4       rW0:5
+    //    11  RET            W0:2
+
+------------------------------------------------------------------------------
+void Respawn()
+// 65 instr, 424 B bytecode, id=0x7B8FFCB7, varspace=24
+------------------------------------------------------------------------------
+{
+    AActor v4;
+    ALokiPlayerState v6;
+    ALokiPlayerState v8;
+    auto v9;
+    ALokiGameMode v14;
+    TSubclassOf<UActorComponent@> v18;
+    UActorComponent v20;
+    ULokiRespawnComponent v22;
+    ULokiRespawnComponent v24;
+
+    this.RespawnTime = 0;
+    v4 = this.GetOwner();
+    if (v4 == null) {
+        v6 = null;
+    } else {
+        v6 = cast<ALokiPlayerState>(v4);
+    }
+    v8 = v6;
+    if (v6 != null) {
+        v9 = v8.bDisconnected;
+    } else {
+        v9 = 0;
+    }
+    if (!v9) {
+        v14 = Loki::GetLokiGameMode(__WorldContext);
+        v18 = TSubclassOf<UActorComponent@>(ULokiRespawnComponent::StaticClass());
+        v20 = v14.GetComponentByClass(v18);
+        if (v20 == null) {
+            v22 = null;
+        } else {
+            v22 = cast<ULokiRespawnComponent>(v20);
+        }
+        v24 = v22;
+        if (v22 != null) {
+            v4 = this.GetOwner();
+            if (v4 == null) {
+                v6 = null;
+            } else {
+                v6 = cast<ALokiPlayerState>(v4);
+            }
+            v24.Respawn(v6);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x0
+    //     3  LoadThisR      W0:208 d:134230863      ; ULokiPlayerRespawnComponent::RespawnTime  (+208)
+    //     5  WRTV8          rW0:2
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    10  STOREOBJ       wW0:4
+    //    11  CmpPtrNull     rW0:4
+    //    12  JZ             ->23
+    //    14  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //    16  PSF            rW0:6
+    //    17  PshVPtr        rW0:4
+    //    18  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    21  JMP            ->24
+    //    23  ClrVPtr        wW0:6
+    //    24  PshVPtr        rW0:6
+    //    25  RefCpyV        wW0:8
+    //    26  CmpPtrNull     rW0:8
+    //    27  JNZ            ->33
+    //    29  SetV4          wW0:9 d:0
+    //    31  JMP            ->39
+    //    33  LoadRObjR      rW0:8 W1:1944 DW2:67115322; ALokiPlayerState::bDisconnected  (+1944)
+    //    36  RDR1           wW0:10
+    //    37  CpyVtoV4       wW0:9 rW1:10
+    //    39  CpyVtoR1       rW0:9
+    //    40  JLowZ          ->44
+    //    42  JMP            ->105
+    //    44  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    47  CALLSYS        q:0x26e7a11d440         ; ALokiGameMode@ Loki::GetLokiGameMode(UObject@)
+    //    50  STOREOBJ       wW0:14
+    //    51  CALL           d:84901                 ; UClass@ ULokiRespawnComponent::StaticClass()
+    //    53  STOREOBJ       wW0:16
+    //    54  PshVPtr        rW0:16
+    //    55  PSF            rW0:18
+    //    56  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //    59  PSF            rW0:18
+    //    60  PshVPtr        rW0:14
+    //    61  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //    64  STOREOBJ       wW0:20
+    //    65  CmpPtrNull     rW0:20
+    //    66  JZ             ->77
+    //    68  TYPEID         d:1207972688            ; ULokiRespawnComponent@
+    //    70  PSF            rW0:22
+    //    71  PshVPtr        rW0:20
+    //    72  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    75  JMP            ->78
+    //    77  ClrVPtr        wW0:22
+    //    78  PshVPtr        rW0:22
+    //    79  RefCpyV        wW0:24
+    //    80  CmpPtrNull     rW0:24
+    //    81  JZ             ->105
+    //    83  PshVPtr        rW0:0
+    //    84  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    87  STOREOBJ       wW0:4
+    //    88  CmpPtrNull     rW0:4
+    //    89  JZ             ->100
+    //    91  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //    93  PSF            rW0:6
+    //    94  PshVPtr        rW0:4
+    //    95  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    98  JMP            ->101
+    //   100  ClrVPtr        wW0:6
+    //   101  PshVPtr        rW0:6
+    //   102  PshVPtr        rW0:24
+    //   103  CALLINTF       d:84893                 ; void ULokiRespawnComponent::Respawn(ALokiPlayerState@)
+    //   105  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthRequestRespawn()
+// 6 instr, 44 B bytecode, id=0x82B1F0F3, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(175));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:175
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: AuthRequestRespawn
+void AuthRequestRespawn_Implementation()
+// 3 instr, 16 B bytecode, id=0x821DDFB7, varspace=0
+------------------------------------------------------------------------------
+{
+    this.Respawn();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84875                 ; void ULokiPlayerRespawnComponent::Respawn()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 9 instr, 60 B bytecode, id=0x227C82BE, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = true;
+    this.SetbReplicates(true);
+    v1 = true;
+    this.SetComponentTickEnabled(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a62c640         ; void UActorComponent::SetbReplicates(bool)
+    //     7  SetV1          wW0:1 d:1
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7973d440         ; void UActorComponent::SetComponentTickEnabled(bool)
+    //    14  RET            W0:2
+
+------------------------------------------------------------------------------
+~ULokiPlayerRespawnComponent()
+// 4 instr, 28 B bytecode, id=0x39F72307, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:232 d:134230863      ; ULokiPlayerRespawnComponent::OnRespawnTimeUpdated  (+232)
+    //     3  CALLSYS        q:0x26e6540d440         ; void FOnUpdated::$beh2()
+    //     6  RET            W0:2
+

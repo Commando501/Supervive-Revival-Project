@@ -1,0 +1,94 @@
+SESSION 41 — STEP 5 LIVE PROBE RESULT: N = 0
+=============================================
+Date: 2026-07-01 22:10 (local)
+Branch: dedicated-server-stub
+Outcome: PROBE SUCCEEDED. The un-suppressed PlayerController replicated to the
+         client, and the client rejected the initial bunch at replicated field
+         index 0. No crash — clean disconnect, client browsed back to login.
+
+THE DATA POINT
+--------------
+Client log (C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log):
+  LogRep: Error: ReceivedBunch: Invalid replicated field 0 in PlayerController
+          /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent
+          :PersistentLevel.PlayerController_2147481890
+  LogNet: Error: UActorChannel::ProcessBunch: Replicator.ReceivedBunch failed.
+          Closing connection. RepObj: PlayerController ... Channel: 3
+  LogNet: Error: BroadcastNetworkFailure: ConnectionLost
+  -> client browses back to /Game/Loki/Maps/LVL_Login
+
+  => N = 0  (FieldCache->FieldNetIndex, DataReplication.cpp:1182)
+
+Stub log (scratchpad/stub-s41-live.log):
+  - LokiNetDriver listening on 7777; route-around handler active.
+  - Suppression list confirmed correct for step 5:
+      SUPPRESSING WorldInfo_1 (WorldSettings)      <- still suppressed
+      SUPPRESSING GameStateBase_0 (GameStateBase)  <- still suppressed
+      SUPPRESSING PlayerState_0 (PlayerState)      <- still suppressed
+      SUPPRESSING DefaultPawn_0 (DefaultPawn)      <- still suppressed
+      (PlayerController ABSENT from the list = un-suppressed, as intended)
+  - Join succeeded -> ReceivedJoin -> (PC replicated) -> client sends
+    NMT_CloseReason ObjectReplicatorReceivedBunchFail -> CleanedUp.
+  - ServerVerifyViewTarget RPC (channel 3) parsed CLEANLY live:
+      "LiveReplay END: FinalPos=2298 Leftover=0 IsError=0"
+    (session 27-32 injection still correct against the real client.)
+
+PIPELINE VALIDATION (all green this run)
+----------------------------------------
+  - Steam auth OK; ags backend serving HTTP :8080 + HTTPS :443.
+  - browse_hook.dll manual-mapped into the client (PID 59644), DllMain OK.
+  - Client logged in, fetched menu, net-traveled to the stub lobby.
+  - NetCache dump diagnostic ran on stub boot (stock table = 98 fields).
+  - The step-5 code change behaves exactly as designed.
+
+INTERPRETATION OF N = 0
+-----------------------
+The error fires in the post-RepLayout field loop (DataReplication.cpp ~1050+),
+whose valid branches are custom-delta STRUCT properties and RPC FUNCTIONS;
+anything else -> "Invalid replicated field N". N = 0 is the FIRST field of the
+class hierarchy. In stock, net index 0 = AActor.bReplicateMovement (a SCALAR),
+which is NOT a valid target in this loop — so the client is reading the field
+section at a MISALIGNED bit offset, i.e. our stub's RepLayout property block
+for the PC is a DIFFERENT SIZE/SHAPE than the client's (SUPERVIVE-patched)
+RepLayout expects. The desync manifests immediately (index 0), meaning the PC's
+replicated schema diverges from the VERY FIRST replicated property.
+
+This reproduces session 36's N=0 (noted in the pickup prompt) and confirms:
+the empty-grid root cause is a PlayerController (and base-class) replicated-
+schema divergence that begins at the front of the property list.
+
+Consistent with session 22's AActor Loki additions: a replicated struct such as
+ServerState (PoolableActorServerState) and/or LokiReplicationStrategy inserted
+into AActor's CPF_Net set would change the RepLayout starting near the front and
+desync everything after it.
+
+CAVEAT (important for step 2): N=0 says "diverges at the front," not "append one
+field." Native-class ClassReps use field-ITERATOR order, and our runtime
+injection primitives APPEND to the tail (high RepIndex). To actually match
+SUPERVIVE we must inject the missing replicated properties at the CORRECT
+positions, not just add them at the end. Getting the order right is the hard
+part flagged in docs/session-40-path-b-lite-analysis.txt (struct injection +
+ordering). So step 2 is an iterative loop: inject candidate field(s), re-run
+this exact probe, watch whether N moves / the connection survives past
+ReceivedJoin, repeat.
+
+NEXT STEP (step 2, first iteration)
+-----------------------------------
+Inject ServerState (PoolableActorServerState struct) as a replicated property
+onto AActor (NOT just APlayerController — it's an AActor-level field, so it
+shifts PC's indices via the FieldsBase chain). Requires:
+  - A runtime-constructed or registered UScriptStruct mirroring
+    PoolableActorServerState (the hard part).
+  - AppendReplicatedPropertyToClass(AActor::StaticClass(), prop) that sets
+    CPF_Net, updates ClassReps at the right position, sets RepIndex, and
+    invalidates the FClassNetCache (see design in session-41-blite-step5-armed.txt).
+Then re-run this probe and compare N. Because N=0 is front-of-list, also
+consider dumping the client's expected RepLayout (needs more instrumentation
+or the SUPERVIVE .usmap CPF_Net flags) to pin exact ordering before guessing.
+
+INFRA STATE AT END OF PROBE
+---------------------------
+Left running (idle): stub server (UnrealEditor-Cmd), ags backend, the game
+client (sitting at LVL_Login after the disconnect). cacert bundle is in the
+re-trusted state (235267 bytes). Kill with:
+  Get-Process UnrealEditor-Cmd,ags,SUPERVIVE-Win64-Shipping,crashpad_handler -EA SilentlyContinue | Stop-Process -Force

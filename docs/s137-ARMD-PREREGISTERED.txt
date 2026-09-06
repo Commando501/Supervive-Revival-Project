@@ -1,0 +1,81 @@
+S137 ARM D PRE-REGISTRATION -- a **Loki** bot controller via one pointer
+Written 2026-08-21 AFTER flights 1-2 and BEFORE the ARM D injection. Not editable after the flight.
+
+================================================================================================
+WHY THIS IS A DIFFERENT MECHANISM FROM THE ONE THAT JUST FAILED
+================================================================================================
+ARM A (flight 1) poked CDO(AIControllerClass).bWantsPlayerState and was MEASURED REFUTED: the
+spawned instance still read the bit CLEAR. Lane V6 had predicted exactly that, offline, and named
+the mechanism -- FObjectInitializer::InitProperties walks the PostConstructLink chain, and
+UStruct::Link never puts a property owned by a NATIVE class into that chain. So the CDO value is
+never copied to the instance for a native-owned field.
+
+ARM D pokes a field whose CONSUMER READS IT OUT OF THE CDO BY HAND, in the constructor:
+
+  APawn::APawn 0x3B809D0
+    0x3B80A08  lea rsi,[rdi+0x3d0]        rsi = &pawn->AIControllerClass
+    0x3B80BD3  call 0x3BA4CE0             a lazy StaticClass() singleton
+    0x3B80BD8  mov rbx,rax
+    0x3B80BF3  mov rbx,[rbx+0x178]        rbx = ThatClass->ClassDefaultObject
+    0x3B80C0D  mov rax,[rbx+0x3d0]        <-- reads AIControllerClass OFF THE CDO
+    0x3B80C14  mov [rsi],rax              pawn->AIControllerClass = it
+
+That is the S130 `bCanEverReplicate` shape -- the one CDO-poke pattern this project has already
+measured working, because the consumer reads the CDO directly instead of relying on a copy.
+
+WHICH CDO, MEASURED LIVE (read-only RPM, 2026-08-21, PID 43736):
+  Default__Pawn               0x173B3BBBE20  [+0x3D0] = 0x173B5191280 'AIController'
+  Default__Character          0x173B3BBC270  [+0x3D0] = 0x173B5191280 'AIController'
+  Default__LokiCharacter      0x173B3D29FD0  [+0x3D0] = 0x173B5191280 'AIController'
+  Default__LokiHeroCharacter  0x173B3D688B0  [+0x3D0] = 0x173B5191280 'AIController'
+  Default__BP_HERO_Ronin_C    0x17518338020  [+0x3D0] = 0x173B5191280 'AIController'
+and 0x173B5191280 is exactly the UClass every spawned pawn was observed carrying at +0x3D0.
+
+TARGET, also confirmed live before the arm was built:
+  LokiBotController UClass    0x173B8595100   CDO Default__LokiBotController 0x173B3D21B00
+(V10's open question "does ALokiBotController's CDO exist at the tutorial world?" -- answered YES.)
+
+Lane V8 measured [M] that APawn::SpawnDefaultController hands SpawnActor the PAWN INSTANCE's
+AIControllerClass read from [pawn+0x3D0] at the call site, not anything from a CDO. So changing
+what the constructor writes there changes what the engine spawns.
+
+================================================================================================
+PREDICTIONS
+================================================================================================
+D1  Default__Pawn+0x3D0 reads the `AIController` UClass at baseline.                      (already
+    confirmed by the live read above, restated so the arm's own read is checkable against it)
+D2  SPAWN A (no poke) produces a controller whose class chain is
+    AIController <- Controller <- LokiActor <- Actor <- Object   -- i.e. NOT BotController.
+D3  The poke readbacks: Default__Pawn+0x3D0 becomes the LokiBotController UClass pointer.
+D4  SPAWN B produces a pawn whose AIControllerClass reads LokiBotController AND a controller whose
+    CLASS CHAIN CONTAINS BotController. That census has read ZERO for this project's entire
+    history. This is the result.
+D5  The restore readbacks.
+D6  SPAWN C produces a plain AIController again. THIS IS WHAT MAKES THE RESTORE A MEASUREMENT.
+    If C is still a bot controller, the restore failed and the engine CDO is left modified.
+D7  ARM B then gives the bot controller a PlayerState (controller+0x3C0 non-null) and ARM C links
+    the pawn (pawn+0x3D8 == it), exactly as measured twice already on plain AIControllers.
+
+================================================================================================
+WHAT WOULD MAKE IT UNINTERPRETABLE, AND THE KNOWN RISK
+================================================================================================
+U1  No pawn returned from a spawn -> that spawn is UNINTERPRETABLE, not a null.
+U2  A and B produce the SAME chain -> the constructor did not read the poked CDO, and the ARM-A
+    mechanism applies here too. That is a real result, not a failure.
+U3  The poke readback fails -> nothing after it is attributable; the arm refuses to spawn a
+    treatment in that case.
+
+RISK, stated before the fact: ALokiBotController::OnPossess (0x5565470) is DARK -- 0/4096 non-zero
+in every image on disk, i.e. it has never executed anywhere. It is where a Loki bot's Blackboard /
+BehaviorTree / Perception wiring would live and it may fault with none of that set up. The call is
+SEH-guarded. A fault is STILL A RESULT: driving the path decrypts the page, which is the only way
+anyone can ever read those bytes (the S118 steerable-decryption method). Take a dumpimage either way.
+
+SCOPE, stated before the fact: this pokes the ENGINE APawn CDO, so while it stands EVERY newly
+constructed pawn process-wide inherits it. The window is poke -> one spawn -> restore, and D6 is
+the check that the window really closed.
+
+ARM: tutorial_launch_lokibot.dll  RAW=3119d75ae2ca1859  VSIZE=0be6bee4caf26ec9
+     (KBSPSARMS=0x20; ARM A deliberately absent -- it is refuted and there is no reason to re-fly it)
+REGRESSION GATE: tutorial_launch_botai.dll RAW=5e47c13cf7f0a158, unchanged across all three patches.
+DCE CHECK: 8/8 probe rows matched expectation with KERNEL32 as the positive control in every row.

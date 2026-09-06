@@ -1,0 +1,311 @@
+// ============================================================================
+//  MODULE   Barracuda.Components.BarracudaJungleCreepTargetingComponent
+//  SOURCE   Barracuda/Components/BarracudaJungleCreepTargetingComponent.as
+//  CONTENT  1 class(es), 7 function(s), 0 enum(s), 1 global(s), 936 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaJungleCreepTargetingComponent;
+
+UBarracudaJungleCreepTargetingComponent@ UBarracudaJungleCreepTargetingComponent()   // traits=0x20
+{
+    UBarracudaJungleCreepTargetingComponent v2;
+
+    v2 = UBarracudaJungleCreepTargetingComponent();
+    return v2;
+}
+/* ---- UBarracudaJungleCreepTargetingComponent: 7 dwords / 4 instructions (cache offset 0x11d60) ----
+    0000  PSF           v2
+    0004  ALLOC         84080 UBarracudaJungleCreepTargetingComponent  ; new UBarracudaJungleCreepTargetingComponent  ctor=void UBarracudaJungleCreepTargetingComponent::UBarracudaJungleCreepTargetingComponent()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ UBarracudaJungleCreepTargetingComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaJungleCreepTargetingComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x11e34) ----
+    0000  PshGPtr       __StaticType_UBarracudaJungleCreepTargetingComponent
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+UBarracudaJungleCreepTargetingComponent@ UBarracudaJungleCreepTargetingComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaJungleCreepTargetingComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaJungleCreepTargetingComponent, v2, typeid(UBarracudaJungleCreepTargetingComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x11f85) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972594                                    ; UBarracudaJungleCreepTargetingComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_UBarracudaJungleCreepTargetingComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetComponentByClass                   ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+UBarracudaJungleCreepTargetingComponent@ UBarracudaJungleCreepTargetingComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaJungleCreepTargetingComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaJungleCreepTargetingComponent, v2, typeid(UBarracudaJungleCreepTargetingComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x120ee) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972594                                    ; UBarracudaJungleCreepTargetingComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_UBarracudaJungleCreepTargetingComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass           ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+UBarracudaJungleCreepTargetingComponent@ UBarracudaJungleCreepTargetingComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaJungleCreepTargetingComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaJungleCreepTargetingComponent, v2, typeid(UBarracudaJungleCreepTargetingComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x12252) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972594                                    ; UBarracudaJungleCreepTargetingComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_UBarracudaJungleCreepTargetingComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_CreateComponentByClass                ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class UBarracudaJungleCreepTargetingComponent : UBarracudaMinionTargetingComponent
+// static class global: __StaticType_UBarracudaJungleCreepTargetingComponent
+{
+    UBarracudaJungleCreepTargetingComponent()   // traits=0x21
+    {
+        this.UBarracudaMinionTargetingComponent();
+        return;
+    }
+    /* ---- UBarracudaJungleCreepTargetingComponent: 8 dwords / 5 instructions (cache offset 0x1282b) ----
+        0000  PshVPtr       this
+        0004  CALL          84092                                         ; void UBarracudaMinionTargetingComponent::UBarracudaMinionTargetingComponent()
+        000C  PshVPtr       this
+        0010  FinConstruct  UBarracudaJungleCreepTargetingComponent
+        001C  RET           2
+    */
+
+    UFUNCTION(UnrealName=UpdateCurrentTargetEnemy, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void UpdateCurrentTargetEnemy_Implementation()   // traits=0x20
+    {
+        ALokiMinionCharacter v2;
+        AActor v4;
+        ALokiMinionCharacter v6;
+        bool v7;
+        auto v8;
+        auto v10;
+        float64 v12;
+        bool v13;
+        FVector v26;
+        ELokiMinionEnemyFilter v27;
+
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 == nullptr) {
+            this.CurrentTargetEnemy = nullptr;
+            return;
+        } else {
+            if (!LokiGameplay::IsAlive(this.HighPriorityEnemyCharacter)) {
+                v7 = 0;
+            } else {
+                v8 = Gameplay::GetServerTime(__WorldContext);
+                v12 = float64(v8);
+                v10 = this.ReleaseHighPriorityEnemyTime;
+                v13 = v12 < v10;
+                v7 = v13;
+            }
+            if (v7) {
+                this.CurrentTargetEnemy = this.HighPriorityEnemyCharacter;
+                return;
+            } else {
+                this.HighPriorityEnemyCharacter = nullptr;
+                this.CurrentTargetEnemy = nullptr;
+                v26 = v2.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v13 = true;
+                v7 = true;
+                v27 = ELokiMinionEnemyFilter::Minion;
+                v4 = v2.GetClosestEnemyOnList(v26, v27, v7, v13);
+                this.CurrentTargetEnemy = v4;
+                v4 = this.CurrentTargetEnemy;
+                if (v4 != nullptr) {
+                    return;
+                } else {
+                    v7 = true;
+                    v13 = true;
+                    v27 = ELokiMinionEnemyFilter::Destructible;
+                    v4 = v2.GetClosestEnemyOnList(v26, v27, v13, v7);
+                    this.CurrentTargetEnemy = v4;
+                    v7 = false;
+                    v13 = true;
+                    v27 = ELokiMinionEnemyFilter::Hero;
+                    v4 = v2.GetClosestEnemyOnList(v26, v27, v13, v7);
+                    this.CurrentTargetEnemy = v4;
+                }
+            }
+        }
+        return;
+    }
+    /* ---- UpdateCurrentTargetEnemy_Implementation: 167 dwords / 114 instructions (cache offset 0x12376) ----
+        0000  PshVPtr       this
+        0004  CALLSYS       UActorComponent::GetOwner                     ; AActor@ UActorComponent::GetOwner() const
+        0010  STOREOBJ      v4
+        0014  CmpPtrNull    v4
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1140857087                                    ; ALokiMinionCharacter@
+        0028  PSF           v6
+        002C  PshVPtr       v4
+        0030  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v6
+      L0048:
+        0048  PshVPtr       v6
+        004C  RefCpyV       v2
+        0050  CmpPtrNull    v2
+        0054  JNZ           8                                             -> L007C
+        005C  PshNull
+        0060  PshVPtr       this
+        0064  ADDSi         216 134230774                                 ; .CurrentTargetEnemy
+        006C  REFCPY
+        0070  PopPtr
+        0074  JMP           135                                           -> L0298
+      L007C:
+        007C  PshVPtr       this
+        0080  ADDSi         208 134230774                                 ; .HighPriorityEnemyCharacter
+        0088  RDSPtr
+        008C  CALLSYS       IsAlive                                       ; bool LokiGameplay::IsAlive(const AActor@)
+        0098  JLowNZ        4                                             -> L00B0
+        00A0  SetV4         v7 0
+        00A8  JMP           18                                            -> L00F8
+      L00B0:
+        00B0  PshGPtr       __WorldContext
+        00BC  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        00C8  CpyRtoV4      v8
+        00CC  fTOd          v12 v8
+        00D4  LoadThisR     224 134230774                                 ; this.ReleaseHighPriorityEnemyTime
+        00DC  RDR8          v10
+        00E0  CMPd          v12 v10
+        00E8  TS
+        00EC  CpyRtoV4      v13
+        00F0  CpyVtoV4      v7 v13
+      L00F8:
+        00F8  CpyVtoR1      v7
+        00FC  JLowZ         11                                            -> L0130
+        0104  PshVPtr       this
+        0108  ADDSi         208 134230774                                 ; .HighPriorityEnemyCharacter
+        0110  RDSPtr
+        0114  PshVPtr       this
+        0118  ADDSi         216 134230774                                 ; .CurrentTargetEnemy
+        0120  REFCPY
+        0124  PopPtr
+        0128  JMP           90                                            -> L0298
+      L0130:
+        0130  PshNull
+        0134  PshVPtr       this
+        0138  ADDSi         208 134230774                                 ; .HighPriorityEnemyCharacter
+        0140  REFCPY
+        0144  PopPtr
+        0148  PshNull
+        014C  PshVPtr       this
+        0150  ADDSi         216 134230774                                 ; .CurrentTargetEnemy
+        0158  REFCPY
+        015C  PopPtr
+        0160  PSF           v26
+        0164  PshVPtr       v2
+        0168  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0174  SetV1         v13 1
+        017C  PshV4         v13
+        0180  SetV1         v7 1
+        0188  PshV4         v7
+        018C  SetV1         v27 5
+        0194  PshV4         v27
+        0198  PSF           v26
+        019C  PshVPtr       v2
+        01A0  CALLSYS       ALokiMinionCharacter::GetClosestEnemyOnList   ; AActor@ ALokiMinionCharacter::GetClosestEnemyOnList(const FVector&, ELokiMinionEnemyFilter, const bool, const bool) const
+        01AC  STOREOBJ      v4
+        01B0  PshVPtr       v4
+        01B4  PshVPtr       this
+        01B8  ADDSi         216 134230774                                 ; .CurrentTargetEnemy
+        01C0  REFCPY
+        01C4  PopPtr
+        01C8  PshVPtr       this
+        01CC  ADDSi         216 134230774                                 ; .CurrentTargetEnemy
+        01D4  RDSPtr
+        01D8  RefCpyV       v4
+        01DC  CmpPtrNull    v4
+        01E0  JZ            2                                             -> L01F0
+        01E8  JMP           42                                            -> L0298
+      L01F0:
+        01F0  SetV1         v7 1
+        01F8  PshV4         v7
+        01FC  SetV1         v13 1
+        0204  PshV4         v13
+        0208  SetV1         v27 6
+        0210  PshV4         v27
+        0214  PSF           v26
+        0218  PshVPtr       v2
+        021C  CALLSYS       ALokiMinionCharacter::GetClosestEnemyOnList   ; AActor@ ALokiMinionCharacter::GetClosestEnemyOnList(const FVector&, ELokiMinionEnemyFilter, const bool, const bool) const
+        0228  STOREOBJ      v4
+        022C  PshVPtr       v4
+        0230  PshVPtr       this
+        0234  ADDSi         216 134230774                                 ; .CurrentTargetEnemy
+        023C  REFCPY
+        0240  PopPtr
+        0244  SetV1         v7 0
+        024C  PshV4         v7
+        0250  SetV1         v13 1
+        0258  PshV4         v13
+        025C  SetV1         v27 4
+        0264  PshV4         v27
+        0268  PSF           v26
+        026C  PshVPtr       v2
+        0270  CALLSYS       ALokiMinionCharacter::GetClosestEnemyOnList   ; AActor@ ALokiMinionCharacter::GetClosestEnemyOnList(const FVector&, ELokiMinionEnemyFilter, const bool, const bool) const
+        027C  STOREOBJ      v4
+        0280  PshVPtr       v4
+        0284  PshVPtr       this
+        0288  ADDSi         216 134230774                                 ; .CurrentTargetEnemy
+        0290  REFCPY
+        0294  PopPtr
+      L0298:
+        0298  RET           2
+    */
+
+}
+

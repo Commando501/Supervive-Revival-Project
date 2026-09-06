@@ -1,87 +1,121 @@
-# Next session kickoff — AssetRegistry.bin repack route
+# Next session — re-test FK-7 with the fixed shims
 
-Use the fenced block below as the opening message of a new Claude Code session.
-
----
-
-```
-Read C:\Users\eastr\.claude\projects\G--git-Supervive-Revival-Project\memory\supervive-milestone3-trackb-status.md and docs/next-session-prompt.md first. We're picking up the AssetRegistry.bin repack route to unblock missions/hunters/store/cosmetics in SUPERVIVE. The native shim route was exhausted last session and is not to be re-attempted.
-
-Brief summary of where we are:
-- LokiAssetManager (custom UAssetManager subclass) registers primary assets ONLY from the content-service manifest's 11 named maps and never runs the standard config-driven directory scan. So baked primary assets (Mission, MissionPool, Hero, StoreOffer, Item, ...) never register — same single root cause behind the empty Missions modal, Hunters grid, Store, and Cosmetics.
-- The cooked Loki/AssetRegistry.bin (36 MB, extracted to tools/extractor/out/AssetRegistry.bin) DOES contain every asset with its full class info and path. Grep confirms DA_MissionPoolDailyChallenge, LokiDataAsset_MissionPool, LokiDataAsset_Mission, BP_HeroAsset_Assault, etc.
-- The native scan-call shim was built end-to-end in tools/inject/shim/scan_shim.cpp and got as far as running on the real game thread via QueueUserAPC — but the scan function crashes with __report_gsfailure (stack-cookie) even with empty config arrays. Further diagnosis requires an attached kernel debugger. Do NOT pursue.
-
-This session's goal: modify AssetRegistry.bin so the missing primary-asset registrations happen during the game's NORMAL startup — no injection, just a data-file change. Smallest viable proof: get one daily mission to appear in the Missions modal after a relaunch.
-
-Start by:
-1. Reading the trackb-status memory file for full context.
-2. Checking what AssetRegistry parsing already exists in tools/extractor/extractor/ (it's CUE4Parse-based; that library can already read AssetRegistry).
-3. Inspecting the file format — version, header, where FAssetData entries live, and what tag/field marks an entry as a primary asset of a given type.
-
-The full plan, file paths to read, constraints, and how-to-test instructions are in docs/next-session-prompt.md — read that document fully before starting work.
-
-Game install is at G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\. Back up Loki\AssetRegistry.bin before any write to it. The launch script configs/launch-redirect.ps1 requires admin (the shell here is already elevated; no UAC needed). Memory file is the canonical state record — update it as findings land.
-```
+Copy everything below the line into a fresh Claude session.
 
 ---
 
-## Detailed reference for the next session (Claude: read this in full before starting)
+## The task
 
-### Why this approach
+Re-test **FK-7** — "the tutorial run dies within ~1–5 minutes" — on the tutorial route, using the
+instruments built in S111. The previous session did not touch the tutorial; it spent 224 launches on
+the **menu** route establishing *why the process dies*, and the answer invalidates most of FK-7's
+evidence base.
 
-The full root-cause analysis from the prior session: SUPERVIVE's `Loki/AssetRegistry.bin` already contains every asset with its full class and path. UE5's standard `UAssetManager::ScanPathsForPrimaryAssets` matches assets to primary-asset types by directory + base class (NOT by a baked tag). So the data needed to register every primary asset is PRESENT in the registry. The blocker is that the game's custom `LokiAssetManager` registers primary assets ONLY from the content-service manifest's 11 named maps and NEVER runs the standard config-driven directory scan. The native shim approach to trigger that scan at runtime got as far as running on the real game thread via APC but the scan function itself crashes with a stack-cookie failure pattern — uncatchable without a kernel debugger.
+**Read first, in this order:**
+1. `docs/s111-SUMMARY.md` — what was established, what shipped, the rules it added.
+2. `docs/s111-FK7-HANDOFF.md` — **the audit findings that this task depends on. Start here for the plan.**
+3. `docs/fk7-crash-settled.md` §0 (governing) — but note its S111 corrections banner near the
+   173–201 s table, including a **retraction of a retraction** (see below).
+4. `CLAUDE.md` → "Before touching anything tutorial- / FK-7- / FK-24-shaped".
 
-The repack route sidesteps the runtime problem entirely. If we can encode the missing primary-asset registrations directly into `AssetRegistry.bin`, the game picks them up during its NORMAL startup — same code path that already works for the 11 manifest-driven types. No injection. No shim. Just a data file change.
+## The one thing that changes everything
 
-### Confirmed facts (DO NOT re-verify; treat as ground truth)
+**`tutorial_launch.cpp:6511-6513` (RM_PLAY) installs a 5-byte `.text` patch at `ProcessInternal` and
+holds it for 600 seconds** — `g_done` is never set in RM_PLAY, so it stands for the whole run.
 
-- `AssetManagerClassName=/Script/Loki.LokiAssetManager` in `Loki/Config/DefaultEngine.ini`.
-- `[/Script/Engine.AssetManagerSettings]` in `Loki/Config/DefaultGame.ini` declares the right `PrimaryAssetTypesToScan` entries (Hero/Mission/MissionPool/Item/Emote/StoreOffer/etc.) with `bShouldManagerDetermineTypeAndName=True`. So in stock UE this would Just Work; the override skips it.
-- `ContentServiceContentManifest` has exactly 11 maps: Heroes, Items, Emotes, PlayerTitles, HeroCosmeticsBundles, StoreOffers, SlotCosmetics, Minions, GameAugments, Equipment, Powers. No mission map. Schema dump at `tools/extractor/out/schema_ContentServiceContentManifest.txt`.
-- `ContentServicePrimaryAsset` schema: `{Str PrimaryAssetType, PrimaryAssetName, AssetPath, Status; Bool IsDefault}` (flat strings + one bool). Schema dump at `tools/extractor/out/schema_ContentServicePrimaryAsset.txt`.
-- The manifest CONSUMER keys the registered PrimaryAssetType off the MAP NAME, not each entry's PrimaryAssetType field. This was confirmed by two probes from inside `handleContentManifest` in `server/internal/menu/menu.go`.
+S111 measured, one variable at a time, that **a standing `.text` write is what makes the anti-tamper
+protector kill the process**: patch standing **11/12** deaths vs no patch **0/5**, p = 0.00097. A
+*permanent* patch to heap **bytecode** is free (0/9); it is the **module image** specifically.
 
-### What to do
+So every FK-7 sitting ever run carried, for its entire duration, the exact condition measured at
+**~88 % lethal**. The 600 s window brackets the whole observed FK-7 death spread (87–524 s).
+Two independent audits reached this conclusion separately.
 
-1. **Read what already exists.** Walk `tools/extractor/extractor/` — it's a .NET 9 CUE4Parse-based tool. CUE4Parse has full `FAssetRegistryState` parsing. Check whether it can already deserialize `AssetRegistry.bin`. If yes, our path is: load the file via CUE4Parse, inspect the structure, modify entries in-memory, re-serialize. If not, we'll need to either extend CUE4Parse usage or write our own parser in Go (parallel to `tools/usmapdump`).
+**⇒ The primary hypothesis is that FK-7 is largely our own PI hook.** Your job is to test that, not
+to assume it.
 
-2. **Understand the format.** UE5 `FAssetRegistryState::Serialize` writes:
-   - `FAssetRegistryHeader` (magic + version + flags + sub-counts)
-   - Name table
-   - Tag table (FAssetData tag map keys)
-   - `TArray<FAssetData>` — each entry has `ObjectPath`, `PackagePath`, `AssetClass`, `Tags` map, `ChunkIDs`, `PackageFlags`. The `Tags` are FName→FString.
-   - `TArray<FDependsNode>` — dependency graph
-   - `TArray<FAssetPackageData>` — package-level metadata
-   The header magic is `0x35DB1E54` ("hash of asset registry" or similar) in some versions; the actual constant lives in UE source.
+## What survives of FK-7 (audited)
 
-3. **Confirm the registration mechanism.** Two competing hypotheses to test:
-   - **(A) Tag-based**: a specific tag on `FAssetData` (e.g. `"PrimaryAssetType"`) makes the asset register as a primary asset of that type, regardless of the directory walk. Test by reading existing manifest-registered assets in the registry — if they have such a tag, this is the path.
-   - **(B) Directory-walk-only**: primary-asset registration ONLY happens via the `PrimaryAssetTypesToScan` directory walk + per-asset `GetPrimaryAssetId()` call at runtime. In that case, the bin alone isn't enough; we'd need to verify whether the override actually skips the directory walk or whether it's running but finding nothing. We can test by checking whether ANY primary asset (e.g. a Hero) is registered via the directory walk in the current game session — if Hunters grid renders even without the manifest registering them, the walk IS running and we have a different problem.
+- **11 death records** survive every contamination filter. **Ten are one 15-hour stretch in
+  2026-07-24→26** (nine inside a single 2 h 55 m sitting); exactly **one** — `UECC-C13252F5`, 258 s,
+  2026-08-05 — is from the current era.
+- **All 11 are shim-mediated.** `log_forceopen_tutorial_url == 2` in 15/15 — **there is not one
+  shim-free tutorial run anywhere in the corpus.**
+- The **camera family** identification is the most robust thing in the record and survives intact:
+  the corrupted `ViewTarget.Target` is **the shim's own spawned camera actor**, proven by the
+  shim-private constant `KCAMPITCH -66.0` recovered from crash memory. Note that this is evidence
+  *against* a game defect. The **writer of the `0x01` byte is still unnamed**, and the leading
+  unexplored suspect is our own shim's diagnostic block.
+- **"Deterministic, not flaky" is retracted.** ~10 deaths / 49 staged force-opens at the era-B boot
+  base ≈ **20 %**; era-C ≈ 6 %. The quoted "4 launches / 4 crashes" is a 4-run sample from one sitting.
 
-4. **Round-trip first.** Build a parser that reads `tools/extractor/out/AssetRegistry.bin`, fully deserializes, then re-serializes to a different file. Hash-compare. This proves we understand the format completely before we modify anything.
+## ⚠ A correction the previous session had to make about itself
 
-5. **Smallest viable mutation.** Add the minimum to make ONE asset (e.g. `DA_MissionPoolDailyChallenge`) register as a `MissionPool` primary asset. Write to a copy. Replace the install's `Loki/AssetRegistry.bin` (BACK UP FIRST — there's only one copy at `G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\AssetRegistry.bin`). Launch via `configs/launch-redirect.ps1`. Open the Missions modal. Read `%LOCALAPPDATA%\SUPERVIVE\Saved\Logs\Loki.log` for `LogAssetManager` lines. Success = no "Invalid Primary Asset Id MissionPool:DA_MissionPoolDailyChallenge" error AND the modal shows the daily mission.
+S111 claimed `0x3494B40` was "the tick task-graph dispatcher, **not** animation code". **That was
+wrong and is retracted.** It quoted 2 of the function's 4 string literals and dropped
+`"[PreviousMarker %s, NextMarker %s]"` (×2) — unambiguously **animation marker sync**. S106's original
+`FAnimSync::TickAssetPlayerInstances` **stands**. Only this survives: `0x3495973` and `0x349596d` are
+the **same function** (one family member, not two). Verify with
+`python tools/strxref/strxref.py func 0x3495973` — **and read all four literal lines.**
 
-### Files / locations you'll need
+## Use subagents — maximum 3, and only where they pay
 
-- `tools/extractor/out/AssetRegistry.bin` — safe working copy
-- `G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\AssetRegistry.bin` — game install (BACK UP BEFORE TOUCHING)
-- `tools/extractor/extractor/` — CUE4Parse-based extractor
-- `tools/extractor/out/DefaultGame.ini` — full `PrimaryAssetTypesToScan` registry
-- `tools/extractor/out/catalog/da/DA_MissionPool*.json` — all 16 mission pool assets dumped
-- `tools/extractor/out/catalog/da/DA_Mission_*.json` — ~330 mission assets dumped
-- `tools/extractor/mappings.usmap` — usmap if structured access needed
-- `tools/inject/shim/scan_shim.cpp` — abandoned native shim, keep, do not touch
-- Memory: `C:\Users\eastr\.claude\projects\G--git-Supervive-Revival-Project\memory\supervive-milestone3-trackb-status.md`
+Run them in parallel, then synthesise yourself. Do **not** let a subagent launch the game, inject
+anything, or modify files — live runs are sequential and must stay under your control.
 
-### Constraints
+- **Agent 1 — build the non-`.text` RM_PLAY variant.** Implement the `UFunction.Func` (+0xE0) pointer
+  swap described in `docs/s111-FK7-HANDOFF.md` §3, as a registered `build.ps1` variant, default OFF.
+  The shim already *reads* that field for its native-call primitive; writing it is the mirror
+  operation and the target is heap. Must produce a distinct `.text` sha256 and pass `verify_dll.py`.
+- **Agent 2 — pre-flight the sitting.** Execute the checklist in `docs/s111-FK7-HANDOFF.md` §5 and
+  report OK / NEEDS ACTION per item. Several items will waste a launch if missed.
+- **Agent 3 — post-mortem each death.** Classify by fault family (`tools/crashtri/fk8_classify.py`),
+  read the staged markers, and report whether the death is ours or the game's.
 
-- Always back up `AssetRegistry.bin` before replacing the install copy. There's no second source.
-- `configs/launch-redirect.ps1` requires admin; the elevated PowerShell tool in this session can run it directly. The hosts file briefly locks (Defender scanning); just wait ~15s and retry.
-- After each game crash, ports 8080/443 sometimes stay bound; killing `ags.exe`/`go.exe` + a brief wait clears them.
-- Each test cycle = ~1 minute (launch + reach menu + open modal + close).
+## The experiment
 
-### If you hit a wall
+**One variable: whether a standing `.text` patch is present.** Everything else identical.
 
-Save findings to the trackb-status memory file before pivoting. The most likely thing wrong with this plan is hypothesis (A) above — the manifest-driven path may use a totally different mechanism than `FAssetData` tagging, in which case the next-best path is to RE the manifest consumer's code path inside `LokiAssetManager` (RVA-relative, addresses already partially documented in memory) to learn what data structure it actually populates, then synthesize equivalent state directly via either a tiny VirtualProtect+memcpy from a SECOND shim attempt, OR by understanding what file the manifest gets persisted to and modifying THAT instead of `AssetRegistry.bin`.
+| arm | probe | prediction |
+|---|---|---|
+| **control** | current `build\tutorial_launch_play.dll` (600 s standing patch) | dies at the historical FK-7 rate |
+| **treatment** | the non-`.text` variant from Agent 1 | if FK-7 is ours, deaths drop sharply |
+
+~10 armed windows per arm. **Classify every death by fault family before counting it** — protector
+(`RIP == runtime.dll base + 1`, EXECUTE, `ExceptionInformation[0]==8`) is **ours**, not FK-7.
+**Never classify by elapsed time.**
+
+If Agent 1's variant is not viable, fall back to `-DKPLAYHOLDMS=<ms>` to shrink the 600 s window to
+the experiment length — strictly worse, but a one-line change that still moves the variable.
+
+## Rules that cost real launches when ignored
+
+1. **A quiet control is VOID, not a pass.** This cost a whole void A/B in S111 before the positive
+   control was made to fire.
+2. **Verify injection positively, every run.** The `-Hook` path silently fails **~1 in 10**. Require
+   `docs/inject-watch.out.log` to change *and* name the DLL, or require the shim's own marker stamp.
+3. **Diff `.text` sha256, never file size.** The *deployed* `tutorial_launch_play.dll` is byte-identical
+   to `play_statictest` — **use the `build\` path.** Two S111 variants shared file *and* `.text` size
+   while differing in hash.
+4. **Delete `docs/tutorial-launch-marker.txt` before staging.** It currently contains a stale
+   `[SP] done step=4`, and `Stage-Inject` never checks `inject.exe`'s exit code — a failed `sp`
+   injection would satisfy the gate instantly and arm the probe with no possessed hero.
+5. **Anchor the hold to `Load map complete …/LVL_Tutorial`, not `T+<n>`.** The launch clock carries the
+   operator's staging schedule (drifted +33.0 s July→August).
+6. **Archive labels are not authoritative** — `archive-crashdumps.ps1` snapshots the whole crashpad DB
+   *before* a launch under the *upcoming* run's label. The `RESULT` lines are the record.
+7. **`gft_ready_fix` writes nothing to the module image** — but its object walk uses the same
+   check-then-dereference TOCTOU that caused the `0x205d` deaths. Classify its faults out too.
+
+## Success criteria
+
+You are done when you can say, with a stated denominator and a fault-family breakdown, **either**:
+
+- *"FK-7 is substantially our own `.text` patch"* — treatment arm's death rate drops significantly
+  versus control; **or**
+- *"A tutorial-specific game defect survives"* — deaths persist in the treatment arm with SUPERVIVE
+  frames on the faulting stack and no self-inflicted signature. **That dump does not currently exist
+  anywhere in the corpus, and producing one would be the first real FK-7 evidence in the project.**
+
+"Inconclusive at this N" is an acceptable and honest outcome — say it plainly rather than rounding a
+p-value. Set `forceTutorialMatch` back to `false` when done.

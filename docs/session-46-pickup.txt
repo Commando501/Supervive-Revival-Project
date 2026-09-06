@@ -1,0 +1,159 @@
+SESSION 46 PICKUP — the hero grid's DATA IS 100% CORRECT AND PRESENT.
+The empty ALL HUNTERS grid is a UI DISPLAY-LOGIC filter, NOT a data/backend/crash problem.
+Copy this whole file into a fresh Claude session's first message.
+Repo: G:\git\Supervive Revival Project — branch dedicated-server-stub.
+==============================================================================
+
+=========================== TL;DR (read this twice) =========================
+Session 45 overturned the framing AGAIN — but this time toward a HOPEFUL, near-done
+conclusion. The 25 heroes ARE in the game's live CatalogManager, as CatalogEntry objects,
+CORRECTLY KEYED (their FName index+number match the grid's enumeration byte-for-byte, 25/25).
+So the empty grid is NOT: a crash, not ownership/purchase, not a server trigger, not the
+content-manifest, not a key/case mismatch, not missing IoStore data — ALL of those were
+tested and FALSIFIED across sessions 39-45. **The empty ALL HUNTERS grid is pure UI DISPLAY
+LOGIC: a widget filter hides data that is already present and already correct.**
+
+The remaining task (S46) is UI reverse-engineering: find the UMG widget that renders the
+VISIBLE ALL HUNTERS grid and the exact filter/condition it uses to build tiles. The data it
+needs is 100% present in CatalogManager. This is the last mile of an 11-session blocker.
+
+DO NOT re-chase the data/backend/manifest/crash theories. They are dead (see below).
+
+=========================== WHAT IS PROVEN (session 45) =====================
+1. THE "HERO-CONTENT-LOAD CRASH" IS NOT A CRASH. Ran the capture (scan_on_enum_veh.dll, a VEH
+   crash logger). With scan early-injected (enum=25, heroes resolve+load) the client is STABLE
+   at the menu >10 min; veh-crash-marker.txt EMPTY. The S44 "crash sequence" (GameplayCue load
+   -> InvalidateAllWidgets -> Audio unregister 'None' -> Compacting FUObjectHashTables) is
+   NON-FATAL load/teardown that the game runs straight past. S44's "empty grid + D3D12 crash are
+   one wall" is WRONG.
+2. PURCHASE/OWNERSHIP: dead. The grid is EMPTY (no tiles), not greyed "unlock me" tiles.
+3. SERVER-TRIGGER: falsified via its two concrete levers (both null on the live client):
+   - /content-service/manifest hero-entry SHAPE, tried EMPTY + wrong-shape + correct-shape-with-
+     AssetPath (found the real ContentServicePrimaryAsset model {PrimaryAssetType,PrimaryAssetName,
+     AssetPath,Status,IsDefault}). Null-loads stayed 8, NameData stayed 2, grid stayed empty
+     (user-confirmed). Re-confirms menu.go probe #2 (2026-06-28). Capture.log: the client fetches
+     the manifest ONLY with ?nonEnabledOnly=true, 3222x tight loop, never the full manifest.
+   - /core-game/players ContentServiceContentManifest ref: null (client already knows the version).
+4. THE GRID FILTER, READ FROM THE MACHINE CODE (trace_caller.cpp + usmapdump disasm of the live
+   process): the ALL HUNTERS populate loop (caller-1 @ +0x562EBF7) enumerates 25 hero ids via
+   GetPrimaryAssetIdList(Hero) [slot 110], then per id calls a per-hero lookup (+0x57AB3C0) into
+   an object r14; if null -> drop; else two byte-flag gates ([entry+0xd0]/[entry+0xd2], display-
+   mode dependent). It never calls GetPrimaryAssetObject(Hero) (0 calls).
+5. r14 = **CatalogManager** (captured live via probe_r14.cpp: r14->Name and r14->Class both
+   "CatalogManager"; vtable RVA +0x8831758; r14 = Singleton(+0x565E1C0)->[0x1f0]->[0x190]).
+   Its +0x60 TMap<FPrimaryAssetId, CatalogEntry*> is the master content catalog (~905 entries:
+   536 SlotCosmetics, 331 Emote, **25 HERO**, StoreOffer, LobbyPlatform, GameFeature, Core=
+   BP_LokiHeroSelectPreview_UnknownHero="?"). ALL 25 HEROES ARE IN THE CATALOG.
+6. KEYS MATCH (no data problem): the AssetManager (0x18BA835EE90, AssetTypeMap Num=30) Hero
+   AssetMap (td+0x178, 25 keys) vs the catalog Hero keys — FName (index+number) match 25/25,
+   diff=0. Mixed display casing (SHIELDBOT/assault/Alchemist) is just first-registration canonical
+   strings; the comparison indices are identical. The grid enumerates EXACTLY the keys the catalog
+   is keyed under.
+=> The heroes are present and correctly keyed; the lookup HITS. The empty grid is downstream UI
+   display logic, not data.
+
+=========================== THE REMAINING WALL (S46 target) =================
+Find the UMG widget that renders the VISIBLE ALL HUNTERS grid, and the filter/branch that decides
+which enumerated+found heroes become tiles. Caveat: we poked all 25 hero CatalogEntry+0xd0=1 in the
+live process and the visible grid STILL stayed empty (even after navigating away/back). So EITHER
+caller-1 (+0x562EBF7) is NOT the visible grid's populate path (the visible tiles may be built by
+caller-2's CALLER — caller-2 @ +0x3965BF6 just FETCHES the id list + cleans up + returns, so its
+CALLER consumes the list and was never traced), OR the grid caches its built tile list, OR a
+different display mode. Pin the actual visible-grid widget + its tile-build condition.
+
+Leads for S46:
+- The widget is a UUserWidget (UMG). Search FNamePool / GUObjectArray (usmapdump nameid / extract)
+  for WBP_*Hunter*, *Roster*, *HeroGrid*, *HeroSelect*, *AllHunters* class/asset names; find the
+  live instance; RE its Construct/Tick/Refresh + the function that iterates the enumerated heroes
+  into tile widgets. That function's filter is the gate.
+- OR trace caller-2's CALLER: caller-2 (+0x3965BF6) writes the enumerated id list to an out-param;
+  find who calls caller-2 and consumes the list to build tiles.
+- The data is already correct in CatalogManager, so the fix is likely: flip a widget/entry display
+  flag, satisfy a filter predicate the widget runs, or an availability/season/roster gate on the
+  widget side (NOT the CatalogEntry+0xd0 we already tried on caller-1's path).
+
+=========================== READ THESE FIRST, IN ORDER ======================
+1. CLAUDE.md — project rules, launch gotchas, DO-NOT list.
+2. memory/supervive-hero-roster-blocker.md — TOP entry is the S45 CatalogManager reframe.
+3. docs/session-45-crash-capture-tooling-and-gate.txt — THE key doc. Full chain, all offsets,
+   every falsification, the CatalogManager finding, the key-match proof, the reframe.
+4. docs/session-44-grid-datapath-SOLVED-crash-is-the-wall.txt — S44 (now partly superseded: the
+   "crash is the wall" verdict is WRONG per S45; but the scan/enumeration RE is still valid).
+
+=========================== GROUND-TRUTH OFFSETS (this build) ================
+Module base 0x7FF682A80000 has been CONSTANT across every run this session (no ASLR rebase) — RVAs
+map to absolute directly; still re-verify if the game updates.
+  LokiAssetManager vtable          = RVA +0x888CB78  (abs 0x7FF68B30CB78; 2 instances via findptr;
+                                     the real one has AssetTypeMap Num=30 @ mgr+0x478)
+  GetPrimaryAssetIdList (slot 110) = RVA +0x34BF320 ; ScanPathsForPrimaryAssets (slot 88) +0x34CF9F0
+  Hero FName id 0x1A568 ; AssetTypeMap @ mgr+0x478 (stride 0x20: key FName@0, td@+8);
+  Hero AssetMap @ td+0x178 (25 keys) ; GGameThreadId +0x9D49158 ; &FNamePool.Blocks[0] +0x9D81450
+  Grid populate (caller-1) GetIdList call @ +0x562EBF7 (ret +0x562EBFE); per-hero lookup +0x57AB3C0
+  2nd GetIdList caller (caller-2, fetch+return) @ +0x3965BF6 (ret +0x3965BFC)
+  CatalogManager vtable RVA +0x8831758 ; getter chain: Singleton(+0x565E1C0)->[0x1f0]->[0x190]=r14
+  catalog map @ r14+0x60 (stride 0x20: key FPrimaryAssetId@+0 = {typeFName,nameFName}; value@+0x10)
+  CatalogEntry: hero name FName @ +0xc8 ; display-flag bytes @ +0xd0 / +0xd1(=2) / +0xd2
+
+=========================== TOOLING BUILT (this build; DLLs gitignored, rebuild) ====
+clang++ at C:\Users\eastr\AppData\Local\Programs\Swift\Toolchains\6.3.2+Asserts\usr\bin\clang++.exe
+  tools/sigbypass-mod/scan_on_enum_veh.cpp  — scan (enum->25) + read-only VEH crash logger
+    (docs/veh-crash-marker.txt). Build: clang++ -shared -O2 <f>.cpp -o <f>.dll -lkernel32
+  tools/sigbypass-mod/trace_caller.cpp — vtable-slot tracer that captures the CALLER return addr of
+    the AssetManager query virtuals (how we found caller-1/caller-2). Marker docs/trace-caller-marker.txt
+  tools/sigbypass-mod/probe_r14.cpp — scan + JIT-patch caller-1's `call +0x57AB3C0` site to a
+    near-allocated log-stub that captures r14 + dumps the +0x60 map. Marker docs/probe-r14-marker.txt.
+    (This is the model for a caller-2-consumer / widget capture.)
+  scratchpad/*.py — ctypes RPM readers + FNamePool resolver (recreate; base+0x9D81450 blocks; FName
+    id -> block=id>>16, off=(id&0xFFFF)<<1, Len10 header len=hdr>>6). r14.py / r14flags.py / keys.py /
+    scan.py / poke.py did: identify r14, dump catalog, diff enum-vs-catalog keys, poke a flag.
+  tools/usmapdump/usmapdump.exe — read-only RPM: disasm/peek/findptr/nameid/vtdump/xrefstr/callxref
+    (disasm the LIVE process so packed .text is decrypted; run WITH the scan so hero-path code decrypts).
+    poke = WPM (non-elevated). tools/inject (watch/mmap, non-elevated).
+
+=========================== THE LIVE TEST CYCLE (memorize) ===================
+Steam must be running first (else Auth Failure 14005). Hosts entries + certs already in place.
+Module base + all RVAs are stable across runs. Heap pointers (r14, catalog Data, CatalogEntry vals,
+AssetManager instances) are PER-RUN — re-derive each launch (findptr the CatalogManager vtable
+0x7FF68B30CB78-style, or re-run probe_r14).
+```powershell
+# 0. kill game + injectors (leave Steam; ags can stay or restart)
+Get-Process 'SUPERVIVE-Win64-Shipping',inject,crashpad_handler -EA SilentlyContinue | Stop-Process -Force
+# 1. injector FIRST, correctly quoted (Start-Process -ArgumentList arrays do NOT quote a
+#    space-containing DLL path -> inject prints usage + exits; pass ONE string with the path quoted):
+$dll="G:\git\Supervive Revival Project\tools\sigbypass-mod\<dll>"
+Start-Process 'G:\git\Supervive Revival Project\tools\inject\inject.exe' `
+  -ArgumentList "watch SUPERVIVE-Win64-Shipping.exe `"$dll`" 0x3EC57D0 40555356574154415541564157"
+# 2. launch the recon client (redirects, no stub):
+powershell -ExecutionPolicy Bypass -File "configs\launch-recon.ps1"
+```
+INJECT BEFORE launching the game — GetPrimaryAssetIdList(Hero) runs during INITIAL asset load, not
+at the "Unlockable heroes fetched" menu-load moment; a late inject misses it. Client log:
+C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log (truncated per run).
+Computer-use / visual: the user can navigate the menu (synthetic clicks were blocked — session
+appeared locked); ask THEM to open HUNTERS + report. Un-hook/un-patch any .text mods within ~28s
+(code-integrity check crashes ~3-5 min in; scan_on_enum_veh + probe_r14 already self-clean).
+
+=========================== BACKEND STATE / CLEANUP =========================
+- The committed source (server/internal/menu/menu.go, interactive/interactive.go) is CLEAN (the
+  S45 manifest-AssetPath and core-game probes were REVERTED after they came back null).
+- server/ags-s45.exe (HEAD) is staged; the running backend this session was ags-s45c.exe (has the
+  reverted-in-source manifest probe still compiled in — harmless, but for a clean run rebuild:
+  `go build -C server -o ags.exe ./cmd/ags` and run server\ags.exe from server\ , or run ags-s45.exe).
+- Left running at session end: the injected recon client (probe_r14, self-cleaned) + ags-s45c. Kill
+  them for a fresh cycle.
+
+=========================== WHAT NOT TO DO ==================================
+- Don't re-chase DATA theories: the crash, ownership/purchase, the server manifest (3 shapes tried),
+  core-game, AssetManager registration/enumeration, key/case matching — ALL falsified. The heroes are
+  PRESENT and CORRECTLY KEYED in CatalogManager. The wall is UI display logic.
+- Don't re-poke CatalogEntry+0xd0 on caller-1's path — tried, no effect on the visible grid.
+- Don't trust scan_on_browse.dll (S43 verdict was wrong). Use scan_on_enum(_veh).
+- Don't leave a vtable-slot/call-site/.text patch installed long (integrity crash ~3-5 min); un-hook.
+- Don't send -LogCmds expecting Verbose (shipping build; compiled out). Use hooks/RPM/disasm.
+- Don't run launch-redirect.ps1 (regenerates certs + rewrites hosts). Steam must be up first.
+
+=========================== WRAP-UP EXPECTATIONS ============================
+Write a docs/session-46-*.txt evidence log. Update memory/supervive-hero-roster-blocker.md (top entry)
++ the MEMORY.md index line. Commit as you go (small single-purpose commits). If S46 finds the visible-
+grid widget + its filter and makes even ONE hero tile render, that is the first-ever visual confirmation
+and effectively closes the 11-session blocker — the data is already all there.

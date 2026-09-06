@@ -1,0 +1,15 @@
+# Build output. Source is the deliverable; every DLL here is reproducible from its .cpp via
+# build.ps1 (see BUILD.md), so binaries are deliberately NOT tracked -- a stale committed .dll
+# that silently disagrees with its source is worse than no .dll at all.
+*.dll
+*.exp
+*.lib
+*.obj
+*.pdb
+*.ilk
+
+# default -OutDir for build.ps1
+build/
+
+# ad-hoc compiler logs
+build_err.txt

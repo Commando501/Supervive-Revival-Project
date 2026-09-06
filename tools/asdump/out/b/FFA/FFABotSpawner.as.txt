@@ -1,0 +1,334 @@
+// ============================================================================
+//  MODULE   FFA.FFABotSpawner
+//  SOURCE   FFA/FFABotSpawner.as
+//  CONTENT  1 class(es), 9 function(s), 0 enum(s), 1 global(s), 1404 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UFFABotSpawnerComponent;
+
+UFFABotSpawnerComponent@ UFFABotSpawnerComponent()   // traits=0x20
+{
+    v2 = UFFABotSpawnerComponent();
+    return v2;
+}
+/* ---- UFFABotSpawnerComponent: 7 dwords / 4 instructions (cache offset 0x71f03) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84838 UFFABotSpawnerComponent               
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ UFFABotSpawnerComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UFFABotSpawnerComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x71fc7) ----
+    0000  PshGPtr       __StaticType_UFFABotSpawnerComponent        
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UFFABotSpawnerComponent@ UFFABotSpawnerComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UFFABotSpawnerComponent, v2, typeid(UFFABotSpawnerComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x72108) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972683                                    ; UFFABotSpawnerComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UFFABotSpawnerComponent        
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UFFABotSpawnerComponent@ UFFABotSpawnerComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UFFABotSpawnerComponent, v2, typeid(UFFABotSpawnerComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x72261) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972683                                    ; UFFABotSpawnerComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UFFABotSpawnerComponent        
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UFFABotSpawnerComponent@ UFFABotSpawnerComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UFFABotSpawnerComponent, v2, typeid(UFFABotSpawnerComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x723b5) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972683                                    ; UFFABotSpawnerComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UFFABotSpawnerComponent        
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UFFABotSpawnerComponent : ULokiBotSpawnerComponent
+// unreal base : /Script/Loki.LokiBotSpawnerComponent
+// C++ header  : ../../../Loki/Source/Loki/AI/Bots/LokiBotSpawnerComponent.h
+// static class global: __StaticType_UFFABotSpawnerComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<FPrimaryAssetId> AvailableBots;
+
+    UFFABotSpawnerComponent()   // traits=0x21
+    {
+        this.AvailableBots = TArray();
+        return;
+    }
+    /* ---- UFFABotSpawnerComponent: 11 dwords / 6 instructions (cache offset 0x72d8f) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         464 134230859                                 ; .AvailableBots
+        000C  CALLSYS       TArray::$beh0                               
+        0018  PshVPtr       this                                        
+        001C  FinConstruct  UFFABotSpawnerComponent                     
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        v4 = FPrimaryAssetId("Hero:assault");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:firefox");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:freeze");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:sniper");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:flex");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:hookguy");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:rocketjumper");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:Storm");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:BurstCaster");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:BountyHunter");
+        this.AvailableBots.Add(v4);
+        v8 = TArray();
+        v14 = this.AvailableBots.Iterator();
+        while (true) {
+            v21 = v14.CanProceed;
+            if (!v21) break;
+            v24 = v14.Proceed();
+            v26 = true;
+            v25 = v26;
+            v30 = ULokiAssetLoader::GetHeroAssetFromPrimaryAssetId(__WorldContext, v24, v25);
+            v31 = int(v25);
+            if (v31 != 1) {
+                v36 = System::LoadClassAsset_Blocking(v30.GameplayBlueprint);
+                v34 = TSubclassOf();
+                v34 = v36;
+                if (v34.IsValid()) {
+                    v8.Add(v34);
+                }
+            }
+        }
+        this.SetSpawnableBots(v8);
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 266 dwords / 139 instructions (cache offset 0x72544) ----
+        0000  PGA           "Hero:assault"                              
+        000C  PSF           v4                                          
+        0010  CALLSYS       FPrimaryAssetId::$beh0                      
+        001C  PSF           v4                                          
+        0020  PshVPtr       this                                        
+        0024  ADDSi         464 134230859                                 ; .AvailableBots
+        002C  CALLSYS       TArray::Add                                 
+        0038  PSF           v4                                          
+        003C  CALLSYS       FPrimaryAssetId::$beh2                      
+        0048  PGA           "Hero:firefox"                              
+        0054  PSF           v4                                          
+        0058  CALLSYS       FPrimaryAssetId::$beh0                      
+        0064  PSF           v4                                          
+        0068  PshVPtr       this                                        
+        006C  ADDSi         464 134230859                                 ; .AvailableBots
+        0074  CALLSYS       TArray::Add                                 
+        0080  PSF           v4                                          
+        0084  CALLSYS       FPrimaryAssetId::$beh2                      
+        0090  PGA           "Hero:freeze"                               
+        009C  PSF           v4                                          
+        00A0  CALLSYS       FPrimaryAssetId::$beh0                      
+        00AC  PSF           v4                                          
+        00B0  PshVPtr       this                                        
+        00B4  ADDSi         464 134230859                                 ; .AvailableBots
+        00BC  CALLSYS       TArray::Add                                 
+        00C8  PSF           v4                                          
+        00CC  CALLSYS       FPrimaryAssetId::$beh2                      
+        00D8  PGA           "Hero:sniper"                               
+        00E4  PSF           v4                                          
+        00E8  CALLSYS       FPrimaryAssetId::$beh0                      
+        00F4  PSF           v4                                          
+        00F8  PshVPtr       this                                        
+        00FC  ADDSi         464 134230859                                 ; .AvailableBots
+        0104  CALLSYS       TArray::Add                                 
+        0110  PSF           v4                                          
+        0114  CALLSYS       FPrimaryAssetId::$beh2                      
+        0120  PGA           "Hero:flex"                                 
+        012C  PSF           v4                                          
+        0130  CALLSYS       FPrimaryAssetId::$beh0                      
+        013C  PSF           v4                                          
+        0140  PshVPtr       this                                        
+        0144  ADDSi         464 134230859                                 ; .AvailableBots
+        014C  CALLSYS       TArray::Add                                 
+        0158  PSF           v4                                          
+        015C  CALLSYS       FPrimaryAssetId::$beh2                      
+        0168  PGA           "Hero:hookguy"                              
+        0174  PSF           v4                                          
+        0178  CALLSYS       FPrimaryAssetId::$beh0                      
+        0184  PSF           v4                                          
+        0188  PshVPtr       this                                        
+        018C  ADDSi         464 134230859                                 ; .AvailableBots
+        0194  CALLSYS       TArray::Add                                 
+        01A0  PSF           v4                                          
+        01A4  CALLSYS       FPrimaryAssetId::$beh2                      
+        01B0  PGA           "Hero:rocketjumper"                         
+        01BC  PSF           v4                                          
+        01C0  CALLSYS       FPrimaryAssetId::$beh0                      
+        01CC  PSF           v4                                          
+        01D0  PshVPtr       this                                        
+        01D4  ADDSi         464 134230859                                 ; .AvailableBots
+        01DC  CALLSYS       TArray::Add                                 
+        01E8  PSF           v4                                          
+        01EC  CALLSYS       FPrimaryAssetId::$beh2                      
+        01F8  PGA           "Hero:Storm"                                
+        0204  PSF           v4                                          
+        0208  CALLSYS       FPrimaryAssetId::$beh0                      
+        0214  PSF           v4                                          
+        0218  PshVPtr       this                                        
+        021C  ADDSi         464 134230859                                 ; .AvailableBots
+        0224  CALLSYS       TArray::Add                                 
+        0230  PSF           v4                                          
+        0234  CALLSYS       FPrimaryAssetId::$beh2                      
+        0240  PGA           "Hero:BurstCaster"                          
+        024C  PSF           v4                                          
+        0250  CALLSYS       FPrimaryAssetId::$beh0                      
+        025C  PSF           v4                                          
+        0260  PshVPtr       this                                        
+        0264  ADDSi         464 134230859                                 ; .AvailableBots
+        026C  CALLSYS       TArray::Add                                 
+        0278  PSF           v4                                          
+        027C  CALLSYS       FPrimaryAssetId::$beh2                      
+        0288  PGA           "Hero:BountyHunter"                         
+        0294  PSF           v4                                          
+        0298  CALLSYS       FPrimaryAssetId::$beh0                      
+        02A4  PSF           v4                                          
+        02A8  PshVPtr       this                                        
+        02AC  ADDSi         464 134230859                                 ; .AvailableBots
+        02B4  CALLSYS       TArray::Add                                 
+        02C0  PSF           v4                                          
+        02C4  CALLSYS       FPrimaryAssetId::$beh2                      
+        02D0  PSF           v8                                          
+        02D4  CALLSYS       TArray::$beh0                               
+        02E0  PSF           v14                                         
+        02E4  PshVPtr       this                                        
+        02E8  ADDSi         464 134230859                                 ; .AvailableBots
+        02F0  CALLSYS       TArray::Iterator                            
+        02FC  JMP           56                                            -> L03E4
+      L0304:
+        0304  SUSPEND                                                   
+        0308  PSF           v14                                         
+        030C  CALLSYS       TArrayIterator::Proceed                     
+        0318  CpyRtoV8      v24                                         
+        031C  SetV1         v26 1                                       
+        0324  CpyVtoV4      v25 v26                                     
+        032C  PSF           v25                                         
+        0330  PshVPtr       v24                                         
+        0334  PshGPtr       __WorldContext                              
+        0340  CALLSYS       GetHeroAssetFromPrimaryAssetId              
+        034C  STOREOBJ      v30                                         
+        0350  sbTOi         v31 v25                                     
+        0358  CMPIi         v31 1                                       
+        0360  JNZ           3                                             -> L0374
+        0368  FreeNullV8    v30                                         
+        036C  JMP           28                                            -> L03E4
+      L0374:
+        0374  PshVPtr       v30                                         
+        0378  ADDSi         120 67115174                                  ; .GameplayBlueprint
+        0380  CALLSYS       LoadClassAsset_Blocking                     
+        038C  STOREOBJ      v36                                         
+        0390  PshVPtr       v36                                         
+        0394  PSF           v34                                         
+        0398  CALLSYS       TSubclassOf::$beh0                          
+        03A4  PSF           v34                                         
+        03A8  CALLSYS       TSubclassOf::opAssign                       
+        03B4  PSF           v34                                         
+        03B8  CALLSYS       TSubclassOf::IsValid                        
+        03C4  JLowZ         5                                             -> L03E0
+        03CC  PSF           v34                                         
+        03D0  PSF           v8                                          
+        03D4  CALLSYS       TArray::Add                                 
+      L03E0:
+        03E0  FreeNullV8    v30                                         
+      L03E4:
+        03E4  LoadVObjR     v14 16 268448588                              ; .CanProceed
+        03F0  RDR1          v21                                         
+        03F4  CpyVtoR1      v21                                         
+        03F8  JLowNZ        -63                                           -> L0304
+        0400  PSF           v8                                          
+        0404  PshVPtr       this                                        
+        0408  CALLSYS       ULokiBotSpawnerComponent::SetSpawnableBots  
+        0414  PSF           v8                                          
+        0418  CALLSYS       TArray::$beh2                               
+        0424  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=GetNextTeamIndex, BlueprintOverride, BlueprintEvent, CanOverrideEvent, ConstMethod)
+    int GetNextTeamIndex_Implementation() const   // traits=0x24
+    {
+        v1 = this.SpawnedTeamCount;
+        v2 = v1 + 4;
+        return v2;
+    }
+    /* ---- GetNextTeamIndex_Implementation: 8 dwords / 5 instructions (cache offset 0x72c5a) ----
+        0000  LoadThisR     212 67114974                                  ; this.SpawnedTeamCount
+        0008  RDR4          v1                                          
+        000C  ADDIi         v2 v1 4                                     
+        0018  CpyVtoR4      v2                                          
+        001C  RET           2                                           
+    */
+
+    void ~UFFABotSpawnerComponent()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~UFFABotSpawnerComponent: 7 dwords / 4 instructions (cache offset 0x72e98) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         464 134230859                                 ; .AvailableBots
+        000C  CALLSYS       TArray::$beh2                               
+        0018  RET           2                                           
+    */
+
+}
+

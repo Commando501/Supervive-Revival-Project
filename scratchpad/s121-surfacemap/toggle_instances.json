@@ -1,0 +1,1230 @@
+[
+ {
+  "asset": "WBP_ActivityPickerScreen",
+  "instance": "ClientCustomGameListToggleOff",
+  "featureKey": "CustomGameList",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=ActivityTile_CustomGame <WBP_UI_ActivityTile_Default_C>",
+  "slot": "OverlaySlot_3 <OverlaySlot>",
+  "allprops": [
+   "DisabledVisibility[6]",
+   "EnabledVisibility[5]",
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_ActivityPickerScreen",
+  "instance": "ClientCustomGameListToggleOn",
+  "featureKey": "CustomGameList",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=WBP_CustomGameListScreen <WBP_CustomGameListScreen_C>",
+  "slot": "OverlaySlot_2 <OverlaySlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_BattlepassScreen",
+  "instance": "Battlepass_ConfigToggle_V2",
+  "featureKey": "SeasonalBattlepass",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=NavButton_BattlepassV2 <WBP_UI_NavBar_ButtonSecondaryV2_C>",
+  "slot": "HorizontalBoxSlot_2 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_BattlepassScreen",
+  "instance": "ReferAFriend_ConfigToggle_V2",
+  "featureKey": "ReferAFriend",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=NavButton_ReferAFriendV2 <WBP_UI_NavBar_ButtonSecondaryV2_C>",
+  "slot": "HorizontalBoxSlot_4 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_BattlepassSplash_Emote",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "EmoteSFX",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=WBP_Stylized_Button_Tertiary <WBP_Stylized_Button_Tertiary_C>",
+  "slot": "VerticalBoxSlot_2 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_Loadout_StyleScreen_VariantPicker",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "CosmeticEffectsOverride",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=WBP_Loadout_VariantPicker_Luxe <WBP_Loadout_VariantPicker_Luxe_C>",
+  "slot": "VerticalBoxSlot_4 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot",
+   "bIsVariable"
+  ]
+ },
+ {
+  "asset": "WBP_ProfileScreen",
+  "instance": "HighlightMoments_ClientConfigVisbilityToggleWidget",
+  "featureKey": "NeHighlightMoments",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=WBP_Button_HighlightMoments <WBP_Button_HighlightMoments_C>",
+  "slot": "SizeBoxSlot_0 <SizeBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_ProfileScreen",
+  "instance": "LeaderboardScreen_ConfigToggle",
+  "featureKey": "leaderboards",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=WBP_Leaderboard_Screens <WBP_Leaderboard_Screens_C>",
+  "slot": "WidgetSwitcherSlot_2 <WidgetSwitcherSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_ProfileScreen",
+  "instance": "NavLeaderboard_ConfigToggle_1",
+  "featureKey": "leaderboards",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=WBP_UI_NavBar_ButtonSecondaryV2_C_2 <WBP_UI_NavBar_ButtonSecondaryV2_C>",
+  "slot": "HorizontalBoxSlot_2 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot",
+   "bIsVariable"
+  ]
+ },
+ {
+  "asset": "WBP_UI_AccountSettingsPanel",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "discord",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=VerticalBox_Discord <VerticalBox>",
+  "slot": "VerticalBoxSlot_2 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_ArmoryCardSmall_Base",
+  "instance": "ArmoryNoProgression",
+  "featureKey": "ArmoryItemProgression",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=ItemLockedLevel <SizeBox>",
+  "slot": "OverlaySlot_5 <OverlaySlot>",
+  "allprops": [
+   "DisabledVisibility[6]",
+   "EnabledVisibility[5]",
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Asset_Preview_Emote_Details",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "EmoteSFX",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=Button_PlayAudio <WBP_Stylized_Button_Tertiary_C>",
+  "slot": "CanvasPanelSlot_3 <CanvasPanelSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Collection_ModalV2",
+  "instance": "ArmoryHeader",
+  "featureKey": "ArmoryItemProgression ",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=HorizontalBox <HorizontalBox>",
+  "slot": "OverlaySlot_2 <OverlaySlot>",
+  "allprops": [
+   "DisabledVisibility[6]",
+   "EnabledVisibility[5]",
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Collection_ModalV2",
+  "instance": "ArmoryHeaderWithProgression",
+  "featureKey": "ArmoryItemProgression ",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=HorizontalBox_0 <HorizontalBox>",
+  "slot": "OverlaySlot_1 <OverlaySlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Collection_ModalV2",
+  "instance": "ArmoryWithProgressionHelper",
+  "featureKey": null,
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=Helper <Overlay>",
+  "slot": "HorizontalBoxSlot_1 <HorizontalBoxSlot>",
+  "allprops": [
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Collection_Screen",
+  "instance": "ArmoryWithProgressionNav",
+  "featureKey": "ArmoryItemProgression",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=HorizontalBox <HorizontalBox>",
+  "slot": null,
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings"
+  ]
+ },
+ {
+  "asset": "WBP_UI_CoreGameScreenRoot",
+  "instance": "ClientConfigToggle_ChatContainer",
+  "featureKey": "ChatLobby",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=WBP_UI_Chat_V2_InGame <WBP_UI_Chat_V2_InGame_C>",
+  "slot": "CanvasPanelSlot_2 <CanvasPanelSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot",
+   "bIsVariable"
+  ]
+ },
+ {
+  "asset": "WBP_UI_EoG_Performance",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_BP",
+  "featureKey": "SeasonalBattlepass",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=WBP_UI_EOG_SeasonalBattlepassProgress <WBP_UI_EOG_SeasonalBattlepassProgress_C>",
+  "slot": "VerticalBoxSlot_3 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_ExpandedMap",
+  "instance": "ClientConfigToggle_ChatContainer",
+  "featureKey": "ChatDropPhase",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=WBP_UI_Chat_V2_InGame <WBP_UI_Chat_V2_InGame_C>",
+  "slot": "ScaleBoxSlot_0 <ScaleBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot",
+   "bIsVariable"
+  ]
+ },
+ {
+  "asset": "WBP_UI_GameItemTooltip",
+  "instance": "ArmoryHJUnlock",
+  "featureKey": "ArmoryItemProgression ",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=HJUnlockLevel <CommonRichTextBlock>",
+  "slot": "VerticalBoxSlot_2 <VerticalBoxSlot>",
+  "allprops": [
+   "DisabledVisibility[6]",
+   "EnabledVisibility[5]",
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_GameSettingsPanel",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "LanguageChange",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=LanguageVerticalBox <VerticalBox>",
+  "slot": "VerticalBoxSlot_0 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_GameSettingsPanel",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_1",
+  "featureKey": "dropin",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=VerticalBox_3 <VerticalBox>",
+  "slot": "VerticalBoxSlot_5 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_GameSettingsPanel",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_99",
+  "featureKey": "Airships",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": null,
+  "slot": "VerticalBoxSlot_5 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_HeroInfo_Party",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "mastery",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=MasteryButton <Button>",
+  "slot": "OverlaySlot_2 <OverlaySlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_HeroPortrait",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "mastery",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=WBP_HeroMastery_LevelIcon <WBP_HeroMastery_LevelIcon_C>",
+  "slot": "OverlaySlot_5 <OverlaySlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_HighlightMomentsSettings",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "NeHighlightMoments",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=VertialBox <VerticalBox>",
+  "slot": null,
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings"
+  ]
+ },
+ {
+  "asset": "WBP_UI_HUD_Currencies",
+  "instance": "ArmoryProgression",
+  "featureKey": "ArmoryItemProgression",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=WBP_UI_GemButton <WBP_UI_GemButton_C>",
+  "slot": "VerticalBoxSlot_0 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_HUD_Screen_EOG_V3",
+  "instance": "ArmoryProgressionToggle",
+  "featureKey": "ArmoryItemProgression",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=ARMORYONLY_WBP_UI_EoG_GemsGained <WBP_UI_ArmoryEnablement_WidgetCreator_C>",
+  "slot": "VerticalBoxSlot_6 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_HUD_Screen_EOG_V3",
+  "instance": "ClientConfigVisbility_NE_HighlightMoments",
+  "featureKey": "NeHighlightMoments",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=WBP_Button_HighlightMoments <WBP_Button_HighlightMoments_C>",
+  "slot": "OverlaySlot_0 <OverlaySlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot",
+   "Visibility"
+  ]
+ },
+ {
+  "asset": "WBP_UI_HUD_Screen_PlacementAnnounce_v2",
+  "instance": "ArmoryProgressionToggle",
+  "featureKey": "ArmoryItemProgression",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=VerticalBox_757 <VerticalBox>",
+  "slot": null,
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings"
+  ]
+ },
+ {
+  "asset": "WBP_UI_InGameEmoteWheel",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "EmoteWheelCheer",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=Button_HeroEmote <Button>",
+  "slot": null,
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings"
+  ]
+ },
+ {
+  "asset": "WBP_UI_KeybindsList",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "dropin",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=RemoteShop <WBP_UI_SettingsKeyBindEntry_C>",
+  "slot": "VerticalBoxSlot_15 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_KeybindsList",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_BarracudaBindings",
+  "featureKey": "KeybindCheats",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=CheatBindingsSpawner_1 <WBP_UI_WidgetSpawner_C>",
+  "slot": "VerticalBoxSlot_1 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_KeybindsList",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_CheatBindings",
+  "featureKey": "KeybindCheats",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=CheatBindingsSpawner <WBP_UI_WidgetSpawner_C>",
+  "slot": "VerticalBoxSlot_16 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_KeybindsList",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_MenuArtDebugBindings",
+  "featureKey": "KeybindCheats",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=CheatBindingsSpawner_2 <WBP_UI_WidgetSpawner_C>",
+  "slot": "VerticalBoxSlot_2 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_LobbyV2_Chrome",
+  "instance": "Battlepass_ConfigToggle",
+  "featureKey": "SeasonalBattlepass",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=WBP_UI_ProgressionTracker_SeasonalBattlepassV2 <WBP_UI_ProgressionTracker_SeasonalBattlepassV2_C>",
+  "slot": "OverlaySlot_0 <OverlaySlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_LobbyV2_Chrome",
+  "instance": "ClientConfigToggle_ChatContainerV2",
+  "featureKey": "ChatLobbyV2",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=WBP_UI_Chat_V2 <WBP_UI_Chat_V2_Lobby_C>",
+  "slot": "SizeBoxSlot_0 <SizeBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_LobbyV2_Chrome",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "mailbox",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=Button_Mailbox <WBP_UI_LobbyV2_MailboxButton_C>",
+  "slot": "OverlaySlot_4 <OverlaySlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Login_Screen_Default",
+  "instance": "ClientConfigVisbility_Discord",
+  "featureKey": "DiscordButton",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=VerticalBox_0 <VerticalBox>",
+  "slot": "VerticalBoxSlot_0 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Login_Screen_Default",
+  "instance": "ClientConfigVisbility_Survey",
+  "featureKey": "lobby_survey",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=VerticalBox_193 <VerticalBox>",
+  "slot": "VerticalBoxSlot_3 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_MainMenu_ActiveXPBoosts",
+  "instance": "ClientConfigVisbilityToggle_XPBoosts",
+  "featureKey": "XPBoosts",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=SizeBox_4 <SizeBox>",
+  "slot": "WrapBoxSlot_2 <WrapBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot",
+   "bIsVariable"
+  ]
+ },
+ {
+  "asset": "WBP_UI_MainMenu_ActiveXPBoosts",
+  "instance": "ClientConfigVisibilityToggle_CatchupXP",
+  "featureKey": "SeasonalBattlepass",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=SizeBox_5 <SizeBox>",
+  "slot": "WrapBoxSlot_3 <WrapBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_MainMenu_ActiveXPBoosts",
+  "instance": "ClientConfigVisibilityToggle_PrismaBoost",
+  "featureKey": "prisma_boost",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=ScaleBox <ScaleBox>",
+  "slot": "WrapBoxSlot_1 <WrapBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_MainMenu_ActiveXPBoosts",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "chuseokboostui",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=WBP_UI_ChuseokEventBoost <WBP_UI_ChuseokEventBoost_C>",
+  "slot": "WrapBoxSlot_4 <WrapBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_MainMenu_NormalMainMenu",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "NeLobbyEventBtn",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=WBP_LobbyEventEntryBtn <WBP_LobbyEventEntryBtn_C>",
+  "slot": "VerticalBoxSlot_2 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_MainMenu_NormalMainMenu",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_2",
+  "featureKey": "DebugNav",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=NavButtonMain_Debug <WBP_UI_NavButton_PrimaryV2_C>",
+  "slot": "VerticalBoxSlot_8 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_MainMenu_NormalMainMenu",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_3",
+  "featureKey": "DebugBattlepass",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=NavButtonMain_DebugBattlepass <WBP_UI_NavButton_PrimaryV2_C>",
+  "slot": "VerticalBoxSlot_9 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_MainMenu_NormalMainMenu",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_80",
+  "featureKey": "GameVersion",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=ScaleBox_VersionInfo <ScaleBox>",
+  "slot": "CanvasPanelSlot_6 <CanvasPanelSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Menus_DialogOptions",
+  "instance": "ClientConfigVisbility_Discord",
+  "featureKey": "DiscordButton",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=VerticalBox_0 <VerticalBox>",
+  "slot": "VerticalBoxSlot_6 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Menus_DialogOptions",
+  "instance": "ClientConfigVisbility_OBS",
+  "featureKey": "OBSButton",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=VerticalBox <VerticalBox>",
+  "slot": "VerticalBoxSlot_7 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Menus_DialogOptions",
+  "instance": "ClientConfigVisibility_Survey",
+  "featureKey": "lobby_survey_menu",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=VerticalBox_1 <VerticalBox>",
+  "slot": "VerticalBoxSlot_4 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Menus_DialogOptions",
+  "instance": "WBP_UI_ClientConfigVisbility_NE_Options",
+  "featureKey": "NeMenuDialogOptions",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=WBP_UI_NE_DialogOptions <WBP_UI_NE_DialogOptions_C>",
+  "slot": "OverlaySlot_0 <OverlaySlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Menus_DialogOptions",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_80",
+  "featureKey": "GameVersion",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=ScaleBox_VersionInfo <ScaleBox>",
+  "slot": "HorizontalBoxSlot_0 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_MetaCurrenciesV2",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "MetaCurrenciesTopUp",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=Button_TopUp <Button>",
+  "slot": "OverlaySlot_0 <OverlaySlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_MinorProtectionSettings",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "NeMinorProtection",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=VerticalBox_47 <VerticalBox>",
+  "slot": null,
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings"
+  ]
+ },
+ {
+  "asset": "WBP_UI_MissionModal",
+  "instance": "CategoryButton_ArmoryMissionTestConfig_1",
+  "featureKey": "PlayerArmoryV2",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=Overlay_2 <Overlay>",
+  "slot": "VerticalBoxSlot_8 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_MissionModal",
+  "instance": "MissionModalCategory_ArmoryMissionTestConfig_1",
+  "featureKey": "PlayerArmoryV2",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=MissionModalCategory_ArmoryTest_1 <WBP_UI_MissionModalCategory_C>",
+  "slot": "WidgetSwitcherSlot_6 <WidgetSwitcherSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot",
+   "bIsFocusable"
+  ]
+ },
+ {
+  "asset": "WBP_UI_PartyHeader",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "party.fill",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=FillContainer <HorizontalBox>",
+  "slot": "HorizontalBoxSlot_2 <HorizontalBoxSlot>",
+  "allprops": [
+   "DisabledVisibility[6]",
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_PartyHeroSelect",
+  "instance": "Mastery_ConfigToggle_1",
+  "featureKey": "mastery",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=NavButton_MasteryV2 <WBP_UI_NavBar_ButtonSecondaryV2_C>",
+  "slot": "HorizontalBoxSlot_2 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_PartyOptions",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "party.fill",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=FillContainer <HorizontalBox>",
+  "slot": "VerticalBoxSlot_1 <VerticalBoxSlot>",
+  "allprops": [
+   "DisabledVisibility[6]",
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_PlayerContextMenu",
+  "instance": "ClientConfigToggle_ReportPlayer",
+  "featureKey": "ReportPlayerContextMenu",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=UI_CM_SocialReportPlayer <WBP_UI_CM_SocialReportPlayer_C>",
+  "slot": "VerticalBoxSlot_15 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_PlayerStatLine",
+  "instance": "ArmoryProgressionToggle",
+  "featureKey": "ArmoryItemProgression",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=TeamPrisma <VerticalBox>",
+  "slot": null,
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings"
+  ]
+ },
+ {
+  "asset": "WBP_UI_PlayScreen_LobbyV2",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "EventHub",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=WBP_UI_LobbyEventHubButton2 <WBP_UI_LobbyEventHubButton_C>",
+  "slot": "VerticalBoxSlot_1 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_PracticeSettingsHunterPanel",
+  "instance": "ChallengeHubVisibilityToggle",
+  "featureKey": "BypassTutorialAndOnboarding",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=WBP_UI_SettingsWidgetBase_527 <WBP_UI_SettingsWidgetBase_C>",
+  "slot": "VerticalBoxSlot_12 <VerticalBoxSlot>",
+  "allprops": [
+   "DisabledVisibility[6]",
+   "EnabledVisibility[5]",
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_PredropScreen_PlayerEntry",
+  "instance": "CallSignVisibilityToggle",
+  "featureKey": "DropScreenTitles",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=WBP_UI_Personalization_PlayerTitle <WBP_UI_Personalization_PlayerTitle_C>",
+  "slot": "VerticalBoxSlot_3 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_RegionSelect_Entry",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "ServerSelectRegionRoutes",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=VBox_RegionRoutes <VerticalBox>",
+  "slot": "VerticalBoxSlot_2 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot",
+   "bIsVariable"
+  ]
+ },
+ {
+  "asset": "WBP_UI_RegionSelect_Entry",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_102",
+  "featureKey": "ServerSelectCheckbox",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=SizeBox_0 <SizeBox>",
+  "slot": "HorizontalBoxSlot_3 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_RegionSelect_Entry",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_89",
+  "featureKey": "ServerSelectNetworkAcceleration",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=UI_RegionSelect_Entry_NetworkAcceleration <WBP_UI_RegionSelect_Entry_NetworkAcceleration_C>",
+  "slot": "VerticalBoxSlot_3 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot",
+   "bIsVariable"
+  ]
+ },
+ {
+  "asset": "WBP_UI_RewardRoll_Base",
+  "instance": "ArmoryForgeToggle",
+  "featureKey": "ArmoryItemProgression ",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=BtnGoCraft <WBP_Stylized_Button_Primary_C>",
+  "slot": "HorizontalBoxSlot_1 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_SkylandsShop",
+  "instance": "PrismaShopToggle",
+  "featureKey": "ArmoryItemProgression",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=PrismaDisplay <HorizontalBox>",
+  "slot": "HorizontalBoxSlot_3 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_SocialFriendsBar",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "ReferAFriend",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=WBP_UI_Social_Button_ReferAFriend <WBP_UI_Social_Button_ReferAFriend_C>",
+  "slot": "HorizontalBoxSlot_2 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_SocialFriendsBar",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_58",
+  "featureKey": "discord",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=WBP_UI_Discord_AuthorizeButton <WBP_UI_Discord_AuthorizeButton_C>",
+  "slot": "VerticalBoxSlot_4 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Social_HoverCard_Root",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "RankedDisplay",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=WBP_UI_Hovercard_Rankings_List <WBP_UI_Hovercard_Rankings_List_C>",
+  "slot": "VerticalBoxSlot_3 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Social_HoverCard_Root",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_1",
+  "featureKey": "RankedDisplay",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=RankedBox <SizeBox>",
+  "slot": "GridSlot_1 <GridSlot>",
+  "allprops": [
+   "DisabledVisibility[6]",
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Social_PlayerEntry",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "RankedDisplay",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=RankedBox <SizeBox>",
+  "slot": "HorizontalBoxSlot_1 <HorizontalBoxSlot>",
+  "allprops": [
+   "DisabledVisibility[6]",
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Social_PlayerEntryV2",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "RankedDisplay",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=RankedBox <SizeBox>",
+  "slot": "HorizontalBoxSlot_1 <HorizontalBoxSlot>",
+  "allprops": [
+   "DisabledVisibility[6]",
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot",
+   "bIsVariable"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Social_Section_Party",
+  "instance": "ClientConfigVisbilityToggle_InviteToParty",
+  "featureKey": "PartyInviteButton",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=WBP_UI_Social_Button_InviteToParty <WBP_UI_Social_Button_PartyInvites_C>",
+  "slot": "HorizontalBoxSlot_0 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Storefront_Root",
+  "instance": "PacksConfigToggle_1",
+  "featureKey": "supporterpacks",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=NavButton_PacksV2 <WBP_UI_NavBar_ButtonSecondaryV2_C>",
+  "slot": "HorizontalBoxSlot_1 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Storefront_Root",
+  "instance": "RedeemConfigToggle_1",
+  "featureKey": "redeemcode",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=NavButton_RedeemV2 <WBP_UI_NavBar_ButtonSecondaryV2_C>",
+  "slot": "HorizontalBoxSlot_0 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Storefront_Root",
+  "instance": "StorageConfigToggle_1",
+  "featureKey": "exchangetokens",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=NavButton_StorageV2 <WBP_UI_NavBar_ButtonSecondaryV2_C>",
+  "slot": "HorizontalBoxSlot_5 <HorizontalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_Storefront_Root",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "storefrontcheats",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=Cheat_TopUp <WBP_UI_NavBar_Button_C>",
+  "slot": "OverlaySlot_2 <OverlaySlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_UserInterface_SettingsPanel",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget",
+  "featureKey": "Hudbar5toggle",
+  "configKey": null,
+  "isEnabledByDefault": true,
+  "wraps": "NamedSlot=Config_HUDBarV5 <WBP_UI_GenericPlayerConfig_Switch_Bool_C>",
+  "slot": "VerticalBoxSlot_25 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "IsEnabledByDefault[4]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ },
+ {
+  "asset": "WBP_UI_UserInterface_SettingsPanel",
+  "instance": "WBP_UI_ClientConfigVisbilityToggleWidget_109",
+  "featureKey": "discord",
+  "configKey": null,
+  "isEnabledByDefault": null,
+  "wraps": "NamedSlot=Config_ChatAllHideDiscordFriendDirectMessages <WBP_UI_GenericPlayerConfig_Switch_Bool_C>",
+  "slot": "VerticalBoxSlot_17 <VerticalBoxSlot>",
+  "allprops": [
+   "FeatureKey[2]",
+   "NamedSlotBindings",
+   "Slot"
+  ]
+ }
+]

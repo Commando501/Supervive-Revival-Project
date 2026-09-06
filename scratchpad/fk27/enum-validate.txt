@@ -1,0 +1,102 @@
+pid=24252 base=0x7FF7BFF50000 numEl=207719
+live=200437 free=7282
+
+================================================================================================
+IS THE STOCK EInternalObjectFlags TABLE IN FORCE? (independent of any RootSet assumption)
+================================================================================================
+  C bit24 ClusterRoot   <=> ClusterRootIndex < 0   PASS  agree=100.000%  (flag&pred=2234 flagonly=0 predonly=0 neither=198203)
+  C bit23 ReachableInCl <=> ClusterRootIndex > 0   FAIL  agree=68.288%  (flag&pred=1024 flagonly=0 predonly=63563 neither=135850)
+
+  POSITIVE CONTROL for ObjectFlags@0x0C: RF_ClassDefaultObject on 306/306 Default__ objects (100.0%)
+  (if that is not ~100%% every cross-object row below is void)
+
+  cross-object, 6000 objects read:
+  C bit25 Native  vs RF_MarkAsNative(objflag b2) agree= 83.72%   both=0      b25-only=977    RF-only=0      neither=5023
+  C bit30 ?????   vs RF_MarkAsRootSet(objflag b7) agree= 80.00%   both=0      b30-only=1200   RF-only=0      neither=4800
+     ^ for bit30 the ONLY prediction stock UE makes is the ONE-WAY implication
+       RF_MarkAsRootSet => internal RootSet.  So 'RF-only' MUST be 0; 'b30-only' is expected
+       to be large, because AddToRoot() and the permanent pool set the internal flag alone.
+
+================================================================================================
+THE 'PERMANENT PREFIX' -- what is actually there
+================================================================================================
+  first free slot = 39295 ; total free = 7282
+  free slots by 10k index bucket: 30k:705, 40k:5000, 170k:8, 190k:1372, 200k:197
+  largest CONTIGUOUS free runs: [39295..44999]=5705, [194345..194415]=71, [197082..197152]=71, [206196..206265]=70, [194479..194536]=58, [195327..195375]=49
+  number of distinct free runs: 157
+
+  live objects BELOW the first free slot that LACK bit30: 20
+    idx=32257   flags=00000000 cluster=0        EdGraphPin_Deprecated            Default__EdGraphPin_Deprecated
+    idx=32960   flags=00100000 cluster=0        BlueprintGeneratedClass          DmgTypeBP_Environmental_C
+    idx=32961   flags=00100000 cluster=0        DmgTypeBP_Environmental_C        Default__DmgTypeBP_Environmental_C
+    idx=33027   flags=00000000 cluster=0        BlendProfile                     Default__BlendProfile
+    idx=38401   flags=00100000 cluster=0        BlueprintGeneratedClass          BP_ThumbnailGenerator_SkySphere_C
+    idx=38402   flags=00100000 cluster=0        Function                         ExecuteUbergraph_BP_ThumbnailGenerator_SkySp
+    idx=38403   flags=00100000 cluster=0        Function                         OnUpdateThumbnailScene
+    idx=38404   flags=00100000 cluster=0        Function                         UserConstructionScript
+    idx=38405   flags=00100000 cluster=0        SceneComponent                   SceneComponent
+    idx=38406   flags=00100000 cluster=0        SceneComponent                   SceneComponent
+    idx=38407   flags=00100000 cluster=0        StaticMeshComponent              SkySphereMesh_GEN_VARIABLE
+    idx=38408   flags=00000000 cluster=0        SimpleConstructionScript         SimpleConstructionScript
+    idx=38409   flags=00000000 cluster=0        SCS_Node                         SCS_Node
+    idx=38410   flags=00000000 cluster=0        SCS_Node                         SCS_Node
+    idx=38411   flags=00000000 cluster=0        SCS_Node                         SCS_Node
+    idx=38412   flags=00100000 cluster=0        BP_ThumbnailGenerator_SkySphere_ Default__BP_ThumbnailGenerator_SkySphere_C
+    idx=38414   flags=00100000 cluster=0        BlueprintGeneratedClass          BP_Thumbnail_CustomDepth_Script_C
+    idx=38415   flags=00100000 cluster=0        Function                         ExecuteUbergraph_BP_Thumbnail_CustomDepth_Sc
+    idx=38416   flags=00100000 cluster=0        Function                         PreCaptureActorThumbnail
+    idx=38417   flags=00100000 cluster=0        BP_Thumbnail_CustomDepth_Script_ Default__BP_Thumbnail_CustomDepth_Script_C
+
+================================================================================================
+EVERY high-index bit30 object (n=32) -- the claim's 'real AddToRoot callers'
+================================================================================================
+    idx=45000   item=40000001 objflags=00000000 OnlineEngineInterfaceImpl          OnlineEngineInterfaceImpl
+    idx=45001   item=40000001 objflags=00000040 LokiGameEngine                     LokiGameEngine
+    idx=45056   item=40000001 objflags=0028000B Texture2D                          DefaultTexture
+    idx=45058   item=40000001 objflags=00280003 Texture2D                          Good64x64TilingNoiseHighFreq
+    idx=45060   item=40000001 objflags=00280003 Texture2D                          DefaultBokeh
+    idx=45062   item=40000001 objflags=0028000B Texture2D                          MiniFont
+    idx=45064   item=40000001 objflags=00280003 Texture2D                          WeightMapPlaceholderTexture
+    idx=45066   item=40000001 objflags=0028000B Texture2DArray                     WeightMapArrayPlaceholderTexture
+    idx=45068   item=40000001 objflags=00280003 Texture2D                          DefaultWhiteGrid
+    idx=45070   item=40000001 objflags=00280003 Texture2D                          PreintegratedSkinBRDF
+    idx=45118   item=40000001 objflags=0028000B SoundClass                         SC_Master
+    idx=45120   item=40000001 objflags=0028000B SoundClass                         Master
+    idx=45134   item=40000001 objflags=0028000B SoundSubmix                        MasterEQSubmixDefault
+    idx=45135   item=40000001 objflags=0028000B SoundSubmix                        MasterSubmixDefault
+    idx=45136   item=40000001 objflags=0028000B SoundSubmix                        MasterReverbSubmixDefault
+    idx=55368   item=40000001 objflags=00280009 BlueprintGeneratedClass            BP_InputData_C
+    idx=55370   item=40000001 objflags=00000000 CommonInputPlatformSettings        CommonInputPlatformSettings_Windows
+    idx=56091   item=40000001 objflags=00000048 BodySetup                          BodySetup
+    idx=56100   item=40000001 objflags=00000048 BodySetup                          BodySetup
+    idx=57087   item=40000001 objflags=00000040 Canvas                             CanvasObject
+    idx=57088   item=40000001 objflags=00000040 Canvas                             DebugCanvasObject
+    idx=57090   item=40000001 objflags=0028000B Texture2D                          STBlueNoise_scalar_128x128x64
+    idx=57092   item=40000001 objflags=0028000B Texture2D                          STBlueNoise_vec2_128x128x64
+    idx=61508   item=40000001 objflags=00000000 LokiInternalAbilitySystemGlobals   LokiInternalAbilitySystemGlobals
+    idx=86592   item=40000001 objflags=00280008 BP_MainMenu_SceneRotator_C         BP_MainMenu_SceneRotator_C
+    idx=93740   item=40000001 objflags=00280008 BP_MainMenu_SceneRotator_C         BP_MainMenu_SceneRotator_C
+    idx=93843   item=40000001 objflags=0028000B World                              LVL_LobbyV2_Persistent
+    idx=93865   item=40000001 objflags=00280008 BP_MainMenu_SceneRotator_C         BP_MainMenu_SceneRotator_C
+    idx=93866   item=40000001 objflags=00280008 BP_MainMenu_SceneRotator_C         BP_MainMenu_SceneRotator_C
+    idx=94472   item=40000001 objflags=00000040 CrowdManager                       CrowdManager
+    idx=94517   item=40000001 objflags=00000000 PCGGenSourcePlayer                 PCGGenSourcePlayer
+    idx=186681  item=40000001 objflags=00000000 ImageCache                         ImageCache
+
+================================================================================================
+FALSE-NEGATIVE HUNT -- high-index objects one would EXPECT to be rooted. Are they in the 32?
+================================================================================================
+  GameEngine           n=3     rooted=3      hi-idx rooted=1    hi-idx UNROOTED=0    
+  GameInstance         n=7     rooted=5      hi-idx rooted=0    hi-idx UNROOTED=2      e.g. UNROOTED: Default__BP_LokiGameInst#49350, BP_LokiGameInstance_C#49351
+  GameViewportClient   n=4     rooted=3      hi-idx rooted=0    hi-idx UNROOTED=1      e.g. UNROOTED: LokiGameViewportClient#55354
+  AssetManager         n=8     rooted=7      hi-idx rooted=0    hi-idx UNROOTED=1      e.g. UNROOTED: LokiAssetManager#45078
+  Canvas               n=1182  rooted=6      hi-idx rooted=2    hi-idx UNROOTED=1176   e.g. UNROOTED: PipCanvas#48767, CanvasPanel#48808, CanvasPanelSlot#48809
+  World                n=108   rooted=72     hi-idx rooted=1    hi-idx UNROOTED=36     e.g. UNROOTED: ActorElementWorldInterfa#45011, ComponentElementWorldInt#45016, SMInstanceElementWorldIn#45019
+  LocalPlayer          n=9     rooted=6      hi-idx rooted=0    hi-idx UNROOTED=3      e.g. UNROOTED: LocalPlayer#55355, DiscordLocalPlayerSubsys#55356, EnhancedInputLocalPlayer#55358
+  PlayerController     n=151   rooted=16     hi-idx rooted=0    hi-idx UNROOTED=135    e.g. UNROOTED: Default__Comp_PlayerCont#47335, Default__Comp_PlayerCont#48460, Default__Comp_PlayerCont#64846
+  GameUserSettings     n=3     rooted=2      hi-idx rooted=0    hi-idx UNROOTED=1      e.g. UNROOTED: LokiGameUserSettings#45137
+  CrowdManager         n=3     rooted=3      hi-idx rooted=1    hi-idx UNROOTED=0    
+  EngineSubsystem      n=13    rooted=8      hi-idx rooted=0    hi-idx UNROOTED=5      e.g. UNROOTED: ExternalDataLayerEngineS#45026, DataDrivenCVarEngineSubs#45028, HLODEngineSubsystem#45030
+  ImageCache           n=4     rooted=4      hi-idx rooted=1    hi-idx UNROOTED=0    
+  SlateThemeManager    n=1     rooted=1      hi-idx rooted=0    hi-idx UNROOTED=0    
+  GCObjectReferencer   n=2     rooted=2      hi-idx rooted=0    hi-idx UNROOTED=0    

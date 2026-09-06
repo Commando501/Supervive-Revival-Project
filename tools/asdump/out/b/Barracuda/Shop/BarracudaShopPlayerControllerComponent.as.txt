@@ -1,0 +1,438 @@
+// ============================================================================
+//  MODULE   Barracuda.Shop.BarracudaShopPlayerControllerComponent
+//  SOURCE   Barracuda/Shop/BarracudaShopPlayerControllerComponent.as
+//  CONTENT  1 class(es), 13 function(s), 0 enum(s), 1 global(s), 1416 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaShopPlayerControllerComponent;
+
+UBarracudaShopPlayerControllerComponent@ UBarracudaShopPlayerControllerComponent()   // traits=0x20
+{
+    v2 = UBarracudaShopPlayerControllerComponent();
+    return v2;
+}
+/* ---- UBarracudaShopPlayerControllerComponent: 7 dwords / 4 instructions (cache offset 0x3b0eb) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84416 UBarracudaShopPlayerControllerComponent
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ UBarracudaShopPlayerControllerComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UBarracudaShopPlayerControllerComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x3b1bf) ----
+    0000  PshGPtr       __StaticType_UBarracudaShopPlayerControllerComponent
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UBarracudaShopPlayerControllerComponent@ UBarracudaShopPlayerControllerComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaShopPlayerControllerComponent, v2, typeid(UBarracudaShopPlayerControllerComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x3b310) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972640                                    ; UBarracudaShopPlayerControllerComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaShopPlayerControllerComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaShopPlayerControllerComponent@ UBarracudaShopPlayerControllerComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaShopPlayerControllerComponent, v2, typeid(UBarracudaShopPlayerControllerComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x3b479) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972640                                    ; UBarracudaShopPlayerControllerComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaShopPlayerControllerComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaShopPlayerControllerComponent@ UBarracudaShopPlayerControllerComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaShopPlayerControllerComponent, v2, typeid(UBarracudaShopPlayerControllerComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x3b5dd) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972640                                    ; UBarracudaShopPlayerControllerComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaShopPlayerControllerComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class UBarracudaShopPlayerControllerComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaShopPlayerControllerComponent
+{
+    UBarracudaShopPlayerControllerComponent()   // traits=0x21
+    {
+        return;
+    }
+    /* ---- UBarracudaShopPlayerControllerComponent: 5 dwords / 3 instructions (cache offset 0x3c5a9) ----
+        0000  PshVPtr       this                                        
+        0004  FinConstruct  UBarracudaShopPlayerControllerComponent     
+        0010  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v6 = UGameEventRouterSubsystem::GetUIGameEventRouter(__WorldContext);
+            if (v6 != nullptr) {
+                v13 = false;
+                v12 = FUIEvent_Barracuda_Shop_BuyItem();
+                v26 = v6.RegisterForEvent(this, v12, typeid(FUIEvent_Barracuda_Shop_BuyItem), nullptr, n"ClientOnBuyItem", v13);
+                v13 = false;
+                v30 = FUIEvent_Barracuda_Shop_SellItem();
+                v26 = v6.RegisterForEvent(this, v30, typeid(FUIEvent_Barracuda_Shop_SellItem), nullptr, n"ClientOnSellItem", v13);
+            }
+        }
+        return;
+    }
+    /* ---- LokiBeginPlay_Implementation: 82 dwords / 46 instructions (cache offset 0x3b6f6) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowZ         73                                            -> L0144
+        0020  PshGPtr       __WorldContext                              
+        002C  CALLSYS       GetUIGameEventRouter                        
+        0038  STOREOBJ      v6                                          
+        003C  CmpPtrNull    v6                                          
+        0040  JZ            62                                            -> L0140
+        0048  SetV1         v13 0                                       
+        0050  PshV4         v13                                         
+        0054  PshC4         22                                          
+        005C  CALLSYS       __STATIC_NAME                               
+        0068  PshRPtr                                                   
+        006C  PshNull                                                   
+        0070  TYPEID        67121331                                      ; FUIEvent_Barracuda_Shop_BuyItem
+        0078  PSF           v12                                         
+        007C  CALLSYS       FUIEvent_Barracuda_Shop_BuyItem::$beh0      
+        0088  PSF           v12                                         
+        008C  PshVPtr       this                                        
+        0090  PSF           v26                                         
+        0094  PshVPtr       v6                                          
+        0098  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        00A4  PSF           v12                                         
+        00A8  CALLSYS       FUIEvent_Barracuda_Shop_BuyItem::$beh2      
+        00B4  PSF           v26                                         
+        00B8  CALLSYS       FGameEventListenerHandle::$beh2             
+        00C4  SetV1         v13 0                                       
+        00CC  PshV4         v13                                         
+        00D0  PshC4         23                                          
+        00D8  CALLSYS       __STATIC_NAME                               
+        00E4  PshRPtr                                                   
+        00E8  PshNull                                                   
+        00EC  TYPEID        67121332                                      ; FUIEvent_Barracuda_Shop_SellItem
+        00F4  PSF           v30                                         
+        00F8  CALLSYS       FUIEvent_Barracuda_Shop_SellItem::$beh0     
+        0104  PSF           v30                                         
+        0108  PshVPtr       this                                        
+        010C  PSF           v26                                         
+        0110  PshVPtr       v6                                          
+        0114  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        0120  PSF           v30                                         
+        0124  CALLSYS       FUIEvent_Barracuda_Shop_SellItem::$beh2     
+        0130  PSF           v26                                         
+        0134  CALLSYS       FGameEventListenerHandle::$beh2             
+      L0140:
+        0140  FreeNullV8    v6                                          
+      L0144:
+        0144  RET           2                                           
+    */
+
+    UFUNCTION(CanOverrideEvent)
+    void ClientOnBuyItem(const FUIEvent_Barracuda_Shop_BuyItem& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.ServerBuyItem(Event.ItemClass);
+        return;
+    }
+    /* ---- ClientOnBuyItem: 7 dwords / 5 instructions (cache offset 0x3ba62) ----
+        0000  PshVPtr       Event                                       
+        0004  ADDSi         8 67121331                                    ; .ItemClass
+        000C  PshVPtr       this                                        
+        0010  CALLINTF      84411                                         ; UBarracudaShopPlayerControllerComponent::ServerBuyItem
+        0018  RET           6                                           
+    */
+
+    void ServerBuyItem(const TSubclassOf<ALokiBaseItem@>& ItemToBuy)   // traits=0x20
+    {
+        __Evt_PushArgument(ItemToBuy, typeid(TSubclassOf));
+        __Evt_Execute(this, n"ServerBuyItem");
+        return;
+    }
+    /* ---- ServerBuyItem: 17 dwords / 9 instructions (cache offset 0x3bba2) ----
+        0000  TYPEID        268448387                                     ; TSubclassOf
+        0008  PshVPtr       ItemToBuy                                   
+        000C  CALLSYS       __Evt_PushArgument                          
+        0018  PshC4         96                                          
+        0020  CALLSYS       __STATIC_NAME                               
+        002C  PshRPtr                                                   
+        0030  PshVPtr       this                                        
+        0034  CALLSYS       __Evt_Execute                               
+        0040  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ServerBuyItem, BlueprintCallable, BlueprintEvent, NetServer)
+    void ServerBuyItem_Implementation(const TSubclassOf<ALokiBaseItem@>& ItemToBuy)   // traits=0x20
+    {
+        v4 = GetBarracudaShop();
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v8 = this.GetOwner();
+            if (v8 != nullptr) {
+                v10 = cast<ALokiPlayerController@>(v8);
+            } else {
+                v10 = nullptr;
+            }
+            v12 = v10;
+            if (v12 == nullptr) {
+                return;
+            } else {
+                v16 = v12.GetLokiPlayerState();
+                if (v16 == nullptr) {
+                    return;
+                } else {
+                    v20 = AbilitySystem::GetAbilitySystemComponent(v16);
+                    v5 = v20.HasMatchingGameplayTag(GameplayTags::GameMode_Barracuda_InBase)  /* UFunction Script_HasMatchingGameplayTag */;
+                    v20 = AbilitySystem::GetAbilitySystemComponent(v16);
+                    v17 = v20.HasMatchingGameplayTag(GameplayTags::State_Dead)  /* UFunction Script_HasMatchingGameplayTag */;
+                    v21 = v17;
+                    v21 = !v21;
+                    if (v21) {
+                        v21 = v5;
+                        v21 = !v21;
+                        if (v21) {
+                            return;
+                        }
+                    } else {
+                        v4.AuthBuyItem(v16, ItemToBuy);
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- ServerBuyItem_Implementation: 89 dwords / 55 instructions (cache offset 0x3bcb5) ----
+        0000  CALL          84351                                         ; GetBarracudaShop
+        0008  STOREOBJ      v4                                          
+        000C  CmpPtrNull    v4                                          
+        0010  JNZ           2                                             -> L0020
+        0018  JMP           80                                            -> L0160
+      L0020:
+        0020  PshVPtr       this                                        
+        0024  CALLSYS       UActorComponent::GetOwner                   
+        0030  STOREOBJ      v8                                          
+        0034  CmpPtrNull    v8                                          
+        0038  JZ            9                                             -> L0064
+        0040  TYPEID        1140857134                                    ; ALokiPlayerController@
+        0048  PSF           v10                                         
+        004C  PshVPtr       v8                                          
+        0050  CALLSYS       UObject::opCast                             
+        005C  JMP           1                                             -> L0068
+      L0064:
+        0064  ClrVPtr       v10                                         
+      L0068:
+        0068  PshVPtr       v10                                         
+        006C  RefCpyV       v12                                         
+        0070  CmpPtrNull    v12                                         
+        0074  JNZ           2                                             -> L0084
+        007C  JMP           55                                            -> L0160
+      L0084:
+        0084  PshVPtr       v12                                         
+        0088  CALLSYS       ALokiPlayerController::GetLokiPlayerState   
+        0094  STOREOBJ      v16                                         
+        0098  CmpPtrNull    v16                                         
+        009C  JNZ           2                                             -> L00AC
+        00A4  JMP           45                                            -> L0160
+      L00AC:
+        00AC  PshGPtr       GameplayTags::GameMode_Barracuda_InBase     
+        00B8  PshVPtr       v16                                         
+        00BC  CALLSYS       GetAbilitySystemComponent                   
+        00C8  STOREOBJ      v20                                         
+        00CC  PshVPtr       v20                                         
+        00D0  CALLSYS       UAbilitySystemComponent::HasMatchingGameplayTag
+        00DC  CpyRtoV4      v5                                          
+        00E0  PshGPtr       GameplayTags::State_Dead                    
+        00EC  PshVPtr       v16                                         
+        00F0  CALLSYS       GetAbilitySystemComponent                   
+        00FC  STOREOBJ      v20                                         
+        0100  PshVPtr       v20                                         
+        0104  CALLSYS       UAbilitySystemComponent::HasMatchingGameplayTag
+        0110  CpyRtoV4      v17                                         
+        0114  CpyVtoV4      v21 v17                                     
+        011C  NOT           v21                                         
+        0120  CpyVtoR1      v21                                         
+        0124  JLowZ         8                                             -> L014C
+        012C  CpyVtoV4      v21 v5                                      
+        0134  NOT           v21                                         
+        0138  CpyVtoR1      v21                                         
+        013C  JLowZ         2                                             -> L014C
+        0144  JMP           5                                             -> L0160
+      L014C:
+        014C  PshVPtr       ItemToBuy                                   
+        0150  PshVPtr       v16                                         
+        0154  PshVPtr       v4                                          
+        0158  CALLINTF      84331                                         ; ABarracudaShop::AuthBuyItem
+      L0160:
+        0160  RET           4                                           
+    */
+
+    UFUNCTION(CanOverrideEvent)
+    void ClientOnSellItem(const FUIEvent_Barracuda_Shop_SellItem& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.ServerSellItem(Event.Item);
+        return;
+    }
+    /* ---- ClientOnSellItem: 8 dwords / 6 instructions (cache offset 0x3c04a) ----
+        0000  PshVPtr       Event                                       
+        0004  ADDSi         8 67121332                                    ; .Item
+        000C  RDSPtr                                                    
+        0010  PshVPtr       this                                        
+        0014  CALLINTF      84414                                         ; UBarracudaShopPlayerControllerComponent::ServerSellItem
+        001C  RET           6                                           
+    */
+
+    void ServerSellItem(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiBaseItem(Item);
+        __Evt_Execute(this, n"ServerSellItem");
+        return;
+    }
+    /* ---- ServerSellItem: 15 dwords / 8 instructions (cache offset 0x3c18b) ----
+        0000  PSF           Item                                        
+        0004  CALLSYS       __Evt_PushArgument__ALokiBaseItem           
+        0010  PshC4         113                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ServerSellItem, BlueprintCallable, BlueprintEvent, NetServer)
+    void ServerSellItem_Implementation(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        v4 = GetBarracudaShop();
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v8 = this.GetOwner();
+            if (v8 != nullptr) {
+                v10 = cast<ALokiPlayerController@>(v8);
+            } else {
+                v10 = nullptr;
+            }
+            v12 = v10;
+            if (v12 == nullptr) {
+                return;
+            } else {
+                v16 = v12.GetLokiPlayerState();
+                if (v16 == nullptr) {
+                    return;
+                } else {
+                    v18 = AbilitySystem::GetAbilitySystemComponent(v16);
+                    v5 = v18.HasMatchingGameplayTag(GameplayTags::GameMode_Barracuda_InBase)  /* UFunction Script_HasMatchingGameplayTag */;
+                    v5 = !v5;
+                    v19 = false;
+                    v19 = !v19;
+                    if (v5 == v19) {
+                        return;
+                    } else {
+                        v4.AuthSellItem(v16, Item);
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- ServerSellItem_Implementation: 72 dwords / 45 instructions (cache offset 0x3c292) ----
+        0000  CALL          84351                                         ; GetBarracudaShop
+        0008  STOREOBJ      v4                                          
+        000C  CmpPtrNull    v4                                          
+        0010  JNZ           2                                             -> L0020
+        0018  JMP           63                                            -> L011C
+      L0020:
+        0020  PshVPtr       this                                        
+        0024  CALLSYS       UActorComponent::GetOwner                   
+        0030  STOREOBJ      v8                                          
+        0034  CmpPtrNull    v8                                          
+        0038  JZ            9                                             -> L0064
+        0040  TYPEID        1140857134                                    ; ALokiPlayerController@
+        0048  PSF           v10                                         
+        004C  PshVPtr       v8                                          
+        0050  CALLSYS       UObject::opCast                             
+        005C  JMP           1                                             -> L0068
+      L0064:
+        0064  ClrVPtr       v10                                         
+      L0068:
+        0068  PshVPtr       v10                                         
+        006C  RefCpyV       v12                                         
+        0070  CmpPtrNull    v12                                         
+        0074  JNZ           2                                             -> L0084
+        007C  JMP           38                                            -> L011C
+      L0084:
+        0084  PshVPtr       v12                                         
+        0088  CALLSYS       ALokiPlayerController::GetLokiPlayerState   
+        0094  STOREOBJ      v16                                         
+        0098  CmpPtrNull    v16                                         
+        009C  JNZ           2                                             -> L00AC
+        00A4  JMP           28                                            -> L011C
+      L00AC:
+        00AC  PshGPtr       GameplayTags::GameMode_Barracuda_InBase     
+        00B8  PshVPtr       v16                                         
+        00BC  CALLSYS       GetAbilitySystemComponent                   
+        00C8  STOREOBJ      v18                                         
+        00CC  PshVPtr       v18                                         
+        00D0  CALLSYS       UAbilitySystemComponent::HasMatchingGameplayTag
+        00DC  CpyRtoV4      v5                                          
+        00E0  NOT           v5                                          
+        00E4  SetV1         v19 0                                       
+        00EC  NOT           v19                                         
+        00F0  CMPi          v5 v19                                      
+        00F8  JNZ           2                                             -> L0108
+        0100  JMP           5                                             -> L011C
+      L0108:
+        0108  PshVPtr       Item                                        
+        010C  PshVPtr       v16                                         
+        0110  PshVPtr       v4                                          
+        0114  CALLINTF      84332                                         ; ABarracudaShop::AuthSellItem
+      L011C:
+        011C  RET           4                                           
+    */
+
+}
+

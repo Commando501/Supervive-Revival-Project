@@ -1,0 +1,484 @@
+==============================================================================
+MODULE   UI.LokiWidgetHighlighterHitTestBlocker
+SOURCE   UI/LokiWidgetHighlighterHitTestBlocker.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiWidgetHighlighterHitTestBlocker_AS;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiWidgetHighlighterHitTestBlocker_AS@ ULokiWidgetHighlighterHitTestBlocker_AS()
+// 4 instr, 28 B bytecode, id=0xE8261238, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiWidgetHighlighterHitTestBlocker_AS v2;
+
+    v2 = ULokiWidgetHighlighterHitTestBlocker_AS();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85438 q:0x26e6ed7fd00; new ULokiWidgetHighlighterHitTestBlocker_AS   ctor=ULokiWidgetHighlighterHitTestBlocker_AS::ULokiWidgetHighlighterHitTestBlocker_AS
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xBBA5326D, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiWidgetHighlighterHitTestBlocker_AS);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e7b045258         ; __StaticType_ULokiWidgetHighlighterHitTestBlocker_AS
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+==============================================================================
+UCLASS()
+class ULokiWidgetHighlighterHitTestBlocker_AS : UUserWidget
+// base /Script/UMG.UserWidget  ->  ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) UWidget@ TargetWidget;
+    UPROPERTY(BlueprintReadable, meta=(BindWidget)) UOverlay@ TopBlocker;
+    UPROPERTY(BlueprintReadable, meta=(BindWidget)) UOverlay@ LeftBlocker;
+    UPROPERTY(BlueprintReadable, meta=(BindWidget)) UOverlay@ BottomBlocker;
+    UPROPERTY(BlueprintReadable, meta=(BindWidget)) UOverlay@ RightBlocker;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bHideBasedOnActivatableParent;
+
+}
+
+------------------------------------------------------------------------------
+ULokiWidgetHighlighterHitTestBlocker_AS() const
+// 3 instr, 20 B bytecode, id=0xF9E83E32, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  FinConstruct   q:0x26e6ed7fd00         ; ULokiWidgetHighlighterHitTestBlocker_AS
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetTargetWidget(UWidget@ Target, const bool bShouldHideBasedOnActivatableParent = false)
+// 8 instr, 40 B bytecode, id=0x6437D93C, varspace=0
+------------------------------------------------------------------------------
+{
+    this.TargetWidget = Target;
+    this.bHideBasedOnActivatableParent = bShouldHideBasedOnActivatableParent;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:744 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::TargetWidget  (+744)
+    //     4  REFCPY
+    //     5  PopPtr
+    //     6  LoadThisR      W0:784 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::bHideBasedOnActivatableParent  (+784)
+    //     8  WRTV1          rW0:-4
+    //     9  RET            W0:5
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const FGeometry&inout MyGeometry, const float64 DeltaTime)
+// 247 instr, 1760 B bytecode, id=0x6F5090FB, varspace=120
+------------------------------------------------------------------------------
+{
+    FVector2D v4;
+    FVector2D v8;
+    float64 v10;
+    float64 v14;
+    auto v15;
+    float64 v18;
+    auto v19;
+    FGeometry v33;
+    FVector2D v38;
+    FVector2D v42;
+    auto v43;
+    UCommonActivatableWidget v46;
+    TSubclassOf<UObject@> v50;
+    UWidget v52;
+    UCommonActivatableWidget v54;
+    UCanvasPanelSlot v56;
+    FGeometry v84;
+    FVector2D v92;
+    FVector2D v96;
+    FVector2D v100;
+    FVector2D v104;
+    FVector2D v108;
+    FVector2D v112;
+
+    v8 = WidgetLayout::GetViewportSize(__WorldContext);
+    v14 = float64(WidgetLayout::GetViewportScale(__WorldContext));
+    v10 = v14;
+    v14 = 0;
+    if (v14 > 0) {
+        v14 = v8.X;
+        v18 = 0;
+        v19 = v14 <= 0;
+        v15 = v19;
+    } else {
+        v15 = true;
+    }
+    if (!v15) {
+        v14 = v8.Y;
+        v18 = 0;
+        v19 = v14 <= 0;
+        v15 = v19;
+    } else {
+        v15 = true;
+    }
+    if (!v15) {
+        v19 = IsValid(this.TargetWidget);
+        v19 = !v19;
+        v15 = v19;
+    } else {
+        v15 = true;
+    }
+    if (!v15) {
+        v33 = FGeometry(this.TargetWidget.GetCachedGeometry());
+        v4 = Slate::GetAbsolutePosition(v33);
+        v38 = Slate::GetAbsoluteSize(v33);
+        v15 = this.TargetWidget.IsVisible();
+        if (v15) {
+            v19 = this.bHideBasedOnActivatableParent;
+            v43 = v19;
+        } else {
+            v43 = 0;
+        }
+        if (v43) {
+            v50 = TSubclassOf<UObject@>(UCommonActivatableWidget::StaticClass());
+            v52 = ULokiUIUtilities::FindParentWidgetOfAnyType(this.TargetWidget, v50);
+            if (v52 == null) {
+                v54 = null;
+            } else {
+                v54 = cast<UCommonActivatableWidget>(v52);
+            }
+            v46 = v54;
+            if (IsValid(v54)) {
+                v43 = v46.IsActivated();
+                v15 = v43;
+            }
+        }
+        v14 = v38.X;
+        if (!Math::IsNearlyZero(v14, 0)) {
+            v14 = v38.Y;
+            v19 = Math::IsNearlyZero(v14, 0);
+            v43 = v19;
+        } else {
+            v43 = true;
+        }
+        if (!v43) {
+            v19 = v15;
+            v19 = !v15;
+            v43 = v19;
+        } else {
+            v43 = true;
+        }
+        if (!v43) {
+            v84 = WidgetLayout::GetViewportWidgetGeometry(__WorldContext);
+            v42 = Slate::GetAbsolutePosition(v84);
+            v14 = v92.X;
+            v104 = FVector2D(v14, 0);
+            v18 = v92.Y;
+            v100 = FVector2D(0, v18);
+            v14 = v96.X;
+            v108 = FVector2D(v14, 0);
+            v18 = v96.Y;
+            v112 = FVector2D(0, v18);
+            v56 = WidgetLayout::SlotAsCanvasSlot(this.LeftBlocker);
+            v56.SetSize(v104);
+            v56 = WidgetLayout::SlotAsCanvasSlot(this.TopBlocker);
+            v56.SetSize(v100);
+            v56 = WidgetLayout::SlotAsCanvasSlot(this.RightBlocker);
+            v56.SetSize(v108);
+            v56 = WidgetLayout::SlotAsCanvasSlot(this.BottomBlocker);
+            v56.SetSize(v112);
+        } else {
+            v56 = WidgetLayout::SlotAsCanvasSlot(this.LeftBlocker);
+            v56.SetSize(FVector2D::ZeroVector);
+            v56 = WidgetLayout::SlotAsCanvasSlot(this.TopBlocker);
+            v56.SetSize(FVector2D::ZeroVector);
+            v56 = WidgetLayout::SlotAsCanvasSlot(this.RightBlocker);
+            v56.SetSize(FVector2D::ZeroVector);
+            v56 = WidgetLayout::SlotAsCanvasSlot(this.BottomBlocker);
+            v56.SetSize(FVector2D::ZeroVector);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  PSF            rW0:8
+    //     4  CALLSYS        q:0x26e7987a500         ; FVector2D WidgetLayout::GetViewportSize(UObject@)
+    //     7  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    10  CALLSYS        q:0x26e7987a6c0         ; float WidgetLayout::GetViewportScale(const UObject@)
+    //    13  CpyRtoV4       wW0:11
+    //    14  fTOd           wW0:14 rW1:11
+    //    16  CpyVtoV8       wW0:10 rW1:14
+    //    18  SetV8          wW0:14 q:0x0
+    //    21  CMPd           rW0:10 rW1:14
+    //    23  JP             ->29
+    //    25  SetV1          wW0:15 d:1
+    //    27  JMP            ->42
+    //    29  LoadVObjR      rW0:8 W1:0 DW2:67117441 ; FVector2D::X  (+0)
+    //    32  RDR8           wW0:14
+    //    33  SetV8          wW0:18 q:0x0
+    //    36  CMPd           rW0:14 rW1:18
+    //    38  TNP
+    //    39  CpyRtoV4       wW0:19
+    //    40  CpyVtoV4       wW0:15 rW1:19
+    //    42  CpyVtoR1       rW0:15
+    //    43  JLowZ          ->49
+    //    45  SetV1          wW0:15 d:1
+    //    47  JMP            ->62
+    //    49  LoadVObjR      rW0:8 W1:8 DW2:67117441 ; FVector2D::Y  (+8)
+    //    52  RDR8           wW0:14
+    //    53  SetV8          wW0:18 q:0x0
+    //    56  CMPd           rW0:14 rW1:18
+    //    58  TNP
+    //    59  CpyRtoV4       wW0:19
+    //    60  CpyVtoV4       wW0:15 rW1:19
+    //    62  CpyVtoR1       rW0:15
+    //    63  JLowZ          ->69
+    //    65  SetV1          wW0:15 d:1
+    //    67  JMP            ->80
+    //    69  PshVPtr        rW0:0
+    //    70  ADDSi          W0:744 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::TargetWidget  (+744)
+    //    72  RDSPtr
+    //    73  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    76  CpyRtoV4       wW0:19
+    //    77  NOT            rW0:19
+    //    78  CpyVtoV4       wW0:15 rW1:19
+    //    80  CpyVtoR1       rW0:15
+    //    81  JLowZ          ->85
+    //    83  JMP            ->439
+    //    85  PshVPtr        rW0:0
+    //    86  ADDSi          W0:744 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::TargetWidget  (+744)
+    //    88  RDSPtr
+    //    89  CALLSYS        q:0x26e79719fc0         ; const FGeometry& UWidget::GetCachedGeometry() const
+    //    92  PshRPtr
+    //    93  PSF            rW0:33
+    //    94  CALLSYS        q:0x26e786df200         ; void FGeometry::$beh0(const FGeometry&)
+    //    97  PSF            rW0:33
+    //    98  PSF            rW0:4
+    //    99  CALLSYS        q:0x26e79873880         ; FVector2D Slate::GetAbsolutePosition(const FGeometry&)
+    //   102  PSF            rW0:33
+    //   103  PSF            rW0:38
+    //   104  CALLSYS        q:0x26e798736c0         ; FVector2D Slate::GetAbsoluteSize(const FGeometry&)
+    //   107  PshVPtr        rW0:0
+    //   108  ADDSi          W0:744 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::TargetWidget  (+744)
+    //   110  RDSPtr
+    //   111  CALLSYS        q:0x26e797175c0         ; bool UWidget::IsVisible() const
+    //   114  CpyRtoV4       wW0:15
+    //   115  CpyVtoR1       rW0:15
+    //   116  JLowNZ         ->122
+    //   118  SetV4          wW0:43 d:0
+    //   120  JMP            ->127
+    //   122  LoadThisR      W0:784 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::bHideBasedOnActivatableParent  (+784)
+    //   124  RDR1           wW0:19
+    //   125  CpyVtoV4       wW0:43 rW1:19
+    //   127  CpyVtoR1       rW0:43
+    //   128  JLowZ          ->177
+    //   130  CALLSYS        q:0x26e7acd9700         ; UClass@ UCommonActivatableWidget::StaticClass()
+    //   133  STOREOBJ       wW0:48
+    //   134  PshVPtr        rW0:48
+    //   135  PSF            rW0:50
+    //   136  CALLSYS        q:0x26e6ee89540         ; void TSubclassOf<UObject@>::$beh0(UClass@)
+    //   139  PSF            rW0:50
+    //   140  PshVPtr        rW0:0
+    //   141  ADDSi          W0:744 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::TargetWidget  (+744)
+    //   143  RDSPtr
+    //   144  CALLSYS        q:0x26e7a433f80         ; UWidget@ ULokiUIUtilities::FindParentWidgetOfAnyType(UWidget@, TSubclassOf<UObject@>)
+    //   147  STOREOBJ       wW0:52
+    //   148  CmpPtrNull     rW0:52
+    //   149  JZ             ->160
+    //   151  TYPEID         d:1140856547            ; UCommonActivatableWidget@
+    //   153  PSF            rW0:54
+    //   154  PshVPtr        rW0:52
+    //   155  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   158  JMP            ->161
+    //   160  ClrVPtr        wW0:54
+    //   161  PshVPtr        rW0:54
+    //   162  RefCpyV        wW0:46
+    //   163  PshVPtr        rW0:46
+    //   164  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   167  JLowZ          ->176
+    //   169  PshVPtr        rW0:46
+    //   170  CALLSYS        q:0x26e79fa4d80         ; bool UCommonActivatableWidget::IsActivated() const
+    //   173  CpyRtoV4       wW0:43
+    //   174  CpyVtoV4       wW0:15 rW1:43
+    //   176  FreeNullV8     wW0:46
+    //   177  PshC8          q:0x3e45798ee0000000
+    //   180  LoadVObjR      rW0:38 W1:0 DW2:67117441; FVector2D::X  (+0)
+    //   183  RDR8           wW0:14
+    //   184  PshV8          rW0:14
+    //   185  CALLSYS        q:0x26e69d2f040         ; bool Math::IsNearlyZero(float64, float64)
+    //   188  JLowZ          ->194
+    //   190  SetV1          wW0:43 d:1
+    //   192  JMP            ->208
+    //   194  PshC8          q:0x3e45798ee0000000
+    //   197  LoadVObjR      rW0:38 W1:8 DW2:67117441; FVector2D::Y  (+8)
+    //   200  RDR8           wW0:14
+    //   201  PshV8          rW0:14
+    //   202  CALLSYS        q:0x26e69d2f040         ; bool Math::IsNearlyZero(float64, float64)
+    //   205  CpyRtoV4       wW0:19
+    //   206  CpyVtoV4       wW0:43 rW1:19
+    //   208  CpyVtoR1       rW0:43
+    //   209  JLowZ          ->215
+    //   211  SetV1          wW0:43 d:1
+    //   213  JMP            ->220
+    //   215  CpyVtoV4       wW0:19 rW1:15
+    //   217  NOT            rW0:19
+    //   218  CpyVtoV4       wW0:43 rW1:19
+    //   220  CpyVtoR1       rW0:43
+    //   221  JLowZ          ->289
+    //   223  PshGPtr        q:0x26e7681a3c8         ; FVector2D::ZeroVector
+    //   226  PshVPtr        rW0:0
+    //   227  ADDSi          W0:760 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::LeftBlocker  (+760)
+    //   229  RDSPtr
+    //   230  CALLSYS        q:0x26e79879c40         ; UCanvasPanelSlot@ WidgetLayout::SlotAsCanvasSlot(UWidget@)
+    //   233  STOREOBJ       wW0:56
+    //   234  PshVPtr        rW0:56
+    //   235  CALLSYS        q:0x26e79834f40         ; void UCanvasPanelSlot::SetSize(FVector2D)
+    //   238  PshGPtr        q:0x26e7681a3c8         ; FVector2D::ZeroVector
+    //   241  PshVPtr        rW0:0
+    //   242  ADDSi          W0:752 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::TopBlocker  (+752)
+    //   244  RDSPtr
+    //   245  CALLSYS        q:0x26e79879c40         ; UCanvasPanelSlot@ WidgetLayout::SlotAsCanvasSlot(UWidget@)
+    //   248  STOREOBJ       wW0:56
+    //   249  PshVPtr        rW0:56
+    //   250  CALLSYS        q:0x26e79834f40         ; void UCanvasPanelSlot::SetSize(FVector2D)
+    //   253  PshGPtr        q:0x26e7681a3c8         ; FVector2D::ZeroVector
+    //   256  PshVPtr        rW0:0
+    //   257  ADDSi          W0:776 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::RightBlocker  (+776)
+    //   259  RDSPtr
+    //   260  CALLSYS        q:0x26e79879c40         ; UCanvasPanelSlot@ WidgetLayout::SlotAsCanvasSlot(UWidget@)
+    //   263  STOREOBJ       wW0:56
+    //   264  PshVPtr        rW0:56
+    //   265  CALLSYS        q:0x26e79834f40         ; void UCanvasPanelSlot::SetSize(FVector2D)
+    //   268  PshGPtr        q:0x26e7681a3c8         ; FVector2D::ZeroVector
+    //   271  PshVPtr        rW0:0
+    //   272  ADDSi          W0:768 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::BottomBlocker  (+768)
+    //   274  RDSPtr
+    //   275  CALLSYS        q:0x26e79879c40         ; UCanvasPanelSlot@ WidgetLayout::SlotAsCanvasSlot(UWidget@)
+    //   278  STOREOBJ       wW0:56
+    //   279  PshVPtr        rW0:56
+    //   280  CALLSYS        q:0x26e79834f40         ; void UCanvasPanelSlot::SetSize(FVector2D)
+    //   283  PSF            rW0:33
+    //   284  CALLSYS        q:0x26e786df3c0         ; void FGeometry::$beh2()
+    //   287  JMP            ->439
+    //   289  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   292  PSF            rW0:84
+    //   293  CALLSYS        q:0x26e7987a340         ; FGeometry WidgetLayout::GetViewportWidgetGeometry(UObject@)
+    //   296  PSF            rW0:84
+    //   297  PSF            rW0:42
+    //   298  CALLSYS        q:0x26e79873880         ; FVector2D Slate::GetAbsolutePosition(const FGeometry&)
+    //   301  PSF            rW0:42
+    //   302  PSF            rW0:88
+    //   303  PSF            rW0:4
+    //   304  CALLSYS        q:0x26e69c5af80         ; FVector2D FVector2D::opSub(const FVector2D&) const
+    //   307  PshV8          rW0:10
+    //   308  PSF            rW0:92
+    //   309  PSF            rW0:88
+    //   310  CALLSYS        q:0x26e69c5fac0         ; FVector2D FVector2D::opDiv(float64) const
+    //   313  PSF            rW0:38
+    //   314  PSF            rW0:96
+    //   315  PSF            rW0:88
+    //   316  CALLSYS        q:0x26e69c5b140         ; FVector2D FVector2D::opAdd(const FVector2D&) const
+    //   319  PSF            rW0:96
+    //   320  PSF            rW0:104
+    //   321  PSF            rW0:8
+    //   322  CALLSYS        q:0x26e69c5af80         ; FVector2D FVector2D::opSub(const FVector2D&) const
+    //   325  PshV8          rW0:10
+    //   326  PSF            rW0:96
+    //   327  PSF            rW0:104
+    //   328  CALLSYS        q:0x26e69c5fac0         ; FVector2D FVector2D::opDiv(float64) const
+    //   331  PshC8          q:0x0
+    //   334  LoadVObjR      rW0:92 W1:0 DW2:67117441; FVector2D::X  (+0)
+    //   337  RDR8           wW0:14
+    //   338  PshV8          rW0:14
+    //   339  PSF            rW0:104
+    //   340  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //   343  LoadVObjR      rW0:92 W1:8 DW2:67117441; FVector2D::Y  (+8)
+    //   346  RDR8           wW0:18
+    //   347  PshV8          rW0:18
+    //   348  PshC8          q:0x0
+    //   351  PSF            rW0:100
+    //   352  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //   355  PshC8          q:0x0
+    //   358  LoadVObjR      rW0:96 W1:0 DW2:67117441; FVector2D::X  (+0)
+    //   361  RDR8           wW0:14
+    //   362  PshV8          rW0:14
+    //   363  PSF            rW0:108
+    //   364  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //   367  LoadVObjR      rW0:96 W1:8 DW2:67117441; FVector2D::Y  (+8)
+    //   370  RDR8           wW0:18
+    //   371  PshV8          rW0:18
+    //   372  PshC8          q:0x0
+    //   375  PSF            rW0:112
+    //   376  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //   379  PSF            rW0:104
+    //   380  PshVPtr        rW0:0
+    //   381  ADDSi          W0:760 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::LeftBlocker  (+760)
+    //   383  RDSPtr
+    //   384  CALLSYS        q:0x26e79879c40         ; UCanvasPanelSlot@ WidgetLayout::SlotAsCanvasSlot(UWidget@)
+    //   387  STOREOBJ       wW0:56
+    //   388  PshVPtr        rW0:56
+    //   389  CALLSYS        q:0x26e79834f40         ; void UCanvasPanelSlot::SetSize(FVector2D)
+    //   392  PSF            rW0:100
+    //   393  PshVPtr        rW0:0
+    //   394  ADDSi          W0:752 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::TopBlocker  (+752)
+    //   396  RDSPtr
+    //   397  CALLSYS        q:0x26e79879c40         ; UCanvasPanelSlot@ WidgetLayout::SlotAsCanvasSlot(UWidget@)
+    //   400  STOREOBJ       wW0:56
+    //   401  PshVPtr        rW0:56
+    //   402  CALLSYS        q:0x26e79834f40         ; void UCanvasPanelSlot::SetSize(FVector2D)
+    //   405  PSF            rW0:108
+    //   406  PshVPtr        rW0:0
+    //   407  ADDSi          W0:776 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::RightBlocker  (+776)
+    //   409  RDSPtr
+    //   410  CALLSYS        q:0x26e79879c40         ; UCanvasPanelSlot@ WidgetLayout::SlotAsCanvasSlot(UWidget@)
+    //   413  STOREOBJ       wW0:56
+    //   414  PshVPtr        rW0:56
+    //   415  CALLSYS        q:0x26e79834f40         ; void UCanvasPanelSlot::SetSize(FVector2D)
+    //   418  PSF            rW0:112
+    //   419  PshVPtr        rW0:0
+    //   420  ADDSi          W0:768 d:134230923      ; ULokiWidgetHighlighterHitTestBlocker_AS::BottomBlocker  (+768)
+    //   422  RDSPtr
+    //   423  CALLSYS        q:0x26e79879c40         ; UCanvasPanelSlot@ WidgetLayout::SlotAsCanvasSlot(UWidget@)
+    //   426  STOREOBJ       wW0:56
+    //   427  PshVPtr        rW0:56
+    //   428  CALLSYS        q:0x26e79834f40         ; void UCanvasPanelSlot::SetSize(FVector2D)
+    //   431  PSF            rW0:84
+    //   432  CALLSYS        q:0x26e786df3c0         ; void FGeometry::$beh2()
+    //   435  PSF            rW0:33
+    //   436  CALLSYS        q:0x26e786df3c0         ; void FGeometry::$beh2()
+    //   439  RET            W0:6
+

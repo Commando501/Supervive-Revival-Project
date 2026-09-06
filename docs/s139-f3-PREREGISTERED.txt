@@ -1,0 +1,62 @@
+S139 FLIGHT 3 -- PRE-REGISTRATION. Written BEFORE injecting. DO NOT EDIT AFTER.
+Client: PID 35608 (the flight-2 staged client, still alive). Inject driverecompute to create the bot.
+
+WHY THIS TEST NOW
+  The weld hypothesis is REFUTED (WeldParent @capsule+0x5F0 == NULL, so GetBodyInstance(bGetWelded=
+  TRUE) returns the capsule's own body, bSimulatePhysics=0, gate 5 passes). All six engine
+  PerformMovement exits now have their inputs measured passing.
+  And the "+0x12B0 advances => the ENGINE PerformMovement runs" inference is RETRACTED: that
+  accumulate is at 0x055B840C, UPSTREAM of the Super call at 0x055B85C1.
+  So the open question is the one upstream of all of it: DOES ControlledCharacterMove RUN AT ALL?
+
+THE DISCRIMINATOR (from engine ControlledCharacterMove 0x035DCD10, no DeltaTime gate anywhere in it)
+  0x035DCD4E call [rbx+0xA38]   ConstrainInputAcceleration
+  0x035DCD5F call [rbx+0xA40]   ScaleInputAcceleration
+  0x035DCD6B movups [rsi+0x328], xmm0   <-- Acceleration written EVERY FRAME
+  0x035DCD7A movsd  [rsi+0x338], xmm1
+  0x035DCD8F movss  [rsi+0x3D0], xmm0   <-- AnalogInputModifier
+  0x035DCDAC call [rax+0xAA8]           PerformMovement
+
+  Acceleration == exactly (0,0,0) is normally THREE-WAY ambiguous: (a) ControlledCharacterMove
+  never ran; (b) it ran and ULokiCMC::ConstrainInputAcceleration 0x055A75B0 wrote literal
+  ZeroVector on its IsStunned arm; (c) ScaleInputAcceleration multiplied by a zero MaxAcceleration.
+
+  ** THE BOT BREAKS THE AMBIGUITY, AND THAT IS WHY THIS NEEDS THE BOT AND NOT THE PLAYER. **
+  IsStunned (0x055B2930) reaches the tag through the character's ASC and its FIRST guard is
+  "NULL ASC -> xor al,al" (return FALSE). The BOT's AbilitySystemComponentStorage (+0xF00) was
+  MEASURED NULL in flight 1 (the player's is non-null -- KWIREGAS wires only the player's).
+  => on the BOT, arm (b) is unreachable BY CONSTRUCTION.
+
+PREDICTIONS
+P1  Identity controls pass on the bot side (CMC+0x198 == pawn, FTickFunction Target == CMC).
+    REFUTED BY: either failing => that side is VOID.
+P2  The bot's AbilitySystemComponentStorage (+0xF00) reads NULL, as in flight 1.
+    REFUTED BY: non-null => arm (b) is back in play and this test is NOT a discriminator this
+    sitting. I will say so and will NOT read Acceleration as a verdict.
+P3  The bot's ControlInputVector (+0x418) churns (fresh unit vector), as in flights 8/9/1.
+    REFUTED BY: static/zero => the AI is not running and nothing downstream is interpretable.
+P4  THE VERDICT, written down in advance:
+      Acceleration COLLINEAR with ControlInputVector (non-zero) => ControlledCharacterMove RUNS
+        => the ladder is passed, and the wall is at/below PerformMovement.
+      Acceleration bit-frozen at exactly (0,0,0) while CIV churns, WITH +0xF00 NULL
+        => arm (b) excluded, arm (c) still possible => read MaxAcceleration's SOURCE, not the
+           CMC's base UPROPERTY (which reads 50000 and is NOT what GetMaxAcceleration returns).
+        => leading reading: ControlledCharacterMove NEVER RUNS, i.e. the tick ladder bails (S2).
+P5  AnalogInputModifier (+0x3D0) is read in the same pass. It is written unconditionally at
+    0x035DCD8F, but it is computed FROM Acceleration, so a 0 there is NOT independent evidence.
+    I will not treat it as a second witness.
+
+WHAT I WILL NOT CLAIM
+  * That Acceleration == 0 alone proves anything on the PLAYER (its ASC is non-null, so arm (b)
+    is live there).
+  * That +0x12B0 advancing shows the ENGINE PerformMovement ran. Retracted; it is upstream.
+  * A per-frame rate from +0x16C8 (sticky latch).
+  * That page protection discriminates (4 KiB granularity; StartNewPhysics shares a page with
+    TickComponent).
+
+HONEST ALTERNATIVE
+  Arm (c) -- GetMaxAcceleration returning 0 because the GAS attribute set is missing -- would
+  produce a zero Acceleration on a ControlledCharacterMove that DID run, and AttributeSetStorage
+  (+0xF08) is measured NULL on BOTH pawns. If the verdict is "frozen zero", (a) and (c) are BOTH
+  live and this flight does not separate them. Separating them needs GetMaxAcceleration's own
+  return, which is a CALL, not a read -- out of scope for a read-only sitting.

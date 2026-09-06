@@ -1,0 +1,268 @@
+# Session 77 — DS route: stable spectator view of the live world REACHED; possession-culprit FALSIFIED; loading-stall root-caused; garbage-thread AV needs route A
+
+Date: 2026-07-15. Continues S76 (stub durably stable via the `ALokiWorldSettings` non-push mirror).
+Goal: get *any* functional control in the tutorial — a hero or even just a spectator camera — that
+**moves without crashing** over the live tutorial world, via the DS stub. Attack the movement
+garbage-thread AV.
+
+## TL;DR
+- ★ **MILESTONE: a stable, rotatable spectator view of the live tutorial world** — cleanest yet. Injected
+  `ds_hybrid.dll` `MODE_SPECTATOR_CAM` into the DS-connected client: it hid the `WBP_UI_MatchTransition`
+  overlay (4/4 loading widgets `SetVisibility(Collapsed)` each tick) → the world rendered fully (portal
+  shield, terrain, drop-pads) with **360° camera rotation and ZERO crash for ~2 min** on a genuinely stable
+  stub. (S76's fly-cam "win" was confounded by the crashing stub; this one is clean.)
+- ✖ **Possession-culprit hypothesis — FALSIFIED.** The stub possessed a concrete `ADefaultPawn` instead of
+  the abstract `ALokiCharacter` (S73's `LokiCharacter` is `CLASS_Abstract` → the client can't spawn its local
+  replica → half-formed possessed-pawn → suspected movement AV). `ADefaultPawn` replicated cleanly (no
+  `abstract` spawn-fail on the client), but **the garbage-thread AV STILL fired** → the culprit half-hydrated
+  replica is **NOT** the possessed pawn.
+- ✖ **`EGP_SpawnSelect` loading-clear — does NOT reproduce.** Reverted the seed `EGP_Combat(7)` (a stale S73
+  lever-2 experiment) → `EGP_SpawnSelect(4)` (the S70-proven loading-clear phase). The client received it but
+  the loading overlay **still stayed** — the S70 clear does not reproduce on the current (Loki-PC) config.
+- ◆ **Loading-stall ROOT-CAUSED (new):** it is the **Loki PC (S73)** running SUPERVIVE's real, round-gated
+  match-entry flow — not the tutorial mode. Specifically the overlay-dismiss hinges on a **lost
+  `GameEvent_SpectatorStateChanged_PlayerController` broadcast** (`LogGameEventRouter: Router was not found!`
+  fired exactly once at match-entry) — no `GameEventRouterComponent` is registered on the bare-native PC — plus
+  round-gated `ULokiGameFeatureToggles`. S70 cleared the overlay only because it ran a **stock PC** (generic
+  flow, no Loki match-gate). Loki-PC control and a stock-PC-cleared overlay are mutually exclusive on the stub.
+- → **NEXT = route A:** the AV is a half-hydrated replica spinning a stale callback into a thread; the faulting
+  thread has RIP=RSP=garbage and **no stack**, so the culprit must be caught at the SPAWN. Build a thread-dispatch
+  diagnostic shim.
+
+## The garbage-thread AV — re-confirmed, characterized
+`parse_minidump.py` on the fresh dump (`…/.sentry-native/reports/285a05a2-…dmp`):
+```
+ExceptionCode=0xC0000005  ExceptionAddress=0x7FF90E000001  params=['0x8', '0x7ff90e000001']
+faulting thread: RIP=0x7FF90E000001 RSP=0x7FF90E000001
+  stack return-address chain (callers):   <empty>
+exc_addr 0x7FF90E000001 not in any listed module
+```
+`0x8` = execute violation at an unmapped address; **RIP and RSP both = the garbage address, empty stack** = a
+thread launched with a stale callback pointer as its entry, execute-AVing on the first instruction. Same
+signature as S53/S54/S76; the value `0x7FF90E000001` is the **S76 pre-drop-stage** replica (distinct from the
+`0x7FF8F04…` earlier-stage one). The AV fired only after the shim hid the overlay and the client advanced into
+the spectator/pre-drop-active state (~2 min in) — i.e. advancing the match stage engages the next
+half-hydrated replica (the S76 whack-a-mole, one stage deeper). The faulting thread carries no info about who
+spawned it → the SPAWNING thread has the info → route A.
+
+## What changed (committed this session)
+- `unreal-stub/Source/Loki/LokiStubGameMode.cpp`:
+  - `PostLogin`: possess a stock **`ADefaultPawn`** (was abstract `ALokiCharacter`). Falsified as the AV fix but
+    a **cleaner baseline** — concrete, replicates, no client `abstract` spawn-fail. Not load-bearing; revert to
+    `ALokiCharacter` (both spawn calls) only if hero-typed possession is wanted again.
+  - `InitGameState`: seed `CurrentPhase = EGP_SpawnSelect(4)` (was `EGP_Combat(7)`, the stale S73 lever-2
+    experiment). `EGP_SpawnSelect` is the S70-documented playing phase; genuine cleanup (loading-clear needs it
+    but is not sufficient — the Loki-PC gate dominates).
+- `tools/sigbypass-mod/ds_hybrid.cpp`: `kMode = MODE_SPECTATOR_CAM` (the mode that achieved the stable spectator
+  view). Build: `clang++ -shared -O2 -D_CRT_SECURE_NO_WARNINGS ds_hybrid.cpp -o ds_hybrid.dll -lkernel32 -luser32`.
+  Inject: `tools/inject/inject.exe mmap <PID> ds_hybrid.dll`. Marker: `docs/ds-hybrid-marker.txt`.
+
+## MODE_SPECTATOR_CAM live result (marker)
+```
+[SPEC] totalWidgets=1196 loadCandidates=4 svThunk=0x…(InVisibility@0x0) cam=0x… pc=0x…
+[SPEC] moveComp=0x… class=SpectatorPawnMovement velOff=0xE8 vel=(0,0,0) updComp=0x… hwnd=0x0
+[SPEC] hit 6200: overlay hidden 4/4; puppet moveComp=0x… yaw=0
+```
+- Overlay-hide WORKS (4/4 loading widgets collapsed). World rendered; 360° rotation via the native
+  dead-spectator camera. NO crash for ~2 min.
+- **No translation:** `hwnd=FindWindowA("SUPERVIVE")=0` (title lookup failed, so the focus guard was bypassed —
+  puppet reads WASD always), but the `SpectatorPawnMovement` velocity puppet (velOff=0xE8) did NOT translate the
+  view — the native dead-spectator camera is rotation-only and the integrator did not move the pawn. (Then the
+  AV fired regardless — the client advancing to pre-drop, not the puppet, is the likely trigger.)
+
+## Loading-stall RE detail (the "dig the flow" result)
+Compared the S77 client log to S70's (`session-70-gamestate-loadingscreen-cleared.txt`): IDENTICAL ready-state
+(`TryUIReady SUCCESS`, hero-skip "not picked in the current match", `GetLocalLokiPlayerState failed`, Barracuda
+content primed). The ONE difference: **PlayerController type** — S70 = stock `APlayerController` (generic flow →
+overlay dismissed into spectator); S77 = `ALokiPlayerController` (S73, runs the real Loki match-flow → overlay
+gated on drop-in/round-start). Schema (`schema.txt`): the "router" is a `GameEventRouterComponent`
+(native `ActorComponent`) registered with `GameEventRouterSubsystem` (GameInstanceSubsystem) by a
+`GameEventRouterOwnerInterface` owner; the UI listens via `UIEventRouterSubsystem`. `GameEvent_SpectatorStateChanged_PlayerController`
+carries a `PlayerController` — its router is expected on the PC. "Router was not found" fired exactly once at
+match-entry ⇒ a **lost event**: the spectator-state signal that would dismiss the overlay was dropped because no
+router is registered (the DS client's PC is the bare native `LokiPlayerController` — the stub's by-path mirror —
+without the `BP_LokiPlayerController_Dev_C` components that register it; same root as S76). Barracuda/BR flavor
+is incidental (S70 loaded the same map/content and still cleared). NOT seedable from the stub. A more targeted
+client-side lever than the blind overlay-hide would be: register a `GameEventRouterComponent` on the local PC +
+re-fire `SpectatorStateChanged` — untested; deferred behind the AV.
+
+## ★★★ ROUTE A RAN (dump analysis) — the crash is the ANTI-TAMPER, NOT a nameable replica. Reframes ~15 sessions. ★★★
+Instead of a live thread-hook shim, analyzed the EXISTING dump's ALL-thread contexts + the faulting thread's
+EXCEPTION context (scratch tools `dump_threads.py` / `dump_faultstack.py`; the dump has 135 threads w/ stacks +
+709 memory regions). NOTE: `parse_minidump.py` line 65 has a print bug (`RSP=%X % (rip and rip or 0)` prints RIP
+twice); the REAL exception context is **RIP=0x7FF90E000001, RSP=0x586233FC68** (a valid stack — not garbage).
+Four signals reframe the crash:
+1. **Fixed crash address across boots (decisive).** `0x7FF8F0400001` = S53/S54 (2026-07-07); `0x7FF90E000001`
+   = S76 + S77 (2026-07-14/15). IDENTICAL across launches with DIFFERENT ASLR bases (this launch's SUPERVIVE
+   base = 0x7FF6AF000000). A half-hydrated GAME replica's stale callback would be an ASLR'd game `.text` address
+   (different every launch). A fixed value in the SYSTEM-DLL GAP is per-boot-stable ⇒ an anti-tamper sentinel,
+   not a game pointer. (Two distinct values = two boot sessions a week apart.)
+2. **Register state = obfuscated dispatch, not a C++ callback.** EXC regs: RIP=poisoned; RSP==RDI==0x586233FC68;
+   RCX=RAX=RSI=R12-15=0 (no valid `this`); high-entropy garbage RDX=0x536023A80BBAEC1F, RBX=R10=0x63F8A7E45EE28AAB
+   (EQUAL), R8=0xD8CE70962CCE8F64, R9=0x7B7EDAE45A8CB4F0 — a crypto/integrity routine computing a target then
+   jumping to poison. A stale vtable call leaves a structured object ptr in RCX + an intact caller frame.
+3. **Caller chain wiped.** The faulting thread's EXC-RSP stack has ZERO game-code return addresses (dispatch
+   destroyed the return chain). The `+0x7059xxx` game addrs on its DUMP-TIME stack are sentry's own crash-handler
+   frames (sentry-native is linked into SUPERVIVE.exe), NOT the culprit. ⇒ route A's "walk the stack → name the
+   culprit replica" is a DEAD END — there is no replica to name.
+4. **Crash only WITH injection.** Bare client = stable on the loading screen indefinitely (15+ min observed); the
+   crash fires ~2 min AFTER injecting a shim (ds_hybrid S76/S77; browse_hook S53/S54) — the documented ~3-5 min
+   code-integrity check reacting to the tamper. Variable timing (S54 noted 37s-150s) = triggered when a
+   tampered/checked code path runs, not a fixed clock.
+
+**CONCLUSION:** the "movement garbage-thread AV" that drove ~15 sessions of "hydrate the next replica"
+whack-a-mole is very likely a MISDIAGNOSIS. The crashes are an **in-match anti-tamper / obfuscated-dispatch
+deliberate crash** reacting to the injected shim, not a hydratable half-hydrated replica — which is exactly why
+the whack-a-mole never converged (each "next replica" fix only shifted the timing until the integrity check fired
+again; S53's "cure" rested on one lucky 428s run). The genuine REPLICATION work (S70-S73 GameState/PC/PlayerState
+mirrors) stands — it got the client stable in the live world with a full Loki net stack — but the VISIBLE moving
+spectator via an injected shim is **capped at ~2 min** by the integrity check. Making it persistent (or adding
+translation, which also needs the shim) requires DEFEATING the code-integrity check — deep, packer-hostile
+(CLAUDE.md: permanent patches get caught; the packer's VEH kills the process). That is the honest ceiling.
+
+## ★★★ ANTI-TAMPER IDENTIFIED + DODGED — durable stable spectator view achieved. ★★★
+The crash is a DELIBERATE anti-tamper integrity-check crash, and it is DODGEABLE with the project's own
+`catalog_store_fix` one-shot pattern. Chain of findings:
+- **No commercial anti-cheat.** Dumped the crash minidump's full module list (scratch `dump_modules.py`): NO
+  EAC/BattlEye/Denuvo. The ONLY anti-tamper module is **`preloader.dll`** (on disk at
+  `…\SUPERVIVE\Loki\Binaries\Win64\preloader.dll`, 26 KB, **UNPACKED** — `.text` entropy 5.46 — statically
+  analyzable) + the packed main exe's protection.
+- **preloader.dll RE** (scratch `analyze_preloader.py`/`disasm_preloader.py`): a signed (DigiCert/Santa Monica =
+  Theorycraft) protection LOADER — imports `ZwCreateThreadEx`, `NtProtectVirtualMemory`, `NtCreateSection`/
+  `NtMapViewOfSection` (maps a payload), `MD5Init` (integrity hashing), `NtTerminateProcess`; USER32
+  `SetWindowLongPtrW`/`CallNextHookEx` (a window/message hook) + `RtlPcToFileHeader` (caller validation). Its
+  own kill is CLEAN (`MessageBoxW`+`NtTerminateProcess`). The crash constants (`R11=0x95654773B3BC`,
+  `Rbp=0x537AC9E1`, CONSTANT across launches/ASLR bases — deterministic anti-tamper) are NOT in preloader.dll ⇒
+  the MESSY poison-jump crash is the PACKED MAIN-EXE protection's code-integrity check.
+- **★ THE TRIGGER: a PERSISTENT `.text` hook.** `ds_hybrid` installed the `ProcessInternal` hook (`base+kPiRva`,
+  5-byte jmp) ONCE and left it installed for ~6 min — a standing `.text` modification the integrity check catches
+  (variable timing = when the periodic scan runs; cheat-like activity can accelerate it). `catalog_store_fix`
+  survives long-term because it leaves NO persistent `.text`/`.rdata` mod: its `jz`-NOP self-restores in ~6 s, its
+  vtable hook unhooks in ~8 s, and its persistent work is PURE HEAP POKES (comment: "no .text patch => no
+  code-integrity crash").
+- **★ THE DODGE (works, live-verified):** ported the one-shot pattern to `ds_hybrid` `MODE_SPECTATOR_CAM`
+  (`kSpectatorHookMs=20000`, `kEnableTranslation=false`): hide the `WBP_UI_MatchTransition` overlay via the PI
+  hook for ~20 s, then **UNINSTALL the hook** and run clean. RESULT: overlay-hide is ONE-SHOT — it STICKS
+  (world stays visible, camera rotatable) with NO re-hiding; and the process SURVIVED **6.6 min past the
+  uninstall (7.6 min total), zero crash, zero dump** — far past the seconds-to-2-min every standing-hook run
+  lasted, and past the ~3–5 min integrity window. **The persistent `.text` hook WAS the trigger; removing it
+  dodges the anti-tamper.** Durable, stable, rotatable spectator view of the live tutorial world = achieved
+  cleanly + permanently.
+
+## ★ PHASE 2 RESULT — NO separate movement validator. Injected movement is allowed.
+Ran the clean single-move test (ds_hybrid MODE_SPECTATOR_CAM: overlay-hide ~20s → uninstall → confirm stable
+~25s with NO hook → TRANSIENTLY re-arm the hook for exactly ONE `K2_SetActorLocation` teleport of the
+`SpectatorPawn` to (4000,0,1000) → uninstall → observe). RESULT: the teleport executed (`[move] <<< returned`,
+no fault) and the process SURVIVED **2.5+ min after the move, zero crash**. So the `K2_SetActorLocation` move
+does NOT trip a separate anti-cheat teleport/movement validator — the ONLY wall was the standing `.text` hook
+(dodged). Pawn resolution solved: `PC->SpectatorPawn` → a real `SpectatorPawn`; `K2_SetActorLocation` resolves
+(loc@0x0, tele@0x118). Also learned: the overlay-hide is TIMING-sensitive — resolve AFTER the widgets spawn
+(inject at ~up=20s+, not ~10s; a too-early census got only 87 widgets and hid 0/3, so the overlay stayed up and
+the move fired behind it). BOTH walls are now down; a moving spectator is a bounded engineering build.
+
+## Phase 3 — continuous movement: standing-hook window CRASHES; needs a NON-.text mechanism
+Fixed the overlay-hide reliability (12s widget-spawn delay before the census → totalWidgets=3438, overlay hidden
+4/4, world revealed — vs 87 widgets / hid 0/3 when injected too early). Then tried continuous movement via a
+BOUNDED standing-hook window (kEnableTranslation=true, kSpectatorHookMs=30000): the process CRASHED MID-WINDOW on
+the same anti-tamper signature (0x7FF90E000001) BEFORE the uninstall — no `[survive]` markers. ⇒ a standing
+`.text` hook is inherently UNRELIABLE (it survived the 20s overlay-only window in phase 1 but died inside a 30s
+window here — variable integrity-check timing), so continuous movement CANNOT ride a standing hook. Reverted the
+default to kEnableTranslation=false (the durable stable-view dodge).
+**Remaining = the continuous-execution mechanism (bounded build, no new walls):** per-frame game-thread exec
+WITHOUT a standing `.text` patch — either (a) a data/VTABLE hook (swap a per-frame-ticked object's vtable POINTER
+[heap field @+0] to a heap vtable copy whose Tick slot is our stub → continuous exec, pure heap mod; needs the
+per-frame slot index RE'd), or (b) transient-per-step (worker polls input off-thread → per step: transient
+install → one K2_SetActorLocation via OnPI → uninstall; PROVEN to survive at the unit level in phase 2, but the
+SafeWrite thread-suspend per step is hitchy). Both avoid the standing hook that the integrity check catches.
+NET S77: both walls DOWN (anti-tamper dodged + movement not gated); durable stable rotatable spectator view of
+the live tutorial world SHIPPED; continuous controllable movement = one bounded mechanism away.
+
+## ★ PHASE 3 CONTINUOUS MOVEMENT WORKS (transient-per-step) — but the view follows a SEPARATE camera rig
+Built the transient-per-step movement loop (ds_hybrid worker, after the one-shot overlay-hide): poll WASD
+OFF-THREAD (no focus gate — `IsGameFocused` returns 0 for SUPERVIVE's CEF window, GetAsyncKeyState reads global
+hardware state) → per step: transient InstallHook → OnPI `DoStepMove` does ONE `K2_SetActorLocation` to the
+worker-updated pos → UninstallHook. LIVE RESULT: **it works + dodges the anti-tamper through sustained movement**
+— keysSeen climbed, steps=60, the `SpectatorPawn` TRANSLATED (5600,0,400)→(8400,400,2800) [X,Y,Z all moving], and
+the process SURVIVED with ZERO crash (the .text patch exists only ~µs/step, so the integrity check never sees it).
+★ REMAINING (the only gap): **the CAMERA does not follow the SpectatorPawn** — moving the pawn moves nothing
+on-screen (the native dead-spectator camera follows a SEPARATE rig, which is why it only rotates in place). So the
+finish is: identify the actual view driver (PlayerCameraManager ViewTarget.Target / a drop-select camera rig / the
+PC's real view target) and drive THAT instead of `PC->SpectatorPawn` — same proven transient-per-step move, just
+pointed at the right actor (or override the camera POV location per step). No crash risk; a bounded camera-RE step.
+Reusable: ds_hybrid transient-per-step movement loop (InstallHook→one move→UninstallHook, ~15/sec, survives).
+
+## ★★★ THE MOVING SPECTATOR CAMERA — ACHIEVED. The S77 goal is met. ★★★
+- **View driver found:** the camera follows the **DefaultPawn** (the stub's server-possessed pawn), NOT
+  `PC->SpectatorPawn`. Found via `ProbeCamera` (logs the `PlayerCameraManager`'s view-target actor pointers;
+  DefaultPawn @ `cam+0x420`; the PC is at cam+0x150/0x390). Retargeted the transient-per-step move to the
+  DefaultPawn + re-seed from its RootComponent RelativeLocation → **the VIEW FLIES**: live-verified translating
+  over the live tutorial world (Z 500→7600, X/Y across the map), ZERO crash (anti-tamper dodged throughout).
+- **Smoothness:** the all-threads `SafeWrite` (suspend ~135 threads × up to 400 retries) took ~seconds/call, so
+  movement jumped every 3-5s. `SafeWriteFast`/`InstallHookFast`/`UninstallHookFast` suspend + check ONLY the game
+  thread (ProcessInternal is game-thread-dominant) → ~10x smoother (fluid ~30 steps/sec), still survives.
+  Speed tuned down (sp=90 horiz, 55 vert) for control.
+- **The DS route now delivers a controllable moving spectator camera over the live SUPERVIVE tutorial world.**
+
+## Refinements remaining (all polish — NO new walls; next-session TODO)
+1. **Mouse-relative steering (biggest UX gap).** Movement is world-axis, steered by the ARROW keys (they rotate
+   `g_spYaw2`), NOT the mouse view. Fix: read the camera/PC view YAW (a native FRotator — `AController::ControlRotation`
+   or the `PlayerCameraManager` POV.Rotation; both native, not UPROPERTYs → RE the offset, e.g. via a ProbeCamera
+   pass that logs candidate FRotators that change as the user rotates) and set `g_spYaw2 = viewYaw` each step.
+2. **Jaggedness when far from the map.** `SafeWriteFast` degrades far/high (whole map visible → ProcessInternal
+   hotter → the game-thread "unsafe" check hits more, toggle slows). Durable fix = a DATA/VTABLE hook (swap a
+   per-frame-ticked object's vtable POINTER@+0 to a heap vtable copy whose Tick slot is our stub → continuous
+   per-frame exec, NO .text, NO thread-suspend). Needs the per-frame vtable slot index RE'd. This also removes the
+   transient-per-step entirely (smoother + faster).
+3. **Start height / speed feel.** Camera sits above the DefaultPawn (elevated drop-select start); tune the seed /
+   speed / add a soft Z clamp so the user doesn't rocket into the skybox (which triggers refinement #2).
+4. **Overlay-hide robustness / inject timing.** Resolve needs widgets spawned (12s delay + inject at up≥35s); a
+   too-early inject gets 0-87 widgets and hides 0/N. Consider polling the widget count instead of a fixed delay.
+5. **Optional:** re-point the move to whatever gives a nicer view (SpectatorPawn vs DefaultPawn vs override the
+   camera POV Location directly each step); investigate whether the DefaultPawn move ever gets replication-corrected
+   over long sessions (so far it sticks — the static server pawn doesn't re-replicate its position).
+
+## Reusable assets (all work)
+- Anti-tamper RE: `tools/re/dump_modules.py` (find AC modules in a dump), `analyze_preloader.py` +
+  `disasm_preloader.py` (RE preloader.dll), `dump_threads.py` (all-threads crash walker).
+- ds_hybrid: the one-shot overlay-hide dodge (`kSpectatorHookMs`+uninstall), transient-per-step movement +
+  `SafeWriteFast` (game-thread-only toggle), `ProbeCamera` (find the camera view-target), the 12s widget delay.
+- `parse_minidump.py` (0x8+unmapped-execute crash triage; RSP print-bug fixed).
+
+## Full recipe to reproduce the moving spectator (elevated PS, Steam up)
+1. ags `interactive.go` `ConnectionDetails.address="127.0.0.1:7777"`, `forceTutorialMatch=true` (already on disk).
+2. Build stub (kill UnrealEditor-Cmd first): `Build.bat LokiEditor Win64 Development -Project=…\Loki.uproject`;
+   start: `UnrealEditor-Cmd.exe …\Loki.uproject /Engine/Maps/Entry?listen -game -server -Port=7777 -nullrhi
+   -NoSplash -Unattended -abslog=<log>` → wait "listening on port 7777" + "swapped WorldSettings → ALokiWorldSettings".
+3. Client: `configs\launch-redirect.ps1 -NoHook` (returns early via Steam relaunch; find live pid via Get-Process).
+4. Wait until the live client is up ≥35s (widgets+camera spawned), then inject the DEFAULT ds_hybrid.dll:
+   `tools\inject\inject.exe mmap <pid> tools\sigbypass-mod\ds_hybrid.dll`. (If Defender blocks inject.exe: add a
+   folder exclusion for tools\inject\ + rebuild `go build -o inject.exe .`.)
+5. Shim self-waits 12s for widgets → reveals world (overlay-hide one-shot) → after ~20s uninstalls the hook →
+   transient-per-step movement loop LIVE. Focus the game, WASD to fly (arrows steer, Space/Ctrl up/down).
+   ds_hybrid.cpp `kMode=MODE_SPECTATOR_CAM`, `kEnableTranslation=false` (the per-tick standing-hook movement stays
+   OFF; the worker transient-per-step loop is the mover).
+
+## (superseded) Route A plan — live thread-dispatch diagnostic shim
+The plan below was the pre-dump-analysis intent; the dump analysis above made it moot (no replica to name; the
+crash is anti-tamper). Kept for reference / if the anti-tamper hypothesis is ever revisited.
+Identify the culprit half-hydrated replica by catching the SPAWN of the garbage thread:
+- New `ds_hybrid` mode (e.g. `MODE_THREADWATCH`): inline-hook **`kernel32!CreateThread`** (and CreateRemoteThreadEx)
+  — NOT `ntdll!NtCreateThreadEx` (the preloader anti-tamper hooks that; naive re-hook may conflict — S53). Log
+  every thread creation's `lpStartAddress` + whether it is mapped (VirtualQuery) + the creating thread's caller
+  stack (`RtlCaptureStackBackTrace`, resolved to SUPERVIVE.exe base+RVA). When a thread is created with an
+  UNMAPPED start address (the garbage callback), its caller stack NAMES the code/subsystem that spun it.
+- Repro: inject into the DS client, hide the overlay to advance to pre-drop, capture the crash-adjacent thread
+  creation. Base for this launch was `0x7FF6AF000000` (ASLR — resolve caller RVAs against the live base, not the
+  "stable 0x7FF6B54F0000" from earlier sessions).
+- If `CreateThread` doesn't catch it (raw NtCreateThreadEx or an APC/corrupted-call rather than a real thread),
+  fall back to hooking the UE async/task dispatch (TaskGraph / FQueuedThreadPool / FRunnableThread::Create) or a
+  VEH-based approach.
+
+## Gotchas reconfirmed
+- In-match anti-tamper blocks external ctypes RPM (works at menu, fails in-match); `inject.exe`/`usmapdump` (C,
+  SeDebugPrivilege) still work → drive via in-process shims + minidumps.
+- Steam-relaunch pid swap: `launch-redirect.ps1 -NoHook` returns early (handoff process exits, Steam relaunches
+  the real game under a new pid) — find the live pid via `Get-Process SUPERVIVE-Win64-Shipping`.
+- ags `interactive.go` `ConnectionDetails.address` = `"127.0.0.1:7777"` (on-disk value; HEAD already has it —
+  the "committed baseline is ''" note is stale). `forceTutorialMatch=true`.
+- Kill `UnrealEditor-Cmd` before rebuilding the stub (LNK1104). Incremental rebuild ~4-14s.

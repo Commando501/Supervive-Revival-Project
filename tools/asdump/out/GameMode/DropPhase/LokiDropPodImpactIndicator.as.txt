@@ -1,0 +1,353 @@
+// ============================================================================
+//  MODULE   GameMode.DropPhase.LokiDropPodImpactIndicator
+//  SOURCE   GameMode/DropPhase/LokiDropPodImpactIndicator.as
+//  CONTENT  1 class(es), 15 function(s), 0 enum(s), 1 global(s), 816 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiDropPodImpactIndicator;
+
+ALokiDropPodImpactIndicator@ ALokiDropPodImpactIndicator()   // traits=0x20
+{
+    ALokiDropPodImpactIndicator v2;
+
+    v2 = ALokiDropPodImpactIndicator();
+    return v2;
+}
+/* ---- ALokiDropPodImpactIndicator: 7 dwords / 4 instructions (cache offset 0x91d1d) ----
+    0000  PSF           v2
+    0004  ALLOC         85077 ALokiDropPodImpactIndicator             ; new ALokiDropPodImpactIndicator  ctor=void ALokiDropPodImpactIndicator::ALokiDropPodImpactIndicator()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ ALokiDropPodImpactIndicator::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiDropPodImpactIndicator);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x91de5) ----
+    0000  PshGPtr       __StaticType_ALokiDropPodImpactIndicator
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+ALokiDropPodImpactIndicator@ ALokiDropPodImpactIndicator::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiDropPodImpactIndicator v8;
+
+    v2 = __StaticType_ALokiDropPodImpactIndicator.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiDropPodImpactIndicator@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x92015) ----
+    0000  PshVPtr       Level
+    0004  PshV4         bDeferredSpawn
+    0008  PshVPtr       Name
+    000C  PshVPtr       Rotation
+    0010  PshVPtr       Location
+    0014  PshGPtr       __StaticType_ALokiDropPodImpactIndicator
+    0020  CHKREF
+    0024  CALLSYS       TSubclassOf::Get                              ; UClass@ TSubclassOf<UObject@>::Get() const
+    0030  STOREOBJ      v2
+    0034  PshVPtr       v2
+    0038  PSF           v4
+    003C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    0048  PSF           v4
+    004C  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    0058  STOREOBJ      v6
+    005C  CmpPtrNull    v6
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972703                                    ; ALokiDropPodImpactIndicator@
+    0070  PSF           v8
+    0074  PshVPtr       v6
+    0078  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8
+  L0090:
+    0090  LOADOBJ       v8
+    0094  RET           9
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ALokiDropPodImpactIndicator : ALokiActor
+// unreal base : /Script/Engine.LokiActor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/LokiActor.h
+// static class global: __StaticType_ALokiDropPodImpactIndicator
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_OwningDropPod)
+    protected ALokiDropPod@ OwningDropPod;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    protected ALokiPlayerState@ OwningPlayerState;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    float64 LandingRadius;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bIsIndicatorInitialized;
+
+    ALokiDropPodImpactIndicator()   // traits=0x21
+    {
+        auto v2;
+        auto v3;
+
+        v2 = 0;
+        this.LandingRadius = v2;
+        v3 = false;
+        this.bIsIndicatorInitialized = v3;
+        return;
+    }
+    /* ---- ALokiDropPodImpactIndicator: 16 dwords / 9 instructions (cache offset 0x93070) ----
+        0000  SetV8         v2 0x0
+        000C  LoadThisR     968 134230879                                 ; this.LandingRadius
+        0014  WRTV8         v2
+        0018  SetV1         v3 0
+        0020  LoadThisR     976 134230879                                 ; this.bIsIndicatorInitialized
+        0028  WRTV1         v3
+        002C  PshVPtr       this
+        0030  FinConstruct  ALokiDropPodImpactIndicator
+        003C  RET           2
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        this.CheckIndicatorReady();
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 4 dwords / 3 instructions (cache offset 0x9242c) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      85071                                         ; void ALokiDropPodImpactIndicator::CheckIndicatorReady()
+        000C  RET           2
+    */
+
+    void InitializeIndicator(ALokiDropPod@ DropPod)   // traits=0x20
+    {
+        ALokiPlayerState v2;
+
+        this.OwningDropPod = DropPod;
+        v2 = DropPod.GetPilotPlayerState();
+        this.OwningPlayerState = v2;
+        this.SetOwner(this.OwningPlayerState);
+        return;
+    }
+    /* ---- InitializeIndicator: 26 dwords / 19 instructions (cache offset 0x9255e) ----
+        0000  PshVPtr       DropPod
+        0004  PshVPtr       this
+        0008  ADDSi         952 134230879                                 ; .OwningDropPod
+        0010  REFCPY
+        0014  PopPtr
+        0018  PshVPtr       DropPod
+        001C  CALLSYS       ALokiDropPodBase::GetPilotPlayerState         ; ALokiPlayerState@ ALokiDropPodBase::GetPilotPlayerState() const
+        0028  STOREOBJ      v2
+        002C  PshVPtr       v2
+        0030  PshVPtr       this
+        0034  ADDSi         960 134230879                                 ; .OwningPlayerState
+        003C  REFCPY
+        0040  PopPtr
+        0044  PshVPtr       this
+        0048  ADDSi         960 134230879                                 ; .OwningPlayerState
+        0050  RDSPtr
+        0054  PshVPtr       this
+        0058  CALLSYS       AActor::SetOwner                              ; void AActor::SetOwner(AActor@)
+        0064  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool IsIndicatorReadyToDisplay()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = this.bIsIndicatorInitialized;
+        return v1;
+    }
+    /* ---- IsIndicatorReadyToDisplay: 5 dwords / 4 instructions (cache offset 0x92664) ----
+        0000  LoadThisR     976 134230879                                 ; this.bIsIndicatorInitialized
+        0008  RDR1          v1
+        000C  CpyVtoR4      v1
+        0010  RET           2
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v1;
+
+        v1 = this.bIsIndicatorInitialized;
+        if (v1) {
+            if (Loki::LokiIsServer(__WorldContext)) {
+                v1 = IsValid(this.OwningDropPod);
+                v1 = !v1;
+                if (v1) {
+                    this.DestroyActor()  /* UFunction K2_DestroyActor */;
+                }
+            }
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 31 dwords / 18 instructions (cache offset 0x927af) ----
+        0000  LoadThisR     976 134230879                                 ; this.bIsIndicatorInitialized
+        0008  RDR1          v1
+        000C  CpyVtoR1      v1
+        0010  JLowZ         24                                            -> L0078
+        0018  PshGPtr       __WorldContext
+        0024  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0030  JLowZ         16                                            -> L0078
+        0038  PshVPtr       this
+        003C  ADDSi         952 134230879                                 ; .OwningDropPod
+        0044  RDSPtr
+        0048  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0054  CpyRtoV4      v1
+        0058  NOT           v1
+        005C  CpyVtoR1      v1
+        0060  JLowZ         4                                             -> L0078
+        0068  PshVPtr       this
+        006C  CALLSYS       AActor::DestroyActor                          ; void AActor::DestroyActor()
+      L0078:
+        0078  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRep_OwningDropPod()   // traits=0x20
+    {
+        this.CheckIndicatorReady();
+        this.OnDropPodReplicated();
+        return;
+    }
+    /* ---- OnRep_OwningDropPod: 7 dwords / 5 instructions (cache offset 0x92958) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      85071                                         ; void ALokiDropPodImpactIndicator::CheckIndicatorReady()
+        000C  PshVPtr       this
+        0010  CALLINTF      85073                                         ; void ALokiDropPodImpactIndicator::OnDropPodReplicated()
+        0018  RET           2
+    */
+
+    void CheckIndicatorReady()   // traits=0x20
+    {
+        auto v1;
+        ALokiDropPod v4;
+
+        v1 = this.bIsIndicatorInitialized;
+        if (v1) {
+            return;
+        } else {
+            v4 = this.OwningDropPod;
+            if (v4 != nullptr) {
+                v1 = true;
+                this.bIsIndicatorInitialized = v1;
+            }
+        }
+        return;
+    }
+    /* ---- CheckIndicatorReady: 22 dwords / 15 instructions (cache offset 0x92a68) ----
+        0000  LoadThisR     976 134230879                                 ; this.bIsIndicatorInitialized
+        0008  RDR1          v1
+        000C  CpyVtoR1      v1
+        0010  JLowZ         2                                             -> L0020
+        0018  JMP           13                                            -> L0054
+      L0020:
+        0020  PshVPtr       this
+        0024  ADDSi         952 134230879                                 ; .OwningDropPod
+        002C  RDSPtr
+        0030  RefCpyV       v4
+        0034  CmpPtrNull    v4
+        0038  JZ            5                                             -> L0054
+        0040  SetV1         v1 1
+        0048  LoadThisR     976 134230879                                 ; this.bIsIndicatorInitialized
+        0050  WRTV1         v1
+      L0054:
+        0054  RET           2
+    */
+
+    void SetLandingRangeRadius(const float64 Radius)   // traits=0x20
+    {
+        auto v2;
+
+        v2 = this.LandingRadius;
+        if (Radius != v2) {
+            this.LandingRadius = Radius;
+            this.OnLandingRadiusChanged();
+        }
+        return;
+    }
+    /* ---- SetLandingRangeRadius: 14 dwords / 9 instructions (cache offset 0x92bc1) ----
+        0000  LoadThisR     968 134230879                                 ; this.LandingRadius
+        0008  RDR8          v2
+        000C  CMPd          Radius v2
+        0014  JZ            6                                             -> L0034
+        001C  LoadThisR     968 134230879                                 ; this.LandingRadius
+        0024  WRTV8         Radius
+        0028  PshVPtr       this
+        002C  CALLINTF      85075                                         ; void ALokiDropPodImpactIndicator::OnLandingRadiusChanged()
+      L0034:
+        0034  RET           4
+    */
+
+    void OnDropPodReplicated()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnDropPodReplicated");
+        return;
+    }
+    /* ---- OnDropPodReplicated: 11 dwords / 6 instructions (cache offset 0x92c9d) ----
+        0000  PshC4         183
+        0008  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0014  PshRPtr
+        0018  PshVPtr       this
+        001C  CALLSYS       __Evt_Execute                                 ; void __Evt_Execute(const UObject@, const FName&)
+        0028  RET           2
+    */
+
+    UFUNCTION(UnrealName=OnDropPodReplicated, BlueprintEvent, CanOverrideEvent, NoOp)
+    void OnDropPodReplicated_Implementation()   // traits=0x20
+    {
+        return;
+    }
+    /* ---- OnDropPodReplicated_Implementation: 1 dwords / 1 instructions (cache offset 0x92d64) ----
+        0000  RET           2
+    */
+
+    void OnLandingRadiusChanged()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnLandingRadiusChanged");
+        return;
+    }
+    /* ---- OnLandingRadiusChanged: 11 dwords / 6 instructions (cache offset 0x92e5f) ----
+        0000  PshC4         184
+        0008  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0014  PshRPtr
+        0018  PshVPtr       this
+        001C  CALLSYS       __Evt_Execute                                 ; void __Evt_Execute(const UObject@, const FName&)
+        0028  RET           2
+    */
+
+    UFUNCTION(UnrealName=OnLandingRadiusChanged, BlueprintEvent, CanOverrideEvent, NoOp)
+    void OnLandingRadiusChanged_Implementation()   // traits=0x20
+    {
+        return;
+    }
+    /* ---- OnLandingRadiusChanged_Implementation: 1 dwords / 1 instructions (cache offset 0x92f29) ----
+        0000  RET           2
+    */
+
+}
+

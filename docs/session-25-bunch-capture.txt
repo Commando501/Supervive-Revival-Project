@@ -1,0 +1,18 @@
+26:LogCsvProfiler: Display: Metadata set : commandline="" "G:\git\Supervive Revival Project\unreal-stub\Loki.uproject" /Engine/Maps/Entry?listen -game -server -log -Port=7777 -nullrhi -NoSplash -Unattended -LogCmds="LogHandshake Verbose, LogNet Verbose, LogLokiNet Verbose, LogLokiStateless Verbose, LogLokiIpConnection Verbose, LogLokiGameInstance Verbose, LogLokiStub Verbose, LogLokiStubGM Verbose, LogLokiStubPC Verbose, LogNetTraffic VeryVerbose, LogLokiActorChannel Verbose" -abslog=C:\Users\eastr\AppData\Local\Temp\claude\G--git-Supervive-Revival-Project\5b4acdf2-d9b7-4354-9798-58d8015eafa3\scratchpad\stub-s25a.log""
+234:LogHAL: Log category LogLokiActorChannel verbosity has been raised to Verbose.
+276:LogInit: Command Line: /Engine/Maps/Entry?listen -game -server -log -Port=7777 -nullrhi -NoSplash -Unattended -LogCmds="LogHandshake Verbose, LogNet Verbose, LogLokiNet Verbose, LogLokiStateless Verbose, LogLokiIpConnection Verbose, LogLokiGameInstance Verbose, LogLokiStub Verbose, LogLokiStubGM Verbose, LogLokiStubPC Verbose, LogNetTraffic VeryVerbose, LogLokiActorChannel Verbose" -abslog=C:\Users\eastr\AppData\Local\Temp\claude\G--git-Supervive-Revival-Project\5b4acdf2-d9b7-4354-9798-58d8015eafa3\scratchpad\stub-s25a.log
+1151:[2026.07.01-06.14.25:106][121]LogNetTraffic: Verbose:    Reliable Bunch, Channel 3 Sequence 176: Size 5.8+292.4
+1152:[2026.07.01-06.14.25:107][121]LogLokiActorChannel: Verbose: ReceivedBunch: ChIndex=3 ChSeq=176 bReliable=1 bOpen=0 bClose=0 NumBits=2339 StartPos=0 remaining=2339 bits
+1153:[2026.07.01-06.14.25:107][121]LogLokiActorChannel: Verbose: ReceivedBunch: bytes (293) 8E 90 78 EB 45 16 00 8C 0B 00 00 C0 CB 51 58 5B D9 0B D3 DB 5A DA 4B 53 18 DC DC 0B D3 9B 98 58 9E 95 CC 0B 93 15 D3 17 D3 9B 98 58 9E 95 CC 17 54 98 1C 5D 5E 53 99 5B 1D 00 00 00 00 00 80 C1 01 00 00 78 39 0A 6B 2B 7B 61 7A 5B 4B 7B 69 0A 83 9B 7B 61 7A 13 13 CB B3 92 79 61 B2 62 FA 62 7A 13 13 CB B3 92 F9 42 2A 93 7B 9B 2A 63 2B 1B A3 FB 9A 5A CB 63 0B 73 23 9B 03 00 00 00 00 00 30 2F 00 00 00 2F 47 61 6D 65 2F 4C 6F 6B 69 2F 4D 61 70 73 2F 4C 6F 62 62 79 56 32 2F 4C 56 4C 5F 4C 6F 62 62 79 56 32 5F 42 61 74 74 6C 65 50 61 73 73 00 00 00 00 00 00 A6 05 00 00 E0 E5 28 AC AD EC 85 E9 6D 2D ED A5 29 0C 6E EE 85 E9 4D 4C 2C CF 4A E6 85 C9 8A E9 8B E9 4D 4C 2C CF 4A E6 8B 29 ED 0C 8D 2E CD ED 0C 00 00 00 00 00 C0 AC 00 00 00 BC 1C 85 B5 95 BD 30 BD AD A5 BD 34 85 C1 CD BD 30 BD 89 89 E5 59 C9 BC 30 59 31 7D 31 BD 89 89 E5 59 C9 7C 05 C9 B5 BD C9 E5 01 00 00 00 00 00 00 
+1155:[2026.07.01-06.14.25:108][121]LogNet: Error: ReceivedRPC: ReceivePropertiesForRPC - Mismatch read. Function: ServerVerifyViewTarget, Object: PlayerController /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0
+1159:[2026.07.01-06.14.25:109][121]LogNet:  - Result=ObjectReplicatorReceivedBunchFail, ErrorContext="ObjectReplicatorReceivedBunchFail"
+
+=== Decoded structure ===
+Total bunch bits: 2339
+Content block header (bits 0-1): bOutHasRepLayout=0, bIsActor=1
+Outer SerializeIntPacked NumPayloadBits (bits 2-17): 2321
+Field header RepIndex (bits 18-24, MaxIndex~100): 94
+Inner SerializeIntPacked NumPayloadBits (bits 25-40): 2298
+RPC arg struct (bits 41-2338): 2298 bits = 287.25 bytes
+
+FString '/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_BattlePass' at bunch byte 129 (int32 count=47 + chars + null)

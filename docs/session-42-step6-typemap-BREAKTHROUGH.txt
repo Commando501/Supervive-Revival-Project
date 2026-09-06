@@ -1,0 +1,243 @@
+SESSION 42 — STEP 6 *** BREAKTHROUGH / DIAGNOSIS OVERTURNED ***
+The live LokiAssetManager HAS 30 primary-asset types registered — including every
+grid type (Hero, Mission, MissionPool, StoreOffer, HeroCosmeticsBundle, Emote,
+PlayerTitle, Item, LobbyPlatform, SlotCosmetics). The scan is NOT bypassed. The
+long-standing "LokiAssetManager bypasses the enumeration scan / types never
+register / manager never consults the AR" root cause is WRONG.
+==============================================================================
+Date: 2026-07-02
+Branch: dedicated-server-stub
+Method: Python ctypes ReadProcessMemory against the live normal-client process
+(PID 70960), non-elevated. Resolved FNames against the live FNamePool
+(&Blocks[0]=0x7FF68C801450). Scripts in scratchpad: read-scan-types.py,
+find-mgr-instance.py, read-typemap.py.
+
+SOLID, VERIFIED FINDINGS
+------------------------
+1. Config PrimaryAssetTypesToScan (engine Default__AssetManagerSettings CDO) = 32
+   FPrimaryAssetTypeInfo entries. Resolved all 32 type names (stride 0x88, 32/32):
+     Map, PrimaryAssetLabel, CueNotifyActor, CueNotifyStatic, Hero, Item, Emote,
+     PlayerTitle, Mission, HeroCosmeticsBundle, HeroAnimation, MapIcon,
+     SlotCosmetics, Minion, MissionPool, GameFeature, GameAugment, XPCategory,
+     LobbyPlatform, HeroMastery, LoginReward, EventTrack, StoreOffer, ExchangeToken,
+     GameFeatureData, Power, Season, Capsule, ArmoryCraftOffer, ProgressionTrack,
+     Equipment, ArmoryTables.
+   => The config is COMPLETE: every empty-grid type is configured to be scanned.
+
+2. Live LokiAssetManager SINGLETON found at 0x1C6E6EBEE90 (name "LokiAssetManager",
+   vtable RVA +0x88CB78; found via findptr on the UClass, the non-CDO vtable-match).
+   Its AssetTypeMap (a TMap<FPrimaryAssetType,TSharedRef<FPrimaryAssetTypeData>> at
+   instance offset +0x478, Num=30 Max=31, element stride 0x20, key=FName@+0x00,
+   value TSharedRef.obj@+0x08) contains 30 registered types. ALL 30 keys resolved
+   cleanly to primary-asset type names, INCLUDING every grid/menu type:
+     CueNotifyActor, CueNotifyStatic, Hero, Item, Emote, PlayerTitle, Mission,
+     HeroCosmeticsBundle, HeroAnimation, MapIcon, SlotCosmetics, Minion,
+     MissionPool, GameFeature, GameAugment, XPCategory, LobbyPlatform, HeroMastery,
+     LoginReward, EventTrack, StoreOffer, ExchangeToken, GameFeatureData, Power,
+     Season, Capsule, ArmoryCraftOffer, ProgressionTrack, Equipment, ArmoryTables.
+   (30 of the 32 config types; the 2 absent are the engine defaults Map +
+   PrimaryAssetLabel — normal, they're filtered in cooked/runtime.)
+   Each type has a live FPrimaryAssetTypeData object (0x200 bytes, densely pool-
+   allocated e.g. Hero=0x1c6e78b5200, StoreOffer=0x1c636242800).
+
+WHAT THIS OVERTURNS
+-------------------
+The documented root cause across sessions (see top of memory/supervive-hero-roster-
+blocker.md and docs/hero-roster-attempts.md) was: "LokiAssetManager registers
+primary assets ONLY from the content-service manifest and NEVER runs the config-
+driven scan; the enumeration bypasses it; the manager never consults the AR." The
+LIVE manager contradicts this: the 30 types ARE registered — which requires the
+scan to have RUN (ScanPathsForPrimaryAssets reads the AssetRegistry per type). So:
+  - The scan is NOT bypassed.
+  - The manager DOES consult the AssetRegistry (registering a type scans AR paths).
+  - => The trackb AR-patch "kill criterion" (manager doesn't consult AR) is likely
+    FALSE. The AR-patch route may be VIABLE after all — IF the reason the grids are
+    empty is that the per-type asset lists (each FPrimaryAssetTypeData's AssetMap)
+    are under-populated because the AR scan of the type's Directories found few/no
+    assets. Patching the AR so those directories resolve the baked primary assets
+    could then populate the per-type lists.
+
+WHAT IS NOT YET CONFIRMED (do NOT over-claim)
+---------------------------------------------
+- The per-type ASSET COUNTS. An attempt to read each FPrimaryAssetTypeData's
+  AssetMap (candidate arrays at obj+0x70 and obj+0x128, small Nums 1-3) was
+  INCONCLUSIVE: their contents decoded as reflection/property data ("ObjectProperty",
+  "NameProperty") and asset-internal names, NOT a clean asset-id list — meaning the
+  FPrimaryAssetTypeData layout used was wrong. So "Hero has 3 assets" etc. is
+  RETRACTED / unverified. The real per-type counts require the correct
+  FPrimaryAssetTypeData/AssetMap layout (diff a stock UE 5.4 UAssetManager, or RE it).
+- Whether the ALL HUNTERS grid is actually empty vs sparsely populated in THIS run
+  was NOT visually confirmed (computer-use screenshot approval timed out).
+
+THE NEW, SHARPER QUESTION (next session)
+----------------------------------------
+Types register fine. So the grid emptiness is DOWNSTREAM of type registration. Two
+candidates, distinguishable by reading the per-type AssetMap correctly:
+  (a) Per-type AssetMap under-populated: the AR scan of each type's Directories
+      found few/no assets (because the baked primary assets aren't discoverable via
+      the Premade AR under those paths). => AR-patch route is back in play (patch AR
+      so the type directories resolve the assets). This CONTRADICTS the old
+      kill criterion and is a genuine reopening.
+  (b) Per-type AssetMap fully populated but the UI enumeration path fails for another
+      reason (e.g. bundle-state / streamable load / a specific missing id — recall
+      the live ChangeBundleStateForPrimaryAssets "failed to find NameData" fired for
+      ONE type/id, not all).
+NEXT STEPS: (1) get the correct FPrimaryAssetTypeData layout and read Hero's AssetMap
+Num + a few asset-id keys — decides (a) vs (b). (2) Visually confirm the grid state
+(screenshot) — is it truly empty or partially populated? (3) If (a): revisit the AR
+extractor `assetregistry` tooling — but now with the knowledge that the manager DOES
+consume the AR, so the fix is making the type Directories resolve baked assets.
+
+VISUAL CONFIRMATION (computer-use screenshot, 2026-07-02, this same run)
+-----------------------------------------------------------------------
+Opened the HUNTERS screen in the live client:
+- The "ALL HUNTERS" grid (left) is VISUALLY EMPTY — zero hunter tiles, only the
+  role-filter icon column. So the enumeration that fills the grid returns nothing.
+- The right-hand DETAIL panel shows a REAL hero: "Frontline Pyromaniac" (ability
+  icon on PRIMARY, 3-star difficulty, PURCHASE 20,000, "Recommended for new
+  players"). So a specific hero loads by DIRECT reference (likely the current-season
+  / default/featured hero, by ID) even though the grid enumeration is empty.
+- The centre hero MODEL is the magenta "?" placeholder (3D model/preview not loaded).
+This GROUNDS the memory read precisely: the Hero primary-asset TYPE is registered
+(so a hero can load by id), but the Hero type's enumerable per-type asset list is
+empty (so GetPrimaryAssetIdList(Hero) -> 0 -> empty grid). The blocker is the
+per-type AssetMap being unpopulated, NOT the type/scan being absent.
+
+PER-TYPE AssetMap READ (layout RE, this run)
+--------------------------------------------
+FPrimaryAssetTypeData = FPrimaryAssetTypeInfo Info (0x88 — matches the config array
+stride) followed by TMap<FName,FPrimaryAssetData> AssetMap at obj+0x88. Read across
+8 types (Hero/Item/Power/Equipment/Mission/StoreOffer/Emote/HeroCosmeticsBundle):
+  - obj+0x00 = the type FName (confirmed: Hero object starts with FName 0x1A568 "Hero").
+  - obj+0x88 (AssetMap TMap header) = {Data=0, Num=0, Max=0} for ALL types => the
+    per-type enumerable AssetMap is EMPTY for every type.
+  - The small per-type counts seen elsewhere (obj+0x70 = N/4, obj+0x128 = N/N, N=1..3)
+    are Info sub-arrays (Directories / AssetScanPaths), NOT the asset list — their
+    contents decode as paths/property refs, and N is tiny (Hero=3) and doesn't match
+    the 25 baked heroes. So they are config data, not registered assets.
+CONCLUSION (high confidence): every primary-asset TYPE is registered but its AssetMap
+(the enumerable per-type asset list) is EMPTY. GetPrimaryAssetIdList(<type>) -> 0 ->
+every grid (hunters/store/cosmetics/missions) is empty — matching the memory's
+"all share one root cause" AND the visual (empty grid, hero loads by direct id).
+NOTE: exact AssetMap offset (+0x88) is inferred from Info size; a stock UE 5.4
+UAssetManager vtable/layout diff would 100%-confirm, but the {0,0,0} footprint + the
+all-types-empty + the empty grids are mutually corroborating.
+
+REFINED FIX DIRECTION
+---------------------
+The Hero type registered but ScanPathsForPrimaryAssets(Hero, Directories) populated
+0 enumerable assets. So the fix is to make the Hero type's scanned Directories
+resolve the 25 baked hero primary assets. Since the manager DOES consult the AR
+(proven by 30 types registering), the AR-patch route is logic-viable again — the
+open problem reverts to DEPLOYMENT (pak signing, still blocked) OR a RUNTIME path:
+usmapdump poke (WPM, non-elevated) could patch the in-memory AR and/or directly
+populate the Hero type's AssetMap. Needs the correct FPrimaryAssetTypeData/AssetMap
+layout + FPrimaryAssetData construction. (Hero AssetMap Num==0 now CONFIRMED above.)
+
+*** FINAL DIAGNOSIS (2026-07-02, decisive) — the in-game AR is FULL and correct;
+LokiAssetManager just never scans it into the per-type AssetMaps. ***
+Found the live UAssetRegistryImpl (CDO 0x1C66C2F63B0 — only ONE object carries its
+vtable 0x7FF68A455328; the registry data lives in the CDO's inline FAssetRegistryImpl
+GuardedData). Scanned it: a map at CDO+0x38/+0x58 has **Num = 103,841** = EXACTLY the
+baked AssetRegistry.bin entry count. So the IN-GAME registry is FULLY POPULATED (all
+103,841 entries, incl. the 25 correctly-tagged heroes). => Hypothesis A (sparse in-game
+AR) is RULED OUT. Hypothesis B CONFIRMED: the registry has everything, correctly tagged,
+but the manager's per-type AssetMaps are empty => LokiAssetManager registers each type's
+Info (from PrimaryAssetTypesToScan config) but NEVER runs the directory-scan / AR-query
+step that would populate the per-type AssetMap from the (full, correct) registry. It
+relies on the content-service MANIFEST (ags, sparse ~1175) instead. THIS is the precise,
+final root cause. (The "0.0008s FAssetRegistry startup" was the module init, not the
+premade-AR content load — the content IS present, 103,841 entries.)
+
+FIX DIRECTION (final, corrected)
+--------------------------------
+NOT an AR patch (the AR is already full + correctly tagged). The fix = make the manager
+populate its per-type AssetMaps FROM the already-present registry. Options:
+  1. RUNTIME TRIGGER (most promising): invoke UAssetManager::ScanPathsForPrimaryAssets
+     (or GetPrimaryAssetIdList/a re-scan) for the types at runtime — the AR is full, so a
+     single scan per type WOULD find the heroes and fill the grid. Via injection (proven
+     browse_hook) call the scan on the game thread. RISK: the prior native-shim call to
+     ScanPrimaryAssetTypesFromConfig __report_gsfailure'd — but that was a DIFFERENT fn in
+     a forced off-thread context; ScanPathsForPrimaryAssets on the game thread may differ.
+  2. UN-SKIP THE NATIVE SCAN: RE LokiAssetManager's StartInitialLoading override to find
+     WHY it skips the AR directory-scan, then poke the gating condition so the natural
+     startup scan runs. Needs the vtable-slot map (diff stock UE5.4 UAssetManager).
+  3. DIRECT WPM POPULATE: read the 25 hero FAssetData from the live AR and construct
+     FPrimaryAssetData entries into the Hero type's AssetMap. Hardest.
+Recommend option 1 first (cheapest test: does one scan call fill the grid?).
+
+(HISTORICAL — superseded by the FINAL DIAGNOSIS above) the notes below explored a
+sparse-AR hypothesis and an AR class-flip; both are now ruled out (AR is full + correct).
+*** CRUCIAL UPDATE — the AR entries are ALREADY correctly tagged; a class-flip is
+NOT the fix. The problem is upstream (sparse in-game AR, or AR-scan skipped). ***
+Ran `assetregistry inspect BP_HeroAsset` on the extracted Premade AR (out/AssetRegistry.bin,
+103,841 entries): it CONTAINS all 25 heroes — BP_HeroAsset_Alchemist ... under
+/Game/Loki/Characters/Heroes/<Hero>/ (50 entries = 25 x Blueprint+BlueprintGeneratedClass).
+The Alchemist BlueprintGeneratedClass entry's tags:
+    AssetClass       = BlueprintGeneratedClass
+    NativeParentClass = /Script/CoreUObject.Class'/Script/Loki.LokiHeroAsset'   <-- MATCHES the Hero scan's base class
+    ParentClass      = BP_LokiHeroAsset_C
+    PrimaryAssetName = Alchemist
+    PrimaryAssetType = Hero                                                       <-- already tagged
+So the baked AR entries are ALREADY set up exactly the way the Hero scan
+(BaseClass=LokiHeroAsset, bHasBlueprintClasses) expects. => The trackb AR-patch
+class-flip is NOT needed and would NOT help; the entries already register-able.
+YET the live Hero AssetMap is empty. So the failure is UPSTREAM of the AR content:
+  Hypothesis A (leading): the IN-GAME FAssetRegistry does NOT actually contain these
+    entries — it loads sparse/empty. Clues: the live log's "FAssetRegistry took 0.0008
+    seconds to start up" (far too fast to have parsed 103,841 entries), and the live
+    manager only knows ~1175 assets (instance maps at +0x120/+0x200 Num=1175/1110),
+    not 103k. The ~1175 likely came from the content-service MANIFEST (ags), NOT from
+    the baked AR. So the baked AssetRegistry.bin (with the heroes) may be loaded as a
+    "premade" registry but NOT populated into the queryable registry the scan uses —
+    OR the game intentionally uses a content-service-delivered registry that our ags
+    doesn't fully provide.
+  Hypothesis B: the AR-scan step (ScanPathsForPrimaryAssets' AR query) is skipped for
+    these types even though the type registers (Info present, AssetMap not populated).
+DECISIVE NEXT READ: find the live FAssetRegistry (FAssetRegistryImpl) singleton and
+count its FAssetData entries. ~103k => AR loaded, scan/query is the bug (Hyp B / a
+filter issue). ~1175 or few => in-game AR is sparse (Hyp A) and the fix is to make the
+game's queryable registry contain the hero entries (inject them into the in-memory AR
+before the scan, via early injection) — the baked data is right, it just isn't in the
+live registry. This REVIVES the "in-memory AR" idea but as ADD-ENTRIES, not class-flip.
+Anchors for finding FAssetRegistry: log "Premade AssetRegistry loaded from
+'../../../Loki/AssetRegistry.bin'"; the manager's AssetPathMap (1175) is a lead to the
+registrations it DID get (probably manifest-sourced).
+
+(SUPERSEDED) earlier fix plan below assumed a class-flip; keep for context but see the
+CRUCIAL UPDATE above — the AR is already correctly tagged.
+
+RECOMMENDED FIX PLAN (synthesis of everything learned)
+------------------------------------------------------
+Best path = EARLY-INJECTION IN-MEMORY AR PATCH (combines proven pieces, no pak sign):
+  1. Inject the browse_hook-style no-throw DLL early (CREATE_SUSPENDED + manual-map —
+     PROVEN in sessions 35-41, used for the dedicated-server path).
+  2. BEFORE UAssetManager::StartInitialLoading runs the scan, patch the in-memory
+     Premade AssetRegistry so the baked hero (and other type) assets are discoverable
+     as their primary-asset types under the scanned Directories — i.e. apply the SAME
+     class-flip the `assetregistry apply-patch` tool does (docs/trackb-assetregistry-
+     route.md), but to the in-memory FAssetRegistryState instead of the on-disk .bin.
+     This sidesteps BOTH the loose-file-inert problem AND the pak-signing wall (Step 3).
+  3. The natural startup scan then finds the assets -> per-type AssetMaps populate ->
+     grids render. No re-triggering of the crashy ScanPrimaryAssetTypesFromConfig.
+WHY this should work now (vs the old "closed" verdict): the old kill criterion said
+the manager ignores the AR. That is DISPROVEN — 30 types registered by scanning the
+AR. So making the AR resolve the assets DOES feed the manager.
+OPEN Q for this plan: does ScanPathsForPrimaryAssets find 0 hero assets because
+(i) the AR entries' AssetClass doesn't match the Hero base-class filter (=> the
+class-flip fixes it), or (ii) the assets aren't under the scanned Directories, or
+(iii) they're IoStore-only and absent from the Premade AR? Determine by reading the
+Hero type's Info.Directories (obj+0x70 array) + AssetBaseClass, then checking the
+Premade AR (tools/extractor `assetregistry inspect`) for hero entries under those
+paths with that class. That tells us exactly what the in-memory patch must change.
+ALT (harder): direct WPM population of each type's AssetMap (construct FPrimaryAssetData
++ TMap insert) — avoid unless the AR-patch path is blocked.
+
+STATE
+-----
+- Normal client still RUNNING at the menu (PID 70960). All heap addresses above are
+  this process's ASLR; RVAs (+0x88CB78 vtable) and offsets (+0x478 AssetTypeMap) are
+  reusable, re-find the singleton via findptr on the UClass each launch.
+- Reusable tooling: scratchpad Python RPM readers (OpenProcess VM_READ + FNamePool
+  resolver) — far better than usmapdump peek for structural walks. Non-elevated.
+- Read-only; nothing modified.

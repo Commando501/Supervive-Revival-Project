@@ -1,0 +1,3561 @@
+==============================================================================
+MODULE   Interaction.LokiInteractionPlayerComponent
+SOURCE   Interaction/LokiInteractionPlayerComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+event FOnInteractionUsableChangedDelegate;
+event FOnInteractionPressedDelegate;
+event FOnInteractionReleasedDelegate;
+
+const TSubclassOf<UObject@> __StaticType_ULokiInteractionPlayerComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiInteractionPlayerComponent@ ULokiInteractionPlayerComponent()
+// 4 instr, 28 B bytecode, id=0xE7C63CEA, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiInteractionPlayerComponent v2;
+
+    v2 = ULokiInteractionPlayerComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85131 q:0x26e6ed7a600; new ULokiInteractionPlayerComponent   ctor=ULokiInteractionPlayerComponent::ULokiInteractionPlayerComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xD36D0434, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiInteractionPlayerComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057bad8         ; __StaticType_ULokiInteractionPlayerComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ULokiInteractionPlayerComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x01C5C838, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiInteractionPlayerComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiInteractionPlayerComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972709            ; ULokiInteractionPlayerComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057bad8         ; __StaticType_ULokiInteractionPlayerComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiInteractionPlayerComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x5DCA0320, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiInteractionPlayerComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiInteractionPlayerComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972709            ; ULokiInteractionPlayerComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057bad8         ; __StaticType_ULokiInteractionPlayerComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiInteractionPlayerComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x371D6B39, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiInteractionPlayerComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiInteractionPlayerComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972709            ; ULokiInteractionPlayerComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057bad8         ; __StaticType_ULokiInteractionPlayerComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class FLokiUsableData
+==============================================================================
+{
+    UPROPERTY() AActor@ Actor;
+    UPROPERTY() UPrimitiveComponent@ OverlapComponent;
+    UPROPERTY() ULokiUsableComponent@ UsableComponent;
+
+}
+
+------------------------------------------------------------------------------
+FLokiUsableData() const
+// 13 instr, 64 B bytecode, id=0x5E9FD86F, varspace=0
+------------------------------------------------------------------------------
+{
+    this.Actor = null;
+    this.OverlapComponent = null;
+    this.UsableComponent = null;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshNull
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //     4  REFCPY
+    //     5  PshNull
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //     9  REFCPY
+    //    10  PshNull
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    14  REFCPY
+    //    15  RET            W0:2
+
+------------------------------------------------------------------------------
+FLokiUsableData(AActor@ InActor, UPrimitiveComponent@ InOverlapComponent, ULokiUsableComponent@ InUsableComponent) const
+// 28 instr, 136 B bytecode, id=0x9F50E35A, varspace=0
+------------------------------------------------------------------------------
+{
+    this.Actor = null;
+    this.OverlapComponent = null;
+    this.UsableComponent = null;
+    this.Actor = InActor;
+    this.OverlapComponent = InOverlapComponent;
+    this.UsableComponent = InUsableComponent;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshNull
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //     4  REFCPY
+    //     5  PshNull
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //     9  REFCPY
+    //    10  PshNull
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    14  REFCPY
+    //    15  PshVPtr        rW0:-2
+    //    16  PshVPtr        rW0:0
+    //    17  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //    19  REFCPY
+    //    20  PopPtr
+    //    21  PshVPtr        rW0:-4
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //    25  REFCPY
+    //    26  PopPtr
+    //    27  PshVPtr        rW0:-6
+    //    28  PshVPtr        rW0:0
+    //    29  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    31  REFCPY
+    //    32  PopPtr
+    //    33  RET            W0:8
+
+------------------------------------------------------------------------------
+bool Equals(const FLokiUsableData&inout InUsableData)
+// 26 instr, 144 B bytecode, id=0x7704CB7E, varspace=11
+------------------------------------------------------------------------------
+{
+    AActor v2;
+    auto v5;
+    UPrimitiveComponent v8;
+
+    v2 = this.Actor;
+    if (v2 == InUsableData.Actor) {
+        v8 = this.OverlapComponent;
+        v5 = v8 == InUsableData.OverlapComponent;
+    } else {
+        v5 = 0;
+    }
+    return v5;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  PshVPtr        rW0:-2
+    //     6  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //     8  RDSPtr
+    //     9  RefCpyV        wW0:4
+    //    10  CmpPtr         rW0:2 rW1:4
+    //    12  JZ             ->18
+    //    14  SetV4          wW0:5 d:0
+    //    16  JMP            ->34
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //    21  RDSPtr
+    //    22  RefCpyV        wW0:8
+    //    23  PshVPtr        rW0:-2
+    //    24  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //    26  RDSPtr
+    //    27  RefCpyV        wW0:10
+    //    28  CmpPtr         rW0:8 rW1:10
+    //    30  TZ
+    //    31  CpyRtoV4       wW0:11
+    //    32  CpyVtoV4       wW0:5 rW1:11
+    //    34  CpyVtoR4       rW0:5
+    //    35  RET            W0:4
+
+------------------------------------------------------------------------------
+bool NotEquals(const FLokiUsableData&inout InUsableData)
+// 26 instr, 144 B bytecode, id=0xDE5D4379, varspace=11
+------------------------------------------------------------------------------
+{
+    AActor v2;
+    auto v5;
+    UPrimitiveComponent v8;
+
+    v2 = this.Actor;
+    if (v2 == InUsableData.Actor) {
+        v8 = this.OverlapComponent;
+        v5 = v8 != InUsableData.OverlapComponent;
+    } else {
+        v5 = true;
+    }
+    return v5;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  PshVPtr        rW0:-2
+    //     6  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //     8  RDSPtr
+    //     9  RefCpyV        wW0:4
+    //    10  CmpPtr         rW0:2 rW1:4
+    //    12  JZ             ->18
+    //    14  SetV1          wW0:5 d:1
+    //    16  JMP            ->34
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //    21  RDSPtr
+    //    22  RefCpyV        wW0:8
+    //    23  PshVPtr        rW0:-2
+    //    24  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //    26  RDSPtr
+    //    27  RefCpyV        wW0:10
+    //    28  CmpPtr         rW0:8 rW1:10
+    //    30  TNZ
+    //    31  CpyRtoV4       wW0:11
+    //    32  CpyVtoV4       wW0:5 rW1:11
+    //    34  CpyVtoR4       rW0:5
+    //    35  RET            W0:4
+
+------------------------------------------------------------------------------
+void SetData(AActor@ InActor, UPrimitiveComponent@ InOverlapComponent, ULokiUsableComponent@ InUsableComponent)
+// 16 instr, 76 B bytecode, id=0xC4C0C385, varspace=0
+------------------------------------------------------------------------------
+{
+    this.Actor = InActor;
+    this.OverlapComponent = InOverlapComponent;
+    this.UsableComponent = InUsableComponent;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //     4  REFCPY
+    //     5  PopPtr
+    //     6  PshVPtr        rW0:-4
+    //     7  PshVPtr        rW0:0
+    //     8  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //    10  REFCPY
+    //    11  PopPtr
+    //    12  PshVPtr        rW0:-6
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    16  REFCPY
+    //    17  PopPtr
+    //    18  RET            W0:8
+
+------------------------------------------------------------------------------
+void Clear()
+// 16 instr, 76 B bytecode, id=0xB268B038, varspace=0
+------------------------------------------------------------------------------
+{
+    this.Actor = null;
+    this.OverlapComponent = null;
+    this.UsableComponent = null;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshNull
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //     4  REFCPY
+    //     5  PopPtr
+    //     6  PshNull
+    //     7  PshVPtr        rW0:0
+    //     8  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //    10  REFCPY
+    //    11  PopPtr
+    //    12  PshNull
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    16  REFCPY
+    //    17  PopPtr
+    //    18  RET            W0:2
+
+==============================================================================
+UCLASS()
+class ULokiInteractionPlayerComponent : ULokiPlayerInteractionComponent
+// base /Script/Loki.LokiPlayerInteractionComponent  ->  ../../../Loki/Source/Loki/Player/LokiPlayerInteractionComponent.h
+==============================================================================
+{
+    protected ALokiPlayerController@ CachedLokiPC;
+    protected ALokiHeroCharacter@ CachedLokiCharacter;
+    protected ULokiAbilitySystemComponent@ CachedLokiAbilitySystem;
+    protected ULokiHeroUsableComponent@ UsableDetectionComponent;
+    protected FLokiUsableData ActiveUsable;
+    protected FLokiUsableData SelectedUsable;
+    protected FLokiUsableData HoveredUsable;
+    protected FLokiUsableData FocusedUsable;
+    protected TArray<AActor@> UsableList;
+    protected bool bInteractionInputPressed;
+    protected float64 InteractionCooldownStartTime;
+    protected float64 MinInteractionCooldownTime;
+    protected bool bInputHoldInteractionCanProcess;
+    protected bool bCanProcessBufferedInteraction;
+    protected float64 ProcessInteractionBufferStartTime;
+    const float64 MaxProcessBufferedInteractionTime;
+    protected bool bHoveredComponentIsValid;
+    const bool bIsSupportingCooldownBuffering;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) UAkAudioEvent@ UsableNotFoundAudio;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FOnInteractionUsableChangedDelegate OnInteractionUsableChanged;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FOnInteractionPressedDelegate OnInteractionPressed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FOnInteractionReleasedDelegate OnInteractionReleased;
+
+}
+
+------------------------------------------------------------------------------
+ULokiInteractionPlayerComponent() const
+// 39 instr, 276 B bytecode, id=0xDF186B97, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    this.ActiveUsable.FLokiUsableData();
+    this.SelectedUsable.FLokiUsableData();
+    this.HoveredUsable.FLokiUsableData();
+    this.FocusedUsable.FLokiUsableData();
+    this.UsableList = TArray<AActor@>();
+    this.OnInteractionUsableChanged.FOnInteractionUsableChangedDelegate();
+    this.OnInteractionPressed.FOnInteractionPressedDelegate();
+    this.OnInteractionReleased.FOnInteractionReleasedDelegate();
+    v2 = 0.2;
+    this.MinInteractionCooldownTime = 0.2;
+    v2 = -1;
+    this.ProcessInteractionBufferStartTime = -1;
+    v2 = 0.5;
+    this.MaxProcessBufferedInteractionTime = 0.5;
+    this.bIsSupportingCooldownBuffering = true;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //     3  CALL           d:85101                 ; void FLokiUsableData::FLokiUsableData()
+    //     5  PshVPtr        rW0:0
+    //     6  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //     8  CALL           d:85101                 ; void FLokiUsableData::FLokiUsableData()
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:288 d:134230885      ; ULokiInteractionPlayerComponent::HoveredUsable  (+288)
+    //    13  CALL           d:85101                 ; void FLokiUsableData::FLokiUsableData()
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //    18  CALL           d:85101                 ; void FLokiUsableData::FLokiUsableData()
+    //    20  PshVPtr        rW0:0
+    //    21  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //    23  CALLSYS        q:0x26e6ee8b680         ; void TArray<AActor@>::$beh0()
+    //    26  PshVPtr        rW0:0
+    //    27  ADDSi          W0:416 d:134230885      ; ULokiInteractionPlayerComponent::OnInteractionUsableChanged  (+416)
+    //    29  CALL           d:85133                 ; void FOnInteractionUsableChangedDelegate::FOnInteractionUsableChangedDelegate()
+    //    31  PshVPtr        rW0:0
+    //    32  ADDSi          W0:432 d:134230885      ; ULokiInteractionPlayerComponent::OnInteractionPressed  (+432)
+    //    34  CALL           d:85142                 ; void FOnInteractionPressedDelegate::FOnInteractionPressedDelegate()
+    //    36  PshVPtr        rW0:0
+    //    37  ADDSi          W0:448 d:134230885      ; ULokiInteractionPlayerComponent::OnInteractionReleased  (+448)
+    //    39  CALL           d:85151                 ; void FOnInteractionReleasedDelegate::FOnInteractionReleasedDelegate()
+    //    41  SetV8          wW0:2 q:0x3fc999999999999a
+    //    44  LoadThisR      W0:368 d:134230885      ; ULokiInteractionPlayerComponent::MinInteractionCooldownTime  (+368)
+    //    46  WRTV8          rW0:2
+    //    47  SetV8          wW0:2 q:0xbff0000000000000
+    //    50  LoadThisR      W0:384 d:134230885      ; ULokiInteractionPlayerComponent::ProcessInteractionBufferStartTime  (+384)
+    //    52  WRTV8          rW0:2
+    //    53  SetV8          wW0:2 q:0x3fe0000000000000
+    //    56  LoadThisR      W0:392 d:134230885      ; ULokiInteractionPlayerComponent::MaxProcessBufferedInteractionTime  (+392)
+    //    58  WRTV8          rW0:2
+    //    59  SetV1          wW0:3 d:1
+    //    61  LoadThisR      W0:401 d:134230885      ; ULokiInteractionPlayerComponent::bIsSupportingCooldownBuffering  (+401)
+    //    63  WRTV1          rW0:3
+    //    64  PshVPtr        rW0:0
+    //    65  FinConstruct   q:0x26e6ed7a600         ; ULokiInteractionPlayerComponent
+    //    68  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 29 instr, 216 B bytecode, id=0x81F2E8B8, varspace=39
+------------------------------------------------------------------------------
+{
+    UGameEventRouterComponent v2;
+    FGameEvent_GameReady_Controller v24;
+    FGameEventListenerHandle v38;
+
+    v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+    v24 = FGameEvent_GameReady_Controller();
+    v38 = v2.RegisterForEvent(this, v24, null, __STATIC_NAME(5), false);
+    if (Loki::LokiIsServer(__WorldContext)) {
+        this.SetComponentTickEnabled(false);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //     6  STOREOBJ       wW0:2
+    //     7  SetV1          wW0:25 d:0
+    //     9  PshV4          rW0:25
+    //    10  PshC4          d:5
+    //    12  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    15  PshRPtr
+    //    16  PshNull
+    //    17  TYPEID         d:67120899              ; FGameEvent_GameReady_Controller
+    //    19  PSF            rW0:24
+    //    20  CALLSYS        q:0x26e7939c640         ; void FGameEvent_GameReady_Controller::$beh0()
+    //    23  PSF            rW0:24
+    //    24  PshVPtr        rW0:0
+    //    25  PSF            rW0:38
+    //    26  PshVPtr        rW0:2
+    //    27  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    30  PSF            rW0:24
+    //    31  CALLSYS        q:0x26e7939c480         ; void FGameEvent_GameReady_Controller::$beh2()
+    //    34  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    37  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //    40  JLowZ          ->49
+    //    42  SetV1          wW0:39 d:0
+    //    44  PshV4          rW0:39
+    //    45  PshVPtr        rW0:0
+    //    46  CALLSYS        q:0x26e7973d440         ; void UActorComponent::SetComponentTickEnabled(bool)
+    //    49  PSF            rW0:38
+    //    50  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    53  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnTest(const FGameEvent_SpellOutcome_PlayerState&inout Event, const ALokiPlayerState@ Context)
+// 27 instr, 176 B bytecode, id=0xC47383AC, varspace=18
+------------------------------------------------------------------------------
+{
+    TArrayConstIterator<FLokiSpellInstanceTarget> v6;
+    auto v13;
+    auto v16;
+    TWeakObjectPtr<AActor@> v18;
+
+    v6 = Event.SpellTargets.Iterator();
+    while (true) {
+        v13 = v6.CanProceed;
+        if (!v13) break;
+        v16 = v6.Proceed();
+        v18 = TWeakObjectPtr<AActor@>();
+        v18 = v16.TargetActor;
+        v13 = v18 == null;
+        v13 = !v13;
+        if (!v13) {
+            goto L36;
+        } else {
+            goto L36;
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:6
+    //     1  PshVPtr        rW0:-2
+    //     2  ADDSi          W0:24 d:67120956        ; FGameEvent_SpellOutcome_PlayerState::SpellTargets  (+24)
+    //     4  CALLSYS        q:0x26e6ef55b80         ; TArrayConstIterator<FLokiSpellInstanceTarget> TArray<FLokiSpellInstanceTarget>::Iterator() const
+    //     7  JMP            ->36
+    //     9  SUSPEND
+    //    10  PSF            rW0:6
+    //    11  CALLSYS        q:0x26e6ef55800         ; const FLokiSpellInstanceTarget& TArrayConstIterator<FLokiSpellInstanceTarget>::Proceed()
+    //    14  CpyRtoV8       wW0:16
+    //    15  PSF            rW0:18
+    //    16  CALLSYS        q:0x26e6ef55100         ; void TWeakObjectPtr<AActor@>::$beh0()
+    //    19  PshVPtr        rW0:16
+    //    20  ADDSi          W0:0 d:67120957         ; FLokiSpellInstanceTarget::TargetActor  (+0)
+    //    22  PSF            rW0:18
+    //    23  CALLSYS        q:0x26e786b9700         ; TWeakObjectPtr<AActor@>& TWeakObjectPtr<AActor@>::opAssign(const TWeakObjectPtr<AActor@>&)
+    //    26  PshNull
+    //    27  PSF            rW0:18
+    //    28  CALLSYS        q:0x26e6ef55640         ; bool TWeakObjectPtr<AActor@>::opEquals(AActor@) const
+    //    31  CpyRtoV4       wW0:13
+    //    32  NOT            rW0:13
+    //    33  CpyVtoR1       rW0:13
+    //    34  JLowZ          ->36
+    //    36  LoadVObjR      rW0:6 W1:16 DW2:268448612; TArrayConstIterator::CanProceed  (+16)
+    //    39  RDR1           wW0:13
+    //    40  CpyVtoR1       rW0:13
+    //    41  JLowNZ         ->9
+    //    43  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 152 instr, 920 B bytecode, id=0x2A286228, varspace=18
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiPlayerController v6;
+    auto v7;
+    ULokiUsableComponent v10;
+    AActor v12;
+    ULokiUsableComponent v16;
+
+    if (!Loki::LokiIsServer(__WorldContext)) {
+        v1 = false;
+        this.bHoveredComponentIsValid = false;
+        if (this.UsableDetectionComponent != null) {
+            v6 = this.CachedLokiPC;
+            v7 = v6 != null;
+            v1 = v7;
+        } else {
+            v1 = 0;
+        }
+        if (v1) {
+            v7 = this.UsableDetectionComponent.IsComponentInUsableList(this.CachedLokiPC.HoveredComponent);
+            this.bHoveredComponentIsValid = v7;
+        }
+        v6 = this.CachedLokiPC;
+        if (v6 != null) {
+            v1 = this.CachedLokiPC.IsActorHoveringEnabled();
+            v7 = v1;
+        } else {
+            v7 = 0;
+        }
+        if (v7) {
+            this.HoveredUsable.Clear();
+            v12 = this.CachedLokiPC.HoveredActor;
+            if (v12 == null) {
+            } else {
+                v16 = ULokiUsableComponent::Get(this.CachedLokiPC.HoveredActor, NAME_None);
+            }
+            v10 = v16;
+            if (v16 != null) {
+                if (v10.CanBeUsed(this.CachedLokiCharacter)) {
+                    this.HoveredUsable.Actor = this.CachedLokiPC.HoveredActor;
+                    this.HoveredUsable.UsableComponent = v10;
+                    v7 = this.bHoveredComponentIsValid;
+                    if (v7) {
+                        v12 = this.CachedLokiPC.HoveredComponent.GetOwner();
+                        if (v12 == this.CachedLokiPC.HoveredActor) {
+                            this.HoveredUsable.OverlapComponent = this.CachedLokiPC.HoveredComponent;
+                        }
+                    }
+                }
+            }
+            this.ProcessInteractionSelection();
+        }
+        v7 = this.bIsSupportingCooldownBuffering;
+        if (v7) {
+            v1 = this.InteractionsAreOnCooldown();
+            v1 = !v1;
+            v7 = v1;
+        } else {
+            v7 = 0;
+        }
+        if (v7) {
+            this.TryProcessingBufferedInput(this.ActiveUsable.UsableComponent);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->10
+    //     8  JMP            ->229
+    //    10  SetV1          wW0:1 d:0
+    //    12  LoadThisR      W0:400 d:134230885      ; ULokiInteractionPlayerComponent::bHoveredComponentIsValid  (+400)
+    //    14  WRTV1          rW0:1
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:232 d:134230885      ; ULokiInteractionPlayerComponent::UsableDetectionComponent  (+232)
+    //    18  RDSPtr
+    //    19  RefCpyV        wW0:4
+    //    20  CmpPtrNull     rW0:4
+    //    21  JNZ            ->27
+    //    23  SetV4          wW0:1 d:0
+    //    25  JMP            ->37
+    //    27  PshVPtr        rW0:0
+    //    28  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //    30  RDSPtr
+    //    31  RefCpyV        wW0:6
+    //    32  CmpPtrNull     rW0:6
+    //    33  TNZ
+    //    34  CpyRtoV4       wW0:7
+    //    35  CpyVtoV4       wW0:1 rW1:7
+    //    37  CpyVtoR1       rW0:1
+    //    38  JLowZ          ->58
+    //    40  PshVPtr        rW0:0
+    //    41  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //    43  RDSPtr
+    //    44  ADDSi          W0:2832 d:67115310      ; ALokiPlayerController::HoveredComponent  (+2832)
+    //    46  RDSPtr
+    //    47  PshVPtr        rW0:0
+    //    48  ADDSi          W0:232 d:134230885      ; ULokiInteractionPlayerComponent::UsableDetectionComponent  (+232)
+    //    50  RDSPtr
+    //    51  CALLSYS        q:0x26e7a2a2700         ; bool ULokiHeroUsableComponent::IsComponentInUsableList(const UPrimitiveComponent@) const
+    //    54  CpyRtoV4       wW0:7
+    //    55  LoadThisR      W0:400 d:134230885      ; ULokiInteractionPlayerComponent::bHoveredComponentIsValid  (+400)
+    //    57  WRTV1          rW0:7
+    //    58  PshVPtr        rW0:0
+    //    59  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //    61  RDSPtr
+    //    62  RefCpyV        wW0:6
+    //    63  CmpPtrNull     rW0:6
+    //    64  JNZ            ->70
+    //    66  SetV4          wW0:7 d:0
+    //    68  JMP            ->80
+    //    70  PshVPtr        rW0:0
+    //    71  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //    73  RDSPtr
+    //    74  CALLSYS        q:0x26e7a352c40         ; bool ALokiPlayerController::IsActorHoveringEnabled()
+    //    77  CpyRtoV4       wW0:1
+    //    78  CpyVtoV4       wW0:7 rW1:1
+    //    80  CpyVtoR1       rW0:7
+    //    81  JLowZ          ->200
+    //    83  PshVPtr        rW0:0
+    //    84  ADDSi          W0:288 d:134230885      ; ULokiInteractionPlayerComponent::HoveredUsable  (+288)
+    //    86  CALL           d:85100                 ; void FLokiUsableData::Clear()
+    //    88  PshVPtr        rW0:0
+    //    89  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //    91  RDSPtr
+    //    92  ADDSi          W0:2824 d:67115310      ; ALokiPlayerController::HoveredActor  (+2824)
+    //    94  RDSPtr
+    //    95  RefCpyV        wW0:12
+    //    96  CmpPtrNull     rW0:12
+    //    97  JZ             ->115
+    //    99  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   102  PshVPtr        rW0:0
+    //   103  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //   105  RDSPtr
+    //   106  ADDSi          W0:2824 d:67115310      ; ALokiPlayerController::HoveredActor  (+2824)
+    //   108  RDSPtr
+    //   109  CALLSYS        q:0x26e7b139540         ; ULokiUsableComponent@ ULokiUsableComponent::Get(const AActor@, const FName&)
+    //   112  STOREOBJ       wW0:16
+    //   113  JMP            ->116
+    //   115  FreeNullV8     wW0:16
+    //   116  PshVPtr        rW0:16
+    //   117  RefCpyV        wW0:10
+    //   118  CmpPtrNull     rW0:10
+    //   119  JZ             ->196
+    //   121  PshVPtr        rW0:0
+    //   122  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   124  RDSPtr
+    //   125  PshVPtr        rW0:10
+    //   126  CALLSYS        q:0x26e7a437b00         ; bool ULokiUsableComponent::CanBeUsed(const ALokiCharacter@) const
+    //   129  JLowZ          ->196
+    //   131  PshVPtr        rW0:0
+    //   132  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //   134  RDSPtr
+    //   135  ADDSi          W0:2824 d:67115310      ; ALokiPlayerController::HoveredActor  (+2824)
+    //   137  RDSPtr
+    //   138  PshVPtr        rW0:0
+    //   139  ADDSi          W0:288 d:134230885      ; ULokiInteractionPlayerComponent::HoveredUsable  (+288)
+    //   141  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //   143  REFCPY
+    //   144  PopPtr
+    //   145  PshVPtr        rW0:10
+    //   146  PshVPtr        rW0:0
+    //   147  ADDSi          W0:288 d:134230885      ; ULokiInteractionPlayerComponent::HoveredUsable  (+288)
+    //   149  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //   151  REFCPY
+    //   152  PopPtr
+    //   153  LoadThisR      W0:400 d:134230885      ; ULokiInteractionPlayerComponent::bHoveredComponentIsValid  (+400)
+    //   155  RDR1           wW0:7
+    //   156  CpyVtoR1       rW0:7
+    //   157  JLowZ          ->196
+    //   159  PshVPtr        rW0:0
+    //   160  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //   162  RDSPtr
+    //   163  ADDSi          W0:2832 d:67115310      ; ALokiPlayerController::HoveredComponent  (+2832)
+    //   165  RDSPtr
+    //   166  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //   169  STOREOBJ       wW0:12
+    //   170  PshVPtr        rW0:0
+    //   171  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //   173  RDSPtr
+    //   174  ADDSi          W0:2824 d:67115310      ; ALokiPlayerController::HoveredActor  (+2824)
+    //   176  RDSPtr
+    //   177  RefCpyV        wW0:18
+    //   178  CmpPtr         rW0:12 rW1:18
+    //   180  JNZ            ->196
+    //   182  PshVPtr        rW0:0
+    //   183  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //   185  RDSPtr
+    //   186  ADDSi          W0:2832 d:67115310      ; ALokiPlayerController::HoveredComponent  (+2832)
+    //   188  RDSPtr
+    //   189  PshVPtr        rW0:0
+    //   190  ADDSi          W0:288 d:134230885      ; ULokiInteractionPlayerComponent::HoveredUsable  (+288)
+    //   192  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //   194  REFCPY
+    //   195  PopPtr
+    //   196  PshVPtr        rW0:0
+    //   197  CALLINTF       d:85120                 ; void ULokiInteractionPlayerComponent::ProcessInteractionSelection()
+    //   199  FreeNullV8     wW0:10
+    //   200  LoadThisR      W0:401 d:134230885      ; ULokiInteractionPlayerComponent::bIsSupportingCooldownBuffering  (+401)
+    //   202  RDR1           wW0:7
+    //   203  CpyVtoR1       rW0:7
+    //   204  JLowNZ         ->210
+    //   206  SetV4          wW0:7 d:0
+    //   208  JMP            ->217
+    //   210  PshVPtr        rW0:0
+    //   211  CALLINTF       d:85125                 ; bool ULokiInteractionPlayerComponent::InteractionsAreOnCooldown() const
+    //   213  CpyRtoV4       wW0:1
+    //   214  NOT            rW0:1
+    //   215  CpyVtoV4       wW0:7 rW1:1
+    //   217  CpyVtoR1       rW0:7
+    //   218  JLowZ          ->229
+    //   220  PshVPtr        rW0:0
+    //   221  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //   223  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //   225  RDSPtr
+    //   226  PshVPtr        rW0:0
+    //   227  CALLINTF       d:85130                 ; void ULokiInteractionPlayerComponent::TryProcessingBufferedInput(ULokiUsableComponent@)
+    //   229  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void AddUsable(AActor@ InUsable)
+// 80 instr, 500 B bytecode, id=0x3045D16A, varspace=22
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v5;
+    APawn v8;
+    APawn v14;
+
+    if (!Loki::LokiIsServer(__WorldContext)) {
+        v5 = InUsable == null;
+        v1 = v5;
+    } else {
+        v1 = true;
+    }
+    if (!v1) {
+        v5 = this.UsableList.Contains(InUsable);
+        v1 = v5;
+    } else {
+        v1 = true;
+    }
+    if (!v1) {
+        if (this.CachedLokiPC == null) {
+        } else {
+            v14 = this.CachedLokiPC.GetControlledPawn();
+        }
+        v8 = v14;
+        if (this.CachedLokiCharacter != null) {
+            v5 = v8 == null;
+            v1 = v5;
+        } else {
+            v1 = true;
+        }
+        if (!v1) {
+            v5 = this.CachedLokiCharacter != v8;
+            v1 = v5;
+        } else {
+            v1 = true;
+        }
+        if (!v1) {
+            this.UsableList.Add(InUsable);
+            this.ProcessInteractionSelection();
+            this.TryProcessingBufferedInput(ULokiUsableComponent::Get(InUsable, NAME_None));
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->12
+    //     8  SetV1          wW0:1 d:1
+    //    10  JMP            ->19
+    //    12  PshVPtr        rW0:-2
+    //    13  RefCpyV        wW0:4
+    //    14  CmpPtrNull     rW0:4
+    //    15  TZ
+    //    16  CpyRtoV4       wW0:5
+    //    17  CpyVtoV4       wW0:1 rW1:5
+    //    19  CpyVtoR1       rW0:1
+    //    20  JLowZ          ->26
+    //    22  SetV1          wW0:1 d:1
+    //    24  JMP            ->36
+    //    26  PSF            rW0:-2
+    //    27  PshVPtr        rW0:0
+    //    28  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //    30  CALLSYS        q:0x26e6ef54f40         ; bool TArray<AActor@>::Contains(const AActor@ const&) const
+    //    33  CpyRtoV4       wW0:5
+    //    34  CpyVtoV4       wW0:1 rW1:5
+    //    36  CpyVtoR1       rW0:1
+    //    37  JLowZ          ->41
+    //    39  JMP            ->124
+    //    41  PshVPtr        rW0:0
+    //    42  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //    44  RDSPtr
+    //    45  RefCpyV        wW0:10
+    //    46  CmpPtrNull     rW0:10
+    //    47  JZ             ->59
+    //    49  PshVPtr        rW0:0
+    //    50  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //    52  RDSPtr
+    //    53  CALLSYS        q:0x26e797a2000         ; APawn@ AController::GetControlledPawn() const   [UFunction K2_GetPawn]
+    //    56  STOREOBJ       wW0:14
+    //    57  JMP            ->60
+    //    59  FreeNullV8     wW0:14
+    //    60  PshVPtr        rW0:14
+    //    61  RefCpyV        wW0:8
+    //    62  PshVPtr        rW0:0
+    //    63  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    65  RDSPtr
+    //    66  RefCpyV        wW0:16
+    //    67  CmpPtrNull     rW0:16
+    //    68  JNZ            ->74
+    //    70  SetV1          wW0:1 d:1
+    //    72  JMP            ->79
+    //    74  CmpPtrNull     rW0:8
+    //    75  TZ
+    //    76  CpyRtoV4       wW0:5
+    //    77  CpyVtoV4       wW0:1 rW1:5
+    //    79  CpyVtoR1       rW0:1
+    //    80  JLowZ          ->86
+    //    82  SetV1          wW0:1 d:1
+    //    84  JMP            ->97
+    //    86  PshVPtr        rW0:0
+    //    87  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    89  RDSPtr
+    //    90  RefCpyV        wW0:18
+    //    91  CmpPtr         rW0:18 rW1:8
+    //    93  TNZ
+    //    94  CpyRtoV4       wW0:5
+    //    95  CpyVtoV4       wW0:1 rW1:5
+    //    97  CpyVtoR1       rW0:1
+    //    98  JLowZ          ->102
+    //   100  JMP            ->124
+    //   102  PSF            rW0:-2
+    //   103  PshVPtr        rW0:0
+    //   104  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //   106  CALLSYS        q:0x26e6ef26440         ; void TArray<AActor@>::Add(const AActor@ const&)
+    //   109  PshVPtr        rW0:0
+    //   110  CALLINTF       d:85120                 ; void ULokiInteractionPlayerComponent::ProcessInteractionSelection()
+    //   112  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   115  PshVPtr        rW0:-2
+    //   116  CALLSYS        q:0x26e7b139540         ; ULokiUsableComponent@ ULokiUsableComponent::Get(const AActor@, const FName&)
+    //   119  STOREOBJ       wW0:20
+    //   120  PshVPtr        rW0:20
+    //   121  PshVPtr        rW0:0
+    //   122  CALLINTF       d:85130                 ; void ULokiInteractionPlayerComponent::TryProcessingBufferedInput(ULokiUsableComponent@)
+    //   124  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void RemoveUsable(AActor@ InUsable)
+// 52 instr, 332 B bytecode, id=0x1D46E4CA, varspace=24
+------------------------------------------------------------------------------
+{
+    auto v1;
+    AActor v8;
+    auto v11;
+    FLokiUsableData v18;
+    ULokiUsableComponent v20;
+
+    if (!Loki::LokiIsServer(__WorldContext)) {
+        v1 = InUsable == null;
+    } else {
+        v1 = true;
+    }
+    if (!v1) {
+        v8 = InUsable;
+        if (InUsable != this.ActiveUsable.Actor) {
+            v20 = ULokiUsableComponent::Get(InUsable, NAME_None);
+            if (v20 != null) {
+                v11 = 10;
+                v20.StopInteraction(this.CachedLokiCharacter, true, 10);
+            }
+        } else {
+            v11 = 10;
+            v18 = this.CancelActiveUsable(10);
+        }
+        this.ProcessInteractionSelection();
+        this.UsableList.Remove(InUsable);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->12
+    //     8  SetV1          wW0:1 d:1
+    //    10  JMP            ->19
+    //    12  PshVPtr        rW0:-2
+    //    13  RefCpyV        wW0:4
+    //    14  CmpPtrNull     rW0:4
+    //    15  TZ
+    //    16  CpyRtoV4       wW0:5
+    //    17  CpyVtoV4       wW0:1 rW1:5
+    //    19  CpyVtoR1       rW0:1
+    //    20  JLowZ          ->24
+    //    22  JMP            ->82
+    //    24  PshVPtr        rW0:-2
+    //    25  RefCpyV        wW0:8
+    //    26  PshVPtr        rW0:0
+    //    27  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    29  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //    31  RDSPtr
+    //    32  RefCpyV        wW0:10
+    //    33  CmpPtr         rW0:8 rW1:10
+    //    35  JNZ            ->46
+    //    37  SetV1          wW0:11 d:10
+    //    39  PshV4          rW0:11
+    //    40  PSF            rW0:18
+    //    41  PshVPtr        rW0:0
+    //    42  CALLINTF       d:85115                 ; FLokiUsableData ULokiInteractionPlayerComponent::CancelActiveUsable(const ELokiUsableInteractionEndResult)
+    //    44  JMP            ->72
+    //    46  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    49  PshVPtr        rW0:-2
+    //    50  CALLSYS        q:0x26e7b139540         ; ULokiUsableComponent@ ULokiUsableComponent::Get(const AActor@, const FName&)
+    //    53  STOREOBJ       wW0:20
+    //    54  CmpPtrNull     rW0:20
+    //    55  JZ             ->71
+    //    57  SetV1          wW0:11 d:10
+    //    59  PshV4          rW0:11
+    //    60  SetV1          wW0:23 d:1
+    //    62  PshV4          rW0:23
+    //    63  PshVPtr        rW0:0
+    //    64  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    66  RDSPtr
+    //    67  PshVPtr        rW0:20
+    //    68  CALLSYS        q:0x26e7a43d0c0         ; void ULokiUsableComponent::StopInteraction(AActor@, ELokiUsableActionNetworkType, ELokiUsableInteractionEndResult)
+    //    71  FreeNullV8     wW0:20
+    //    72  PSF            rW0:-2
+    //    73  PshVPtr        rW0:0
+    //    74  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //    76  CALLSYS        q:0x26e6ef54d80         ; int TArray<AActor@>::Remove(const AActor@ const&)
+    //    79  PshVPtr        rW0:0
+    //    80  CALLINTF       d:85120                 ; void ULokiInteractionPlayerComponent::ProcessInteractionSelection()
+    //    82  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ProcessInteractionInputPressed()
+// 6 instr, 36 B bytecode, id=0x851C59E3, varspace=1
+------------------------------------------------------------------------------
+{
+    this.bInputHoldInteractionCanProcess = true;
+    this.ProcessActiveInteraction();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  LoadThisR      W0:376 d:134230885      ; ULokiInteractionPlayerComponent::bInputHoldInteractionCanProcess  (+376)
+    //     4  WRTV1          rW0:1
+    //     5  PshVPtr        rW0:0
+    //     6  CALLINTF       d:85123                 ; void ULokiInteractionPlayerComponent::ProcessActiveInteraction()
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ProcessInteractionInputReleased()
+// 52 instr, 324 B bytecode, id=0x68E52FE5, varspace=9
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v5;
+
+    v1 = this.bInteractionInputPressed;
+    v1 = !v1;
+    if (!v1) {
+        v1 = false;
+        this.bInteractionInputPressed = false;
+        this.OnInteractionReleased.Broadcast(this.ActiveUsable.Actor);
+        if (this.CachedLokiAbilitySystem != null) {
+            v5 = this.CachedLokiAbilitySystem.HasMatchingGameplayTag(GameplayTags::State_Knocked);
+            v5 = !v5;
+            v1 = v5;
+        } else {
+            v1 = 0;
+        }
+        if (v1) {
+            if (this.ActiveUsable.UsableComponent != null) {
+                this.ActiveUsable.UsableComponent.UpdateInteraction(this.CachedLokiCharacter, true);
+            }
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:352 d:134230885      ; ULokiInteractionPlayerComponent::bInteractionInputPressed  (+352)
+    //     2  RDR1           wW0:1
+    //     3  NOT            rW0:1
+    //     4  CpyVtoR1       rW0:1
+    //     5  JLowZ          ->9
+    //     7  JMP            ->80
+    //     9  SetV1          wW0:1 d:0
+    //    11  LoadThisR      W0:352 d:134230885      ; ULokiInteractionPlayerComponent::bInteractionInputPressed  (+352)
+    //    13  WRTV1          rW0:1
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    17  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //    19  RDSPtr
+    //    20  PshVPtr        rW0:0
+    //    21  ADDSi          W0:448 d:134230885      ; ULokiInteractionPlayerComponent::OnInteractionReleased  (+448)
+    //    23  CALL           d:85154                 ; void FOnInteractionReleasedDelegate::Broadcast(AActor@) const
+    //    25  PshVPtr        rW0:0
+    //    26  ADDSi          W0:224 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiAbilitySystem  (+224)
+    //    28  RDSPtr
+    //    29  RefCpyV        wW0:4
+    //    30  CmpPtrNull     rW0:4
+    //    31  JNZ            ->37
+    //    33  SetV4          wW0:1 d:0
+    //    35  JMP            ->51
+    //    37  PshGPtr        q:0x26e705ba648         ; GameplayTags::State_Knocked
+    //    40  PshVPtr        rW0:0
+    //    41  ADDSi          W0:224 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiAbilitySystem  (+224)
+    //    43  RDSPtr
+    //    44  CALLSYS        q:0x26e79e78740         ; bool UAbilitySystemComponent::HasMatchingGameplayTag(FGameplayTag) const   [UFunction Script_HasMatchingGameplayTag]
+    //    47  CpyRtoV4       wW0:5
+    //    48  NOT            rW0:5
+    //    49  CpyVtoV4       wW0:1 rW1:5
+    //    51  CpyVtoR1       rW0:1
+    //    52  JLowZ          ->80
+    //    54  PshVPtr        rW0:0
+    //    55  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    57  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    59  RDSPtr
+    //    60  RefCpyV        wW0:8
+    //    61  CmpPtrNull     rW0:8
+    //    62  JZ             ->80
+    //    64  SetV1          wW0:9 d:1
+    //    66  PshV4          rW0:9
+    //    67  PshVPtr        rW0:0
+    //    68  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    70  RDSPtr
+    //    71  PshVPtr        rW0:0
+    //    72  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    74  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    76  RDSPtr
+    //    77  CALLSYS        q:0x26e7a43cd40         ; void ULokiUsableComponent::UpdateInteraction(AActor@, ELokiUsableInteractionInputType)
+    //    80  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void CancelUsableIfActive(AActor@ InUsableActor)
+// 52 instr, 308 B bytecode, id=0xF03CA8FF, varspace=20
+------------------------------------------------------------------------------
+{
+    auto v3;
+    AActor v6;
+    auto v9;
+    FLokiUsableData v20;
+
+    if (InUsableActor != null) {
+        v6 = InUsableActor;
+        v9 = InUsableActor == this.ActiveUsable.Actor;
+        v3 = v9;
+    } else {
+        v3 = 0;
+    }
+    if (v3) {
+        v9 = this.ActiveUsable.UsableComponent != null;
+        v3 = v9;
+    } else {
+        v3 = 0;
+    }
+    if (v3) {
+        v9 = this.ActiveUsable.UsableComponent.IsUsableInteracting(this.CachedLokiCharacter);
+        v3 = v9;
+    } else {
+        v3 = 0;
+    }
+    if (v3) {
+        v20 = this.CancelActiveUsable(3);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  RefCpyV        wW0:2
+    //     2  CmpPtrNull     rW0:2
+    //     3  JNZ            ->9
+    //     5  SetV4          wW0:3 d:0
+    //     7  JMP            ->24
+    //     9  PshVPtr        rW0:-2
+    //    10  RefCpyV        wW0:6
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    14  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //    16  RDSPtr
+    //    17  RefCpyV        wW0:8
+    //    18  CmpPtr         rW0:6 rW1:8
+    //    20  TZ
+    //    21  CpyRtoV4       wW0:9
+    //    22  CpyVtoV4       wW0:3 rW1:9
+    //    24  CpyVtoR1       rW0:3
+    //    25  JLowNZ         ->31
+    //    27  SetV4          wW0:3 d:0
+    //    29  JMP            ->43
+    //    31  PshVPtr        rW0:0
+    //    32  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    34  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    36  RDSPtr
+    //    37  RefCpyV        wW0:12
+    //    38  CmpPtrNull     rW0:12
+    //    39  TNZ
+    //    40  CpyRtoV4       wW0:9
+    //    41  CpyVtoV4       wW0:3 rW1:9
+    //    43  CpyVtoR1       rW0:3
+    //    44  JLowNZ         ->50
+    //    46  SetV4          wW0:3 d:0
+    //    48  JMP            ->66
+    //    50  PshVPtr        rW0:0
+    //    51  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    53  RDSPtr
+    //    54  PshVPtr        rW0:0
+    //    55  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    57  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    59  RDSPtr
+    //    60  CALLSYS        q:0x26e7a43d980         ; bool ULokiUsableComponent::IsUsableInteracting(AActor@) const
+    //    63  CpyRtoV4       wW0:9
+    //    64  CpyVtoV4       wW0:3 rW1:9
+    //    66  CpyVtoR1       rW0:3
+    //    67  JLowZ          ->76
+    //    69  SetV1          wW0:13 d:3
+    //    71  PshV4          rW0:13
+    //    72  PSF            rW0:20
+    //    73  PshVPtr        rW0:0
+    //    74  CALLINTF       d:85115                 ; FLokiUsableData ULokiInteractionPlayerComponent::CancelActiveUsable(const ELokiUsableInteractionEndResult)
+    //    76  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool RequestCancelActiveUsable()
+// 14 instr, 68 B bytecode, id=0xC8D48F39, varspace=17
+------------------------------------------------------------------------------
+{
+    FLokiUsableData v14;
+    auto v17;
+
+    v14 = this.CancelActiveUsable(3);
+    v17 = v14.Actor != null;
+    return v17;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:7 d:3
+    //     2  PshV4          rW0:7
+    //     3  PSF            rW0:14
+    //     4  PshVPtr        rW0:0
+    //     5  CALLINTF       d:85115                 ; FLokiUsableData ULokiInteractionPlayerComponent::CancelActiveUsable(const ELokiUsableInteractionEndResult)
+    //     7  PSF            rW0:14
+    //     8  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //    10  RDSPtr
+    //    11  RefCpyV        wW0:16
+    //    12  CmpPtrNull     rW0:16
+    //    13  TNZ
+    //    14  CpyRtoV4       wW0:17
+    //    15  CpyVtoR4       rW0:17
+    //    16  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool IsActorFocusedUsable(AActor@ InActor)
+// 19 instr, 104 B bytecode, id=0xB291D765, varspace=9
+------------------------------------------------------------------------------
+{
+    auto v3;
+    AActor v6;
+
+    if (InActor != null) {
+        v6 = InActor;
+        v3 = InActor == this.FocusedUsable.Actor;
+    } else {
+        v3 = 0;
+    }
+    return v3;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  RefCpyV        wW0:2
+    //     2  CmpPtrNull     rW0:2
+    //     3  JNZ            ->9
+    //     5  SetV4          wW0:3 d:0
+    //     7  JMP            ->24
+    //     9  PshVPtr        rW0:-2
+    //    10  RefCpyV        wW0:6
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //    14  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //    16  RDSPtr
+    //    17  RefCpyV        wW0:8
+    //    18  CmpPtr         rW0:6 rW1:8
+    //    20  TZ
+    //    21  CpyRtoV4       wW0:9
+    //    22  CpyVtoV4       wW0:3 rW1:9
+    //    24  CpyVtoR4       rW0:3
+    //    25  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnPlayerInitialized(const FGameEvent_GameReady_Controller&inout Event, const EGameEventStatefulEventType EventType, const AController@ Context)
+// 46 instr, 284 B bytecode, id=0x0574A7EC, varspace=13
+------------------------------------------------------------------------------
+{
+    AActor v2;
+    ALokiPlayerController v4;
+    ALokiHeroCharacter v8;
+    APawn v10;
+    ALokiHeroCharacter v12;
+
+    v2 = this.GetOwner();
+    if (v2 == null) {
+        v4 = null;
+    } else {
+        v4 = cast<ALokiPlayerController>(v2);
+    }
+    this.CachedLokiPC = v4;
+    this.CachedLokiPC.OnSpawnedCharacterChanged.AddUFunction(this, __STATIC_NAME(75));
+    v10 = this.CachedLokiPC.GetControlledPawn();
+    if (v10 == null) {
+        v12 = null;
+    } else {
+        v12 = cast<ALokiHeroCharacter>(v10);
+    }
+    v8 = v12;
+    if (v12 != null) {
+        this.OnSpawnedCharacterChangedCalled(v8);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857134            ; ALokiPlayerController@
+    //    10  PSF            rW0:4
+    //    11  PshVPtr        rW0:2
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:4
+    //    18  PshVPtr        rW0:4
+    //    19  PshVPtr        rW0:0
+    //    20  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //    22  REFCPY
+    //    23  PopPtr
+    //    24  PshC4          d:75
+    //    26  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    29  PshRPtr
+    //    30  PshVPtr        rW0:0
+    //    31  PshVPtr        rW0:0
+    //    32  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //    34  RDSPtr
+    //    35  ADDSi          W0:2648 d:67115310      ; ALokiPlayerController::OnSpawnedCharacterChanged  (+2648)
+    //    37  CALLSYS        q:0x26e77172e00         ; void FOnSpawnedCharacterChanged::AddUFunction(const UObject@, const FName&)
+    //    40  PshVPtr        rW0:0
+    //    41  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //    43  RDSPtr
+    //    44  CALLSYS        q:0x26e797a2000         ; APawn@ AController::GetControlledPawn() const   [UFunction K2_GetPawn]
+    //    47  STOREOBJ       wW0:10
+    //    48  CmpPtrNull     rW0:10
+    //    49  JZ             ->60
+    //    51  TYPEID         d:1140857000            ; ALokiHeroCharacter@
+    //    53  PSF            rW0:12
+    //    54  PshVPtr        rW0:10
+    //    55  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    58  JMP            ->61
+    //    60  ClrVPtr        wW0:12
+    //    61  PshVPtr        rW0:12
+    //    62  RefCpyV        wW0:8
+    //    63  CmpPtrNull     rW0:8
+    //    64  JZ             ->70
+    //    66  PshVPtr        rW0:8
+    //    67  PshVPtr        rW0:0
+    //    68  CALLINTF       d:85113                 ; void ULokiInteractionPlayerComponent::OnSpawnedCharacterChangedCalled(const ALokiCharacter@)
+    //    70  RET            W0:7
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnSpawnedCharacterChangedCalled(const ALokiCharacter@ NewCharacter)
+// 128 instr, 788 B bytecode, id=0x2087A384, varspace=24
+------------------------------------------------------------------------------
+{
+    FLokiUsableData v8;
+    ALokiHeroCharacter v10;
+    auto v11;
+    ALokiCharacter v14;
+    ULokiAbilitySystemComponent v20;
+
+    this.ClearUsables();
+    v8 = this.CancelActiveUsable(8);
+    v10 = this.CachedLokiCharacter;
+    if (v10 != null) {
+        v14 = this.CachedLokiCharacter;
+        v11 = v14 != NewCharacter;
+    } else {
+        v11 = 0;
+    }
+    if (v11) {
+        this.CachedLokiCharacter.OnLivingStateChanged.UnbindObject(this);
+        this.CachedLokiCharacter.OnAbilitySystemInitialized.UnbindObject(this);
+        v20 = this.CachedLokiAbilitySystem;
+        if (v20 != null) {
+            this.CachedLokiAbilitySystem.OnGameplaySpellAdded.UnbindObject(this);
+            this.CachedLokiAbilitySystem = null;
+        }
+        this.UsableDetectionComponent = null;
+    }
+    if (NewCharacter == null) {
+        v10 = null;
+    } else {
+        v10 = cast<ALokiHeroCharacter>(NewCharacter);
+    }
+    this.CachedLokiCharacter = v10;
+    v10 = this.CachedLokiCharacter;
+    if (v10 != null) {
+        this.CachedLokiCharacter.OnLivingStateChanged.AddUFunction(this, __STATIC_NAME(76));
+        this.UsableDetectionComponent = ULokiHeroUsableComponent::Get(this.CachedLokiCharacter, NAME_None);
+        if (Loki::LokiIsClient(__WorldContext)) {
+            this.CachedLokiCharacter.OnAbilitySystemInitialized.AddUFunction(this, __STATIC_NAME(77));
+            if (this.CachedLokiCharacter.IsAbilitySystemInitialized()) {
+                v20 = this.CachedLokiCharacter.GetLokiAbilitySystem_BP();
+                this.OnAbilitySystemInitializedCalled(v20);
+            }
+        }
+        this.ProcessInteractionSelection();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85114                 ; void ULokiInteractionPlayerComponent::ClearUsables()
+    //     3  SetV1          wW0:1 d:8
+    //     5  PshV4          rW0:1
+    //     6  PSF            rW0:8
+    //     7  PshVPtr        rW0:0
+    //     8  CALLINTF       d:85115                 ; FLokiUsableData ULokiInteractionPlayerComponent::CancelActiveUsable(const ELokiUsableInteractionEndResult)
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    13  RDSPtr
+    //    14  RefCpyV        wW0:10
+    //    15  CmpPtrNull     rW0:10
+    //    16  JNZ            ->22
+    //    18  SetV4          wW0:11 d:0
+    //    20  JMP            ->35
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    25  RDSPtr
+    //    26  RefCpyV        wW0:14
+    //    27  PshVPtr        rW0:-2
+    //    28  RefCpyV        wW0:16
+    //    29  CmpPtr         rW0:14 rW1:16
+    //    31  TNZ
+    //    32  CpyRtoV4       wW0:17
+    //    33  CpyVtoV4       wW0:11 rW1:17
+    //    35  CpyVtoR1       rW0:11
+    //    36  JLowZ          ->88
+    //    38  PshVPtr        rW0:0
+    //    39  PshVPtr        rW0:0
+    //    40  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    42  RDSPtr
+    //    43  ADDSi          W0:3128 d:67114993      ; ALokiCharacter::OnLivingStateChanged  (+3128)
+    //    45  CALLSYS        q:0x26e711bb4c0         ; void FLivingStateDelegate::UnbindObject(UObject@)
+    //    48  PshVPtr        rW0:0
+    //    49  PshVPtr        rW0:0
+    //    50  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    52  RDSPtr
+    //    53  ADDSi          W0:3544 d:67114993      ; ALokiCharacter::OnAbilitySystemInitialized  (+3544)
+    //    55  CALLSYS        q:0x26e71188740         ; void FAbilitySystemInitializedDelegate::UnbindObject(UObject@)
+    //    58  PshVPtr        rW0:0
+    //    59  ADDSi          W0:224 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiAbilitySystem  (+224)
+    //    61  RDSPtr
+    //    62  RefCpyV        wW0:20
+    //    63  CmpPtrNull     rW0:20
+    //    64  JZ             ->82
+    //    66  PshVPtr        rW0:0
+    //    67  PshVPtr        rW0:0
+    //    68  ADDSi          W0:224 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiAbilitySystem  (+224)
+    //    70  RDSPtr
+    //    71  ADDSi          W0:5352 d:67114901      ; ULokiAbilitySystemComponent::OnGameplaySpellAdded  (+5352)
+    //    73  CALLSYS        q:0x26e711b5640         ; void FGameplayAbilityAdded::UnbindObject(UObject@)
+    //    76  PshNull
+    //    77  PshVPtr        rW0:0
+    //    78  ADDSi          W0:224 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiAbilitySystem  (+224)
+    //    80  REFCPY
+    //    81  PopPtr
+    //    82  PshNull
+    //    83  PshVPtr        rW0:0
+    //    84  ADDSi          W0:232 d:134230885      ; ULokiInteractionPlayerComponent::UsableDetectionComponent  (+232)
+    //    86  REFCPY
+    //    87  PopPtr
+    //    88  CmpPtrNull     rW0:-2
+    //    89  JZ             ->100
+    //    91  TYPEID         d:1140857000            ; ALokiHeroCharacter@
+    //    93  PSF            rW0:10
+    //    94  PshVPtr        rW0:-2
+    //    95  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    98  JMP            ->101
+    //   100  ClrVPtr        wW0:10
+    //   101  PshVPtr        rW0:10
+    //   102  PshVPtr        rW0:0
+    //   103  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   105  REFCPY
+    //   106  PopPtr
+    //   107  PshVPtr        rW0:0
+    //   108  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   110  RDSPtr
+    //   111  RefCpyV        wW0:10
+    //   112  CmpPtrNull     rW0:10
+    //   113  JZ             ->196
+    //   115  PshC4          d:76
+    //   117  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   120  PshRPtr
+    //   121  PshVPtr        rW0:0
+    //   122  PshVPtr        rW0:0
+    //   123  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   125  RDSPtr
+    //   126  ADDSi          W0:3128 d:67114993      ; ALokiCharacter::OnLivingStateChanged  (+3128)
+    //   128  CALLSYS        q:0x26e711bb840         ; void FLivingStateDelegate::AddUFunction(const UObject@, const FName&)
+    //   131  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   134  PshVPtr        rW0:0
+    //   135  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   137  RDSPtr
+    //   138  CALLSYS        q:0x26e7b11a180         ; ULokiHeroUsableComponent@ ULokiHeroUsableComponent::Get(const AActor@, const FName&)
+    //   141  STOREOBJ       wW0:24
+    //   142  PshVPtr        rW0:24
+    //   143  PshVPtr        rW0:0
+    //   144  ADDSi          W0:232 d:134230885      ; ULokiInteractionPlayerComponent::UsableDetectionComponent  (+232)
+    //   146  REFCPY
+    //   147  PopPtr
+    //   148  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   151  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //   154  JLowZ          ->193
+    //   156  PshC4          d:77
+    //   158  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   161  PshRPtr
+    //   162  PshVPtr        rW0:0
+    //   163  PshVPtr        rW0:0
+    //   164  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   166  RDSPtr
+    //   167  ADDSi          W0:3544 d:67114993      ; ALokiCharacter::OnAbilitySystemInitialized  (+3544)
+    //   169  CALLSYS        q:0x26e71188ac0         ; void FAbilitySystemInitializedDelegate::AddUFunction(const UObject@, const FName&)
+    //   172  PshVPtr        rW0:0
+    //   173  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   175  RDSPtr
+    //   176  CALLSYS        q:0x26e7a18d440         ; bool ALokiCharacter::IsAbilitySystemInitialized() const
+    //   179  JLowZ          ->193
+    //   181  PshVPtr        rW0:0
+    //   182  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   184  RDSPtr
+    //   185  CALLSYS        q:0x26e7a188740         ; ULokiAbilitySystemComponent@ ALokiCharacter::GetLokiAbilitySystem_BP() const
+    //   188  STOREOBJ       wW0:20
+    //   189  PshVPtr        rW0:20
+    //   190  PshVPtr        rW0:0
+    //   191  CALLINTF       d:85118                 ; void ULokiInteractionPlayerComponent::OnAbilitySystemInitializedCalled(ULokiAbilitySystemComponent@)
+    //   193  PshVPtr        rW0:0
+    //   194  CALLINTF       d:85120                 ; void ULokiInteractionPlayerComponent::ProcessInteractionSelection()
+    //   196  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClearUsables()
+// 26 instr, 180 B bytecode, id=0x3042C5E5, varspace=2
+------------------------------------------------------------------------------
+{
+    if (!Loki::LokiIsServer(__WorldContext)) {
+        this.UsableList.Empty(0);
+        this.ActiveUsable.Clear();
+        this.SelectedUsable.Clear();
+        this.HoveredUsable.Clear();
+        this.FocusedUsable.Clear();
+        this.UsableDetectionComponent = null;
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->10
+    //     8  JMP            ->44
+    //    10  PshC4          d:0
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //    15  CALLSYS        q:0x26e6ef54bc0         ; void TArray<AActor@>::Empty(int)
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    21  CALL           d:85100                 ; void FLokiUsableData::Clear()
+    //    23  PshVPtr        rW0:0
+    //    24  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //    26  CALL           d:85100                 ; void FLokiUsableData::Clear()
+    //    28  PshVPtr        rW0:0
+    //    29  ADDSi          W0:288 d:134230885      ; ULokiInteractionPlayerComponent::HoveredUsable  (+288)
+    //    31  CALL           d:85100                 ; void FLokiUsableData::Clear()
+    //    33  PshVPtr        rW0:0
+    //    34  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //    36  CALL           d:85100                 ; void FLokiUsableData::Clear()
+    //    38  PshNull
+    //    39  PshVPtr        rW0:0
+    //    40  ADDSi          W0:232 d:134230885      ; ULokiInteractionPlayerComponent::UsableDetectionComponent  (+232)
+    //    42  REFCPY
+    //    43  PopPtr
+    //    44  RET            W0:2
+
+------------------------------------------------------------------------------
+FLokiUsableData CancelActiveUsable(const ELokiUsableInteractionEndResult ResultType)
+// 99 instr, 604 B bytecode, id=0xAF30CA19, varspace=17
+------------------------------------------------------------------------------
+{
+    FLokiUsableData v6;
+    auto v7;
+    auto v11;
+
+    v6.FLokiUsableData();
+    if (!Loki::LokiIsServer(__WorldContext)) {
+        v11 = this.ActiveUsable.Actor == null;
+        v7 = v11;
+    } else {
+        v7 = true;
+    }
+    if (!v7) {
+        v11 = this.ActiveUsable.UsableComponent == null;
+        v7 = v11;
+    } else {
+        v7 = true;
+    }
+    if (!v7) {
+        v11 = this.CachedLokiCharacter == null;
+        v7 = v11;
+    } else {
+        v7 = true;
+    }
+    if (!v7) {
+        if (!this.ActiveUsable.UsableComponent.IsInteractionEnding(this.CachedLokiCharacter)) {
+            if (this.ShouldCancelActiveUsableInteraction()) {
+                this.ActiveUsable.UsableComponent.StopInteraction(this.CachedLokiCharacter, true, ResultType);
+                this.ActiveUsable = v6;
+            }
+            this.CachedLokiPC.ForceCloseUI();
+            this.ActiveUsable.Clear();
+            __return.FLokiUsableData();
+            v6 = __return;
+        } else {
+            __return.FLokiUsableData();
+            v6 = __return;
+        }
+    } else {
+        __return.FLokiUsableData();
+        v6 = __return;
+    }
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:6
+    //     1  CALL           d:85101                 ; void FLokiUsableData::FLokiUsableData()
+    //     3  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     6  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     9  JLowZ          ->15
+    //    11  SetV1          wW0:7 d:1
+    //    13  JMP            ->27
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    18  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //    20  RDSPtr
+    //    21  RefCpyV        wW0:10
+    //    22  CmpPtrNull     rW0:10
+    //    23  TZ
+    //    24  CpyRtoV4       wW0:11
+    //    25  CpyVtoV4       wW0:7 rW1:11
+    //    27  CpyVtoR1       rW0:7
+    //    28  JLowZ          ->34
+    //    30  SetV1          wW0:7 d:1
+    //    32  JMP            ->46
+    //    34  PshVPtr        rW0:0
+    //    35  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    37  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    39  RDSPtr
+    //    40  RefCpyV        wW0:14
+    //    41  CmpPtrNull     rW0:14
+    //    42  TZ
+    //    43  CpyRtoV4       wW0:11
+    //    44  CpyVtoV4       wW0:7 rW1:11
+    //    46  CpyVtoR1       rW0:7
+    //    47  JLowZ          ->53
+    //    49  SetV1          wW0:7 d:1
+    //    51  JMP            ->63
+    //    53  PshVPtr        rW0:0
+    //    54  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    56  RDSPtr
+    //    57  RefCpyV        wW0:16
+    //    58  CmpPtrNull     rW0:16
+    //    59  TZ
+    //    60  CpyRtoV4       wW0:11
+    //    61  CpyVtoV4       wW0:7 rW1:11
+    //    63  CpyVtoR1       rW0:7
+    //    64  JLowZ          ->76
+    //    66  PshVPtr        rW0:-2
+    //    67  CALL           d:85101                 ; void FLokiUsableData::FLokiUsableData()
+    //    69  PSF            rW0:6
+    //    70  PshVPtr        rW0:-2
+    //    71  COPY           W0:24 d:134230883       ; 24 dwords of FLokiUsableData
+    //    73  PopPtr
+    //    74  JMP            ->150
+    //    76  PshVPtr        rW0:0
+    //    77  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    79  RDSPtr
+    //    80  PshVPtr        rW0:0
+    //    81  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    83  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    85  RDSPtr
+    //    86  CALLSYS        q:0x26e7a43db40         ; bool ULokiUsableComponent::IsInteractionEnding(AActor@) const
+    //    89  JLowZ          ->101
+    //    91  PshVPtr        rW0:-2
+    //    92  CALL           d:85101                 ; void FLokiUsableData::FLokiUsableData()
+    //    94  PSF            rW0:6
+    //    95  PshVPtr        rW0:-2
+    //    96  COPY           W0:24 d:134230883       ; 24 dwords of FLokiUsableData
+    //    98  PopPtr
+    //    99  JMP            ->150
+    //   101  PshVPtr        rW0:0
+    //   102  CALLINTF       d:85116                 ; bool ULokiInteractionPlayerComponent::ShouldCancelActiveUsableInteraction()
+    //   104  JLowZ          ->130
+    //   106  PshV4          rW0:-4
+    //   107  SetV1          wW0:17 d:1
+    //   109  PshV4          rW0:17
+    //   110  PshVPtr        rW0:0
+    //   111  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   113  RDSPtr
+    //   114  PshVPtr        rW0:0
+    //   115  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //   117  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //   119  RDSPtr
+    //   120  CALLSYS        q:0x26e7a43d0c0         ; void ULokiUsableComponent::StopInteraction(AActor@, ELokiUsableActionNetworkType, ELokiUsableInteractionEndResult)
+    //   123  PshVPtr        rW0:0
+    //   124  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //   126  PSF            rW0:6
+    //   127  COPY           W0:24 d:134230883       ; 24 dwords of FLokiUsableData
+    //   129  PopPtr
+    //   130  PshVPtr        rW0:0
+    //   131  ADDSi          W0:208 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiPC  (+208)
+    //   133  RDSPtr
+    //   134  CALLSYS        q:0x26e7a32fe40         ; void ALokiPlayerController::ForceCloseUI()
+    //   137  PshVPtr        rW0:0
+    //   138  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //   140  CALL           d:85100                 ; void FLokiUsableData::Clear()
+    //   142  PshVPtr        rW0:-2
+    //   143  CALL           d:85101                 ; void FLokiUsableData::FLokiUsableData()
+    //   145  PSF            rW0:6
+    //   146  PshVPtr        rW0:-2
+    //   147  COPY           W0:24 d:134230883       ; 24 dwords of FLokiUsableData
+    //   149  PopPtr
+    //   150  RET            W0:5
+
+------------------------------------------------------------------------------
+bool ShouldCancelActiveUsableInteraction()
+// 11 instr, 64 B bytecode, id=0xE3DE1FB8, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.ActiveUsable.UsableComponent.IsUsableInteracting(this.CachedLokiCharacter);
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //     3  RDSPtr
+    //     4  PshVPtr        rW0:0
+    //     5  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //     7  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //     9  RDSPtr
+    //    10  CALLSYS        q:0x26e7a43d980         ; bool ULokiUsableComponent::IsUsableInteracting(AActor@) const
+    //    13  CpyRtoV4       wW0:1
+    //    14  CpyVtoR4       rW0:1
+    //    15  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnLivingStateChangedCalled(const ELivingState LivingState, ALokiCharacter@ LokiCharacter)
+// 6 instr, 36 B bytecode, id=0xE6FF55E4, varspace=0
+------------------------------------------------------------------------------
+{
+    this.SelectedUsable.Clear();
+    this.ProcessInteractionSelection();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //     3  CALL           d:85100                 ; void FLokiUsableData::Clear()
+    //     5  PshVPtr        rW0:0
+    //     6  CALLINTF       d:85120                 ; void ULokiInteractionPlayerComponent::ProcessInteractionSelection()
+    //     8  RET            W0:5
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnAbilitySystemInitializedCalled(ULokiAbilitySystemComponent@ LokiASComponent)
+// 13 instr, 80 B bytecode, id=0x9FE748B0, varspace=1
+------------------------------------------------------------------------------
+{
+    this.CachedLokiAbilitySystem = LokiASComponent;
+    LokiASComponent.OnGameplaySpellAdded.AddUFunction(this, __STATIC_NAME(78));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:224 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiAbilitySystem  (+224)
+    //     4  REFCPY
+    //     5  PopPtr
+    //     6  PshC4          d:78
+    //     8  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    11  PshRPtr
+    //    12  PshVPtr        rW0:0
+    //    13  PshVPtr        rW0:-2
+    //    14  ADDSi          W0:5352 d:67114901      ; ULokiAbilitySystemComponent::OnGameplaySpellAdded  (+5352)
+    //    16  CALLSYS        q:0x26e711b59c0         ; void FGameplayAbilityAdded::AddUFunction(const UObject@, const FName&)
+    //    19  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnGameplaySpellAddedCalled(UGameplayAbility@ Ability, UObject@ SourceObject)
+// 28 instr, 164 B bytecode, id=0x884564C0, varspace=10
+------------------------------------------------------------------------------
+{
+    UObject v2;
+    ULokiGameplayUsableSpell v8;
+    ULokiGameplayUsableSpell v10;
+
+    v2 = SourceObject;
+    if (SourceObject == this.ActiveUsable.Actor) {
+        if (Ability == null) {
+            v10 = null;
+        } else {
+            v10 = cast<ULokiGameplayUsableSpell>(Ability);
+        }
+        v8 = v10;
+        if (v10 != null) {
+            v8.InitializeLocalSpellInput(this.bInteractionInputPressed);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  RefCpyV        wW0:2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //     5  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //     7  RDSPtr
+    //     8  RefCpyV        wW0:4
+    //     9  CmpPtr         rW0:2 rW1:4
+    //    11  JNZ            ->40
+    //    13  CmpPtrNull     rW0:-2
+    //    14  JZ             ->25
+    //    16  TYPEID         d:1140856983            ; ULokiGameplayUsableSpell@
+    //    18  PSF            rW0:10
+    //    19  PshVPtr        rW0:-2
+    //    20  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    23  JMP            ->26
+    //    25  ClrVPtr        wW0:10
+    //    26  PshVPtr        rW0:10
+    //    27  RefCpyV        wW0:8
+    //    28  CmpPtrNull     rW0:8
+    //    29  JZ             ->39
+    //    31  LoadThisR      W0:352 d:134230885      ; ULokiInteractionPlayerComponent::bInteractionInputPressed  (+352)
+    //    33  RDR1           wW0:5
+    //    34  PshV4          rW0:5
+    //    35  PshVPtr        rW0:8
+    //    36  CALLSYS        q:0x26e7a25bd80         ; void ULokiGameplayUsableSpell::InitializeLocalSpellInput(bool)
+    //    39  FreeNullV8     wW0:8
+    //    40  RET            W0:6
+
+------------------------------------------------------------------------------
+void ProcessInteractionSelection()
+// 151 instr, 924 B bytecode, id=0x3A670A00, varspace=26
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v8;
+    FLokiUsableData v16;
+    AActor v18;
+    ULokiHeroUsableComponent v20;
+    UPrimitiveComponent v22;
+    AActor v24;
+
+    if (!Loki::LokiIsServer(__WorldContext)) {
+        if (this.CachedLokiCharacter != null) {
+            v8 = int(this.CachedLokiCharacter.GetLivingState()) != 1;
+            v1 = v8;
+        } else {
+            v1 = true;
+        }
+        if (!v1) {
+            this.SelectedUsable.Clear();
+            v18 = this.HoveredUsable.Actor;
+            if (v18 != null) {
+                v1 = this.IsInUsableList(this.HoveredUsable.Actor);
+                v8 = v1;
+            } else {
+                v8 = 0;
+            }
+            if (v8) {
+                v1 = this.HoveredUsable.UsableComponent.CanBeUsed(this.CachedLokiCharacter);
+                v8 = v1;
+            } else {
+                v8 = 0;
+            }
+            if (!v8) {
+                v24 = ULokiUsableComponent::GetHighestPriorityUsable(this.CachedLokiCharacter, this.UsableList);
+                this.SelectedUsable.Actor = v24;
+                v18 = this.SelectedUsable.Actor;
+                if (v18 != null) {
+                    this.SelectedUsable.UsableComponent = ULokiUsableComponent::Get(this.SelectedUsable.Actor, NAME_None);
+                }
+                v20 = this.UsableDetectionComponent;
+                if (v20 != null) {
+                    v22 = this.UsableDetectionComponent.GetClosestOverlappingComponentWithTags(v24);
+                    this.SelectedUsable.OverlapComponent = v22;
+                }
+            } else {
+                this.HoveredUsable = this.SelectedUsable;
+                v20 = this.UsableDetectionComponent;
+                if (v20 != null) {
+                    v22 = this.UsableDetectionComponent.GetClosestOverlappingComponentWithTags(this.HoveredUsable.Actor);
+                    this.SelectedUsable.OverlapComponent = v22;
+                }
+            }
+            this.UpdateSelectedUsable();
+        } else {
+            v16 = this.CancelActiveUsable(8);
+            this.UpdateSelectedUsable();
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->10
+    //     8  JMP            ->230
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    13  RDSPtr
+    //    14  RefCpyV        wW0:4
+    //    15  CmpPtrNull     rW0:4
+    //    16  JNZ            ->22
+    //    18  SetV1          wW0:1 d:1
+    //    20  JMP            ->38
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    25  RDSPtr
+    //    26  CALLSYS        q:0x26e7a188ac0         ; ELivingState ALokiCharacter::GetLivingState() const
+    //    29  CpyRtoV4       wW0:5
+    //    30  sbTOi          wW0:6 rW1:5
+    //    32  CMPIi          rW0:6 d:1
+    //    34  TNZ
+    //    35  CpyRtoV4       wW0:8
+    //    36  CpyVtoV4       wW0:1 rW1:8
+    //    38  CpyVtoR1       rW0:1
+    //    39  JLowZ          ->53
+    //    41  SetV1          wW0:9 d:8
+    //    43  PshV4          rW0:9
+    //    44  PSF            rW0:16
+    //    45  PshVPtr        rW0:0
+    //    46  CALLINTF       d:85115                 ; FLokiUsableData ULokiInteractionPlayerComponent::CancelActiveUsable(const ELokiUsableInteractionEndResult)
+    //    48  PshVPtr        rW0:0
+    //    49  CALLINTF       d:85121                 ; void ULokiInteractionPlayerComponent::UpdateSelectedUsable()
+    //    51  JMP            ->230
+    //    53  PshVPtr        rW0:0
+    //    54  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //    56  CALL           d:85100                 ; void FLokiUsableData::Clear()
+    //    58  PshVPtr        rW0:0
+    //    59  ADDSi          W0:288 d:134230885      ; ULokiInteractionPlayerComponent::HoveredUsable  (+288)
+    //    61  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //    63  RDSPtr
+    //    64  RefCpyV        wW0:18
+    //    65  CmpPtrNull     rW0:18
+    //    66  JNZ            ->72
+    //    68  SetV4          wW0:8 d:0
+    //    70  JMP            ->84
+    //    72  PshVPtr        rW0:0
+    //    73  ADDSi          W0:288 d:134230885      ; ULokiInteractionPlayerComponent::HoveredUsable  (+288)
+    //    75  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //    77  RDSPtr
+    //    78  PshVPtr        rW0:0
+    //    79  CALLINTF       d:85122                 ; bool ULokiInteractionPlayerComponent::IsInUsableList(AActor@)
+    //    81  CpyRtoV4       wW0:1
+    //    82  CpyVtoV4       wW0:8 rW1:1
+    //    84  CpyVtoR1       rW0:8
+    //    85  JLowNZ         ->91
+    //    87  SetV4          wW0:8 d:0
+    //    89  JMP            ->107
+    //    91  PshVPtr        rW0:0
+    //    92  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    94  RDSPtr
+    //    95  PshVPtr        rW0:0
+    //    96  ADDSi          W0:288 d:134230885      ; ULokiInteractionPlayerComponent::HoveredUsable  (+288)
+    //    98  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //   100  RDSPtr
+    //   101  CALLSYS        q:0x26e7a437b00         ; bool ULokiUsableComponent::CanBeUsed(const ALokiCharacter@) const
+    //   104  CpyRtoV4       wW0:1
+    //   105  CpyVtoV4       wW0:8 rW1:1
+    //   107  CpyVtoR1       rW0:8
+    //   108  JLowZ          ->151
+    //   110  PshVPtr        rW0:0
+    //   111  ADDSi          W0:288 d:134230885      ; ULokiInteractionPlayerComponent::HoveredUsable  (+288)
+    //   113  PshVPtr        rW0:0
+    //   114  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //   116  COPY           W0:24 d:134230883       ; 24 dwords of FLokiUsableData
+    //   118  PopPtr
+    //   119  PshVPtr        rW0:0
+    //   120  ADDSi          W0:232 d:134230885      ; ULokiInteractionPlayerComponent::UsableDetectionComponent  (+232)
+    //   122  RDSPtr
+    //   123  RefCpyV        wW0:20
+    //   124  CmpPtrNull     rW0:20
+    //   125  JZ             ->149
+    //   127  PshVPtr        rW0:0
+    //   128  ADDSi          W0:288 d:134230885      ; ULokiInteractionPlayerComponent::HoveredUsable  (+288)
+    //   130  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //   132  RDSPtr
+    //   133  PshVPtr        rW0:0
+    //   134  ADDSi          W0:232 d:134230885      ; ULokiInteractionPlayerComponent::UsableDetectionComponent  (+232)
+    //   136  RDSPtr
+    //   137  CALLSYS        q:0x26e7a2a2a80         ; UPrimitiveComponent@ ULokiHeroUsableComponent::GetClosestOverlappingComponentWithTags(const AActor@) const
+    //   140  STOREOBJ       wW0:22
+    //   141  PshVPtr        rW0:22
+    //   142  PshVPtr        rW0:0
+    //   143  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //   145  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //   147  REFCPY
+    //   148  PopPtr
+    //   149  JMP            ->227
+    //   151  PshVPtr        rW0:0
+    //   152  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //   154  PshVPtr        rW0:0
+    //   155  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   157  RDSPtr
+    //   158  CALLSYS        q:0x26e7a437400         ; AActor@ ULokiUsableComponent::GetHighestPriorityUsable(ALokiCharacter@, const TArray<AActor@>&)
+    //   161  STOREOBJ       wW0:24
+    //   162  PshVPtr        rW0:24
+    //   163  PshVPtr        rW0:0
+    //   164  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //   166  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //   168  REFCPY
+    //   169  PopPtr
+    //   170  PshVPtr        rW0:0
+    //   171  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //   173  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //   175  RDSPtr
+    //   176  RefCpyV        wW0:18
+    //   177  CmpPtrNull     rW0:18
+    //   178  JZ             ->201
+    //   180  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   183  PshVPtr        rW0:0
+    //   184  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //   186  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //   188  RDSPtr
+    //   189  CALLSYS        q:0x26e7b139540         ; ULokiUsableComponent@ ULokiUsableComponent::Get(const AActor@, const FName&)
+    //   192  STOREOBJ       wW0:26
+    //   193  PshVPtr        rW0:26
+    //   194  PshVPtr        rW0:0
+    //   195  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //   197  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //   199  REFCPY
+    //   200  PopPtr
+    //   201  PshVPtr        rW0:0
+    //   202  ADDSi          W0:232 d:134230885      ; ULokiInteractionPlayerComponent::UsableDetectionComponent  (+232)
+    //   204  RDSPtr
+    //   205  RefCpyV        wW0:20
+    //   206  CmpPtrNull     rW0:20
+    //   207  JZ             ->226
+    //   209  PshVPtr        rW0:24
+    //   210  PshVPtr        rW0:0
+    //   211  ADDSi          W0:232 d:134230885      ; ULokiInteractionPlayerComponent::UsableDetectionComponent  (+232)
+    //   213  RDSPtr
+    //   214  CALLSYS        q:0x26e7a2a2a80         ; UPrimitiveComponent@ ULokiHeroUsableComponent::GetClosestOverlappingComponentWithTags(const AActor@) const
+    //   217  STOREOBJ       wW0:22
+    //   218  PshVPtr        rW0:22
+    //   219  PshVPtr        rW0:0
+    //   220  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //   222  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //   224  REFCPY
+    //   225  PopPtr
+    //   226  FreeNullV8     wW0:24
+    //   227  PshVPtr        rW0:0
+    //   228  CALLINTF       d:85121                 ; void ULokiInteractionPlayerComponent::UpdateSelectedUsable()
+    //   230  RET            W0:2
+
+------------------------------------------------------------------------------
+void UpdateSelectedUsable()
+// 231 instr, 1432 B bytecode, id=0x2BDDEC4F, varspace=30
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    AActor v4;
+    AActor v6;
+    UPrimitiveComponent v10;
+    auto v13;
+    ULokiUsableComponent v16;
+    ULokiUsableComponent v18;
+    FText v22;
+    ULokiUsableComponent v26;
+
+    v2 = false;
+    v1 = false;
+    v4 = this.FocusedUsable.Actor;
+    if (v4 == null) {
+        this.SelectedUsable = this.FocusedUsable;
+        v2 = true;
+        v1 = true;
+    } else {
+        v6 = this.FocusedUsable.Actor;
+        if (v6 == this.SelectedUsable.Actor) {
+            v10 = this.FocusedUsable.OverlapComponent;
+            v13 = v10 != this.SelectedUsable.OverlapComponent;
+            v2 = v13;
+        } else {
+            v2 = true;
+        }
+        if (v2) {
+            v16 = this.FocusedUsable.UsableComponent;
+            this.SelectedUsable = this.FocusedUsable;
+            v13 = true;
+            v1 = true;
+            v16.Unfocus();
+        }
+    }
+    v4 = this.FocusedUsable.Actor;
+    if (v4 != null) {
+        v18 = this.FocusedUsable.UsableComponent;
+        v13 = v18 != null;
+        v2 = v13;
+    } else {
+        v2 = 0;
+    }
+    if (!v2) {
+        v13 = this.UsableList.IsEmpty();
+        v13 = !v13;
+        if (!v13) {
+            if (v1) {
+                this.OnInteractionUsableChanged.Broadcast(null, null);
+            }
+        } else {
+            v4 = this.UsableList[0];
+            if (v4 == null) {
+            } else {
+                v26 = ULokiUsableComponent::Get(this.UsableList[0], NAME_None);
+            }
+            v16 = v26;
+            if (v26 != null) {
+                v22 = v16.GetFailurePrompt(this.CachedLokiCharacter, null);
+                v2 = v22.IsEmpty();
+                v2 = !v2;
+                if (v2) {
+                    v16.Focus(null);
+                    v16.SetInteractionUIPrompt(v22);
+                    this.FocusedUsable.SetData(this.UsableList[0], null, v16);
+                    this.OnInteractionUsableChanged.Broadcast(this.UsableList[0], null);
+                }
+            }
+        }
+    } else {
+        if (v1) {
+            this.FocusedUsable.UsableComponent.Focus(this.FocusedUsable.OverlapComponent);
+            v4 = this.FocusedUsable.Actor;
+            if (v4 != null) {
+                v18 = this.FocusedUsable.UsableComponent;
+                v13 = v18 != null;
+                v2 = v13;
+            } else {
+                v2 = 0;
+            }
+            if (v2) {
+                v22 = this.FocusedUsable.UsableComponent.GetPrompt(this.CachedLokiCharacter, this.FocusedUsable.OverlapComponent);
+                this.FocusedUsable.UsableComponent.SetInteractionUIPrompt(v22);
+                this.OnInteractionUsableChanged.Broadcast(this.FocusedUsable.Actor, this.FocusedUsable.OverlapComponent);
+            }
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:2 d:0
+    //     2  CpyVtoV4       wW0:1 rW1:2
+    //     4  PshVPtr        rW0:0
+    //     5  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //     7  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //     9  RDSPtr
+    //    10  RefCpyV        wW0:4
+    //    11  CmpPtrNull     rW0:4
+    //    12  JZ             ->86
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //    17  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //    19  RDSPtr
+    //    20  RefCpyV        wW0:6
+    //    21  PshVPtr        rW0:0
+    //    22  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //    24  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //    26  RDSPtr
+    //    27  RefCpyV        wW0:8
+    //    28  CmpPtr         rW0:6 rW1:8
+    //    30  JZ             ->36
+    //    32  SetV1          wW0:2 d:1
+    //    34  JMP            ->56
+    //    36  PshVPtr        rW0:0
+    //    37  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //    39  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //    41  RDSPtr
+    //    42  RefCpyV        wW0:10
+    //    43  PshVPtr        rW0:0
+    //    44  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //    46  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //    48  RDSPtr
+    //    49  RefCpyV        wW0:12
+    //    50  CmpPtr         rW0:10 rW1:12
+    //    52  TNZ
+    //    53  CpyRtoV4       wW0:13
+    //    54  CpyVtoV4       wW0:2 rW1:13
+    //    56  CpyVtoR1       rW0:2
+    //    57  JLowZ          ->84
+    //    59  PshVPtr        rW0:0
+    //    60  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //    62  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    64  RDSPtr
+    //    65  RefCpyV        wW0:16
+    //    66  PshVPtr        rW0:0
+    //    67  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //    69  PshVPtr        rW0:0
+    //    70  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //    72  COPY           W0:24 d:134230883       ; 24 dwords of FLokiUsableData
+    //    74  PopPtr
+    //    75  SetV1          wW0:13 d:1
+    //    77  CpyVtoV4       wW0:1 rW1:13
+    //    79  PshVPtr        rW0:16
+    //    80  CALLSYS        q:0x26e7a43cf00         ; void ULokiUsableComponent::Unfocus()
+    //    83  FreeNullV8     wW0:16
+    //    84  JMP            ->99
+    //    86  PshVPtr        rW0:0
+    //    87  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //    89  PshVPtr        rW0:0
+    //    90  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //    92  COPY           W0:24 d:134230883       ; 24 dwords of FLokiUsableData
+    //    94  PopPtr
+    //    95  SetV1          wW0:2 d:1
+    //    97  CpyVtoV4       wW0:1 rW1:2
+    //    99  PshVPtr        rW0:0
+    //   100  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //   102  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //   104  RDSPtr
+    //   105  RefCpyV        wW0:4
+    //   106  CmpPtrNull     rW0:4
+    //   107  JNZ            ->113
+    //   109  SetV4          wW0:2 d:0
+    //   111  JMP            ->125
+    //   113  PshVPtr        rW0:0
+    //   114  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //   116  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //   118  RDSPtr
+    //   119  RefCpyV        wW0:18
+    //   120  CmpPtrNull     rW0:18
+    //   121  TNZ
+    //   122  CpyRtoV4       wW0:13
+    //   123  CpyVtoV4       wW0:2 rW1:13
+    //   125  CpyVtoR1       rW0:2
+    //   126  JLowZ          ->228
+    //   128  CpyVtoR1       rW0:1
+    //   129  JLowZ          ->226
+    //   131  PshVPtr        rW0:0
+    //   132  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //   134  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //   136  RDSPtr
+    //   137  PshVPtr        rW0:0
+    //   138  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //   140  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //   142  RDSPtr
+    //   143  CALLSYS        q:0x26e7a437940         ; void ULokiUsableComponent::Focus(UPrimitiveComponent@)
+    //   146  PshVPtr        rW0:0
+    //   147  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //   149  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //   151  RDSPtr
+    //   152  RefCpyV        wW0:4
+    //   153  CmpPtrNull     rW0:4
+    //   154  JNZ            ->160
+    //   156  SetV4          wW0:2 d:0
+    //   158  JMP            ->172
+    //   160  PshVPtr        rW0:0
+    //   161  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //   163  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //   165  RDSPtr
+    //   166  RefCpyV        wW0:18
+    //   167  CmpPtrNull     rW0:18
+    //   168  TNZ
+    //   169  CpyRtoV4       wW0:13
+    //   170  CpyVtoV4       wW0:2 rW1:13
+    //   172  CpyVtoR1       rW0:2
+    //   173  JLowZ          ->226
+    //   175  PshVPtr        rW0:0
+    //   176  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //   178  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //   180  RDSPtr
+    //   181  PshVPtr        rW0:0
+    //   182  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   184  RDSPtr
+    //   185  PSF            rW0:22
+    //   186  PshVPtr        rW0:0
+    //   187  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //   189  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //   191  RDSPtr
+    //   192  CALLSYS        q:0x26e7a43e240         ; FText ULokiUsableComponent::GetPrompt(ALokiCharacter@, UPrimitiveComponent@) const
+    //   195  PSF            rW0:22
+    //   196  PshVPtr        rW0:0
+    //   197  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //   199  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //   201  RDSPtr
+    //   202  CALLSYS        q:0x26e7a43d440         ; void ULokiUsableComponent::SetInteractionUIPrompt(const FText&)
+    //   205  PSF            rW0:22
+    //   206  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   209  PshVPtr        rW0:0
+    //   210  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //   212  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //   214  RDSPtr
+    //   215  PshVPtr        rW0:0
+    //   216  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //   218  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //   220  RDSPtr
+    //   221  PshVPtr        rW0:0
+    //   222  ADDSi          W0:416 d:134230885      ; ULokiInteractionPlayerComponent::OnInteractionUsableChanged  (+416)
+    //   224  CALL           d:85136                 ; void FOnInteractionUsableChangedDelegate::Broadcast(AActor@, UPrimitiveComponent@) const
+    //   226  JMP            ->357
+    //   228  PshVPtr        rW0:0
+    //   229  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //   231  CALLSYS        q:0x26e6ef54a00         ; bool TArray<AActor@>::IsEmpty() const
+    //   234  CpyRtoV4       wW0:13
+    //   235  NOT            rW0:13
+    //   236  CpyVtoR1       rW0:13
+    //   237  JLowZ          ->347
+    //   239  PshC4          d:0
+    //   241  PshVPtr        rW0:0
+    //   242  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //   244  Thiscall1      q:0x26e6ee8b140         ; AActor@& TArray<AActor@>::opIndex(int)
+    //   247  PshRPtr
+    //   248  RDSPtr
+    //   249  RefCpyV        wW0:4
+    //   250  CmpPtrNull     rW0:4
+    //   251  JZ             ->272
+    //   253  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   256  PshC4          d:0
+    //   258  PshVPtr        rW0:0
+    //   259  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //   261  Thiscall1      q:0x26e6ee8b140         ; AActor@& TArray<AActor@>::opIndex(int)
+    //   264  PshRPtr
+    //   265  RDSPtr
+    //   266  CALLSYS        q:0x26e7b139540         ; ULokiUsableComponent@ ULokiUsableComponent::Get(const AActor@, const FName&)
+    //   269  STOREOBJ       wW0:26
+    //   270  JMP            ->273
+    //   272  FreeNullV8     wW0:26
+    //   273  PshVPtr        rW0:26
+    //   274  RefCpyV        wW0:16
+    //   275  CmpPtrNull     rW0:16
+    //   276  JZ             ->344
+    //   278  PshNull
+    //   279  PshVPtr        rW0:0
+    //   280  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   282  RDSPtr
+    //   283  PSF            rW0:22
+    //   284  PshVPtr        rW0:16
+    //   285  CALLSYS        q:0x26e7a4375c0         ; FText ULokiUsableComponent::GetFailurePrompt(ALokiCharacter@, UPrimitiveComponent@) const
+    //   288  PSF            rW0:22
+    //   289  CALLSYS        q:0x26e69d0cd40         ; bool FText::IsEmpty() const
+    //   292  CpyRtoV4       wW0:2
+    //   293  NOT            rW0:2
+    //   294  CpyVtoR1       rW0:2
+    //   295  JLowZ          ->340
+    //   297  PshNull
+    //   298  PshVPtr        rW0:16
+    //   299  CALLSYS        q:0x26e7a437940         ; void ULokiUsableComponent::Focus(UPrimitiveComponent@)
+    //   302  PSF            rW0:22
+    //   303  PshVPtr        rW0:16
+    //   304  CALLSYS        q:0x26e7a43d440         ; void ULokiUsableComponent::SetInteractionUIPrompt(const FText&)
+    //   307  PshVPtr        rW0:16
+    //   308  PshNull
+    //   309  PshC4          d:0
+    //   311  PshVPtr        rW0:0
+    //   312  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //   314  Thiscall1      q:0x26e6ee8b140         ; AActor@& TArray<AActor@>::opIndex(int)
+    //   317  PshRPtr
+    //   318  RDSPtr
+    //   319  PshVPtr        rW0:0
+    //   320  ADDSi          W0:312 d:134230885      ; ULokiInteractionPlayerComponent::FocusedUsable  (+312)
+    //   322  CALL           d:85099                 ; void FLokiUsableData::SetData(AActor@, UPrimitiveComponent@, ULokiUsableComponent@)
+    //   324  PshNull
+    //   325  PshC4          d:0
+    //   327  PshVPtr        rW0:0
+    //   328  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //   330  Thiscall1      q:0x26e6ee8b140         ; AActor@& TArray<AActor@>::opIndex(int)
+    //   333  PshRPtr
+    //   334  RDSPtr
+    //   335  PshVPtr        rW0:0
+    //   336  ADDSi          W0:416 d:134230885      ; ULokiInteractionPlayerComponent::OnInteractionUsableChanged  (+416)
+    //   338  CALL           d:85136                 ; void FOnInteractionUsableChangedDelegate::Broadcast(AActor@, UPrimitiveComponent@) const
+    //   340  PSF            rW0:22
+    //   341  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   344  FreeNullV8     wW0:16
+    //   345  JMP            ->357
+    //   347  CpyVtoR1       rW0:1
+    //   348  JLowZ          ->357
+    //   350  PshNull
+    //   351  PshNull
+    //   352  PshVPtr        rW0:0
+    //   353  ADDSi          W0:416 d:134230885      ; ULokiInteractionPlayerComponent::OnInteractionUsableChanged  (+416)
+    //   355  CALL           d:85136                 ; void FOnInteractionUsableChangedDelegate::Broadcast(AActor@, UPrimitiveComponent@) const
+    //   357  RET            W0:2
+
+------------------------------------------------------------------------------
+bool IsInUsableList(AActor@ InUsable)
+// 7 instr, 40 B bytecode, id=0x1A4C183A, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.UsableList.Contains(InUsable);
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //     4  CALLSYS        q:0x26e6ef54f40         ; bool TArray<AActor@>::Contains(const AActor@ const&) const
+    //     7  CpyRtoV4       wW0:1
+    //     8  CpyVtoR4       rW0:1
+    //     9  RET            W0:4
+
+------------------------------------------------------------------------------
+void ProcessActiveInteraction()
+// 128 instr, 816 B bytecode, id=0x68B229F7, varspace=30
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ELokiUsableInteractionEndResult v2;
+    ELokiUsableInteractionEndResult v3;
+    auto v4;
+    auto v8;
+    ELokiUsableInteractionEndResult v11;
+    FLokiUsableData v24;
+    auto v29;
+    auto v30;
+
+    if (!this.InteractionsAreOnCooldown()) {
+        this.ResetInteractionsCooldown();
+        v1 = true;
+        this.bInteractionInputPressed = true;
+        v3 = 4;
+        v2 = 4;
+        v1 = false;
+        v4 = false;
+        if (this.ActiveUsable.UsableComponent != null) {
+            if (this.ActiveUsable.UsableComponent.IsUsableInteracting(this.CachedLokiCharacter)) {
+                v8 = this.ActiveUsable.UsableComponent.GetActiveInteractionRepressBehavior(this.CachedLokiCharacter);
+                if (int(v8) == 0) {
+                    goto L203;
+                }
+                v1 = int(v8) == 2;
+                v4 = v1;
+                if (!v4) {
+                    v11 = 6;
+                    v3 = 6;
+                } else {
+                    v11 = 5;
+                    v3 = 5;
+                }
+                v2 = v3;
+            }
+        }
+        v24 = this.CancelActiveUsable(v2);
+        if (this.SelectedUsable.Actor != null) {
+            if (!this.SelectedUsable.NotEquals(v24)) {
+                v1 = v4;
+            } else {
+                v1 = true;
+            }
+            if (v1) {
+                this.ActivateUsable(this.SelectedUsable);
+            }
+        } else {
+            if (this.CachedLokiCharacter != null) {
+                v29 = this.CachedLokiCharacter.HeroPredropHidden;
+                v29 = !v29;
+                v30 = false;
+                v30 = !false;
+                v29 = v29 == v30;
+                v30 = v29;
+            } else {
+                v30 = 0;
+            }
+            if (v30) {
+                LokiAudio::PostEventActor(__WorldContext, this.UsableNotFoundAudio, this.CachedLokiCharacter);
+            }
+            this.StartProcessInteractionBuffer();
+        }
+        this.OnInteractionPressed.Broadcast(this.ActiveUsable.Actor);
+    } else {
+        v1 = this.bIsSupportingCooldownBuffering;
+        if (v1) {
+            this.StartProcessInteractionBuffer();
+        }
+    }
+    L203:
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85125                 ; bool ULokiInteractionPlayerComponent::InteractionsAreOnCooldown() const
+    //     3  JLowZ          ->16
+    //     5  LoadThisR      W0:401 d:134230885      ; ULokiInteractionPlayerComponent::bIsSupportingCooldownBuffering  (+401)
+    //     7  RDR1           wW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->14
+    //    11  PshVPtr        rW0:0
+    //    12  CALLINTF       d:85127                 ; void ULokiInteractionPlayerComponent::StartProcessInteractionBuffer()
+    //    14  JMP            ->203
+    //    16  PshVPtr        rW0:0
+    //    17  CALLINTF       d:85126                 ; void ULokiInteractionPlayerComponent::ResetInteractionsCooldown()
+    //    19  SetV1          wW0:1 d:1
+    //    21  LoadThisR      W0:352 d:134230885      ; ULokiInteractionPlayerComponent::bInteractionInputPressed  (+352)
+    //    23  WRTV1          rW0:1
+    //    24  SetV1          wW0:3 d:4
+    //    26  CpyVtoV4       wW0:2 rW1:3
+    //    28  SetV1          wW0:1 d:0
+    //    30  CpyVtoV4       wW0:4 rW1:1
+    //    32  PshVPtr        rW0:0
+    //    33  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    35  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    37  RDSPtr
+    //    38  RefCpyV        wW0:6
+    //    39  CmpPtrNull     rW0:6
+    //    40  JZ             ->102
+    //    42  PshVPtr        rW0:0
+    //    43  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    45  RDSPtr
+    //    46  PshVPtr        rW0:0
+    //    47  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    49  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    51  RDSPtr
+    //    52  CALLSYS        q:0x26e7a43d980         ; bool ULokiUsableComponent::IsUsableInteracting(AActor@) const
+    //    55  JLowZ          ->102
+    //    57  PshVPtr        rW0:0
+    //    58  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    60  RDSPtr
+    //    61  PshVPtr        rW0:0
+    //    62  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    64  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    66  RDSPtr
+    //    67  CALLSYS        q:0x26e7a437780         ; ELokiUsableInteractionRepress ULokiUsableComponent::GetActiveInteractionRepressBehavior(AActor@) const
+    //    70  CpyRtoV4       wW0:8
+    //    71  sbTOi          wW0:9 rW1:8
+    //    73  CMPIi          rW0:9 d:0
+    //    75  JNZ            ->79
+    //    77  JMP            ->203
+    //    79  sbTOi          wW0:10 rW1:8
+    //    81  CMPIi          rW0:10 d:2
+    //    83  TZ
+    //    84  CpyRtoV4       wW0:1
+    //    85  CpyVtoV4       wW0:4 rW1:1
+    //    87  CpyVtoR1       rW0:4
+    //    88  JLowZ          ->96
+    //    90  SetV1          wW0:11 d:5
+    //    92  CpyVtoV4       wW0:3 rW1:11
+    //    94  JMP            ->100
+    //    96  SetV1          wW0:11 d:6
+    //    98  CpyVtoV4       wW0:3 rW1:11
+    //   100  CpyVtoV4       wW0:2 rW1:3
+    //   102  PshV4          rW0:2
+    //   103  PSF            rW0:24
+    //   104  PshVPtr        rW0:0
+    //   105  CALLINTF       d:85115                 ; FLokiUsableData ULokiInteractionPlayerComponent::CancelActiveUsable(const ELokiUsableInteractionEndResult)
+    //   107  PshVPtr        rW0:0
+    //   108  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //   110  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //   112  RDSPtr
+    //   113  RefCpyV        wW0:26
+    //   114  CmpPtrNull     rW0:26
+    //   115  JNZ            ->169
+    //   117  PshVPtr        rW0:0
+    //   118  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   120  RDSPtr
+    //   121  RefCpyV        wW0:28
+    //   122  CmpPtrNull     rW0:28
+    //   123  JNZ            ->129
+    //   125  SetV4          wW0:30 d:0
+    //   127  JMP            ->147
+    //   129  PshVPtr        rW0:0
+    //   130  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   132  RDSPtr
+    //   133  ADDSi          W0:7144 d:67115176      ; ALokiHeroCharacter::HeroPredropHidden  (+7144)
+    //   135  PopRPtr
+    //   136  RDR1           wW0:29
+    //   137  NOT            rW0:29
+    //   138  SetV1          wW0:30 d:0
+    //   140  NOT            rW0:30
+    //   141  CMPi           rW0:29 rW1:30
+    //   143  TZ
+    //   144  CpyRtoV4       wW0:29
+    //   145  CpyVtoV4       wW0:30 rW1:29
+    //   147  CpyVtoR1       rW0:30
+    //   148  JLowZ          ->164
+    //   150  PshVPtr        rW0:0
+    //   151  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //   153  RDSPtr
+    //   154  PshVPtr        rW0:0
+    //   155  ADDSi          W0:408 d:134230885      ; ULokiInteractionPlayerComponent::UsableNotFoundAudio  (+408)
+    //   157  RDSPtr
+    //   158  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   161  CALLSYS        q:0x26e7a0aeb00         ; int LokiAudio::PostEventActor(UObject@, UAkAudioEvent@, AActor@)
+    //   164  PshVPtr        rW0:0
+    //   165  CALLINTF       d:85127                 ; void ULokiInteractionPlayerComponent::StartProcessInteractionBuffer()
+    //   167  JMP            ->192
+    //   169  PSF            rW0:24
+    //   170  PshVPtr        rW0:0
+    //   171  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //   173  CALL           d:85098                 ; bool FLokiUsableData::NotEquals(const FLokiUsableData&) const
+    //   175  JLowZ          ->181
+    //   177  SetV1          wW0:1 d:1
+    //   179  JMP            ->183
+    //   181  CpyVtoV4       wW0:1 rW1:4
+    //   183  CpyVtoR1       rW0:1
+    //   184  JLowZ          ->192
+    //   186  PshVPtr        rW0:0
+    //   187  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //   189  PshVPtr        rW0:0
+    //   190  CALLINTF       d:85124                 ; void ULokiInteractionPlayerComponent::ActivateUsable(const FLokiUsableData&)
+    //   192  PshVPtr        rW0:0
+    //   193  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //   195  ADDSi          W0:0 d:134230883        ; FLokiUsableData::Actor  (+0)
+    //   197  RDSPtr
+    //   198  PshVPtr        rW0:0
+    //   199  ADDSi          W0:432 d:134230885      ; ULokiInteractionPlayerComponent::OnInteractionPressed  (+432)
+    //   201  CALL           d:85145                 ; void FOnInteractionPressedDelegate::Broadcast(AActor@) const
+    //   203  RET            W0:2
+
+------------------------------------------------------------------------------
+void ActivateUsable(const FLokiUsableData&inout InUsable)
+// 36 instr, 232 B bytecode, id=0xBE5904FF, varspace=6
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    this.SelectedUsable = this.ActiveUsable;
+    if (!Loki::LokiIsServer(__WorldContext)) {
+        v1 = this.ActiveUsable.UsableComponent == null;
+    } else {
+        v1 = true;
+    }
+    if (!v1) {
+        this.ActiveUsable.UsableComponent.StartInteraction(this.CachedLokiCharacter, this.ActiveUsable.OverlapComponent);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:264 d:134230885      ; ULokiInteractionPlayerComponent::SelectedUsable  (+264)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //     6  COPY           W0:24 d:134230883       ; 24 dwords of FLokiUsableData
+    //     8  PopPtr
+    //     9  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    12  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //    15  JLowZ          ->21
+    //    17  SetV1          wW0:1 d:1
+    //    19  JMP            ->33
+    //    21  PshVPtr        rW0:0
+    //    22  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    24  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    26  RDSPtr
+    //    27  RefCpyV        wW0:4
+    //    28  CmpPtrNull     rW0:4
+    //    29  TZ
+    //    30  CpyRtoV4       wW0:5
+    //    31  CpyVtoV4       wW0:1 rW1:5
+    //    33  CpyVtoR1       rW0:1
+    //    34  JLowZ          ->38
+    //    36  JMP            ->57
+    //    38  PshVPtr        rW0:0
+    //    39  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    41  ADDSi          W0:8 d:134230883        ; FLokiUsableData::OverlapComponent  (+8)
+    //    43  RDSPtr
+    //    44  PshVPtr        rW0:0
+    //    45  ADDSi          W0:216 d:134230885      ; ULokiInteractionPlayerComponent::CachedLokiCharacter  (+216)
+    //    47  RDSPtr
+    //    48  PshVPtr        rW0:0
+    //    49  ADDSi          W0:240 d:134230885      ; ULokiInteractionPlayerComponent::ActiveUsable  (+240)
+    //    51  ADDSi          W0:16 d:134230883       ; FLokiUsableData::UsableComponent  (+16)
+    //    53  RDSPtr
+    //    54  CALLSYS        q:0x26e7a43d280         ; int ULokiUsableComponent::StartInteraction(AActor@, UPrimitiveComponent@)
+    //    57  RET            W0:4
+
+------------------------------------------------------------------------------
+bool InteractionsAreOnCooldown()
+// 24 instr, 160 B bytecode, id=0x21F3EBE3, varspace=11
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v4;
+    auto v5;
+
+    v2 = this.InteractionCooldownStartTime;
+    v4 = 0;
+    if (v2 > 0) {
+        v2 = this.GetWorld().GetTimeSeconds();
+        v4 = this.InteractionCooldownStartTime;
+        v2 = v2 - v4;
+        v5 = v2 < this.MinInteractionCooldownTime;
+    } else {
+        v5 = 0;
+    }
+    return v5;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:360 d:134230885      ; ULokiInteractionPlayerComponent::InteractionCooldownStartTime  (+360)
+    //     2  RDR8           wW0:2
+    //     3  SetV8          wW0:4 q:0x0
+    //     6  CMPd           rW0:2 rW1:4
+    //     8  JP             ->14
+    //    10  SetV4          wW0:5 d:0
+    //    12  JMP            ->38
+    //    14  PshVPtr        rW0:0
+    //    15  CALLSYS        q:0x26e70393f80         ; UWorld@ UObject::GetWorld() const
+    //    18  STOREOBJ       wW0:8
+    //    19  PshVPtr        rW0:8
+    //    20  CALLSYS        q:0x26e78650780         ; float64 UWorld::GetTimeSeconds() const
+    //    23  CpyRtoV8       wW0:2
+    //    24  LoadThisR      W0:360 d:134230885      ; ULokiInteractionPlayerComponent::InteractionCooldownStartTime  (+360)
+    //    26  RDR8           wW0:4
+    //    27  SUBd           wW0:2 rW1:2 rW2:4
+    //    29  LoadThisR      W0:368 d:134230885      ; ULokiInteractionPlayerComponent::MinInteractionCooldownTime  (+368)
+    //    31  RDR8           wW0:10
+    //    32  CMPd           rW0:2 rW1:10
+    //    34  TS
+    //    35  CpyRtoV4       wW0:11
+    //    36  CpyVtoV4       wW0:5 rW1:11
+    //    38  CpyVtoR4       rW0:5
+    //    39  RET            W0:2
+
+------------------------------------------------------------------------------
+void ResetInteractionsCooldown()
+// 9 instr, 56 B bytecode, id=0x8B12ECD3, varspace=4
+------------------------------------------------------------------------------
+{
+    this.InteractionCooldownStartTime = this.GetWorld().GetTimeSeconds();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e70393f80         ; UWorld@ UObject::GetWorld() const
+    //     4  STOREOBJ       wW0:2
+    //     5  PshVPtr        rW0:2
+    //     6  CALLSYS        q:0x26e78650780         ; float64 UWorld::GetTimeSeconds() const
+    //     9  CpyRtoV8       wW0:4
+    //    10  LoadThisR      W0:360 d:134230885      ; ULokiInteractionPlayerComponent::InteractionCooldownStartTime  (+360)
+    //    12  WRTV8          rW0:4
+    //    13  RET            W0:2
+
+------------------------------------------------------------------------------
+void StartProcessInteractionBuffer()
+// 12 instr, 76 B bytecode, id=0x8E4FF84F, varspace=6
+------------------------------------------------------------------------------
+{
+    this.bCanProcessBufferedInteraction = true;
+    this.ProcessInteractionBufferStartTime = this.GetWorld().GetTimeSeconds();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  LoadThisR      W0:377 d:134230885      ; ULokiInteractionPlayerComponent::bCanProcessBufferedInteraction  (+377)
+    //     4  WRTV1          rW0:1
+    //     5  PshVPtr        rW0:0
+    //     6  CALLSYS        q:0x26e70393f80         ; UWorld@ UObject::GetWorld() const
+    //     9  STOREOBJ       wW0:4
+    //    10  PshVPtr        rW0:4
+    //    11  CALLSYS        q:0x26e78650780         ; float64 UWorld::GetTimeSeconds() const
+    //    14  CpyRtoV8       wW0:6
+    //    15  LoadThisR      W0:384 d:134230885      ; ULokiInteractionPlayerComponent::ProcessInteractionBufferStartTime  (+384)
+    //    17  WRTV8          rW0:6
+    //    18  RET            W0:2
+
+------------------------------------------------------------------------------
+void StopProcessInteractionBuffer()
+// 7 instr, 48 B bytecode, id=0x9AA3F928, varspace=4
+------------------------------------------------------------------------------
+{
+    this.bCanProcessBufferedInteraction = false;
+    this.ProcessInteractionBufferStartTime = -1;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  LoadThisR      W0:377 d:134230885      ; ULokiInteractionPlayerComponent::bCanProcessBufferedInteraction  (+377)
+    //     4  WRTV1          rW0:1
+    //     5  SetV8          wW0:4 q:0xbff0000000000000
+    //     8  LoadThisR      W0:384 d:134230885      ; ULokiInteractionPlayerComponent::ProcessInteractionBufferStartTime  (+384)
+    //    10  WRTV8          rW0:4
+    //    11  RET            W0:2
+
+------------------------------------------------------------------------------
+bool CanProcessBufferedInteraction()
+// 23 instr, 144 B bytecode, id=0x0EA5A950, varspace=10
+------------------------------------------------------------------------------
+{
+    auto v4;
+    auto v10;
+
+    v10 = this.bCanProcessBufferedInteraction;
+    if (v10) {
+        v4 = this.GetWorld().GetTimeSeconds();
+        v4 = v4 - this.ProcessInteractionBufferStartTime;
+        v10 = v4 < this.MaxProcessBufferedInteractionTime;
+    } else {
+        v10 = 0;
+    }
+    return v10;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:377 d:134230885      ; ULokiInteractionPlayerComponent::bCanProcessBufferedInteraction  (+377)
+    //     2  RDR1           wW0:10
+    //     3  CpyVtoR1       rW0:10
+    //     4  JLowNZ         ->10
+    //     6  SetV4          wW0:10 d:0
+    //     8  JMP            ->34
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e70393f80         ; UWorld@ UObject::GetWorld() const
+    //    14  STOREOBJ       wW0:2
+    //    15  PshVPtr        rW0:2
+    //    16  CALLSYS        q:0x26e78650780         ; float64 UWorld::GetTimeSeconds() const
+    //    19  CpyRtoV8       wW0:4
+    //    20  LoadThisR      W0:384 d:134230885      ; ULokiInteractionPlayerComponent::ProcessInteractionBufferStartTime  (+384)
+    //    22  RDR8           wW0:6
+    //    23  SUBd           wW0:4 rW1:4 rW2:6
+    //    25  LoadThisR      W0:392 d:134230885      ; ULokiInteractionPlayerComponent::MaxProcessBufferedInteractionTime  (+392)
+    //    27  RDR8           wW0:8
+    //    28  CMPd           rW0:4 rW1:8
+    //    30  TS
+    //    31  CpyRtoV4       wW0:9
+    //    32  CpyVtoV4       wW0:10 rW1:9
+    //    34  CpyVtoR4       rW0:10
+    //    35  RET            W0:2
+
+------------------------------------------------------------------------------
+void TryProcessingBufferedInput(ULokiUsableComponent@ UsableComp)
+// 46 instr, 296 B bytecode, id=0x224B916A, varspace=8
+------------------------------------------------------------------------------
+{
+    auto v3;
+    auto v4;
+    auto v5;
+    auto v6;
+
+    if (UsableComp != null) {
+        v3 = UsableComp.InteractionRequiresInputHold();
+        v4 = v3;
+        v4 = !v3;
+        if (v4) {
+            v6 = this.CanProcessBufferedInteraction();
+            v4 = v6;
+        } else {
+            v4 = 0;
+        }
+        if (v3) {
+            v6 = this.bInteractionInputPressed;
+            v5 = v6;
+        } else {
+            v5 = 0;
+        }
+        if (v5) {
+            v6 = this.bInputHoldInteractionCanProcess;
+        } else {
+            v6 = 0;
+        }
+        if (!v4) {
+            v5 = v6;
+        } else {
+            v5 = true;
+        }
+        if (v5) {
+            this.ProcessActiveInteraction();
+            this.bInputHoldInteractionCanProcess = false;
+            this.StopProcessInteractionBuffer();
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  RefCpyV        wW0:2
+    //     2  CmpPtrNull     rW0:2
+    //     3  JZ             ->73
+    //     5  PshVPtr        rW0:-2
+    //     6  CALLSYS        q:0x26e7a43dd00         ; bool ULokiUsableComponent::InteractionRequiresInputHold() const
+    //     9  CpyRtoV4       wW0:3
+    //    10  CpyVtoV4       wW0:4 rW1:3
+    //    12  NOT            rW0:4
+    //    13  CpyVtoR1       rW0:4
+    //    14  JLowNZ         ->20
+    //    16  SetV4          wW0:4 d:0
+    //    18  JMP            ->26
+    //    20  PshVPtr        rW0:0
+    //    21  CALLINTF       d:85129                 ; bool ULokiInteractionPlayerComponent::CanProcessBufferedInteraction()
+    //    23  CpyRtoV4       wW0:6
+    //    24  CpyVtoV4       wW0:4 rW1:6
+    //    26  CpyVtoR1       rW0:3
+    //    27  JLowNZ         ->33
+    //    29  SetV4          wW0:5 d:0
+    //    31  JMP            ->38
+    //    33  LoadThisR      W0:352 d:134230885      ; ULokiInteractionPlayerComponent::bInteractionInputPressed  (+352)
+    //    35  RDR1           wW0:6
+    //    36  CpyVtoV4       wW0:5 rW1:6
+    //    38  CpyVtoR1       rW0:5
+    //    39  JLowNZ         ->45
+    //    41  SetV4          wW0:6 d:0
+    //    43  JMP            ->50
+    //    45  LoadThisR      W0:376 d:134230885      ; ULokiInteractionPlayerComponent::bInputHoldInteractionCanProcess  (+376)
+    //    47  RDR1           wW0:8
+    //    48  CpyVtoV4       wW0:6 rW1:8
+    //    50  CpyVtoR1       rW0:4
+    //    51  JLowZ          ->57
+    //    53  SetV1          wW0:5 d:1
+    //    55  JMP            ->59
+    //    57  CpyVtoV4       wW0:5 rW1:6
+    //    59  CpyVtoR1       rW0:5
+    //    60  JLowZ          ->73
+    //    62  PshVPtr        rW0:0
+    //    63  CALLINTF       d:85123                 ; void ULokiInteractionPlayerComponent::ProcessActiveInteraction()
+    //    65  SetV1          wW0:7 d:0
+    //    67  LoadThisR      W0:376 d:134230885      ; ULokiInteractionPlayerComponent::bInputHoldInteractionCanProcess  (+376)
+    //    69  WRTV1          rW0:7
+    //    70  PshVPtr        rW0:0
+    //    71  CALLINTF       d:85128                 ; void ULokiInteractionPlayerComponent::StopProcessInteractionBuffer()
+    //    73  RET            W0:4
+
+------------------------------------------------------------------------------
+~ULokiInteractionPlayerComponent()
+// 13 instr, 88 B bytecode, id=0x2F4CB2B7, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnInteractionUsableChanged.~FOnInteractionUsableChangedDelegate();
+    this.OnInteractionPressed.~FOnInteractionPressedDelegate();
+    this.OnInteractionReleased.~FOnInteractionReleasedDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:336 d:134230885      ; ULokiInteractionPlayerComponent::UsableList  (+336)
+    //     3  CALLSYS        q:0x26e70663f80         ; void TArray<AActor@>::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:416 d:134230885      ; ULokiInteractionPlayerComponent::OnInteractionUsableChanged  (+416)
+    //     9  CALL           d:85506                 ; void FOnInteractionUsableChangedDelegate::~FOnInteractionUsableChangedDelegate()
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:432 d:134230885      ; ULokiInteractionPlayerComponent::OnInteractionPressed  (+432)
+    //    14  CALL           d:85507                 ; void FOnInteractionPressedDelegate::~FOnInteractionPressedDelegate()
+    //    16  PshVPtr        rW0:0
+    //    17  ADDSi          W0:448 d:134230885      ; ULokiInteractionPlayerComponent::OnInteractionReleased  (+448)
+    //    19  CALL           d:85508                 ; void FOnInteractionReleasedDelegate::~FOnInteractionReleasedDelegate()
+    //    21  RET            W0:2
+
+==============================================================================
+class FOnInteractionUsableChangedDelegate
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FOnInteractionUsableChangedDelegate() const
+// 4 instr, 28 B bytecode, id=0x2279614A, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230886        ; FOnInteractionUsableChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FOnInteractionUsableChangedDelegate(const FOnInteractionUsableChangedDelegate&inout Other) const
+// 7 instr, 44 B bytecode, id=0xA97DA5F2, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230886        ; FOnInteractionUsableChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:85135                 ; FOnInteractionUsableChangedDelegate& FOnInteractionUsableChangedDelegate::opAssign(const FOnInteractionUsableChangedDelegate&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FOnInteractionUsableChangedDelegate& opAssign(const FOnInteractionUsableChangedDelegate&inout Other)
+// 8 instr, 48 B bytecode, id=0xB6F880D7, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230886        ; FOnInteractionUsableChangedDelegate::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230886        ; FOnInteractionUsableChangedDelegate::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast(AActor@ UsableActor, UPrimitiveComponent@ UsableActorOverlapComponent)
+// 16 instr, 112 B bytecode, id=0xB8E1BA7C, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_PushArgument__AActor(UsableActor);
+        __Evt_PushArgument__UPrimitiveComponent(UsableActorOverlapComponent);
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230886        ; FOnInteractionUsableChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->27
+    //    13  PSF            rW0:-2
+    //    14  CALLSYS        q:0x26e7762b300         ; void __Evt_PushArgument__AActor(const AActor@&)
+    //    17  PSF            rW0:-4
+    //    18  CALLSYS        q:0x26e77633180         ; void __Evt_PushArgument__UPrimitiveComponent(const UPrimitiveComponent@&)
+    //    21  PshVPtr        rW0:0
+    //    22  ADDSi          W0:0 d:134230886        ; FOnInteractionUsableChangedDelegate::_Inner  (+0)
+    //    24  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    27  RET            W0:6
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0x664E9296, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230886             ; FOnInteractionUsableChangedDelegate
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230886        ; FOnInteractionUsableChangedDelegate::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0xE3F443C2, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230886        ; FOnInteractionUsableChangedDelegate::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0x55E8A6F5, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230886        ; FOnInteractionUsableChangedDelegate::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0xC41E4E54, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230886        ; FOnInteractionUsableChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0xFA11E50E, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230886        ; FOnInteractionUsableChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FOnInteractionUsableChangedDelegate()
+// 4 instr, 28 B bytecode, id=0x3BD5AB92, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230886        ; FOnInteractionUsableChangedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+
+==============================================================================
+class FOnInteractionPressedDelegate
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FOnInteractionPressedDelegate() const
+// 4 instr, 28 B bytecode, id=0xECA4348D, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230887        ; FOnInteractionPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FOnInteractionPressedDelegate(const FOnInteractionPressedDelegate&inout Other) const
+// 7 instr, 44 B bytecode, id=0x2E4102E9, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230887        ; FOnInteractionPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:85144                 ; FOnInteractionPressedDelegate& FOnInteractionPressedDelegate::opAssign(const FOnInteractionPressedDelegate&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FOnInteractionPressedDelegate& opAssign(const FOnInteractionPressedDelegate&inout Other)
+// 8 instr, 48 B bytecode, id=0xC35D3A60, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230887        ; FOnInteractionPressedDelegate::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230887        ; FOnInteractionPressedDelegate::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast(AActor@ UsableActor)
+// 14 instr, 96 B bytecode, id=0x6B9150D2, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_PushArgument__AActor(UsableActor);
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230887        ; FOnInteractionPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->23
+    //    13  PSF            rW0:-2
+    //    14  CALLSYS        q:0x26e7762b300         ; void __Evt_PushArgument__AActor(const AActor@&)
+    //    17  PshVPtr        rW0:0
+    //    18  ADDSi          W0:0 d:134230887        ; FOnInteractionPressedDelegate::_Inner  (+0)
+    //    20  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    23  RET            W0:4
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0x4E71A3E7, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230887             ; FOnInteractionPressedDelegate
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230887        ; FOnInteractionPressedDelegate::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0x42732061, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230887        ; FOnInteractionPressedDelegate::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0x288777DD, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230887        ; FOnInteractionPressedDelegate::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0x9B670DB9, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230887        ; FOnInteractionPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0xE5DC664D, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230887        ; FOnInteractionPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FOnInteractionPressedDelegate()
+// 4 instr, 28 B bytecode, id=0xDD1B5EDE, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230887        ; FOnInteractionPressedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+
+==============================================================================
+class FOnInteractionReleasedDelegate
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FOnInteractionReleasedDelegate() const
+// 4 instr, 28 B bytecode, id=0x40DFC02C, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230888        ; FOnInteractionReleasedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FOnInteractionReleasedDelegate(const FOnInteractionReleasedDelegate&inout Other) const
+// 7 instr, 44 B bytecode, id=0xFD27BC0E, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230888        ; FOnInteractionReleasedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:85153                 ; FOnInteractionReleasedDelegate& FOnInteractionReleasedDelegate::opAssign(const FOnInteractionReleasedDelegate&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FOnInteractionReleasedDelegate& opAssign(const FOnInteractionReleasedDelegate&inout Other)
+// 8 instr, 48 B bytecode, id=0x87CCB372, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230888        ; FOnInteractionReleasedDelegate::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230888        ; FOnInteractionReleasedDelegate::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast(AActor@ UsableActor)
+// 14 instr, 96 B bytecode, id=0x44661D6B, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_PushArgument__AActor(UsableActor);
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230888        ; FOnInteractionReleasedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->23
+    //    13  PSF            rW0:-2
+    //    14  CALLSYS        q:0x26e7762b300         ; void __Evt_PushArgument__AActor(const AActor@&)
+    //    17  PshVPtr        rW0:0
+    //    18  ADDSi          W0:0 d:134230888        ; FOnInteractionReleasedDelegate::_Inner  (+0)
+    //    20  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    23  RET            W0:4
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0xD2E96518, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230888             ; FOnInteractionReleasedDelegate
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230888        ; FOnInteractionReleasedDelegate::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0x5A911811, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230888        ; FOnInteractionReleasedDelegate::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0x3164009A, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230888        ; FOnInteractionReleasedDelegate::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0xF6BE4D7C, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230888        ; FOnInteractionReleasedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0x185A04A7, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230888        ; FOnInteractionReleasedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FOnInteractionReleasedDelegate()
+// 4 instr, 28 B bytecode, id=0x3DD0A658, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230888        ; FOnInteractionReleasedDelegate::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+

@@ -1,0 +1,22 @@
+[CTRL] union pages decrypted = 16694 / 30281  (55.13%)
+[CTRL] this must equal merged6's 16694 -> PASS
+[CTRL] .pdata extents inside .text: 382704 of 382704 rows
+[CTRL] pages touched by >=1 extent: 19520 (64.46%)
+
+=== FUNCTION EXTENTS BY PAGE STATE (unit: .pdata extents, n=382704) ===
+  FULLY DARK  (certainly never executed) :   25921 ( 6.77%)     3.32 MB of extent
+  MIXED       (spans dark + decrypted)   :    2193 ( 0.57%)     3.08 MB
+  FULLY LIT                              :  354590 (92.65%)    61.58 MB
+
+=== DARK PAGES BY .pdata COVERAGE (unit: 4 KiB pages) ===
+  dark total                       : 13587
+  dark AND covered by an extent    : 3074
+  dark AND covered by NO extent    : 10513   <- data-in-text / padding / leaf fns w/o unwind
+
+=== DARK PAGE NEIGHBOURHOOD (is dark code segregated or interleaved?) ===
+  dark page with BOTH neighbours decrypted :   1016 ( 7.48%)  <- island inside running code
+  dark page with ONE neighbour decrypted   :   2612 (19.22%)  <- edge of a dark run
+  dark page with NEITHER neighbour         :   9959 (73.30%)  <- interior of a dark region
+
+=== CROSS-CHECK vs pdata_union.csv 'seen_in_dumps' column (independent instrument) ===
+  seen_in_dumps histogram (top 10): [(76, 155722), (69, 82033), (71, 59147), (74, 22629), (40, 7081), (70, 6745), (2, 6215), (75, 3954), (63, 3341), (18, 3212)]

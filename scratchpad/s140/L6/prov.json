@@ -1,0 +1,485 @@
+[
+ [
+  "0x1266b34",
+  "0x1265df0",
+  "rsp",
+  [
+   "call 0x123b060",
+   "call 0x10d7c40"
+  ]
+ ],
+ [
+  "0x1266b4b",
+  "0x1265df0",
+  "rsp",
+  [
+   "call 0x123b060",
+   "call 0x10d7c40"
+  ]
+ ],
+ [
+  "0x127d79f",
+  "0x127bab0",
+  "rsp",
+  [
+   "call 0xfa11d0"
+  ]
+ ],
+ [
+  "0x127d7ae",
+  "0x127bab0",
+  "rsp",
+  [
+   "call 0xfa11d0"
+  ]
+ ],
+ [
+  "0x1293c67",
+  "0x128e530",
+  "rsp",
+  [
+   "call 0x10d7c40",
+   "call 0x123b060"
+  ]
+ ],
+ [
+  "0x1293c7e",
+  "0x128e530",
+  "rsp",
+  [
+   "call 0x10d7c40",
+   "call 0x123b060"
+  ]
+ ],
+ [
+  "0x13a0293",
+  "0x13969a0",
+  "rsp",
+  [
+   "call 0x1391250"
+  ]
+ ],
+ [
+  "0x148fad4",
+  "0x148c8c0",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x28118]"
+  ]
+ ],
+ [
+  "0x148fb00",
+  "0x148c8c0",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x28118]"
+  ]
+ ],
+ [
+  "0x14b50a0",
+  "0x14b4410",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x22f18]"
+  ]
+ ],
+ [
+  "0x27d5171",
+  "0x27d48a0",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x2310]"
+  ]
+ ],
+ [
+  "0x393486e",
+  "0x392f460",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x2910]"
+  ]
+ ],
+ [
+  "0x3934875",
+  "0x392f460",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x2910]"
+  ]
+ ],
+ [
+  "0x3934883",
+  "0x392f460",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x2910]"
+  ]
+ ],
+ [
+  "0x3a432d4",
+  "0x3a42d80",
+  "rdi",
+  [
+   "mov rdi, rcx"
+  ]
+ ],
+ [
+  "0x3a6cf26",
+  "0x3a6ca40",
+  "rsi",
+  [
+   "mov rsi, rcx"
+  ]
+ ],
+ [
+  "0x3c54fff",
+  "0x3c516b0",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x18b0]"
+  ]
+ ],
+ [
+  "0x3e2d792",
+  "0x3e2d630",
+  "IMM",
+  null
+ ],
+ [
+  "0x472d190",
+  "0x472b320",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x6d00]"
+  ]
+ ],
+ [
+  "0x4832fb0",
+  "0x4832840",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x2868]"
+  ]
+ ],
+ [
+  "0x483eba1",
+  "0x483cf90",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x2f80]"
+  ]
+ ],
+ [
+  "0x4843539",
+  "0x48418a0",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x2d10]"
+  ]
+ ],
+ [
+  "0x48472dd",
+  "0x4845730",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x3b50]"
+  ]
+ ],
+ [
+  "0x4850f8d",
+  "0x484f3b0",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x39b0]"
+  ]
+ ],
+ [
+  "0x485a91c",
+  "0x48570b0",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x5180]"
+  ]
+ ],
+ [
+  "0x486992e",
+  "0x4869050",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x17f0]"
+  ]
+ ],
+ [
+  "0x4869947",
+  "0x4869050",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x17f0]"
+  ]
+ ],
+ [
+  "0x4869955",
+  "0x4869050",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x17f0]"
+  ]
+ ],
+ [
+  "0x486bc21",
+  "0x486b620",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x1890]"
+  ]
+ ],
+ [
+  "0x486bc67",
+  "0x486b620",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x1890]"
+  ]
+ ],
+ [
+  "0x486bc6e",
+  "0x486b620",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x1890]"
+  ]
+ ],
+ [
+  "0x4af370d",
+  "0x4af2200",
+  "rdi",
+  [
+   "mov rdi, rcx"
+  ]
+ ],
+ [
+  "0x4b03cc6",
+  null,
+  null,
+  null
+ ],
+ [
+  "0x52921e9",
+  "0x5292040",
+  "rbx",
+  [
+   "mov rbx, rcx"
+  ]
+ ],
+ [
+  "0x52c9a08",
+  "0x52c6110",
+  "rbp",
+  [
+   "lea rbp, [rsp - 0x1950]"
+  ]
+ ],
+ [
+  "0x530ab43",
+  "0x530aaa0",
+  "rbx",
+  [
+   "mov rbx, rcx"
+  ]
+ ],
+ [
+  "0x530ab4c",
+  "0x530aaa0",
+  "rbx",
+  [
+   "mov rbx, rcx"
+  ]
+ ],
+ [
+  "0x530abf9",
+  null,
+  null,
+  null
+ ],
+ [
+  "0x530ac10",
+  null,
+  null,
+  null
+ ],
+ [
+  "0x530c7ff",
+  null,
+  null,
+  null
+ ],
+ [
+  "0x5513c05",
+  "0x5513a00",
+  "rdi",
+  [
+   "mov rdi, rcx"
+  ]
+ ],
+ [
+  "0x559c59e",
+  "0x559c560",
+  "rax",
+  [
+   "<ENTRY: register live-in>"
+  ]
+ ],
+ [
+  "0x559ea48",
+  "0x559e180",
+  "r14",
+  [
+   "mov r14, rcx"
+  ]
+ ],
+ [
+  "0x559fdf4",
+  "0x559f580",
+  "rdi",
+  [
+   "mov rdi, rcx"
+  ]
+ ],
+ [
+  "0x55a6bcb",
+  "0x55a69f0",
+  "rsi",
+  [
+   "mov rsi, qword ptr [rdi + 0x198]"
+  ]
+ ],
+ [
+  "0x55a7562",
+  "0x55a7440",
+  "rbx",
+  [
+   "mov rbx, r8"
+  ]
+ ],
+ [
+  "0x55b860b",
+  "0x55b8370",
+  "r15",
+  [
+   "xor r15d, r15d",
+   "mov r15, qword ptr [rcx + 0x198]"
+  ]
+ ],
+ [
+  "0x55bdd6c",
+  "0x55bdcb0",
+  "rbx",
+  [
+   "mov rbx, rdx"
+  ]
+ ],
+ [
+  "0x55be974",
+  "0x55be930",
+  "rbx",
+  [
+   "mov rbx, rcx"
+  ]
+ ],
+ [
+  "0x55c0304",
+  "0x55c00c0",
+  "rbx",
+  [
+   "mov rbx, qword ptr [rbx + 0x198]"
+  ]
+ ],
+ [
+  "0x55c099e",
+  "0x55c0970",
+  "rbx",
+  [
+   "mov rbx, rdx"
+  ]
+ ],
+ [
+  "0x55c0da9",
+  "0x55c0d30",
+  "rbx",
+  [
+   "mov rbx, rcx"
+  ]
+ ],
+ [
+  "0x55c2438",
+  null,
+  null,
+  null
+ ],
+ [
+  "0x55c2441",
+  null,
+  null,
+  null
+ ],
+ [
+  "0x55c2469",
+  null,
+  null,
+  null
+ ],
+ [
+  "0x6e80b2e",
+  "0x6e80b10",
+  "rcx",
+  [
+   "<ENTRY: register live-in>"
+  ]
+ ],
+ [
+  "0x6e8c422",
+  "0x6e8c390",
+  "IMM",
+  null
+ ],
+ [
+  "0x6e8d22f",
+  "0x6e8d1d0",
+  "IMM",
+  null
+ ],
+ [
+  "0x6e8ed0e",
+  "0x6e8ea60",
+  "IMM",
+  null
+ ],
+ [
+  "0x6e8f253",
+  "0x6e8f1f0",
+  "IMM",
+  null
+ ],
+ [
+  "0x6e92cad",
+  "0x6e92ca0",
+  "rcx",
+  [
+   "<ENTRY: register live-in>"
+  ]
+ ],
+ [
+  "0x6e92d2d",
+  "0x6e92d10",
+  "IMM",
+  null
+ ],
+ [
+  "0x6e92d5e",
+  "0x6e92d10",
+  "r11",
+  [
+   "mov r11, rcx"
+  ]
+ ]
+]

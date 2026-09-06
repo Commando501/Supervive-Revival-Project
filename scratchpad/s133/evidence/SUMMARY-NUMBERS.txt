@@ -1,0 +1,20 @@
+distinct crashpad reports parsed      : 124
+all exception codes                   : {'0xC0000005': 124}
+kill_shape histogram (unit: reports)  : {'AV+EXEC+PLUS1': 108, 'AV+READ': 16}
+FK-31 family reports                  : 108
+  by address                          : {'0x7FFD3B400001': 99, '0x7FFA42600001': 4, '0x7FFB57400001': 5}
+  killalloc span (all)                : {'0x4066000': 108}
+  killalloc regions                   : {'15': 108}
+  killalloc type                      : {'IMAGE': 108}
+  killalloc prot                      : {'READONLY': 108}
+  killalloc in ModuleList             : {'0': 108}
+runtime.dll in ModuleList (all 124)   : {'0': 124}
+distinct ntdll bases (boot sessions)  : 3 ['0x7FFA422D0000', '0x7FFB57050000', '0x7FFD3B150000']
+distinct game exe bases               : 16
+distinct preloader bases              : 53
+OS build (all)                        : {'10.0.19045': 124}
+ModuleList entries                    : {'220': 82, '210': 4, '221': 29, '214': 1, '219': 1, '185': 1, '196': 1, '204': 2, '198': 2, '182': 1}
+MemoryInfoList regions min/med/max    : 14929 / 41380 / 76374
+handles min/med/max                   : 3675 / 14167 / 18429
+threads min/med/max                   : 120 / 139 / 164
+ProcessCreateTime span                : 2026-08-04 14:02 .. 2026-08-20 14:28

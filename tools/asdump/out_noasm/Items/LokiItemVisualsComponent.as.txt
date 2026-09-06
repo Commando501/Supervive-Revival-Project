@@ -1,0 +1,341 @@
+// ============================================================================
+//  MODULE   Items.LokiItemVisualsComponent
+//  SOURCE   Items/LokiItemVisualsComponent.as
+//  CONTENT  1 class(es), 14 function(s), 0 enum(s), 1 global(s), 2876 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiItemVisualsComponent;
+
+ULokiItemVisualsComponent@ ULokiItemVisualsComponent()   // traits=0x20
+{
+    ULokiItemVisualsComponent v2;
+
+    v2 = ULokiItemVisualsComponent();
+    return v2;
+}
+
+UClass@ ULokiItemVisualsComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiItemVisualsComponent);
+    return v2;
+}
+
+ULokiItemVisualsComponent@ ULokiItemVisualsComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiItemVisualsComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiItemVisualsComponent, v2, typeid(ULokiItemVisualsComponent@), WithName);
+    return v2;
+}
+
+ULokiItemVisualsComponent@ ULokiItemVisualsComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiItemVisualsComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiItemVisualsComponent, v2, typeid(ULokiItemVisualsComponent@), WithName);
+    return v2;
+}
+
+ULokiItemVisualsComponent@ ULokiItemVisualsComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiItemVisualsComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiItemVisualsComponent, v2, typeid(ULokiItemVisualsComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiItemVisualsComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiItemVisualsComponent
+{
+    private TMap<TSubclassOf<ALokiBaseItem@>, bool> RecommendedItems;
+    private TMap<TSubclassOf<ALokiBaseItem@>, bool> PreferredItems;
+
+    ULokiItemVisualsComponent()   // traits=0x21
+    {
+        this.RecommendedItems = TMap<TSubclassOf<ALokiBaseItem@>, bool>();
+        this.PreferredItems = TMap<TSubclassOf<ALokiBaseItem@>, bool>();
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        bool v1;
+        UGameEventRouterComponent v4;
+        FGameEventListenerHandle v18;
+        FGameEvent_OnInventoryItemAdded_PlayerState v24;
+        auto v25;
+        FGameEventListenerHandle v38;
+        FGameEvent_OnInventoryItemRemoved_PlayerState v54;
+
+        v1 = false;
+        this.SetComponentTickEnabled(v1);
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v4 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+            v25 = false;
+            v24 = FGameEvent_OnInventoryItemAdded_PlayerState();
+            v38 = v4.RegisterForEvent(this, v24, typeid(FGameEvent_OnInventoryItemAdded_PlayerState), nullptr, n"OnInventoryItemAdded", v25);
+            v25 = false;
+            v54 = FGameEvent_OnInventoryItemRemoved_PlayerState();
+            v18 = v4.RegisterForEvent(this, v54, typeid(FGameEvent_OnInventoryItemRemoved_PlayerState), nullptr, n"OnInventoryItemRemoved", v25);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    bool IsRecommendedItem(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        auto v1;
+        TSubclassOf<ALokiBaseItem@> v4;
+        UObject v6;
+        bool v7;
+        ALokiCharacter v10;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = false;
+            return v1;
+        } else {
+            v4 = TSubclassOf<ALokiBaseItem@>(Item.BaseClass);
+            v6 = UObject@(v4);
+            v1 = IsValid(v6);
+            v1 = !v1;
+            if (v1) {
+                v1 = false;
+                return v1;
+            } else {
+                v1 = false;
+                v7 = v1;
+                if (this.RecommendedItems.Contains(v4)) {
+                    this.RecommendedItems.Find(v4, v7);
+                    return v7;
+                } else {
+                    v10 = Loki::GetLocalLokiCharacter(__WorldContext);
+                    v1 = IsValid(v10);
+                    v1 = !v1;
+                    if (v1) {
+                        v1 = true;
+                        return v1;
+                    } else {
+                        v1 = this.EvaluateItemRecommended(v4);
+                        v7 = v1;
+                        this.RecommendedItems.Add(v4, v7);
+                    }
+                }
+            }
+        }
+        return v7;
+    }
+
+    bool EvaluateItemRecommended(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        auto v1;
+        UObject v4;
+        ALokiCharacter v6;
+        ALokiHeroCharacter v8;
+        ALokiHeroCharacter v10;
+        ALokiLoadout v12;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = false;
+            return v1;
+        } else {
+            v4 = UObject@(ItemClass);
+            v1 = IsValid(v4);
+            v1 = !v1;
+            if (v1) {
+                v1 = false;
+                return v1;
+            } else {
+                v6 = Loki::GetLocalLokiCharacter(__WorldContext);
+                if (v6 != nullptr) {
+                    v8 = cast<ALokiHeroCharacter@>(v6);
+                } else {
+                    v8 = nullptr;
+                }
+                v10 = v8;
+                if (IsValid(v10)) {
+                    v12 = v10.DefaultRecommendedLoadout.GetDefaultObject();
+                    v1 = v12.ItemClasses.Contains(ItemClass);
+                    return v1;
+                } else {
+                    v1 = false;
+                }
+            }
+        }
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    bool IsPreferredItem(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        auto v1;
+        TSubclassOf<ALokiBaseItem@> v4;
+        UObject v6;
+        bool v7;
+        ALokiCharacter v10;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = false;
+            return v1;
+        } else {
+            v4 = TSubclassOf<ALokiBaseItem@>(Item.BaseClass);
+            v6 = UObject@(v4);
+            v1 = IsValid(v6);
+            v1 = !v1;
+            if (v1) {
+                v1 = false;
+                return v1;
+            } else {
+                v1 = false;
+                v7 = v1;
+                if (this.PreferredItems.Contains(v4)) {
+                    this.PreferredItems.Find(v4, v7);
+                    return v7;
+                } else {
+                    v10 = Loki::GetLocalLokiCharacter(__WorldContext);
+                    v1 = IsValid(v10);
+                    v1 = !v1;
+                    if (v1) {
+                        v1 = true;
+                        return v1;
+                    } else {
+                        v1 = this.EvaluateItemPreferred(Item);
+                        v7 = v1;
+                        this.PreferredItems.Add(v4, v7);
+                    }
+                }
+            }
+        }
+        return v7;
+    }
+
+    bool EvaluateItemPreferred(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        auto v1;
+        ALokiCharacter v4;
+        ALokiHeroCharacter v6;
+        ALokiHeroCharacter v8;
+        TArrayIterator<FGameplayAttribute> v14;
+        FGameplayAttribute v22;
+        TArrayIterator<TSubclassOf<UGameplayEffect@>> v28;
+        TSubclassOf<UGameplayEffect@> v36;
+        float32 v37;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = false;
+            return v1;
+        } else {
+            v4 = Loki::GetLocalLokiCharacter(__WorldContext);
+            if (v4 != nullptr) {
+                v6 = cast<ALokiHeroCharacter@>(v4);
+            } else {
+                v6 = nullptr;
+            }
+            v8 = v6;
+            if (IsValid(v8)) {
+                v14 = v8.RelevantEquipmentAttributes.Iterator();
+                while (true) {
+                    v1 = v14.CanProceed;
+                    if (!v1) break;
+                    v22 = v14.Proceed();
+                    v28 = Item.InventoryEffects.Iterator();
+                    while (true) {
+                        v1 = v28.CanProceed;
+                        if (!v1) break;
+                        v36 = v28.Proceed();
+                        v37 = 0;
+                        if (UAbilitySystemComponent::GetEffectModifierValueAtLevel(v36, v22, 0, v37, v37, v37, v37, v37)) {
+                            v1 = true;
+                            return v1;
+                        }
+                    }
+                }
+            }
+            v1 = false;
+        }
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnInventoryItemAdded(const FGameEvent_OnInventoryItemAdded_PlayerState& Event, const ALokiPlayerState@ Context)   // traits=0x28
+    {
+        ALokiBaseItem v2;
+        auto v3;
+        UObject v6;
+        TArray<ALokiBaseItem@> v10;
+        UClass v12;
+        TArrayIterator<ALokiBaseItem@> v18;
+        ALokiBaseItem v26;
+
+        v2 = Event.Item;
+        v3 = v2.bAllowUpgradesFromDupes;
+        if (v3) {
+            v6 = UObject@(v2.BaseClass);
+            if (IsValid(v6)) {
+                v10 = TArray<ALokiBaseItem@>();
+                v12 = UClass@(v2.BaseClass);
+                GetAllActorsOfClass(v12, v10, typeid(TArray));
+                v18 = v10.Iterator();
+                while (true) {
+                    v3 = v18.CanProceed;
+                    if (!v3) break;
+                    v26 = v18.Proceed();
+                    v18.Proceed();
+                    v26.DirtyDupeVisuals();
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnInventoryItemRemoved(const FGameEvent_OnInventoryItemRemoved_PlayerState& Event, const ALokiPlayerState@ Context)   // traits=0x28
+    {
+        ALokiBaseItem v2;
+        auto v3;
+        UObject v6;
+        TArray<ALokiBaseItem@> v10;
+        UClass v12;
+        TArrayIterator<ALokiBaseItem@> v18;
+        ALokiBaseItem v26;
+
+        v2 = Event.Item;
+        v3 = v2.bAllowUpgradesFromDupes;
+        if (v3) {
+            v6 = UObject@(v2.BaseClass);
+            if (IsValid(v6)) {
+                v10 = TArray<ALokiBaseItem@>();
+                v12 = UClass@(v2.BaseClass);
+                GetAllActorsOfClass(v12, v10, typeid(TArray));
+                v18 = v10.Iterator();
+                while (true) {
+                    v3 = v18.CanProceed;
+                    if (!v3) break;
+                    v26 = v18.Proceed();
+                    v18.Proceed();
+                    v26.DirtyDupeVisuals();
+                }
+            }
+        }
+        return;
+    }
+
+    void ~ULokiItemVisualsComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

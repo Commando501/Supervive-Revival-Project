@@ -1,0 +1,191 @@
+SESSION 57 — MISSION-DA RESOLUTION ROOT-CAUSED (via the working primitive): missions are NOT registered
+=========================================================================================================
+Date: 2026-07-08 (continued from s55/s56 same run). Branch: dedicated-server-stub. Goal: use the now-working
+native-call primitive (Avenue A + params, s55/s56) to make mission DAs resolvable so the missions model can be
+populated with real data and the modal renders. RESULT: definitively root-caused — the primitive + the asset-
+manager path WORK (a hero DA resolved live), but mission PrimaryAssetIds resolve to NULL => missions are
+genuinely NOT registered/scanned into the asset manager. The reflected LokiAssetManager API cannot register
+them (registration is native-only). This is now proven (not a s52 no-op artifact).
+
+THE DECISIVE TEST (probe9, docs/missions-nativecall9-marker.txt)
+---------------------------------------------------------------
+Chained two LokiAssetManager natives via the primitive (both members of the LokiAssetManager singleton;
+param[0]@Locals+0; Code=NULL + PropertyChain@+0x88 param recipe):
+  PrimaryAssetIDFromString(AssetIDString:FString) -> FPrimaryAssetId (16B struct, to r8)
+  GetLokiDataAsset(PrimaryAssetId:struct)         -> LokiDataAsset_Base* (to r8)
+Results:
+  CONTROL Hero:    PrimaryAssetIDFromString("Hero:Alchemist") -> {Type=Hero, Name=Alchemist} (raw FNames
+                   {0x1A568,0x326FA7}) -> GetLokiDataAsset -> DA=0x14612A71640 class='BP_HeroAsset_Alchemist_C'.
+                   *** The hero DA RESOLVED. The primitive + asset-manager path fully work. ***
+  TEST Mission:    PrimaryAssetIDFromString("Mission:ArmoryDaily_PlayAGame") -> {Type=Mission,
+                   Name=ArmoryDaily_PlayAGame} (raw {0x162B8,0x3FE76D}, a WELL-FORMED id) ->
+                   GetLokiDataAsset -> DA=0x0 (NULL). Game stayed alive.
+=> The mission id PARSES correctly (non-zero FNames), but the asset manager has no entry for it. Heroes are
+   registered/scanned; missions are NOT. This CONFIRMS s52's suspicion with a WORKING primitive (s52's
+   GetLokiDataAsset->null was a no-op artifact; now it's a real negative). Root blocker = mission asset
+   REGISTRATION, not the primitive.
+
+THE REFLECTED ASSET API CANNOT REGISTER (sig_enum, LokiAssetManager — all native/reflected):
+---------------------------------------------------------------------------------------------
+  PrimaryAssetIDFromString(str) -> FPrimaryAssetId          [works]
+  GetLokiDataAsset(FPrimaryAssetId) -> LokiDataAsset_Base*  [works; null for unregistered]
+  AsyncLoadPrimaryAssets(WorldContext, TArray<FPrimaryAssetId> Assets, OnLoadComplete delegate) -> LoadAssetHandle*
+  GetRestrictedAssetPath / GetReleaseAssetPath / GetReferenceAssetPath / GetDevelopmentAssetPath /
+  GetDevelopersAssetPath -> FString  [config path getters]
+There is NO reflected Scan/Register/AddDynamic UFunction. AsyncLoadPrimaryAssets can't help (it loads
+already-REGISTERED ids). So registration must be done via a RAW native (not a UFunction) — the primitive's
+UFunction-thunk mechanism doesn't reach it. (Confirms s52: "Scan/AddDynamic are native-only, not reflected".)
+
+WHAT THIS MEANS FOR THE MISSIONS MODAL (two layers remain, both below the primitive)
+------------------------------------------------------------------------------------
+1. REGISTRATION (the blocker just pinpointed): mission DAs must be scanned/registered as the "Mission" primary
+   asset type so GetLokiDataAsset resolves them. Options:
+   (A) RAW native call to UAssetManager::ScanPathsForPrimaryAssets(FPrimaryAssetType, TArray<FString> Paths,
+       UClass* BaseClass, bHasBlueprintClasses, bIsEditorOnly, bForceSynchronousScan) — a direct C++ call
+       (NO FFrame; rcx=AssetManager this, rdx=&Type, r8=&Paths, r9=BaseClass, stack: bools). Needs: the raw
+       function address (RE via usmapdump/xref), the mission DA folder path(s) (from the 346 DA_Mission* full
+       object paths in the catalog / docs/game-map.md), and the LokiDataAsset_Mission UClass. We are ALREADY on
+       the game thread in the ProcessInternal hook, so a clean direct call is feasible — and the s55 primitive
+       proves clean game-thread native execution works (unlike the injection/thread-hijack attempts CLAUDE.md
+       flags for __report_gsfailure; a fresh clean-context attempt is warranted). Constructing TArray<FString> +
+       FPrimaryAssetType in shim memory is the main work.
+   (B) RAW native StaticLoadObject/LoadObject on each mission DA's full object path to get the DA object
+       directly (bypasses the primary-asset registry). Then build MissionModels with real MissionAsset ptrs
+       and insert into knownMM — but that also needs the manual FString-map insert (s52) AND doesn't fix
+       GetLokiDataAsset for the game's own population path. (A) is cleaner if the scan works.
+2. GRANTED-MISSION SET (which missions to show): even with DAs resolvable, the MENU model needs a per-pool
+   active-mission set (normally server/replication via LokiPlayerState_Missions -> OnPSMissionsUpdated). Once
+   DAs resolve, we can SYNTHESIZE a set (pick missions per pool) and drive the population, or reuse the DS
+   replication schema (s54) locally.
+
+DURABLE CAPABILITIES BANKED (s55-s57) — reusable for the whole client-side-shim strategy
+-----------------------------------------------------------------------------------------
+- Avenue A direct-thunk primitive: call native UFunctions on the game thread (no-param, ptr-return, TArray
+  return-by-value, AND parameters). VERIFIED across ProgressionManager, MissionsModel, LokiAssetManager.
+- Param recipe: params frame (value @ FProperty.Offset_Internal +0x44), FFrame Code=NULL, Locals=frame,
+  PropertyChainForCompiledIn +0x88 = Function.ChildProperties (*(UFunc+0x58)), clear +0x30/+0x38/+0x40;
+  return -> r8. FPrimaryAssetId = {FName Type@+0, FName Name@+8}. FString = {Data, Num(incl null), Max}.
+- LokiAssetManager singleton found by class-name scan; PrimaryAssetIDFromString + GetLokiDataAsset are the
+  reflected resolve path (proven on Hero:Alchemist -> BP_HeroAsset_Alchemist_C).
+
+NEXT (S58): attempt registration.
+  1. RE UAssetManager::ScanPathsForPrimaryAssets raw address + confirm signature (usmapdump strings/xref on
+     the exe, or vtable/xref from AsyncLoadPrimaryAssets which is nearby). Also find LokiDataAsset_Mission UClass
+     and the mission DA folder path (docs/game-map.md / catalog full paths).
+  2. Build a shim that, from the ProcessInternal game-thread hook, constructs FPrimaryAssetType("Mission") +
+     TArray<FString>{mission path} and calls ScanPathsForPrimaryAssets directly; then re-run probe9's mission
+     GetLokiDataAsset to confirm it now resolves. (Keep the VEH; scan is the historically crash-prone call.)
+  3. If it resolves: synthesize a granted-mission set, populate knownMM, broadcast OnUpdated, open the modal
+     (computer-use) to verify tiles.
+
+FILES: tools/sigbypass-mod/missions_nativecall_probe9.cpp (+ .dll), docs/missions-nativecall9-marker.txt.
+RECIPE: standalone via configs\launch-redirect.ps1 -Hook catalog_store_fix.dll; base=0x7FF6B54F0000 (re-read).
+
+==================================================================================
+S58 (2026-07-08) — REGISTERED-vs-UNLOADED diagnostic attempt: asset-query calls are finicky
+==================================================================================
+Goal: distinguish "missions registered but unloaded" (fix = AsyncLoadPrimaryAssets, easy) from "not
+registered" (fix = raw ScanPathsForPrimaryAssets). Built probe10 = KismetSystemLibrary::
+GetPrimaryAssetIdList(FPrimaryAssetType, OUT TArray<FPrimaryAssetId>) for Hero(control) + Mission.
+RESULT: the game CRASHED during the query (marker reached [3], no [4]/[VEH]). The param mechanism is
+NOT the cause (probe7/probe9 param calls are clean; probe10's thunk param-stepping is identical).
+DISASM of GetPrimaryAssetIdList (rva 0x3965B20) shows the body: it IGNORES the passed Context, calls
+**UAssetManager::Get() @ rva 0x34BAEF0** (returns the singleton in rax), then a VIRTUAL call
+**[AssetManager_vtable + 0x370]** (slot 110) = UAssetManager::GetPrimaryAssetIdList(this, type, OUT list, 0).
+So the fault is inside that virtual query, not my FFrame. Cause unpinned (query internals at the menu, OR
+the documented intermittent menu crash coinciding). NOTE: several asset-manager / factory calls have now
+crashed at the menu (probe6/8 factory, probe10 query) while GETTERS (GetMissionsModel, GetMissions,
+GetLokiDataAsset, GetMissionModel) and PrimaryAssetIDFromString are all clean — the crashy ones are the
+heavier registry/factory operations.
+
+USEFUL RE FOR THE RAW-SCAN PATH (S59):
+- UAssetManager singleton getter: UAssetManager::Get() @ base+0x34BAEF0 (call it to get `this` for a raw
+  virtual call, instead of scanning for the instance).
+- AssetManager vtable: GetPrimaryAssetIdList = slot @ +0x370. ScanPathsForPrimaryAssets is ANOTHER virtual
+  in the SAME vtable — dump the vtable (usmapdump vtdump on *(LokiAssetManager instance)) and identify the
+  scan slot by disassembling candidates (match the 6-arg signature: type, TArray<FString> paths, UClass*,
+  3 bools). Then call it directly (raw, NO FFrame) from the game-thread hook with constructed args.
+- FName indices are PER-PROCESS (not stable across relaunches) — resolve type FNames live via
+  PrimaryAssetIDFromString each run (don't hardcode across launches; probe10 hardcoded from probe9's
+  same-process values, which is only valid within one process).
+- Alt fix if missions turn out registered-but-unloaded: AsyncLoadPrimaryAssets(WorldContext,
+  TArray<FPrimaryAssetId>, delegate) — reflected; needs a world-context object + a (nullable) delegate; async.
+
+STATE: probe10 in tools/sigbypass-mod/. New tool tools/re/find_func.py (scan Function objects by name substr).
+The core s55-s57 capabilities (primitive, param-passing, DA-resolution root-cause) stand. The registration
+step is a defined but finicky/crash-prone sub-investigation best done with the vtable-slot RE above in hand.
+
+==================================================================================
+*** S58 BREAKTHROUGH (2026-07-08): OUT-param crashes ROOT-CAUSED + FIXED; missions ARE registered ***
+==================================================================================
+The probe6/8/10 __fastfail crashes were NOT anti-tamper/re-entrancy — they were a BUG in my param setup:
+OUT params. Disasm of StepExplicitProperty (@rva 0x1345FE0) shows: for a CPF_OutParm param (bt flags,0x8)
+it reads **FFrame.OutParms @ +0x80** and walks an FOutParmRec list {Property@+0, PropAddr@+8, NextOutParm@+16}
+matching by Property ptr (it does NOT use Locals+Offset for OUT params). My FFrame's +0x80 was garbage (from
+the captured template) => the walk dereferenced garbage => __fastfail. Every crashing call (factory probe6/8,
+query probe10) had an OUT param; every clean call (probe4/5/7/9) had only IN params + return.
+FIX (probe11, VERIFIED): for each CPF_OutParm (non-return) param, build an FOutParmRec {Property=the FField,
+PropAddr=Locals+Offset(+0x44), Next=chain} and set FFrame+0x80 = &head. probe11 then called
+KismetSystemLibrary::GetPrimaryAssetIdList(type, OUT TArray) with NO crash:
+    types: Hero='Hero'(0x1A568) Mission='Mission'(0x162B8)
+    GetPrimaryAssetIdList Num: Hero=25   Mission=330
+=> *** MISSIONS ARE REGISTERED (330 ids, ~ the 346 DA_Mission* catalog). *** GetLokiDataAsset(mission)=null
+   was because they're registered-but-NOT-LOADED, not unregistered. NO raw ScanPathsForPrimaryAssets needed.
+   The fix is to LOAD them (AsyncLoadPrimaryAssets — reflected, all IN params) so GetLokiDataAsset resolves.
+CONSEQUENCE: the whole OUT-param native toolkit is now open (factory, query, SetMissionProgress, model
+population). The s52 "factory rejects synthetic data" was ALSO an OUT-param crash (its param is CPF_OutParm)
+— must be re-tested with the OutParms fix. FName type indices are PER-PROCESS — resolve live via
+PrimaryAssetIDFromString each run (probe11 does this). New: FFrame.OutParms@+0x80; FOutParmRec{+0,+8,+16}.
+probe11 in tools/sigbypass-mod/.
+
+==================================================================================
+*** S58 BREAKTHROUGH #2 (2026-07-08): the FACTORY WORKS — builds a populated model from synthetic data ***
+==================================================================================
+With the OUT-param fix, re-ran CreateMissionModelFromFinalProgress (probe12) — the call s52 believed
+"rejects synthetic data" but had only ever run through the OUT-param crash / a no-op. Fed it a REAL registered
+mission id (from GetPrimaryAssetIdList("Mission")[0]) inside 1 synthetic FMissionProgress:
+    missionIds=330 (id0={Type=Mission 0x162B8, Name 0x200302937}) poolIds=16 (id0={MissionPool 0x16F06, 0x3F4AAA})
+    factory ret model=0x1BFFC503880 class='MissionsModel' ; model.GetMissions().Num=1
+=> *** THE FACTORY BUILT A NON-EMPTY MissionsModel (Num=1) FROM SYNTHETIC FMissionProgress. *** s52's negative
+   was purely the OUT-param crash. This is the client-side model-population path.
+OPEN QUESTIONS for render: (1) does the built MissionModel have a LOADED MissionAsset (missions are registered
+but NOT loaded — GetLokiDataAsset=null)? If null, the widget may skip/blank the tile -> may need
+AsyncLoadPrimaryAssets first. (2) wiring: the factory returns a SEPARATE model; the menu widgets read
+ProgressionManager.GetMissionsModel() (knownMM @ ProgMgr+0x3B8). Plan: build the model, RPM-write
+ProgMgr+0x3B8 = the new model (roots it via the UPROPERTY), then open the modal FRESH so the widgets read it on
+Construct (no broadcast needed for a fresh open). (3) tab filtering: WBP_UI_MissionContainer filters missions
+by PoolId == the tab's baked pool id — spread missions across several real pool ids to land in a visible tab.
+probe12 in tools/sigbypass-mod/.
+
+==================================================================================
+*** ★★★ S58 — THE MISSIONS MODAL RENDERS (2026-07-08, computer-use verified) ★★★ ***
+==================================================================================
+probe14 closed the loop end-to-end. It (1) AsyncLoadPrimaryAssets'd the 8 target mission DAs (registered !=
+loaded), polled GetLokiDataAsset until they resolved (mission[0] -> DA_Mission_Tournament_WinGame_C, LOADED),
+(2) built a MissionsModel with 8 DISTINCT-ID FMissionProgress (empty-ID collision fixed — the Missions map is
+FString-ID-keyed; all "" deduped to 1 in probe13) across real pools, (3) SWAPPED it into
+ProgMgr.MissionsModel@+0x3B8 (roots via the UPROPERTY). Marker:
+    missions registered=330, pools=16. Built 8-mission model GetMissions().Num=8
+    mission[0] DA loaded? GetLokiDataAsset=0x1C0CAEBA900 class='DA_Mission_Tournament_WinGame_C'
+    SWAP ProgMgr.MissionsModel -> new model: DONE
+Reopening the modal (the open widgets read GetMissionsModel() on Construct) -> the SEASONAL tab renders 4 real
+Tournament mission tiles ("Get Knocks or Assists in Tournament", "Play Games of Tournament", "Place Top 3...",
+"Win a Game of Tournament") with progress bars + 10000 XP rewards. *** THE PREVIOUSLY-EMPTY MISSIONS MODAL IS
+POPULATED, FULLY CLIENT-SIDE. ***
+
+THE COMPLETE CLIENT-SIDE MISSIONS PIPELINE (all reusable, all live-verified):
+  1. Avenue A native-call primitive (s55): hook ProcessInternal, captured FFrame, call the UFunction thunk
+     @+0xE0 directly (Code=NULL for no-param).
+  2. Parameters (s56): Locals-by-offset (@FProperty+0x44), PropertyChainForCompiledIn@+0x88, return->r8;
+     AND OUT params (s58): build the FOutParmRec list + set FFrame.OutParms@+0x80 (this was the real cause of
+     the "anti-tamper" crashes — a bug in my setup, not the game).
+  3. GetPrimaryAssetIdList -> missions ARE registered (330). GetLokiDataAsset null = not LOADED.
+  4. AsyncLoadPrimaryAssets(WorldContext=ProgMgr, TArray<FPrimaryAssetId>, empty delegate) LOADS the DAs;
+     poll GetLokiDataAsset until non-null.
+  5. CreateMissionModelFromFinalProgress(TArray<FMissionProgress> w/ real registered ids + DISTINCT FString
+     IDs + real PoolIds) -> a populated MissionsModel (s52's "factory rejects synthetic data" was the OUT-param
+     crash; it works).
+  6. RPM-write ProgMgr.MissionsModel@+0x3B8 = the new model -> GetMissionsModel() returns it -> reopen modal.
+DURABLE-FIX PATH (for a shim, like catalog_store_fix): do steps 4-6 from the ProcessInternal hook on menu load;
+pick a real per-pool granted set from the 330 registered missions; distinct IDs; broadcast MissionsModel.OnUpdated
+if refreshing an already-open modal instead of reopen. probe14 in tools/sigbypass-mod/.

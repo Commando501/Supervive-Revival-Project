@@ -1,0 +1,31 @@
+﻿PID=41816 SET_PTR=0x15F109D5500
+
+=== T=0: baseline (should show Health=750, MaxHealth=1000 from prior pokes) ===
+  [T=0] Health.Cur=750.0 Health.Base=1000.0 MaxHealth.Cur=1000.0 MaxHealth.Base=1000.0 Damage.Cur=3.6735319501967944e-40
+
+=== T=0.1: write Health.CurrentValue = 0.0 ===
+
+=== Sampling every 1s for 8s (looking for game-side reactions) ===
+[T=+1s]
+  [T=+1s] Health.Cur=0.0 Health.Base=1000.0 MaxHealth.Cur=1000.0 MaxHealth.Base=1000.0 Damage.Cur=3.6735319501967944e-40
+[T=+2s]
+  [T=+2s] Health.Cur=0.0 Health.Base=1000.0 MaxHealth.Cur=1000.0 MaxHealth.Base=1000.0 Damage.Cur=3.6735319501967944e-40
+[T=+3s]
+  [T=+3s] Health.Cur=0.0 Health.Base=1000.0 MaxHealth.Cur=1000.0 MaxHealth.Base=1000.0 Damage.Cur=3.6735319501967944e-40
+[T=+4s]
+  [T=+4s] Health.Cur=0.0 Health.Base=1000.0 MaxHealth.Cur=1000.0 MaxHealth.Base=1000.0 Damage.Cur=3.6735319501967944e-40
+[T=+5s]
+  [T=+5s] Health.Cur=0.0 Health.Base=1000.0 MaxHealth.Cur=1000.0 MaxHealth.Base=1000.0 Damage.Cur=3.6735319501967944e-40
+[T=+6s]
+  [T=+6s] Health.Cur=0.0 Health.Base=1000.0 MaxHealth.Cur=1000.0 MaxHealth.Base=1000.0 Damage.Cur=3.6735319501967944e-40
+[T=+7s]
+  [T=+7s] Health.Cur=0.0 Health.Base=1000.0 MaxHealth.Cur=1000.0 MaxHealth.Base=1000.0 Damage.Cur=3.6735319501967944e-40
+[T=+8s]
+  [T=+8s] Health.Cur=0.0 Health.Base=1000.0 MaxHealth.Cur=1000.0 MaxHealth.Base=1000.0 Damage.Cur=3.6735319501967944e-40
+
+=== T=+8s: restore Health.CurrentValue = 1000.0 ===
+
+=== T=+8.1s: post-restore verify ===
+  [post-restore] Health.Cur=1000.0 Health.Base=1000.0 MaxHealth.Cur=1000.0 MaxHealth.Base=1000.0 Damage.Cur=3.6735319501967944e-40
+
+OK: Health.CurrentValue restored to 1000.0. Full sequence completed.

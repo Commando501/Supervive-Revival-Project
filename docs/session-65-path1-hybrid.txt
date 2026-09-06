@@ -1,0 +1,85 @@
+SESSION 65 — PATH 1 SUCCEEDED: the tutorial gamemode fully initializes (no revert); new gate = feature toggles
+================================================================================================================
+Date: 2026-07-11. Continues S64 (the post-"ready to play" revert = the CoreGameMatchModel being INVALID; forcing
+bIsValid via a poke crashes init because the model is incomplete). This session BEAT the revert by building a
+COMPLETE, valid model — via the client's OWN parser (the "hybrid"), not by hand — and the tutorial gamemode
+initializer ran ALL THE WAY to "Finished". Live + autonomous (elevated shell; the client auto-polls, so no clicks).
+
+WHY NOT A FACTORY CALL (ruled out first): dumped CoreGameManager + CoreGameMatchModel UFunctions in-shim
+(DumpClassFuncs). CoreGameManager exposes only Try*/Get* (TryStopMatch, TryDisassociateMatch, GetMatchInfo,
+GetCoreGameMatchModel, ...); CoreGameMatchModel has NO relevant UFunctions. So there is NO BlueprintCallable
+setter/factory to invoke (unlike missions' CreateMissionModelFromFinalProgress). The model is populated ONLY by
+the client's native HTTP-response parser. And MatchInfo is a large (~1496-byte) EMBEDDED struct (offset gap
+0xB0->0x688) — hand-writing it in memory would be hugely fragile. => use the client's parser.
+
+THE HYBRID (the winning approach) — let the client build the model, then force-open
+--------------------------------------------------------------------------------------
+Confirmed the client polls GET /core-game/players/{id} at the IDLE menu (~1/min), so ags can arm the match with
+no user click. ags changes (server/internal/interactive/interactive.go, live-verified):
+  - forceTutorialMatch = TRUE  -> /core-game/players returns a MatchID at idle; the client escalates and fetches
+    GET /core-game/matches/{id}, whose buildTutorialMatchInfo (19-prop usmap MatchInfo) the client's OWN parser
+    turns into a COMPLETE, self-consistent CoreGameMatchModel.
+  - ConnectionDetails.address = ""  -> empty address => the client parks LOCALLY in the pre-game DROP lobby
+    (UI_CoreGameScreenRoot; S62: "Attempting to travel ... Address:'' -> parked") instead of connecting to a dead
+    DS at 7777 (which times out in 20s and bounces to login, tearing the model down). Empty keeps the model LIVE.
+LIVE-VERIFIED the model went from invalid -> VALID after the client's fetch (in-shim DumpCoreGameState):
+  bIsValid @0x30: 0 -> 1 ;  MatchState @0x48: 0 -> 5 (InProgress) ;  MatchInfo @0xB0: null -> populated
+  (SelfModel/TeamMembers non-null; TeamSize 1). CoreGameManager persists at a stable addr; model @CGM+0x6E0.
+
+★★★ THE RESULT — force-open with the valid model in place: THE TUTORIAL GAMEMODE FULLY INITIALIZES ★★★
+------------------------------------------------------------------------------------------------------
+tutorial_launch.dll (login slot-285 + PlayerState InitPlayerState-260/273 fixes) force-opened LVL_Tutorial from
+the pre-game-lobby state. Loki.log (NO revert, NO crash, NO "failed to get ULokiServerPlatformInstance"):
+  Browse LVL_Tutorial -> world up -> LogLokiRoundGameMode Setting Phase 1 (EGP_ServerStartup -> EGP_BeginInit)
+  -> LogLokiGameModeInitializer: Stage 0 -> Priming -> "Client is ready to play." -> Stage 1 -> MemoryReport
+  -> Stage 2 -> WaitingForClientsReady -> Stage 3 -> "Transitioning from WaitingForClientsReady to FINISHED".
+[LOGIN1] pc=BP_LokiPlayerController_Dev_C err='(empty=approved)'. DIAG: real trio present —
+  PCClass=BP_LokiPlayerController_Dev_C, GSClass=BP_LokiGameState_Tutorial_C, PSClass=BP_LokiPlayerState_C.
+Pawn census (DumpPawns): 166 live hero/character actors incl. LokiCharacterMovementComponent /
+LokiCharacterSpringArmComponent (camera) / LokiCharacterFastTargetComponent / Comp_Hero_HoverHighlight — hero
+pawns/components ARE in the world. Game STABLE (alive many minutes, no crash, no browse-away). *** This is the
+farthest the project has ever reached: the REAL tutorial gamemode + gamestate run, past every prior gate. ***
+
+NEW FRONTIER (the next gate): ULokiGameFeatureToggles NEVER INITIALIZES
+----------------------------------------------------------------------
+After "Finished", LogLokiRoundGameMode stays at EGP_BeginInit (phase 1) and does NOT advance to a drop-in phase;
+no Possess / DropPlane-fire / hero-deploy event occurs. The log then SPAMS every frame:
+  "LogTemp: Error: ULokiGameFeatureToggles::Get <X> called when feature toggles were not ready"
+for X = DeadSpectatorCameraLock, CursorCharacterAim, AttachAudioListenerToHero, BonfireUAVs, WinterEvent, ...
+(45,862+ occurrences, ZERO "ready"). DeadSpectatorCameraLock + CursorCharacterAim every frame => the player is in
+a SPECTATOR-camera state (no possessed hero), and hero control/aim/camera are GATED OFF because the game feature
+toggles subsystem was never initialized. This subsystem is normally populated at proper match start (server-
+replicated and/or backend config) — the force-open/ags path bypasses whatever initializes it. Very likely this
+same "not ready" also blocks LokiRoundGameMode from advancing past BeginInit to the drop-in.
+=> NEXT (S66): initialize ULokiGameFeatureToggles. Investigate what populates it: (a) a backend endpoint (check
+/configuration/client — S60 serves clientVersions; maybe it needs a feature-toggles payload — trace what the
+client reads into the toggles subsystem), (b) server replication (a real match server sets them), or (c) a native
+call. Find ULokiGameFeatureToggles' live instance + its "ready" flag + the toggle map, and either serve the data
+or set "ready" + populate the map (missions-style, via the PI primitive). With toggles ready, expect the round to
+advance to drop-in (Comp_GameMode_DropPlane_Tutorial) and possess a hero. THEN verify controllable = PLAYABLE.
+
+GATE LADDER (updated)
+---------------------
+  [DONE] travel+load; Login (slot-285); PlayerState (InitPlayerState 260/273, Loki PC); WaitingForClientsReady
+         ("Client is ready to play"); *** the post-ready REVERT (S64) — beaten by a valid client-built model (S65) ***;
+         gamemode initializer reaches FINISHED; real gamemode/gamestate/PC + hero pawns present.
+  [NEXT] ULokiGameFeatureToggles never ready -> round stuck at EGP_BeginInit, no drop-in, spectator camera.
+  [LATER] drop-in possess a hero + controllable = PLAYABLE.
+
+CONFIG / STATE AT END (the working PATH-1 setup — keep for S66)
+--------------------------------------------------------------
+- ags (server\ags.exe, rebuilt): forceTutorialMatch=TRUE + ConnectionDetails.address="" — the HYBRID that makes
+  the client build a valid model at idle and park locally. (Revert both to restore normal menu use: the client
+  auto-enters the pre-game lobby at boot with these on.) tutorialMatchState="InProgress". Restarting ags REUSES
+  the existing certs (no cacert re-append) — verified (client kept getting 200s after the hot restart).
+- tutorial_launch.dll = durable FIX_TARGETED_INITPS force-open build (kInvestigateOnly=false, kPokeMatchModel=false).
+  New reusable probes: DumpCoreGameState (CoreGameManager + match-model state), FindCoreGameManager, DumpClassFuncs
+  (class UFunction dump), DumpPawns (hero/pawn census), PokeMatchModelLoop (disabled). kInvestigateOnly=true does a
+  read-only census at the menu (no force-open) — flip it for probing.
+- WORKFLOW to reproduce: (1) launch-redirect -NoHook; (2) ags already has forceTutorialMatch/empty-address baked in,
+  so at the menu the client auto-fetches the match + builds the model + parks in the pre-game lobby (~1min; verify
+  via DumpCoreGameState bIsValid=1); (3) inject tutorial_launch.dll -> force-opens LVL_Tutorial -> initializer
+  Finishes, tutorial runs (spectator until feature toggles are fixed).
+- Static xref stays dead (packer). Game left ALIVE running the tutorial (spectator) at end.
+- Preserved: scratchpad marker-s65-path1-success.txt, Loki-S65-path1-tutorial-runs.log.
+- Handoff: docs/next-session-prompt-s66.md.

@@ -1,0 +1,20 @@
+714:[2026.07.01-07.41.30:528][  0]LogLokiStub: Display: InjectServerVerifyViewTarget: found UFunction on APlayerController (NumParms=0, ParmsSize=0, FunctionFlags=0x80220CC2)
+715:[2026.07.01-07.41.30:528][  0]LogLokiStub: Display: InjectServerVerifyViewTarget: added FVector+FRotator+FString params. New NumParms=3, ParmsSize=48
+1124:[2026.07.01-07.42.10:236][176]LogLokiActorChannel: Verbose: ReceivedBunch: ChIndex=3 ChSeq=673 bReliable=1 bOpen=0 bClose=0 NumBits=2339 StartPos=0 remaining=2339 bits
+1128:[2026.07.01-07.42.10:241][176]LogRep: Error: ReceivedRPC: ReceivePropertiesForRPC - Reader.IsError() == true: Function: ServerVerifyViewTarget, Object: PlayerController /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0
+1132:[2026.07.01-07.42.10:242][176]LogNet:  - Result=ObjectReplicatorReceivedBunchFail, ErrorContext="ObjectReplicatorReceivedBunchFail"
+1160:[2026.07.01-07.42.10:252][176]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from ReceivedJoin to CleanedUp
+
+=== SESSION 29 SUMMARY ===
+
+Injector helpers added: AppendIntParam, AppendFloatParam, AppendByteParam
+
+Trial signature: (FVector_NetQuantize100, int32, FString)
+Result: Reader.IsError() == true
+
+Analytical findings:
+- First 96 bits as FVector floats: (1.86e-35, -1.32e+23, -1.68e+27) - IMPOSSIBLE for coordinates
+- First 128 bits as FQuat: norm = 1.68e+27 - IMPOSSIBLE for quaternion
+- Bit 0 of payload = 1 - consistent with FVector_NetQuantize non-zero flag OR NetGUID valid-reference flag
+
+First param MUST be a variable-bit-encoded type (custom NetSerialize struct or NetGUID).

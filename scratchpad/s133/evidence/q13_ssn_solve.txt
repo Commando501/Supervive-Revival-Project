@@ -1,0 +1,116 @@
+========================================================================================================
+Q13  SOLVE THE PROTECTOR SYSCALL NUMBERS OFFLINE
+========================================================================================================
+extracted sites (strict encodings only): 138
+distinct cells: 15
+
+C1  does every site on a cell reproduce the DISK dword for s = 0xFFFFFFFF ?
+   cells reproducing the disk dword: 14 ; failing: 1
+
+--- solving: for each cell, which s in [0,0x1000) makes ALL its sites agree? ---
+  cell 0x0094A6D8  sites=83  disk=0x65246E45  4096 solutions
+      s = 0x000                            live cell would be 0x67246E45
+      s = 0x001                            live cell would be 0x61246E45
+      s = 0x002                            live cell would be 0x63246E45
+      s = 0x003 NtDeviceIoControlFile      live cell would be 0x6D246E45
+      s = 0x004                            live cell would be 0x6F246E45
+      s = 0x005 NtQueryInformationThread   live cell would be 0x69246E45
+      s = 0x006 NtWaitForSingleObject      live cell would be 0x6B246E45
+      s = 0x007                            live cell would be 0x55246E45
+  cell 0x0094A6DC  sites=1   disk=0x13E2BA7A  4096 solutions
+      s = 0x000                            live cell would be 0x11E2BA7A
+      s = 0x001                            live cell would be 0x0FE2BA7A
+      s = 0x002                            live cell would be 0x0DE2BA7A
+      s = 0x003 NtDeviceIoControlFile      live cell would be 0x0BE2BA7A
+      s = 0x004                            live cell would be 0x09E2BA7A
+      s = 0x005 NtQueryInformationThread   live cell would be 0x07E2BA7A
+      s = 0x006 NtWaitForSingleObject      live cell would be 0x05E2BA7A
+      s = 0x007                            live cell would be 0x03E2BA7A
+  cell 0x0094A6E0  sites=1   disk=0xE4E45B8F  4096 solutions
+      s = 0x000                            live cell would be 0xEAE45B8F
+      s = 0x001                            live cell would be 0xE8E45B8F
+      s = 0x002                            live cell would be 0xEEE45B8F
+      s = 0x003 NtDeviceIoControlFile      live cell would be 0xECE45B8F
+      s = 0x004                            live cell would be 0xF2E45B8F
+      s = 0x005 NtQueryInformationThread   live cell would be 0xF0E45B8F
+      s = 0x006 NtWaitForSingleObject      live cell would be 0xF6E45B8F
+      s = 0x007                            live cell would be 0xF4E45B8F
+  cell 0x0094A734  sites=1   disk=0x42978408  4096 solutions
+      s = 0x000                            live cell would be 0x4C978408
+      s = 0x001                            live cell would be 0x4E978408
+      s = 0x002                            live cell would be 0x48978408
+      s = 0x003 NtDeviceIoControlFile      live cell would be 0x4A978408
+      s = 0x004                            live cell would be 0x54978408
+      s = 0x005 NtQueryInformationThread   live cell would be 0x56978408
+      s = 0x006 NtWaitForSingleObject      live cell would be 0x50978408
+      s = 0x007                            live cell would be 0x52978408
+  cell 0x0094A74C  sites=5   disk=0xE382978D  4096 solutions
+      s = 0x000                            live cell would be 0xE582978D
+      s = 0x001                            live cell would be 0xE782978D
+      s = 0x002                            live cell would be 0xF982978D
+      s = 0x003 NtDeviceIoControlFile      live cell would be 0xFB82978D
+      s = 0x004                            live cell would be 0xFD82978D
+      s = 0x005 NtQueryInformationThread   live cell would be 0xFF82978D
+      s = 0x006 NtWaitForSingleObject      live cell would be 0xF182978D
+      s = 0x007                            live cell would be 0xF382978D
+  cell 0x0094A754  sites=1   disk=0xF6253A33  4096 solutions
+      s = 0x000                            live cell would be 0xF4253A33
+      s = 0x001                            live cell would be 0xFA253A33
+      s = 0x002                            live cell would be 0xF8253A33
+      s = 0x003 NtDeviceIoControlFile      live cell would be 0xFE253A33
+      s = 0x004                            live cell would be 0xFC253A33
+      s = 0x005 NtQueryInformationThread   live cell would be 0xC2253A33
+      s = 0x006 NtWaitForSingleObject      live cell would be 0xC0253A33
+      s = 0x007                            live cell would be 0xC6253A33
+  cell 0x0094A75C  sites=2   disk=0x20D463F0  4096 solutions
+      s = 0x000                            live cell would be 0x5ED463F0
+      s = 0x001                            live cell would be 0x5CD463F0
+      s = 0x002                            live cell would be 0x5AD463F0
+      s = 0x003 NtDeviceIoControlFile      live cell would be 0x58D463F0
+      s = 0x004                            live cell would be 0x56D463F0
+      s = 0x005 NtQueryInformationThread   live cell would be 0x54D463F0
+      s = 0x006 NtWaitForSingleObject      live cell would be 0x52D463F0
+      s = 0x007                            live cell would be 0x50D463F0
+  cell 0x0094A794  sites=11  disk=0x8C147338  4096 solutions
+      s = 0x000                            live cell would be 0x8A147338
+      s = 0x001                            live cell would be 0x88147338
+      s = 0x002                            live cell would be 0x96147338
+      s = 0x003 NtDeviceIoControlFile      live cell would be 0x94147338
+      s = 0x004                            live cell would be 0x92147338
+      s = 0x005 NtQueryInformationThread   live cell would be 0x90147338
+      s = 0x006 NtWaitForSingleObject      live cell would be 0x9E147338
+      s = 0x007                            live cell would be 0x9C147338
+  cell 0x0094A7B0  sites=1   disk=0x552977B8  4096 solutions
+      s = 0x000                            live cell would be 0x532977B8
+      s = 0x001                            live cell would be 0x512977B8
+      s = 0x002                            live cell would be 0x4F2977B8
+      s = 0x003 NtDeviceIoControlFile      live cell would be 0x4D2977B8
+      s = 0x004                            live cell would be 0x4B2977B8
+      s = 0x005 NtQueryInformationThread   live cell would be 0x492977B8
+      s = 0x006 NtWaitForSingleObject      live cell would be 0x472977B8
+      s = 0x007                            live cell would be 0x452977B8
+  cell 0x0094A7F8  sites=3   disk=0x4C9376D7  4096 solutions
+      s = 0x000                            live cell would be 0x4E9376D7
+      s = 0x001                            live cell would be 0x409376D7
+      s = 0x002                            live cell would be 0x429376D7
+      s = 0x003 NtDeviceIoControlFile      live cell would be 0x449376D7
+      s = 0x004                            live cell would be 0x469376D7
+      s = 0x005 NtQueryInformationThread   live cell would be 0xB89376D7
+      s = 0x006 NtWaitForSingleObject      live cell would be 0xBA9376D7
+      s = 0x007                            live cell would be 0xBC9376D7
+  cell 0x0094A800  sites=3   disk=0x10BFA9CE  4096 solutions
+      s = 0x000                            live cell would be 0x12BFA9CE
+      s = 0x001                            live cell would be 0x14BFA9CE
+      s = 0x002                            live cell would be 0x16BFA9CE
+      s = 0x003 NtDeviceIoControlFile      live cell would be 0x18BFA9CE
+      s = 0x004                            live cell would be 0x1ABFA9CE
+      s = 0x005 NtQueryInformationThread   live cell would be 0x1CBFA9CE
+      s = 0x006 NtWaitForSingleObject      live cell would be 0x1EBFA9CE
+      s = 0x007                            live cell would be 0xE0BFA9CE
+  cell 0x0094A80C  sites=2   disk=0x3BEEA5A0  4096 solutions
+      s = 0x000                            live cell would be 0x39EEA5A0
+      s = 0x001                            live cell would be 0x27EEA5A0
+      s = 0x002                            live cell would be 0x25EEA5A0
+      s = 0x003 NtDeviceIoControlFile      live cell would be 0x23EEA5A0
+      s = 0x004                            live cell would be 0x21EEA5A0
+      s = 0x005 NtQueryInformationThread   live cell would be 0x2FEEA5A0

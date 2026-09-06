@@ -1,0 +1,334 @@
+SESSION 45 — Path-1 crash-capture tool built (scan_on_enum_veh.dll); the live capture
+is GATED on the user because it requires killing an actively-running client.
+==============================================================================
+Date: 2026-07-03  (branch dedicated-server-stub; continuous with session 44)
+
+Read after: docs/session-44-grid-datapath-SOLVED-crash-is-the-wall.txt (the key doc).
+The grid DATA PATH is solved; the remaining wall is the hero-content-load crash. This
+session built the tool to capture that crash's callstack and characterized the live
+state, but did NOT run the capture — see "WHY THE CAPTURE IS GATED" below.
+
+=========================== STATE FOUND AT SESSION START ======================
+- A recon client is ALREADY RUNNING (PID 71152), parked at the menu, STOCK config:
+  NO injector, empty grid, NOT crashed. Its Loki.log advances in real time — the
+  Messenger heartbeat drops every ~60s, reconnects, and re-fetches "Unlockable heroes
+  fetched: 25 heroes" + wallet each cycle. No user-activity signature (no map loads /
+  navigation), i.e. the user is away with the client parked, but the process is LIVE.
+  => This confirms the crash is NOT caused by the backend returning 25 heroes: with 25
+     storefront heroes fetched but WITHOUT the AssetManager enumeration scan, the client
+     is stable. The crash needs the heroes RESOLVED+LOADED as primary assets, which
+     requires scan_on_enum injected EARLY (before menu-load). The already-running process
+     can't be retrofitted (enumeration already ran empty at menu-load), so a repro needs
+     a FRESH early-injected launch.
+- ags (PID 26512) is running, started as bare "server\ags.exe" (no args -> defaults,
+  reuses server\certs; cacert.pem already has that root). BUT it is a STALE binary:
+  GET /content-service/manifest/x?nonEnabledOnly=true returns a POPULATED SUBSET of
+  heroes (missing alchemist/assault/beebo), not the empty {} the committed source
+  (server/internal/menu/menu.go handleContentManifest) produces. Likely a leftover from
+  S44's inconclusive "enable only a few heroes" crash-isolation test. A faithful 25-hero
+  repro needs ags rebuilt from HEAD (staged this session as server\ags-s45.exe; HEAD
+  compiles clean).
+- NO minidump exists for the hero-content-load crash. The newest UECC dump on disk is
+  2026-07-02 09:17 (the already-analyzed S41 lobby D3D12 dump). Every UECC dump in
+  Saved\Crashes is from the dedicated-server-stub D3D12/RHI path (S40/41). The S44
+  hero-content-load crash writes NONE — it routes only through Sentry crashpad
+  ("LogSentrySdk: flushing ... before crashpad handler"). So the two crashes take
+  DIFFERENT crash-handling paths.
+
+=========================== THE DISCRIMINATOR (evidence, not yet proof) =======
+Is the hero-content-load crash the SAME D3D12/RHI wall as S40/41, or something else
+(a throttleable streaming/asset/GC failure)? Two honest signals:
+  (1) UECC-dump asymmetry: S40/41's D3D12 RHI-thread AVs RELIABLY produced UECC
+      minidumps (UE's structured-exception handler -> CrashReportClient -> UEMinidump.dmp,
+      13-14 MB each, one per crash). The hero-content-load crash produces NONE, only
+      Sentry crashpad. If it were the identical RHI-thread AV, the same UE handler should
+      fire and write a UECC dump. Its absence LEANS AGAINST "identical to S40/41" (it
+      could be a UE Fatal/check() during content processing, or a handler-race
+      difference — unconfirmed).
+  (2) Log fingerprint is a WORLD TEARDOWN: hero GameplayCue load -> LogSlate
+      InvalidateAllWidgets -> LogAudio "Audio Device unregistered from world 'None'" ->
+      LogUObjectHash "Compacting FUObjectHashTables" -> Sentry. That is UE destroying the
+      current world, consistent with a fatal DURING content load, not specifically the
+      D3D12 command-list/residency AV that S40/41 pinned (FRDGBuilder::Execute /
+      FD3D12CommandList::Close, SUPERVIVE +0x296xxxx band, D3D12Core interleave).
+NEITHER is conclusive. The faulting RIP is the only decisive discriminator. If it lands
+in the SUPERVIVE +0x29xxxxx band or inside D3D12Core.dll -> same wall (render, likely
+unsolvable client-side; anti-cheat walls the renderer CVars). If it's elsewhere (asset
+streaming / GC / OOM) -> Path 2 (throttle/stage the load) is live and worth pursuing.
+The evidence hint in (1) is a reason to GET the RIP, not to assume it's a dead end.
+
+=========================== TOOL BUILT THIS SESSION ===========================
+tools/sigbypass-mod/scan_on_enum_veh.cpp  ->  scan_on_enum_veh.dll  (gitignored; rebuild)
+  Build: clang++ -shared -O2 scan_on_enum_veh.cpp -o scan_on_enum_veh.dll -lkernel32
+  = a byte-for-byte copy of the proven scan_on_enum fix (the scan/hook/un-hook logic is
+    UNCHANGED) PLUS a read-only VEH crash logger. It both TRIGGERS the roster resolve+load
+    and CAPTURES the resulting crash before Sentry kills the process:
+    - AddVectoredExceptionHandler(1, ...) installed first-chance; logs only fatal codes
+      (AV 0xC0000005, fastfail 0xC0000409, illegal-instr, bp, heap/stack, FP), caps at 64
+      entries. The LAST entry before the process dies is the crash.
+    - Per crash it writes docs/veh-crash-marker.txt: code, RIP, SUPERVIVE_RVA (the decisive
+      D3D12-band datum), identified module + module_RVA, AV op/addr, GP registers, and a
+      stack-band scan (return-addr-looking values inside the SUPERVIVE image -> which code
+      band). Returns EXCEPTION_CONTINUE_SEARCH so UE/Sentry still handle it (this is a
+      read-only observer, NOT a C++-EH payload — the packer's VEH only eats EH payloads).
+    - Loader-lock-safe: the module table is snapshotted on the worker thread
+      (CreateToolhelp32Snapshot at startup + every 5s heartbeat, so D3D12Core.dll is
+      captured once it loads post-menu); the VEH only READS that table — no loader API in
+      the handler.
+configs/launch-recon.ps1  = the recon-client launch (recreated from launch-redirect.ps1;
+  the -ini AccelByte/Loki overrides + -log, no stub, no elevation). Preconditions in-file.
+server/ags-s45.exe        = HEAD ags, staged (compile-checked). Swap over server/ags.exe
+                            to make the content-manifest fix live.
+
+=========================== WHY THE CAPTURE IS GATED ==========================
+Reproducing the crash requires killing the running client (PID 71152) — two game
+instances conflict, and the fresh launch must be early-injected. CLAUDE.md explicitly:
+"Don't kill the SUPERVIVE-Win64-Shipping process without warning — the user may be
+mid-test." The process is actively logging (not frozen), and the user is away and cannot
+course-correct if the fresh launch misbehaves (session-0/desktop attach, SteamAPI init).
+So this session built + committed everything and left the capture as ONE authorized step
+rather than killing an active client blind. Nothing about the grid data path changed.
+
+=========================== THE READY-TO-RUN CAPTURE (when authorized) ========
+From the repo root; Steam must be running (it is); hosts + cacert already in place.
+  0. Kill the parked client + any injectors (leave Steam):
+       Get-Process 'SUPERVIVE-Win64-Shipping',inject,crashpad_handler -EA SilentlyContinue |
+         Stop-Process -Force
+  1. Make the manifest fix live (safe restart — no cert regen, reuses server\certs):
+       Get-Process ags -EA SilentlyContinue | Stop-Process -Force
+       Copy-Item server\ags-s45.exe server\ags.exe -Force
+       Start-Process server\ags.exe -WorkingDirectory server        # bare, defaults
+       # verify: curl "http://localhost:8080/content-service/manifest/x?nonEnabledOnly=true"
+       #         -> "Heroes":{}  (empty => all 25 stay ENABLED)
+  2. Clear the crash marker, start the gated early injector:
+       Clear-Content docs\veh-crash-marker.txt -EA SilentlyContinue
+       tools\inject\inject.exe watch SUPERVIVE-Win64-Shipping.exe `
+         tools\sigbypass-mod\scan_on_enum_veh.dll 0x3EC57D0 40555356574154415541564157
+  3. Launch the recon client, wait ~60-90s for menu-load + the hero-content-load crash:
+       powershell -ExecutionPolicy Bypass -File configs\launch-recon.ps1
+  4. Read docs\veh-crash-marker.txt — the LAST "=== VEH fatal exception ===" block is the
+     crash. Decide: SUPERVIVE_RVA in +0x29xxxxx band / module=D3D12Core.dll => the S40/41
+     render wall (see docs/session-40-D3D12-CONFIRMED.txt). Else => a different, possibly
+     throttleable failure (Path 2). If a UECC-*/UEMinidump.dmp also appears in
+     Saved\Crashes, parse it with scratchpad/parse-any-dump.py for a fuller stack.
+
+=========================== WHAT NOT TO DO (unchanged) ========================
+- Don't re-grind the AssetManager registration/enumeration route — solved (returns 25).
+- Don't trust scan_on_browse.dll as the fix — use scan_on_enum(_veh).dll.
+- Don't leave a vtable-slot/code patch installed long (code-integrity crash ~3-5 min in);
+  scan_on_enum un-hooks after the one-shot scan. That is a SEPARATE crash from the
+  hero-content-load one — don't confuse them.
+- Don't send -LogCmds expecting Verbose logs (shipping build; Verbose UE_LOG compiled out).
+- Don't run launch-redirect.ps1 (regenerates certs + rewrites hosts). Steam must be up.
+
+=========================== CAPTURE RESULTS (user authorized "capture now") ====
+*** THE CRASH DID NOT REPRODUCE. The client is STABLE with the roster enumeration
+    injected. This overturns the S44 "empty grid + D3D12 crash are ONE wall,
+    reproducible on command" framing. ***
+
+Setup that worked (3rd launch attempt):
+- Backend: restarted HEAD ags (ran server\ags-s45.exe directly, NON-elevated — Go binds
+  :443 via a raw socket, so no elevation needed on Windows; the urlacl entries are http.sys
+  only). Verified GET /content-service/manifest/x?nonEnabledOnly=true -> "Heroes":{} (all 25
+  enabled). New ags reused server\certs, cacert chain intact.
+- Injection bug fixed: Start-Process -ArgumentList with an ARRAY does not quote elements, so
+  the space-containing DLL path ("...\Supervive Revival Project\...") split into multiple
+  args -> inject saw len(os.Args)!=6 -> printed usage and exited. BOTH first attempts failed
+  this way (NOT a DLL problem). Fix: pass a single arg STRING with the DLL path in embedded
+  quotes: `watch SUPERVIVE-Win64-Shipping.exe "<dllpath>" 0x3EC57D0 4055...`.
+- Early injection is REQUIRED: injecting 44s into boot installed the hook but the roster
+  enumeration had ALREADY run (GetPrimaryAssetIdList is called during initial asset load, NOT
+  at the "Unlockable heroes fetched" menu-load moment) so the hook never fired. Start the
+  injector BEFORE launching the game (it catches the process, waits ~6s for the Browse
+  prologue to unpack, then mmaps). Then the hook fires: scan ran, 30 types, HERO added=25,
+  GetPrimaryAssetIdList(Hero) returned Num=25, un-hooked cleanly. == the S44 data-path state.
+
+What happened after the heroes resolved+loaded:
+- veh-crash-marker.txt: EMPTY. The VEH (catches AV/fastfail/heap/etc.) caught NOTHING.
+- The client stayed STABLE at the main menu for >8 min (Fatal=0), still looping normally.
+- The EXACT S44 "crash sequence" DID occur (Loki.log ~15:00:39): hero GameplayCues load
+  (Flash.OffCD, Hook.Impact.HookGuy HellKnight chromas, HookGuy.ChargeBlast.Fire) ->
+  LogLokiGameplayCueManager "Clearing all cached gameplay cue BPs" -> LogSlate
+  InvalidateAllWidgets (x32) -> LogAudio "Audio Device unregistered from world 'None'" ->
+  LogUObjectHash "Compacting FUObjectHashTables" -> and the game CONTINUED PAST IT.
+  => That sequence is NON-FATAL hero-content-load/teardown, not a crash. S44 either
+     misattributed normal loading teardown to "the crash," or the crash is INTERMITTENT and
+     this clean run avoided it.
+
+CAVEATS (honest):
+- N=1. The crash MAY be intermittent; this run avoided it. Claim only: "did not reproduce in
+  a clean run; the sequence S44 called the crash is non-fatal." Not "never crashes."
+- The grid data path is NOT fully solved. RequestAsyncLoad "empty/null assets"=8 and
+  LogAssetManager "ChangeBundleStateForPrimaryAssets failed to find NameData"=2 PERSISTED this
+  run (baseline counts). S44 claimed both -> 0 with the fixes; NOT reproduced. So populating
+  the Hero AssetMap (enum=25) is necessary but the downstream ChangeBundleState/NameData step
+  still FAILS. S44's "grid data path SOLVED" is over-stated: enumeration works, ChangeBundleState
+  does not.
+- VISUAL: main menu renders fine and is STABLE (first stable look at the injected state), but
+  the center still shows the "?" hero-preview placeholder (preview not populated). Could NOT
+  drive menu navigation to HUNTERS via synthetic computer-use input (session appears LOCKED —
+  lockapp.exe resident, no hover highlight, clicks don't reach the game UI). Game LEFT RUNNING
+  so the user can click HUNTERS with real input to see whether the grid has tiles.
+
+NET / re-framing for next session:
+- The remaining blocker is NOT a crash / D3D12 render wall (it did not reproduce). It is a
+  DATA-PATH completeness gap: ChangeBundleState's "NameData" lookup still fails and the hero
+  preview/grid still shows "?"/empty even with enum=25. Next work targets the NameData /
+  ChangeBundleStateForPrimaryAssets path (what NameData is and why the scan doesn't fill it),
+  NOT a crash. Re-verify whether the crash is truly gone or intermittent across a few runs.
+- Environment left running: injected game (vtable UN-hooked after the one-shot scan -> no
+  code-integrity risk; VEH is a harmless read-only logger) + ags-s45.exe (HEAD) on :8080/:443.
+
+=========================== SERVER-TRIGGER HYPOTHESIS — FALSIFIED ============
+User hypothesis (sessions of collaborative debugging): the empty HUNTERS grid is gated on
+a SERVER trigger with a downstream effect (server declares/enables content -> client shows).
+Tested its two most concrete levers on the LIVE client. BOTH negative:
+
+1. /core-game/players/{id} (the ~17/s poller carrying ContentServiceContentManifest +
+   ContentServicePrimaryAsset). Added the manifest VERSION ref to the no-active-match
+   response. RESULT: null. The client already knows the version (capture.log: it requests
+   manifest/release2.4.live-156430-shipping) and does not re-register from this field.
+2. /content-service/manifest hero-entry SHAPE. Server-side capture.log proves the client
+   fetches the manifest ONLY with ?nonEnabledOnly=true (3222x, a tight retry loop) and
+   NEVER the full manifest. Found the real entry model (schema_ContentServicePrimaryAsset):
+      ContentServicePrimaryAsset { Str PrimaryAssetType; Str PrimaryAssetName; Str AssetPath;
+                                   Str Status; Bool IsDefault }
+   We were sending only {PrimaryAssetName}. Declared all 25 heroes with the FULL shape incl.
+   AssetPath = /Game/Loki/Characters/Heroes/<PascalCase>/BP_HeroAsset_<PascalCase> and
+   Status="Enabled", relaunched with the scan (enum=25). RESULT (mechanical + VISUAL): null.
+   RequestAsyncLoad null-loads stayed 8, "failed to find NameData" stayed 2, GetPrimaryAsset
+   Object still 0, ZERO BP_HeroAsset loads, and the user confirmed the HUNTERS grid is STILL
+   EMPTY. This RE-CONFIRMS menu.go probe #2 (2026-06-28: full-shape incl. AssetPath ->
+   "ZERO observable effect") — now airtight.
+
+The manifest hero content has now been tried EMPTY (S44), populated-wrong-shape (pre-S44),
+and populated-correct-shape-with-AssetPath (this session) — all byte-identical loader
+behaviour. => The content-service manifest is NOT the grid lever. The backend route is
+CLOSED (as menu.go's own comment concluded), triply confirmed.
+
+=========================== CONVERGED DIAGNOSIS (end of session 45) ==========
+The grid needs (1) ENUMERATION and (2) RESOLVE+LOAD each id into a tile.
+  (1) Enumeration = CLIENT-side (scan_on_enum -> GetPrimaryAssetIdList(Hero)=25). WORKS.
+  (2) Resolve/load = FAILS, CLIENT-side, and is INDIFFERENT to every server response we
+      control: GetPrimaryAssetObject(Hero) is called 0x (S44 trace), RequestAsyncLoad gets
+      null assets (8x), ChangeBundleState "failed to find NameData" (2x). The AssetManager
+      enumerates the 25 hero PrimaryAssetIds but cannot RESOLVE them to loadable BP_HeroAsset
+      objects. No manifest/core-game/storefront response changes this.
+=> The blocker is client-side ASSET RESOLUTION (the AssetManager can enumerate the hero ids
+   but the per-asset NameData/path doesn't resolve to a loadable object), downstream of both
+   the enumeration scan AND anything the server sends. NOT a crash, NOT ownership, NOT a
+   server trigger. This session eliminated all three.
+
+ONLY non-circular path left = INSTRUMENT THE GRID WIDGET: hook the widget's per-id path
+between GetPrimaryAssetIdList (returns 25) and tile-build, and read DIRECTLY what it does
+with each id / why it never calls GetPrimaryAssetObject (the filter/resolve it fails). Every
+proxy (crash, NameData, hero-token, SKU, manifest) has misfired; reading the widget's actual
+logic is the only thing that stops the gu-and-check loop. Alternatively, refine the client-
+side registration to populate resolvable NameData (not just enumeration keys), or the IoStore
+mod-pak overlay (CLAUDE.md's remaining client-side route) so the primary assets resolve
+natively.
+
+WHAT NOT TO RE-TRY (now triply/quadruply confirmed dead): the content-manifest hero shape,
+the core-game content ref, hero ownership/purchase (grid is EMPTY not greyed), the hero-token,
+and "the crash is the wall". The blocker is client-side asset resolution.
+
+=========================== GRID WIDGET INSTRUMENTATION — THE FILTER, READ FROM CODE ===
+Built tools/sigbypass-mod/trace_caller.cpp (+.dll) = trace_hooks + a stub that captures the
+CALLER return address of the AssetManager query virtuals. Injected (no scan; the widget calls
+GetPrimaryAssetIdList(Hero) at menu-load regardless of result count). RESULT
+(docs/trace-caller-marker.txt): GetPrimaryAssetIdList(Hero) has TWO distinct call sites —
+  caller RVA +0x562EBFE   and   caller RVA +0x3965BFC
+and GetPrimaryAssetObject(Hero)=0, ChangeBundleState(Hero)=0. So the grid enumerates then drops
+all 25 WITHOUT ever asking the AssetManager to resolve them. The drop is in the WIDGET.
+
+Disassembled caller 1 (live RPM, usmapdump disasm). The GetPrimaryAssetIdList call is
+`call [r10+0x370]` (slot 110) at +0x562EBF7. AFTER it returns, the populate loop (over the
+returned TArray<FPrimaryAssetId> at rsi):
+  for each id:
+    lea rdx,[id]; mov rcx,r14; call +0x57AB3C0      ; PER-HERO LOOKUP into r14
+    test rax,rax; jz SKIP                            ; <-- lookup null => DROP the hero
+    (if r15b) cmp byte[rax+0xd2],0; jnz SKIP         ; secondary flag gate (display-mode)
+    (if r12b) cmp byte[rax+0xd0],0; jz  SKIP         ; secondary flag gate (display-mode)
+    ...add survivor to the tile array...
+  (r12b/r15b derive from a byte arg 'dil' in {1,2} = a display/filter mode.)
+
+The lookup fn +0x57AB3C0 (abs 0x7ff68822b3c0; decrypt it by running WITH the scan so the loop
+executes it): hashes the FPrimaryAssetId (call +0x...d6a210), then does a TMap FIND into a map
+at **r14+0x60** (call +0x...c99090 -> element index or -1; 32-byte entries; value @entry+0x10).
+Found -> returns the per-hero value. index==-1 (NOT in the map) -> fallback path that tries to
+NewObject from the id and returns null for our heroes -> hero dropped.
+
+r14 = Singleton(+0x565E1C0)->[+0x1f0]->[+0x190]  (a NESTED member of a game singleton; NOT the
+AssetManager, NOT the content manifest, NOT any server response). Its per-hero TMap @ r14+0x60
+is keyed by hashed FPrimaryAssetId.
+
+=========================== THE ACTUAL ROOT CAUSE (finally, from code) ========
+The ALL HUNTERS grid builds tiles by looking each enumerated hero id up in a WIDGET/SINGLETON-
+side per-hero TMap at r14+0x60 (r14 = *(*(Singleton_565E1C0 +0x1f0) +0x190)). None of the 25
+enumerated heroes are keyed into that map -> every lookup returns null -> every hero dropped ->
+empty grid. This is why NOTHING we tried worked: the scan populates the AssetManager's
+enumeration (a DIFFERENT structure), and the server populates the manifest/storefront (DIFFERENT
+structures). The grid consults r14+0x60, which none of them fill.
+=> FIX TARGET: get the 25 heroes into the r14+0x60 map (or make the +0x57AB3C0 fallback resolve
+   them). NEXT: identify the singleton at +0x565E1C0 and its +0x1f0/+0x190 chain (usmapdump
+   findptr / vtable / the getter's callees) to learn what class owns r14 and what normally
+   populates its +0x60 map (storefront hero fetch? a hero-catalog asset load? a subsystem init
+   we stub away?). Then populate it (native shim into that map, or drive the real populate path).
+Offsets (this build, base 0x7FF682A80000 constant across runs — effectively no ASLR rebase):
+  grid populate caller (GetIdList site) = +0x562EBF7 (ret +0x562EBFE); 2nd site ret +0x3965BFC
+  per-hero lookup fn = +0x57AB3C0 ; r14-producer = +0x57AB6C0 ; r14 singleton getter = +0x565E1C0
+  r14 = getter()->[0x1f0]->[0x190] ; per-hero TMap @ r14+0x60 (stride 0x20, value@+0x10, hashed
+  FPrimaryAssetId key) ; secondary per-hero flags @ +0xd0 / +0xd2.
+Tooling: tools/sigbypass-mod/trace_caller.cpp (caller-capturing vtable tracer). usmapdump disasm
+reads live decrypted code (RUN WITH SCAN so the hero-loop body + lookup fn are decrypted).
+
+--- object chain to r14 (traced by disasm; class ID still needs a runtime capture) ---
+grid-widget populate fn (caller 1, +0x562EB7B..) has `this` in rcx (mov rbx,rcx). It calls
+`this->[vtable+0x188]()` (slot 49) -> sub-object; getter +0x565E1C0 reads a WEAK OBJECT PTR at
+[subobj+0x2d0], validates it (inner call +0x5340280 = generic weak-ptr/GUObjectArray machinery,
+reads global +0xA020438 — NOT a named manager), returns manager M. r14 = M->[0x1f0]->[0x190];
+per-hero TMap @ r14+0x60.
+=> M is a WEAK-PTR-held subsystem/manager; its class name is NOT in the static disasm. To name
+   it + see the map, capture a runtime pointer: patch caller-1's `call +0x57AB3C0` site
+   (+0x562EC85, an E8 rel32) to a log-stub that records rcx(=r14) + [r14+0x60] TMap header/keys
+   then tail-jumps 0x7ff68822b3c0; fold this into the scan DLL (the lookup only runs when the
+   list is non-empty) and UN-PATCH after capture (integrity check). Then r14's vtable / M's
+   vtable -> findptr -> class name; and the map contents show EMPTY (populate it) vs WRONG-KEY
+   (re-key). That capture DLL is the next build.
+
+=========================== r14 = CatalogManager — DATA IS ALL PRESENT & CORRECT =====
+Built tools/sigbypass-mod/probe_r14.cpp: scans + JIT-patches caller-1's `call +0x57AB3C0`
+site to a log-stub that captures r14 + dumps the +0x60 map. CAPTURE (docs/probe-r14-marker.txt
++ scratchpad Python RPM readers):
+  r14 = a UObject, ->Name = "CatalogManager", ->Class = "CatalogManager" (vtable RVA +0x8831758).
+  Its +0x60 = a TMap<FPrimaryAssetId, CatalogEntry*> — the master content catalog, Num~905:
+    536 SlotCosmetics, 331 Emote, 25 HERO, 4 LobbyPlatform, 3 StoreOffer, 3 StoreOfferEntitlement,
+    1 GameFeature, 1 Core (BP_LokiHeroSelectPreview_UnknownHero = the "?" placeholder).
+  => ALL 25 HEROES ARE IN THE CATALOG (as CatalogEntry objects). The grid consults THIS map.
+  Locate CatalogManager: findptr its vtable (base+0x8831758); r14 = Singleton(+0x565E1C0)->
+  [0x1f0]->[0x190]; per-hero entry.value @ mapentry+0x10; CatalogEntry has the hero FName @ +0xc8,
+  bytes @ +0xd0/+0xd1/+0xd2 = 00/02/00 (same for heroes AND the cosmetics that render).
+
+KEYS MATCH (no data/format problem): read the AssetManager (0x18BA835EE90, AssetTypeMap Num=30)
+Hero AssetMap (td+0x178, 25 keys) and compared (FName index + Number) to the catalog Hero keys:
+ALL 25 match byte-for-byte (same=(idx,num) 25/25, diff=0). So the grid enumerates exactly the keys
+the catalog is keyed under. NO key mismatch, NO case problem, NO missing data. (Mixed display
+casing SHIELDBOT/assault/Alchemist is just first-registration canonical strings; the comparison
+indices are identical.)
+
+=========================== THE REFRAME (end of session 45) ==================
+The 25 heroes are PRESENT and CORRECTLY KEYED in the CatalogManager catalog, matching the grid's
+enumeration exactly. So the empty ALL HUNTERS grid is NOT a data/backend/manifest/key/crash problem
+(all of which this project chased across ~11 sessions) — it is a UI DISPLAY-LOGIC problem: the grid
+widget drops the (present, correct) heroes via a filter. caller-1 (+0x562EBF7) filters per hero:
+lookup CatalogManager (HITS — keys match) -> then flag checks: (mode-1) drop if [entry+0xd2]!=0
+(heroes=0, pass); (mode-2) drop if [entry+0xd0]==0 (heroes=0 -> DROP). We poked all 25 hero
+[entry+0xd0]=1 in the live process; the visible grid stayed EMPTY even after navigating away/back.
+=> Either caller-1 is NOT the visible grid's populate path (the visible tiles may be built by
+   caller-2's CALLER, which consumes caller-2's fetched list and was not traced), or the grid caches
+   its built list, or the display mode differs. The exact widget/path + filter that renders the
+   VISIBLE grid is the last mile — a focused UI-RE task, NOT a data task.
+NEXT: find the UMG widget that renders the visible ALL HUNTERS grid (WBP_*Hunters*/*Roster*) and its
+tile-build filter; the data it needs is already 100% present in CatalogManager. Offsets: CatalogManager
+vtable RVA +0x8831758; catalog map @ r14+0x60 (stride 0x20, key FPrimaryAssetId@+0, value@+0x10);
+CatalogEntry hero-name@+0xc8, flags@+0xd0/+0xd2. Tools: probe_r14.cpp, scratchpad/*.py (RPM+FNamePool).

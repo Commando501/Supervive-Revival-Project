@@ -1,0 +1,611 @@
+// ============================================================================
+//  MODULE   Barracuda.GameState.BarracudaGameStateComponent
+//  SOURCE   Barracuda/GameState/BarracudaGameStateComponent.as
+//  CONTENT  3 class(es), 43 function(s), 0 enum(s), 1 global(s), 4216 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+event FOnDragonKillsUpdated;
+event FOnTeamKillsUpdated;
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaGameStateComponent;
+
+UBarracudaGameStateComponent@ UBarracudaGameStateComponent()   // traits=0x20
+{
+    UBarracudaGameStateComponent v2;
+
+    v2 = UBarracudaGameStateComponent();
+    return v2;
+}
+
+UClass@ UBarracudaGameStateComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaGameStateComponent);
+    return v2;
+}
+
+UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaGameStateComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaGameStateComponent, v2, typeid(UBarracudaGameStateComponent@), WithName);
+    return v2;
+}
+
+UBarracudaGameStateComponent@ UBarracudaGameStateComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaGameStateComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaGameStateComponent, v2, typeid(UBarracudaGameStateComponent@), WithName);
+    return v2;
+}
+
+UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaGameStateComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaGameStateComponent, v2, typeid(UBarracudaGameStateComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaGameStateComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaGameStateComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Replicated, ReplicationCondition=0)
+    float64 NextDayNightSwapTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bDayNightTransitionEnabled;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    TSet<AActor@> Structures;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    TSet<ABarracudaMinionWaypoint@> MinionWaypoints;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TSubclassOf<ABarracudaShop@> ShopClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Replicated, ReplicationCondition=0)
+    ABarracudaShop@ Shop;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient)
+    FGameplayTagContainer DisabledSpawnerTypes;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults)
+    TArray<FBarracudaPhase> BarracudaPhases;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_CurrentPhaseIndex)
+    int CurrentPhaseIndex;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient, Replicated, ReplicationCondition=0)
+    float64 CurrentPhaseStartTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_OnTeamKillsUpdated)
+    TArray<int> TeamKillScores;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FOnTeamKillsUpdated OnTeamKillsUpdated;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_DragonKillsUpdated)
+    int NumDragonsKilled;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FOnDragonKillsUpdated OnDragonKillsUpdated;
+
+    UBarracudaGameStateComponent()   // traits=0x21
+    {
+        auto v1;
+        auto v4;
+
+        this.Structures = TSet<AActor@>();
+        this.MinionWaypoints = TSet<ABarracudaMinionWaypoint@>();
+        this.ShopClass = TSubclassOf<ABarracudaShop@>();
+        this.DisabledSpawnerTypes = FGameplayTagContainer();
+        this.BarracudaPhases = TArray<FBarracudaPhase>();
+        this.TeamKillScores = TArray<int>();
+        this.OnTeamKillsUpdated.FOnTeamKillsUpdated();
+        this.OnDragonKillsUpdated.FOnDragonKillsUpdated();
+        v1 = 0;
+        this.CurrentPhaseIndex = v1;
+        v4 = 0;
+        this.CurrentPhaseStartTime = v4;
+        v1 = 0;
+        this.NumDragonsKilled = v1;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRep_OnTeamKillsUpdated()   // traits=0x20
+    {
+        this.OnTeamKillsUpdated.Broadcast(this.TeamKillScores);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRep_DragonKillsUpdated()   // traits=0x20
+    {
+        int v1;
+
+        v1 = this.NumDragonsKilled;
+        this.OnDragonKillsUpdated.Broadcast(v1);
+        return;
+    }
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        auto v1;
+        ALokiGameState v6;
+        ABarracudaShop v8;
+        TSubclassOf<ABarracudaShop@> v10;
+        bool v11;
+        AActor v14;
+        int v15;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = Loki::GetLokiGameState(__WorldContext);
+            v8 = this.Shop;
+            if (v8 != nullptr) {
+                v1 = 0;
+            } else {
+                v10 = TSubclassOf<ABarracudaShop@>();
+                v10 = this.ShopClass;
+                v11 = v10 == nullptr;
+                v11 = !v11;
+                v1 = v11;
+            }
+            if (v1) {
+                v14 = this.GetOwner();
+                v14.FlushNetDormancy();
+                v11 = false;
+                v8 = SpawnActor(this.ShopClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v11, nullptr);
+                this.Shop = v8;
+            }
+            v15 = 0;
+            this.TeamKillScores.Add(v15);
+            v15 = 0;
+            this.TeamKillScores.Add(v15);
+            if (v6 != nullptr) {
+                v6.OnPlayerKilled.AddUFunction(this, n"OnPlayerKilled");
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnPlayerKilled(const FPlayerKillEventData& KillData)   // traits=0x20
+    {
+        this.UpdateTeamKills();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void UpdateTeamKills()   // traits=0x20
+    {
+        ALokiGameState v4;
+        auto v5;
+        TArray<int> v10;
+        int v11;
+        TArray<ALokiPlayerState@> v16;
+        TArrayConstIterator<ALokiPlayerState@> v22;
+        TArrayConstIterator<ALokiPlayerState@> v28;
+        ALokiPlayerState v30;
+        auto v31;
+        int v32;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 != nullptr) {
+            v10 = TArray<int>();
+            v11 = 0;
+            v16 = v4.GetPlayerStatesOnTeam(0);
+            v22 = v16.Iterator();
+            while (true) {
+                v5 = v22.CanProceed;
+                if (!v5) break;
+                v30 = v22.Proceed();
+                v22.Proceed();
+                v31 = v30.GetKills();
+                v11 = v11 + v31;
+            }
+            v32 = 0;
+            v16 = v4.GetPlayerStatesOnTeam(1);
+            v28 = v16.Iterator();
+            while (true) {
+                v5 = v28.CanProceed;
+                if (!v5) break;
+                v30 = v28.Proceed();
+                v28.Proceed();
+                v31 = v30.GetKills();
+                v32 = v32 + v31;
+            }
+            v10.Add(v11);
+            v10.Add(v32);
+            this.TeamKillScores = v10;
+            this.OnTeamKillsUpdated.Broadcast(this.TeamKillScores);
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v1;
+        int v2;
+        int v3;
+        auto v6;
+        auto v7;
+        auto v8;
+        auto v10;
+        float64 v12;
+        float64 v14;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v2 = this.CurrentPhaseIndex;
+            v2 = v2 + 1;
+            if (this.BarracudaPhases.IsValidIndex(v2)) {
+                v3 = this.CurrentPhaseIndex;
+                v6 = this.BarracudaPhases[v3];
+                v7 = v6.Duration;
+                if (v7 > 0.0) {
+                    v8 = Gameplay::GetServerTime(__WorldContext);
+                    v12 = float64(v8);
+                    v10 = v12;
+                    v12 = this.CurrentPhaseStartTime;
+                    v12 = v10 - v12;
+                    v7 = v6.Duration;
+                    v14 = float64(v7);
+                    if (v12 > v14) {
+                        this.AuthMoveToNextBarracudaPhase();
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    void AuthMoveToNextBarracudaPhase()   // traits=0x20
+    {
+        int v1;
+        int v2;
+        auto v3;
+        EBarracudaPhaseType v4;
+        auto v5;
+        auto v6;
+        float64 v8;
+
+        v1 = this.CurrentPhaseIndex;
+        v1 = v1 + 1;
+        v3 = this.BarracudaPhases.IsValidIndex(v1);
+        v3 = !v3;
+        if (v3) {
+            return;
+        } else {
+            v2 = this.CurrentPhaseIndex;
+            v5 = this.BarracudaPhases[v2].Type;
+            v4 = v5;
+            this.CurrentPhaseIndex++;
+            v6 = Gameplay::GetServerTime(__WorldContext);
+            v8 = float64(v6);
+            this.CurrentPhaseStartTime = v8;
+            this.EmitPhaseChangedEvent(v4);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRep_CurrentPhaseIndex(const int PreviousPhaseIndex)   // traits=0x20
+    {
+        EBarracudaPhaseType v3;
+        auto v4;
+
+        if (this.BarracudaPhases.IsValidIndex(PreviousPhaseIndex)) {
+            v4 = this.BarracudaPhases[PreviousPhaseIndex].Type;
+            v3 = v4;
+        } else {
+            v4 = false;
+            v3 = v4;
+        }
+        this.EmitPhaseChangedEvent(v3);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void EmitPhaseChangedEvent(const EBarracudaPhaseType PreviousPhaseType)   // traits=0x28
+    {
+        UGameEventRouterComponent v2;
+        FGameEvent_BarracudaPhaseChanged v14;
+        auto v15;
+
+        v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v2 == nullptr) {
+            return;
+        } else {
+            v14 = FGameEvent_BarracudaPhaseChanged();
+            v14.PreviousPhaseType = PreviousPhaseType;
+            v15 = GetCurrentBarracudaPhaseType();
+            v14.CurrentPhaseType = v15;
+            v2.BroadcastEvent(v14, typeid(FGameEvent_BarracudaPhaseChanged), nullptr);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, BlueprintAuthorityOnly, CanOverrideEvent, meta.Category=Barracuda|GameState)
+    AActor@ GetRespawnStructure(const int TeamIndex)   // traits=0x20
+    {
+        TSetIterator<AActor@> v8;
+        auto v17;
+        AActor v20;
+        UBarracudaStructureComponent v24;
+        auto v25;
+        auto v26;
+        AActor v28;
+
+        v8 = this.Structures.Iterator();
+        while (true) {
+            v17 = v8.CanProceed;
+            if (!v17) break;
+            v20 = v8.Proceed();
+            v8.Proceed();
+            if (v20 != nullptr) {
+                v24 = UBarracudaStructureComponent::Get(v20, NAME_None);
+                if (v24 == nullptr) {
+                    v17 = 0;
+                } else {
+                    v25 = v24.bRespawnLocation;
+                    v17 = v25;
+                }
+                if (v17) {
+                    v26 = LokiTeam::GetTeamFromActor(v20);
+                    if (v26 == TeamIndex) {
+                        return v20;
+                    }
+                }
+            }
+        }
+        return v28;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod)
+    float64 SecondsUntilNextDayNightSwap() const   // traits=0x24
+    {
+        auto v2;
+        auto v3;
+        float64 v6;
+        auto v10;
+
+        v3 = Gameplay::GetServerTime(__WorldContext);
+        v6 = float64(v3);
+        v2 = v6;
+        v6 = this.NextDayNightSwapTime;
+        v6 = v6 - v2;
+        v10 = Math::Max(v6, 0);
+        return v10;
+    }
+
+    void AuthPlayPilotVOForAll(const FGameplayTag& PilotVOTag)   // traits=0x20
+    {
+        __Evt_PushArgument__FGameplayTag(PilotVOTag);
+        __Evt_Execute(this, n"AuthPlayPilotVOForAll");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthPlayPilotVOForAll, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthPlayPilotVOForAll_Implementation(const FGameplayTag& PilotVOTag)   // traits=0x20
+    {
+        this.MultiPlayPilotVO(PilotVOTag);
+        return;
+    }
+
+    void MultiPlayPilotVO(const FGameplayTag& PilotVOTag)   // traits=0x20
+    {
+        __Evt_PushArgument__FGameplayTag(PilotVOTag);
+        __Evt_Execute(this, n"MultiPlayPilotVO");
+        return;
+    }
+
+    UFUNCTION(UnrealName=MultiPlayPilotVO, BlueprintCallable, BlueprintEvent, NetMulticast)
+    void MultiPlayPilotVO_Implementation(const FGameplayTag& PilotVOTag)   // traits=0x20
+    {
+        FString v4;
+
+        v4 = FString();
+        ULokiBarkUtilities::RequestVOPilot(__WorldContext, PilotVOTag, v4);
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v4;
+        UClass v6;
+
+        v1 = true;
+        this.SetbReplicates(v1);
+        v4 = 60.0;
+        this.NextDayNightSwapTime = v4;
+        v1 = true;
+        this.bDayNightTransitionEnabled = v1;
+        v6 = ABarracudaShop::StaticClass();
+        this.ShopClass = v6;
+        return;
+    }
+
+    void ~UBarracudaGameStateComponent()   // traits=0x22
+    {
+        this.OnTeamKillsUpdated.~FOnTeamKillsUpdated();
+        this.OnDragonKillsUpdated.~FOnDragonKillsUpdated();
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FOnDragonKillsUpdated
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FOnDragonKillsUpdated()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FOnDragonKillsUpdated(const FOnDragonKillsUpdated& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FOnDragonKillsUpdated& opAssign(const FOnDragonKillsUpdated& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast(const int NumDragons) const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_PushArgument__int(NumDragons);
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FOnDragonKillsUpdated));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FOnDragonKillsUpdated()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FOnTeamKillsUpdated
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FOnTeamKillsUpdated()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FOnTeamKillsUpdated(const FOnTeamKillsUpdated& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FOnTeamKillsUpdated& opAssign(const FOnTeamKillsUpdated& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast(const TArray<int>& KillScores) const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_PushArgument(KillScores, typeid(TArray));
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FOnTeamKillsUpdated));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FOnTeamKillsUpdated()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

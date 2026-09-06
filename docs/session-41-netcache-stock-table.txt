@@ -1,0 +1,169 @@
+SESSION 41 — STOCK UE 5.4 APlayerController NET-INDEX TABLE (GROUND TRUTH)
+==========================================================================
+Date: 2026-07-02 (03:01 UTC log stamp)
+Source: captured LIVE from the stub server (UnrealEditor-Cmd -server -nullrhi)
+        at OnPostEngineInit via FLokiModule::DumpClassNetCacheLayout, which
+        reproduces FClassNetCacheMgr::GetClassNetCache's exact index assignment.
+        Our stub is pure stock UE 5.4, so this IS the stock reference.
+Purpose: map the client's "ReceivedBunch: Invalid replicated field N"
+        (DataReplication.cpp:1182, N = FieldCache->FieldNetIndex) to a concrete
+        field. This table does NOT need re-running; it is deterministic for
+        stock UE 5.4.
+
+HOW TO READ IT
+--------------
+- Column [i] is the FieldNetIndex (== N in the client error).
+- Index numbering is HIERARCHICAL and cumulative from the root: per class
+  level, that level's owned replicated PROPERTIES come first, then its RPC
+  FUNCTIONS; then the next subclass continues from there.
+- FieldNetIndex != RepIndex. RepIndex counts ONLY properties (ClassReps
+  position); FieldNetIndex also counts the RPC functions interleaved at each
+  level. Example: TargetViewRotation is RepIndex=12 but FieldNetIndex [14],
+  because AController's 2 RPCs (ClientSetLocation/Rotation) occupy net 12-13.
+- The "Invalid replicated field" error loop only handles STRUCT (custom-delta)
+  properties and FUNCTIONS. Scalar properties are consumed earlier by the
+  RepLayout and never appear as an N here. The struct props below are marked.
+
+CLASS-LEVEL STRUCTURE
+---------------------
+  Object            : 0 reps, 0 funcs           (base index 0)
+  Actor             : 10 reps, 0 funcs          (net 0..9)      max index 10
+  Controller        : 2 reps,  2 funcs          (net 10..13)    max index 14
+  PlayerController   : 3 reps,  81 funcs        (net 14..97)    max index 98
+  => 98 total net-indexed fields (0..97) on stock APlayerController.
+
+FULL TABLE
+----------
+AActor (properties; net 0..9):
+  [  0] bReplicateMovement          BoolProperty     scalar
+  [  1] bHidden                     BoolProperty     scalar
+  [  2] bTearOff                    BoolProperty     scalar
+  [  3] bCanBeDamaged               BoolProperty     scalar
+  [  4] RemoteRole                  ByteProperty     scalar
+  [  5] AttachmentReplication       StructProperty   *** STRUCT (in error loop) ***
+  [  6] ReplicatedMovement          StructProperty   *** STRUCT (in error loop) ***
+  [  7] Owner                       ObjectProperty   scalar
+  [  8] Role                        ByteProperty     scalar
+  [  9] Instigator                  ObjectProperty   scalar
+
+AController (net 10..13):
+  [ 10] PlayerState                 ObjectProperty   scalar
+  [ 11] Pawn                        ObjectProperty   scalar
+  [ 12] ClientSetLocation           UFunction        RPC
+  [ 13] ClientSetRotation           UFunction        RPC
+
+APlayerController (net 14..97):
+  [ 14] TargetViewRotation          StructProperty   *** STRUCT (in error loop) ***
+  [ 15] AsyncPhysicsDataComponent_DEPRECARED ObjectProperty  scalar
+  [ 16] SpawnLocation               StructProperty   *** STRUCT (in error loop) ***
+  [ 17] ClientAckTimeDilation ......... RPC
+  [ 18] ClientAckUpdateLevelVisibility  RPC
+  [ 19] ClientAddTextureStreamingLoc    RPC
+  [ 20] ClientCancelPendingMapChange    RPC
+  [ 21] ClientCapBandwidth              RPC
+  [ 22] ClientClearCameraLensEffects    RPC
+  [ 23] ClientCommitMapChange           RPC
+  [ 24] ClientCorrectionAsyncPhysicsTimestamp RPC
+  [ 25] ClientEnableNetworkVoice        RPC
+  [ 26] ClientEndOnlineSession          RPC
+  [ 27] ClientFlushLevelStreaming       RPC
+  [ 28] ClientForceGarbageCollection    RPC
+  [ 29] ClientGameEnded                 RPC
+  [ 30] ClientGotoState                 RPC
+  [ 31] ClientIgnoreLookInput           RPC
+  [ 32] ClientIgnoreMoveInput           RPC
+  [ 33] ClientMessage                   RPC
+  [ 34] ClientMutePlayer                RPC
+  [ 35] ClientPlayForceFeedback_Internal RPC
+  [ 36] ClientPlaySound                 RPC
+  [ 37] ClientPlaySoundAtLocation       RPC
+  [ 38] ClientPrepareMapChange          RPC
+  [ 39] ClientPrestreamTextures         RPC
+  [ 40] ClientReceiveLocalizedMessage   RPC
+  [ 41] ClientRecvServerAckFrame        RPC
+  [ 42] ClientRecvServerAckFrameDebug   RPC
+  [ 43] ClientRepObjRef                 RPC
+  [ 44] ClientReset                     RPC
+  [ 45] ClientRestart                   RPC
+  [ 46] ClientRetryClientRestart        RPC
+  [ 47] ClientReturnToMainMenuWithTextReason RPC
+  [ 48] ClientSetBlockOnAsyncLoading    RPC
+  [ 49] ClientSetCameraFade             RPC
+  [ 50] ClientSetCameraMode             RPC
+  [ 51] ClientSetCinematicMode          RPC
+  [ 52] ClientSetForceMipLevelsToBeResident RPC
+  [ 53] ClientSetHUD                    RPC
+  [ 54] ClientSetSpectatorWaiting       RPC
+  [ 55] ClientSetupNetworkPhysicsTimestamp RPC
+  [ 56] ClientSetViewTarget             RPC
+  [ 57] ClientSpawnCameraLensEffect     RPC
+  [ 58] ClientSpawnGenericCameraLensEffect RPC
+  [ 59] ClientStartCameraShake          RPC
+  [ 60] ClientStartOnlineSession        RPC
+  [ 61] ClientStopCameraShake           RPC
+  [ 62] ClientStopForceFeedback         RPC
+  [ 63] ClientTeamMessage               RPC
+  [ 64] ClientTravelInternal            RPC
+  [ 65] ClientUnmutePlayer              RPC
+  [ 66] ClientUnmutePlayers             RPC
+  [ 67] ClientUpdateLevelStreamingStatus RPC
+  [ 68] ClientUpdateMultipleLevelsStreamingStatus RPC
+  [ 69] ClientVoiceHandshakeComplete    RPC
+  [ 70] ClientWasKicked                 RPC
+  [ 71] OnServerStartedVisualLogger     RPC
+  [ 72] ServerAcknowledgePossession     RPC
+  [ 73] ServerBlockPlayer               RPC
+  [ 74] ServerCamera                    RPC
+  [ 75] ServerChangeName                RPC
+  [ 76] ServerCheckClientPossession     RPC
+  [ 77] ServerCheckClientPossessionReliable RPC
+  [ 78] ServerExecRPC                   RPC
+  [ 79] ServerMutePlayer                RPC
+  [ 80] ServerNotifyLoadedWorld         RPC
+  [ 81] ServerPause                     RPC
+  [ 82] ServerRecvClientInputFrame      RPC
+  [ 83] ServerRestartPlayer             RPC
+  [ 84] ServerSendLatestAsyncPhysicsTimestamp RPC
+  [ 85] ServerSetSpectatorLocation      RPC
+  [ 86] ServerSetSpectatorWaiting       RPC
+  [ 87] ServerShortTimeout              RPC
+  [ 88] ServerToggleAILogging           RPC
+  [ 89] ServerUnblockPlayer             RPC
+  [ 90] ServerUnmutePlayer              RPC
+  [ 91] ServerUpdateCamera              RPC
+  [ 92] ServerUpdateLevelVisibility     RPC
+  [ 93] ServerUpdateMultipleLevelsVisibility RPC
+  [ 94] ServerVerifyViewTarget          RPC   (session 27-32 injected params here)
+  [ 95] ServerViewNextPlayer            RPC
+  [ 96] ServerViewPrevPlayer            RPC
+  [ 97] ServerViewSelf                  RPC
+
+VERIFICATION NOTES
+------------------
+- The stub started cleanly headless; only benign LogPhysics cook warnings on
+  the Entry placeholder map (degenerate collision geo), unrelated to net.
+- Session 27-32 ServerVerifyViewTarget injection unaffected: SelfReplay END
+  reported FinalPos=2298 Leftover=0 IsError=0. Injection appears at [94] as a
+  FUNCTION (params live on the UFunction, not as separate net fields).
+
+USING THIS TO INTERPRET N (when step 5 runs live)
+-------------------------------------------------
+SUPERVIVE's client added CPF_Net properties to base classes (session 22 shows
+AActor.ServerState etc.). Extra properties on the client shift EVERY later
+net index UP relative to this stock table. So when the client reads a field
+header our stub wrote (using stock indices), the index lands on the WRONG
+client field:
+  - If N (client index) points at a client SCALAR property where our stub
+    meant a struct/RPC -> "Invalid replicated field N".
+  - The GAP between our stock index and the client index at the first mismatch
+    == the number of extra CPF_Net properties SUPERVIVE inserted before that
+    point. That count + position tells us exactly how many/which fields to
+    inject in step 2 to realign.
+Compare the live N against this table:
+  N <= 9   : divergence is inside AActor's own reps (ServerState etc. inserted
+             among/after AActor properties) -> inject on AActor.
+  10 <= N <= 13 : divergence at AController level.
+  14 <= N <= 16 : divergence among APlayerController's own properties.
+  N >= 17  : divergence has pushed into the RPC range; almost certainly caused
+             by extra PROPERTIES earlier (which shifted the whole function
+             block). Injecting the missing earlier properties realigns it.

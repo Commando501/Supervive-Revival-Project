@@ -1,0 +1,173 @@
+// ============================================================================
+//  MODULE   UAV.UAVVaultContentActor
+//  SOURCE   UAV/UAVVaultContentActor.as
+//  CONTENT  1 class(es), 11 function(s), 0 enum(s), 1 global(s), 1204 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_AUAVVaultContentActor;
+
+AUAVVaultContentActor@ AUAVVaultContentActor()   // traits=0x20
+{
+    AUAVVaultContentActor v2;
+
+    v2 = AUAVVaultContentActor();
+    return v2;
+}
+
+UClass@ AUAVVaultContentActor::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_AUAVVaultContentActor);
+    return v2;
+}
+
+AUAVVaultContentActor@ AUAVVaultContentActor::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    AUAVVaultContentActor v8;
+
+    v2 = __StaticType_AUAVVaultContentActor.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<AUAVVaultContentActor@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class AUAVVaultContentActor : AActor
+// unreal base : /Script/Engine.Actor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+// static class global: __StaticType_AUAVVaultContentActor
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, meta.ExposeOnSpawn, meta.Category=UAV)
+    FLokiTeamVaultDataItem VaultDataItem;
+
+    AUAVVaultContentActor()   // traits=0x21
+    {
+        this.VaultDataItem = FLokiTeamVaultDataItem();
+        return;
+    }
+
+    void VaultDataItemUpdated()   // traits=0x20
+    {
+        __Evt_Execute(this, n"VaultDataItemUpdated");
+        return;
+    }
+
+    UFUNCTION(UnrealName=VaultDataItemUpdated, BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+    void VaultDataItemUpdated_Implementation()   // traits=0x20
+    {
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        auto v3;
+        UGameEventRouterComponent v6;
+        FGameEvent_TeamVaultData_Update v28;
+        auto v29;
+        FGameEventListenerHandle v42;
+        FGameEvent_TeamVaultData_Remove v62;
+
+        v2 = true;
+        v1 = v2;
+        v3 = this.VaultDataItem.ID;
+        if (v3 < 0) {
+            v2 = false;
+            v1 = v2;
+        }
+        v6 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v6 != nullptr) {
+            v29 = false;
+            v28 = FGameEvent_TeamVaultData_Update();
+            v42 = v6.RegisterForEvent(this, v28, typeid(FGameEvent_TeamVaultData_Update), nullptr, n"OnUpdate", v29);
+            v29 = false;
+            v62 = FGameEvent_TeamVaultData_Remove();
+            v42 = v6.RegisterForEvent(this, v62, typeid(FGameEvent_TeamVaultData_Remove), nullptr, n"OnRemove", v29);
+        } else {
+            v2 = false;
+            v1 = v2;
+        }
+        if (v1) {
+            this.VaultDataItemUpdated();
+            return;
+        } else {
+            this.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnUpdate(const FGameEvent_TeamVaultData_Update& Event, const AActor@& Context)   // traits=0x28
+    {
+        FLokiTeamVaultDataItem v18;
+        auto v19;
+        auto v20;
+
+        v18 = FLokiTeamVaultDataItem(Event.VaultDataItem);
+        v19 = v18.ID;
+        v20 = this.VaultDataItem.ID;
+        if (v19 != v20) {
+            return;
+        } else {
+            this.VaultDataItem = v18;
+            this.SetActorLocation(this.VaultDataItem.Location)  /* UFunction K2_SetActorLocation */;
+            this.VaultDataItemUpdated();
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnRemove(const FGameEvent_TeamVaultData_Remove& Event, const AActor@& Context)   // traits=0x28
+    {
+        FLokiTeamVaultDataItem v18;
+        auto v19;
+        auto v20;
+
+        v18 = FLokiTeamVaultDataItem(Event.VaultDataItem);
+        v19 = v18.ID;
+        v20 = this.VaultDataItem.ID;
+        if (v19 != v20) {
+            return;
+        } else {
+            this.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.SetbReplicates(v1);
+        v1 = false;
+        this.PrimaryActorTick.SetbStartWithTickEnabled(v1);
+        return;
+    }
+
+    void ~AUAVVaultContentActor()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

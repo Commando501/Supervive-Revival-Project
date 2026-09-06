@@ -1,0 +1,167 @@
+SESSION 50 PICKUP — the SELECTED-HUNTER flow: LAST piece = the MAIN-MENU portrait live-refresh
+Copy this whole file into a fresh Claude session's first message.
+Repo: G:\git\Supervive Revival Project — branch dedicated-server-stub. Baseline: see `git log` (S49 chain,
+newest = "tools: resolve_delegate.py ..."). Read docs/session-49-click-center-offline-model.txt FIRST — it is
+the full evidence log; this pickup is the condensed state + the exact next task.
+==============================================================================================================
+
+=========================== TL;DR (read twice) ==============================================================
+GOAL (user, verbatim): "everything needs to work just as the original game did." Clicking an OWNED hunter must
+show that hunter in the center AND persist — including the MAIN-MENU portrait updating live, exactly like the
+real game.
+
+WHAT ALREADY WORKS (validated live this session; but it's LIVE-ONLY — vanishes on relaunch, must be re-applied):
+  1. ROSTER grid renders — catalog_ready_fix.dll (inject per launch). [unchanged from S47]
+  2. HUNTERS center shows + PERSISTS the clicked hunter — via (a) two Script-bytecode patches making the tile
+     IsPreviewable=true / IsUseable=false so an owned click routes into the WORKING preview path, plus (b) a
+     "mirror" shim that writes the party member's HeroAssetID = the clicked hero (holds it against resets).
+     User-confirmed: pick a hunter -> shows in the HUNTERS center -> re-enter HUNTERS -> still selected.
+  3. The party member tracks the pick, so PLAY (&hero= at queue) uses it. The functional pick+play flow WORKS.
+
+THE ONE REMAINING GAP: the MAIN-MENU portrait (the character on the main screen, separate from HUNTERS) still
+shows the OLD hero until a reload. It binds PartyModel.OnPartyUpdated (NOT the member's OnHeroAssetIDChanged),
+which is applied at menu-load and does NOT retrigger from a bare member write or a REST poll (S48-confirmed).
+Refreshing it live needs a GAME-THREAD ProcessEvent call. That is the whole remaining task.
+
+=========================== *** THE KEY BREAKTHROUGH (S49): ProcessEvent FOUND *** ==========================
+UObject::ProcessEvent @ **0x7FF683D45A10** (RVA +0x12C5A10, UObject vtable SLOT 56). Found by cross-referencing
+the picker (UUserWidget) vtable and the member (PartyMemberModel) vtable for SHARED UObject virtuals, then
+disasm: slot 56 reads gs:[0x58] (FUObjectThreadContext TLS) + manages the script-callstack recursion guard,
+r14=Function/rdi=this = canonical ProcessEvent. To invoke any UFunction from a shim: `obj->vtable[56](obj,
+UFunction*, Params)`. **MUST run on the GAME THREAD** (it uses the thread-local script stack; off-thread = crash/
+corruption). This unblocks calling the game's own TryPickMyHeroAndCosmetics.
+
+=========================== *** THE NEXT TASK (Phase 3) — do this *** ========================================
+Make the main-menu portrait refresh live, like the original. TWO routes (both need ProcessEvent on the game
+thread; the user has ACCEPTED the crash risk — but see CAUTIONS):
+
+ROUTE A (cleanest = original behavior): call native **TryPickMyHeroAndCosmetics** via ProcessEvent. It does
+  member-set + OnHeroAssetIDChanged (HUNTERS/collection/mastery) + OnPartyUpdated (MAIN-MENU) + &hero= — i.e.
+  everything the original does, and it would REPLACE the IsPreviewable/IsUseable Script patches AND the mirror.
+  NEED: (1) the UPartyManager instance (GUObjectArray class "PartyManager"); (2) the TryPick UFunction object
+  (FName 0x005904F7, Outer = the PartyManager UClass — find via obj_iter/scan_ufunc_local); (3) the param frame
+  layout — read the UFunction's ParmsSize + child FProperty offsets (roughly {FPrimaryAssetId Hero @0 (16B),
+  FPrimaryAssetId Cosmetic @16 (16B), FScriptDelegate OnComplete @32 (16B), bool ReturnValue @~48}); build a
+  zeroed frame, set Hero = the pick, call obj->vtable[56](partyManager, tryPickUFunc, &frame).
+ROUTE B (guaranteed refresh, more mechanical): directly BROADCAST PartyModel.OnPartyUpdated. The main-menu slot
+  is one of its handlers; broadcasting re-runs the slot's DetermineCosmeticToShow -> reads member.HeroAssetID
+  (=pick, already mirrored) -> refreshes. NEED: the OnPartyUpdated delegate on the live PartyModel (0x26C95E3F340
+  this run; find its offset — PartyModel props are ~19 MulticastInlineDelegates starting near +0x30; use
+  resolve_delegate.py to find the one whose handlers include BP_MainMenuSpawner_MainMenu_PartySlot / Comp_
+  MainMenu_PartySlotSubject), then for each FScriptDelegate {ObjIndex, Fn} call ProcessEvent(handlerObj,
+  FindFunction(handlerObj, Fn), null). OnPartyUpdated is likely parameterless (params=null). NOTE: the +0x40
+  delegate read Num=158 this run — verify which offset is really OnPartyUpdated before broadcasting.
+
+GAME-THREAD EXECUTION (required for both): the shim WORKER thread is NOT the game thread. HOOK ProcessEvent
+  itself (intra-jmp at 0x7FF683D45A10 — it runs on the game thread every frame). Worker detects a pick -> sets
+  g_pending + installs the hook briefly. The hook (game thread), guarded by g_inHook (REENTRANCY: the refresh's
+  own ProcessEvent calls must NOT re-enter the refresh), does the TryPick/broadcast, clears g_pending; worker
+  uninstalls the hook (fires within ~1 BP event; keep the .text patch << the ~3min integrity wall). Use the
+  PROVEN intra-jmp/NearAlloc stub pattern from catalog_ready_fix.cpp / pick_probe.cpp.
+
+CAUTIONS (be honest with the user, decide with them):
+  - CRASH-PRONE: wrong param frame / off-thread / bad reentrancy corrupts the script stack -> client crash
+    (recoverable via relaunch + re-inject). Build INCREMENTALLY: verify every object find READ-ONLY first
+    (obj_iter/resolve_delegate/find_pa), then the call.
+  - UNCERTAINTY: ROUTE A's OnPartyUpdated may ride on the party-SERVICE round-trip (the very thing our stub
+    can't complete — the original root cause). If TryPick sets the member + fires OnHeroAssetIDChanged but NOT
+    OnPartyUpdated (because it awaits the service), the main-menu still won't refresh -> fall to ROUTE B
+    (broadcast OnPartyUpdated directly, which doesn't depend on the service).
+  - If TryPick (Route A) works, it fires member.OnHeroAssetIDChanged -> WBP_UI_PartyHeroSelect.OnPartyHeroUpdated
+    (a confirmed handler) -> the HUNTERS preview refreshes too, so the IsPreviewable/IsUseable Script patches
+    become UNNECESSARY. BUT then the INPUT signal question reopens: without the preview patch, does the picker's
+    SelectedHeroAsset (+0x10D8) still update on an owned click? (It updated WITH the patch. If not without it,
+    keep the patch just to drive the input, OR read the UTileView selected item instead.)
+
+=========================== WHAT WAS PROVEN / DEAD ENDS (do NOT re-grind) ====================================
+* The owned click does NOT reach the native pick (pick_probe hits=0, reliable). The selection is handled in
+  NATIVE C++ (both HeroPickerSelectable BP classes have no click handler); it queries IsPreviewable/IsUseable.
+* There is NO hero-pick REST route (full Theorycraft party route table dumped); hero is sent only as &hero= on
+  /startSoloMode at QUEUE time. So a backend member-write route (S48 handleSetPartyMember) is a DEAD END.
+* **The Func-swap technique (patch UFunction+0xE0) is DEAD** — proven with a valid control (ShouldHideHero
+  across all variants stayed 0 while the roster demonstrably filtered). This build's VM runs a BP->BP callee's
+  Script bytecode directly; Func is only used for native->BP. This is what silently defeated Route B twice.
+  DO NOT use Func-swap for BP-invoked functions.
+* **The Script-bytecode patch technique WORKS** (heap, no integrity wall — the VM runs Script directly).
+  tools/re/script_patch.py: locate Script @UFunc+0x68, dump, jump0<off> (overwrite Script[0]=EX_Jump), pokebyte,
+  restore. Proven: jumping ShouldHideHero->its Hide=true branch emptied the roster on filter.
+* Writing member.HeroAssetID alone does NOT refresh the main-menu (tested: wrote Beebo, main menu stayed
+  Mercury). Needs the delegate broadcast (hence Phase 3).
+
+=========================== GROUND-TRUTH OFFSETS (base 0x7FF682A80000 CONSTANT; heap ptrs PER-RUN) ===========
+UObject THIS build: InternalIndex@+0x10, Class@+0x18, Name(FName)@+0x20, Outer@+0x28. (Non-standard: shifted
+  +0x8 vs stock UE5.)  FNamePool @ base+0x9D81450 (Len10 layout: hdr=len<<6|wideBit; blocks[id>>16], off=
+  (id&0xFFFF)<<1). Hero FName type id = 0x1A568 (constant).
+GUObjectArray.ObjObjects (FChunkedFixedUObjectArray) @ **base+0x9E38930**: Objects(FUObjectItem**)@+0x00,
+  NumElements(int32)@+0x14. PerChunk=65536, FUObjectItem stride=0x18 (Object ptr @ item+0). Iterate:
+  chunk=Objects[i/65536]; obj=*(chunk+(i%65536)*0x18). (find_guobjectarray.py located it; obj_iter.py iterates
+  by class name — both validated live.)
+ProcessEvent: **0x7FF683D45A10** (RVA +0x12C5A10, vtable slot 56).  ProcessInternal 0x7FF683DC54A0 (shared BP
+  VM entry, = every BP UFunction's Func @+0xE0 — NOTE Func-swap on this is DEAD).
+PartyMemberModel: HeroAssetID (PrimaryAssetId 16B) @+0x78 (type FName@+0x78=Hero, name FName@+0x80);
+  OnHeroAssetIDChanged (MulticastInlineDelegate) @+0x88 (Data@+0x88, Num@+0x90=3; handlers = WBP_UI_
+  PartyHeroSelect.OnPartyHeroUpdated / WBP_UI_Collection.SetSelectedHero / ProgressionTracker.HeroIDChanged —
+  NOT the main-menu slot). CosmeticsAssetID follows.
+WBP_HeroPicker_C: SelectedHeroAsset (PrimaryAssetId 16B) @+0x10D8 (type@+0x10D8, name@+0x10E0). 8 instances
+  exist; ACTIVE = the one whose SelectedHeroAsset is a valid (non-None) hero. Input signal CONFIRMED reliable
+  (Crysta->Hero:BurstCaster, Beebo->Beebo, Brall->Ronin — codenames != display names).
+IsPreviewable tile UFunc @0x26D001D6F00 (Script: pokebyte off257 28->27 + jump0 247 => returns true);
+  IsUseable tile UFunc @0x26D001D6E00 (jump0 109 => returns false). ShouldHideHero @0x26D001D6900.
+  (These heap UFunc addrs are the SAME across the process lifetime but differ per LAUNCH — re-derive via
+  scan_ufunc_local.py: anchor = find_ufunc.py hit for IsPreviewable FName 0x00777E46.)
+TryPickMyHeroAndCosmetics: FName 0x005904F7; exec thunk +0x54B5380; impl +0x58467E0 (NON-standard ABI, rax=
+  frame — do NOT call the impl directly; call via ProcessEvent). members-getter +0x5840730.
+Catalog/roster: catalog_ready_fix.cpp (scan Hero=25 + NOP jz @+0x57BB722 for IsCatalogDataReady + self-restore).
+PER-RUN heap anchors THIS session (re-derive next launch): member 0x26C72BCE400, active picker 0x26CFE1EDD20,
+  PartyModel 0x26C95E3F340, WBP_HeroPicker_C UClass 0x26CFB2644F0, ProcessEvent is CONSTANT (module .text).
+
+=========================== TOOLS (tools/re/*.py — read-only RPM; tools/sigbypass-mod/*.cpp — DLLs) =========
+* find_guobjectarray.py <PID> <UClass> <findptrHits...> — locate GUObjectArray via a known object.
+* obj_iter.py <PID> <ClassNameSubstr> [dumpBytes] — iterate GUObjectArray, find instances by class name.
+* find_pa.py <PID> <obj> <size> — find PrimaryAssetId(Hero) fields in an object (locate SelectedHeroAsset etc).
+* resolve_delegate.py <PID> <obj> <delegateOff> — resolve a MulticastInlineDelegate's handlers (obj+class+fn).
+* script_patch.py <PID> <UFunc> [dump|jump0 <off>|pokebyte <off> <hex>|restore <hex>] — Script-bytecode patch.
+* scan_ufunc_local.py / find_ufunc.py — locate UFunction objects by FName id (for the IsPreviewable/IsUseable
+  Script patches; per-launch re-derive).
+* patch_passthrough.py / patch_count.py — Func-swap (DEAD technique; kept for the record only).
+* shim_watch.cpp -> builds shim_mirror.dll — Phase 1/2 mirror (iterate GUObjectArray, find member+pickers,
+  mirror active picker SelectedHeroAsset -> member.HeroAssetID). THE BASE to extend for Phase 3 (add the
+  ProcessEvent hook + TryPick/broadcast). Reuse its GUObjectArray iteration + FName resolve + Marker/SafeReadable.
+* catalog_ready_fix.cpp (roster fix + NearAlloc stub-builder + VEH crash logger — reuse the stub pattern).
+* pick_probe.cpp / hero_resolve_probe.cpp — intra-jmp capture pattern (the PROVEN game-thread hook technique).
+* usmapdump.exe — live read-only RPM: nameid/findptr/peek/disasm/vtdump/vtslot. Build clang++: `clang++ -shared
+  -O2 <x>.cpp -o <x>.dll -lkernel32` from tools/sigbypass-mod. Inject: tools/inject/inject.exe mmap <PID> <dll>.
+
+=========================== HOW TO LAUNCH / RE-ESTABLISH THE WORKING STATE ==================================
+Steam MUST be running (else Auth Failure 14005). The live state (PID 62212 this session: Script patches +
+shim_mirror) VANISHES on relaunch. To reproduce on a fresh client:
+0) Build+run ags from repo root: `& "$env:ProgramFiles\Go\bin\go.exe" build -C server -o ags.exe ./cmd/ags`;
+   run `.\server\ags.exe -log <scratchpad>\ags.log` from server\ CWD; re-append certs\root.crt to
+   <GameRoot>\Loki\Content\Certificates\cacert.pem (memory/supervive-ags-cert-rebuild-gotcha.md).
+1) Roster fix (per launch, HARNESS-TRACKED BACKGROUND task): tools\inject\inject.exe watch
+   SUPERVIVE-Win64-Shipping.exe tools\sigbypass-mod\catalog_ready_fix.dll 0x3EC57D0 40555356574154415541564157
+2) Launch: powershell -ExecutionPolicy Bypass -File configs\launch-recon.ps1  (run_in_background)
+3) Wait for menu + ~1min for heroes to load; open HUNTERS (grid populates on nav).
+4) Inject the SELECTION SHIM into the RUNNING client: inject.exe mmap <PID> <shim>.dll. (Currently shim_mirror
+   + the two Script patches applied via script_patch.py on the live IsPreviewable/IsUseable UFuncs — re-derive
+   their per-launch addresses with scan_ufunc_local.py.)  THE PHASE-3 SHIM should fold all of this into one DLL.
+INTERMITTENT menu-load crash (Clearing gameplay cue BPs -> InvalidateAllWidgets -> Sentry) hits a fraction of
+launches regardless of mods — just relaunch. Live Loki.log: C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\
+Loki.log. Codenames != display names (alchemist=Mercury, Ronin=Brall, BurstCaster=Crysta).
+CLICK GOTCHA: only the USER's real mouse activates TileView tiles reliably; instrument first, then ask the user
+to click, then read. computer-use needs the game genuinely foreground (Alt-tap + AttachThreadInput trick);
+never open_application (spawns a bare 2nd instance). BEST: have the user click + report.
+
+=========================== READ FIRST (fresh session) ======================================================
+1. CLAUDE.md — project rules, launch gotchas, DO-NOT list.
+2. docs/session-49-click-center-offline-model.txt — THE full evidence log (LIVE SESSIONS 1-5): the complete
+   model, Func-swap-dead, Script-patch-works, the mirror, ProcessEvent found, the Phase-3 plan + all offsets.
+3. memory/supervive-hero-roster-blocker.md (TOP entries) — chronological RE incl. this session.
+4. server/internal/interactive/interactive.go (buildSoloParty seed + handleSetPartyMember) + docs/trackb-notes.md.
+
+=========================== WRAP-UP EXPECTATIONS ============================================================
+Write a docs/session-50-*.txt evidence log; update memory/supervive-hero-roster-blocker.md (top) + MEMORY.md.
+Small single-purpose commits. If Phase 3 lands (clicking an owned hunter refreshes the MAIN-MENU portrait live,
+like the original), the last "?" gap closes and the hunter flow is end-to-end functional exactly like the
+original game — the stated goal. If TryPick (Route A) hits the service-round-trip wall, pivot to Route B
+(broadcast OnPartyUpdated directly). Decide with the user re: crash-prone build vs. careful incremental steps.

@@ -1,0 +1,448 @@
+SESSION 47 — THE ALL HUNTERS TILE WIDGET IS PINNED (WBP_HeroPicker / TileView_Hunters),
+its data path read end-to-end from Blueprint bytecode. This OVERTURNS the S46 reframe:
+the visible grid DOES consume GetHeroAssetFromPrimaryAssetId — and the live log proves the
+hero asset OBJECTS still fail to load (RequestAsyncLoad null / NameData fail), which is the
+real reason the grid is empty.
+==============================================================================
+Date: 2026-07-04 (branch dedicated-server-stub; continuous with sessions 45/46)
+Method: OFFLINE Blueprint bytecode read (the fixed bpdump) + a read-only peek of the LIVE
+client log (PID 45088, still running from S46). NO injection this session.
+
+*** SOLVED — the empty ALL HUNTERS grid rendered the full roster once IsCatalogDataReady was forced true.
+    Root cause = IsCatalogDataReady()==FALSE because CatalogManager[+0x354]==0 (the stub backend never sets
+    the 5th "catalog ready" sub-flag), which gates WBP_HeroPicker's LoadCharacters off. Fix (catalog_ready_fix.cpp:
+    scan + NOP the jz at +0x57BB722 so the 5th flag is ignored) -> grid populates (screenshot-verified, PID 69684).
+    See the "*** SUCCESS ***" FIX-TEST section at the bottom. Details below. ***
+
+*** ROOT CAUSE FOUND (2nd live session) — IsCatalogDataReady == FALSE gates the grid's LoadCharacters ***
+The grid (WBP_HeroPicker) Construct does: GetCatalogManager -> IsValid -> IsCatalogDataReady ; only if TRUE
+does it call LoadCharacters (which builds AllHunters); if FALSE it binds OnCatalogDataReady and waits.
+IsCatalogDataReady impl (+0x57BB700, called via exec thunk +0x5260DD0) returns TRUE only if ALL FIVE bytes
+[CatalogManager+0x350], +0x351, +0x352, +0x353, +0x354 are nonzero. LIVE READ of the CatalogManager
+(inst 0x1578AA4DD00, found via findptr on vtable abs 0x7FF68B2B1758; the other hit is the empty CDO):
+  [+0x350..0x354] = 01 01 01 01 **00**  => the 5th flag (+0x354) is ZERO => IsCatalogDataReady = FALSE.
+=> The grid NEVER runs LoadCharacters -> AllHunters is never populated -> TileView_Hunters is empty. The 5226
+   hero resolves captured earlier are from the OTHER widgets (combobox/preview/party-select) that do NOT gate
+   on catalog-ready. The ShouldHideHero/IsHidden lead was REFUTED by direct read: all 25 hero CatalogEntries
+   have [+0xd3]=0 (IsHidden=false), so the filter does NOT hide them — the grid is empty purely because it was
+   never built. Poked [+0x354]=1 live (IsCatalogDataReady now true); the clean fix-test is to set it BEFORE the
+   grid Constructs (early inject) so LoadCharacters runs. FIX = make IsCatalogDataReady true at grid-Construct
+   (force [+0x354]=1 early, OR patch the impl to return 1, OR find what content-service data sets +0x354 and
+   provide it on the stub backend). See "*** ROOT CAUSE: IsCatalogDataReady ***" section at the bottom.
+
+*** LIVE-CAPTURE CORRECTION (added after the offline analysis below) ***
+The offline sections below conclude the fix target is "make the hero objects load (NameData)". A LIVE
+instrumented run (hero_resolve_probe v2, keep-set capture) REFUTED that: GetHeroAssetFromPrimaryAssetId
+RESOLVES all 25 heroes to VALID, LOADED, correctly-classed BP_HeroAsset_<Hero>_C objects (5226 keep-set
+hits = ~209 full 25-hero cycles), and the grid was STILL EMPTY on that same run (screenshot-verified).
+=> The empty grid is NOT resolution/object-load/cast failure. It is a UI-POPULATION problem DOWNSTREAM of
+successful resolution. See the "*** LIVE CAPTURE — RESOLUTION PROVEN TO SUCCEED ***" section at the bottom.
+
+=========================== TL;DR ===========================================
+S46 concluded "the resolver GetHeroAssetFromPrimaryAssetId succeeds (25/25) yet the grid is
+empty, so the visible tile grid must use a DIFFERENT path we never pinned." S47 pinned that
+path and it is the OPPOSITE conclusion:
+
+1. The visible "ALL HUNTERS" grid = **WBP_HeroPicker** (/Game/Loki/UI/Widgets/FrontEnd/
+   MainMenu/Shared/WBP_HeroPicker), a widget containing **TileView_Hunters** (a UTileView),
+   the role-filter strip **WBP_UI_FilterControl**, and the title **Text_Title**. This matches
+   the screenshots exactly (role-filter icons render, zero tiles). It is placed (statically)
+   inside WBP_UI_PartyHeroSelect.HeroPicker, inside WBP_PartyHeroSelect_Screen.
+2. Its tile data comes from an instance TMap **AllHunters**. UpdateFilteredList does
+   Map_Values(AllHunters) -> role filter + ShouldHideHero -> TileView_Hunters.BP_SetListItems.
+3. AllHunters is BUILT (ubergraph) via LoadCharacters:
+     GetHeroCharacterList(AssetListKind) -> ids
+     per id: GetHeroAssetFromPrimaryAssetId -> ReturnValue(object) + OutputExecs
+             keep iff OutputExecs==0 AND DynamicCast<BP_LokiHeroAsset_C>(ReturnValue) succeeds
+             -> LoadedHeroAssets
+     GATE: OnLoaded() fires ONLY IF len(LoadedHeroAssets) == len(ids)  (ALL-OR-NOTHING)
+   -> then spawn a BP_HunterPicker_ListObject per hero -> Map_Add(AllHunters, id, obj).
+   => The grid DOES depend on GetHeroAssetFromPrimaryAssetId, PLUS a cast to BP_LokiHeroAsset_C,
+      PLUS an all-25-or-nothing count check. S46 checked none of the latter.
+4. LIVE LOG (PID 45088, current run, WITH the scan injected): at menu-load, right after
+   "Unlockable heroes fetched: 25 heroes", there are 8x "RequestAsyncLoad() called with empty
+   or only null assets" + "ChangeBundleStateForPrimaryAssets failed to find NameData" (Invalid
+   Primary Asset Type + Invalid Primary Asset Id). The hero asset OBJECTS never load.
+=> UNIFIED ROOT CAUSE (re-validates S44/S45, refutes S46's "resolution succeeds"): the hero
+   primary-asset OBJECTS fail to load (NameData), so GetHeroAssetFromPrimaryAssetId cannot
+   return loaded BP_LokiHeroAsset_C objects, the DynamicCast fails / OutputExecs!=0, LoadedHeroAssets
+   never reaches 25, the count-match gate fails, OnLoaded never fires, AllHunters is never built,
+   and TileView_Hunters gets an empty item list. The grid is empty because the hero ASSETS
+   don't load, exactly as S44/S45 measured — NOT because the tiles use some other data source.
+
+=========================== HOW THE WIDGET WAS FOUND ==========================
+Tool: the S46 bpdump (tools/extractor/extractor Program.cs; `dotnet run -c Release -- bpdump
+<asset-substr> <fn|*|@props>`). All offline, no game.
+- `bpdump WBP_PartyHeroSelect_Screen @props`: WidgetTree has ONE substantive child —
+  HunterSelectContainer holds Image_PreviewFade + WBP_UI_PartyHeroSelect. There is NO
+  "AllHuntersOwnedContainer" here. => S46's claim that this screen "owns AllHuntersOwnedContainer"
+  is FALSIFIED; AllHuntersOwnedContainer was merely seen in the global FNamePool and belongs to
+  some other (unrelated) widget, not the hunters grid. Do not chase it.
+- `bpdump WBP_UI_PartyHeroSelect @props`: its CanvasPanel_0 holds **HeroPicker (WBP_HeroPicker_C)**
+  with class defaults:
+     "Hero Pick Selectable Class" = HeroPickerSelectable_CatalogEntryWithPreview_C
+     "HeroPortraitClass"          = WBP_UI_HeroPortrait_Lobby_C
+  ("CatalogEntry" in the tile class name ties the tiles to the CatalogManager work.)
+- `bpdump WBP_HeroPicker *`: exports include **TileView_Hunters** and the functions
+  LoadCharacters, OnCatalogDataReady, UpdateFilteredList, SortHeroEntries, EnsureHeroLoad,
+  HandlePortraitClicked, "Update Hero Selection", plus WBP_UI_FilterControl + Text_Title.
+  TileView_Hunters (UTileView) + WBP_UI_FilterControl (the role filter) + Text_Title
+  (the filter/label) == the visible ALL HUNTERS grid. PINNED.
+
+=========================== THE DATA PATH (from bytecode) ======================
+File dumps in tools/extractor/out/ (gitignored): bpdump_UpdateFilteredList.txt,
+bpdump_ExecuteUbergraph_WBP_HeroPicker.txt, bpdump_LoadCharacters.txt, bpdump_OnCatalogDataReady.txt.
+
+UpdateFilteredList (the populate; 44 statements):
+  [8]  Map_Values(AllHunters) -> values          <-- DATA SOURCE = instance TMap AllHunters
+  loop values:
+    [17] WBP_UI_FilterControl.GetActiveFilter -> FilterID
+    [18-22] role filter: keep iff (no active filter) OR item.Role == RolesByName[FilterID]
+            (RolesByName = {Fighter:0, Protector:1, Controller:2, Frontliner:3, Initiator:4})
+    [24-26] item.HeroPickSelectable.ShouldHideHero() -> skip if hidden
+    [28] Array_Add(Result, item)
+  [30-31] SortObjectArrayDirectly(Result, SortHeroEntries)
+  [32-33] if ShowRandom: Array_Insert(Result, RandomListObject, 0)
+  [34] TileView_Hunters.BP_SetListItems(Result)  <-- populate the grid
+  [35-37] GetNumItems; OnChildrenChanged(NumItems<=0)
+  => Empty grid  <=>  AllHunters is empty (or everything filtered/hidden). AllHunters empty is
+     the operative case (below).
+
+ExecuteUbergraph_WBP_HeroPicker — the AllHunters builder:
+  Construct/OnInitialized region:
+    [118] GetCatalogManager ; [119] IsValid ; [120] PopExecutionFlowIfNot(valid)
+    [122] IsCatalogDataReady(catalogMgr)
+    [123] JumpIfNot(ready) -> bind-and-wait:
+            ready  => [124] LoadCharacters()
+            !ready => [126-128] bind self.OnCatalogDataReady to catalogMgr.OnCatalogDataReady (wait)
+    *** NEW GATE #1: IsCatalogDataReady. If false AND the delegate never broadcasts, LoadCharacters
+        never runs and AllHunters is never built. No prior session examined this. ***
+
+  LoadCharacters (event stub -> ubergraph @5514):
+    [174] clear OutPrimaryAssetIdList
+    [175] GetHeroCharacterList(Self, out OutPrimaryAssetIdList, AssetListKind)   // AssetListKind = instance var
+    [172] Array_Clear(LoadedHeroAssets)
+    loop ids [138..157]:
+      [145] Array_Get id
+      [146] GetHeroAssetFromPrimaryAssetId(Self, id, out OutputExecs) -> ReturnValue (EX_LetObj = OBJECT)
+      [147] CmpSuccess = (OutputExecs != 0)
+      [148] JumpIfNot(CmpSuccess) -> 5000   // OutputExecs==0 -> proceed to cast; !=0 -> [149] skip hero
+      [150] DynamicCast<BP_LokiHeroAsset_C>(ReturnValue) -> AsBP_Loki_Hero_Asset
+      [151] bSuccess = ObjectToBool(AsBP_Loki_Hero_Asset)
+      [152] PopExecutionFlowIfNot(bSuccess)  // cast FAILED -> skip hero
+      [153] Array_Add(LoadedHeroAssets, AsBP_Loki_Hero_Asset)
+    after loop:
+      [158] len_loaded = Length(LoadedHeroAssets)
+      [159] len_ids    = Length(OutPrimaryAssetIdList)
+      [160] equal = (len_ids == len_loaded)
+      [161] PopExecutionFlowIfNot(equal)     *** NEW GATE #2: ALL-OR-NOTHING. If any hero fails to
+                                                 resolve/cast, counts differ and OnLoaded never fires. ***
+      [162] OnLoaded()
+
+  OnLoaded -> (ubergraph) builds HeroAssetList map from LoadedHeroAssets, then [0..24]:
+    sort names; per hero: SpawnObject(BP_HunterPicker_ListObject) ; set Role, AssetID
+    (=GetPrimaryAssetIdFromHeroAsset), HeroAsset, HeroPickSelectable, PortraitsSelfUpdate ; Init() ;
+    [22] Map_Add(AllHunters, id, listObject).  Then spawn RandomListObject; Map_Clear(HeroAssetList).
+    => AllHunters is populated ONLY on this path, which is gated behind BOTH new gates.
+
+=========================== OFFLINE CHECKS (rule things IN/OUT) ================
+- CAST IS VIABLE: out/BP_HeroAsset_Assault.json shows BP_HeroAsset_Assault_C.Super =
+  BlueprintGeneratedClass'BP_LokiHeroAsset_C' (/Game/Loki/Core/Characters/BP_LokiHeroAsset). So every
+  BP_HeroAsset_<Hero>_C derives from BP_LokiHeroAsset_C => the DynamicCast<BP_LokiHeroAsset_C>
+  SUCCEEDS *iff* GetHeroAssetFromPrimaryAssetId returns the actual (loaded) hero asset object. The
+  cast LOGIC is not the bug; the missing loaded OBJECT is.
+- ASSET LIST KIND (grid) = 0 (default): WBP_HeroPicker CDO (Default__WBP_HeroPicker_C) does NOT set
+  "Asset List Kind" (CUE4Parse only serializes non-defaults), and the parent's HeroPicker export
+  doesn't set it either => it is the zero enum value. Per S46's disasm, GetHeroCharacterList with
+  AssetListKind==0 returns ALL 25 ids UNFILTERED (no CatalogManager +0xd0/+0xd2 flag gate). So the
+  grid is NOT lost to the S45 mode-1/2 flag filter (that filter afflicts the COMBOBOX, which S46
+  found calls "Get Heroes Asset List Sorted" with AssetListKind=1). Grid and combobox fail for the
+  SAME upstream reason (objects don't load) but via slightly different gates.
+
+=========================== LIVE EVIDENCE (read-only, PID 45088) ===============
+Loki.log (C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log), this still-running S46
+scanned client (enum=25 confirmed earlier; catalog_probe was injected so the scan ran):
+  [01.31.58] LogPlatformStorefront: Unlockable heroes fetched: 25 heroes
+  [01.32.04] LogStreamableManager: RequestAsyncLoad() called with empty or only null assets!  (x8)
+  [01.32.04] LogAssetManager: Warning: Invalid Primary Asset Type : ChangeBundleStateForPrimaryAssets
+             failed to find NameData
+  [01.32.04] LogAssetManager: Warning: Invalid Primary Asset Id  : ChangeBundleStateForPrimaryAssets
+             failed to find NameData
+  (the "25 heroes fetched" line then repeats ~1x/min = the storefront poll loop; the load failures
+   recur on menu re-entry, e.g. [01.45.33] x4.)
+=> With the scan present (AssetManager Hero enumeration = 25), the hero asset OBJECT loads STILL
+   fail: ChangeBundleStateForPrimaryAssets cannot find NameData for the Hero primary-asset ids, so
+   RequestAsyncLoad is handed null and nothing loads. This is precisely S44/S45's "bulk primary-asset
+   resolution fails" — alive and reproducing right now. It is the input that starves WBP_HeroPicker's
+   LoadCharacters: no loaded objects -> cast fails -> count!=25 -> OnLoaded skipped -> AllHunters {} ->
+   TileView_Hunters empty.
+
+=========================== WHY S46's "RESOLUTION SUCCEEDS" WAS AN OVER-READ ====
+catalog_probe (S46) JIT-captured rsi = *(Singleton+0x210) inside GetHeroAssetFromPrimaryAssetId and
+dumped rsi's embedded TMap: Num=25, all Hero-typed keys, valid CatalogEntry* values, [value+0xc] bit30
+clear. That proves the resolver's INTERNAL CatalogEntry lookup map is complete and its FLAG GATE would
+pass. It does NOT prove the function RETURNS a loaded, castable BP_LokiHeroAsset_C object — the
+CatalogEntry is a lightweight descriptor; the actual hero ASSET it points at must be async-loaded, and
+the live log shows that load failing (NameData). So "the resolver keeps all 25" (flag map) and "the
+grid's heroes don't resolve to loaded objects" (S44/S45; live log) are BOTH true and NOT in conflict.
+The S46 reframe wrongly leapt from "flag map is full" to "the grid must use a different path." The grid
+uses this exact path; the path's OBJECT output is null because the asset load fails.
+
+=========================== THE FIX TARGET (unchanged from S44/S45, now precisely localized) ==
+Make ChangeBundleStateForPrimaryAssets(Hero) FIND NAMEDATA so the 25 hero primary-asset ids load to
+BP_LokiHeroAsset_C objects. Then GetHeroAssetFromPrimaryAssetId returns loaded objects, the cast
+succeeds for all 25, the count matches, OnLoaded fires, AllHunters fills, and TileView_Hunters renders.
+Notes / constraints already known:
+  - The S42 scan (ScanPathsForPrimaryAssets) populated each type's AssetMap (Hero 0->25, DATA-confirmed
+    S42-step8) but "failed to find NameData" PERSISTS (live log above) => the scan fills the AssetMap
+    the ENUMERATION reads, but NOT the NameData that ChangeBundleStateForPrimaryAssets reads (or fills a
+    different manager instance / too late). The gap between "AssetMap populated" and "NameData found" is
+    the exact thing to close. NameData in UAssetManager is the per-primary-asset FPrimaryAssetData
+    (asset path + bundle entries); ChangeBundleStateForPrimaryAssets looks it up to know what to stream.
+  - S46 fix attempt #1 (scan_and_load: ChangeBundleStateForPrimaryAssets({ClientGlobal,Game}) manually)
+    DID stream Game content (mem 5->7GB) but the grid stayed empty — because that manual load is not the
+    lookup the widget makes, and the widget's own ChangeBundleState still hit "failed to find NameData",
+    and the grid list is cached (count_idl de-risk).
+  - The all-or-nothing count gate (LoadCharacters [160-161]) means partial success is useless: even 24/25
+    loading leaves the grid empty. The fix must resolve ALL 25.
+
+=========================== CONCRETE NEXT EXPERIMENTS (S48, live) ==============
+Cheapest decisive diagnostics (use catalog_probe's NearAlloc'd JIT-capture at these call sites, patched
+at menu-load in h_idl_post as before; base 0x7FF682A80000 constant, resolver RVAs in the pickup):
+  A. Capture, per hero, GetHeroAssetFromPrimaryAssetId's ReturnValue OBJECT pointer + OutputExecs
+     (the resolver's OUT object, not its internal map). If ReturnValue is null (or OutputExecs!=0) for
+     any hero, that confirms the object-load failure is what starves LoadCharacters. (This is the
+     single measurement S46 was missing.)
+  B. Capture LoadedHeroAssets.Num vs OutPrimaryAssetIdList.Num just before [160] (count gate). Num
+     mismatch = confirmed all-or-nothing abort.
+  C. Capture IsCatalogDataReady's return (gate #1). If false at Construct, the whole build is deferred
+     to a delegate that may never fire on our backend.
+Fix directions (once A/B/C localize it):
+  1. NAMEDATA: RE why ScanPathsForPrimaryAssets populates AssetMap but ChangeBundleStateForPrimaryAssets
+     can't find NameData (are they the same LokiAssetManager instance? is NameData a separate map the
+     scan skipped? does the loose/premade AR lack the bundle entries the Hero type needs?). Populate the
+     missing NameData (native, before menu-load's ChangeBundleState) so the 25 ids stream.
+  2. IF gate #1 (IsCatalogDataReady) is the blocker: find what sets the CatalogManager's "data ready"
+     state (a content-service sync?) and make it complete on the stub backend, OR broadcast
+     OnCatalogDataReady after the catalog map is filled.
+  3. Widget-side (last resort, brittle): the all-or-nothing gate + BP VM patching — avoid; fix the load.
+
+=========================== FILES / OFFSETS =================================
+- Widget: /Game/Loki/UI/Widgets/FrontEnd/MainMenu/Shared/WBP_HeroPicker (TileView_Hunters, AllHunters,
+  LoadCharacters, UpdateFilteredList, OnCatalogDataReady). Sibling WBP_HeroPicker_Multi exists (not used
+  by the party screen). Tile classes: HeroPickerSelectable_CatalogEntryWithPreview_C,
+  WBP_UI_HeroPortrait_Lobby_C, list item BP_HunterPicker_ListObject_C, BP_HunterPicker_ListObject_C(random).
+- Dumps (tools/extractor/out/, gitignored): bpdump_WBP_PartyHeroSelect_Screen_PROPS.txt,
+  bpdump_WBP_UI_PartyHeroSelect_PROPS.txt, bpdump_WBP_HeroPicker_ALL.txt, bpdump_WBP_HeroPicker_PROPS.txt,
+  bpdump_UpdateFilteredList.txt, bpdump_ExecuteUbergraph_WBP_HeroPicker.txt, bpdump_LoadCharacters.txt,
+  bpdump_OnCatalogDataReady.txt, bpdump_EnsureHeroLoad.txt.
+- Native resolver RVAs (from S46, base 0x7FF682A80000 constant): GetHeroAssetFromPrimaryAssetId impl
+  +0x562E9F6, keep-set +0x562EB2E; GetHeroCharacterList +0x562EB7B, GetPrimaryAssetIdList(Hero) call
+  +0x562EBF7, AssetListKind==0 early-return +0x562EBFE; ChangeBundleStateForPrimaryAssets slot 119
+  +0x34AF2A0; AssetTypeMap mgr+0x478; Hero AssetMap td+0x178; Hero FName type id 0x1A568.
+
+=========================== WHAT NOT TO DO (updated) ==========================
+- Don't chase AllHuntersOwnedContainer for the grid — it is NOT in the hunters-screen widget tree
+  (falsified this session); it's an unrelated global FName.
+- Don't treat S46's "resolver keeps all 25" as "resolution succeeds." It proves the CatalogEntry flag
+  map is full, NOT that the hero ASSET object loads. The live log shows the object load failing.
+- Don't re-run scan_and_load-style manual ChangeBundleState and expect the grid to fill — the widget's
+  OWN ChangeBundleState (NameData) must succeed, and the grid list is cached (post-hoc load won't help).
+- Don't hardcode FName ids (drift). Don't patch +0x562Exxx before menu-load (packer page encrypted).
+- Base 0x7FF682A80000 constant; heap addrs per-run — re-derive each launch.
+
+=========================== *** LIVE CAPTURE — RESOLUTION PROVEN TO SUCCEED (this overturns the object-load hypothesis above) *** ===
+Built tools/sigbypass-mod/hero_resolve_probe.cpp and ran it on a fresh instrumented relaunch.
+WHAT IT DOES: hook GetPrimaryAssetIdList slot 110 (scan all 30 types on the game thread, Hero enum=25),
+then at menu-load patch the resolver's KEEP-set at +0x562EB2E with a NearAlloc'd `jmp keepStub` (a
+probe_r14-style INTRA-FUNCTION jmp, NOT a call — see the crash note). keepStub replicates `mov byte[r15],0`
+(OutputExecs=0=KEEP), records {id.Type, id.Name, rdi=the returned object}, and `jmp +0x562EB5D` (epilogue).
+The worker resolves each kept object's UClass name via [obj+0x18]->[cls+0x20] + FNamePool, then un-patches.
+
+CRASH NOTE (v1 -> v2): v1 was an ENTRY-DETOUR WRAPPER (patch the resolver entry with jmp to a stub that
+CALLs the whole resolver via a trampoline and reads RAX after). It CRASHED the game at menu-load 2/2, while
+the identical scan-only control (scan_on_enum) SURVIVED to the menu. => the resolver's frame is non-standard
+and cannot be black-box-wrapped+returned. v2 (keep-set intra-jmp, no return interception) ran with ZERO
+crashes and captured cleanly. The control experiment also independently proved the resolver IS called at
+menu-load (the wrapper got exercised -> crashed).
+
+RESULT (docs/hero-resolve-probe-marker.txt, run @2026-07-04 03.18, PID 44276):
+  [scan] DONE: 30 types scanned (Hero added=25)
+  [patch] keep-set +0x562EB2E patched
+  [RESULT] keep-set hits (heroes the resolver KEEPS w/ OutputExecs=0) = 5226
+  [0] id=Hero:Alchemist  obj=0x1578ABCB640 class=BP_HeroAsset_Alchemist_C
+  [2] id=Hero:assault    obj=0x1578ABCB000 class=BP_HeroAsset_Assault_C
+  [1] id=Hero:Wukong     obj=0x156A2D90740 class=BP_HeroAsset_Wukong_C
+  ... ALL 25 heroes, each resolving to its OWN distinct, valid BP_HeroAsset_<Hero>_C object, cycling ~209x
+  (5226/25 = 209.04 ; matches S44's "209 GetPrimaryAssetIdList(Hero) calls at menu-load").
+=> GetHeroAssetFromPrimaryAssetId SUCCEEDS for all 25: OutputExecs=0 (KEEP) + returns a NON-NULL object
+   whose UClass is BP_HeroAsset_<Hero>_C. Since BP_HeroAsset_<Hero>_C.Super = BP_LokiHeroAsset_C (verified),
+   the grid's DynamicCast<BP_LokiHeroAsset_C>(ReturnValue) WOULD SUCCEED for every hero, and the objects
+   are LOADED (valid ptrs, real classes) — repeatedly (209x). The heroes are fully resolvable AND loaded.
+
+VISUAL CONFIRMATION (same run, computer-use): navigated the probed client (PID 44276) to HUNTERS -> the
+ALL HUNTERS grid is EMPTY (role-filter strip renders, zero tiles), "?" centre, working direct-id detail
+panel (Frontline Pyromaniac). So on the very run where resolution provably succeeds 5226x, the grid is empty.
+
+*** THE REFRAME (decisive, inverts ~13 sessions) ***
+The empty grid is NOT resolution failure, NOT object-load failure, NOT cast failure. The 25 hero PrimaryAssetIds
+resolve to loaded, correctly-classed, cast-compatible BP_HeroAsset objects — the exact input the grid's
+LoadCharacters needs. So S44/S45/S46 AND the offline part of THIS doc were all wrong to target asset
+resolution/NameData: that step works. (The live-log "RequestAsyncLoad null / ChangeBundleState NameData fail"
+is a DIFFERENT subsystem — loading hero CONTENT bundles/models — not the BP_HeroAsset object resolution the
+grid consumes; the grid's objects are present.) The blocker is PURELY UI POPULATION downstream of a
+successful resolve. This finally vindicates S45's first instinct ("the data is all present; it's UI logic")
+and pins it at the object level, not just the CatalogEntry flag map.
+
+NEXT (S48) — the remaining candidates, all downstream of the (working) resolver, in the WBP_HeroPicker path:
+  (a) AllHunters never gets POPULATED despite the resolves: OnLoaded gated by the count check
+      (len(LoadedHeroAssets)==len(ids)) or by IsCatalogDataReady, OR the resolves counted here are from
+      OTHER widgets (combobox/preview/party-select) and the grid's own LoadCharacters is gated off. Read the
+      live WBP_HeroPicker instance's AllHunters.Num + LoadedHeroAssets.Num via RPM (0 => not populated;
+      25 => populated but filtered/not-rendered).
+  (b) UpdateFilteredList FILTERS everything out: item.HeroPickSelectable.ShouldHideHero() returns true for
+      all (a per-hero UI/ownership/availability predicate), OR the role filter/GetActiveFilter rejects all.
+      Dump ShouldHideHero + GetActiveFilter bytecode (bpdump, offline) on HeroPickerSelectable_CatalogEntryWithPreview
+      / WBP_UI_FilterControl; and/or capture ShouldHideHero's return live.
+  (c) TileView_Hunters.BP_SetListItems is called with a full array but the UTileView doesn't build entry
+      widgets (entry-widget class / EntryWidgetClass unset or failing).
+  Cheapest decisive next read: AllHunters.Num (splits (a) from (b)/(c)). If 25 => it's a filter/render
+  problem (ShouldHideHero the leading suspect); if 0 => it's the OnLoaded count/catalog-ready gate.
+
+TOOLS: tools/sigbypass-mod/hero_resolve_probe.cpp (v2 keep-set capture; SAFE, reusable to capture rdi/regs
+at any decrypted intra-function site via NearAlloc'd jmp-stub). Resolver keep-set +0x562EB2E, jmp-back
++0x562EB5D, id ptr in r14, object in rdi, OutputExecs ptr in r15. Base 0x7FF682A80000 constant.
+
+=========================== *** THE FILTER, TRACED OFFLINE: ShouldHideHero -> CatalogEntry.IsHidden() *** ==
+With resolution proven to work, the remaining drop is UpdateFilteredList's per-hero filter. Dumped the
+relevant widgets (bpdump) and traced it end-to-end:
+  UpdateFilteredList (WBP_HeroPicker) keeps a hero iff (role-filter match) AND NOT
+    item.HeroPickSelectable.ShouldHideHero().  item.HeroPickSelectable = a HeroPickerSelectable_CatalogEntryWithPreview.
+  HeroPickerSelectable_CatalogEntryWithPreview::ShouldHideHero (bytecode):
+    if (!IsValid(Entry)) Hide = TRUE ; else Hide = Entry.IsHidden().
+  HeroPickerSelectable_CatalogEntryWithPreview::SetAssetID -> ubergraph@884 sets `Entry`:
+    IsValidPrimaryAssetId(AssetID) ; GetCatalogManager ; **Entry = CatalogManager.GetCatalogEntry(AssetID)** ;
+    (then binds OnHiddenUpdated/OnDisabledUpdated/UsableUpdated delegates to Entry).
+=> `Entry` = the hero's CatalogEntry from the SAME CatalogManager S45 confirmed holds all 25 heroes, so Entry
+   is VALID. Therefore ShouldHideHero == Entry.IsHidden(). => **LEADING S48 HYPOTHESIS: the heroes' CatalogEntry
+   .IsHidden() returns TRUE, so UpdateFilteredList hides all 25 and TileView_Hunters gets an empty list.**
+   (Consistent with S44's "nonEnabledOnly manifest marked heroes non-enabled -> grid hid them"; S44's manifest
+   tweak evidently did NOT clear whatever IsHidden reads. Also consistent with S45 poking CatalogEntry+0xd0=1
+   having NO effect — IsHidden reads a DIFFERENT field than +0xd0.)
+DECISIVE S48 EXPERIMENT: live-capture CatalogEntry::IsHidden()'s return for the 25 hero entries at menu-load
+  (native fn; find it via the CatalogEntry vtable or the BP EX_FinalFunction 'IsHidden' registration; then a
+  hero_resolve_probe-style intra-jmp/return capture). If IsHidden==true for all 25 => THAT is the drop; the fix
+  is to make the hero CatalogEntries report not-hidden (find what sets the hidden flag: catalog/content-service
+  data, or a CatalogEntry byte — candidates +0xc/+0xd0/+0xd1/+0xd2 from S45; poke it false and re-open HUNTERS).
+  This ALSO confirms AllHunters is populated (IsHidden is only called if UpdateFilteredList iterates a non-empty
+  AllHunters), splitting it from the OnLoaded-count/IsCatalogDataReady gate in one shot.
+Widgets dumped (tools/extractor/out/): bpdump_HeroPickerSelectable_CatalogEntryWithPreview_ALL.txt,
+  bpdump_ShouldHideHero.txt, bpdump_SetAssetID.txt, bpdump_ExecuteUbergraph_HeroPickerSelectable_CatalogEntryWithPreview.txt.
+
+=========================== *** ROOT CAUSE: IsCatalogDataReady == FALSE (the ~13-session blocker, found) *** ==
+After proving (live) that heroes RESOLVE fine, the drop had to be either the UpdateFilteredList filter or that
+AllHunters is never built. Both were checked LIVE (read-only RPM on the running probed client PID 44276):
+
+1. FILTER RULED OUT. ShouldHideHero = if !IsValid(Entry) hide else Entry.IsHidden(); Entry =
+   CatalogManager.GetCatalogEntry(AssetID). Found IsHidden's impl by FName (0x584C90 -> exec thunk +0x5260E60
+   / raw getter +0x525C210): both are `movzx eax, byte [rcx+0xd3]` — IsHidden returns the CatalogEntry byte at
+   +0xd3. Walked the live CatalogManager +0x60 map (Data=0x15806260600, Num=905) via ctypes RPM
+   (tools/re/catalog_hidden.py), found all 25 hero CatalogEntries, and read +0xd3 = 0 for ALL 25
+   (also +0xd0/d1/d2 = 00/02/00 per S45, +0xc = 0). => IsHidden=false for every hero; ShouldHideHero does NOT
+   hide them. The filter is NOT the cause.
+
+2. ROOT CAUSE = IsCatalogDataReady. The grid Construct (ubergraph) gates LoadCharacters on
+   GetCatalogManager -> IsCatalogDataReady. Found IsCatalogDataReady by FName (0x584CF8 -> exec thunk +0x5260DD0
+   -> `call +0x57BB700` = the impl, rcx=CatalogManager). Impl (+0x57BB700) disasm:
+     cmp byte[rcx+0x350],0; jz false ; cmp [rcx+0x351]; jz false ; cmp [rcx+0x353]; jz false ;
+     cmp [rcx+0x354]; jz false ; cmp [rcx+0x352]; jz false ; mov al,1; ret ;  false: xor al,al; ret
+   => returns TRUE only if ALL of [+0x350,+0x351,+0x352,+0x353,+0x354] are nonzero.
+   LIVE read of the CatalogManager (inst 0x1578AA4DD00, found via findptr on vtable abs 0x7FF68B2B1758; the
+   2nd hit 0x156DD0170B0 is the empty CDO with +0x60 map Num=0):
+     [CatalogManager+0x350..0x354] = 01 01 01 01 **00**
+   => +0x354 == 0 => IsCatalogDataReady == FALSE.
+=> DECISIVE: the grid's WBP_HeroPicker never runs LoadCharacters (it binds OnCatalogDataReady and waits, and
+   that delegate never fires because +0x354 never gets set on our stub backend) -> AllHunters stays empty ->
+   TileView_Hunters empty. Heroes resolve + aren't hidden; the grid-builder is simply gated off by one un-set
+   "catalog ready" sub-flag. This is THE root cause of the empty ALL HUNTERS grid (and, by the shared catalog-
+   ready gate, plausibly the STORE/COSMETICS/MISSIONS panels too — verify each).
+
+WHAT SETS +0x354: the 4 set flags (0x350-0x353) plus the unset 0x354 look like 5 "catalog category loaded"
+booleans; 4 categories complete, the 5th never does on the dead/stub backend. Candidates to identify it: RE the
+writers of [CatMgr+0x354] (usmapdump: find the store that writes +0x354 in the catalog-load code), or diff which
+content-service / platform fetch is missing vs a real server (capture.log). The 5th category is NOT the heroes
+(heroes resolve), so forcing +0x354=1 is safe for the hero grid.
+
+FIX OPTIONS (in order of cleanliness):
+  (A) Backend: make ags complete whatever content-service response drives the 5th catalog flag (proper fix; find
+      the writer of +0x354).
+  (B) Native, early: before the grid Constructs, force IsCatalogDataReady true — either poke [CatMgr+0x354]=1
+      (must be set at grid-Construct time; CatMgr found by scanning for vtable abs base+0x8831758, the instance
+      whose +0x60 map Num>0), OR patch the impl +0x57BB700 prologue to `B0 01 C3` (mov al,1; ret) so it always
+      returns true. Then LoadCharacters runs -> AllHunters fills -> grid renders. (Timing: must be in place
+      before/at the grid's Construct; if the grid already Constructed-and-waited, also need the OnCatalogDataReady
+      broadcast, so early/held is required.)
+  In-place poke of [+0x354]=1 on the already-Constructed grid does NOT repopulate (the grid is past its check and
+  waiting on the never-firing delegate; UpdateFilteredList re-runs on filter change but reads the still-empty
+  AllHunters). => the fix must land BEFORE the grid Constructs (early inject).
+
+FIX-TEST (tools/sigbypass-mod/catalog_ready_fix.cpp) — *** SUCCESS: THE GRID POPULATES. BLOCKER SOLVED. ***
+  The DLL does the proven scan (Hero enum=25) + NOP's the `jz` at +0x57BB722 (74 0C -> 90 90) so
+  IsCatalogDataReady ignores the never-set +0x354 and returns true once the 4 real flags [0x350-0x353] are
+  set (== catalog loaded); the game's post-load readiness check then BROADCASTS OnCatalogDataReady, waking
+  the waiting grid to run LoadCharacters. Marker confirms it applies cleanly (jz NOP'd early, scan=25,
+  CatalogManager found, [+0x354] also poked to 1).
+  RESULT: on a SURVIVING run (PID 69684), navigated to HUNTERS and the ALL HUNTERS grid rendered the FULL
+  ROSTER — ~20+ distinct hero portrait tiles (locked, since unpurchased), screenshot/zoom-confirmed. After
+  ~13 sessions the roster displays. => IsCatalogDataReady==false (CatMgr+0x354==0) WAS the root cause, and
+  forcing it true populates the grid. CONFIRMED end-to-end.
+  CRASH CORRECTION: the earlier 4 fix runs crashed at menu-load ~10s into the Vivox/GameplayCue phase — that
+  is the DOCUMENTED INTERMITTENT menu-load crash (bad luck), NOT caused by the fix. This surviving run dodged
+  it and shows the grid full, disproving the "gate-opening causes the crash / same wall" hypothesis. (A VEH
+  crash-logger was added to catalog_ready_fix to capture the RIP; the surviving run left it empty, and the
+  eventual exit had no VEH catch — consistent with the ~3-5min code-integrity check on the LEFT-INSTALLED
+  jz-patch, session-43's finding, not a render crash.)
+  DURABILITY: the jz-patch is a persistent .text mod => the integrity check kills the client ~3-5min later.
+  For a durable fix: (A backend, cleanest) make ags complete whatever content-service fetch sets
+  CatalogManager+0x354 so IsCatalogDataReady goes true natively (no patch); or (B) self-restore the jz-patch
+  right after the grid builds (the readiness broadcast has already fired, so LoadCharacters/AllHunters
+  persist) to avoid the integrity wall. Also: this same catalog-ready gate likely fed the empty STORE/
+  COSMETICS/MISSIONS panels (CLAUDE.md's shared-root-cause note) — re-check them with the gate open.
+
+=========================== *** LOOSE ENDS RESOLVED (durability + the other panels) *** ==================
+DURABILITY — SOLVED with a SELF-RESTORING jz-patch (catalog_ready_fix.cpp, current). The worker:
+  (1) NOPs the jz at +0x57BB722 early (IsCatalogDataReady ignores +0x354);
+  (2) finds the live CatalogManager once (its +0x60 map Num>=50 => catalog loaded => the readiness broadcast
+      has fired w/ the patch, so the grid's LoadCharacters ran and AllHunters is built + cached);
+  (3) ~6s later RESTORES the jz (74 0C) — so NO persistent .text mod remains.
+  RESULT: grid populated AND the client survived **7m34s+ with NO crash** (marker: jzRestored=1, VEH empty),
+  vs the leave-installed run that died at ~3-5min to the code-integrity check (session-43). => the self-restore
+  beats the integrity wall; the grid stays populated because it built (broadcast fired) BEFORE the restore.
+  This is a working durable-per-launch fix (still requires early injection each launch). The TRULY durable,
+  injection-free fix remains option (A): find/serve whatever content-service data sets CatalogManager+0x354 in
+  ags (the 5 flags [0x350..0x354] look like 5 "catalog category loaded" booleans; 4 complete on our stub, the
+  5th never does). NOTE the failed poke-only attempt: a data-only hold of [+0x354]=1 needs the live instance
+  set BEFORE the readiness check, which required a continuous full-memory scan that aggravated the fragile
+  menu-load phase (crashed early) — the find-once + jz-patch + restore is the stable approach.
+
+THE OTHER PANELS — the catalog-ready gate was blocking ALL of them from BUILDING (confirmed live, gate open):
+  - HUNTERS: FULLY FIXED — grid renders the full roster AND the centre hero PREVIEW MODEL now loads (selected
+    Beebo rendered in 3D with real abilities; the "?" placeholder is gone). The hero content/model streams fine
+    once the grid builds — so there is NO separate hero-content/render wall (the earlier "same wall" worry is
+    dead).
+  - STORE: the panel now BUILDS (tabs FEATURED/BUNDLES/SKINS/ACCESSORIES/SUPPORTER PACKS/REDEEM render); content
+    is EMPTY because store offers come from /storefront/offers (ags returns empty) — a separate backend dep.
+  - CUSTOMIZATION: BUILDS (tabs OVERVIEW/SKIN/GLIDER/WISP/EMOTES/SPRAY/PEDESTAL + preview + upgrade panels);
+    content is a placeholder (no owned cosmetics; inventory is empty) — separate backend dep.
+  - MISSIONS: the modal now OPENS (was broken/empty); no mission rows (missions come from /progression — empty).
+  => The shared catalog-ready gate is what kept STORE/COSMETICS/MISSIONS from building (CLAUDE.md's shared-root-
+     cause note CONFIRMED). Opening it makes them all render; their remaining emptiness is per-panel backend
+     data (storefront offers, owned inventory, progression missions), NOT the catalog-ready gate.
+LIVE-VERIFIED this session on PID 53020 (self-restoring fix): HUNTERS full + Beebo model; STORE/CUSTOMIZATION/
+MISSIONS build; survived 7m34s+ with the jz restored. Screenshots in-conversation.
+
+OFFSETS (base 0x7FF682A80000 constant; heap per-run): IsCatalogDataReady exec +0x5260DD0, impl +0x57BB700
+  (flags CatMgr+0x350..0x354, all-nonzero => ready). IsHidden exec +0x5260E60 / getter +0x525C210 (CatalogEntry
+  +0xd3). CatalogManager vtable RVA +0x8831758 (map @+0x60: key FPrimaryAssetId@0 / value CatalogEntry*@+0x10,
+  stride 0x20; CatalogEntry hero-name FName @+0xc8, flags @+0xc, hidden @+0xd3). Tool: tools/re/catalog_hidden.py
+  (ctypes RPM: walk the catalog map, read/poke hero entry flags).

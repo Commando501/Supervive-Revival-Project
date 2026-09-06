@@ -1,0 +1,1397 @@
+==============================================================================
+MODULE   Barracuda.GameState.BarracudaGameStateComponent
+SOURCE   Barracuda/GameState/BarracudaGameStateComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+event FOnDragonKillsUpdated;
+event FOnTeamKillsUpdated;
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaGameStateComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaGameStateComponent@ UBarracudaGameStateComponent()
+// 4 instr, 28 B bytecode, id=0xFE21FD0F, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v2;
+
+    v2 = UBarracudaGameStateComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84233 q:0x26e6e875b00; new UBarracudaGameStateComponent   ctor=UBarracudaGameStateComponent::UBarracudaGameStateComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x08F8AD0A, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaGameStateComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b48d8         ; __StaticType_UBarracudaGameStateComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UBarracudaGameStateComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xF5CBCCA6, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaGameStateComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972602            ; UBarracudaGameStateComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b48d8         ; __StaticType_UBarracudaGameStateComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaGameStateComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x586FC0E7, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaGameStateComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972602            ; UBarracudaGameStateComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b48d8         ; __StaticType_UBarracudaGameStateComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaGameStateComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x49397145, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaGameStateComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972602            ; UBarracudaGameStateComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b48d8         ; __StaticType_UBarracudaGameStateComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class UBarracudaGameStateComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Replicated, RepCond=0) float64 NextDayNightSwapTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) bool bDayNightTransitionEnabled;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) TSet<AActor@> Structures;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) TSet<ABarracudaMinionWaypoint@> MinionWaypoints;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) TSubclassOf<ABarracudaShop@> ShopClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Replicated, RepCond=0) ABarracudaShop@ Shop;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient) FGameplayTagContainer DisabledSpawnerTypes;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults) TArray<FBarracudaPhase> BarracudaPhases;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient, Replicated, RepNotify, RepCond=0, meta=(ReplicatedUsing=OnRep_CurrentPhaseIndex)) int CurrentPhaseIndex;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient, Replicated, RepCond=0) float64 CurrentPhaseStartTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient, Replicated, RepNotify, RepCond=0, meta=(ReplicatedUsing=OnRep_OnTeamKillsUpdated)) TArray<int> TeamKillScores;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FOnTeamKillsUpdated OnTeamKillsUpdated;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, RepNotify, RepCond=0, meta=(ReplicatedUsing=OnRep_DragonKillsUpdated)) int NumDragonsKilled;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FOnDragonKillsUpdated OnDragonKillsUpdated;
+
+}
+
+------------------------------------------------------------------------------
+UBarracudaGameStateComponent() const
+// 36 instr, 268 B bytecode, id=0x59016B2F, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    this.Structures = TSet<AActor@>();
+    this.MinionWaypoints = TSet<ABarracudaMinionWaypoint@>();
+    this.ShopClass = TSubclassOf<ABarracudaShop@>();
+    this.DisabledSpawnerTypes = FGameplayTagContainer();
+    this.BarracudaPhases = TArray<FBarracudaPhase>();
+    this.TeamKillScores = TArray<int>();
+    this.OnTeamKillsUpdated.FOnTeamKillsUpdated();
+    this.OnDragonKillsUpdated.FOnDragonKillsUpdated();
+    v1 = 0;
+    this.CurrentPhaseIndex = 0;
+    this.CurrentPhaseStartTime = 0;
+    v1 = 0;
+    this.NumDragonsKilled = 0;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:224 d:134230778      ; UBarracudaGameStateComponent::Structures  (+224)
+    //     3  CALLSYS        q:0x26e6ef02000         ; void TSet<AActor@>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:304 d:134230778      ; UBarracudaGameStateComponent::MinionWaypoints  (+304)
+    //     9  CALLSYS        q:0x26e6ef01e40         ; void TSet<ABarracudaMinionWaypoint@>::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:384 d:134230778      ; UBarracudaGameStateComponent::ShopClass  (+384)
+    //    15  CALLSYS        q:0x26e6ef03180         ; void TSubclassOf<ABarracudaShop@>::$beh0()
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:400 d:134230778      ; UBarracudaGameStateComponent::DisabledSpawnerTypes  (+400)
+    //    21  CALLSYS        q:0x26e78761c80         ; void FGameplayTagContainer::$beh0()
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:432 d:134230778      ; UBarracudaGameStateComponent::BarracudaPhases  (+432)
+    //    27  CALLSYS        q:0x26e6ef01c80         ; void TArray<FBarracudaPhase>::$beh0()
+    //    30  PshVPtr        rW0:0
+    //    31  ADDSi          W0:464 d:134230778      ; UBarracudaGameStateComponent::TeamKillScores  (+464)
+    //    33  CALLSYS        q:0x26e6ee8f740         ; void TArray<int>::$beh0()
+    //    36  PshVPtr        rW0:0
+    //    37  ADDSi          W0:480 d:134230778      ; UBarracudaGameStateComponent::OnTeamKillsUpdated  (+480)
+    //    39  CALL           d:84245                 ; void FOnTeamKillsUpdated::FOnTeamKillsUpdated()
+    //    41  PshVPtr        rW0:0
+    //    42  ADDSi          W0:504 d:134230778      ; UBarracudaGameStateComponent::OnDragonKillsUpdated  (+504)
+    //    44  CALL           d:84236                 ; void FOnDragonKillsUpdated::FOnDragonKillsUpdated()
+    //    46  SetV4          wW0:1 d:0
+    //    48  LoadThisR      W0:448 d:134230778      ; UBarracudaGameStateComponent::CurrentPhaseIndex  (+448)
+    //    50  WRTV4          rW0:1
+    //    51  SetV8          wW0:4 q:0x0
+    //    54  LoadThisR      W0:456 d:134230778      ; UBarracudaGameStateComponent::CurrentPhaseStartTime  (+456)
+    //    56  WRTV8          rW0:4
+    //    57  SetV4          wW0:1 d:0
+    //    59  LoadThisR      W0:496 d:134230778      ; UBarracudaGameStateComponent::NumDragonsKilled  (+496)
+    //    61  WRTV4          rW0:1
+    //    62  PshVPtr        rW0:0
+    //    63  FinConstruct   q:0x26e6e875b00         ; UBarracudaGameStateComponent
+    //    66  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnRep_OnTeamKillsUpdated()
+// 6 instr, 36 B bytecode, id=0x508F90B9, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnTeamKillsUpdated.Broadcast(this.TeamKillScores);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:464 d:134230778      ; UBarracudaGameStateComponent::TeamKillScores  (+464)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:480 d:134230778      ; UBarracudaGameStateComponent::OnTeamKillsUpdated  (+480)
+    //     6  CALL           d:84248                 ; void FOnTeamKillsUpdated::Broadcast(const TArray<int>&) const
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnRep_DragonKillsUpdated()
+// 7 instr, 40 B bytecode, id=0x2AC61161, varspace=1
+------------------------------------------------------------------------------
+{
+    this.OnDragonKillsUpdated.Broadcast(this.NumDragonsKilled);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:496 d:134230778      ; UBarracudaGameStateComponent::NumDragonsKilled  (+496)
+    //     2  RDR4           wW0:1
+    //     3  PshV4          rW0:1
+    //     4  PshVPtr        rW0:0
+    //     5  ADDSi          W0:504 d:134230778      ; UBarracudaGameStateComponent::OnDragonKillsUpdated  (+504)
+    //     7  CALL           d:84239                 ; void FOnDragonKillsUpdated::Broadcast(const int) const
+    //     9  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: LokiBeginPlay
+void LokiBeginPlay_Implementation()
+// 72 instr, 500 B bytecode, id=0x07AFADF2, varspace=15
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiGameState v6;
+    ABarracudaShop v8;
+    TSubclassOf<ABarracudaShop@> v10;
+    auto v11;
+    int v15;
+
+    v1 = Loki::LokiIsServer(__WorldContext);
+    v1 = !v1;
+    if (!v1) {
+        v6 = Loki::GetLokiGameState(__WorldContext);
+        v8 = this.Shop;
+        if (v8 == null) {
+            v10 = TSubclassOf<ABarracudaShop@>();
+            v10 = this.ShopClass;
+            v11 = v10 == null;
+            v11 = !v11;
+            v1 = v11;
+        } else {
+            v1 = 0;
+        }
+        if (v1) {
+            this.GetOwner().FlushNetDormancy();
+            v11 = false;
+            v8 = SpawnActor(this.ShopClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, false, null);
+            this.Shop = v8;
+        }
+        v15 = 0;
+        this.TeamKillScores.Add(v15);
+        v15 = 0;
+        this.TeamKillScores.Add(v15);
+        if (v6 != null) {
+            v6.OnPlayerKilled.AddUFunction(this, __STATIC_NAME(9));
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->124
+    //    13  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    16  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    19  STOREOBJ       wW0:6
+    //    20  PshVPtr        rW0:0
+    //    21  ADDSi          W0:392 d:134230778      ; UBarracudaGameStateComponent::Shop  (+392)
+    //    23  RDSPtr
+    //    24  RefCpyV        wW0:8
+    //    25  CmpPtrNull     rW0:8
+    //    26  JZ             ->32
+    //    28  SetV4          wW0:1 d:0
+    //    30  JMP            ->52
+    //    32  PSF            rW0:10
+    //    33  CALLSYS        q:0x26e6ef03180         ; void TSubclassOf<ABarracudaShop@>::$beh0()
+    //    36  PshVPtr        rW0:0
+    //    37  ADDSi          W0:384 d:134230778      ; UBarracudaGameStateComponent::ShopClass  (+384)
+    //    39  PSF            rW0:10
+    //    40  CALLSYS        q:0x26e6e838900         ; TSubclassOf<ABarracudaShop@>& TSubclassOf<ABarracudaShop@>::opAssign(const TSubclassOf<ABarracudaShop@>&)
+    //    43  PshNull
+    //    44  PSF            rW0:10
+    //    45  CALLSYS        q:0x26e6ef036c0         ; bool TSubclassOf<ABarracudaShop@>::opEquals(UClass@) const
+    //    48  CpyRtoV4       wW0:11
+    //    49  NOT            rW0:11
+    //    50  CpyVtoV4       wW0:1 rW1:11
+    //    52  CpyVtoR1       rW0:1
+    //    53  JLowZ          ->90
+    //    55  PshVPtr        rW0:0
+    //    56  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    59  STOREOBJ       wW0:14
+    //    60  PshVPtr        rW0:14
+    //    61  CALLSYS        q:0x26e79708580         ; void AActor::FlushNetDormancy()
+    //    64  PshNull
+    //    65  SetV1          wW0:11 d:0
+    //    67  PshV4          rW0:11
+    //    68  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    71  PshGPtr        q:0x26e76817c48         ; FRotator::ZeroRotator
+    //    74  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    77  PshVPtr        rW0:0
+    //    78  ADDSi          W0:384 d:134230778      ; UBarracudaGameStateComponent::ShopClass  (+384)
+    //    80  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    83  STOREOBJ       wW0:8
+    //    84  PshVPtr        rW0:8
+    //    85  PshVPtr        rW0:0
+    //    86  ADDSi          W0:392 d:134230778      ; UBarracudaGameStateComponent::Shop  (+392)
+    //    88  REFCPY
+    //    89  PopPtr
+    //    90  SetV4          wW0:15 d:0
+    //    92  PSF            rW0:15
+    //    93  PshVPtr        rW0:0
+    //    94  ADDSi          W0:464 d:134230778      ; UBarracudaGameStateComponent::TeamKillScores  (+464)
+    //    96  CALLSYS        q:0x26e6ef02fc0         ; void TArray<int>::Add(const int&)
+    //    99  SetV4          wW0:15 d:0
+    //   101  PSF            rW0:15
+    //   102  PshVPtr        rW0:0
+    //   103  ADDSi          W0:464 d:134230778      ; UBarracudaGameStateComponent::TeamKillScores  (+464)
+    //   105  CALLSYS        q:0x26e6ef02fc0         ; void TArray<int>::Add(const int&)
+    //   108  CmpPtrNull     rW0:6
+    //   109  JZ             ->124
+    //   111  PshC4          d:9
+    //   113  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   116  PshRPtr
+    //   117  PshVPtr        rW0:0
+    //   118  PshVPtr        rW0:6
+    //   119  ADDSi          W0:1800 d:67115161      ; ALokiGameState::OnPlayerKilled  (+1800)
+    //   121  CALLSYS        q:0x26e771b4bc0         ; void FPlayerKillEventSignature::AddUFunction(const UObject@, const FName&)
+    //   124  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnPlayerKilled(const FPlayerKillEventData&inout KillData)
+// 3 instr, 16 B bytecode, id=0xFCE66655, varspace=0
+------------------------------------------------------------------------------
+{
+    this.UpdateTeamKills();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84222                 ; void UBarracudaGameStateComponent::UpdateTeamKills()
+    //     3  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void UpdateTeamKills()
+// 77 instr, 520 B bytecode, id=0x39DDD487, varspace=32
+------------------------------------------------------------------------------
+{
+    ALokiGameState v4;
+    auto v5;
+    TArray<int> v10;
+    int v11;
+    TArray<ALokiPlayerState@> v16;
+    TArrayConstIterator<ALokiPlayerState@> v22;
+    TArrayConstIterator<ALokiPlayerState@> v28;
+    ALokiPlayerState v30;
+    auto v31;
+    int v32;
+
+    v4 = Loki::GetLokiGameState(__WorldContext);
+    if (v4 != null) {
+        v10 = TArray<int>();
+        v11 = 0;
+        v16 = v4.GetPlayerStatesOnTeam(0);
+        v22 = v16.Iterator();
+        while (true) {
+            v5 = v22.CanProceed;
+            if (!v5) break;
+            v30 = v22.Proceed();
+            v31 = v30.GetKills();
+            v11 = v11 + v31;
+        }
+        v32 = 0;
+        v16 = v4.GetPlayerStatesOnTeam(1);
+        v28 = v16.Iterator();
+        while (true) {
+            v5 = v28.CanProceed;
+            if (!v5) break;
+            v30 = v28.Proceed();
+            v31 = v30.GetKills();
+            v32 = v32 + v31;
+        }
+        v10.Add(v11);
+        v10.Add(v32);
+        this.TeamKillScores = v10;
+        this.OnTeamKillsUpdated.Broadcast(this.TeamKillScores);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //     6  STOREOBJ       wW0:4
+    //     7  CmpPtrNull     rW0:4
+    //     8  JZ             ->129
+    //    10  PSF            rW0:10
+    //    11  CALLSYS        q:0x26e6ee8f740         ; void TArray<int>::$beh0()
+    //    14  SetV4          wW0:11 d:0
+    //    16  PSF            rW0:22
+    //    17  PshC4          d:0
+    //    19  PSF            rW0:16
+    //    20  PshVPtr        rW0:4
+    //    21  CALLSYS        q:0x26e7a2728c0         ; TArray<ALokiPlayerState@> ALokiGameState::GetPlayerStatesOnTeam(int) const
+    //    24  PSF            rW0:16
+    //    25  CALLSYS        q:0x26e6ee8cd40         ; TArrayConstIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator() const
+    //    28  JMP            ->46
+    //    30  SUSPEND
+    //    31  PSF            rW0:22
+    //    32  CALLSYS        q:0x26e6ee8f900         ; ALokiPlayerState@ const& TArrayConstIterator<ALokiPlayerState@>::Proceed()
+    //    35  PshRPtr
+    //    36  RDSPtr
+    //    37  RefCpyV        wW0:30
+    //    38  PshVPtr        rW0:30
+    //    39  CALLSYS        q:0x26e7a391580         ; int ALokiPlayerState::GetKills() const
+    //    42  CpyRtoV4       wW0:31
+    //    43  ADDi           wW0:11 rW1:11 rW2:31
+    //    45  FreeNullV8     wW0:30
+    //    46  LoadVObjR      rW0:22 W1:16 DW2:268448511; TArrayConstIterator::CanProceed  (+16)
+    //    49  RDR1           wW0:5
+    //    50  CpyVtoR1       rW0:5
+    //    51  JLowNZ         ->30
+    //    53  PSF            rW0:16
+    //    54  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //    57  SetV4          wW0:32 d:0
+    //    59  PSF            rW0:28
+    //    60  PshC4          d:1
+    //    62  PSF            rW0:16
+    //    63  PshVPtr        rW0:4
+    //    64  CALLSYS        q:0x26e7a2728c0         ; TArray<ALokiPlayerState@> ALokiGameState::GetPlayerStatesOnTeam(int) const
+    //    67  PSF            rW0:16
+    //    68  CALLSYS        q:0x26e6ee8cd40         ; TArrayConstIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator() const
+    //    71  JMP            ->89
+    //    73  SUSPEND
+    //    74  PSF            rW0:28
+    //    75  CALLSYS        q:0x26e6ee8f900         ; ALokiPlayerState@ const& TArrayConstIterator<ALokiPlayerState@>::Proceed()
+    //    78  PshRPtr
+    //    79  RDSPtr
+    //    80  RefCpyV        wW0:30
+    //    81  PshVPtr        rW0:30
+    //    82  CALLSYS        q:0x26e7a391580         ; int ALokiPlayerState::GetKills() const
+    //    85  CpyRtoV4       wW0:31
+    //    86  ADDi           wW0:32 rW1:32 rW2:31
+    //    88  FreeNullV8     wW0:30
+    //    89  LoadVObjR      rW0:28 W1:16 DW2:268448511; TArrayConstIterator::CanProceed  (+16)
+    //    92  RDR1           wW0:5
+    //    93  CpyVtoR1       rW0:5
+    //    94  JLowNZ         ->73
+    //    96  PSF            rW0:16
+    //    97  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //   100  PSF            rW0:11
+    //   101  PSF            rW0:10
+    //   102  CALLSYS        q:0x26e6ef02fc0         ; void TArray<int>::Add(const int&)
+    //   105  PSF            rW0:32
+    //   106  PSF            rW0:10
+    //   107  CALLSYS        q:0x26e6ef02fc0         ; void TArray<int>::Add(const int&)
+    //   110  PSF            rW0:10
+    //   111  PshVPtr        rW0:0
+    //   112  ADDSi          W0:464 d:134230778      ; UBarracudaGameStateComponent::TeamKillScores  (+464)
+    //   114  CALLSYS        q:0x26e70f35100         ; TArray<int>& TArray<int>::opAssign(const TArray<int>&)
+    //   117  PshVPtr        rW0:0
+    //   118  ADDSi          W0:464 d:134230778      ; UBarracudaGameStateComponent::TeamKillScores  (+464)
+    //   120  PshVPtr        rW0:0
+    //   121  ADDSi          W0:480 d:134230778      ; UBarracudaGameStateComponent::OnTeamKillsUpdated  (+480)
+    //   123  CALL           d:84248                 ; void FOnTeamKillsUpdated::Broadcast(const TArray<int>&) const
+    //   125  PSF            rW0:10
+    //   126  CALLSYS        q:0x26e70f352c0         ; void TArray<int>::$beh2()
+    //   129  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 42 instr, 308 B bytecode, id=0xB7DE39EC, varspace=14
+------------------------------------------------------------------------------
+{
+    auto v1;
+    int v2;
+    auto v6;
+    auto v7;
+    auto v10;
+    auto v12;
+
+    v1 = Loki::LokiIsServer(__WorldContext);
+    v1 = !v1;
+    if (!v1) {
+        v2 = this.CurrentPhaseIndex;
+        v2 = v2 + 1;
+        if (this.BarracudaPhases.IsValidIndex(v2)) {
+            v6 = this.BarracudaPhases[this.CurrentPhaseIndex];
+            v7 = v6.Duration;
+            if (v7 > 0) {
+                v12 = float64(Gameplay::GetServerTime(__WorldContext));
+                v10 = v12;
+                v12 = this.CurrentPhaseStartTime;
+                v12 = v12 - v12;
+                v7 = v6.Duration;
+                if (v12 > float64(v7)) {
+                    this.AuthMoveToNextBarracudaPhase();
+                }
+            }
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->76
+    //    13  LoadThisR      W0:448 d:134230778      ; UBarracudaGameStateComponent::CurrentPhaseIndex  (+448)
+    //    15  RDR4           wW0:2
+    //    16  ADDIi          wW0:2 rW1:2 DW2:1
+    //    19  PshV4          rW0:2
+    //    20  PshVPtr        rW0:0
+    //    21  ADDSi          W0:432 d:134230778      ; UBarracudaGameStateComponent::BarracudaPhases  (+432)
+    //    23  CALLSYS        q:0x26e6ef02e00         ; bool TArray<FBarracudaPhase>::IsValidIndex(int) const
+    //    26  JLowZ          ->76
+    //    28  LoadThisR      W0:448 d:134230778      ; UBarracudaGameStateComponent::CurrentPhaseIndex  (+448)
+    //    30  RDR4           wW0:3
+    //    31  PshV4          rW0:3
+    //    32  PshVPtr        rW0:0
+    //    33  ADDSi          W0:432 d:134230778      ; UBarracudaGameStateComponent::BarracudaPhases  (+432)
+    //    35  Thiscall1      q:0x26e6ef02a80         ; FBarracudaPhase& TArray<FBarracudaPhase>::opIndex(int)
+    //    38  CpyRtoV8       wW0:6
+    //    39  LoadRObjR      rW0:6 W1:4 DW2:67120849 ; FBarracudaPhase::Duration  (+4)
+    //    42  RDR4           wW0:7
+    //    43  CMPIf          rW0:7 d:0
+    //    45  JNP            ->76
+    //    47  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    50  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    53  CpyRtoV4       wW0:8
+    //    54  fTOd           wW0:12 rW1:8
+    //    56  CpyVtoV8       wW0:10 rW1:12
+    //    58  LoadThisR      W0:456 d:134230778      ; UBarracudaGameStateComponent::CurrentPhaseStartTime  (+456)
+    //    60  RDR8           wW0:12
+    //    61  SUBd           wW0:12 rW1:10 rW2:12
+    //    63  LoadRObjR      rW0:6 W1:4 DW2:67120849 ; FBarracudaPhase::Duration  (+4)
+    //    66  RDR4           wW0:7
+    //    67  fTOd           wW0:14 rW1:7
+    //    69  CMPd           rW0:12 rW1:14
+    //    71  JNP            ->76
+    //    73  PshVPtr        rW0:0
+    //    74  CALLINTF       d:84224                 ; void UBarracudaGameStateComponent::AuthMoveToNextBarracudaPhase()
+    //    76  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+void AuthMoveToNextBarracudaPhase()
+// 35 instr, 228 B bytecode, id=0x451FD156, varspace=8
+------------------------------------------------------------------------------
+{
+    int v1;
+    auto v3;
+    EBarracudaPhaseType v4;
+
+    v1 = this.CurrentPhaseIndex;
+    v1 = v1 + 1;
+    v3 = this.BarracudaPhases.IsValidIndex(v1);
+    v3 = !v3;
+    if (!v3) {
+        v4 = this.BarracudaPhases[this.CurrentPhaseIndex].Type;
+        this.CurrentPhaseIndex++;
+        this.CurrentPhaseStartTime = float64(Gameplay::GetServerTime(__WorldContext));
+        this.EmitPhaseChangedEvent(v4);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:448 d:134230778      ; UBarracudaGameStateComponent::CurrentPhaseIndex  (+448)
+    //     2  RDR4           wW0:1
+    //     3  ADDIi          wW0:1 rW1:1 DW2:1
+    //     6  PshV4          rW0:1
+    //     7  PshVPtr        rW0:0
+    //     8  ADDSi          W0:432 d:134230778      ; UBarracudaGameStateComponent::BarracudaPhases  (+432)
+    //    10  CALLSYS        q:0x26e6ef02e00         ; bool TArray<FBarracudaPhase>::IsValidIndex(int) const
+    //    13  CpyRtoV4       wW0:3
+    //    14  NOT            rW0:3
+    //    15  CpyVtoR1       rW0:3
+    //    16  JLowZ          ->20
+    //    18  JMP            ->56
+    //    20  LoadThisR      W0:448 d:134230778      ; UBarracudaGameStateComponent::CurrentPhaseIndex  (+448)
+    //    22  RDR4           wW0:2
+    //    23  PshV4          rW0:2
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:432 d:134230778      ; UBarracudaGameStateComponent::BarracudaPhases  (+432)
+    //    27  Thiscall1      q:0x26e6ef02a80         ; FBarracudaPhase& TArray<FBarracudaPhase>::opIndex(int)
+    //    30  PshRPtr
+    //    31  ADDSi          W0:0 d:67120849         ; FBarracudaPhase::Type  (+0)
+    //    33  PopRPtr
+    //    34  RDR1           wW0:5
+    //    35  CpyVtoV4       wW0:4 rW1:5
+    //    37  LoadThisR      W0:448 d:134230778      ; UBarracudaGameStateComponent::CurrentPhaseIndex  (+448)
+    //    39  INCi
+    //    40  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    43  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    46  CpyRtoV4       wW0:6
+    //    47  fTOd           wW0:8 rW1:6
+    //    49  LoadThisR      W0:456 d:134230778      ; UBarracudaGameStateComponent::CurrentPhaseStartTime  (+456)
+    //    51  WRTV8          rW0:8
+    //    52  PshV4          rW0:4
+    //    53  PshVPtr        rW0:0
+    //    54  CALLINTF       d:84226                 ; void UBarracudaGameStateComponent::EmitPhaseChangedEvent(const EBarracudaPhaseType)
+    //    56  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnRep_CurrentPhaseIndex(const int PreviousPhaseIndex)
+// 21 instr, 136 B bytecode, id=0xB30AE232, varspace=4
+------------------------------------------------------------------------------
+{
+    EBarracudaPhaseType v3;
+    EBarracudaPhaseType v4;
+
+    if (!this.BarracudaPhases.IsValidIndex(PreviousPhaseIndex)) {
+        v4 = 0;
+        v3 = 0;
+    } else {
+        v4 = this.BarracudaPhases[PreviousPhaseIndex].Type;
+        v3 = v4;
+    }
+    this.EmitPhaseChangedEvent(v3);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshV4          rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:432 d:134230778      ; UBarracudaGameStateComponent::BarracudaPhases  (+432)
+    //     4  CALLSYS        q:0x26e6ef02e00         ; bool TArray<FBarracudaPhase>::IsValidIndex(int) const
+    //     7  JLowZ          ->25
+    //     9  PshV4          rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:432 d:134230778      ; UBarracudaGameStateComponent::BarracudaPhases  (+432)
+    //    13  Thiscall1      q:0x26e6ef02a80         ; FBarracudaPhase& TArray<FBarracudaPhase>::opIndex(int)
+    //    16  PshRPtr
+    //    17  ADDSi          W0:0 d:67120849         ; FBarracudaPhase::Type  (+0)
+    //    19  PopRPtr
+    //    20  RDR1           wW0:4
+    //    21  CpyVtoV4       wW0:3 rW1:4
+    //    23  JMP            ->29
+    //    25  SetV1          wW0:4 d:0
+    //    27  CpyVtoV4       wW0:3 rW1:4
+    //    29  PshV4          rW0:3
+    //    30  PshVPtr        rW0:0
+    //    31  CALLINTF       d:84226                 ; void UBarracudaGameStateComponent::EmitPhaseChangedEvent(const EBarracudaPhaseType)
+    //    33  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void EmitPhaseChangedEvent(const EBarracudaPhaseType PreviousPhaseType)
+// 22 instr, 160 B bytecode, id=0xE9F76ED9, varspace=15
+------------------------------------------------------------------------------
+{
+    UGameEventRouterComponent v2;
+    FGameEvent_BarracudaPhaseChanged v14;
+
+    v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+    if (v2 != null) {
+        v14 = FGameEvent_BarracudaPhaseChanged();
+        v14.PreviousPhaseType = PreviousPhaseType;
+        v14.CurrentPhaseType = GetCurrentBarracudaPhaseType();
+        v2.BroadcastEvent(v14, null);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //     6  STOREOBJ       wW0:2
+    //     7  CmpPtrNull     rW0:2
+    //     8  JNZ            ->12
+    //    10  JMP            ->39
+    //    12  PSF            rW0:14
+    //    13  CALLSYS        q:0x26e79396d00         ; void FGameEvent_BarracudaPhaseChanged::$beh0()
+    //    16  LoadVObjR      rW0:14 W1:8 DW2:67120880; FGameEvent_BarracudaPhaseChanged::PreviousPhaseType  (+8)
+    //    19  WRTV1          rW0:-2
+    //    20  CALL           d:84265                 ; EBarracudaPhaseType GetCurrentBarracudaPhaseType()
+    //    22  CpyRtoV4       wW0:15
+    //    23  LoadVObjR      rW0:14 W1:9 DW2:67120880; FGameEvent_BarracudaPhaseChanged::CurrentPhaseType  (+9)
+    //    26  WRTV1          rW0:15
+    //    27  PshNull
+    //    28  TYPEID         d:67120880              ; FGameEvent_BarracudaPhaseChanged
+    //    30  PSF            rW0:14
+    //    31  PshVPtr        rW0:2
+    //    32  CALLSYS        q:0x26e7968b4c0         ; void UGameEventRouterComponent::BroadcastEvent(const ?&, UObject@)
+    //    35  PSF            rW0:14
+    //    36  CALLSYS        q:0x26e79396b40         ; void FGameEvent_BarracudaPhaseChanged::$beh2()
+    //    39  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, BlueprintAuthorityOnly, CanOverrideEvent, meta=(Category=Barracuda|GameState))
+AActor@ GetRespawnStructure(const int TeamIndex)
+// 44 instr, 280 B bytecode, id=0x0DC790B3, varspace=28
+------------------------------------------------------------------------------
+{
+    TSetIterator<AActor@> v8;
+    auto v17;
+    AActor v20;
+    UBarracudaStructureComponent v24;
+    AActor v28;
+
+    v8 = this.Structures.Iterator();
+    while (true) {
+        v17 = v8.CanProceed;
+        if (!v17) break;
+        v20 = v8.Proceed();
+        if (v20 == null) {
+            continue;
+        }
+        v24 = UBarracudaStructureComponent::Get(v20, NAME_None);
+        if (v24 != null) {
+            v17 = v24.bRespawnLocation;
+        } else {
+            v17 = 0;
+        }
+        if (v17) {
+            if (LokiTeam::GetTeamFromActor(v20) == TeamIndex) {
+                goto L69;
+            }
+        }
+    }
+    L69:
+    return v28;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:8
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:224 d:134230778      ; UBarracudaGameStateComponent::Structures  (+224)
+    //     4  CALLSYS        q:0x26e6ef02540         ; TSetIterator<AActor@> TSet<AActor@>::Iterator()
+    //     7  JMP            ->60
+    //     9  SUSPEND
+    //    10  PSF            rW0:8
+    //    11  CALLSYS        q:0x26e6ef021c0         ; AActor@ const& TSetIterator<AActor@>::Proceed()
+    //    14  PshRPtr
+    //    15  RDSPtr
+    //    16  RefCpyV        wW0:20
+    //    17  CmpPtrNull     rW0:20
+    //    18  JNZ            ->23
+    //    20  FreeNullV8     wW0:20
+    //    21  JMP            ->60
+    //    23  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    26  PshVPtr        rW0:20
+    //    27  CALL           d:84154                 ; UBarracudaStructureComponent@ UBarracudaStructureComponent::Get(const AActor@, const FName&)
+    //    29  STOREOBJ       wW0:24
+    //    30  CmpPtrNull     rW0:24
+    //    31  JNZ            ->37
+    //    33  SetV4          wW0:17 d:0
+    //    35  JMP            ->43
+    //    37  LoadRObjR      rW0:24 W1:209 DW2:134230779; UBarracudaStructureComponent::bRespawnLocation  (+209)
+    //    40  RDR1           wW0:25
+    //    41  CpyVtoV4       wW0:17 rW1:25
+    //    43  CpyVtoR1       rW0:17
+    //    44  JLowZ          ->58
+    //    46  PshVPtr        rW0:20
+    //    47  CALLSYS        q:0x26e7a4113c0         ; int LokiTeam::GetTeamFromActor(const AActor@)
+    //    50  CpyRtoV4       wW0:26
+    //    51  CMPi           rW0:26 rW1:-2
+    //    53  JNZ            ->58
+    //    55  LOADOBJ        rW0:20
+    //    56  JMP            ->69
+    //    58  FreeNullV8     wW0:24
+    //    59  FreeNullV8     wW0:20
+    //    60  LoadVObjR      rW0:8 W1:24 DW2:268448515; TSetIterator::CanProceed  (+24)
+    //    63  RDR1           wW0:17
+    //    64  CpyVtoR1       rW0:17
+    //    65  JLowNZ         ->9
+    //    67  FreeNullV8     wW0:28
+    //    68  LOADOBJ        rW0:28
+    //    69  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Const)
+float64 SecondsUntilNextDayNightSwap()
+// 14 instr, 104 B bytecode, id=0xC30A8FF8, varspace=10
+------------------------------------------------------------------------------
+{
+    auto v2;
+    float64 v6;
+    auto v10;
+
+    v6 = float64(Gameplay::GetServerTime(__WorldContext));
+    v2 = v6;
+    v6 = this.NextDayNightSwapTime;
+    v6 = v6 - v6;
+    v10 = Math::Max(v6, 0);
+    return v10;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //     6  CpyRtoV4       wW0:3
+    //     7  fTOd           wW0:6 rW1:3
+    //     9  CpyVtoV8       wW0:2 rW1:6
+    //    11  PshC8          q:0x0
+    //    14  LoadThisR      W0:208 d:134230778      ; UBarracudaGameStateComponent::NextDayNightSwapTime  (+208)
+    //    16  RDR8           wW0:6
+    //    17  SUBd           wW0:6 rW1:6 rW2:2
+    //    19  PshV8          rW0:6
+    //    20  CALLSYS        q:0x26e70382000         ; float64 Math::Max(float64, float64)
+    //    23  CpyRtoV8       wW0:10
+    //    24  CpyVtoR8       rW0:10
+    //    25  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthPlayPilotVOForAll(const FGameplayTag&inout PilotVOTag)
+// 8 instr, 60 B bytecode, id=0xD60F596F, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__FGameplayTag(PilotVOTag);
+    __Evt_Execute(this, __STATIC_NAME(105));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e7805b140         ; void __Evt_PushArgument__FGameplayTag(const FGameplayTag&)
+    //     4  PshC4          d:105
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: AuthPlayPilotVOForAll
+void AuthPlayPilotVOForAll_Implementation(const FGameplayTag&inout PilotVOTag)
+// 4 instr, 20 B bytecode, id=0x5CE328CF, varspace=0
+------------------------------------------------------------------------------
+{
+    this.MultiPlayPilotVO(PilotVOTag);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALLINTF       d:84231                 ; void UBarracudaGameStateComponent::MultiPlayPilotVO(const FGameplayTag&)
+    //     4  RET            W0:4
+
+------------------------------------------------------------------------------
+void MultiPlayPilotVO(const FGameplayTag&inout PilotVOTag)
+// 8 instr, 60 B bytecode, id=0xBA34AD41, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__FGameplayTag(PilotVOTag);
+    __Evt_Execute(this, __STATIC_NAME(106));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e7805b140         ; void __Evt_PushArgument__FGameplayTag(const FGameplayTag&)
+    //     4  PshC4          d:106
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetMulticast)
+// UFunction name: MultiPlayPilotVO
+void MultiPlayPilotVO_Implementation(const FGameplayTag&inout PilotVOTag)
+// 9 instr, 68 B bytecode, id=0x3D85B5FA, varspace=5
+------------------------------------------------------------------------------
+{
+    FString v4;
+
+    v4 = FString();
+    return;
+    ULokiBarkUtilities::RequestVOPilot(__WorldContext, PilotVOTag, v4);
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e628a8c80         ; void FString::$beh0()
+    //     4  PSF            rW0:4
+    //     5  PshVPtr        rW0:-2
+    //     6  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     9  CALLSYS        q:0x26e7a0e05c0         ; bool ULokiBarkUtilities::RequestVOPilot(UObject@, const FGameplayTag, FString&)
+    //    12  PSF            rW0:4
+    //    13  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //    16  RET            W0:4
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 17 instr, 116 B bytecode, id=0x976B297E, varspace=6
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = true;
+    this.SetbReplicates(true);
+    this.NextDayNightSwapTime = 60;
+    v1 = true;
+    this.bDayNightTransitionEnabled = true;
+    this.ShopClass = ABarracudaShop::StaticClass();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a62c640         ; void UActorComponent::SetbReplicates(bool)
+    //     7  SetV8          wW0:4 q:0x404e000000000000
+    //    10  LoadThisR      W0:208 d:134230778      ; UBarracudaGameStateComponent::NextDayNightSwapTime  (+208)
+    //    12  WRTV8          rW0:4
+    //    13  SetV1          wW0:1 d:1
+    //    15  LoadThisR      W0:216 d:134230778      ; UBarracudaGameStateComponent::bDayNightTransitionEnabled  (+216)
+    //    17  WRTV1          rW0:1
+    //    18  CALL           d:84353                 ; UClass@ ABarracudaShop::StaticClass()
+    //    20  STOREOBJ       wW0:6
+    //    21  PshVPtr        rW0:6
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:384 d:134230778      ; UBarracudaGameStateComponent::ShopClass  (+384)
+    //    25  CALLSYS        q:0x26e6ef01ac0         ; void TSubclassOf<ABarracudaShop@>::opAssign(UClass@)
+    //    28  RET            W0:2
+
+------------------------------------------------------------------------------
+~UBarracudaGameStateComponent()
+// 22 instr, 164 B bytecode, id=0x5390C7E9, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnTeamKillsUpdated.~FOnTeamKillsUpdated();
+    this.OnDragonKillsUpdated.~FOnDragonKillsUpdated();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:224 d:134230778      ; UBarracudaGameStateComponent::Structures  (+224)
+    //     3  CALLSYS        q:0x26e7a205800         ; void TSet<AActor@>::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:304 d:134230778      ; UBarracudaGameStateComponent::MinionWaypoints  (+304)
+    //     9  CALLSYS        q:0x26e6e838580         ; void TSet<ABarracudaMinionWaypoint@>::$beh2()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:400 d:134230778      ; UBarracudaGameStateComponent::DisabledSpawnerTypes  (+400)
+    //    15  CALLSYS        q:0x26e78761ac0         ; void FGameplayTagContainer::$beh2()
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:432 d:134230778      ; UBarracudaGameStateComponent::BarracudaPhases  (+432)
+    //    21  CALLSYS        q:0x26e6e838ac0         ; void TArray<FBarracudaPhase>::$beh2()
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:464 d:134230778      ; UBarracudaGameStateComponent::TeamKillScores  (+464)
+    //    27  CALLSYS        q:0x26e70f352c0         ; void TArray<int>::$beh2()
+    //    30  PshVPtr        rW0:0
+    //    31  ADDSi          W0:480 d:134230778      ; UBarracudaGameStateComponent::OnTeamKillsUpdated  (+480)
+    //    33  CALL           d:85466                 ; void FOnTeamKillsUpdated::~FOnTeamKillsUpdated()
+    //    35  PshVPtr        rW0:0
+    //    36  ADDSi          W0:504 d:134230778      ; UBarracudaGameStateComponent::OnDragonKillsUpdated  (+504)
+    //    38  CALL           d:85465                 ; void FOnDragonKillsUpdated::~FOnDragonKillsUpdated()
+    //    40  RET            W0:2
+
+==============================================================================
+class FOnDragonKillsUpdated
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FOnDragonKillsUpdated() const
+// 4 instr, 28 B bytecode, id=0xE7C4501D, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230788        ; FOnDragonKillsUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FOnDragonKillsUpdated(const FOnDragonKillsUpdated&inout Other) const
+// 7 instr, 44 B bytecode, id=0x822203E8, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230788        ; FOnDragonKillsUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:84238                 ; FOnDragonKillsUpdated& FOnDragonKillsUpdated::opAssign(const FOnDragonKillsUpdated&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FOnDragonKillsUpdated& opAssign(const FOnDragonKillsUpdated&inout Other)
+// 8 instr, 48 B bytecode, id=0x486ADA4B, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230788        ; FOnDragonKillsUpdated::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230788        ; FOnDragonKillsUpdated::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast(const int NumDragons)
+// 14 instr, 96 B bytecode, id=0xB9B49D19, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_PushArgument__int(NumDragons);
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230788        ; FOnDragonKillsUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->23
+    //    13  PSF            rW0:-2
+    //    14  CALLSYS        q:0x26e77fc8ac0         ; void __Evt_PushArgument__int(const int&)
+    //    17  PshVPtr        rW0:0
+    //    18  ADDSi          W0:0 d:134230788        ; FOnDragonKillsUpdated::_Inner  (+0)
+    //    20  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    23  RET            W0:3
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0xDFA1D1E0, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230788             ; FOnDragonKillsUpdated
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230788        ; FOnDragonKillsUpdated::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0x64809A83, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230788        ; FOnDragonKillsUpdated::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0x9A25D4F7, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230788        ; FOnDragonKillsUpdated::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0xC2C7A562, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230788        ; FOnDragonKillsUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0x613D749D, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230788        ; FOnDragonKillsUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FOnDragonKillsUpdated()
+// 4 instr, 28 B bytecode, id=0x9C42F421, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230788        ; FOnDragonKillsUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+
+==============================================================================
+class FOnTeamKillsUpdated
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FOnTeamKillsUpdated() const
+// 4 instr, 28 B bytecode, id=0xD89C05DF, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230789        ; FOnTeamKillsUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FOnTeamKillsUpdated(const FOnTeamKillsUpdated&inout Other) const
+// 7 instr, 44 B bytecode, id=0xBF675515, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230789        ; FOnTeamKillsUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:84247                 ; FOnTeamKillsUpdated& FOnTeamKillsUpdated::opAssign(const FOnTeamKillsUpdated&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FOnTeamKillsUpdated& opAssign(const FOnTeamKillsUpdated&inout Other)
+// 8 instr, 48 B bytecode, id=0xF00FBA43, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230789        ; FOnTeamKillsUpdated::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230789        ; FOnTeamKillsUpdated::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast(const TArray<int>&inout KillScores)
+// 15 instr, 104 B bytecode, id=0x0D7519B5, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_PushArgument(KillScores);
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230789        ; FOnTeamKillsUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->25
+    //    13  TYPEID         d:268448518             ; TArray<int>
+    //    15  PshVPtr        rW0:-2
+    //    16  CALLSYS        q:0x26e7861c640         ; void __Evt_PushArgument(const ?&)
+    //    19  PshVPtr        rW0:0
+    //    20  ADDSi          W0:0 d:134230789        ; FOnTeamKillsUpdated::_Inner  (+0)
+    //    22  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    25  RET            W0:4
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0x70E26A25, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230789             ; FOnTeamKillsUpdated
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230789        ; FOnTeamKillsUpdated::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0x29A67E02, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230789        ; FOnTeamKillsUpdated::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0xBA752B7F, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230789        ; FOnTeamKillsUpdated::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0xDF319FF4, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230789        ; FOnTeamKillsUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0xBD713084, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230789        ; FOnTeamKillsUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FOnTeamKillsUpdated()
+// 4 instr, 28 B bytecode, id=0xA1B29BDC, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230789        ; FOnTeamKillsUpdated::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+

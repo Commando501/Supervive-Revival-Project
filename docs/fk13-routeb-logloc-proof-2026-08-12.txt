@@ -1,0 +1,21 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[CHM] Route B: construct a UCheatManager and install it on the live PlayerController.
+[CHM] Inject AFTER the world is up (menu is fine -- CheatClass is populated in both).
+[CHM] KFUNCSWAP=1: game-thread callback via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7C92354A0 stub=0x24999C321E0 funcCls=0x2483872B000 gameTid=16692
+[CHM] === RM_CHEATMGR: install a UCheatManager on the live PlayerController ===
+[FS] arm: swapped=18223 BP UFunctions  (scan 3172 ms over 177235 objects, 34913 UFunctions total) -- NO .text WRITE
+[CHM] cand 'LokiPlayerController' -> 0x24848421470 (LokiPlayerControllerUAVComponent) REJECTED: CheatManager@0xFFFFFFFF CheatClass@0xFFFFFFFF
+[FS] hot: 0 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   (none -- the swapped functions are not being dispatched on the game thread)
+[CHM] PC=0x24983CBC040 class=PC_MainMenu_C  CheatManager@0x520 CheatClass@0x528 (by name, not literals)
+[CHM] ALREADY INSTALLED: CheatManager=0x24A071D2D60 (CheatManager) -- skipping construction
+[CHM] KCMVERIFY=1: exercising the router with 'LogLoc' on the EXISTING manager
+[FOW] resolved 'ExecuteConsoleCommand' fn=0x24847B5D8B0 thunk=0x7FF7CB84D790 owner=KismetSystemLibrary cdo=0x2484816D050
+[CHM] chm-verify: ExecuteConsoleCommand('LogLoc') WCO=0x24983CBC040 SpecificPlayer=0x24983CBC040 (wco@0x0 sp@0x18)
+[CHM] chm-verify: call returned -- now grep Loki.log for the verb's OWN output; 'ok' here only means the call did not fault
+[FS] disarm: restored=18223 of 18223 swapped (scan 3313 ms, 34913 UFunctions live)
+[CHM] done (installed=0x24A071D2D60 pc=0x24983CBC040 called=1 hitsGT=1)
+9387:[2026.08.13-03.13.57:271][104]LogCheatManager: BugItGo 0.000000 0.000000 0.000000 -2.150000 -90.000000 -0.000000
+9388:[2026.08.13-03.13.57:272][104]LogCheatManager: ?BugLoc=X=0.000 Y=0.000 Z=0.000?BugRot=P=-2.150000 Y=-90.000000 R=-0.000000

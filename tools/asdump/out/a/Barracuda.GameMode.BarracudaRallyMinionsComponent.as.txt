@@ -1,0 +1,446 @@
+==============================================================================
+MODULE   Barracuda.GameMode.BarracudaRallyMinionsComponent
+SOURCE   Barracuda/GameMode/BarracudaRallyMinionsComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaRallyMinionsComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaRallyMinionsComponent@ UBarracudaRallyMinionsComponent()
+// 4 instr, 28 B bytecode, id=0xCC235631, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaRallyMinionsComponent v2;
+
+    v2 = UBarracudaRallyMinionsComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84211 q:0x26e6e875e00; new UBarracudaRallyMinionsComponent   ctor=UBarracudaRallyMinionsComponent::UBarracudaRallyMinionsComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xCA257277, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaRallyMinionsComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b45d8         ; __StaticType_UBarracudaRallyMinionsComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UBarracudaRallyMinionsComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xC5913039, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaRallyMinionsComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaRallyMinionsComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972610            ; UBarracudaRallyMinionsComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b45d8         ; __StaticType_UBarracudaRallyMinionsComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaRallyMinionsComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xABD0821A, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaRallyMinionsComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaRallyMinionsComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972610            ; UBarracudaRallyMinionsComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b45d8         ; __StaticType_UBarracudaRallyMinionsComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaRallyMinionsComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x2E810B94, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaRallyMinionsComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaRallyMinionsComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972610            ; UBarracudaRallyMinionsComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b45d8         ; __StaticType_UBarracudaRallyMinionsComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class UBarracudaRallyMinionsComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 RallyAggroRange;
+
+}
+
+------------------------------------------------------------------------------
+UBarracudaRallyMinionsComponent() const
+// 6 instr, 44 B bytecode, id=0x9FF81EAD, varspace=2
+------------------------------------------------------------------------------
+{
+    this.RallyAggroRange = 2000;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x409f400000000000
+    //     3  LoadThisR      W0:208 d:134230786      ; UBarracudaRallyMinionsComponent::RallyAggroRange  (+208)
+    //     5  WRTV8          rW0:2
+    //     6  PshVPtr        rW0:0
+    //     7  FinConstruct   q:0x26e6e875e00         ; UBarracudaRallyMinionsComponent
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: LokiBeginPlay
+void LokiBeginPlay_Implementation()
+// 22 instr, 156 B bytecode, id=0xC76BDDF1, varspace=100
+------------------------------------------------------------------------------
+{
+    UGameEventRouterComponent v2;
+    FGameEvent_OnDamaged_Character v86;
+    FGameEventListenerHandle v100;
+
+    v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+    v86 = FGameEvent_OnDamaged_Character();
+    v100 = v2.RegisterForEvent(this, v86, null, __STATIC_NAME(11), false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //     6  STOREOBJ       wW0:2
+    //     7  SetV1          wW0:87 d:0
+    //     9  PshV4          rW0:87
+    //    10  PshC4          d:11
+    //    12  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    15  PshRPtr
+    //    16  PshNull
+    //    17  TYPEID         d:67120919              ; FGameEvent_OnDamaged_Character
+    //    19  PSF            rW0:86
+    //    20  CALLSYS        q:0x26e793a4f40         ; void FGameEvent_OnDamaged_Character::$beh0()
+    //    23  PSF            rW0:86
+    //    24  PshVPtr        rW0:0
+    //    25  PSF            rW0:100
+    //    26  PshVPtr        rW0:2
+    //    27  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    30  PSF            rW0:86
+    //    31  CALLSYS        q:0x26e793a4d80         ; void FGameEvent_OnDamaged_Character::$beh2()
+    //    34  PSF            rW0:100
+    //    35  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    38  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnCharacterDamaged(const FGameEvent_OnDamaged_Character&inout Event, const ALokiCharacter@ ContextCharacter)
+// 40 instr, 240 B bytecode, id=0xA60BFC06, varspace=10
+------------------------------------------------------------------------------
+{
+    ALokiHeroCharacter v2;
+    ALokiHeroCharacter v4;
+    ALokiCharacter v8;
+    ALokiHeroCharacter v10;
+
+    if (ContextCharacter == null) {
+        v2 = null;
+    } else {
+        v2 = cast<ALokiHeroCharacter>(ContextCharacter);
+    }
+    v4 = v2;
+    if (v2 != null) {
+        v8 = Event.DamageStatistic.SourceCharacter;
+        if (v8 == null) {
+            v2 = null;
+        } else {
+            v2 = cast<ALokiHeroCharacter>(v8);
+        }
+        v10 = v2;
+        if (v2 != null) {
+            if (LokiTeam::IsEnemyTeam(v4, v10)) {
+                this.RallyAlliedMinionsForHelp(v4, v10);
+            }
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CmpPtrNull     rW0:-4
+    //     1  JZ             ->12
+    //     3  TYPEID         d:1140857000            ; ALokiHeroCharacter@
+    //     5  PSF            rW0:2
+    //     6  PshVPtr        rW0:-4
+    //     7  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    10  JMP            ->13
+    //    12  ClrVPtr        wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  RefCpyV        wW0:4
+    //    15  CmpPtrNull     rW0:4
+    //    16  JNZ            ->20
+    //    18  JMP            ->59
+    //    20  PshVPtr        rW0:-2
+    //    21  ADDSi          W0:16 d:67120919        ; FGameEvent_OnDamaged_Character::DamageStatistic  (+16)
+    //    23  ADDSi          W0:80 d:67120736        ; FLokiDamageStatistic::SourceCharacter  (+80)
+    //    25  RDSPtr
+    //    26  RefCpyV        wW0:8
+    //    27  CmpPtrNull     rW0:8
+    //    28  JZ             ->39
+    //    30  TYPEID         d:1140857000            ; ALokiHeroCharacter@
+    //    32  PSF            rW0:2
+    //    33  PshVPtr        rW0:8
+    //    34  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    37  JMP            ->40
+    //    39  ClrVPtr        wW0:2
+    //    40  PshVPtr        rW0:2
+    //    41  RefCpyV        wW0:10
+    //    42  CmpPtrNull     rW0:10
+    //    43  JNZ            ->47
+    //    45  JMP            ->59
+    //    47  PshVPtr        rW0:10
+    //    48  PshVPtr        rW0:4
+    //    49  CALLSYS        q:0x26e7a410940         ; bool LokiTeam::IsEnemyTeam(const AActor@, const AActor@)
+    //    52  JLowZ          ->59
+    //    54  PshVPtr        rW0:10
+    //    55  PshVPtr        rW0:4
+    //    56  PshVPtr        rW0:0
+    //    57  CALLINTF       d:84210                 ; void UBarracudaRallyMinionsComponent::RallyAlliedMinionsForHelp(ALokiHeroCharacter@, ALokiHeroCharacter@)
+    //    59  RET            W0:6
+
+------------------------------------------------------------------------------
+void RallyAlliedMinionsForHelp(ALokiHeroCharacter@ Victim, ALokiHeroCharacter@ Attacker)
+// 92 instr, 580 B bytecode, id=0xE3CA6F30, varspace=106
+------------------------------------------------------------------------------
+{
+    ALokiTeamState v6;
+    auto v7;
+    FVector v14;
+    FVector v20;
+    FVector v26;
+    TSet<ALokiCharacter@> v46;
+    TSetIterator<ALokiCharacter@> v74;
+    ALokiCharacter v84;
+    ALokiMinionCharacter v86;
+    ALokiMinionCharacter v88;
+    float64 v98;
+    auto v100;
+    UBarracudaMinionTargetingComponent v106;
+
+    v6 = ALokiTeamState::GetTeamStateByTeamIndex(__WorldContext, LokiTeam::GetTeamFromActor(Victim));
+    if (v6 != null) {
+        v20 = Victim.GetActorLocation();
+        v14 = Attacker.GetActorLocation();
+        v46 = v6.GetCachedCharacters();
+        v74 = v46.Iterator();
+        while (true) {
+            v7 = v74.CanProceed;
+            if (!v7) break;
+            v84 = v74.Proceed();
+            if (v84 == null) {
+                v86 = null;
+            } else {
+                v86 = cast<ALokiMinionCharacter>(v84);
+            }
+            v88 = v86;
+            if (v86 == null) {
+                continue;
+            }
+            v26 = v88.GetActorLocation();
+            v98 = this.RallyAggroRange;
+            v100 = Math::Square(v98);
+            v98 = v20.DistSquared2D(v26);
+            if (v98 <= v100) {
+                v98 = v14.DistSquared2D(v26);
+                v7 = v98 > v100;
+            } else {
+                v7 = true;
+            }
+            if (v7) {
+                continue;
+            }
+            v106 = UBarracudaMinionTargetingComponent::Get(v84, NAME_None);
+            if (v106 != null) {
+                v106.NotifyEnemyHeroHitAlliedHero(Attacker);
+            }
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e7a4113c0         ; int LokiTeam::GetTeamFromActor(const AActor@)
+    //     4  CpyRtoV4       wW0:1
+    //     5  PshV4          rW0:1
+    //     6  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     9  CALLSYS        q:0x26e7a413340         ; ALokiTeamState@ ALokiTeamState::GetTeamStateByTeamIndex(const UObject@, int)
+    //    12  STOREOBJ       wW0:6
+    //    13  CmpPtrNull     rW0:6
+    //    14  JNZ            ->18
+    //    16  JMP            ->144
+    //    18  PSF            rW0:20
+    //    19  PshVPtr        rW0:-2
+    //    20  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    23  PSF            rW0:14
+    //    24  PshVPtr        rW0:-4
+    //    25  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    28  PSF            rW0:46
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7a3db140         ; TSet<ALokiCharacter@> ALokiTeamState::GetCachedCharacters()
+    //    33  PSF            rW0:74
+    //    34  PSF            rW0:46
+    //    35  CALLSYS        q:0x26e6ee8e940         ; TSetIterator<ALokiCharacter@> TSet<ALokiCharacter@>::Iterator()
+    //    38  JMP            ->133
+    //    40  SUSPEND
+    //    41  PSF            rW0:74
+    //    42  CALLSYS        q:0x26e6ef03880         ; ALokiCharacter@ const& TSetIterator<ALokiCharacter@>::Proceed()
+    //    45  PshRPtr
+    //    46  RDSPtr
+    //    47  RefCpyV        wW0:84
+    //    48  CmpPtrNull     rW0:84
+    //    49  JZ             ->60
+    //    51  TYPEID         d:1140857087            ; ALokiMinionCharacter@
+    //    53  PSF            rW0:86
+    //    54  PshVPtr        rW0:84
+    //    55  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    58  JMP            ->61
+    //    60  ClrVPtr        wW0:86
+    //    61  PshVPtr        rW0:86
+    //    62  RefCpyV        wW0:88
+    //    63  CmpPtrNull     rW0:88
+    //    64  JNZ            ->70
+    //    66  FreeNullV8     wW0:88
+    //    67  FreeNullV8     wW0:84
+    //    68  JMP            ->133
+    //    70  PSF            rW0:26
+    //    71  PshVPtr        rW0:88
+    //    72  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    75  LoadThisR      W0:208 d:134230786      ; UBarracudaRallyMinionsComponent::RallyAggroRange  (+208)
+    //    77  RDR8           wW0:98
+    //    78  PshV8          rW0:98
+    //    79  CALLSYS        q:0x26e70381900         ; float64 Math::Square(float64)
+    //    82  CpyRtoV8       wW0:100
+    //    83  PSF            rW0:26
+    //    84  PSF            rW0:20
+    //    85  CALLSYS        q:0x26e69d07400         ; float64 FVector::DistSquared2D(const FVector&) const
+    //    88  CpyRtoV8       wW0:98
+    //    89  CMPd           rW0:98 rW1:100
+    //    91  JNP            ->97
+    //    93  SetV1          wW0:7 d:1
+    //    95  JMP            ->109
+    //    97  PSF            rW0:26
+    //    98  PSF            rW0:14
+    //    99  CALLSYS        q:0x26e69d07400         ; float64 FVector::DistSquared2D(const FVector&) const
+    //   102  CpyRtoV8       wW0:98
+    //   103  CMPd           rW0:98 rW1:100
+    //   105  TP
+    //   106  CpyRtoV4       wW0:101
+    //   107  CpyVtoV4       wW0:7 rW1:101
+    //   109  CpyVtoR1       rW0:7
+    //   110  JLowZ          ->116
+    //   112  FreeNullV8     wW0:88
+    //   113  FreeNullV8     wW0:84
+    //   114  JMP            ->133
+    //   116  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   119  PshVPtr        rW0:84
+    //   120  CALL           d:84096                 ; UBarracudaMinionTargetingComponent@ UBarracudaMinionTargetingComponent::Get(const AActor@, const FName&)
+    //   122  STOREOBJ       wW0:106
+    //   123  CmpPtrNull     rW0:106
+    //   124  JZ             ->130
+    //   126  PshVPtr        rW0:-4
+    //   127  PshVPtr        rW0:106
+    //   128  CALLINTF       d:84086                 ; void UBarracudaMinionTargetingComponent::NotifyEnemyHeroHitAlliedHero(ALokiCharacter@)
+    //   130  FreeNullV8     wW0:106
+    //   131  FreeNullV8     wW0:88
+    //   132  FreeNullV8     wW0:84
+    //   133  LoadVObjR      rW0:74 W1:24 DW2:268448513; TSetIterator::CanProceed  (+24)
+    //   136  RDR1           wW0:7
+    //   137  CpyVtoR1       rW0:7
+    //   138  JLowNZ         ->40
+    //   140  PSF            rW0:46
+    //   141  CALLSYS        q:0x26e7a314f40         ; void TSet<ALokiCharacter@>::$beh2()
+    //   144  RET            W0:6
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 9 instr, 60 B bytecode, id=0x1BC77124, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.SetbReplicates(false);
+    v1 = true;
+    this.SetbExcludeFromClient(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a62c640         ; void UActorComponent::SetbReplicates(bool)
+    //     7  SetV1          wW0:1 d:1
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7a62bbc0         ; void UActorComponent::SetbExcludeFromClient(bool)
+    //    14  RET            W0:2
+

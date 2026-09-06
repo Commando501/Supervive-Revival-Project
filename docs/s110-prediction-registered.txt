@@ -1,0 +1,182 @@
+S110 TASK ONE -- PREDICTION REGISTERED BEFORE THE TUTORIAL SITTING
+written 2026-08-05, before item_watch.py was pointed at a live tutorial run
+
+Basis (all measured read-only at the menu earlier today, docs/s110-itemwatch-*.log):
+  * "Unreachable" is NOT a sticky bit in this build. Reachability is an alternating low-bit flag:
+    the whole population swaps which of bits 0/1/2 it carries on each GC pass (observed 0x2 -> 0x1
+    -> 0x4, 232/256 controls flipping inside one 250 ms sweep, passes ~61 s apart, matching the
+    game's own gc.TimeBetweenPurgingPendingKillObjects = 61.1).
+  * Rooted and marked are MUTUALLY EXCLUSIVE in the natural population:
+        rooted     4915 objects, of which     6 (0%)   carry the current reachability flag
+        not rooted 17237 objects, of which 17234 (100%) carry it
+    So a root-set object is EXCLUDED from marking; it is not marked, it is skipped.
+  * Therefore the shim's GcRoot poke (InterlockedOr of bit 30 onto an object that already carries a
+    reachability value, flags 00000004 -> 40000004) produces a state that occurs in 0.03% of the
+    natural population: ROOTED **and** MARKED at once.
+
+PREDICTIONS, in order of confidence:
+
+  P1  The run AnimSequence will be acquired in state ROOTED+MARK (the chimera), not ROOTED.
+      Falsified if the shim's poke leaves it looking like the other 4,915 rooted objects.
+
+  P2  It will die by discriminator B or A -- item.Object -> 0 (FreeUObjectIndex ran), possibly
+      followed by the slot being reissued. I.e. REAL destruction, not an out-of-band overwrite.
+      Falsified by D: the object's vtable/NamePrivate going bad while the array slot is untouched.
+
+  P3  The death will be concurrent (within ~3 s) with a visible GC pass -- a reachability-flag flip
+      and/or a live-count drop. Falsified if the object dies in a window with no GC activity at all,
+      which would mean something tore it down specifically.
+
+  P4  Between the poke and the death, the object will FAIL to acquire the new reachability flag at
+      the next flip (state ROOTED+MARK -> ROOTED, or -> UNMARKED), because rooted objects are not
+      marked. If it goes UNMARKED (bit 30 lost) that would mean the poked bit was CLEARED by the
+      engine, which is a different and stronger finding than "the bit is ignored".
+
+  Explicitly NOT predicted, and to be read off the data rather than assumed: whether the poked bit
+  is honoured. P4 distinguishes "ignored" from "cleared"; neither is assumed here.
+
+VOID conditions registered in advance:
+  * the target is never acquired (no anim load line in the marker)  -> the run measures nothing
+  * zero target events AND zero decoy events                        -> the watcher is unproven, VOID
+  * the game dies before the anim loads                             -> not a data point
+
+================================================================================================
+RUN 2 -- THE PHASE-LOCKED TWO-GC-PASS EXPERIMENT (FK-27)
+registered before the sitting, 2026-08-05
+
+QUESTION. Run 1 showed the run AnimSequence rooted (readback-verified) and destroyed 251 ms later,
+with the poke landing only 151 ms before that GC pass's marking became visible. That cannot separate:
+    (a) the poked RootSet bit is STRUCTURALLY INERT -- the engine's root set is not "objects with
+        bit 30", so the poke never protected anything; or
+    (b) the poke RACED an in-flight pass whose root set had already been gathered, and would have
+        worked with more lead time.
+
+DESIGN. Single variable changed from run 1: INJECTION PHASE. Same DLL (tutorial_launch_play.dll,
+.text 7bc4df9236ead0ac), same staging, same probe. Stage the world with -SkipProbe, watch the GC
+clock that item_watch.py prints live, and inject the probe IMMEDIATELY AFTER a reachability flip so
+the asset is loaded and rooted with ~45-55 s of lead before the next pass instead of 0.15 s.
+
+PREDICTIONS:
+
+  Q1  The lead time (root -> next GC pass) will exceed 20 s. This is a check on the METHOD, not the
+      game: if phase-locking does not actually buy lead time the run cannot answer anything, and I
+      should say so rather than reading the outcome.
+
+  Q2  THE DISCRIMINATOR. Given Q1 holds:
+        * the asset SURVIVES the next full pass  => (b): the bit IS honoured, FK-27 narrows to a
+          race, and the fix is to root EARLIER (or to force a GC before the body build).
+        * the asset DIES at the next pass anyway => (a): the bit is INERT. FK-27 closes, and the
+          only remaining route is a real UObject reference.
+
+  Q3  I expect (a) -- inert. Reason: run 1 measured that the engine's own rooted objects carry NO
+      reachability flag at all (0% of 4,915), while the shim's poked objects keep theirs and get
+      re-marked exactly like ordinary objects. That is the signature of the poke not entering the
+      root set. Stated so it can be wrong.
+
+  Q4  If the load itself provokes a collection -- i.e. a GC pass fires within ~2 s of body build
+      REGARDLESS of when I inject -- then phase-locking is impossible, Q2 is unanswerable this run,
+      and THAT is the finding: it would explain why every death in S109/S110 clusters 1.1-7.8 s
+      after body build rather than spreading over the 61 s period.
+
+VOID conditions: no armed window; the anim never loads; zero decoy events; the game dies before the
+next pass after the poke (in which case the lead time achieved is still reported, and nothing else).
+
+================================================================================================
+RUN 4 -- THE UPROPERTY REFERENCE FIX (KANIMREF)
+registered before the sitting, 2026-08-05
+
+THE FIX. Rooting is measured INERT (RUN 2 above: bit 30 verified set 33.1 s before a pass, destroyed
+at that pass anyway). What keeps objects alive here is being REACHED by the traversal. So park the run
+AnimSequence in USkeletalMeshComponent::AnimationData.AnimToPlay -- an object-typed UPROPERTY on the
+body component, which is ours, is measured to survive every pass, and which we otherwise never use
+(the swap drives PlayAnimation(), which writes the single-node instance's CurrentAsset instead --
+that is exactly why the IDLE anim already survives and the run anim does not).
+
+ARMS, distinct by .text hash, one dimension apart:
+    tutorial_launch_play.dll            513c6277c3ae88f3   KANIMREF=1  (fix on)
+    tutorial_launch_play_noanimref.dll  86c07ede88380697   KANIMREF=0  (control)
+  NOTE play's .text hash has MOVED AGAIN: 7bc4df9236ead0ac -> 513c6277c3ae88f3.
+  NOTE play-noanimref shares a 161,792-byte .text with play-strictroot. Diff hashes, never sizes.
+
+PREDICTIONS:
+
+  R1  Both offsets resolve by name and the write reads back:
+      "[REF] run-anim: AnimationData.AnimToPlay @comp+0x... OK". If either lookup fails the shim
+      REFUSES and says so -- that is a gate that can fail, and a refusal makes the run inconclusive
+      for R2 rather than a negative result.
+
+  R2  THE DISCRIMINATOR. At the first GC pass after the load, the run anim is RE-MARKED with the new
+      reachability value (state stays out of ROOTED+STALE) and SURVIVES. In all three prior armed
+      windows it went ROOTED+STALE at that pass and was destroyed within ~1 s.
+      Falsified if it goes ROOTED+STALE and dies anyway -- which would mean AnimationData is not
+      traversed, and the next slot to try is a second component's CurrentAsset.
+
+  R3  END-TO-END: with the asset alive past t+20 s, the self-driven walk finally has something to
+      play, so the marker shows "[ANIM] PlayAnimation(run, loop) ok" and the idle<->run cycling that
+      S108b reported and S109 could never reproduce. This is the actual user-visible goal.
+
+  R4  I expect R2 to hold. Reason: the four objects that survived every pass in the prior runs are
+      exactly the four reachable through UPROPERTYs from the hero actor. Stated so it can be wrong.
+
+VOID conditions: no armed window (FK-26 NOSTAGE); the anim never loads; the game dies before the
+first GC pass after the load; zero decoy events.
+
+------------------------------------------------------------------------------------------------
+RUN 4 OUTCOMES (recorded after the sitting) -- ALL FOUR HELD.
+  R1 HELD. "[REF] SingleAnimationPlayData=0x2AB3DC482C0 AnimToPlay@0x0" then
+           "[REF] run-anim: AnimationData.AnimToPlay @comp+0xAB8 (struct 0xAB8 + 0x0) 0 -> ... OK".
+  R2 HELD. Re-marked at TWO consecutive passes -- 40000001 -> 40000004 at pass #5 (t=241.8) and
+           40000004 -> 40000002 at pass #6 (t=302.9). Never entered ROOTED+STALE. Zero [GCW] lines.
+  R3 HELD. Four "PlayAnimation(run|idle, loop) ok" swaps at the DEFAULT KAUTOWALKATMS=20000.
+  R4 HELD (I expected R2 to hold, for the stated reason).
+Log: docs/s110-itemwatch-animref-*.log. The game died at ~390 s of the usual protector death,
+long after the verdict; that is not part of this result.
+
+================================================================================================
+RUN 5 -- S111 THE ABILITY-SYSTEM GATE (KGASSTORAGE)
+registered before the sitting, 2026-08-05
+
+THE FIX. docs/s111-asc-census.md §11: the hero-side ASC getter is `mov rax,[rcx+0x710]; ret` on
+hero+0xF00 (AbilitySystemComponentStorage). TryUpdateAbilitySystem's sibling calls it and bails when it
+returns NULL -- which is why PS+0x658 stays NULL and ASC.AvatarActor is never bound, even though the
+PlayerState side works (PS+0x650 measured NULL -> ASC, so the event DOES broadcast).
+PopulateHeroAscCache writes the carrier's ASC into that field, by name, with readback, after
+EnsureHeroAffiliatedCarrier and before TryUpdateAbilitySystem.
+
+ARMS, distinct by .text hash, one dimension apart:
+    build\tutorial_launch_sp.dll             4285c0dd22ae9976   KGASSTORAGE=1  (fix)
+    build\tutorial_launch_sp_nostorage.dll   6280308746efe814   KGASSTORAGE=0  (control)
+  ⚠ tools\sigbypass-mod\tutorial_launch_sp.dll is a STALE Jul-29 copy (d0d3cc140c4f4286) and is what
+    fk24-stage.ps1 injects. Inject the build\ path EXPLICITLY for this test.
+
+PREDICTIONS:
+  S1  The write lands: "[GAS] *** cache: hero.AbilitySystemComponentStorage@0xF00 (expect 0xF00)
+      0 -> <asc> OK ***". A refusal (property not found / not writable / already populated) makes the
+      run inconclusive for S2 rather than a negative.
+  S2  THE DISCRIMINATOR. AFTER the chain, ASC.AvatarActor == the hero pawn, i.e. the marker prints
+      "*** AVATAR IS THE HERO -- BOUND ***", and PS+0x658 is no longer NULL.
+      Falsified if AvatarActor stays NULL -- which would mean the sibling bails for a SECOND reason
+      beyond the cache, and the next read is whatever its next branch tests.
+  S3  ActivatableAbilities MAY STAY 0. Granting is a separate step (BP_AuthGiveAbilityWithInputID), so
+      a bind with zero abilities is a SUCCESS for this experiment, not a partial failure. Stated in
+      advance so it cannot be re-read as disappointment afterwards.
+  S4  IsAbilitySystemInitialized will probably flip to 1 -- but it reads the hero's cache, which we
+      just wrote, so it is NO LONGER AN INDEPENDENT WITNESS for this run. AvatarActor is the witness.
+      (This is why ReportAscActorInfo was added.)
+
+VOID: no armed window (FK-26); the carrier is not built; the game dies before the chain completes.
+
+------------------------------------------------------------------------------------------------
+RUN 5 OUTCOMES (recorded after the sitting)
+  S1 HELD.       "[GAS] *** cache: hero.AbilitySystemComponentStorage@0xF00 (expect 0xF00)
+                 0 -> 26B22974D80 OK ***" -- the property resolved BY NAME to exactly 0xF00.
+  S2 FALSIFIED.  ASC.AvatarActor stayed 0x0 and PS+0x658 did not change. The bind did not happen.
+  S3 n/a         (no bind, so granting was never reached).
+  S4 WRONG, usefully: IsAbilitySystemInitialized stayed 0 WITH the cache populated, so it does NOT
+                 merely read that cache -- it remains an independent witness. GetLokiAbilitySystem_BP
+                 (which does read the cache) now returns the ASC.
+  CAUSE: the sibling base+0x56CEDB0 does not bind anything. Read past its gate for the first time, it
+  caches a value at +0x658, writes two floats at +0x690/+0x694, and broadcasts GameEvent_CrewDrop... .
+  It is a generic "broadcast whatever PlayerState value changed" helper, not ability wiring. I had
+  inferred its purpose from its call site without reading it.
+  KEEP the fix: @0xF00 is genuinely the hero-side getter's backing field. Necessary, not sufficient.

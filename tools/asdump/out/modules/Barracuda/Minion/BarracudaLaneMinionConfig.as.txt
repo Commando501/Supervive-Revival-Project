@@ -1,0 +1,64 @@
+// ============================================================================
+//  MODULE   Barracuda.Minion.BarracudaLaneMinionConfig
+//  SOURCE   Barracuda/Minion/BarracudaLaneMinionConfig.as
+//  CONTENT  1 class(es), 1 function(s), 0 enum(s), 0 global(s), 124 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FBarracudaLaneMinionConfig
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 GenericDamage;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 AdditionalTowerDamage;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 ProjectileMaxDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 ProjectileInitialSpeed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 ProjectileHomingAcceleration;
+
+    FBarracudaLaneMinionConfig()   // traits=0x21
+    {
+        auto v2;
+
+        v2 = 0;
+        this.GenericDamage = v2;
+        v2 = 0;
+        this.AdditionalTowerDamage = v2;
+        v2 = 0;
+        this.ProjectileMaxDistance = v2;
+        v2 = 0;
+        this.ProjectileInitialSpeed = v2;
+        v2 = 0;
+        this.ProjectileHomingAcceleration = v2;
+        return;
+    }
+    /* ---- FBarracudaLaneMinionConfig: 31 dwords / 16 instructions (cache offset 0x29e3a) ----
+        0000  LoadThisR     0 134230794                                   ; this.GenericDamage
+        0008  SetV8         v2 0x0
+        0014  WRTV8         v2
+        0018  LoadThisR     8 134230794                                   ; this.AdditionalTowerDamage
+        0020  SetV8         v2 0x0
+        002C  WRTV8         v2
+        0030  LoadThisR     16 134230794                                  ; this.ProjectileMaxDistance
+        0038  SetV8         v2 0x0
+        0044  WRTV8         v2
+        0048  LoadThisR     24 134230794                                  ; this.ProjectileInitialSpeed
+        0050  SetV8         v2 0x0
+        005C  WRTV8         v2
+        0060  LoadThisR     32 134230794                                  ; this.ProjectileHomingAcceleration
+        0068  SetV8         v2 0x0
+        0074  WRTV8         v2
+        0078  RET           2
+    */
+
+}
+

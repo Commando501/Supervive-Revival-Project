@@ -1,0 +1,181 @@
+// ============================================================================
+//  MODULE   Barracuda.Components.BarracudaTowerTargetingComponent
+//  SOURCE   Barracuda/Components/BarracudaTowerTargetingComponent.as
+//  CONTENT  1 class(es), 8 function(s), 0 enum(s), 1 global(s), 1364 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaTowerTargetingComponent;
+
+UBarracudaTowerTargetingComponent@ UBarracudaTowerTargetingComponent()   // traits=0x20
+{
+    UBarracudaTowerTargetingComponent v2;
+
+    v2 = UBarracudaTowerTargetingComponent();
+    return v2;
+}
+
+UClass@ UBarracudaTowerTargetingComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaTowerTargetingComponent);
+    return v2;
+}
+
+UBarracudaTowerTargetingComponent@ UBarracudaTowerTargetingComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaTowerTargetingComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaTowerTargetingComponent, v2, typeid(UBarracudaTowerTargetingComponent@), WithName);
+    return v2;
+}
+
+UBarracudaTowerTargetingComponent@ UBarracudaTowerTargetingComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaTowerTargetingComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaTowerTargetingComponent, v2, typeid(UBarracudaTowerTargetingComponent@), WithName);
+    return v2;
+}
+
+UBarracudaTowerTargetingComponent@ UBarracudaTowerTargetingComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaTowerTargetingComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaTowerTargetingComponent, v2, typeid(UBarracudaTowerTargetingComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class UBarracudaTowerTargetingComponent : UBarracudaMinionTargetingComponent
+// static class global: __StaticType_UBarracudaTowerTargetingComponent
+{
+    UBarracudaTowerTargetingComponent()   // traits=0x21
+    {
+        this.UBarracudaMinionTargetingComponent();
+        return;
+    }
+
+    UFUNCTION(UnrealName=UpdateCurrentTargetEnemy, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void UpdateCurrentTargetEnemy_Implementation()   // traits=0x20
+    {
+        ALokiMinionCharacter v2;
+        AActor v4;
+        ALokiMinionCharacter v6;
+        auto v7;
+        TArray<FMinionEnemyListEntry> v12;
+        auto v17;
+        AActor v20;
+        UClass v22;
+        AActor v24;
+
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 == nullptr) {
+            this.CurrentTargetEnemy = nullptr;
+            return;
+        } else {
+            v12 = v2.GetEnemyList();
+            if (!LokiGameplay::IsAlive(this.HighPriorityEnemyCharacter)) {
+                v7 = 0;
+            } else {
+                v17 = this.IsActorInEnemyList(this.HighPriorityEnemyCharacter);
+                v7 = v17;
+            }
+            if (v7) {
+                this.CurrentTargetEnemy = this.HighPriorityEnemyCharacter;
+                return;
+            } else {
+                this.HighPriorityEnemyCharacter = nullptr;
+                if (!LokiGameplay::IsAlive(this.CurrentTargetEnemy)) {
+                    v17 = 0;
+                } else {
+                    v7 = this.IsActorInEnemyList(this.CurrentTargetEnemy);
+                    v17 = v7;
+                }
+                if (v17) {
+                    return;
+                } else {
+                    v22 = ALokiMinionCharacter::StaticClass();
+                    v20 = this.FindClosestEnemyByClass(v2, v22);
+                    if (v20 != nullptr) {
+                        this.CurrentTargetEnemy = v20;
+                        return;
+                    } else {
+                        v22 = ALokiHeroCharacter::StaticClass();
+                        v24 = this.FindClosestEnemyByClass(v2, v22);
+                        if (v24 != nullptr) {
+                            this.CurrentTargetEnemy = v24;
+                            return;
+                        } else {
+                            this.CurrentTargetEnemy = nullptr;
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    AActor@ FindClosestEnemyByClass(ALokiMinionCharacter@ Minion, UClass@ ClassFilter)   // traits=0x20
+    {
+        TArray<FMinionEnemyListEntry> v4;
+        FVector v14;
+        FVector v20;
+        AActor v22;
+        auto v24;
+        auto v26;
+        TArrayIterator<FMinionEnemyListEntry> v32;
+        auto v39;
+        auto v42;
+        AActor v44;
+        auto v45;
+
+        v4 = Minion.GetEnemyList();
+        v20 = Minion.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+        v24 = 0;
+        v32 = v4.Iterator();
+        while (true) {
+            v39 = v32.CanProceed;
+            if (!v39) break;
+            v42 = v32.Proceed();
+            v44 = v42.Actor;
+            if (v44 == nullptr) {
+                v39 = true;
+            } else {
+                v45 = v44.IsA(ClassFilter);
+                v45 = !v45;
+                v39 = v45;
+            }
+            if (!v39) {
+                v14 = v44.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v26 = v20.DistSquared2D(v14);
+                if (v22 == nullptr) {
+                    v39 = true;
+                } else {
+                    v45 = v26 < v24;
+                    v39 = v45;
+                }
+                if (v39) {
+                    v22 = v44;
+                    v24 = v26;
+                }
+            }
+        }
+        return v22;
+    }
+
+}
+

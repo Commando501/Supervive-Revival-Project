@@ -1,0 +1,460 @@
+SESSION 54 — DEDICATED-SERVER MISSIONS: LokiPlayerState_Missions REPLICATION BUILT
+==================================================================================
+Date: 2026-07-07. Branch: dedicated-server-stub. Builds on session 53's breakthrough
+(un-suppressing PlayerState fixed the DS menu-load crash; the client now sits at a
+stable working menu 7+ min connected to the stub). Goal this session: add the
+replicated LokiPlayerState_Missions actor that carries mission data to the client so
+the Missions modal can populate.
+
+*** LIVE TEST RESULTS (2026-07-07, computer-use granted) — appended after the build writeup below ***
+See "LIVE TEST" section at the bottom. TL;DR: the class BINDS by path + replicates (the big
+unknown is SOLVED), but two blockers remain: (1) the FMissionProgress element wire format desyncs
+(client rejects the bunch); (2) even an empty missions actor re-triggers the session-53 garbage-
+thread crash ~100s in. Both are next-session work.
+
+WHAT WAS BUILT (server side, complete + compiled + boot-verified)
+-----------------------------------------------------------------
+New files in the stub Loki module:
+  unreal-stub/Source/Loki/LokiPlayerState_Missions.h
+  unreal-stub/Source/Loki/LokiPlayerState_Missions.cpp
+Wired into:
+  LokiStubGameMode.cpp  (PostLogin spawns + seeds the actor)
+  Loki.cpp              (boot-time RepIndex verification dump)
+
+1. FMissionProgress USTRUCT — member-wise mirror of SUPERVIVE's FMissionProgress
+   (usmap schema.txt:32018, 9 fields, in exact order):
+     ID(FString) AssetId(FPrimaryAssetId) PoolId(FPrimaryAssetId) Complete(bool)
+     Failed(bool) ObjectiveProgress(TArray<int64>) MillisUntilExpiry(int64)
+     Expiry(FDateTime) GrantedAt(FDateTime).
+   Uses the ENGINE FPrimaryAssetId / FDateTime types (CoreUObject/Core), so the
+   RepLayout cmd expansion is byte-identical to the client's (FPrimaryAssetId -> 2
+   FName cmds; FDateTime -> 1 int64 Ticks cmd). Only FMissionProgress itself is
+   mirrored; the sub-structs are shared engine types.
+
+2. ALokiPlayerState_Missions : AActor — named exactly LokiPlayerState_Missions so
+   its path is /Script/Loki.LokiPlayerState_Missions. Because the SUPERVIVE game
+   module is ALSO named "Loki", this path MATCHES the client's real class; when the
+   stub exports the actor's class NetGUID by path, the client resolves it to ITS
+   OWN class (same mechanism that already gets stock engine classes recognized —
+   no IoStore/mod-pak overlay). Replicated props (DOREPLIFETIME, RepNotify):
+     Missions              (TArray<FMissionProgress>)   -> RepIndex 11
+     FinalMissionProgress  (TArray<FMissionProgress>)   -> RepIndex 12
+   bReplicates=true, bAlwaysRelevant=true (menu has no gameplay-relevant position,
+   so distance relevancy would never send it). OwningPlayerState is a NON-replicated
+   plain UPROPERTY (matches usmap — the client's is a plain ObjectProperty).
+
+3. PostLogin spawn+seed — for each connecting PC, spawn ALokiPlayerState_Missions
+   owned by that PC and seed Missions with 2 Armory dailies (PlayAGame, GetKnocks)
+   in pool "Daily", with real UtcNow GrantedAt / +24h Expiry timestamps (so the
+   client's pool-timer doesn't log "DateTime in bad format (year 0)").
+
+REP-INDEX ALIGNMENT — CONFIRMED AT BOOT (no client needed)
+----------------------------------------------------------
+AActor has ServerState injected at RepIndex 10 (Loki.cpp
+InjectServerStateReplicatedProperty, session 41), and the client's AActor is
+likewise patched, so both sides' LokiPlayerState_Missions have 11 inherited AActor
+reps (0..10) then the two mission arrays. Added a boot-time DumpClassNetCacheLayout
+call for our class; the headless stub boot log (docs/ds-server-s54-boot.log) shows:
+  NetCacheDump: --- LokiPlayerState_Missions  FirstOwnedClassRep=11 ClassReps=13 NetFields=0
+  NetCacheDump:  [ 10] ServerState            StructProperty   RepIndex=10   (inherited from AActor)
+  NetCacheDump:  [ 11] Missions               ArrayProperty    RepIndex=11
+  NetCacheDump:  [ 12] FinalMissionProgress   ArrayProperty    RepIndex=12
+This is the strongest pre-client evidence that our RepLayout matches the client's.
+The stub boots clean (Engine initialized 11.65s, "IpNetDriver listening on port
+7777", GameStateBase still suppressed as expected, no crash).
+
+BUILD/RUN facts
+---------------
+- Build: `Build.bat LokiEditor Win64 Development -Project=...\Loki.uproject -WaitMutex`
+  (~60-220s). NOTE: NetUpdateFrequency is a PUBLIC MEMBER in UE 5.4 — the
+  SetNetUpdateFrequency() accessor is 5.5+ (first compile error, fixed).
+- If Link fails LNK1104 "cannot open UnrealEditor-Loki.dll", a stub server still
+  holds the DLL — Stop-Process the UnrealEditor-Cmd PID first, then rebuild.
+- Run headless (space-free abslog path avoids Start-Process arg mangling):
+    UnrealEditor-Cmd.exe "<proj>" /Engine/Maps/Entry?listen -game -server -Port=7777
+      -nullrhi -NoSplash -Unattended -abslog="<no-space-path>.log"
+
+THE OPEN QUESTION (for the live test): CLIENT-SIDE MODEL ASSOCIATION
+-------------------------------------------------------------------
+The remaining unknown is HOW the client associates the replicated
+LokiPlayerState_Missions with the local UMissionsModel (which has a MissionsActor
+field, session-52). The usmap shows OwningPlayerState is NOT replicated, so the
+client can't use it directly. Candidate association mechanisms, in order of
+likelihood, to check against the live client:
+  (a) AActor::Owner (which IS replicated) — we spawn owned by the PC, so the client
+      receives Owner as a NetGUID. The client's ProgressionManager may bind the
+      missions actor whose Owner resolves to the local PC/PlayerState.
+  (b) The client scans for any LokiPlayerState_Missions actor and binds the first/
+      local one regardless of owner.
+  (c) It expects the missions actor as a SUBOBJECT/child of the LokiPlayerState
+      (then approach: spawn it attached to / as a component of the now-replicating
+      PlayerState instead of a standalone actor).
+If (a)/(b) work, the current build renders. If neither fires, next step is to RE the
+client's ProgressionManager/UMissionsModel binding (find who sets MissionsModel.
+MissionsActor and what it keys on) — session-52 doc has the MissionsModel API and
+the CreateMissionsModel(PSMissions) entry point.
+
+LIVE TEST RECIPE (needs elevated PowerShell + Steam running + computer-use)
+---------------------------------------------------------------------------
+1. Build stub if source changed (above). 2. Run stub headless (above); wait for
+   "IpNetDriver listening on port 7777". 3. Launch client:
+     configs\launch-redirect.ps1 -Hook "...\tools\sigbypass-mod\browse_hook.dll"
+   (browse_hook rewrites the travel Host to 127.0.0.1. DO NOT add catalog_store_fix
+   — it crashes itself in the DS-connected catalog state, session 53.)
+   Client Loki.log: C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log
+SUCCESS SIGNALS:
+  - Stub log: "Join succeeded"; then a NEW line from LokiStubGameMode PostLogin:
+    "spawned ALokiPlayerState_Missions ... N missions ... replicating to the client".
+  - Client survives (session-53 baseline: stable 7+ min, TryUIReady SUCCESS, no
+    crashpad). If it now CRASHES where session 53 was stable, the FMissionProgress
+    cmd stream desynced the client's read cursor => FMissionProgress likely has a
+    custom NetSerializer on the client; make the mirror WithNetSerializer (mirror
+    the exact bits) rather than member-wise. That crash-vs-stable delta is the
+    discriminator, same single-variable style as session 53.
+  - Open the Missions modal (computer-use): Dailies tab should render the seeded
+    tile(s). If the model populates but no tile shows, tune the AssetId/PoolId
+    PrimaryAssetId Name strings (MakeMissionProgress args in LokiStubGameMode.cpp)
+    — the container filters by PoolId == the pool's PrimaryAssetId. The pool/mission
+    Name portions ("Mission"/"MissionPool" + short name) are the current best guess
+    from session 52 and may need the real PrimaryAssetId (inspect the DA's
+    GetPrimaryAssetId live, or read it off the client's PoolIds set after BindToMissions).
+
+TUNING KNOBS (in LokiStubGameMode.cpp MakeMissionProgress / PostLogin)
+----------------------------------------------------------------------
+- Mission/pool PrimaryAssetId type+name strings (first suspects if tiles don't filter in).
+- Number/spread of seeded missions (currently 2 dailies; scale to all 6 categories
+  from tools/extractor/out/catalog/missions_catalog.json once one tile renders).
+
+FILES
+-----
+  unreal-stub/Source/Loki/LokiPlayerState_Missions.{h,cpp}   NEW
+  unreal-stub/Source/Loki/LokiStubGameMode.cpp               spawn+seed in PostLogin
+  unreal-stub/Source/Loki/Loki.cpp                           boot RepIndex dump
+  docs/ds-server-s54-boot.log                                headless boot proof
+
+
+==================================================================================
+LIVE TEST (2026-07-07, computer-use granted; stub + real client)
+==================================================================================
+Ran the full recipe: stub headless on 7777, client via launch-redirect.ps1 -Hook
+browse_hook.dll (NO catalog_store_fix). Steam up, ags up, elevated. Three launches.
+
+WHAT WORKS (the session's core hypothesis is CONFIRMED)
+------------------------------------------------------
+* The client RECOGNIZES the class by path. On the DS travel it logged:
+    LogRep: Error: ... in LokiPlayerState_Missions /Game/Loki/Maps/LobbyV2/
+      LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.LokiPlayerState_Missions_2147480905
+  i.e. the NetGUID for /Script/Loki.LokiPlayerState_Missions resolved to the
+  client's OWN class and the actor channel opened + a bunch arrived. The "name a
+  same-path UCLASS in the Loki module" approach is VALIDATED — no IoStore overlay.
+* Stub confirmed the spawn each connect: "PostLogin: spawned ALokiPlayerState_Missions
+  LokiPlayerState_Missions_N (owner=PlayerController_N, 2 missions, bAlwaysRelevant=1
+  bReplicates=1)" + "Join succeeded".
+* RepIndex alignment held (boot dump Missions=[11]/FinalMissionProgress=[12]).
+
+BLOCKER 1 — FMissionProgress ELEMENT WIRE FORMAT DESYNC (the modal can't render yet)
+-----------------------------------------------------------------------------------
+With 2 missions seeded, the client rejects the property bunch:
+    LogRep: Error: ReceivedBunch: Invalid replicated field 0 in LokiPlayerState_Missions ...
+    LogNet: Error: UActorChannel::ProcessBunch: Replicator.ReceivedBunch failed.
+            Closing connection. RepObj: LokiPlayerState_Missions ..., Channel: 4
+then a ~1s connect/fail/reconnect loop (the churn eventually crashed the client too).
+ISOLATION TEST — seed 0 missions (both arrays == CDO empty => NOT in the changelist
+=> zero element bytes on the wire): the field-0 error VANISHED (grep count = 0), the
+connection was STABLE (single Join, PC set, 6 channels, ~103s uptime vs ~1s in the loop).
+=> DECISIVE: the desync is the FMissionProgress ELEMENT serialization, NOT the class
+   rep layout (RepIndex 11/12 is correct). Our member-wise mirror (using engine
+   FPrimaryAssetId/FDateTime) does NOT match the client's FMissionProgress wire format.
+   All 9 field TYPES match the usmap, and the engine sub-structs expand identically on
+   both ends, so the remaining explanation is that the client's FMissionProgress has a
+   CUSTOM NetSerialize (collapses the element to ONE RepLayout cmd) — our member-wise
+   struct writes ~11 cmds' worth of bits, the client reads 1 NetSerialize's worth, and
+   the cursor desyncs -> the post-property field header reads garbage -> "field 0".
+FIX (next session): RE the client's FMissionProgress::NetSerialize byte layout from the
+   exe and mirror it as a WithNetSerializer USTRUCT (pattern: FPoolableActorServerState
+   in LokiReplicatedStructs.h + Loki.cpp). Confirm the "custom NetSerializer" theory
+   first by checking STRUCT_NetSerializeNative in the client's FMissionProgress
+   UScriptStruct->StructFlags (live RPM via usmapdump-style walk), or by empirical bit-
+   count comparison (instrument the stub to log the bytes it writes for the element).
+
+BLOCKER 2 — THE SESSION-53 GARBAGE-THREAD CRASH RECURS WITH THE MISSIONS ACTOR PRESENT
+-------------------------------------------------------------------------------------
+Even the EMPTY missions actor run crashed at ~103s post-Join with the SAME signature
+session 53 documented (parse_minidump on the fresh Sentry dump):
+    ExceptionCode=0xC0000005  param[0]=8 (EXECUTE)  RIP=fault=0x7FF8F0400001 (unmapped,
+    just above ntdll — the anti-tamper neighborhood). A worker thread spun up with a
+    garbage start routine — identical to the pre-session-53 crash.
+Session 53 claimed un-suppressing PlayerState CURED this (it survived 428s once, with NO
+missions actor). This session, WITH an (empty) LokiPlayerState_Missions replica bound,
+it recurs at ~100s. So merely BINDING the missions replica re-introduces it: the client
+half-initializes its missions subsystem off the replica (ProgressionManager sets
+MissionsModel.MissionsActor + subscribes OnMissionsUpdated), then a stale/garbage
+callback gets threaded. (The FIRST launch also crashed pre-Join at ~2s with a DIFFERENT
+signature — read-AV at RVA +0xFA4A53 deref 0x300000b33 — that one is the documented
+intermittent menu-load crash, unrelated: it happened before Join so the missions code
+never ran.)
+HYPOTHESIS: fully hydrating the actor with VALID mission data (Blocker-1 fix) may also
+resolve Blocker 2 — a correctly-populated object wouldn't leave the client's missions
+subsystem half-initialized. If it doesn't, options: keep the actor un-spawned until its
+data path is complete; suppress the client's association delegate; or dig into which
+object's callback is threaded (session-53 tried and was blocked by the anti-tamper owning
+NtCreateThreadEx). Note session 53's "cured" claim rests on ONE 428s run — the crash may
+be periodic/timing-based and only loosely tied to the actor; a with/without-actor
+survival-time comparison would settle it.
+
+ARTIFACTS: docs/ds-server-s54-empty.log (stub, empty-array stable run),
+docs/ds-server-s54-live.log (stub, seeded run + reconnect loop), Sentry dump parsed via
+tools/re/parse_minidump.py.
+
+NEXT-SESSION PRIORITY: Blocker 1 (FMissionProgress NetSerialize). It is the gate to a
+rendered modal AND the likeliest cure for Blocker 2. Everything structural (class
+binding, replication, RepIndex alignment, spawn/seed) is DONE and proven live.
+
+==================================================================================
+BLOCKER 1 ROOT-CAUSED + FIXED (2026-07-07, live RE) — usmap was WRONG about a field
+==================================================================================
+The "custom NetSerialize" theory was FALSE. Live RE of the running client (read-only RPM;
+new tools tools/re/struct_probe.py, field_walk.py, rep_expand.py) proved FMissionProgress
+is a plain member-wise struct (StructFlags=0x1001, no STRUCT_NetSerializeNative). So is the
+client — meaning our member-wise mirror SHOULD have matched. The decisive step was expanding
+BOTH sides' FMissionProgress the exact way FRepLayout does (recurse structs lacking
+STRUCT_NetSerializeNative(0x400); arrays emit a cmd then recurse Inner) and comparing:
+  - STUB (our mirror):   12 leaf cmds  — ObjectiveProgress = TArray<int64> -> [array]+[int64].
+  - CLIENT (live truth): 22 leaf cmds  — ObjectiveProgress = TArray<FMissionObjectiveProgress>!
+=> THE USMAP + session-52 doc were WRONG: they list ObjectiveProgress as ArrayProperty<Int64Property>,
+   but the LIVE client's reflection shows the inner is the struct FMissionObjectiveProgress (8 fields:
+   ObjectiveName(FName), Progress(float), MaxProgress(float), Context(TArray<FString>),
+   InitialArmoryContext(TArray<FPrimaryAssetId>), StartingProgress(float), Complete(bool), Failed(bool)).
+   Our int64 inner made the array element 10 cmds too short -> the client's read cursor desynced right
+   after ObjectiveProgress -> the leftover bits parsed as a bogus field header -> "Invalid replicated
+   field 0". EVERYTHING ELSE in FMissionProgress already matched (incl. the surprise that FDateTime HAS
+   STRUCT_NetSerializeNative(0x400) so Expiry/GrantedAt are single NetSerialize cmds on both sides).
+
+FIX (necessary, NOT yet sufficient): added FMissionObjectiveProgress mirror
+(LokiPlayerState_Missions.h) and changed ObjectiveProgress to
+TArray<FMissionObjectiveProgress>. The stub's boot RepLayout dumper (Loki.cpp
+DumpMissionProgressRepCmds) now reports FMissionProgress = 22 leaf cmds, CMD-FOR-CMD
+identical to the client (incl. the nested Context + InitialArmoryContext arrays;
+MillisUntilExpiry=[19], Expiry=[20], GrantedAt=[21] on both).
+
+BUT THE LIVE DS RETEST STILL FAILS: "Invalid replicated field 0" persists even with the
+22-cmd structure matched. So there is a RESIDUAL bit-level desync beyond the cmd structure.
+Localization test (seed 0 objectives => ObjectiveProgress empty, element never serialized):
+STILL fails => the residual is in the OUTER FMissionProgress leaves (ID FString, AssetId/
+PoolId FNames, MillisUntilExpiry int64, Expiry/GrantedAt), not the MissionObjectiveProgress
+element. Ruled out so far (all engine-standard + self-describing, identical both sides):
+  - FDateTime: NetSerialize is just `Ar << Ticks` (Core/Private/Misc/DateTime.cpp:201) — 64 bits.
+  - FName: UPackageMap::StaticSerializeName is self-describing (1 bit hardcoded-flag, then a
+    packed EName index OR FString+int32 Number) — portable across name tables.
+  - FString/bool/int64/float: standard self-describing NetSerializeItem.
+Since structure matches AND every leaf is self-describing, a pure content/structure desync
+should be IMPOSSIBLE — which points to one of:
+  (A) CLASS-LEVEL handle misalignment: Missions sits at a RepLayout handle = (AActor rep cmd
+      count)+1. If SUPERVIVE's AActor expands to a different cmd count than our stock+injected-
+      ServerState AActor, Missions' handle is off. The empty-actor test did NOT expose this
+      (Missions not sent when empty; ServerState==CDO also not sent), so it only bites when
+      Missions data flows. This is the leading hypothesis.
+  (B) A SUPERVIVE engine-level serialization mod (e.g. a modified RepLayout/array-count/FName
+      path) not visible in stock UE 5.4 source.
+NEXT STEP to resolve: a BIT-LEVEL wire capture — dump the exact bunch bytes/bit-count the stub
+writes for LokiPlayerState_Missions, and/or dump the CLIENT's actual FRepLayout Cmds (handles)
+for its LokiPlayerState_Missions (needs the client live + RepLayout walk). Compare the Missions
+handle + per-cmd bit widths. A stub self-round-trip (serialize then deserialize its own
+RepLayout in-process) would also cleanly split stub-bug vs stub-vs-client-diff.
+
+==================================================================================
+*** BLOCKER 1 SOLVED (2026-07-07) — the usmap was DOUBLY wrong; both blockers fall ***
+==================================================================================
+Expanded the client's LokiPlayerState_Missions via its ACTUAL property path (class ->
+Missions ArrayProperty -> Inner, tools/re/rep_expand_class.py) instead of the standalone
+FMissionProgress struct. THE TWO REPLICATED ARRAYS HAVE DIFFERENT INNER TYPES:
+  - Missions             -> Inner is an ObjectProperty (PropertyClass = UClass "BaseMission"
+                            : AActor). So Missions is TArray<ABaseMission*> — an array of
+                            REPLICATED ACTOR REFERENCES (NetGUIDs), NOT structs.
+  - FinalMissionProgress -> Inner IS the FMissionProgress struct (TArray<FMissionProgress>).
+The usmap showed BOTH as the same misparsed "ArrayProperty<MulticastInlineDelegateProperty>",
+and session-52 assumed both were FMissionProgress. WRONG. Mirroring Missions as a struct array
+gave its element 22 cmds where the client expects 1 (an object ref), which desynced the whole
+class RepLayout AND shifted FinalMissionProgress's handle -> the persistent "Invalid replicated
+field 0".
+
+FIX (LokiPlayerState_Missions.h + LokiStubGameMode.cpp):
+  - Missions -> TArray<TObjectPtr<UObject>> (any ObjectProperty = one PropertyObject cmd, so the
+    class RepLayout aligns regardless of the exact PropertyClass). Kept EMPTY (populating it needs
+    replicated ABaseMission actors — the next phase).
+  - Populate FinalMissionProgress (the correctly-typed TArray<FMissionProgress>) with the 2 dailies.
+
+LIVE RESULT — *** WORKS ***: the client ACCEPTS the bunch (grep "Invalid replicated field" = 0),
+"Join succeeded", FinalMissionProgress=2 replicated, and the client is STABLE for 140s+ (past the
+~103s point where every prior DS run crashed). => FMissionProgress wire format is CORRECT, and
+BLOCKER 2 (the session-53 garbage-thread execute-AV) is ALSO GONE — correct typing means the
+client's missions subsystem isn't half-initialized, so no stale callback gets threaded. Both
+blockers fixed by one schema correction. Stub log: docs/ds-server-s54-objfix.log.
+
+STILL TO DO — RENDER THE MODAL (task): FinalMissionProgress drives OnMissionsDone (end-of-game);
+the MENU is driven by Missions (OnMissionsUpdated -> OnPSMissionsUpdated -> MissionsModel). So the
+modal stays empty until Missions (the object array) holds replicated ABaseMission actors. RE'd for
+the next phase:
+  - BaseMission is a NATIVE class at /Script/Loki.BaseMission : AActor (mirrorable by path, same
+    NetGUID trick as LokiPlayerState_Missions). 6 replicated props (field order): ID(FString),
+    AssetId(FPrimaryAssetId), Objectives(TArray<FLokiMissionObjective>), bCompleted(bool),
+    bFailed(bool), PoolId(FPrimaryAssetId).
+  - FLokiMissionObjective (Objectives' inner) is a 16-field struct (UniqueName FName,
+    CurrentProgress/MaxProgress/InitialProgress float, Completed/Failed bool, ObjectiveData struct,
+    Context/InitialArmoryContext arrays, OrderPriority int, ...). Its CPF_Net subset must be
+    mirrored cmd-for-cmd so Objectives' element cmd count keeps bCompleted/bFailed/PoolId handles
+    aligned (same handle-shift lesson as Missions).
+  - Plan: define ABaseMission in the stub, spawn one per mission (populate ID/AssetId/PoolId,
+    Objectives can start empty), reference them in Missions[], replicate; then open the modal.
+Current DS-connected menu is stable but BARE (lobby sky only — no catalog_store_fix in DS context,
+so roster/store are empty); confirm the missions modal can be reached/populated in that state.
+New tool: tools/re/rep_expand_class.py, objprop_probe.py.
+
+==================================================================================
+*** MODAL-REACHABILITY CHECKED (2026-07-07) — BLOCKED: the main-menu HUD never loads on the DS client ***
+==================================================================================
+Before investing in ABaseMission replication, checked whether the Missions modal is even reachable
+in the DS-connected state. IT IS NOT. Log comparison (client Loki.log), both traveling to the SAME
+map /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent:
+  - NORMAL (standalone) client:  "HUD BeginPlay - BP_MainMenuHUD_C" + WBP_UI_MainMenu_MenuRootV2 +
+    MENUSPAWNER party slots + hero previews => the full main menu renders.
+  - DS-connected client:  BP_LoginHUD is torn down at travel, then NO main-menu HUD spawns at all
+    (zero "MainMenu" mentions). The client sits at a bare lobby (sky only). => no nav bar, no
+    MISSIONS button, no modal to open. THE MODAL IS UNREACHABLE.
+ROOT CAUSE (hypothesis): BP_MainMenuHUD is spawned by the LOBBY GameMode's HUDClass. In standalone
+the client uses the REAL lobby GameMode (HUDClass=BP_MainMenuHUD). When DS-connected, the travel URL
+forces `?game=/Script/Loki.LokiStubGameMode` (LokiGameInstance::ModifyClientTravelLevelURL), and the
+stub's GameMode does NOT set HUDClass, so AGameModeBase::InitializeHUDForPlayer never tells the client
+to spawn the main-menu HUD. More broadly: SUPERVIVE's main menu is a STANDALONE-lobby experience;
+forcing the client to be a NETWORKED client of the stub changes the mode and the standalone menu-build
+flow doesn't run.
+ALSO NOTED: the ~103s garbage-thread crash is INTERMITTENT, not eliminated — one objfix run was stable
+150s+, another crashed at ~37s. So Blocker 2 is reduced but still fires sometimes.
+IMPLICATION — PRIORITY CHANGE: replicating ABaseMission actors into Missions is PREMATURE. Even with
+the data, there is no menu UI to display it. The prerequisite is getting BP_MainMenuHUD to LOAD in the
+DS-connected state. Candidate approaches (need RE): (a) stub GameMode sets HUDClass=BP_MainMenuHUD by
+path so ClientSetHUD makes the client spawn it (hard: BP_MainMenuHUD is a client-only /Game BP the stub
+can't load — would need the NetGUID-by-path trick for a BP class); (b) the client-side lobby PC/GameState
+gate that creates the HUD — figure out what standalone provides that the stub doesn't, and provide it;
+(c) reconsider whether the DS route can drive the STANDALONE menu at all, vs. a hybrid (client stays
+standalone for the menu; a side channel delivers mission data). This reachability wall is arguably the
+real DS-route blocker for a VISIBLE modal — bigger than the missions data path.
+
+*** WHY THE HUD DOESN'T LOAD — ROOT-CAUSED (2026-07-07, live RE) ***
+The main menu is GameMode-driven. On the standalone client the lobby (LVL_LobbyV2_Persistent) runs
+GameMode **BP_MainMenuGameMode_C** (log: "Game class is 'BP_MainMenuGameMode_C'" immediately before
+"HUD BeginPlay - BP_MainMenuHUD_C"). Its CDO (read live, /Game/Loki/UI/MainMenu/BP_MainMenuGameMode)
+specifies the FULL menu class set:
+    HUDClass                = BP_MainMenuHUD_C          (/Game/Loki/UI/MainMenu/BP_MainMenuHUD)
+    PlayerControllerClass   = PC_MainMenu_C
+    GameStateClass          = BP_MainMenuGameState_C
+    DefaultPawnClass        = BP_MainMenuPawn_C
+    (PlayerStateClass=APlayerState, SpectatorClass=ASpectatorPawn — native)
+The HUD + widgets are built client-side by these BP classes (HUD BeginPlay creates WBP_UI_MainMenu_*).
+On the DS-connected client the client is a NETWORKED client — it does NOT run a local GameMode; the
+SERVER (stub) does, and the travel URL forces `?game=/Script/Loki.LokiStubGameMode`. LokiStubGameMode
+: AGameModeBase uses STOCK/DEFAULT classes: HUDClass=AHUD (empty), PlayerControllerClass=APlayerController
+(stock), GameStateClass=AGameStateBase, DefaultPawnClass=ADefaultPawn. So the client gets an empty HUD
+and a stock PC — none of the BP menu-building logic runs => bare lobby.
+
+FIX FEASIBILITY (why this is a HARD wall, not a quick fix):
+  1. All four menu classes are /Game client Blueprints the stub can't load — each would need the
+     NetGUID-by-path trick (fake a class at the exact path so the client resolves it to its own BP).
+  2. *** The PlayerController is the killer. *** The menu is driven by PC_MainMenu_C, but session 41
+     established the stub MUST use STOCK APlayerController — it cannot match SUPERVIVE's modified PC RPC
+     signatures (ServerVerifyViewTarget / ClientSetViewTarget), and using the real menu PC breaks the
+     connection. In a networked game the client's LOCAL PC == the server's PlayerControllerClass (same
+     class, replicated), so we CAN'T give the client PC_MainMenu_C without the stub being it — which the
+     RPC-signature constraint forbids. Direct conflict.
+  3. Even a HUDClass-only attempt (stub HUDClass -> BP_MainMenuHUD_C via NetGUID-path, cheapest to try)
+     may fail: BP_MainMenuHUD_C's BeginPlay likely casts the PC to PC_MainMenu_C / reads
+     BP_MainMenuGameState_C, and would get null/stock substitutes.
+NET ASSESSMENT: the DS route can CONNECT the client + REPLICATE mission data (both proven), but making
+SUPERVIVE's STANDALONE-designed main menu render as a NETWORKED client collides with the client's
+architecture AND the session-41 stock-PC constraint. Paths, roughly: (A) HUDClass-only NetGUID-path test
+(cheap, likely insufficient); (B) full menu-class emulation incl. PC_MainMenu_C (blocked by RPC sigs);
+(C) client-side shim that force-spawns BP_MainMenuHUD_C + builds the menu, decoupled from the networked
+GameMode (bypasses the PC constraint but is a client hack); (D) hybrid — keep the client STANDALONE for
+the menu and deliver missions another way (but session-52 closed the client-side data channels, which is
+what motivated the DS route). This is the crux decision for the DS route's viability.
+
+*** OPTION C INVESTIGATION (2026-07-07, offline bpdump) — menu is component-heavy => target STANDALONE ***
+Decompiled the menu classes to judge whether a shim can force-build the menu on the DS client:
+  - BP_MainMenuHUD: THIN — only a BlueprintPure getter GetMainMenuRoot + a DefaultSceneRoot. NO BP
+    BeginPlay. The HUD does not build the menu itself.
+  - PC_MainMenu_C: ReceiveBeginPlay is thin (3 bytecode entries); the menu is built by a WEB of ~20
+    ActorComponents on the controller (Comp_MainMenu_UIState / IntroSequence / LevelStreaming / Camera /
+    QueueController / Ceremony_Coordinator / Onboarding / ...) + a 119-entry ExecuteUbergraph. Not a
+    single callable "build menu" entry point.
+=> Force-building the menu on the DS-connected client (stock PC, no components) is impractical — it would
+   mean spawning PC_MainMenu_C + all ~20 components + driving their setup. The menu realistically only
+   exists on a STANDALONE client. CONSEQUENCE: Option C should target the STANDALONE client, where the
+   full menu AND the Missions modal already work (modal opens EMPTY, per session 52) — NO menu/HUD problem
+   there. Option C then reduces to ONE thing: a client-side shim that POPULATES missions on the standalone
+   client. Remaining blocker = session-52's open one: the missions ingestion (OnPSMissionsUpdated / the
+   MissionsModel-population natives) is NATIVE, and there is no proven game-thread NATIVE-call primitive
+   (ProcessEvent-from-hook no-ops for native; pi8 ProcessInternal+FFrame is BP-only). The roster/store
+   shims worked by FLAG-FLIPS over LATENT client data + pi8 BP-calls; missions has no latent data and
+   needs a native trigger. NEW leverage from the DS work: the game's OWN replication path
+   (Missions=TArray<ABaseMission*> -> OnPSMissionsUpdated) correctly builds the model from ABaseMission
+   actors — so a viable shim sets up ABaseMission actors + a LokiPlayerState_Missions and triggers the
+   game's ingestion, rather than hand-poking the model (session-52 Route A, which failed). CRUX for
+   Option C = get a game-thread native-call primitive (untried: direct thunk call with a hand-built FFrame
+   — prior sessions hit __report_gsfailure; risky) OR find a BP-callable ingestion entry point (re-check
+   ProgressionManager / PC_MainMenu_C components). Everything else for standalone missions is solved.
+   bpdumps: tools/extractor/out/bpdump_{BP_MainMenuHUD,PC_MainMenu}_ALL.txt.
+
+RE METHOD (reusable): the client's RVAs are constant per exe build; only the module base changes
+(ASLR). Get base from the process module list, pass to tools/re/*.py (NAMEPOOL=base+0x9D81450,
+OBJOBJECTS=base+0x9E38930). UObject: InternalIndex@+0x10 Class@+0x18 Name@+0x20 Outer@+0x28.
+UStruct/UClass ChildProperties@+0x58. FField: FFieldClass@+0x08 Next@+0x18 Name@+0x20 Flags@+0x38.
+FStructProperty.Struct@+0x70, FArrayProperty.Inner@+0x78. UScriptStruct.StructFlags@+0xB8(low u32).
+Lesson: TRUST the live client's reflection over the usmap for inner/nested types.
+
+*** OPTION C — STEP 2 RESULT (2026-07-07, live func-enum): NO BP-callable ingestion entry. CLOSED. ***
+Enumerated every UFunction on the missions classes on a live standalone client (new tool
+tools/re/func_enum.py: walks UClass.Children @+0x50 / UField.Next @+0x30, flags BP via Script.Num @+0x70
+> 0 vs native = 0; validated on PC_MainMenu_C which shows all 16 BP funcs with bytecode). RESULT — the
+ENTIRE missions system is NATIVE (Script.Num=0), no BP entry the pi8 primitive could call:
+  - UMissionsModel: OnPSMissionsUpdated, CreateMissionsModel, CreateMissionModelFromFinalProgress,
+    GetMissions, GetMissionModel, GetActiveMissionModel, CountCompleteMissionsFromPools, ... ALL native.
+  - UProgressionManager: GetMissionsModel, AddProgressToMission, GetClaimableMissionRewards,
+    ClaimAllProgressionTrackRewards, GetCurrentPlayerProgression, ... ALL native.
+  - LokiPlayerState_Missions: ServerAddMissionProgress, SetMissionProgress, GetMissionProgress,
+    GetMission, OnRep_MissionsUpdated, OnRep_FinalMissionProgress, OnMissionDone, ... ALL native.
+=> Option 2 (BP-callable ingestion via pi8) is CLOSED — confirms session-52. The BP layer only READS the
+   model (widgets); every function that POPULATES/ingests is native.
+CONSEQUENCE: a client-side missions shim REQUIRES a game-thread NATIVE-call primitive (Option 1). The
+ingestion TARGETS are now precise — cleanest are LokiPlayerState_Missions.ServerAddMissionProgress /
+SetMissionProgress and UProgressionManager.AddProgressToMission (these ADD a mission's progress = populate),
+or UMissionsModel.CreateMissionsModel(PSMissions). If Option 1 yields a working native call, calling one of
+these on the standalone client (working menu) populates the model -> the modal renders. So the WHOLE
+client-side path reduces to ONE unlock: a reliable game-thread native-UFunction-call primitive.
+(Session-52 found ProcessEvent-from-hook returned a no-op-looking result for a native func; direct-thunk
+call w/ hand-built FFrame is untried-but-__report_gsfailure-risky. It is the single unlock for the entire
+shim / "activation-server" strategy, so a careful fresh attempt is warranted.)
+
+*** OPTION 1 — STEP 1 RESULT (2026-07-07): ProcessEvent-from-hook DEFINITIVELY no-ops for native. ***
+Built two probes (tools/sigbypass-mod/missions_nativecall_probe{,2}.cpp) reusing the pi8 ProcessInternal
+game-thread hook. Test: call ProgressionManager.GetMissionsModel() (native, Script.Num=0) via
+ProcessEvent(base+0x12C5A10) from the hook.
+  probe1: result==0x0 vs known MissionsModel (ProgMgr+0x3B8, RPM-verified as class MissionsModel).
+          Ambiguous (no-op OR GetMissionsModel returns a different field OR wrong return offset).
+  probe2 (DEFINITIVE): run-through-hooked GetMissionsModel's native thunk (UFunction.Func @+0xE0 =
+          exe RVA +0x54D8190), counting entries ONLY during our ProcessEvent call. Result: **thunkHits=0**
+          — ProcessEvent did NOT enter the native thunk.
+Validated the ProcessEvent address (base+0x12C5A10) by disasm: prologue is unmistakably UObject::ProcessEvent
+(saves rbx/rbp/rsi/rdi/r12-r15, sub rsp,0xA0, gs:[0x58] TLS for FUObjectThreadContext, mov r14,rdx=Function).
+So the address is RIGHT and the result is real: ProcessEvent-from-the-ProcessInternal-hook does NOT execute
+native UFunctions. Tracing ProcessEvent's body shows heavy FUObjectThreadContext (thread call-stack) access
+— consistent with a re-entrancy guard: the pi8 BP-call primitive works re-entrantly (BP funcs re-enter
+ProcessInternal fine, per mainmenu_refresh_pi8), but ProcessEvent no-ops for native when called from inside
+script execution. CONFIRMS session-52 (not a false positive).
+CONSEQUENCE — remaining avenues for the native-call primitive (both un-done):
+  (A) DIRECT NATIVE-THUNK CALL: build a minimal FFrame and call the thunk (UFunction.Func) directly,
+      bypassing ProcessEvent. We HAVE the thunk address (+0xE0). Risk: FFrame layout + prior scan-shim
+      attempts hit __report_gsfailure; the thunk prologue reads FFrame+0x20 so the frame must be valid.
+  (B) NON-RE-ENTRANT ProcessEvent: call PE from a game-thread hook that is NOT inside ProcessInternal
+      (a per-frame native tick / main-loop hook), in case the no-op is re-entrancy-specific. Needs a
+      good non-PI game-thread hook point.
+New tools: tools/sigbypass-mod/missions_nativecall_probe{,2}.cpp, tools/re/func_enum.py.

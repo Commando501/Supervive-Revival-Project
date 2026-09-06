@@ -1,0 +1,201 @@
+SESSION 55 — THE GAME-THREAD NATIVE-CALL PRIMITIVE IS SOLVED (Avenue A: direct thunk call)
+==========================================================================================
+Date: 2026-07-07. Branch: dedicated-server-stub. Builds on session 54's pivot: the whole
+client-side missions path reduced to ONE unlock — a reliable game-thread native-UFunction-call
+primitive (ProcessEvent-from-the-pi8-hook was proven to no-op for native, probe2/s54). This
+session got the primitive. *** RESULT: Avenue A (direct native-thunk call) WORKS, live-verified,
+no crash. *** This is the keystone for the standalone-client missions shim AND the user's broader
+"server-as-activation-layer, client-side shims do the work" vision.
+
+TL;DR
+-----
+- Built two probes: probe3 (Avenue B — ProcessEvent from a non-ProcessInternal context) and
+  probe4 (Avenue A — direct native-thunk call with a captured live FFrame).
+- Live-tested both on the standalone client (menu up via catalog_store_fix, PID 79132, base
+  0x7FF6B54F0000).
+- Avenue B (probe3): the ProcessEvent-entry hook NEVER FIRED (peSeen=0) in a 10s window — cause
+  undiagnosed, but MOOT (see below). Resolve + the PE prologue read both succeeded.
+- Avenue A (probe4): *** ret == knownMM (0x262FDC71180), no crash. THE PRIMITIVE WORKS. ***
+
+WHAT WAS BUILT
+--------------
+tools/sigbypass-mod/missions_nativecall_probe3.cpp  (Avenue B)
+tools/sigbypass-mod/missions_nativecall_probe4.cpp  (Avenue A)  <-- THE WINNER
+Build: clang++ -shared -O2 <f>.cpp -o <f>.dll -lkernel32
+Inject: tools/inject/inject.exe mmap <PID> <dll>
+Markers: docs/missions-nativecall3-marker.txt, docs/missions-nativecall4-marker.txt
+
+AVENUE A — HOW THE PRIMITIVE WORKS (the reusable recipe)
+-------------------------------------------------------
+A direct call to a native UFunction's thunk, bypassing ProcessEvent entirely, on the game thread,
+using a REAL (captured live) FFrame as the template. Mechanism:
+  1. Hook ProcessInternal @base+0x13454A0 (the proven-reliable game-thread hook — pi8 /
+     catalog_store_fix all use it every session; it fires constantly at the menu).
+  2. In the hook, on the game thread with a valid FFrame arg, CAPTURE that FFrame (memcpy 0x180
+     bytes) as a template. It has a valid FOutputDevice vtable @+0 and valid internals, so any
+     incidental field read the thunk does is safe.
+  3. Build myframe = template with: Node(+0x10)=UFunction, Object(+0x18)=Context(the this),
+     Code(+0x20)=NULL, Locals(+0x28)=my buffer.
+     - Code=NULL is the key safety trick: for a no-param function the thunk's P_FINISH does
+       `Stack.Code += !!Stack.Code` (the observed prologue `mov rax,[rdx+0x20]; xor r9d,r9d;
+       test rax,rax; setne r9b; ...`) => reads Code, advances by (Code!=0). With Code=NULL it
+       reads 0, advances 0, and NEVER derefs *Code. No bytecode is interpreted.
+  4. Call the thunk directly:  ((void(*)(void* Context, void* FFrame, void* Result))thunk)
+       (Context, &myframe, &result);
+     thunk = UFunction.Func @ UFunction+0xE0.  x64 ABI: rcx=Context, rdx=&FFrame, r8=&Result.
+  5. The native body runs and writes its return value to Result. For a getter, Result[0] = the
+     returned pointer.
+
+WHY THIS WORKS WHERE ProcessEvent DIDN'T
+----------------------------------------
+- ProcessEvent (probe2, s54) no-ops for native when called from inside script execution — thunkHits=0.
+- A DIRECT thunk call has NO guards: it is just calling the function pointer. Re-entrancy, script
+  state, FUObjectThreadContext — none of it matters. The thunk IS the native function's entry.
+- The captured live FFrame means we don't have to hand-fabricate FOutputDevice/vtable/internal
+  fields — we inherit a valid one and only repoint the 4 fields the thunk needs.
+
+LIVE PROOF (probe4 marker, docs/missions-nativecall4-marker.txt)
+----------------------------------------------------------------
+  [2] ProgMgr=0x26200D67A20 GetMissionsModel=0x26202964990 thunk=0x7FF6BA9C8190(rva 0x54D8190)
+      knownMM=0x262FDC71180 gameTid=39960
+  [3] hook built; calling GetMissionsModel THUNK directly on the game thread...
+  [4] CALLED. thunk ret=0x262FDC71180 knownMM=0x262FDC71180 matches=1 hitsGT=1
+  [4] *** ret==knownMM => DIRECT THUNK CALL EXECUTES NATIVE UFunctions on the game thread.
+      AVENUE A PRIMITIVE WORKS. ***
+The result buffer was memset to 0 before the call; the only way it holds knownMM afterward is that
+execGetMissionsModel ran `*Result = this->MissionsModel` (ProgMgr+0x3B8). Unambiguous native execution.
+Game stayed ALIVE (no crash, no [VEH] line). Test target GetMissionsModel is a read-only no-param
+getter — chosen as the safe first proof.
+
+PRIMITIVE GENERALIZED — return-by-value (probe5, docs/missions-nativecall5-marker.txt)
+--------------------------------------------------------------------------------------
+probe5 called UMissionsModel::GetMissions() (native, no in-params, returns TArray<MissionModel*>)
+on the LIVE MissionsModel (0x262FDC71180 == probe4's knownMM) via the same Avenue-A mechanism:
+  [4] CALLED. GetMissions() -> TArray{ Data=0x0 Num=0 Max=0 } hitsGT=1
+=> return-by-value WORKS: a well-formed TArray came back (Data=0 Num=0 Max=0 = a valid EMPTY array).
+This (a) proves the primitive handles TArray return-by-value (the Result buffer receives the 16-byte
+TArray), (b) generalizes the primitive to a SECOND class (MissionsModel) and a SECOND function, (c)
+confirms the BASELINE: 0 missions in the live model at the menu (matches s52's "empty Missions/Pools").
+The S56 ingestion-verification plan (call GetMissions() and watch Num go 0 -> N) is validated. Three
+native calls (GetMissionsModel ptr-return, GetMissions TArray-return, across 2 classes) — zero crashes.
+
+AVENUE B — WHAT HAPPENED (probe3, docs/missions-nativecall3-marker.txt)
+----------------------------------------------------------------------
+Hypothesis: ProcessEvent no-ops for native only because probe2 called it RE-ENTRANTLY (from the
+ProcessInternal hook, mid-script). probe3 hooked ProcessEvent ITSELF (base+0x12C5A10) to sample
+native->script boundaries and call the target native from there via the trampoline.
+  [2] resolve OK (same ProgMgr/GetMissionsModel/thunk/knownMM as probe4).
+  [2] PE first16: 48 89 5C 24 18 55 56 57 41 54 41 55 41 56 41 57  (= mov [rsp+18],rbx; push
+      rbp/rsi/rdi/r12-r15 — textbook ProcessEvent prologue; steal-5 was a clean instr boundary).
+  [4] DONE. peSeen=0 attempts=0 thunkHits=0 ...  => the ProcessEvent-ENTRY hook NEVER FIRED.
+peSeen=0 means OnPE was never entered in the 10s window. InstallJmp reported no failure. Candidate
+causes (undiagnosed, since Avenue A mooted it): (a) at an IDLE menu, ProcessEvent at that specific
+RVA may be called far less than assumed (much BP execution enters via ProcessInternal/CallFunction
+from the tick pipeline, not ProcessEvent); (b) the 5-byte JMP write over the hot ProcessEvent entry
+didn't "take" (packer/anti-tamper page handling) despite SafeWrite reporting success. NOT pursued —
+Avenue A is the primitive we needed. If ever wanted, probe3 should read-back-verify the installed
+JMP bytes and extend the window; but there's no reason to prefer B now.
+
+RE FACTS CONFIRMED THIS SESSION (this exe build)
+------------------------------------------------
+- base (ASLR) this run = 0x7FF6B54F0000 (same as recent runs; re-read each launch).
+- ProcessEvent @base+0x12C5A10, prologue mov [rsp+18],rbx (48 89 5C 24 18) — a valid ProcessEvent.
+- ProcessInternal @base+0x13454A0 (prologue 48 89 5C 24 08) — hooks reliably, fires constantly.
+- GetMissionsModel thunk rva = 0x54D8190 (UFunction+0xE0). ProgressionManager.MissionsModel @+0x3B8.
+- Live ProgressionManager present at the menu; GetMissionsModel returns the live MissionsModel.
+- UFunction.Func @+0xE0 = the native thunk pointer. UObject Class@+0x18 Name@+0x20. UClass.Children
+  (UField*)@+0x50, UField.Next@+0x30.
+
+*** CRITICAL COROLLARY — SESSION 52's INGESTION NEGATIVES MUST BE RE-TESTED ***
+-------------------------------------------------------------------------------
+Session 52 concluded the missions ingestion path was blocked ("the game's factory rejects synthetic
+data", "mission DAs don't resolve as primary assets") — BUT those tests were run through the
+ProcessEvent-from-hook primitive that session 52 ITSELF later proved is a UNIFORM NO-OP for native.
+i.e. CreateMissionModelFromFinalProgress->NULL and PrimaryAssetIDFromString->{0,0} were results of
+calls that NEVER RAN. With the WORKING direct-thunk primitive, those experiments are now REDO-able
+and may behave completely differently. Do NOT treat session 52's ingestion "impossibilities" as
+settled — re-test each with Avenue A before concluding anything.
+
+NEXT (Session 56) — USE THE PRIMITIVE TO RENDER THE MODAL
+---------------------------------------------------------
+The client-side path is now: standalone client (menu + Missions modal already work; modal opens
+EMPTY) + Avenue A primitive to call ingestion natives. Plan:
+  1. Extend probe4 into a param-passing caller. For a function WITH params, don't use Code=NULL;
+     instead marshal params into the FFrame the way ProcessEvent does (write each param property
+     into a params frame; or, easier, capture a template FFrame whose Locals point at a params
+     buffer you fill). Start by RE'ing the exact signatures (tools/re/ufunc_sig.py, func_enum.py) of:
+       - UProgressionManager.AddProgressToMission
+       - UMissionsModel.CreateMissionsModel(LokiPlayerState_Missions*) and
+         CreateMissionModelFromFinalProgress
+       - LokiPlayerState_Missions.SetMissionProgress / ServerAddMissionProgress
+  2. AUTONOMOUSLY-VERIFIABLE de-risk (no computer-use): after an ingestion call, read MissionsModel's
+     Missions/Pools TMap counts via RPM (or call GetMissions() with the primitive and read Num). If
+     the count goes 0 -> N, the data landed and the modal will almost certainly populate.
+  3. Broadcast: the mission-category widgets subscribe to ProgressionManager.GetMissionsModel().OnUpdated;
+     the ingestion natives should fire it. If not, use the primitive to broadcast, or use pi8 to
+     invoke a BP that rebuilds. (S45 "dead delegate" gotcha: broadcast, don't just poke.)
+  4. VISUAL verify (needs computer-use + user present): open the Missions modal, confirm tiles.
+Reuse the fast standalone recipe (below) — today's launch reached the menu in ~20s, so build->inject->
+observe cycles are cheap now.
+
+INGESTION-TARGET SIGNATURES (RE'd live this session — tools/re/sig_enum.py, read-only)
+--------------------------------------------------------------------------------------
+New tool tools/re/sig_enum.py <PID> <BASE> [ClassName...] finds UClasses by name and dumps each
+UFunction's params (type + CPF in/OUT/RET). Live dump (all native, Script.Num=0 — confirms s54):
+
+ProgressionManager (UClass @0x26207AD6C80):
+  GetMissionsModel()                         -> MissionsModel*                 [the proven getter]
+  AddProgressToMission(Objective:SoftClass, Progress:float)                    [ingest candidate; on live ProgMgr]
+  GetClaimableMissionRewards(OUT TArray<MissionClaimData>) -> bool
+  GetCurrentPlayerProgression(OUT PlayerProgression) -> bool
+  GetHeroMastery(HeroId:PrimaryAssetId, OUT HeroMasteryProgress) -> bool
+MissionsModel (UClass @0x26207AD1F00):
+  GetMissions()                              -> TArray<MissionModel*>          [*** RPM-verifiable baseline probe (no params) ***]
+  OnPSMissionsUpdated()                      -> void                           [the native the replication path calls to rebuild the model]
+  CreateMissionsModel(PSMissions:LokiPlayerState_Missions*) -> MissionsModel*  [needs a LokiPlayerState_Missions instance]
+  CreateMissionModelFromFinalProgress(OUT TArray<MissionProgress>) -> MissionsModel*  [*** RE-TEST: s52 got NULL via a NO-OP call ***]
+  GetMissionModel(ID:str) -> MissionModel* ; GetClaimableMissionModel(MissionID:PrimaryAssetId) -> MissionModel*
+  GetCurrentAndTotalProgress(MissionAsset:LokiDataAsset_Mission*, OUT int, OUT int) -> bool
+LokiPlayerState_Missions (UClass @0x26207A97400):
+  ServerAddMissionProgress(MissionID:str, ObjectiveName:str, Progress:float)   [*** simplest params; needs a LIVE instance (CDO-only at menu) ***]
+  SetMissionProgress(OUT MissionInfo:struct MissionInfo)
+  GetMissionProgress(OUT TArray<MissionProgress>) -> bool ; GetMission(MissionClass:SoftClass) -> BaseMission*
+  OnRep_MissionsUpdated() / OnRep_FinalMissionProgress() / OnMissionDone() -> void
+
+READING THE INGESTION WIRING (what the widgets consume): the category widgets read
+`ProgressionManager.GetMissionsModel()` (== the ProgMgr's OWN live MissionsModel = knownMM) and
+subscribe to its OnUpdated. So populating a SEPARATE model (Create*) doesn't help unless it's
+assigned back to the ProgMgr / knownMM. The game's real path is: replicated LokiPlayerState_Missions
+-> MissionsModel.OnPSMissionsUpdated() rebuilds knownMM's Missions/Pools from its MissionsActor. On
+standalone MissionsActor is null. So the S56 crux is getting data INTO the live knownMM. Options to
+try (all now executable via Avenue A): (1) call GetMissions() first for the baseline (safe); (2)
+re-test CreateMissionModelFromFinalProgress(populated TArray<FMissionProgress>) — if it now returns
+non-null, inspect its GetMissions().Num, then find how to make knownMM adopt it; (3) craft/point
+knownMM.MissionsActor at a populated LokiPlayerState_Missions then call OnPSMissionsUpdated().
+FMissionProgress layout is known cmd-for-cmd from s54 (22 leaves; ID/AssetId/PoolId/Complete/Failed/
+ObjectiveProgress(TArray<FMissionObjectiveProgress>)/MillisUntilExpiry/Expiry/GrantedAt).
+
+PARAM-MARSHALLING for Avenue A with params (S56): the Code=NULL trick only covers no-param fns. For
+params, either (a) marshal each param into a Parms frame and use ProcessEvent-style property copy
+(but ProcessEvent no-ops native), or — cleaner — (b) call the thunk directly with a real captured
+FFrame whose bytecode Code stream feeds the params: the thunk reads params by stepping Code via
+Stack.Step. Simplest robust route: build a params struct in memory and drive the thunk with a
+hand-assembled Code stream of EX_ tokens, OR (easiest for a getter-with-out-params like GetMissions)
+keep Code=NULL and read the return TArray from the Result buffer (Result[0]=data ptr, Result[1]=Num).
+Start with GetMissions (no in-params, returns TArray) to prove return-by-value works, then tackle
+in-params.
+
+STANDALONE RECIPE (elevated PS; Steam running) — used this session, works fast
+-------------------------------------------------------------------------------
+  configs\launch-redirect.ps1 -Hook "...\tools\sigbypass-mod\catalog_store_fix.dll"
+Explicit -Hook => catalog_store_fix ONLY (no pi8 secondaries), so a PI-hooking probe is the sole one.
+Wait for "HUD BeginPlay - BP_MainMenuHUD_C" + "TryUIReady SUCCESS" in the client Loki.log
+(C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log). Confirm catalog_store_fix settled
+(docs/catalog-store-fix-marker.txt: "jz=1/1 unhook=1") before injecting to avoid racing its
+thread-suspending install. Then inject probe(s). Steam must be up first (else Auth Failure 14005).
+
+FILES
+-----
+  tools/sigbypass-mod/missions_nativecall_probe3.cpp / .dll   (Avenue B; PE-entry hook; didn't fire)
+  tools/sigbypass-mod/missions_nativecall_probe4.cpp / .dll   (Avenue A; DIRECT thunk call; *** WORKS ***)
+  docs/missions-nativecall3-marker.txt / missions-nativecall4-marker.txt   (live results)

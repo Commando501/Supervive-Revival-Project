@@ -1,0 +1,80 @@
+S73 LIVE RPM CAPTURE — LokiPlayerController net-cache reconstruction spec
+=======================================================================
+Captured off the running client (PID 78404, base 0x7FF6B54F0000) 2026-07-11.
+Class hierarchy (client): LokiPlayerController : LokiBaseController : PlayerController :
+  Controller : LokiActor : Actor : Object   (NB: SUPERVIVE inserts LokiActor above Actor;
+  LokiActor has 0 net funcs — its net-prop contribution assumed 0, same as the working S70
+  GameState mirror which also folds to stock AActor.)
+
+REPLICATED PROPS (CPF_Net), via rep_expand_class.py:
+  LokiBaseController   : 0
+  LokiPlayerController : 1  -> LokiPlayerCheats (ObjectProperty; 1 NetGUID cmd)
+
+NET FUNCTIONS (FUNC_Net, non-override) per level, via netfields_dump.py:
+  PlayerController     : 81  == the stub's stock 81 (NO divergence at this level)
+  LokiBaseController   : 0
+  LokiPlayerController : 60  (below — the mirror must declare all 60 matching-named net
+     UFUNCTIONs so the name-sorted NetFields index space aligns; params only needed for the
+     handful that actually FIRE in tutorial possession/spawn flow)
+
+=== LokiPlayerController 60 own net functions (name-sorted = NetFields order) ===
+   [  0] AuthCheatChangeCharacter                     flags=0x04220CC0  [Server,Reliable,Native]
+   [  1] ClientAddPersistentMessage                   flags=0x01020CC0  [Client,Reliable,Native]
+   [  2] ClientDebugMessage                           flags=0x05020CC0  [Client,Reliable,Native]
+   [  3] ClientDebugMessageLocation                   flags=0x05820CC0  [Client,Reliable,Native]
+   [  4] ClientDrawDebugBox                           flags=0x01820CC0  [Client,Reliable,Native]
+   [  5] ClientDrawDebugCapsule                       flags=0x01820CC0  [Client,Reliable,Native]
+   [  6] ClientDrawDebugLine                          flags=0x01820CC0  [Client,Reliable,Native]
+   [  7] ClientDrawDebugSlice                         flags=0x01820CC0  [Client,Reliable,Native]
+   [  8] ClientDrawDebugSphere                        flags=0x01820CC0  [Client,Reliable,Native]
+   [  9] ClientExecuteLocalGameplayCue                flags=0x01820CC0  [Client,Reliable,Native]
+   [ 10] ClientExecuteUnownedGameplayCue              flags=0x01820C40  [Client,Native]
+   [ 11] ClientGetServerPerfInfo                      flags=0x01040C41  [Client,Native]
+   [ 12] ClientNotifiesServerTransferCompleted        flags=0x00220CC0  [Server,Reliable,Native]
+   [ 13] ClientNotifyAFKDetected                      flags=0x01020CC0  [Client,Reliable,Native]
+   [ 14] ClientNotifyCharacterBountyReceived          flags=0x05820C40  [Client,Native]
+   [ 15] ClientNotifyDamageDealt                      flags=0x01020C40  [Client,Native]
+   [ 16] ClientNotifyDamageTaken                      flags=0x01020C40  [Client,Native]
+   [ 17] ClientNotifyHealingDealt                     flags=0x01020C40  [Client,Native]
+   [ 18] ClientNotifyHealingTaken                     flags=0x01020C40  [Client,Native]
+   [ 19] ClientNotifyNonBountyXPReceived              flags=0x05020C40  [Client,Native]
+   [ 20] ClientNotifyStatusUpdate                     flags=0x05020CC0  [Client,Reliable,Native]
+   [ 21] ClientNotifyTrainingEvent                    flags=0x01020CC0  [Client,Reliable,Native]
+   [ 22] ClientPlatformDisconnect                     flags=0x01020CC0  [Client,Reliable,Native]
+   [ 23] ClientPlayAudioAtLocation                    flags=0x01820C40  [Client,Native]
+   [ 24] ClientProcessTimestampEcho                   flags=0x01040C41  [Client,Native]
+   [ 25] ClientRecordCameraShakeEditor                flags=0x01040C41  [Client,Native]
+   [ 26] ClientUpdateDebugPoints                      flags=0x05020CC0  [Client,Reliable,Native]
+   [ 27] ClientUpdateDebugStrings                     flags=0x05020CC0  [Client,Reliable,Native]
+   [ 28] DebugServerResetObjects                      flags=0x04240CC1  [Server,Reliable,Native]
+   [ 29] NetProfile                                   flags=0x00240CC1  [Server,Reliable,Native]
+   [ 30] SendPlayerGameLog                            flags=0x05020C40  [Client,Native]
+   [ 31] ServerAddAbilityLevelNative                  flags=0x04220CC0  [Server,Reliable,Native]
+   [ 32] ServerConsoleCommand                         flags=0x00240CC1  [Server,Reliable,Native]
+   [ 33] ServerDebugAdvanceTime                       flags=0x00240CC1  [Server,Reliable,Native]
+   [ 34] ServerDebugSetTime                           flags=0x00240CC1  [Server,Reliable,Native]
+   [ 35] ServerDebugTimelineAddEvent                  flags=0x00220CC0  [Server,Reliable,Native]
+   [ 36] ServerDebugTimelineReset                     flags=0x00220CC0  [Server,Reliable,Native]
+   [ 37] ServerDebugTimelineResetAndPause             flags=0x00220CC0  [Server,Reliable,Native]
+   [ 38] ServerDebugTimelineResume                    flags=0x00220CC0  [Server,Reliable,Native]
+   [ 39] ServerEchoTimestamp                          flags=0x00240C41  [Server,Native]
+   [ 40] ServerFillTeam                               flags=0x04220CC0  [Server,Reliable,Native]
+   [ 41] ServerJoinTeam                               flags=0x04220CC0  [Server,Reliable,Native]
+   [ 42] ServerLogTrainingAnalytics                   flags=0x00220CC0  [Server,Reliable,Native]
+   [ 43] ServerNotifiesClientTransferCompleted        flags=0x01020CC0  [Client,Reliable,Native]
+   [ 44] ServerNotifyDiedToAbyss                      flags=0x05020C40  [Client,Native]
+   [ 45] ServerOverrideDropPlaneLocations             flags=0x00A20CC0  [Server,Reliable,Native]
+   [ 46] ServerPlatformDisconnect                     flags=0x04220CC0  [Server,Reliable,Native]
+   [ 47] ServerRequestAdmin                           flags=0x04240CC1  [Server,Reliable,Native]
+   [ 48] ServerRequestEACDisconnectForSelf            flags=0x00220CC0  [Server,Reliable,Native]
+   [ 49] ServerRequestSpawnLocation                   flags=0x04A20CC0  [Server,Reliable,Native]
+   [ 50] ServerReturnFromAFK                          flags=0x00220CC0  [Server,Reliable,Native]
+   [ 51] ServerSelectItemEvolution                    flags=0x04220CC0  [Server,Reliable,Native]
+   [ 52] ServerSelectItemFancyPassive                 flags=0x04220CC0  [Server,Reliable,Native]
+   [ 53] ServerSetDebugMode                           flags=0x00220CC0  [Server,Reliable,Native]
+   [ 54] ServerSetDebugTarget                         flags=0x04220CC0  [Server,Reliable,Native]
+   [ 55] ServerSetGameFeatureToggle                   flags=0x00220CC0  [Server,Reliable,Native]
+   [ 56] ServerSpectateNextTeam                       flags=0x04220CC0  [Server,Reliable,Native]
+   [ 57] ServerSwitchSpectateTeam                     flags=0x04220CC0  [Server,Reliable,Native]
+   [ 58] ServerToggleDebugMode                        flags=0x00220CC0  [Server,Reliable,Native]
+   [ 59] ServerTriggerControllerCheatCommand          flags=0x00220CC0  [Server,Reliable,Native]

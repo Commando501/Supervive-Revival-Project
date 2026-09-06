@@ -1,0 +1,295 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[PS] poolspawn mode (S128/FK-22 Route F): resolve ULokiGameplayStatics + its CDO + BOTH
+[PS] pooled-spawn statics -> BEFORE census -> P0c POSITIVE CONTROL -> P1 Deferred ->
+[PS] P2 NonDeferred -> P3 non-pooled reference -> AFTER census + delta table.
+[PS] It answers ONE question: is 'PrimePools is not enabled' a real cause of S127's
+[PS] bail 2, or a red herring? Inject into the STAGED TUTORIAL WORLD (gft -> fo -> sp ->
+[PS] this). Not meaningful at the menu: no world, no GameMode, nothing to spawn into.
+[PS] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[DP] P0-BEFORE      0x1EA418EA020 'Default__LokiDropPlane' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA418EA860 'Default__LokiDropPodBase' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA418F2FA0 'Default__LokiGameModeDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA4192D710 'Default__LokiPlayerControllerDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA4192D7F0 'Default__LokiPlayerDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA41A2B250 'Default__LokiDropPhase_PlayerStateComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA41A2B4F0 'Default__LokiDropPod' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA41A2BB50 'Default__LokiDropPodImpactIndicator' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA41A2BF30 'Default__LokiDropPodLaser' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA41A2C2F0 'Default__LokiDropShip' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB0180DC00 'Default__BP_Avatar_DropPod2_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB0B555400 'Default__BP_Avatar_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB0B2C9E00 'Default__BP_Avatar_DropPod3_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE       0x1EB601037C0 'Comp_GameMode_DropPlane_Tutorial'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[DP] P0-BEFORE      0x1EC0108CA00 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE       0x1EB7B6C3740 'WBP_UI_DropPodControls'  chain=WBP_UI_DropPodControls_C<-UserWidget<-Widget<-Visual<-Object
+[DP] P0-BEFORE       0x1EB8F52F250 'WBP_UI_DropPlane_Slice'  chain=WBP_UI_DropPlane_Slices_C<-UserWidget<-Widget<-Visual<-Object
+[DP] P0-BEFORE       0x1EB788D5E00 'WBP_UI_DropPlane_SpinningDonut'  chain=WBP_UI_DropPlane_SpinningDonut_C<-UserWidget<-Widget<-Visual<-Object
+[DP] P0-BEFORE      0x1EC01EB76C0 'Default__Comp_GameMode_DropPlane_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7ADB0100 'Default__Comp_PlayerState_DropPlane_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE       0x1EB890D0B00 'WBP_UI_DropPodIndicator_Animated'  chain=WBP_UI_DropPodIndicator_Animated_C<-UserWidget<-Widget<-Visual<-Object
+[DP] P0-BEFORE      0x1EB77CFD6F0 'Default__WBP_Minimap_DropPod_Aim_Indicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB77CFC020 'Default__GIE_DropPod_Aim_Indicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7ADBAF00 'Default__Comp_PlayerState_DropPlane_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7F53D000 'Default__WBP_UI_DropPlane_SpinningDonut_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7EE61A80 'Default__BP_DropPlane_MultiStationary_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7EE63A60 'Default__BP_DropPlane_Straight_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7BD0E830 'Default__BP_DropPod_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7BD029B0 'Default__BP_DropPlane_SpinningDonut_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7EE65A40 'Default__BP_DropPlane_Shrinking_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7EE61420 'Default__BP_DropPlane_Expanding_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7EE60DC0 'Default__BP_DropPlane_Straight_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7EE60760 'Default__BP_DropPlane_Stationary_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7EE60100 'Default__BP_DropPlane_PieSlices_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7EE6F9A0 'Default__BP_DropPlane_Flop_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7EE6ECE0 'Default__BP_DropPlane_Base_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7BD08100 'Default__BP_DropPod_Child_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB0B84F810 'Default__BP_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB797B09A0 'Default__ABP_DropPod_Child_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB77CFF6E0 'Default__GIE_DropPod_Impact_WASDIndicator_Baby_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB77CFFB70 'Default__GIE_DropPod_Impact_WASDIndicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB783C9280 'Default__BP_SkyVisual_DropPlaneIcon_HotZone_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB783C8DF0 'Default__BP_SkyVisual_DropPlaneIcon_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA11AA9760 'Default__DropPlaneCameraPawn_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB783C84D0 'Default__GIE_DropPod_Aim_Indicator_Live_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EB7BAF7290 'Default__WBP_UI_DropPodControls_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA01D27E80 'Default__WBP_UI_DropPodIndicator_Animated_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EAD55DF040 'Default__BP_DropPodLaser_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA0808D9C0 'Default__ABP_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EBF8772990 'Default__WBP_UI_DropPlane_Slices_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE      0x1EA3DB29D90 'Default__BP_DropPlane_PlaneIcon_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P0-BEFORE CENSUS summary: DropPlane=3 DropPod=2 DropShip=0 objects=5 new=0 gone=0 archetypesExcluded=46 (memo classes=10161 overflow=810) elapsed=1656 ms
+[PS] class LokiGameplayStatics cand[0] 0x1EA430BC680 cls=Class idx=3881
+[PS] class LokiGameplayStatics enumeration: 1 match(es)
+[PS] class 0x1EA430BC680 'LokiGameplayStatics' chain=LokiGameplayStatics<-BlueprintFunctionLibrary<-Object
+[PS] CDO Default__LokiGameplayStatics cand[0] 0x1EA418FE7A0 cls=LokiGameplayStatics idx=36575
+[PS] CDO Default__LokiGameplayStatics enumeration: 1 match(es)
+[PS] CDO 0x1EA418FE7A0  (ClassOf(CDO) == the resolved class: cross-check PASSED)
+[PS] grade SpawnPoolableActorFromClassDeferred: fn=0x1EA415E4750 owner=LokiGameplayStatics child=0x1EA85215F80
+[PS] grade SpawnPoolableActorFromClassDeferred: Func@+0xE0=0x7FF7BDA4F1A0 (rva 0x537F1A0) => NATIVE exec thunk -> the S55 direct-Func primitive
+[PS] grade SpawnPoolableActorFromClassDeferred: FunctionFlags@+0xB8=0x00C22401 Static  PropertiesSize@+0x60=144  Script.Num@+0x70=0  NumParms@+0xBC=8  ParmsSize@+0xBE=144  ReturnValueOffset@+0xC0=0x88
+[PD] sig SpawnPoolableActorFromClassDeferred: 8 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig SpawnPoolableActorFromClassDeferred [0] WorldContextObject     @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000400280  IN
+[PD] sig SpawnPoolableActorFromClassDeferred [1] ActorClass             @0x8    size=8   ClassProperty    struct=-          flags=0x001C001000000280  IN
+[PD] sig SpawnPoolableActorFromClassDeferred [2] SpawnTransform         @0x10   size=96  StructProperty   struct=Transform  flags=0x3018001048000182  IN (const-ref: value lives INLINE in the param block)
+[PD] sig SpawnPoolableActorFromClassDeferred [3] Owner                  @0x70   size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[PD] sig SpawnPoolableActorFromClassDeferred [4] Instigator             @0x78   size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[PD] sig SpawnPoolableActorFromClassDeferred [5] SpawnCollisionHandlingOverride @0x80   size=1   EnumProperty     struct=-          flags=0x0018001040000280  IN
+[PD] sig SpawnPoolableActorFromClassDeferred [6] TransformScaleMethod   @0x81   size=1   EnumProperty     struct=-          flags=0x0018001040000280  IN
+[PD] sig SpawnPoolableActorFromClassDeferred [7] ReturnValue            @0x88   size=8   ObjectProperty   struct=-          flags=0x0018001000000780  RETURN
+[PS] grade SpawnPoolableActorFromClass: fn=0x1EA415E4660 owner=LokiGameplayStatics child=0x1EA85214380
+[PS] grade SpawnPoolableActorFromClass: Func@+0xE0=0x7FF7BDA4EEE0 (rva 0x537EEE0) => NATIVE exec thunk -> the S55 direct-Func primitive
+[PS] grade SpawnPoolableActorFromClass: FunctionFlags@+0xB8=0x04C22401 Static  PropertiesSize@+0x60=144  Script.Num@+0x70=0  NumParms@+0xBC=8  ParmsSize@+0xBE=144  ReturnValueOffset@+0xC0=0x88
+[PD] sig SpawnPoolableActorFromClass: 8 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig SpawnPoolableActorFromClass [0] WorldContextObject     @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000400280  IN
+[PD] sig SpawnPoolableActorFromClass [1] ActorClass             @0x8    size=8   ClassProperty    struct=-          flags=0x001C001000000280  IN
+[PD] sig SpawnPoolableActorFromClass [2] SpawnTransform         @0x10   size=96  StructProperty   struct=Transform  flags=0x3018001048000182  IN (const-ref: value lives INLINE in the param block)
+[PD] sig SpawnPoolableActorFromClass [3] SpawnCollisionHandlingOverride @0x70   size=1   EnumProperty     struct=-          flags=0x0018001040000280  IN
+[PD] sig SpawnPoolableActorFromClass [4] TransformScaleMethod   @0x71   size=1   EnumProperty     struct=-          flags=0x0018001040000280  IN
+[PD] sig SpawnPoolableActorFromClass [5] Owner                  @0x78   size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[PD] sig SpawnPoolableActorFromClass [6] Instigator             @0x80   size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[PD] sig SpawnPoolableActorFromClass [7] ReturnValue            @0x88   size=8   ObjectProperty   struct=-          flags=0x0018001000000780  RETURN
+[PS] bind Deferred(P1)     WorldContextObject -> slot[0] 'WorldContextObject' @0x0    size=8   ObjectProperty struct=- enum=-
+[PS] bind Deferred(P1)     ActorClass         -> slot[1] 'ActorClass' @0x8    size=8   ClassProperty struct=- enum=-
+[PS] bind Deferred(P1)     SpawnTransform     -> slot[2] 'SpawnTransform' @0x10   size=96  StructProperty struct=Transform enum=-
+[PS] bind Deferred(P1)     CollisionHandling  -> slot[5] 'SpawnCollisionHandlingOverride' @0x80   size=1   EnumProperty struct=- enum=ESpawnActorCollisionHandlingMethod
+[PS] bind Deferred(P1)     ScaleMethod        -> slot[6] 'TransformScaleMethod' @0x81   size=1   EnumProperty struct=- enum=ESpawnActorScaleMethod
+[PS] bind Deferred(P1)     Owner              -> slot[3] 'Owner' @0x70   size=8   ObjectProperty struct=- enum=-
+[PS] bind Deferred(P1)     Instigator         -> slot[4] 'Instigator' @0x78   size=8   ObjectProperty struct=- enum=-
+[PS] bind Deferred(P1)     ReturnValue        -> slot[7] 'ReturnValue' @0x88 size=8 ObjectProperty
+[PS] bind NonDeferred(P2)  WorldContextObject -> slot[0] 'WorldContextObject' @0x0    size=8   ObjectProperty struct=- enum=-
+[PS] bind NonDeferred(P2)  ActorClass         -> slot[1] 'ActorClass' @0x8    size=8   ClassProperty struct=- enum=-
+[PS] bind NonDeferred(P2)  SpawnTransform     -> slot[2] 'SpawnTransform' @0x10   size=96  StructProperty struct=Transform enum=-
+[PS] bind NonDeferred(P2)  CollisionHandling  -> slot[3] 'SpawnCollisionHandlingOverride' @0x70   size=1   EnumProperty struct=- enum=ESpawnActorCollisionHandlingMethod
+[PS] bind NonDeferred(P2)  ScaleMethod        -> slot[4] 'TransformScaleMethod' @0x71   size=1   EnumProperty struct=- enum=ESpawnActorScaleMethod
+[PS] bind NonDeferred(P2)  Owner              -> slot[5] 'Owner' @0x78   size=8   ObjectProperty struct=- enum=-
+[PS] bind NonDeferred(P2)  Instigator         -> slot[6] 'Instigator' @0x80   size=8   ObjectProperty struct=- enum=-
+[PS] bind NonDeferred(P2)  ReturnValue        -> slot[7] 'ReturnValue' @0x88 size=8 ObjectProperty
+[PS] SANITY on the live FProperty reads: 16 slot(s) inspected, pointer-sized OK=10, FTransform OK=2, FAILURES=0 => PASS (FPROP_ELEMSIZE=0x34 really is reading ElementSize, not ArrayDim)
+[PS] pod class BP_DropPod_Tutorial_C cand[0] 0x1EB8C2D2B60 cls=BlueprintGeneratedClass idx=144904
+[PS] pod class BP_DropPod_Tutorial_C enumeration: 1 match(es)
+[PS] pod class 0x1EB8C2D2B60 'BP_DropPod_Tutorial_C' chain=BP_DropPod_Tutorial_C<-BP_DropPod_C<-LokiDropPod<-LokiDropPodBase<-LokiActor<-Actor<-Object
+[PH] gm-cand[0] 0x1EB0906D750 'EndOfGameModel'  chain=EndOfGameModel<-Object  [+0x418]=0x0 not-live
+[PH] world 0x1EA89342B80 'LVL_Tutorial' AuthorityGameMode@0x250=0x0  GameState@0x258=0x0
+[PH] gm-cand[1] 0x1EB7B10B020 'Comp_GameMode_EoGFinisher'  chain=Comp_GameMode_EoGFinisher_C<-Comp_GameMode_EoGFinisher_Code_C<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[2] 0x1EA832C6700 'Comp_GameMode_DeathCircle'  chain=Comp_GameMode_DeathCircle_C<-ActorComponent<-Object  [+0x418]=0x250EC000250EB not-live
+[PH] gm-cand[3] 0x1EB601037C0 'Comp_GameMode_DropPlane_Tutorial'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object  [+0x418]=0x1EB0E1F1000 not-live
+[PH] gm-cand[4] 0x1EB85C11C00 'Comp_GameMode_ShopKeepers'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x1EA846186C0 not-live
+[PH] gm-cand[5] 0x1EC01F93740 'BP_LokiGameMode_Tutorial_C'  chain=BP_LokiGameMode_Tutorial_C<-LokiTutorialGameMode<-LokiRoundGameMode<-LokiGameMode<-LokiGameModeBase<-GameModeBase<-Info<-LokiActor<-Actor<-Object  [+0x418]=0x1EBF623A060 LIVE-UOBJECT
+[PH] gm-cand[6] 0x1EA07F80700 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x70000000D not-live
+[PH] gm-cand[7] 0x1EC478049C0 'Comp_GameMode_EoGFinisher_GEN_VARIABLE'  chain=Comp_GameMode_EoGFinisher_C<-Comp_GameMode_EoGFinisher_Code_C<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[8] 0x1EC0108CA00 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object  [+0x418]=0xFFFFFFFFBF800000 not-live
+[PH] gm-cand[9] 0x1EB7B606800 'Comp_GameMode_DeathCircle_GEN_VARIABLE'  chain=Comp_GameMode_DeathCircle_C<-ActorComponent<-Object  [+0x418]=0x13D00 not-live
+[PH] gm-cand[10] 0x1EB85C1BC80 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[11] 0x1EA02FF4200 'Comp_GameMode_WipeoutRespawns_GEN_VARIABLE'  chain=Comp_GameMode_WipeoutRespawns_C<-ActorComponent<-Object  [+0x418]=0x3F66E9F33F549A89 not-live
+[PH] gm-cand[12] 0x1EA02FF4000 'Comp_GameMode_Vaults_GEN_VARIABLE'  chain=Comp_GameMode_Vaults_C<-ActorComponent<-Object  [+0x418]=0x3F66E9F300000038 not-live
+[PH] gm-cand[13] 0x1EB85C1BF80 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x500000000001EB8F not-live
+[PH] gm-cand[14] 0x1EBFBAC5F20 'Comp_GameMode_QuestManager_GEN_VARIABLE'  chain=Comp_GameMode_QuestManager_C<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[15] 0x1EB8E03A060 'Comp_GameMode_Biomes_GEN_VARIABLE'  chain=Comp_GameMode_Biomes_C<-Comp_GameMode_Biomes_Code_C<-LokiBiomeManagerComponent<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[16] 0x1EB85C1D180 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x5FFFFFFFF not-live
+[PH] gm-cand[17] 0x1EBFBAC9E20 'Comp_GameMode_RoundReset_GEN_VARIABLE'  chain=Comp_GameMode_RoundReset_C<-ActorComponent<-Object  [+0x418]=0xBA43160000000000 not-live
+[PH] gm enumeration: 18 live *GameMode instance(s), 1 deriving from LokiRoundGameMode; world=0x1EA89342B80
+[PS] GameMode pick: 0x1EC01F93740  reason: the ONLY live instance deriving from LokiRoundGameMode (the class that DECLARES GoToPhase); no World AuthorityGameMode available
+[PS] comp-cand[0] 0x1EA418F2FA0 'Default__LokiGameModeDropPlaneComponent'  [EXCLUDED: archetype/_GEN_VARIABLE] chain=LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[PS] comp-cand[1] 0x1EB601037C0 'Comp_GameMode_DropPlane_Tutorial' chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[PS] comp-cand[2] 0x1EC0108CA00 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE'  [EXCLUDED: archetype/_GEN_VARIABLE] chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[PS] comp-cand[3] 0x1EC01EB76C0 'Default__Comp_GameMode_DropPlane_Tutorial_C'  [EXCLUDED: archetype/_GEN_VARIABLE] chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[PS] DropPlane component enumeration: 4 seen, 1 live candidate(s)
+[PS] WorldContextObject = 0x1EC01F93740 'BP_LokiGameMode_Tutorial_C' (BP_LokiGameMode_Tutorial_C)
+[PS]        chosen because: the live GameMode (auto 1st choice -- the SAME object SpawnActorCls passes in P3, so the WorldContextObject is held constant across all three spawn arms)
+[PD] hero-cand[0] 0x1EB8BF812C0 'LokiHeroCharacterGrid' (LokiHeroCharacterGrid) loc=UNREADABLE(0,0,0)
+[PD] hero-cand[1] 0x1EB8FAC5580 'BP_HERO_Ronin_C' (BP_HERO_Ronin_C) loc=(0,0,13240)
+[PD] start-cand[0] 0x1EBF76CD260 'BP_LokiPlayerStart_C_UAID_709CD165B93A7B4E02' loc=(-3206,5070,100)
+[PD] origin scan: 2 LokiHeroCharacter, 1 TrainingStart-tagged actor(s)  ⚠ >1 hero: the FIRST is used; its address is printed above so a wrong pick is visible
+[PS] SpawnTransform.Translation DERIVED from the TrainingStart-tagged actor (auto 2nd choice) (0x1EBF76CD260) = (-3206.4, 5070.5, 100.0)
+[PS] control actor = 0x1EBF76CD260 loc=(-3206.4,5070.5,100.0) rootAttached=0 (1 yes / 0 no / -1 unknown) -- the TrainingStart-tagged actor (non-origin, root NOT attached)
+[PS] control-actor candidates: hero 0x1EB8BF812C0 usable=0 | TrainingStart 0x1EBF76CD260 usable=1 (usable = live + readable + NON-ZERO location + root NOT attached)
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7B9A154A0 stub=0x1EB91821140 funcCls=0x1EA31EAB000 gameTid=29752
+[PS] ========== RM_POOLSPAWN: ROUTE F -- does the pooled spawn need the pool? ==========
+[PS] cfg arms=0x1FF podClass=BP_DropPod_Tutorial_C wco=0 origin=0 collision=0 scaleMethod=1 force=0 stepMs=500 settleMs=4000 miniCensus=1 frameInit=1 faultInfo=1 outParmRet=1
+[PS] NOTE on arming: if [FS] printed 'ZERO TARGETS SWAPPED', ignore its RM_PLAY wording and its tutorial_launch_play_hold300.dll suggestion -- for RM_POOLSPAWN it means THIS ladder will never advance and the sitting is VOID. Every poolspawn variant already builds with KFSNAME="" (every BP UFunction is a target).
+[PS] --- P0c (POSITIVE CONTROL): K2_GetActorLocation() on a NON-ORIGIN actor, cross-checked against a pure-RPM read of the same actor's RootComponent->RelativeLocation. ---
+[PD] sig K2_GetActorLocation(P0c CONTROL): 1 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig K2_GetActorLocation(P0c CONTROL) [0] ReturnValue            @0x0    size=24  StructProperty   struct=Vector     flags=0x0018001040000780  RETURN
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[PS] P0c returned without fault  dispatch=CallNativeGuarded  retElem=24  got=(-3206.4,5070.5,100.0) via RESULT_DECL (native path) | RPM ref=(-3206.4,5070.5,100.0)
+[PS] P0c VERDICT: STRONG PASS -- agreed to 0.00 uu on a non-zero reference (|ref|=8377)
+[FS] arm: swapped=17563 BP UFunctions  (scan 4140 ms over 154966 objects, 34253 UFunctions total) -- NO .text WRITE
+[PS] --- P1 (HEADLINE): ULokiGameplayStatics::SpawnPoolableActorFromClassDeferred. This is the FIRST LINK of the [I] chain 'PrimePools is disabled => the pooled spawn returns null => SpawnDropPodForTeam bail 2'. Nobody has ever shown that link holds. ---
+[PS] P1 Deferred SpawnTransform: slot @0x10, 96 bytes ZEROED then written -- quatW@+0x18, Translation@+0x20=(-3206.4,5070.5,100.0), Scale3D@+0x40=(1,1,1)
+[PS] P1 Deferred args: WCO=0x1EC01F93740 'BP_LokiGameMode_Tutorial_C' | ActorClass=0x1EB8C2D2B60 'BP_DropPod_Tutorial_C' | Collision=0 (declared enum 'ESpawnActorCollisionHandlingMethod') | ScaleMethod=1 (declared enum 'ESpawnActorScaleMethod') | Owner=NULL | Instigator=NULL
+[PS]        ^ the two enum VALUES are stock UE numbering [I]; the NAMES beside them are read live off the FProperty. A '-' means the name could not be read -- an instrument gap, not agreement. Neither value can sink the call: they are single bytes in a flat params block, not JSON enum strings (the S118 ELokiActivityState failure mode does not apply here).
+[PS] P1 Deferred sentinel 0xA5 armed in BOTH the params ReturnValue slot (@0x88) and RESULT_DECL, so 'nothing wrote a return' is distinguishable from 'wrote null'.
+[PS] P1 Deferred dispatch: thunk=0x7FF7BDA4F1A0 -> NATIVE via CallNativeGuarded (ProcessInternal is 0x7FF7B9A154A0). It is a NATIVE STATIC, so 'native' is the expected reading; the object is the CDO 0x1EA418FE7A0.
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[PS] P1 Deferred AFTER: returned without fault  fault=-
+[PS] P1 Deferred AFTER: sentinel -> paramsSlot *** 0xA5 INTACT ***, RESULT_DECL OVERWRITTEN | retUSED=0x0 (source: RESULT_DECL (native path))
+[PS] P1 Deferred AFTER: a return WAS written and it is NULL. THAT is the pooled spawn declining -- the exact value S127's bail 2 tested.
+[PS] P1 Deferred        ^ 'returned without fault' IS NOT A RESULT. Only the DropPod census delta is.
+[DP] after-P1 CENSUS summary: DropPlane=3 DropPod=2 DropShip=0 objects=5 new=0 gone=0 archetypesExcluded=46 (memo classes=10161 overflow=1647) elapsed=1281 ms
+[PS] --- P2 (THE CONTROL THAT MAKES P1 INTERPRETABLE): the NON-deferred sibling SpawnPoolableActorFromClass, same class, same transform, same WorldContextObject. Deferred null + non-deferred actor => the fault is in the DEFERRED path. BOTH null => the pool. ---
+[PS] P2 NonDeferred SpawnTransform: slot @0x10, 96 bytes ZEROED then written -- quatW@+0x18, Translation@+0x20=(-3206.4,5070.5,100.0), Scale3D@+0x40=(1,1,1)
+[PS] P2 NonDeferred args: WCO=0x1EC01F93740 'BP_LokiGameMode_Tutorial_C' | ActorClass=0x1EB8C2D2B60 'BP_DropPod_Tutorial_C' | Collision=0 (declared enum 'ESpawnActorCollisionHandlingMethod') | ScaleMethod=1 (declared enum 'ESpawnActorScaleMethod') | Owner=NULL | Instigator=NULL
+[PS]        ^ the two enum VALUES are stock UE numbering [I]; the NAMES beside them are read live off the FProperty. A '-' means the name could not be read -- an instrument gap, not agreement. Neither value can sink the call: they are single bytes in a flat params block, not JSON enum strings (the S118 ELokiActivityState failure mode does not apply here).
+[PS] P2 NonDeferred sentinel 0xA5 armed in BOTH the params ReturnValue slot (@0x88) and RESULT_DECL, so 'nothing wrote a return' is distinguishable from 'wrote null'.
+[PS] P2 NonDeferred dispatch: thunk=0x7FF7BDA4EEE0 -> NATIVE via CallNativeGuarded (ProcessInternal is 0x7FF7B9A154A0). It is a NATIVE STATIC, so 'native' is the expected reading; the object is the CDO 0x1EA418FE7A0.
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[PS] P2 NonDeferred AFTER: returned without fault  fault=-
+[PS] P2 NonDeferred AFTER: sentinel -> paramsSlot *** 0xA5 INTACT ***, RESULT_DECL OVERWRITTEN | retUSED=0x0 (source: RESULT_DECL (native path))
+[PS] P2 NonDeferred AFTER: a return WAS written and it is NULL. THAT is the pooled spawn declining -- the exact value S127's bail 2 tested.
+[PS] P2 NonDeferred        ^ 'returned without fault' IS NOT A RESULT. Only the DropPod census delta is.
+[FS] hot: 14 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   hot[00] hits=41      ABP_ResBeacon_C::BlueprintUpdateAnimation  (0x1EB0772E000)   <- candidate for -DKFSNAME
+[FS]   hot[01] hits=41      BP_LokiPlayerController_C::ReceiveTick  (0x1EC37D1B200)   <- candidate for -DKFSNAME
+[FS]   hot[02] hits=41      BP_HERO_Ronin_C::ReceiveTick  (0x1EBB5944D00)   <- candidate for -DKFSNAME
+[FS]   hot[03] hits=41      BP_LokiHeroCharacter_C::ReceiveTickClient  (0x1EA025C3800)   <- candidate for -DKFSNAME
+[FS]   hot[04] hits=40      BP_LokiHeroCharacter_C::ReceiveTickVisible  (0x1EA025C3900)   <- candidate for -DKFSNAME
+[FS]   hot[05] hits=41      Comp_PlayerController_Shop_Skylands_C::OnCharacterMoved  (0x1EC4A0F7D00)   <- candidate for -DKFSNAME
+[FS]   hot[06] hits=41      BP_HeroHeightIndicator_C::ReceiveUpdateHeightOffset  (0x1EB7E9CC200)   <- candidate for -DKFSNAME
+[FS]   hot[07] hits=41      BP_LineOfSightRendering_Component_C::ReceiveTick  (0x1EB7DA2CF00)   <- candidate for -DKFSNAME
+[FS]   hot[08] hits=18      BP_LokiGameMode_Tutorial_C::ReceiveTick  (0x1EA07DD4E00)   <- candidate for -DKFSNAME
+[FS]   hot[09] hits=41      Comp_GameMode_EoGFinisher_C::ReceiveTick  (0x1EBF7D7E900)   <- candidate for -DKFSNAME
+[FS]   hot[10] hits=41      Comp_PlayerController_DamageNumbers_C::ReceiveTick  (0x1EC01EC5600)   <- candidate for -DKFSNAME
+[FS]   hot[11] hits=18      Comp_PlayerController_Pings_C::ReceiveTick  (0x1EB785A6F00)   <- candidate for -DKFSNAME
+[FS]   hot[12] hits=7       Comp_PlayerController_Stats_C::ExecuteUbergraph_Comp_PlayerController_Stats  (0x1EC0239C400)   <- candidate for -DKFSNAME
+[FS]   hot[13] hits=2       Comp_PlayerController_Camera_C::ReceiveTick  (0x1EB89153400)   <- candidate for -DKFSNAME
+[DP] after-P2 CENSUS summary: DropPlane=3 DropPod=2 DropShip=0 objects=5 new=0 gone=0 archetypesExcluded=46 (memo classes=10161 overflow=2456) elapsed=1657 ms
+[PS] --- P3 (NON-POOLED REFERENCE): the SAME class through the ordinary spawn path. It establishes that the class is spawnable HERE, which is the precondition for reading anything at all into P1/P2. It runs LAST so it cannot contaminate their deltas. ---
+[FS] *** ARMED AND LIVE: hitsGT=588 allThreadCalls=588 after 8016 ms (~73 game-thread dispatches/s) ***
+[SEQ] seqClass=0x1EB8A5A2380 gm=0x1EC01F93740 gsCDO=0x1EA4177A140 begin=0x7FF7BBECEEC0 finish=0x7FF7BBED2CC0 vol=(283,277,-250)
+[FS] t=+15s hitsGT=588 called=587 allThreadCalls=588 swapped=17563
+[SEQ] BEFORE: TrainingQuest=0  Sequencer=0
+[PS] P3 offset Begin  WorldContextObject         SpawnActorCls-uses=0x0    live=0x0         => OK
+[PS] P3 offset Begin  ActorClass                 SpawnActorCls-uses=0x8    live=0x8         => OK
+[PS] P3 offset Begin  SpawnTransform             SpawnActorCls-uses=0x10   live=0x10        => OK
+[PS] P3 offset Begin  CollisionHandlingOverride  SpawnActorCls-uses=0x70   live=0x70        => OK
+[PS] P3 offset Begin  ReturnValue                SpawnActorCls-uses=0x88   live=0x88        => OK
+[PS] P3 offset Finish Actor                      SpawnActorCls-uses=0x0    live=0x0         => OK
+[PS] P3 offset Finish SpawnTransform             SpawnActorCls-uses=0x10   live=0x10        => OK
+[PS] P3 offset Finish ReturnValue                SpawnActorCls-uses=0x78   live=0x78        => OK
+[PS] P3: all 8 borrowed parameter offsets re-derived BY NAME and AGREE with what SpawnActorCls will use. The arguments will land where they are meant to.
+[PS] P3 WorldContextObject = 0x1EC01F93740 'BP_LokiGameMode_Tutorial_C' (BP_LokiGameMode_Tutorial_C) -- SpawnActorCls's OWN g_gm2, from a first-match SUBSTRING lookup, NOT from PhPickGameMode.
+[PS]        P1/P2 used 0x1EC01F93740 'BP_LokiGameMode_Tutorial_C'. MEASURED: they are THE SAME OBJECT.
+[PS] P3: spawning BP_DropPod_Tutorial_C at (-3206.4,5070.5,100.0) through BeginDeferredActorSpawnFromClass + FinishSpawningActor.
+[PS] P3 ⚠ STATED CONFOUND #1: SpawnActorCls hardcodes CollisionHandlingOverride=2 (AdjustIfPossibleButAlwaysSpawn) and is shared code compiled into `play`, so it is NOT edited. P1/P2 passed 0. If P1/P2 return null and P3 spawns, re-fly `poolspawn-collmatch` (KSPCOLLISION=2) BEFORE blaming the pool.
+[XF] KXFORMFIX=1  Scale3D@0x40  copy=0x60 bytes  (B.xform@0x10 coll@0x70)  scale=(1.00,1.00,1.00)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[QST] P3-reference(non-pooled) FinishSpawning -> res=0x1EB8530C080 par=0x0 | proxy(root)=null
+[PS] P3 RESULT: actor=0x1EB8530C080 (LIVE UObject 'BP_DropPod_Tutorial_C')
+[DP] after-P3 *** NEW *** 0x1EA793CCD00 'ABP_DropPod_C'  chain=ABP_DropPod_C<-AnimInstance<-Object
+[DP] after-P3 *** NEW *** 0x1EB8530C080 'BP_DropPod_Tutorial_C'  chain=BP_DropPod_Tutorial_C<-BP_DropPod_C<-LokiDropPod<-LokiDropPodBase<-LokiActor<-Actor<-Object
+[DP] after-P3 CENSUS summary: DropPlane=3 DropPod=4 DropShip=0 objects=7 new=2 gone=0 archetypesExcluded=46 (memo classes=10161 overflow=3265) elapsed=1437 ms
+[PS] ========== game-thread arms COMPLETE (P4 runs on the worker after a settle) ==========
+[FS] disarm: restored=17563 of 17563 swapped (scan 3531 ms, 34253 UFunctions live)
+[PS] settling 4000 ms before the AFTER census...
+[DP] P4-AFTER      0x1EA418EA020 'Default__LokiDropPlane' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA418EA860 'Default__LokiDropPodBase' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA418F2FA0 'Default__LokiGameModeDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA4192D710 'Default__LokiPlayerControllerDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA4192D7F0 'Default__LokiPlayerDropPlaneComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA41A2B250 'Default__LokiDropPhase_PlayerStateComponent' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA41A2B4F0 'Default__LokiDropPod' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA41A2BB50 'Default__LokiDropPodImpactIndicator' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA41A2BF30 'Default__LokiDropPodLaser' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA41A2C2F0 'Default__LokiDropShip' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB0180DC00 'Default__BP_Avatar_DropPod2_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB0B555400 'Default__BP_Avatar_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB0B2C9E00 'Default__BP_Avatar_DropPod3_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER *** NEW *** 0x1EA793CCD00 'ABP_DropPod_C'  chain=ABP_DropPod_C<-AnimInstance<-Object
+[DP] P4-AFTER       0x1EB601037C0 'Comp_GameMode_DropPlane_Tutorial'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[DP] P4-AFTER      0x1EC0108CA00 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER       0x1EB7B6C3740 'WBP_UI_DropPodControls'  chain=WBP_UI_DropPodControls_C<-UserWidget<-Widget<-Visual<-Object
+[DP] P4-AFTER *** NEW *** 0x1EB8530C080 'BP_DropPod_Tutorial_C'  chain=BP_DropPod_Tutorial_C<-BP_DropPod_C<-LokiDropPod<-LokiDropPodBase<-LokiActor<-Actor<-Object
+[DP] P4-AFTER       0x1EB8F52F250 'WBP_UI_DropPlane_Slice'  chain=WBP_UI_DropPlane_Slices_C<-UserWidget<-Widget<-Visual<-Object
+[DP] P4-AFTER       0x1EB788D5E00 'WBP_UI_DropPlane_SpinningDonut'  chain=WBP_UI_DropPlane_SpinningDonut_C<-UserWidget<-Widget<-Visual<-Object
+[DP] P4-AFTER      0x1EC01EB76C0 'Default__Comp_GameMode_DropPlane_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7ADB0100 'Default__Comp_PlayerState_DropPlane_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER       0x1EB890D0B00 'WBP_UI_DropPodIndicator_Animated'  chain=WBP_UI_DropPodIndicator_Animated_C<-UserWidget<-Widget<-Visual<-Object
+[DP] P4-AFTER      0x1EB77CFD6F0 'Default__WBP_Minimap_DropPod_Aim_Indicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB77CFC020 'Default__GIE_DropPod_Aim_Indicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7ADBAF00 'Default__Comp_PlayerState_DropPlane_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7F53D000 'Default__WBP_UI_DropPlane_SpinningDonut_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7EE61A80 'Default__BP_DropPlane_MultiStationary_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7EE63A60 'Default__BP_DropPlane_Straight_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7BD0E830 'Default__BP_DropPod_Tutorial_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7BD029B0 'Default__BP_DropPlane_SpinningDonut_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7EE65A40 'Default__BP_DropPlane_Shrinking_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7EE61420 'Default__BP_DropPlane_Expanding_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7EE60DC0 'Default__BP_DropPlane_Straight_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7EE60760 'Default__BP_DropPlane_Stationary_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7EE60100 'Default__BP_DropPlane_PieSlices_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7EE6F9A0 'Default__BP_DropPlane_Flop_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7EE6ECE0 'Default__BP_DropPlane_Base_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7BD08100 'Default__BP_DropPod_Child_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB0B84F810 'Default__BP_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB797B09A0 'Default__ABP_DropPod_Child_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB77CFF6E0 'Default__GIE_DropPod_Impact_WASDIndicator_Baby_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB77CFFB70 'Default__GIE_DropPod_Impact_WASDIndicator_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB783C9280 'Default__BP_SkyVisual_DropPlaneIcon_HotZone_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB783C8DF0 'Default__BP_SkyVisual_DropPlaneIcon_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA11AA9760 'Default__DropPlaneCameraPawn_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB783C84D0 'Default__GIE_DropPod_Aim_Indicator_Live_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EB7BAF7290 'Default__WBP_UI_DropPodControls_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA01D27E80 'Default__WBP_UI_DropPodIndicator_Animated_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EAD55DF040 'Default__BP_DropPodLaser_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA0808D9C0 'Default__ABP_DropPod_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EBF8772990 'Default__WBP_UI_DropPlane_Slices_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER      0x1EA3DB29D90 'Default__BP_DropPlane_PlaneIcon_C' [ARCHETYPE/GEN_VARIABLE -- excluded from all counts]
+[DP] P4-AFTER CENSUS summary: DropPlane=3 DropPod=4 DropShip=0 objects=7 new=2 gone=0 archetypesExcluded=46 (memo classes=10161 overflow=4074) elapsed=1562 ms
+[PS] ------------- DELTA TABLE (the DropPod row is the Route F result) -------------
+[PS]   bucket    BEFORE afterP1 afterP2 afterP3   AFTER     dP1     dP2     dP3
+[PS]   DropPod        2       2       2       4       4      +0      +0      +2   <== ROUTE F
+[PS]   DropPlane      3       3       3       3       3      +0      +0      +0
+[PS]   DropShip       0       0       0       0       0      +0      +0      +0
+[PS]   objects        5       5       5       7       7   (new=2 gone=0; the per-stage columns are meaningless wherever the row above read n/a)
+[PS]   archetyp      46      46      46      46      46   (EXCLUDED from every bucket above)
+[PS] call status codes: -1 = NOT CALLED | 0 = called, no fault | 1 = called and FAULTED. -1 is NOT a clean run.
+[PS] ran: P0c=1(status=0 verdict=1) P1=1(status=0 written=1 ret=0x0 via RESULT_DECL (native path)) P2=1(status=0 written=1 ret=0x0 via RESULT_DECL (native path)) P3=1(actor=0x1EB8530C080 sameWCOasP1P2=1 borrowedOffsetsOk=1)
+[PS] P3 qualifier codes: sameWCOasP1P2 1 = P3 held the WorldContextObject constant against P1/P2 (single-variable) | 0 = it did NOT (two variables) | -1 = P3 never got that far. borrowedOffsetsOk 1 = every parameter offset SpawnActorCls uses re-derived BY NAME.
+[PS] targets: class=LokiGameplayStatics CDO=0x1EA418FE7A0 | Deferred grade=1 fn=0x1EA415E4750 thunk=0x7FF7BDA4F1A0 | NonDeferred grade=1 fn=0x1EA415E4660 thunk=0x7FF7BDA4EEE0 | WCO=BP_LokiGameMode_Tutorial_C | pod=BP_DropPod_Tutorial_C | origin=the TrainingStart-tagged actor (auto 2nd choice) (0x1EBF76CD260) | sanity=1
+[PS] grade codes: 0 unresolved | 1 NATIVE thunk (S55 direct-Func) | 2 ProcessInternal (bytecode) | 3 universal fold (stripped) | 4 Func == NULL.
+[PS] ***** VERDICT: BOTH pooled spawns returned null while the SAME class spawned fine through the ordinary non-pooled path. => the class IS spawnable here, so the null belongs to the POOL, and the [I] chain 'PrimePools disabled => pooled spawn returns null => SpawnDropPodForTeam bail 2' is SUPPORTED at its first link for the first time.
+[PS] corroboration: total DropPod delta BEFORE->AFTER = +2 | dP1=0 | dP2=0 | P3 spawned an actor. Any pod P3 created is INSIDE the total and is labelled in the dP3 column.
+[PS] ⚠ NOTHING IS UNDONE. Any actor these arms spawned is still in the world. Recovery = restart the client.
+[PS] done (step=8 resolved=1 p0c=1 p1=1 p2=1 p3=1 called=590 hitsGT=590)

@@ -1,0 +1,198 @@
+SESSION 59 — MISSIONS PROGRESS BARS: OPTION 1 SOLVED (bars show real "0 / <max>", not the "10/20" placeholder)
+=============================================================================================================
+Date: 2026-07-08. Branch: dedicated-server-stub. Builds on s55-s58 (native-call primitive + full missions page).
+RESULT: *** COMPUTER-USE + USER-SCREENSHOT VERIFIED — every mission bar now renders its true "not started" state
+(0 / real-max) with correct per-mission maxes, across all four tabs. The design-time placeholder is gone. ***
+
+WHAT THE PROGRESS BAR ACTUALLY READS (RE'd from BP bytecode this session)
+------------------------------------------------------------------------
+The per-objective bar widget = WBP_UI_MissionObjectiveProgress(Base). Container chain:
+  WBP_UI_MissionContainer -> "Create Widget for Mission" -> WBP_UI_MissionProgress(Base) [the per-MISSION tile;
+  DA.LobbyWidgetClass is null so the default WBP_UI_MissionProgress_C is used].
+The tile's AddMissingObjectives (ubergraph entry 2951) iterates **Mission.MissionAsset.Objectives** (the DA's
+TArray<LokiMissionObjectiveData>, @DA+0x88), and for each objective whose ObjectiveClass IsValidClass:
+  - Create(WBP_UI_MissionObjectiveProgress)
+  - SetStructurePropertyByName(widget,"Objective", objData)   <- widget.Objective = the DA struct (has TotalProgress)
+  - SetObjectPropertyByName(widget,"MissionModel", Mission)
+  - AddNewObjective(widget)
+The bar's UpdateProgress ubergraph then draws:
+  current = GetCurrentProgress()   // = ObjectiveModel.CurrentProgress if IsValid(ObjectiveModel), else 0
+  total   = widget.Objective.TotalProgress
+  ProgressTextv2.SetText( Format("{current}/{total}") )
+  ProgressBarv2.SetPercent( current / total )
+The bar's Construct subscribes OnMissionUpdated to MissionModel.OnUpdated AND calls OnMissionUpdated, which:
+  name = LokiAssetStatics::GetUniqueObjectiveName(widget.Objective)   // FName, NATIVE fn
+  ObjectiveModel = MissionModel.Objectives.Find(name)                 // FName-keyed TMap<FName, MissionObjectiveModel*>
+  if found -> OnObjectiveModelSet -> UpdateProgress
+
+ROOT CAUSE OF THE "10/20"
+-------------------------
+It's the DESIGN-TIME placeholder of ProgressTextv2 ("10/20") + ProgressBarv2 (Percent 0.5), left visible because
+UpdateProgress never runs with real data. Live ground-truth (tools/re/live_bars.py, modal open): all 23 bars had
+ObjectiveModel = NULL, total = the REAL per-mission max (already correctly bound from widget.Objective!), and
+Percent = 0.500. The bind failed because our factory model (probe15/16) keyed MissionModel.Objectives by
+ObjectiveProgress[i].ObjectiveName = None, so Map_Find(GetUniqueObjectiveName(...)) never matched -> ObjectiveModel
+stayed null -> UpdateProgress didn't fire -> placeholder stayed.
+(MissionObjectiveModel fields, dumped: Name(FName)@0x30, CurrentProgress(float)@0x38, Completed@0x60,
+StartingProgress@0x64, Objective(->LokiMissionObjective)@0x78. The MAX is NOT here — it's widget.Objective.
+TotalProgress from the DA struct. LokiMissionObjectiveData(48B): Prompt(Text)@0, TotalProgress(float)@0x10,
+HideInMenus@0x14, ObjectiveClass(Class)@0x18. LokiDataAsset_Mission: Objectives(TArray)@0x88, XPReward@0x98,
+InternalName@0x40. Class chain: DA_Mission_*_C -> LokiDataAsset_Mission -> LokiDataAsset_Base -> PrimaryDataAsset.
+SuperStruct @+0x48.)
+
+THE FIX (probe17, durable, native-only) — key the model's Objectives map by the REAL objective name
+--------------------------------------------------------------------------------------------------
+Extend the probe15 pipeline: after loading each mission DA, read DA.Objectives (@+0x88); for each
+LokiMissionObjectiveData objective:
+  key   = LokiAssetStatics::GetUniqueObjectiveName(objData)   // native, via the s55 primitive
+  total = objData.TotalProgress (@+0x10)                      // informational; the bar reads the DA anyway
+  build one FMissionObjectiveProgress { ObjectiveName=key, Progress=0, MaxProgress=total, StartingProgress=0 }
+Put those in FMissionProgress.ObjectiveProgress (@+0x38) per mission, then
+CreateMissionModelFromFinalProgress -> swap into ProgMgr.MissionsModel (@+0x3B8) as before.
+Now the factory builds MissionModel.Objectives keyed by the real FName, with a MissionObjectiveModel whose
+CurrentProgress=0. On (re)open, the widget's GetUniqueObjectiveName(same DA struct) matches the map key ->
+Map_Find succeeds -> ObjectiveModel binds (CurrentProgress=0) -> UpdateProgress -> text "0 / TotalProgress",
+Percent 0. Durable because the game's own BP does the binding every time the modal opens.
+
+GetUniqueObjectiveName (LokiAssetStatics, NATIVE, thunk rva 0x52B3720): params [0] Objective(LokiMissionObjectiveData,
+48B, CPF_OutParm|CPF_ConstParm @off0), [1] ReturnValue(FName @off48, Return). Call it with the s58 OUT-param recipe
+(FOutParmRec for the Objective struct -> Locals+0); return FName in r8. Sample keys computed live: Tournament_WinGame
+-> 'a2winarenagames' total=1; Tournament_Top3 -> 'BR_3Top4' total=3; Tournament_PlayAGame -> 'PlayAGame' total=5;
+Tournament_KnocksAssists -> 'BR_Knocks_Assists' total=50.
+
+VERIFICATION (this session)
+---------------------------
+- Structural (RPM): after swap, MissionModel[0].Objectives is keyed FName 'a2winarenagames' (not None); the value
+  MissionObjectiveModel has Name='a2winarenagames', CurrentProgress=0.000, Completed=false.
+- Visual (computer-use reopen + user screenshots): ONBOARDING = 0/1,0/1,0/1; SEASONAL (Tournament) = 0/50, 0/5,
+  0/3, 0/1; WEEKLIES = 0/15,0/3,0/45,0/20,0/500,0/5,0/30; DAILIES = 0/3(Complete All),0/6,0/5,0/5,0/1. Bars empty,
+  real varied maxes, XP rewards render. *** THE "10/20" PLACEHOLDER IS GONE. Option 1 COMPLETE. ***
+
+FILES
+-----
+- tools/sigbypass-mod/missions_nativecall_probe17.cpp  (the Option-1 shim; copy of probe15 + GetUniqueObjectiveName
+  keying + Progress=0). Build: clang++ -shared -O2 ... -lkernel32. Inject: tools/inject/inject.exe mmap <PID> ...
+  Marker: docs/missions-nativecall17-marker.txt.
+- tools/re/mission_obj_dump.py   (dump a live MissionModel.Objectives TMap: keys + value MissionObjectiveModel)
+- tools/re/objmodel_dump.py      (MissionObjectiveModel class + live instances; find current/max fields)
+- tools/re/da_dump.py            (follow MissionModel.MissionAsset/BaseMission, walk DA class chain incl. supers)
+- tools/re/live_bars.py          (GROUND TRUTH without a screenshot: read live bar widgets' Percent + total + current)
+- BP dumps: tools/extractor/out/bpdump_{UpdateProgress,GetCurrentProgress,Create Widget for Mission,
+  ExecuteUbergraph_WBP_UI_MissionProgressBase,ExecuteUbergraph_WBP_UI_MissionObjectiveProgress*}.txt
+
+=============================================================================================================
+OPTION 2 — real tracking via the ags backend: read/apply loop BUILT + VERIFIED (2a + 2b). 2c/2d remain.
+=============================================================================================================
+Goal: bars reflect real, per-account progress that persists and (eventually) fills as you play.
+
+PHASE 2a — backend store + serve (DONE, unit-tested, live-verified). server/internal/interactive/missions.go:
+  - playerState.MissionObjectives map[string]float64 (objective UNIQUE name -> current progress), persisted in
+    the shared store (state/interactive.json), single-account key "local" (the in-process shim carries no JWT).
+  - Revival-only endpoints (namespaced /revival/, never collide with impersonated client routes):
+      GET  /revival/missions/progress            -> {"objectives":{"<name>":<val>,...}}   (shim reads this)
+      POST /revival/missions/progress            -> merge-SET absolute values (seed / reconcile)
+      POST /revival/missions/progress/add        -> INCREMENT by deltas (the match-end hook shape)
+  - Test: server/internal/interactive/missions_test.go (round-trip set/add/get). `go test -C server ./...` green.
+  - Live: restarted ags (reuses existing certs -> NO cacert re-append, game reconnected seamlessly);
+    GET .../progress -> 200 {"objectives":{}}.
+
+PHASE 2b — client fetch + apply (DONE, structurally verified; visual pending a modal reopen).
+  tools/sigbypass-mod/missions_nativecall_probe18.cpp = probe17 + WinINet GET of /revival/missions/progress
+  (off the game thread, in Worker) + a tiny JSON scan, then in BuildObjectivesForMission:
+      Progress = objectives[ GetFNameStr(GetUniqueObjectiveName(objective)) ]   (clamped to TotalProgress; else 0)
+  Live run (seed BR_Knocks_Assists=17, BR_3Top4=2, PlayAGame=3): marker fetchOk=1 entries=3 appliedNonZero=4;
+  new model's MissionObjectiveModel.CurrentProgress reads BR_Knocks_Assists=17, BR_3Top4=2, PlayAGame=3 (+ a
+  second 'PlayAGame' daily clamped to 1). Since Option 1 proved CurrentProgress -> bar, SEASONAL reopens to
+  17/50, 2/3, 3/5, 0/1. (Build: clang++ -shared -O2 ... -lkernel32 -lwininet.)
+  KNOWN LIMITATION: objective UNIQUE names can repeat across missions (e.g. 'PlayAGame' is on both the Tournament
+  and a Daily mission), so a single progress value applies to all missions sharing that objective name. If
+  per-mission granularity is needed later, key ags progress by "<missionInternalName>/<objectiveName>" and have
+  the shim look up with that composite (the shim already knows the mission's InternalName from the DA).
+
+PHASE 2c — increment from match results (ENGINE BUILT + unit-tested; auto-drive from LIVE matches still blocked).
+  HARD CONSTRAINT: every match/mission endpoint the client hits is a GET (docs/endpoints.md: /match-history,
+  /core-game, /progression — all reads). In the real game the DEDICATED SERVER reports match results to the
+  backend; the client never POSTs them, and matches are gated in the revival. So fully-automatic tracking from
+  live play is out of reach here. What IS achievable + built: the match-result -> objective-increment ENGINE.
+  server/internal/interactive/missions.go: POST /revival/missions/match-result takes a match stat summary
+  (win, placement, knocks, assists, teamWipes, minionKills, bossKills, chestsOpened, vaultsOpened,
+  bonfiresCaptured, sunrises, purchases, uniqueHeroes, gameMode, + explicit `objectives` passthrough) and maps
+  it to per-objective deltas via objectiveRules, keyed by the REAL objective unique-names read live from the
+  DAs (Tournament: a2winarenagames/BR_3Top4/PlayAGame/BR_Knocks_Assists; Dailies: BR_Knocks/BR_Sunrises/
+  ArmoryOnboarding_PurchaseEquipment; Weeklies: BR_WinABR/BR_KillBosses/BR_Boxes/BR_Vaults/BR_Capture Bonfires/
+  BR_Minions/BR_WipeTeams/Armory_PlayUniqueHunters/TopXWithFullArmory; Onboarding: Onboarding_PlayTriosMatch).
+  Applies to the store; the shim's poll picks it up -> bars fill. Unit-tested (missions_test.go
+  TestMatchResultMapping). Drive it with a simulated match now; wire to real match data when matches launch
+  (the mapping is ready). All 91 distinct objective unique-names were dumped live (330 missions) — extend
+  objectiveRules from that list as more semantics are confirmed.
+  Example:  curl -X POST http://127.0.0.1:8080/revival/missions/match-result \
+              -d '{"win":true,"placement":1,"knocks":8,"assists":2,"chestsOpened":3,"minionKills":40,"gameMode":"tournament"}'
+  LIVE-VERIFIED (computer-use, on the -Missions relaunch): a simulated tournament win POST returned applied
+  deltas {a2winarenagames:1, BR_WinABR:1, BR_3Top4:1, BR_Knocks_Assists:10, BR_Knocks:8, PlayAGame:1, BR_Boxes:5,
+  BR_Minions:30, TopXWithFullArmory:1}; the shim's poll auto-re-applied; reopening the modal showed SEASONAL
+  = Get Knocks/Assists 37/50, Play Games 4/5, Place Top 3 3/3 (COMPLETE), Win a Game 1/1 (COMPLETE), and DAILIES
+  = Get Knocks 5/5 (COMPLETE, clamped from 8), Play a Game 1/1 (COMPLETE) — with untouched objectives (See
+  Sunrises 0/6, Purchase 0/5) correctly empty. *** THE WHOLE OPTION-2 LOOP WORKS ON A FRESH LAUNCH. ***
+
+PHASE 2d — durable packaging (DONE, live-verified). tools/sigbypass-mod/missions_fix.cpp = probe18 packaged
+  as an auto-run launch shim: waits for ProgMgr/MissionsModel + funcs to resolve, fetches ags progress, builds
+  the keyed model w/ progress, swaps — then POLLS ags every 30s and re-applies ONLY when the fetched progress
+  CHANGES (idle = cheap HTTP polls, no thread-suspends), so a match's POST /revival/missions/progress/add fills
+  the bars without a relaunch (reopen the modal to see it). Marker docs/missions-fix-marker.txt.
+  Wiring: `launch-redirect.ps1 -Missions` sets primary catalog_store_fix + $InjectMissions, which spawns
+  configs/inject-missions.ps1 (mirror of inject-secondaries) to inject missions_fix.dll AFTER the primary
+  self-unhooks. IT IS THE SOLE ProcessInternal-hooker in this mode: the pick/refresh secondary
+  mainmenu_refresh_pi8 ALSO hooks ProcessInternal, and two PI-hookers race on the thread-suspend install, so
+  -Missions SKIPS the secondaries (pick-commit + main-menu refresh are unavailable in this mode; store/roster
+  still work via the primary). Combining missions + pick/refresh in one launch = a future task (fold both into
+  a single PI-hooking shim). Build: clang++ -shared -O2 missions_fix.cpp -o missions_fix.dll -lkernel32 -lwininet.
+  LIVE-VERIFIED end-to-end via an actual `.\configs\launch-redirect.ps1 -Missions` RELAUNCH: catalog_store_fix
+  auto-injected + settled ([cm]/[unhook]/[patch]); inject-missions.ps1 then auto-injected missions_fix, which on
+  menu load fetched the PERSISTED progress (BR_Knocks_Assists=27 survived the full game+ags restart) and swapped
+  the model (apply#1). (Note: the game hit the documented intermittent boot crash on 2 tries before booting on
+  the 3rd — unrelated to missions_fix, which never loads until the menu.)
+
+RUN IT (durable):  from an ELEVATED PowerShell:  .\configs\launch-redirect.ps1 -Missions
+  (Steam running first.) Seed/advance progress any time:
+    curl -X POST http://127.0.0.1:8080/revival/missions/progress -d '{"objectives":{"BR_Knocks_Assists":17}}'
+    curl -X POST http://127.0.0.1:8080/revival/missions/progress/add -d '{"objectives":{"PlayAGame":1}}'
+
+=============================================================================================================
+PER-MISSION GRANULARITY + MISSIONS/PICK-REFRESH COEXISTENCE (follow-ups) — DONE, relaunch-verified.
+=============================================================================================================
+PER-MISSION GRANULARITY: progress is now keyed "<missionInternalName>/<objectiveUniqueName>" (composite),
+not the bare objective name, so two missions sharing an objective name track INDEPENDENTLY. Shim reads each
+DA's InternalName (@DA+0x40), builds the composite key for lookup, and POSTs a mission->objective manifest
+(POST /revival/missions/manifest) on menu load. ags's match-result engine fans an objective-name delta out
+to EVERY mission that has it (via the manifest). Verified live (fresh -Missions launch, one tournament match):
+the model shows Tournament_PlayAGame/PlayAGame=1 AND ArmoryDaily_PlayAGame/PlayAGame=1 (independent),
+ArmoryDaily_GetKnocks/BR_Knocks=5 (clamped to its max) vs Tournament_KnocksAssists/BR_Knocks_Assists=10.
+Files: server/internal/interactive/{store.go,missions.go} (composite storage + manifest + fan-out,
+unit-tested TestMatchResultManifestFanout); missions_fix.cpp (InternalName read + composite key + manifest POST).
+
+COEXISTENCE: missions_fix and mainmenu_refresh_pi8 both hook ProcessInternal; they now serialize their
+(one-time g_stolen capture + every install/use/uninstall) on a shared named mutex
+"Local\SuperviveMissionsPIHook", so the two PI-hookers never race the thread-suspending SafeWrite. Under the
+lock the prologue is always the ORIGINAL (each installs only while holding the lock). inject-missions.ps1 now
+injects mainmenu_refresh_pi8 + catalog_pick_fix alongside missions_fix, so -Missions also gets pick-mirror/
+main-menu-refresh + pick-commit. Verified: pi8 resolved (subjects=4, spawners=4, member) and armed alongside
+missions_fix; game stable.
+
+LOAD-WAIT HARDENING (missions_fix): the load-poll now waits until ~90% of a mission sample has its DA loaded
+(GetLokiDataAsset non-null) before CreateMissionModelFromFinalProgress, and SKIPS the swap entirely if loading
+badly stalls (<50% at a 35s timeout) — so it never pushes a DEGRADED model (missions with no objectives) into
+the UI. This fixed a menu crash seen when BuildAndSwap ran ~3s after inject (only mission[0] loaded => 22/330
+objectives); with the fix the manifest is the full 330 and the menu is stable.
+
+GOTCHA (relaunch): this game build BOOT-CRASHES intermittently (~half the launches this session, before the
+menu/shims engage — unrelated to any shim). Just re-run `.\configs\launch-redirect.ps1 -Missions` until it
+reaches the menu. Also: computer-use `open_application` on the game LAUNCHES A DUPLICATE instance (the game was
+started via the exe, not Steam, so Steam doesn't see it running) — verify per-mission progress via RPM
+(tools/re) or have the user open the modal, rather than open_application.
+
+Detail continues in this file. Prior handoff: docs/session-57-da-resolution.txt.
+
+RE FACTS THIS BUILD (unchanged): base 0x7FF6B54F0000 (re-read each launch); ProcessInternal @base+0x13454A0;
+GUObjectArray @base+0x9E38930; FNamePool @base+0x9D81450; GGameThreadId @base+0x9D49158. FName indices PER-PROCESS.
+UProgressBar.Percent @+0x410. Leaf bar widget offsets: Objective(struct)@0x2F0 (TotalProgress@0x300),
+ObjectiveModel@0x320, MissionModel@0x328, ProgressBarv2@0x368, ProgressTextv2@0x370.

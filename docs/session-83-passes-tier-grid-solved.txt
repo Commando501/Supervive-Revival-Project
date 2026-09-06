@@ -1,0 +1,301 @@
+================================================================================
+SESSION 83 — PASSES: THE HUNTER'S JOURNEY TIER GRID IS BUILT (Levels 0 -> 86)
+================================================================================
+Date: 2026-07-18.  Branch: dedicated-server-stub.
+Companion memory: supervive-passes-battlepass-status.  Predecessor: session-82-passes-battlepass-shim.txt.
+
+--------------------------------------------------------------------------------
+0. TL;DR
+--------------------------------------------------------------------------------
+S82 cracked ADOPTION (account-pass VM exists, 85-tier asset bound) but its tier grid was empty
+(Levels@+0xC8 = 0). S83 found the grid had TWO client-side blockers and fixed both in the shim.
+The game now POPULATES THE TIERS ITSELF — we never call the populate.
+
+  AccountPassViewModel: ID='ProgressionTrack:HuntersJourney'  IsAccountPass=1
+                        ProgressionTrackAsset=Default__HuntersJourney_C (LevelRewards=85)
+                        LevelsToDisplay(+0x70) = 85   (game-set; was 0)
+                        Levels(+0xC8)          = 86   <-- THE TIER GRID
+  Elements are real per-reward objects: BP_battlepassLevelViewModel_HeroToken_C,
+  BP_BattlepassLevelViewModel_{GameFeature,Emote,SlotCosmetic,PlayerTitle,Currency,
+  HeroCosmeticsBundle}_C, each with its tier XP threshold at +0x338 (2000, 2500, 3000, 4000, ...).
+  Loop still dead (adopted>=target), game stable, no crash.
+
+★ VISUALLY CONFIRMED ON SCREEN (screenshots, end of session): the PASSES > HUNTER'S JOURNEY page
+  RENDERS FULLY — the numbered tier ladder draws with per-tier reward tiles and correct rarity/type
+  labels (8 "3RD CONSUMABLE SLOT" FEATURE, 7 "HUNTER TOKEN" COMMON UNLOCK, 6 "BUBBLES" SPRAY,
+  5 "HEART" EMOTE, 3 "ARMOR EVOLVES" FEATURE, ... plus FINAL ABILITY LEVEL), the right-hand reward
+  detail pane shows description + capsule art + a working "GO TO HUNTERS" button, the tab header
+  reads "HUNTER'S JOURNEY" (string table now resolves, see §5a), and the MAIN MENU shows a
+  "NEW LEVELS" badge next to PASSES. The PASSES section is ONLINE.
+
+--------------------------------------------------------------------------------
+1. THE TWO ROOT CAUSES (the S82 "next steps" were both wrong turns)
+--------------------------------------------------------------------------------
+S82 proposed: (A) open the tab and hope the widget populates, or (B) RE the populate's args and
+force-call 0x57DF4B0. (A) was tested and FAILED — the tab was opened 3x with Levels still 0.
+(B) is actively dangerous (see §3). The real chain, fully RE'd from the bytes:
+
+`CheckAccountPassChanges` (0x5794480, rcx=BattlepassViewManager) is the populate's REAL caller:
+   mov rsi,rcx                                  ; ONLY rcx is an input
+   mov rcx,[rsi+0x1C8]                          ; PM = ViewManager+0x1C8
+   call 0x5840700  ; GetAccountTrack -> byte[PM+0x208]     test al,al / je bail   <-- GATE A
+   call 0x584B920  ; tier predicate: cmp dword[track+0xEC],-1 ; setne al / je bail <-- GATE B
+   call 0x562BC70  ; -> X = LokiAssetLoader          test rax,rax / je bail
+   call 0x562BED0  ; -> P = HuntersJourney_C (class) test rbx,rbx / je bail
+   call 0x53283E0  ; cached UClass (IsChildOf validate) / je bail
+   mov rax,[rcx] ; lea rdx,[rsp+0x48] ; call [rax+0x1D0]   ; P->GetPrimaryAssetId(&out)
+   mov rcx,rax   ; lea rdx,[rsp+0x38] ; call 0x12F4230     ; FPrimaryAssetId::ToString -> FString K
+   mov rdx,rax   ; mov rcx,rsi        ; call 0x57AB180     ; FindVM(ViewManager, K)
+   test rax,rax ; je 0x5794670                             ; *** NOT FOUND -> SKIP THE POPULATE ***
+   lea r8,[rbp+0xB8] ; mov rcx,rax ; lea rdx,[rsp+0x28] ; call 0x57DF4B0   ; the populate
+
+BLOCKER 1 — TIER GATE. Live-measured: byte[PM+0x208]=1 (Gate A passed, from the S82 /progression
+  lever) but dword[PM+0x90+0xEC] (CurrentTierIndex) = **-1** => Gate B failed => CheckAccountPassChanges
+  bailed before the populate. The shim writes it (=0).
+  *** CORRECTION (post-session RE workflow) — THIS WAS NOT THE CAUSE OF THE EMPTY GRID. ***
+  The marker reads `Levels via CheckAccountPassChanges: before=86 -> after=86`: Levels was ALREADY 86
+  BEFORE the force-call. The grid is built by the VM BUILDER's unconditional Init `0x57BB560`
+  (`+57BB64F mov [rsi+0x70],edx` = LevelsToDisplay; `+57BB65E call 0x57B1130`), invoked from the account
+  builder at `+57CABBD` AHEAD OF BOTH GATES, during the adoption broadcast. So BLOCKER 2 (the key) is
+  the SOLE verified cause; fixing the key made the builder run for a properly-keyed VM and it populated
+  Levels itself. **Whether the tier write is needed AT ALL is UNVERIFIED** — it may be inert for the
+  grid (it still matters for progress, see §5d). Cheap test on a fresh launch: set the tier back to -1
+  (`battlepass_pm_probe.py --set-tier -1`), bump Version, re-inject, and see if Levels still reaches 86.
+  Do NOT repeat the S83 claim that this was "root cause 1" until that test is run.
+
+BLOCKER 2 — ★ THE KEYSTONE: VM MAP-KEY MISMATCH.
+  The lookup key is P's stringified FPrimaryAssetId. Live-resolved: **K = "ProgressionTrack:HuntersJourney"**.
+  Our shim keyed the VM by the adopted track's ProgressionTrackID = bare **"HuntersJourney"**.
+  Live proof of the mismatch (the two maps even use different key TYPES):
+     BattlepassViewModels @+0x58 : key = FString          'HuntersJourney'          Levels=0  (ours)
+     MasteryViewModels    @+0xA8 : key = FPrimaryAssetId  HeroMastery:Beebo         Levels=9  (works)
+  => FindVM missed => `je` => populate skipped => empty grid.
+  FIX: resolve K at runtime and set ProgressionTrackID = K BEFORE adoption, so the game INSERTS the
+  VM under K. Patching the stored key string in place would NOT work — a TMap find HASHES the key.
+  Once keyed correctly the game did the rest natively: it populated Levels AND set LevelsToDisplay.
+
+--------------------------------------------------------------------------------
+2. THE SHIM (tools/sigbypass-mod/battlepass_adopt_fix.cpp)
+--------------------------------------------------------------------------------
+On the game thread (ProcessInternal hook base+0x13454A0), in order:
+  1. ResolveKey(): 0x562BC70(vmgr) -> LokiAssetLoader; 0x562BED0(loader,&out) -> P;
+     P->vtbl[0x1D0](&paid) -> FPrimaryAssetId; 0x12F4230(&paid,&fstr) -> K. Copy K to g_keyw.
+  2. BuildAggregate(): LokiPublishedProgressionTracks{ [1 track: ProgressionTrackID=K,
+     Details.InternalId="HuntersJourney", IsAccountPass=1, rest zero], Version=N }.
+  3. Call OnSuccess 0x57C8130(BPIM,&agg) -> adopt + broadcast -> ViewManager builds the VM UNDER K.
+  4. Bind AccountPassViewModel+0xE8 = Default__HuntersJourney_C (build-time resolver still not found).
+  5. Satisfy gates: byte[PM+0x208]=1 if 0; dword[PM+0x90+0xEC]=0 if <0.
+  6. Call CheckAccountPassChanges 0x5794480(vmgr) -> the game builds the populate's args and runs it.
+Marker: docs/battlepass-adopt-marker.txt. *** BUMP `Version` (g_agg+0x10) above the current adopted
+value on EVERY re-inject *** or OnSuccess's `jle` skips the re-adopt (the marker prints adopted).
+Build: clang++ -shared -O2 tools/sigbypass-mod/battlepass_adopt_fix.cpp -o ...dll -lkernel32
+   (clang at C:\Users\eastr\AppData\Local\Programs\Swift\Toolchains\6.3.2+Asserts\usr\bin\clang++.exe)
+Inject: tools\inject\inject.exe mmap <PID> "<abs path to dll>"
+Fallback: tools/sigbypass-mod/battlepass_adopt_fix.s82-known-good.dll (adopt+bind only).
+
+--------------------------------------------------------------------------------
+3. CORRECTIONS TO PRIOR NOTES (each cost real time — do not regress)
+--------------------------------------------------------------------------------
+* `VM.Levels`(+0xC8) is **TArray<UObject*>** (8-byte pointers), NOT TArray<FPrimaryAssetId> as the
+  usmap/older notes claimed. Elements are per-reward BP_BattlepassLevelViewModel_<Kind>_C objects;
+  tier XP threshold at +0x338. Verified by raw bytes on a working mastery VM.
+  => The populate CONSTRUCTS objects. That is why the S82 p12 zeroed-arg force-call CRASHED.
+     **NEVER force-call 0x57DF4B0.** Call CheckAccountPassChanges instead and let it build the args.
+* The published-pass chain is NOT "P = S[+0x238]" (S82 p3). Live: 0x562BC70 -> LokiAssetLoader;
+  0x562BED0 -> **P = HuntersJourney_C itself** (BlueprintGeneratedClass, package
+  /Game/Loki/Core/ProgressionTracks/HuntersJourney). S[+0x238]=0 is a RED HERRING — chasing it
+  wasted a shim iteration this session.
+* `CheckAccountPassChanges` is SAFE to force-call: rcx-only ABI, its own 0x268 stack frame + /GS
+  cookie, and EVERY downstream step is null-checked with a clean bail to 0x5794687. Worst case it
+  no-ops (observed twice before the key fix). This is why probing it was cheap.
+* usmap container element types remain untrustworthy — verify against live RPM (project rule held).
+
+--------------------------------------------------------------------------------
+4. TOOLS ADDED / GROUND TRUTH
+--------------------------------------------------------------------------------
+  tools/re/battlepass_deep_probe.py — account VM vs a working mastery VM vs the adopted track;
+      resolves each Levels element's class + XP threshold. The comparison that cracked this.
+  tools/re/battlepass_pm_probe.py   — reads the two gates (PM+0x208, PM+0x90+0xEC);
+      `--set-tier N` writes CurrentTierIndex (probe-only by default).
+  tools/re/battlepass_oracle.py     — unchanged one-command status (now reports Levels=86).
+NEW RVAs: 0x5794480 CheckAccountPassChanges | 0x5840700 GetAccountTrack | 0x584B920 tier predicate |
+  0x562BC70 ->LokiAssetLoader | 0x562BED0 ->P | 0x53283E0 cached UClass | vtbl+0x1D0 GetPrimaryAssetId |
+  0x12F4230 FPrimaryAssetId::ToString | 0x57AB180 FindVM(key) | 0x57DF4B0 populate (DO NOT CALL).
+PM offsets: +0x90 account track (0x120) | track+0xEC CurrentTierIndex | +0x208 present flag |
+  +0x210 seasonal track | +0x388 seasonal flag.
+
+--------------------------------------------------------------------------------
+5. WHAT'S LEFT
+--------------------------------------------------------------------------------
+ (a) HEADER TEXT: **FIXED as a side effect — nothing to do.** Before the key fix the tab rendered
+     `<MISSING STRING TABLE ENTRY>` (Loki.log: "Failed to find string table entry for
+     '.../ST_battlepass.ST_battlepass' 'HuntersJourney-header'"), because the widget builds its key
+     as `<VM.ID>-header` and the ID was the bare 'HuntersJourney'. With the ID corrected to
+     'ProgressionTrack:HuntersJourney' the lookup RESOLVES and the tab renders "HUNTER'S JOURNEY".
+     (This session predicted it would still miss — it does not. The shipped string-table key is
+     keyed off the PrimaryAssetId form, which is further confirmation that K is the canonical ID.)
+ (b) SEASONAL — *** TESTED LIVE. The VM BUILDS; NO TAB APPEARS. Parked, default OFF. ***
+     It is NOT the same lever as progress (3/3 verifiers): the VM builder's true entry is 0x57CA670
+     (0x57CAB50 in earlier notes is MID-INSTRUCTION — +57CAB4E is a 7-byte mov rdx,[r13+0x1e0]), and it
+     iterates the tracks at BattlepassInfoManager(+0x1D8)+0x40, NOT the ProgressionManager — zero refs
+     to PM+0x388/0x210/0x2FC anywhere in its 688-instruction body. Its gate:
+       +57CACF5 cmp byte ptr [r15+0xAB],0 ; +57CACFD je skip      (r15 = track, stride 0x120)
+       +57CADF2 mov qword ptr [r13+0x1a8], rax                    (SeasonalPassViewModel)
+     Slots PROVEN by live UClass reflection: Account=+0x198, Referral=+0x1A0, Seasonal=+0x1A8
+     ⇒ track+0xAA=bIsReferralPass, track+0xAB=bIsSeasonalPass.
+     EXPERIMENT RUN (shim kArmSeasonal, 2-element aggregate: account + a track with IsSeasonalPass=1,
+     ID "Season:supervive-season-1" — the ID must NOT already be a map key or the builder skips it):
+       RESULT: BPIM tracks.Num 1->2, BattlepassViewModels 2->3, SeasonalPassViewModel 0x0 -> a real
+       BP_BattlepassViewModel_C (outer=BattlepassViewManager), Levels=0 LevelsToDisplay=0.
+       Account VM UNTOUCHED (Levels=86, tier 12) — as predicted, the builder SKIPS a track whose ID is
+       already a map key (+57CA963 cmp eax,-1 / jne), which is what protects it. No crash.
+       *** BUT THE UI SHOWS NO SEASONAL TAB *** — still only HUNTER'S JOURNEY / YOUR REFERRALS.
+     ⇒ TWO SOLID NEGATIVES FOR A FUTURE SESSION:
+       1. Tab visibility is NOT gated on SeasonalPassViewModel != null. Something else drives the tab
+          strip — find THAT before building any more seasonal plumbing.
+       2. A seasonal LADDER is structurally impossible through this path: the non-account branch uses
+          the pure field copier 0x57B9C00, which zeroes the Levels count (+57B9C86 mov [r15+8],r14d,
+          r15=VM+0xC8, r14d=0) and never calls the level Init 0x57BB560. No packed asset changes this.
+          (Live negative control: the game-built VM keyed 'HuntersJourney' also has 0/0.)
+     Default left OFF (kArmSeasonal=false): an empty invisible VM is dead weight and a latent risk if a
+     widget ever iterates its Levels unguarded. Flip to true to reproduce.
+ (c) The build-time +0xE8 resolver is still unknown — the shim binds ProgressionTrackAsset by hand.
+ (d) ★★★ PROGRESS — *** SOLVED, PURELY FROM THE BACKEND (2026-07-18, later the same session). ***
+     Serving GET /progression/players/{id} as a SUPERSET (existing AccelByte envelope untouched +
+     three added top-level keys) made the native ingester adopt. LIVE RESULT:
+       PM+0xA0 (adopted Version) -1 -> our value | PM+0x17C (AccountPass.Level) 0 -> 12
+       PM+0x180 (AccountPass.XP) 0 -> 1500       | PM+0x388 (Gate C) 0 -> 1 (LEGITIMATE side effect:
+       the ingester archives PM+0x90 -> PM+0x210 itself; this is the CONSTRUCTED way that byte
+       becomes valid, as opposed to poking it by hand — see the warning below)
+       Loki.log Progress Notif: {currentTierIndex:0,currentXP:0,requiredXP:2000}
+                             -> {currentTierIndex:12,currentXP:1500,requiredXP:22000}
+       ^ requiredXP was RECOMPUTED by the client for tier 12 from the packed CDO ladder — proof it
+         is genuinely consuming our data, not echoing it.
+     ★ VISUALLY CONFIRMED ON SCREEN: the ladder now AUTO-SCROLLS to the current tier, tiers <=12 draw
+       dimmed (earned) and 13+ bright (upcoming), and the tier-14 row renders the live XP counter
+       "1,500 / 22,000 XP" — our served XP against the client's own recomputed requirement.
+     THE PAYLOAD (field names RECOVERED from live UStruct reflection + the usmap name table —
+     FPlayerProgression size 0x178, FProgressionTrackLevel size 0x60; only the VALUES are ours):
+       { ...existing data/paging/total...,
+         "ID": "<playerId>", "Version": <monotonic>,
+         "AccountPass": { "Level": 12, "XP": 1500, "Cleared": false } }
+     Deliberately OMIT Matches/MissionInfo/HeroMastery/LoginReward/EventProgression/UnclaimedRewards:
+     a MATCHED key with a wrong CONTAINER type rejects the WHOLE document and looks identical to
+     "no effect". Absent is safe. Name matching is case-INsensitive (the camelCase in Loki.log is
+     FJsonObjectConverter's OUTPUT convention, not an input requirement).
+     VERSION IS LOAD-BEARING: the ingester gate is `cmp dword[src+0x10], dword[PM+0xA0]; jle bail`
+     (STRICT >). Two traps, both hit and fixed here: (1) a CONSTANT is adopted once then ignored
+     forever on the ~61s poll — the classic "worked once then stopped"; (2) a process-local counter
+     RESETS on an ags restart while PM+0xA0 SURVIVES, so every later change is silently dropped.
+     Fix = bump only when the served content changes, seeded from time.Now().Unix() (monotonic
+     across restarts, fits the DWORD compare). Code: server/internal/interactive/interactive.go
+     (progressionVersionFor + handleGetProgression).
+     TWO MORE UNTAPPED ROUTES hit the SAME ingester if ever needed:
+       GET /progression/players/{id}/login/rewards/checkin (OnSuccess 0x5854B40) and
+       POST /progression/players/{id}/heroexchange (binds 0x585A570 directly). Neither is served.
+
+     ★ WIRED TO THE ADMIN PANEL (live round-trip verified). The values are no longer hardcoded:
+       - playerState gains AccountPassLevel / AccountPassXP / AccountPassCleared (store.go),
+         persisted per-account in state/interactive.json like every other player field.
+       - interactive.Service.AccountPass(id) / SetAccountPass(id, p) (admin.go) — Level<0 is
+         clamped to 0, because the client's tier predicate 0x584B920 reads -1 as "no account
+         track" and would drop the pass out of the UI entirely.
+       - admin API: GET/PUT http://127.0.0.1:9210/api/progression/{id}  {"level","xp","cleared"}
+       - admin GUI: a "Hunter's Journey — account pass" block in the player editor + a column in
+         the player list. NB the GUI needed TYPED setters (st_setNum/st_setBool): the existing
+         st_set stores STRINGS and drops falsy values, and the server decodes the player doc with
+         DisallowUnknownFields into typed Go fields, so "12" or "" would fail the whole save.
+       - progressionVersionFor is now PER-PLAYER (map keyed by id). It must be: the version is
+         compared against each CLIENT's adopted value, so one shared counter would let two
+         accounts bump each other and re-broadcast on every poll.
+       LIVE: PUT {level:34,xp:9000} -> within ~22s (next poll) PM+0x17C=34, PM+0x180=9000,
+       Version +1 (content-change bump), and the notif read
+       {"currentTierIndex":34,"currentXP":9000,"requiredXP":41000} — requiredXP recomputed for
+       tier 34 (cf. 22000 at tier 12, 2000 at tier 0). No relaunch, no shim, no re-inject.
+       DEFAULTS ARE NOW ZERO (tier 0 / no XP) — the honest fresh-account state. Anyone expecting
+       the old hardcoded 12/1500 should set it in the panel.
+
+     ★★ PASS XP IS EARNED FROM MATCH RESULTS (server/internal/interactive/passxp.go, live-verified).
+       The same POST /revival/missions/match-result that advances missions now also grants
+       Hunter's Journey XP and LEVELS THE PASS UP.
+       WHY THE SERVER NEEDS THE LADDER: the client does NOT level the pass. It treats Level as a
+       tier INDEX and XP as progress toward the NEXT tier, computing that tier's requirement itself
+       from the packed asset — so serving XP above the requirement just draws a full bar forever;
+       only the SERVER raising Level advances a tier. So passxp.go carries the 85-value ladder,
+       DUMPED FROM THE LIVE PROCESS (Default__HuntersJourney_C -> LevelClass(+0xB8)
+       HuntersJourneyLevelProgression_C -> CDO(+0x178) -> int32[] at CDO+0x30, count at CDO+0x38)
+       and VERIFIED against the client's own reported requiredXP at tiers 0/12/34 (2000/22000/41000
+       — all three match). Regenerate with scratchpad/dump_xp_ladder.py if the build ever changes;
+       TestPassLadderMatchesClient pins those three values so a bad regeneration fails loudly.
+       THE LADDER IS NON-MONOTONIC (dips at 20, 30, 40, 55...) — these are PER-TIER requirements,
+       not a cumulative curve, so levelling MUST subtract tier by tier. There is no closed form;
+       TestAdvancePassNonMonotonic pins that.
+       WHO GETS CREDITED: the game-facing POST carries the player's Bearer token, so handleMatchResult
+       fills PlayerID from it and the real path is EXACT, never inferred. The admin simulator (no auth)
+       falls back to the sole player, or takes an explicit playerId. With 0 or 2+ players and no id we
+       SKIP the grant rather than guess. That is not hypothetical — the first live run credited nobody
+       because a stale second account was still in state/interactive.json.
+       AWARD TABLE (passXPRules) is OURS, not the game's (the real one died with the backend):
+       1000 played + 1500 win + 500 top3 + 50/knock + 25/assist + 150/wipe + 100/boss + 75/bonfire
+       + 50/vault + 10/chest + 5/minion, plus an explicit passXp passthrough. Tuned so an average
+       match ~= one early tier and clearly less than a late one. Nothing in the client depends on them.
+       LIVE: a 1st-place win with 8 knocks/2 assists/1 wipe granted 3600 (itemized breakdown returned),
+       then a 31000 grant rolled tier 34 -> 35 with 2600 carried; the client adopted Level=35 XP=2600
+       ~28s later and the notif read {"currentTierIndex":35,"currentXP":2600,"requiredXP":43000}.
+       Tests: server/internal/interactive/passxp_test.go (10 pass, incl. carry-over, multi-tier,
+       non-monotonic dip, max-tier cap + Cleared, non-positive no-op, ambiguity skip).
+
+ (d-old) THE ORIGINAL (WRONG) FRAMING, kept as a warning. We believed Gate C blocked the populate.
+     Mechanism found: **GATE C** — `0x5842EA0` (which fills the populate's progress out-params) opens
+     with `+5842EBE cmp byte[rcx+0x388],0 ; +5842ED3 xor al,al ; jmp` — i.e. if `byte[PM+0x388]==0` it
+     returns having LEFT THE OUT-PARAMS UNWRITTEN, so `0x57DF4B0` gets the caller's PRE-ZEROED TArray.
+     Live `byte[PM+0x388]=0`. That is exactly why tiers draw but progress does not.
+     ROUTE: **`0x585A570(rcx=PM, rdx=srcTrack)`** is the real account-track ingester — it copy-constructs
+     PM+0x90 from src via `0x58061A0` (which writes `track+0xEC` at `+5806363`), sets `byte[PM+0x208]=1`
+     (`+585A613`) AND `byte[PM+0x388]=1` (`+585A5D8`), then Broadcasts the delegate at PM+0x48
+     (`+585A62B lea rcx,[rbx+0x48]; call 0x3071C30`) — to which CheckAccountPassChanges,
+     CheckMasteryChanges, CheckLoginRewardChanges, CheckEventProgressionChanges and
+     OnUpdatedCurrentPublishedProgressionTracks are ALL AddDynamic-bound (wide string @0x8B40860
+     = L"&UBattlepassViewManager::CheckAccountPassChanges"). One call does the whole refresh natively.
+     Entry gate: `cmp dword[rdx+0x10], dword[PM+0xA0]; jle bail` — live PM+0xA0 = -1, so any src ver >=0 passes.
+     *** DO NOT hand-fabricate the >=0x178-byte src struct *** (0x58061A0 deep-copies FStrings/TArrays +
+     two sub-objects — that is the fabricate-structs trap this project has been burned by twice).
+     Instead trace which of `0x5838DDD` / `0x583CC24` / `0x5854B6C` / `0x585C48C` is fed by the HTTP
+     progression response and drive THAT.
+ (d-2) ⚠⚠ GATE C IS NOT A GATE — the (d-old) framing above was WRONG, and acting on it would have
+     been harmful. Proof, from one live log line BEFORE any progress was served:
+       "Match () Progress Notif: {...,"currentTierIndex":0,...,"requiredXP":2000,...}"
+     The EMPTY "Match ()" means 0x5842EA0 bailed and never wrote its ARG2 FString — yet the notif was
+     emitted FULLY FORMED, so the populate 0x57DF4B0 RAN TO COMPLETION anyway. Gate C's out-param
+     never reaches the populate: populate's progress arg is r8 = &local.AccountPass
+     (+579465C lea r8,[rbp+0xb8], from GetAccountTrack's COPY of PM+0x90), and Gate C's return value
+     in al is dead (clobbered immediately by +579453E call 0x584B920). The pipeline ran end-to-end
+     all along and was simply FED ZEROS (FPlayerProgression @PM+0x90 all-zero, Version -1).
+     *** DO NOT POKE byte[PM+0x388]. *** It is SAFE inside 0x5842EA0 (triple-verified instruction
+     walk on the live all-zero state) but it is the TOptional::bIsSet byte of the struct at PM+0x210,
+     and setting it by hand permanently disarms the ingester's guard
+       +585A5B5 cmp byte[rdi+0x178],0 ; +585A5BC je (skips) ; +585A5C8 call 0x5278640 ~FPlayerProgression
+     so the NEXT ingest runs a destructor over 288 bytes of RAW ZEROS (not a default-constructed
+     struct — its sparse headers read MaxBits=0/FirstFree=0 where a real one reads 0x80/-1), tearing
+     down an FString, three TMaps and four TArrays. Plus an untraced deep copy at +585B897. AND the
+     action is provably a NO-OP for progress. Zero value, two armed paths. The ingester sets that
+     byte itself, correctly, as part of (d).
+     Also DEAD: force-calling RefreshTracks 0x57D0630 (fully disassembled, 3/3: no store to
+     PM+0x90/0x208/0x388/0xA0, no call to the ingester or populate — it is a request issuer only).
+
+ (e) ⚠ CORRECTION — "the backend route is exhausted" (S82 p9 / S83) is **FALSIFIED** (3/3 verifiers)
+     — and now EMPIRICALLY DEAD: (d) drove real progress entirely from a backend endpoint.
+     S82's empirical negative stands only for the specific endpoints tried; a native writer of
+     PM+0x208/PM+0x17C/PM+0x388 does exist (0x585A570 / 0x58061A0). The backend route is BACK IN PLAY
+     and is the clean path to real progress AND likely to the seasonal pass.
+     Also falsified: `0x55608E0` as the ingester — its callee page `0x564FD00` is all-zero in vmbuild,
+     accountpass AND merged, so it has never executed in any captured state.
+ (f) KNOWN ARTIFACT (benign): `BattlepassViewModels` currently holds TWO account VMs — the stale
+     hand-built `HuntersJourney`-keyed one (Levels=0) and the good `ProgressionTrack:HuntersJourney`
+     one (Levels=86). This is an artifact of re-adopting repeatedly with different keys inside ONE
+     process; a FRESH launch with the final shim produces only the correct VM. The page renders, which
+     empirically proves the widget binds the correctly-keyed VM — no action needed.
+ (g) `LevelsToDisplay`(+0x70) is SETTLED — never hand-set it. `0x57BB560` writes it from
+     `LevelClass_CDO+0x38`, and `Levels.Num == that + 1` on BOTH VMs (account 85 -> 85/86; mastery
+     Beebo 8 -> 8/9). Neither 0x57DF4B0 nor 0x57B1130 reads it; it is display-side only.
+================================================================================

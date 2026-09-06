@@ -1,0 +1,44 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[BS] BUILDSTAMP=S136-guardfix-1
+[BS] RM_BOTSPAWN (S135): SpawnClassBotAtLoc on the tutorial GameMode's own bot spawner.
+[BS] CO-OP VS. AI is already ACCESSIBLE (tile + FIND MATCH work, S133); what has never
+[BS] happened is a BOT. The bots queue's own gamemode IS Breach, so this arm does NOT
+[BS] use it: Comp_BP_BotSpawner_C rides on BP_LokiGameMode_Tutorial, and [M] it has ZERO
+[BS] ServerOnly/HasAuthority/SpawnPlayer occurrences (control: 8 in the gamemode's own
+[BS] ubergraph) -- so it is free of BOTH the FK-42 exec-pin gates and FK-1's stripped
+[BS] SpawnPlayer. Inject into a STAGED TUTORIAL WORLD (gft -> fo -> sp -> this).
+[BS] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF60A2854A0 stub=0x1B390A91140 funcCls=0x1B27A91B000 gameTid=17376
+[BS] ---- A0: BASELINE WORLD SCAN (read-only; NO CALL) ----
+[FS] arm: swapped=17563 BP UFunctions  (scan 4172 ms over 155177 objects, 34253 UFunctions total) -- NO .text WRITE
+[BS]   heroCand[0] 0x1B38CD52E20 'LokiHeroCharacterGrid' cls='LokiHeroCharacterGrid' root=0x0 locOff=0x158 -> no readable location
+[BS]   heroCand[1] 0x1B399FF5580 'BP_HERO_Ronin_C' cls='BP_HERO_Ronin_C' root=0x1B39FCA0200 locOff=0x158 -> USABLE
+[BS]   heroCand[2] 0x1B3E6922AE0 'BP_HERO_Ronin_C' cls='BP_HERO_Ronin_C' root=0x1B256017910 locOff=0x158 -> USABLE
+[BS] census A0       BotOrAIController-chain=1  LokiHeroCharacter-chain=3  (136770 objects, 1024 classes memoised, 4610 ms)
+[BS] hero candidates: 3; chosen=0x1B399FF5580
+[BS] ---- RESOLVE ----
+[BS] playerHero/WorldContext=0x1B399FF5580 'BP_HERO_Ronin_C'
+[BS]   heroLoc = (0.0, 0.0, 13240.0)
+[FS] hot: 0 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   (none -- the swapped functions are not being dispatched on the game thread)
+[BS] pawnClass 'BP_HERO_Ronin_C' = 0x1B3239F7240 chain=BP_HERO_Ronin_C<-BP_LokiHeroCharacter_C<-BP_LokiHeroCharacter_Code_C<-LokiHeroCharacter_AS<-LokiHeroCharacter<-LokiCharacter<-Character<-Pawn<-LokiActor<-Actor<-Object -> DERIVES FROM Pawn
+[BS] SpawnAIFromClass fn=0x1B220766590 thunk=0x7FF60D577EC0 cdo=0x1B220AE1520
+[BS]   params: WCO@0x0 PawnClass@0x8 BT@0x10 Loc@0x18 Rot@0x30 NoColl@0x48 Owner@0x50 Ret@0x58
+[BS] ARGS: pawnClass='BP_HERO_Ronin_C' spawnLoc=(600.0, 0.0, 13240.0) BT=null noCollisionFail=1 owner=null
+[BS] ---- A1: STABILITY RE-SCAN after 750 ms settle (still NO CALL) ----
+[FS] *** ARMED AND LIVE: hitsGT=1 allThreadCalls=1 after 8000 ms (~0 game-thread dispatches/s) ***
+[BS] census A1       BotOrAIController-chain=1  LokiHeroCharacter-chain=3  (136770 objects, 1024 classes memoised, 4610 ms)
+[BS] ---- THE CALL: UAIBlueprintHelperLibrary::SpawnAIFromClass ----
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[BS] SpawnAIFromClass -> ReturnValue=0x1B302F7D560 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C'
+[BS] ! ReturnValue is a corroborator, NOT the verdict. The CONTROLLER census delta is.
+[BS] ---- A2: POST-CALL SCAN ----
+[FS] t=+15s hitsGT=1 called=0 allThreadCalls=65 swapped=17563
+[BS] census A2       BotOrAIController-chain=2  LokiHeroCharacter-chain=4  (137247 objects, 1024 classes memoised, 4484 ms)
+[FS] disarm: restored=17563 of 17563 swapped (scan 4015 ms, 34253 UFunctions live)
+[BS] ---------------- RM_BOTSPAWN SUMMARY ----------------
+[BS] resolved=1 roster=-1 team=-1(player=-999) called=1 faulted=0 refused=0
+[BS] botOrAIControllers A0=1 A1=1 A2=2 | heroCharacters A0=3 A1=3 A2=4
+[BS] ***** VERDICT: A BOT SPAWNED. BotController +1 and LokiHeroCharacter +1 across the call, from a STRUCTURAL ZERO baseline (0 of 1,126 log files contain any bot-spawn string). This is the first AI hero in this project's history. Screenshot it, then escalate: 'Spawn Random Bot At Loc' proves the roster, 'SpawnBotTeamAtLoc' spawns a whole enemy team. *****
+[BS] done (step=4 resolved=1 called=1 faulted=0 dCtl=1 dHero=1 hits=1 hitsGT=1)

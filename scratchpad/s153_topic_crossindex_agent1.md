@@ -1,0 +1,21 @@
+**AGGREGATE:** 29 STRIPPED stubs on WALL P's critical path (ability activation, completion, cue, cooldown, spell-swap, mana) out of 318 total.
+
+**TOP-10 HIGHEST-IMPACT:**
+
+- **ULokiGameplaySpell::CallSpellCompleteEvent  thunk=0x5254180** — blocks: spell completion event never fires → cooldown/next-cast/durable-body pathway broken (directly explains S147's "no durable ability body"); in_fk1_register: no; icf_share: 92-way; bypass_status: **CANDIDATE_ALT_CALL** (call Blueprint completion path directly)
+- **ULokiSpellSwapper::SwitchSpell  thunk=0x52FD2D0** — blocks: cannot switch between primary/sub-spells; NEW; in_fk1_register: no; icf_share: other (LokiIsServer fold); bypass_status: **GENUINELY_BLOCKING**
+- **ULokiSpellSwapper::AddSubSpell  thunk=0x5438720** — blocks: sub-spell attachment (multi-charge/upgrade paths, if MiniDash is composed); NEW; in_fk1_register: no; icf_share: unshared; bypass_status: **GENUINELY_BLOCKING**
+- **ULokiSpellSwapper::NextSpell/PreviousSpell  thunk=0x52FD980** — blocks: spell-cycle navigation for heroes with rotating kits; NEW x2; in_fk1_register: no; icf_share: other; bypass_status: **GENUINELY_BLOCKING**
+- **ULokiSpellSwapper::RemoveSubSpell  thunk=0x5469F00** — blocks: cleanup; LokiIsClient TRUE fold means this returns success on client — different failure mode; NEW; bypass_status: **UNKNOWN**
+- **ULokiAbilitySystemComponent::AuthExecuteLocalGameplayCueOnClient  thunk=0x5294660** — blocks: local VFX/SFX cue → no visual receipt of activation; in_fk1_register: no; icf_share: unshared; bypass_status: **CANDIDATE_ALT_CALL** (call `NetMulticastGameplayCue` path)
+- **ULokiAbilitySystemComponent::CancelAllMovementSpells  thunk=0x5254180** — blocks: activation flows that pre-cancel active movement (dashes, dodges); in_fk1_register: no; icf_share: 92-way; bypass_status: **CANDIDATE_DATA_POKE** (clear active-spell TArray directly)
+- **ULokiAbilitySystemComponent::ServerSetAbilityToLevel  thunk=0x5296B80** — blocks: level=0 specs may fail CanActivate; in_fk1_register: no; icf_share: unshared; bypass_status: **CANDIDATE_DATA_POKE** (write `FGameplayAbilitySpec.Level` on the committed spec)
+- **ULokiTuningLibrary::GetTuningRoninDashCooldownOverride  thunk=0x5490C90** — blocks: Ronin dash cooldown returns void → cooldown lookup may return garbage/zero, or worse trip a nullcheck; in_fk1_register: no; icf_share: shared 3x with two other tuning-cooldown getters; bypass_status: **UNKNOWN** (measure downstream first)
+- **ALokiCharacter::ResetCooldowns  thunk=0x5254180** — blocks: cannot cheat cooldowns for iteration (utility, not the wall itself); in_fk1_register: no; icf_share: 92-way; bypass_status: **CANDIDATE_ALT_CALL** (poke ASC cooldown-tag TArray)
+
+**NEW-INFO ASSESSMENT:** Of the 29 critical-path stubs:
+- **In FK-1 register (5-entry list):** 1 direct (ALokiCharacter::AuthCheatSetMana shares FK-1's AuthCheatSetHealth thunk 0x52FD620, 9-way ICF); ALokiGameState::AuthHandlePlayerPawnUpdated shares 0x2C2CE30 (SetDropLeader thunk, 23-way). Zero WALL-P entries are named in the FK-1 register.
+- **S152 batch hunt (95 hits) / S153 exec sweep (32 hits) overlap:** ~22 rows marked `new_vs_v1=no` (already known via prior 92-way/23-way/9-way ICF discoveries).
+- **Genuinely new to S153 v2:** **7** — all in `ULokiGameplaySpell` (2) and `ULokiSpellSwapper` (5). None appear in the FK-1 register or prior hunts.
+
+**BLOCKS-WHAT SUMMARY:** WALL P **can** achieve InitAbilityActorInfo bind, GiveAbility spec commit, Mana cost debit, and CanActivate → InputID state transition (all measured S143–S147). WALL P **cannot** currently deliver spell-completion events (CallSpellCompleteEvent stripped → no cooldown finalize, no next-cast rearm — the most plausible S147 "no durable body" mechanism), spell-swap (5 stubs → any hero whose kit routes through SpellSwapper is dead), local gameplay-cue VFX (no visual receipt), or Ronin-dash cooldown override reads. **Priority for S151 Move 3 BINDCENSUS follow-up: read live spec state after activation to distinguish "CallSpellCompleteEvent needed" from "InputID never reaches BP action-binding" — if the spec shows `ActiveCount>0 && bIsActive==true` post-cast, CallSpellCompleteEvent is the smoking gun.**

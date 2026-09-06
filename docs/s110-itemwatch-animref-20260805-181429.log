@@ -1,0 +1,330 @@
+====================================================================================================
+item_watch  2026-08-05 18:14:29   pid=18536  base=0x7FF681610000
+log=G:\git\Supervive Revival Project\docs\s110-itemwatch-animref-20260805-181429.log
+csv=G:\git\Supervive Revival Project\docs\s110-itemwatch-animref-20260805-181429.csv
+====================================================================================================
+FUObjectArray @0x7FF68B448930  objects=0x2AB3C439520  numElements=58077
+chunks: 0x2AB3E4A0008(58077)
+live objects: 52372 of 58077 slots
+
+--- CALIBRATION (400 sampled objects) --------------------------------------------------
+  InternalIndex @0x10  (matches the array slot for 400/400 objects)
+  ObjectFlags  @0x0C  (RF_ClassDefaultObject on 100% of 52 CDOs, 0% of 348 others)
+----------------------------------------------------------------------------------------------------
+decoys: 256 control objects (half uniform, half from the top 20% of indices, seed=1)
+marker: G:\git\Supervive Revival Project\docs\tutorial-launch-marker.txt
+  marker is 609 s old (previous run): skipping its 205 existing lines; only pointers written from now on are adopted
+
+--- VERDICT TABLE, registered before the run (docs/next-session-prompt-s110.md S0) --------
+  A  item.SerialNumber changes, or item.Object -> a DIFFERENT object
+     => SLOT RECYCLED. The object was really destroyed and the index reissued.
+  B  item.Object -> 0 (and Flags -> 0), no recycle yet
+     => FreeUObjectIndex ran: ~UObjectBase executed. Real destruction.
+  C  a new item-flag bit appears before B, and that bit is the one the sweep sees spike
+     population-wide  => the REACHABILITY PASS marked it. If we rooted it, the poked bit
+     is NOT honoured by this build's GC.
+  D  neither the item nor the sweep moves, but the object's vtable/NamePrivate go bad
+     => OUT-OF-BAND teardown (package unload / stream-out / explicit destroy), or the
+     pointer was never the object we thought. GC was never involved.
+  VOID  no target event AND no decoy event => the watcher never showed it can see a change.
+----------------------------------------------------------------------------------------------------
+
+[t=   0.000] watching 0 target(s); interval=50 ms sweep=250 ms (stride 1/8)
+[t=   0.001] SWEEP#1  live~52376 free~5704  (1-in-8 sample, scaled)  bits: bit2 25%, bit25 61%, bit26 2%, bit30 75%
+           reachability flag currently = bit None  (the bit most live objects carry; see the header note)
+           RootSet(bit30) vs reachability flag, over 6547 sampled live objects:
+             rooted       4915, of which      0 (  0%) carry the current flag
+             not rooted   1632, of which      0 (  0%) carry the current flag
+[t=   3.286] *** PURGE VISIBLE *** live 52384 -> 50464 (-1920 objects destroyed since the previous sweep)
+[t=   3.286] decoy control: 164 slot(s) changed (#48133 flags 00000004->00100002; #50694 flags 00000004->00000002; #47627 flags 00000004->00000002)
+[t=   3.539] *** POPULATION FLAG MOVE *** live~69024  bit20(LoaderImport?) +15pp, bit25(Native) -17pp, bit26(Async?) +26pp, bit27(AsyncLoading?) +27pp, bit30(RootSet) -21pp
+[t=   3.539] decoy control: 41 slot(s) changed (#56857 obj 0x0->0x2ABFF6B5BA0 flags 00000000->0C100002; #55871 obj 0x0->0x2AB7DE63CE0 flags 00000000->0C100002; #55897 obj 0x0->0x2AB7DE60400 flags 00000000->0C100002)
+[t=   3.793] *** POPULATION FLAG MOVE *** live~85096  bit20(LoaderImport?) +5pp, bit25(Native) -9pp, bit26(Async?) +14pp, bit27(AsyncLoading?) +14pp, bit30(RootSet) -11pp
+[t=   3.793] decoy control: 2 slot(s) changed (#32914 serial 0->9457; #55484 serial 0->9393)
+[t=   4.048] *** POPULATION FLAG MOVE *** live~85328  bit20(LoaderImport?) -22pp, bit26(Async?) -41pp, bit27(AsyncLoading?) -41pp
+[t=   4.048] decoy control: 55 slot(s) changed (#48133 flags 00100002->00000002; #56857 flags 0C100002->00000002; #55871 flags 0C100002->00000002)
+[t=   4.301] *** POPULATION FLAG MOVE *** live~113736  bit20(LoaderImport?) +6pp, bit25(Native) -9pp, bit30(RootSet) -12pp
+[t=   4.301] decoy control: 26 slot(s) changed (#48133 flags 00000002->00100002; #48180 flags 00000002->00100002; #47695 flags 00000002->00100002)
+[t=   4.555] *** POPULATION FLAG MOVE *** live~130128  bit20(LoaderImport?) +6pp, bit26(Async?) +10pp, bit27(AsyncLoading?) +10pp
+[t=   4.810] *** POPULATION FLAG MOVE *** live~159576  bit26(Async?) +7pp, bit27(AsyncLoading?) +7pp, bit30(RootSet) -6pp
+[t=   5.063] *** POPULATION FLAG MOVE *** live~181064  bit26(Async?) +6pp, bit27(AsyncLoading?) +6pp
+[t=   5.063] decoy control: 1 slot(s) changed (#54583 serial 0->32528)
+[t=   5.316] decoy control: 1 slot(s) changed (#54586 flags 00000002->00100002)
+[t=   5.821] decoy control: 1 slot(s) changed (#54111 flags 00100002->00000002)
+[t=   8.346] decoy control: 1 slot(s) changed (#48273 flags 00100002->00000002)
+[t=   8.597] decoy control: 1 slot(s) changed (#56799 flags 00100002->00000002)
+[t=   8.850] decoy control: 1 slot(s) changed (#53935 flags 00100002->00000002)
+[t=   9.102] decoy control: 1 slot(s) changed (#54084 flags 00100002->00000002)
+[t=   9.353] decoy control: 6 slot(s) changed (#47695 flags 00100002->00000002; #56940 flags 00100002->00000002; #55981 flags 00100002->00000002)
+[t=   9.606] decoy control: 1 slot(s) changed (#55124 flags 00100002->00000002)
+[t=  10.364] decoy control: 2 slot(s) changed (#54407 serial 0->35736; #49383 flags 00100002->00000002)
+[t=  10.616] *** POPULATION FLAG MOVE *** live~184448  bit20(LoaderImport?) -8pp
+[t=  10.616] decoy control: 13 slot(s) changed (#48133 flags 00100002->00000002; #48180 flags 00100002->00000002; #56424 flags 00100002->00000002)
+[t=  57.861] *** GC PASS #1 *** reachability flag bit1 -> bit0 (live~185144, +0 objects)
+[t=  57.861] decoy control: 163 slot(s) changed (#48133 flags 00000002->00000001; #50694 flags 00000002->00000001; #47627 flags 00000002->00000001)
+[t=  58.619] *** PURGE VISIBLE *** live 185144 -> 182488 (-2656 objects destroyed since the previous sweep)
+[t=  58.619] decoy control: 1 slot(s) changed (#57068 obj 0x2ABE4D126C0->0x0 flags 00000002->00000000)
+[t=  58.871] *** PURGE VISIBLE *** live 182488 -> 177336 (-5152 objects destroyed since the previous sweep)
+[t= 119.055] *** GC PASS #2 *** reachability flag bit0 -> bit2 (live~177336, -16 objects)
+[t= 119.055] decoy control: 163 slot(s) changed (#48133 flags 00000001->00000004; #50694 flags 00000001->00000004; #47627 flags 00000001->00000004)
+  marker TRUNCATED (FK-25: a new injection reopened it CREATE_ALWAYS) -- rewinding
+[t= 147.356] decoy control: 123 slot(s) changed (#48133 flags 00000004->00000002; #50694 flags 00000004->00000002; #47627 flags 00000004->00000002)
+[t= 147.608] *** PURGE VISIBLE *** live 177352 -> 126568 (-50784 objects destroyed since the previous sweep)
+[t= 147.608] *** POPULATION FLAG MOVE *** live~126568  bit25(Native) +7pp, bit30(RootSet) +9pp
+[t= 147.608] decoy control: 40 slot(s) changed (#56857 obj 0x2ABFF6B5BA0->0x0 flags 00000004->00000000; #55871 obj 0x2AB7DE63CE0->0x0 flags 00000004->00000000; #55897 obj 0x2AB7DE60400->0x0 flags 00000004->00000000)
+[t= 147.862] *** PURGE VISIBLE *** live 126568 -> 55624 (-70944 objects destroyed since the previous sweep)
+[t= 147.862] *** POPULATION FLAG MOVE *** live~55624  bit20(LoaderImport?) +11pp, bit25(Native) +32pp, bit26(Async?) +8pp, bit27(AsyncLoading?) +8pp, bit30(RootSet) +40pp
+[t= 147.862] decoy control: 21 slot(s) changed (#48133 flags 00000002->00100002; #48180 flags 00000002->00100002; #47695 flags 00000002->00100002)
+[t= 148.115] *** GC PASS #3 *** reachability flag bit2 -> bit1 (live~69896, +14272 objects)
+[t= 148.115] *** POPULATION FLAG MOVE *** live~69896  bit20(LoaderImport?) +13pp, bit25(Native) -12pp, bit26(Async?) +19pp, bit27(AsyncLoading?) +19pp, bit30(RootSet) -14pp
+[t= 148.367] *** POPULATION FLAG MOVE *** live~90560  bit20(LoaderImport?) +7pp, bit25(Native) -10pp, bit26(Async?) +17pp, bit27(AsyncLoading?) +17pp, bit30(RootSet) -13pp
+[t= 148.619] *** POPULATION FLAG MOVE *** live~107872  bit25(Native) -6pp, bit26(Async?) +9pp, bit27(AsyncLoading?) +9pp, bit30(RootSet) -7pp
+[t= 149.378] *** POPULATION FLAG MOVE *** live~119880  bit26(Async?) -26pp, bit27(AsyncLoading?) -26pp
+[t= 149.631] *** POPULATION FLAG MOVE *** live~120008  bit20(LoaderImport?) -39pp, bit26(Async?) -30pp, bit27(AsyncLoading?) -30pp
+[t= 149.631] decoy control: 21 slot(s) changed (#48133 flags 00100002->00000002; #48180 flags 00100002->00000002; #47695 flags 00100002->00000002)
+[t= 153.673] decoy control: 3 slot(s) changed (#48133 flags 00000002->00100002; #48180 flags 00000002->00100002; #54583 flags 00000002->00100002)
+[t= 153.927] decoy control: 2 slot(s) changed (#53935 flags 00000002->00100002; #54583 flags 00100002->00000002)
+[t= 154.180] decoy control: 1 slot(s) changed (#53935 flags 00100002->00000002)
+[t= 154.435] decoy control: 2 slot(s) changed (#48133 flags 00100002->00000002; #48180 flags 00100002->00000002)
+[t= 156.707] decoy control: 2 slot(s) changed (#48133 flags 00000002->00100002; #48180 flags 00000002->00100002)
+[t= 156.960] decoy control: 2 slot(s) changed (#48133 flags 00100002->00000002; #48180 flags 00100002->00000002)
+  marker TRUNCATED (FK-25: a new injection reopened it CREATE_ALWAYS) -- rewinding
+[t= 180.205] *** GC PASS #4 *** reachability flag bit1 -> bit0 (live~158280, +0 objects)
+[t= 180.205] decoy control: 123 slot(s) changed (#48133 flags 00000002->00000001; #50694 flags 00000002->00000001; #47627 flags 00000002->00000001)
+[t= 180.711] *** PURGE VISIBLE *** live 158280 -> 152464 (-5816 objects destroyed since the previous sweep)
+[t= 180.964] *** PURGE VISIBLE *** live 152464 -> 151104 (-1360 objects destroyed since the previous sweep)
+  marker TRUNCATED (FK-25: a new injection reopened it CREATE_ALWAYS) -- rewinding
+[t= 223.941] +TARGET BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 obj=0x2ACF1C056B0 item=0x2ACE4A58B40 idx=189901
+           baseline item{obj=0x2ACF1C056B0 flags=00000001 [0:?] cluster=0 serial=63928}
+           baseline obj {ObjectFlags=00280009 [Public,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 189901, array slot is 189901 -> AGREE
+           from LoadAsset_Blocking (BlueprintGeneratedClass)
+[t= 224.567] BlueprintGeneratedClass/BP_Ron item.Flags 00000001 -> 40000001   [+bit30(RootSet)  --]
+[t= 224.668] BlueprintGeneratedClass/BP_Ron state LIVE -> ROOTED+MARK
+[t= 225.756] +TARGET AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 obj=0x2AD3900A000 item=0x2ACE4A586D8 idx=189854
+           baseline item{obj=0x2AD3900A000 flags=40000001 [0:?,30:RootSet] cluster=0 serial=63943}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           item addr: probe 0x2ACE4A586D8 vs shim-printed 0x2ACE4A586D8  -> AGREE
+           InternalIndex: object says 189854, array slot is 189854 -> AGREE
+           from ROOT loaded-asset (AnimSequence)
+[t= 225.974] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000001 ser=63928} obj{gcAlive}
+[t= 225.974] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000001 ser=63943} obj{gcAlive}
+[t= 226.728] +TARGET BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 obj=0x2ACF57F4ED0 item=0x2ACE4A58990 idx=189883
+           baseline item{obj=0x2ACF57F4ED0 flags=40000001 [0:?,30:RootSet] cluster=0 serial=63930}
+           baseline obj {ObjectFlags=00000000}
+           item addr: probe 0x2ACE4A58990 vs shim-printed 0x2ACE4A58990  -> AGREE
+           InternalIndex: object says 189883, array slot is 189883 -> AGREE
+           from ROOT body-component (BP_Ronin_DefaultSKMeshComponent_C)
+[t= 230.262] +TARGET AnimSingleNodeInstance/AnimSingleNodeInstance#189857 obj=0x2ACF94AE860 item=0x2ACE4A58720 idx=189857
+           baseline item{obj=0x2ACF94AE860 flags=40000001 [0:?,30:RootSet] cluster=0 serial=0}
+           baseline obj {ObjectFlags=00000040 [Transient]}
+           item addr: probe 0x2ACE4A58720 vs shim-printed 0x2ACE4A58720  -> AGREE
+           InternalIndex: object says 189857, array slot is 189857 -> AGREE
+           from ROOT anim-instance (AnimSingleNodeInstance)
+[t= 231.021] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000001 ser=63928} obj{gcAlive}
+[t= 231.021] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000001 ser=63943} obj{gcAlive}
+[t= 231.021] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000001 ser=63930} obj{gcAlive}
+[t= 231.021] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000001 ser=0} obj{gcAlive}
+[t= 231.277] +TARGET AnimSingleNodeInstance/AnimSingleNodeInstance#189881 obj=0x2AD3ED2CCD0 item=0x2ACE4A58960 idx=189881
+           baseline item{obj=0x2AD3ED2CCD0 flags=40000001 [0:?,30:RootSet] cluster=0 serial=0}
+           baseline obj {ObjectFlags=00000040 [Transient]}
+           item addr: probe 0x2ACE4A58960 vs shim-printed 0x2ACE4A58960  -> AGREE
+           InternalIndex: object says 189881, array slot is 189881 -> AGREE
+           from ROOT anim-instance (AnimSingleNodeInstance)
+[t= 235.389] +TARGET AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 obj=0x2AD3900EE00 item=0x2ACE4A583D8 idx=189822
+           baseline item{obj=0x2AD3900EE00 flags=00000001 [0:?] cluster=0 serial=63945}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 189822, array slot is 189822 -> AGREE
+           from LoadAsset_Blocking (AnimSequence)
+[t= 236.061] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000001 ser=63928} obj{gcAlive}
+[t= 236.061] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000001 ser=63943} obj{gcAlive}
+[t= 236.061] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000001 ser=63930} obj{gcAlive}
+[t= 236.061] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000001 ser=0} obj{gcAlive}
+[t= 236.061] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189881 item{obj=0x2AD3ED2CCD0 flags=40000001 ser=0} obj{gcAlive}
+[t= 236.061] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=00000001 ser=63945} obj{gcAlive}
+[t= 236.111] AnimSequence/A_Ronin_Movement_ item.Flags 00000001 -> 40000001   [+bit30(RootSet)  --]
+[t= 236.111] AnimSequence/A_Ronin_Movement_ state LIVE -> ROOTED+MARK
+[t= 241.068] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000001 ser=63928} obj{gcAlive}
+[t= 241.068] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000001 ser=63943} obj{gcAlive}
+[t= 241.068] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000001 ser=63930} obj{gcAlive}
+[t= 241.068] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000001 ser=0} obj{gcAlive}
+[t= 241.068] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189881 item{obj=0x2AD3ED2CCD0 flags=40000001 ser=0} obj{gcAlive}
+[t= 241.068] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000001 ser=63945} obj{gcAlive}
+[t= 241.776] BlueprintGeneratedClass/BP_Ron item.Flags 40000001 -> 40000004   [+bit2(?)  -bit0(?)]
+[t= 241.776] AnimSequence/A_Ronin_Cosmetic_ item.Flags 40000001 -> 40000004   [+bit2(?)  -bit0(?)]
+[t= 241.776] BP_Ronin_DefaultSKMeshComponen item.Flags 40000001 -> 40000004   [+bit2(?)  -bit0(?)]
+[t= 241.776] AnimSingleNodeInstance/AnimSin item.Flags 40000001 -> 40000004   [+bit2(?)  -bit0(?)]
+[t= 241.776] AnimSequence/A_Ronin_Movement_ item.Flags 40000001 -> 40000004   [+bit2(?)  -bit0(?)]
+[t= 241.927] *** GC PASS #5 *** reachability flag bit0 -> bit2 (live~151152, +0 objects)
+[t= 241.927] AnimSingleNodeInstance/AnimSin state ROOTED+MARK -> ROOTED+STALE
+[t= 241.927] decoy control: 123 slot(s) changed (#48133 flags 00000001->00000004; #50694 flags 00000001->00000004; #47627 flags 00000001->00000004)
+[t= 242.938] *** PURGE VISIBLE *** live 151152 -> 149392 (-1760 objects destroyed since the previous sweep)
+[t= 243.189] AnimSingleNodeInstance/AnimSin item.Object 0x2AD3ED2CCD0 -> 0   [FreeUObjectIndex ran: the UObject was destroyed]
+[t= 243.189] AnimSingleNodeInstance/AnimSin item.Flags 40000001 -> 00000000   [+-  -bit0(?),bit30(RootSet)]
+[t= 243.189] AnimSingleNodeInstance/AnimSin obj.vtable 0x7FF6895707D8 -> 0x2AC75514300   [OUT OF IMAGE -- freed/overwritten]
+[t= 243.189] AnimSingleNodeInstance/AnimSin obj.ObjectFlags 00018040 -> 00000000   [+-  -Transient,BeginDestroyed,FinishDestroyed]
+[t= 243.189] *** PURGE VISIBLE *** live 149392 -> 146992 (-2400 objects destroyed since the previous sweep)
+[t= 244.554] AnimSingleNodeInstance/AnimSin item.Object 0 -> 0x2ACE0B4C020   [SLOT REUSED by a new object]
+[t= 244.554] AnimSingleNodeInstance/AnimSin item.SerialNumber 0 -> 64165   [lazy AllocateSerialNumber: something took a WEAK POINTER to this object -- NOT a recycle]
+[t= 244.554] AnimSingleNodeInstance/AnimSin item.Flags 00000000 -> 00000004   [+bit2(?)  --]
+[t= 244.707] AnimSingleNodeInstance/AnimSin state ROOTED+STALE -> LIVE
+[t= 246.071] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000004 ser=63928} obj{gcAlive}
+[t= 246.071] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000004 ser=63943} obj{gcAlive}
+[t= 246.071] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000004 ser=63930} obj{gcAlive}
+[t= 246.071] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000004 ser=0} obj{gcAlive}
+[t= 246.071] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000004 ser=63945} obj{gcAlive}
+[t= 251.083] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000004 ser=63928} obj{gcAlive}
+[t= 251.083] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000004 ser=63943} obj{gcAlive}
+[t= 251.083] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000004 ser=63930} obj{gcAlive}
+[t= 251.083] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000004 ser=0} obj{gcAlive}
+[t= 251.083] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000004 ser=63945} obj{gcAlive}
+[t= 256.106] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000004 ser=63928} obj{gcAlive}
+[t= 256.106] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000004 ser=63943} obj{gcAlive}
+[t= 256.106] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000004 ser=63930} obj{gcAlive}
+[t= 256.106] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000004 ser=0} obj{gcAlive}
+[t= 256.106] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000004 ser=63945} obj{gcAlive}
+[t= 261.155] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000004 ser=63928} obj{gcAlive}
+[t= 261.155] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000004 ser=63943} obj{gcAlive}
+[t= 261.155] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000004 ser=63930} obj{gcAlive}
+[t= 261.155] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000004 ser=0} obj{gcAlive}
+[t= 261.155] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000004 ser=63945} obj{gcAlive}
+[t= 266.206] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000004 ser=63928} obj{gcAlive}
+[t= 266.206] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000004 ser=63943} obj{gcAlive}
+[t= 266.206] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000004 ser=63930} obj{gcAlive}
+[t= 266.206] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000004 ser=0} obj{gcAlive}
+[t= 266.206] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000004 ser=63945} obj{gcAlive}
+[t= 271.214] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000004 ser=63928} obj{gcAlive}
+[t= 271.214] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000004 ser=63943} obj{gcAlive}
+[t= 271.214] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000004 ser=63930} obj{gcAlive}
+[t= 271.214] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000004 ser=0} obj{gcAlive}
+[t= 271.214] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000004 ser=63945} obj{gcAlive}
+[t= 276.241] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000004 ser=63928} obj{gcAlive}
+[t= 276.241] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000004 ser=63943} obj{gcAlive}
+[t= 276.241] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000004 ser=63930} obj{gcAlive}
+[t= 276.241] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000004 ser=0} obj{gcAlive}
+[t= 276.241] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000004 ser=63945} obj{gcAlive}
+[t= 281.257] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000004 ser=63928} obj{gcAlive}
+[t= 281.257] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000004 ser=63943} obj{gcAlive}
+[t= 281.257] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000004 ser=63930} obj{gcAlive}
+[t= 281.257] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000004 ser=0} obj{gcAlive}
+[t= 281.257] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000004 ser=63945} obj{gcAlive}
+[t= 286.270] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000004 ser=63928} obj{gcAlive}
+[t= 286.270] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000004 ser=63943} obj{gcAlive}
+[t= 286.270] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000004 ser=63930} obj{gcAlive}
+[t= 286.270] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000004 ser=0} obj{gcAlive}
+[t= 286.270] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000004 ser=63945} obj{gcAlive}
+[t= 291.280] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000004 ser=63928} obj{gcAlive}
+[t= 291.280] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000004 ser=63943} obj{gcAlive}
+[t= 291.280] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000004 ser=63930} obj{gcAlive}
+[t= 291.280] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000004 ser=0} obj{gcAlive}
+[t= 291.280] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000004 ser=63945} obj{gcAlive}
+[t= 296.306] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000004 ser=63928} obj{gcAlive}
+[t= 296.306] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000004 ser=63943} obj{gcAlive}
+[t= 296.306] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000004 ser=63930} obj{gcAlive}
+[t= 296.306] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000004 ser=0} obj{gcAlive}
+[t= 296.306] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000004 ser=63945} obj{gcAlive}
+[t= 301.322] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000004 ser=63928} obj{gcAlive}
+[t= 301.322] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000004 ser=63943} obj{gcAlive}
+[t= 301.322] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000004 ser=63930} obj{gcAlive}
+[t= 301.322] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000004 ser=0} obj{gcAlive}
+[t= 301.322] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000004 ser=63945} obj{gcAlive}
+[t= 302.863] BlueprintGeneratedClass/BP_Ron item.Flags 40000004 -> 40000002   [+bit1(?)  -bit2(?)]
+[t= 302.863] AnimSequence/A_Ronin_Cosmetic_ item.Flags 40000004 -> 40000002   [+bit1(?)  -bit2(?)]
+[t= 302.863] BP_Ronin_DefaultSKMeshComponen item.Flags 40000004 -> 40000002   [+bit1(?)  -bit2(?)]
+[t= 302.863] AnimSingleNodeInstance/AnimSin item.Flags 40000004 -> 40000002   [+bit1(?)  -bit2(?)]
+[t= 302.863] AnimSingleNodeInstance/AnimSin item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t= 302.863] AnimSequence/A_Ronin_Movement_ item.Flags 40000004 -> 40000002   [+bit1(?)  -bit2(?)]
+[t= 302.965] *** GC PASS #6 *** reachability flag bit2 -> bit1 (live~147128, +0 objects)
+[t= 302.965] decoy control: 123 slot(s) changed (#48133 flags 00000004->00000002; #50694 flags 00000004->00000002; #47627 flags 00000004->00000002)
+[t= 303.471] *** PURGE VISIBLE *** live 147128 -> 146088 (-1040 objects destroyed since the previous sweep)
+[t= 306.359] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000002 ser=63928} obj{gcAlive}
+[t= 306.359] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000002 ser=63943} obj{gcAlive}
+[t= 306.359] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000002 ser=63930} obj{gcAlive}
+[t= 306.359] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000002 ser=0} obj{gcAlive}
+[t= 306.359] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000002 ser=63945} obj{gcAlive}
+[t= 311.369] alive  BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901 item{obj=0x2ACF1C056B0 flags=40000002 ser=63928} obj{gcAlive}
+[t= 311.369] alive  AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854 item{obj=0x2AD3900A000 flags=40000002 ser=63943} obj{gcAlive}
+[t= 311.369] alive  BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883 item{obj=0x2ACF57F4ED0 flags=40000002 ser=63930} obj{gcAlive}
+[t= 311.369] alive  AnimSingleNodeInstance/AnimSingleNodeInstance#189857 item{obj=0x2ACF94AE860 flags=40000002 ser=0} obj{gcAlive}
+[t= 311.369] alive  AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822 item{obj=0x2AD3900EE00 flags=40000002 ser=63945} obj{gcAlive}
+[t= 315.019] *** THE GAME PROCESS EXITED *** (watch ends here; this is not a target event)
+
+====================================================================================================
+SUMMARY  observed 315.0 s, 6228 ticks, 1246 sweeps, 356901 RPM calls
+  max observed sampling gap: 94 ms  <- ALIASING BOUND: any state shorter than this could
+     have been missed, and no 'X never happened' claim below is stronger than that.
+  decoy control: 1230 event(s) across 256 control objects
+  GC PASSES (reachability-flag flips): 6 in 315 s  ->  t = 57.9, 119.1, 148.1, 180.2, 241.9, 303.0
+     final reachable-flag bit: 1
+  GC activity seen at t = 3.3(purge), 3.5(flagmove), 3.8(flagmove), 4.0(flagmove), 4.3(flagmove), 4.6(flagmove), 4.8(flagmove), 5.1(flagmove), 10.6(flagmove), 57.9(reach-flip), 58.6(purge), 58.9(purge), 119.1(reach-flip), 147.6(purge), 147.6(flagmove), 147.9(purge), 147.9(flagmove), 148.1(reach-flip), 148.1(flagmove), 148.4(flagmove), 148.6(flagmove), 149.4(flagmove), 149.6(flagmove), 180.2(reach-flip), 180.7(purge), 181.0(purge), 241.9(reach-flip), 242.9(purge), 243.2(purge), 303.0(reach-flip), 303.5(purge)
+  live-object count: start 52376, min 50464 @t=3.3, max 185144 @t=29.8, end 145928
+
+----------------------------------------------------------------------------------------------------
+TARGET BlueprintGeneratedClass/BP_Ronin_DefaultSKMeshComponent_C#189901   acquired t=223.941 from LoadAsset_Blocking (BlueprintGeneratedClass)
+  obj=0x2ACF1C056B0  item=0x2ACE4A58B40  idx=189901
+  BASELINE item{obj=0x2ACF1C056B0 flags=00000001 [0:?] cluster=0 serial=63928}
+    t= 224.567  item.Flags 00000001 -> 40000001   [+bit30(RootSet)  --]
+    t= 224.668  state LIVE -> ROOTED+MARK   (flags=40000001, current reachability bit is 0)
+    t= 241.776  item.Flags 40000001 -> 40000004   [+bit2(?)  -bit0(?)]
+    t= 302.863  item.Flags 40000004 -> 40000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 94 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Ronin_Cosmetic_HeroSelect_Breathe#189854   acquired t=225.756 from ROOT loaded-asset (AnimSequence)
+  obj=0x2AD3900A000  item=0x2ACE4A586D8  idx=189854
+  BASELINE item{obj=0x2AD3900A000 flags=40000001 [0:?,30:RootSet] cluster=0 serial=63943}
+    t= 241.776  item.Flags 40000001 -> 40000004   [+bit2(?)  -bit0(?)]
+    t= 302.863  item.Flags 40000004 -> 40000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 94 ms)
+----------------------------------------------------------------------------------------------------
+TARGET BP_Ronin_DefaultSKMeshComponent_C/BP_Ronin_DefaultSKMeshComponent_C#189883   acquired t=226.728 from ROOT body-component (BP_Ronin_DefaultSKMeshComponent_C)
+  obj=0x2ACF57F4ED0  item=0x2ACE4A58990  idx=189883
+  BASELINE item{obj=0x2ACF57F4ED0 flags=40000001 [0:?,30:RootSet] cluster=0 serial=63930}
+    t= 241.776  item.Flags 40000001 -> 40000004   [+bit2(?)  -bit0(?)]
+    t= 302.863  item.Flags 40000004 -> 40000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 94 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSingleNodeInstance/AnimSingleNodeInstance#189857   acquired t=230.262 from ROOT anim-instance (AnimSingleNodeInstance)
+  obj=0x2ACF94AE860  item=0x2ACE4A58720  idx=189857
+  BASELINE item{obj=0x2ACF94AE860 flags=40000001 [0:?,30:RootSet] cluster=0 serial=0}
+    t= 241.776  item.Flags 40000001 -> 40000004   [+bit2(?)  -bit0(?)]
+    t= 302.863  item.Flags 40000004 -> 40000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 94 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSingleNodeInstance/AnimSingleNodeInstance#189881   acquired t=231.277 from ROOT anim-instance (AnimSingleNodeInstance)
+  obj=0x2AD3ED2CCD0  item=0x2ACE4A58960  idx=189881
+  BASELINE item{obj=0x2AD3ED2CCD0 flags=40000001 [0:?,30:RootSet] cluster=0 serial=0}
+    t= 241.927  state ROOTED+MARK -> ROOTED+STALE   (flags=40000001, current reachability bit is 2)
+    t= 242.179  ROOTED+STALE for 2 consecutive sweeps -- the GC traversal did not mark it in the current cycle. In THIS build that IS 'unreachable'.
+    t= 242.534  obj.NamePrivate 201153 -> 0   [NAME_None: ~UObject ran LowLevelRename]
+    t= 242.534  obj.ObjectFlags 00000040 -> 00008040   [+BeginDestroyed  --]
+    t= 242.534  *** GcAlive() would now return FALSE -- this is the exact moment the shim declares the asset dead ***
+    t= 242.736  obj.ObjectFlags 00008040 -> 00018040   [+FinishDestroyed  --]
+    t= 243.189  item.Object 0x2AD3ED2CCD0 -> 0   [FreeUObjectIndex ran: the UObject was destroyed]
+    t= 243.189  item.Flags 40000001 -> 00000000   [+-  -bit0(?),bit30(RootSet)]
+    t= 243.189  obj.vtable 0x7FF6895707D8 -> 0x2AC75514300   [OUT OF IMAGE -- freed/overwritten]
+    t= 243.189  obj.ObjectFlags 00018040 -> 00000000   [+-  -Transient,BeginDestroyed,FinishDestroyed]
+    t= 243.240  obj.vtable 0x2AC75514300 -> 0x1E31503F0   [OUT OF IMAGE -- freed/overwritten]
+    t= 243.240  obj.NamePrivate 0 -> 7   [renamed]
+    t= 243.240  obj.ObjectFlags 00000000 -> 000002AD   [+Public,MarkAsNative,Transactional,ArchetypeObject,MarkAsRootSet,NeedInitialization  --]
+    t= 244.554  item.Object 0 -> 0x2ACE0B4C020   [SLOT REUSED by a new object]
+    t= 244.554  item.SerialNumber 0 -> 64165   [lazy AllocateSerialNumber: something took a WEAK POINTER to this object -- NOT a recycle]
+    t= 244.554  item.Flags 00000000 -> 00000004   [+bit2(?)  --]
+    t= 244.707  state ROOTED+STALE -> LIVE   (flags=00000004, current reachability bit is 2)
+    t= 302.863  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: A  SLOT RECYCLED at t=244.554 -- the object was really destroyed and its index reissued.
+           C  a NEW item-flag bit appeared first, at t=244.554 (-2.020 s before the object went bad) -- something marked this slot.
+           C' at t=242.179 this object was UNMARKED for 2+ sweeps -- neither rooted nor marked reachable. In THIS build that IS 'unreachable', so the GC had it as garbage.
+           NOTE a weak pointer was taken on this object at t=244.554 (lazy serial allocation) -- something in the engine WAS referencing it.
+           GC activity (reach-flip) was visible at t=241.9, i.e. concurrent with the death.
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Ronin_Movement_OutOfCombat_N#189822   acquired t=235.389 from LoadAsset_Blocking (AnimSequence)
+  obj=0x2AD3900EE00  item=0x2ACE4A583D8  idx=189822
+  BASELINE item{obj=0x2AD3900EE00 flags=00000001 [0:?] cluster=0 serial=63945}
+    t= 236.111  item.Flags 00000001 -> 40000001   [+bit30(RootSet)  --]
+    t= 236.111  state LIVE -> ROOTED+MARK   (flags=40000001, current reachability bit is 0)
+    t= 241.776  item.Flags 40000001 -> 40000004   [+bit2(?)  -bit0(?)]
+    t= 302.863  item.Flags 40000004 -> 40000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 94 ms)
+====================================================================================================
+log: G:\git\Supervive Revival Project\docs\s110-itemwatch-animref-20260805-181429.log
+csv: G:\git\Supervive Revival Project\docs\s110-itemwatch-animref-20260805-181429.csv

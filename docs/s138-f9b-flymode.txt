@@ -1,0 +1,53 @@
+flymode_poke  PID=34396 BASE=0x7FF6CFF90000  *** WILL WRITE ONE BYTE ***   2026-08-23 14:42:22
+
+bot  ctl=0x1D79D9129B0 pawn=0x1D687685580 cmc=0x1D71D875560   MovementMode BY NAME @+0x231
+CONTROL player cmc=0x1D78A168E40 (NOT written)
+Velocity BY NAME @+0xE8
+
+== A BASELINE ==
+  [A       ] mode=3 (Falling  ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(0.959,-0.284,0.000)       loc=(600.0,0.0,13240.0)
+
+== B POKE bot CMC MovementMode = 5 (MOVE_Flying) ==
+  write ok=True READBACK=5
+  R1 HOLDS.
+  [B+0s    ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(0.959,-0.284,0.000)       loc=(600.0,0.0,13240.0)
+  [B+1s    ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.844,-0.536,0.000)      loc=(600.0,0.0,13240.0)
+  [B+2s    ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.844,-0.536,0.000)      loc=(600.0,0.0,13240.0)
+  [B+3s    ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.980,0.200,0.000)       loc=(600.0,0.0,13240.0)
+  [B+4s    ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.980,0.200,0.000)       loc=(600.0,0.0,13240.0)
+  [B+5s    ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.390,0.921,0.000)       loc=(600.0,0.0,13240.0)
+  [B+6s    ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.390,0.921,0.000)       loc=(600.0,0.0,13240.0)
+  [B+7s    ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(0.320,0.948,0.000)        loc=(600.0,0.0,13240.0)
+  [B+8s    ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(0.320,0.948,0.000)        loc=(600.0,0.0,13240.0)
+  [B+9s    ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(0.888,0.459,0.000)        loc=(600.0,0.0,13240.0)
+  [B+10s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(0.888,0.459,0.000)        loc=(600.0,0.0,13240.0)
+  [B+11s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.810,0.587,0.000)       loc=(600.0,0.0,13240.0)
+  [B+12s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.810,0.587,0.000)       loc=(600.0,0.0,13240.0)
+  [B+13s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.063,-0.998,0.000)      loc=(600.0,0.0,13240.0)
+  [B+14s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.063,-0.998,0.000)      loc=(600.0,0.0,13240.0)
+  [B+15s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.902,0.432,0.000)       loc=(600.0,0.0,13240.0)
+  [B+16s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.902,0.432,0.000)       loc=(600.0,0.0,13240.0)
+  [B+17s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(0.916,-0.401,0.000)       loc=(600.0,0.0,13240.0)
+  [B+18s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(0.916,-0.401,0.000)       loc=(600.0,0.0,13240.0)
+  [B+19s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(0.555,0.832,0.000)        loc=(600.0,0.0,13240.0)
+  [B+20s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(0.555,0.832,0.000)        loc=(600.0,0.0,13240.0)
+  [B+21s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(0.998,-0.059,0.000)       loc=(600.0,0.0,13240.0)
+  [B+22s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(0.998,-0.059,0.000)       loc=(600.0,0.0,13240.0)
+  [B+23s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.611,-0.791,0.000)      loc=(600.0,0.0,13240.0)
+  [B+24s   ] mode=5 (Flying   ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(-0.611,-0.791,0.000)      loc=(600.0,0.0,13240.0)
+
+== C RESTORE MovementMode = 3 ==
+  READBACK=3
+  [C       ] mode=3 (Falling  ) gate=1   plr_mode=3   Vel=(0.000,0.000,0.000)            CIV=(1.000,-0.005,0.000)       loc=(600.0,0.0,13240.0)
+
+========================================================================================================
+VERDICT  (computed from the 25 observed B samples)
+========================================================================================================
+  R1 poke landed (readback==5)                : YES
+  R2 PLAYER mode untouched (was 3)            : YES
+  R3 Velocity ever non-zero                   : NO
+  R4 pawn LOCATION changed (>1 uu)            : NO
+
+  Mode is NOT the blocker either. Per the pre-registration this leaves the standing
+  candidate: the component/actor does not TICK -- which no poke fixes. The next read is
+  the component tick registration and the actor tick state, not another poke.

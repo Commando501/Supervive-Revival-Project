@@ -1,0 +1,101 @@
+SESSION 56 — PARAM-PASSING SOLVED; the missions FACTORY needs resolvable data (primitive is NOT the blocker)
+============================================================================================================
+Date: 2026-07-07 (same day as s55, continued). Branch: dedicated-server-stub. Builds directly on the s55
+breakthrough (Avenue A direct-thunk primitive). Goal: extend the primitive to PASS PARAMETERS and use it to
+populate the missions model so the modal renders. RESULT: parameter-passing is fully SOLVED + verified. The
+first real ingestion target (CreateMissionModelFromFinalProgress) crashes with synthetic/empty data — the
+remaining wall is the missions DATA/ASSET layer (s52's layer 2), NOT the native-call primitive.
+
+TL;DR
+-----
+- ★ PARAM-PASSING via Avenue A is SOLVED and live-verified (probe7: GetMissionModel("Daily") ran clean, no crash).
+- Mechanism fully RE'd from the thunk disasm (offsets below). It's the ProcessEvent "compiled-in" path,
+  executed directly against the native thunk.
+- FMissionProgress + FMissionObjectiveProgress struct layouts fully RE'd (tools/re/struct_layout.py).
+- CreateMissionModelFromFinalProgress CRASHES on empty (probe6) AND on a 1-element None-id array (probe8) —
+  a __fastfail (no VEH), i.e. INSIDE the factory. probe7 proves the param mechanism is clean, so this is
+  factory-internal: it needs REAL resolvable mission data / in-game context (reconfirms s52's DA wall).
+
+★ PARAM-PASSING RECIPE (RE'd + verified — the reusable capability)
+------------------------------------------------------------------
+Calling a native UFunction WITH parameters via the direct thunk. It's UObject::ProcessEvent's "compiled-in"
+path (Code==NULL branch) done by hand:
+  1. Build a params frame (Locals): a zeroed buffer; write each INPUT param value at its FProperty
+     Offset_Internal (@ FProperty+0x44). (Return value is written to the r8 Result buffer, not the frame.)
+  2. FFrame fields: Object(+0x18)=Context(this; ignored for a static fn), Node(+0x10)=UFunction,
+     Code(+0x20)=NULL, Locals(+0x28)=params frame, PropertyChainForCompiledIn(+0x88)=Function.ChildProperties
+     (= *(UFunction+0x58) = the first param FField). Clear MostRecentProperty(+0x30) /
+     MostRecentPropertyAddress(+0x38) / MostRecentPropertyContainer(+0x40) (the thunk also zeros +0x38/+0x40).
+  3. Call the thunk: ((void(*)(void* Ctx, void* FFrame, void* Result))(UFunction.Func@+0xE0))(Ctx,&frame,&res).
+The thunk's Code==0 branch reads FFrame+0x88, walks Property->Next(+0x18) per param, and StepExplicitProperty
+copies (non-out) / addresses (OUT) from Locals+Offset. VERIFIED against the GetMissionModel + factory thunks.
+
+KEY OFFSETS RE'd THIS SESSION (this build)
+------------------------------------------
+- FProperty.Offset_Internal @ +0x44 (confirmed: GetMissionModel ID@0, ReturnValue@16). ElementSize @ +0x34.
+  PropertyFlags(u64) @ +0x38 (CPF_Parm=0x80, CPF_OutParm=0x100, CPF_ReturnParm=0x400).
+- FFrame.PropertyChainForCompiledIn @ +0x88 (decoded from both thunks' Code==0 else-branch:
+  `mov r8,[rdx+0x88]; mov rax,[r8+0x18](Next); mov [rdx+0x88],rax`). FFrame.MostRecentPropertyAddress @ +0x38,
+  MostRecentPropertyContainer @ +0x40 (thunk zeros both at entry). Return written to r8 (`mov [rsi],rax`).
+- UStruct.PropertiesSize @ +0x40 (reads 0 for UFunctions here — not needed; use param offsets+sizes).
+- FMissionProgress (size 0x60): ID@0x00(FString) AssetId@0x10(FPrimaryAssetId) PoolId@0x20 Complete@0x30(bool)
+  Failed@0x31 ObjectiveProgress@0x38(TArray<FMissionObjectiveProgress>) MillisUntilExpiry@0x48(i64)
+  Expiry@0x50(FDateTime i64 ticks) GrantedAt@0x58. FPrimaryAssetId = {FName Type@+0, FName Name@+8} (16 bytes).
+- FMissionObjectiveProgress (size 0x38): ObjectiveName@0x00(FName) Progress@0x08(f) MaxProgress@0x0C(f)
+  Context@0x10(TArray<FString>) InitialArmoryContext@0x20(TArray<FPrimaryAssetId>) StartingProgress@0x30(f)
+  Complete@0x34(bool) Failed@0x35.
+
+LIVE PROBE RESULTS
+------------------
+- probe7 (docs/missions-nativecall7-marker.txt): GetMissionModel("Daily") — a real non-empty FString param
+  (exercises the deep-copy path). [4] CALLED (no crash), ret=0x0 (null, expected: empty model), game ALIVE.
+  *** PARAM-PASSING MECHANISM WORKS. *** A wrong PropertyChain/Offset would fault in StepExplicitProperty.
+- probe6 (empty array) and probe8 (1 element, ids=None, valid dates): both reached [3] then the game DIED with
+  NO [4] and NO [VEH] line => __fastfail (stack-cookie/assert) INSIDE CreateMissionModelFromFinalProgress.
+  Since probe7 (non-out FString param) is clean, the crash is the FACTORY body, not the param mechanism.
+
+INTERPRETATION — the remaining wall is the missions DATA/ASSET layer, not the primitive
+----------------------------------------------------------------------------------------
+CreateMissionModelFromFinalProgress crashes with BOTH empty and synthetic (None-id) input. This matches s52's
+finding that the missions factory needs REAL player progress + RESOLVABLE mission DAs (the shared
+LokiAssetManager gate). The native-call primitive is proven and is NOT the blocker. Also note s54: this factory
+builds the END-OF-GAME model (FinalMissionProgress → OnMissionsDone); the MENU is driven by the active
+Missions path (OnPSMissionsUpdated ← knownMM.MissionsActor, a LokiPlayerState_Missions holding
+TArray<ABaseMission*>). So even a working factory here may be the wrong model for the menu.
+
+WHERE THIS LEAVES THE MISSIONS MODAL
+------------------------------------
+Solved and banked (reusable for ALL client-side shims + the "server-as-activation-layer" vision):
+  * Avenue A direct-thunk primitive (no-param, ptr-return, TArray return-by-value) — s55.
+  * PARAMETER passing via that primitive — s56 (this doc).
+Still blocking a rendered missions modal (a SEPARATE layer from the primitive):
+  * The missions model needs real, resolvable mission DA data. The factory shortcut
+    (CreateMissionModelFromFinalProgress) rejects synthetic data. The menu path needs a populated
+    LokiPlayerState_Missions (TArray<ABaseMission*>) + OnPSMissionsUpdated, i.e. a mission OBJECT GRAPH with
+    resolvable assets.
+NEXT-PHASE OPTIONS (all now UNBLOCKED by the primitive, but each is its own investigation):
+  (A) Attack mission-DA RESOLUTION natively: s52 called registration "native-only, unreachable via reflected
+      UFuncs" — but the primitive now reaches natives. Find + call the asset-register/resolve native so mission
+      PrimaryAssetIds resolve (mirror how catalog_ready_fix opened the cosmetics gate), then the factory / model
+      path can consume real DAs. This is the highest-leverage next target.
+  (B) Construct the mission OBJECT GRAPH client-side via the primitive: NewObject/StaticConstructObject a
+      LokiPlayerState_Missions + ABaseMission actors (needs resolvable DAs anyway), set knownMM.MissionsActor,
+      call knownMM.OnPSMissionsUpdated(). Heavier; still needs (A).
+  (C) Try CreateMissionModelFromFinalProgress with a REAL, currently-resolvable mission PrimaryAssetId (find one
+      that resolves under catalog_store_fix). If the crash was purely None/asset resolution, a resolvable id may
+      pass — cheap to try but likely hits (A)'s wall (s52 said mission DAs don't resolve even with the gate).
+
+FILES (this session)
+--------------------
+  tools/sigbypass-mod/missions_nativecall_probe6.cpp  (factory, empty array — crash)
+  tools/sigbypass-mod/missions_nativecall_probe7.cpp  (GetMissionModel(FString) — *** param mechanism WORKS ***)
+  tools/sigbypass-mod/missions_nativecall_probe8.cpp  (factory, 1 None-id element — crash)
+  tools/re/param_probe.py    (dump a UFunction's param offsets + thunk bytes for disasm)
+  tools/re/struct_layout.py  (dump a UScriptStruct's field offsets)
+  tools/re/sig_enum.py       (dump a class's UFunction signatures)
+  docs/missions-nativecall{6,7,8}-marker.txt  (live results)
+
+RECIPE (unchanged from s55): standalone client via
+  configs\launch-redirect.ps1 -Hook "...\tools\sigbypass-mod\catalog_store_fix.dll"
+Wait for HUD BeginPlay + catalog-store-fix-marker "jz=1/1 unhook=1", then inject. base=0x7FF6B54F0000 (re-read
+each launch). Menu in ~20s. NOTE: factory-type calls can __fastfail (crash → relaunch) — keep the VEH, expect it.

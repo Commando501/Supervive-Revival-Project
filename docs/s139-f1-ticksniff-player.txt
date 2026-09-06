@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "G:\git\Supervive Revival Project\scratchpad\s139\ticksniff.py", line 450, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "G:\git\Supervive Revival Project\scratchpad\s139\ticksniff.py", line 443, in main
+    sniff(a.pid, a.base or 0, a.comp, "component")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\git\Supervive Revival Project\scratchpad\s139\ticksniff.py", line 253, in sniff
+    r = Reader(pid)
+  File "G:\git\Supervive Revival Project\scratchpad\s139\ticksniff.py", line 233, in __init__
+    raise OSError("OpenProcess(%d) failed: %d" % (pid, ctypes.get_last_error()))
+OSError: OpenProcess(44332) failed: 87

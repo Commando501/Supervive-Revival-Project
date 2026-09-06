@@ -1,0 +1,246 @@
+================================================================================
+SESSION 81 (2026-07-17) — THE DS DISCONNECT, CHARACTERIZED. The handoff's premise
+is WRONG: the idle DS connection is STABLE. The drop is caused by the injected
+per-frame MOVEMENT shim driving the game thread into a ~20s kernel wait.
+================================================================================
+
+## ONE-PARAGRAPH RESULT
+S80 handed off believing "the client disconnects from the DS stub ~2 minutes after
+every join" and that the S81 wall might be "the DS route cannot hold a connection."
+BOTH ARE FALSE. A clean, NO-INJECTION tutorial session held the connection for
+17+ MINUTES (still in LokiGameState, healthy game thread, no timeout). A deliberate
+20-SECOND game-thread FREEZE (clean SuspendThread) did NOT drop it either. The drops
+S80 saw are caused by what MODE_PLAYABLE *does*: it spawns+wires a hero, enables
+movement (GetMaxSpeed 0->500, reproduced), then drives per-frame WASD — and the
+game's own CharacterMovementComponent tick then blocks the GAME THREAD on a ~20s
+KERNEL WAIT (ntdll NtWaitForSingleObject-class), which trips the 15s netdriver
+timeout -> ConnectionTimeout -> travel to LVL_Login?closed -> main menu. The DS
+route is fine; the movement path is the bug.
+
+## THE THREE EXPERIMENTS (all live, this session, pid 14068, base 0x7FF6AF000000)
+
+1. CLEAN BASELINE (no injection): launched the client fresh with the -ini overrides,
+   it auto-armed + joined the tutorial in ~8s (Entering game state
+   LokiGameState_2147480962 @ log 08:37:10), and I sampled the game thread at 4Hz for
+   the full 800s window. RESULT: **17+ minutes in-world, ZERO drop.** Game thread
+   625 EXE / 2569 wait samples (~80% idle-waiting = healthy light load). Longest
+   stuck run 3.5s (idle wait). Server side (stub log) went quiet after join+13s and
+   logged NO close. => THE IDLE DS CONNECTION IS STABLE. (This is exactly the
+   handoff's "★ DO THIS FIRST" test; the answer is the "STAYS CONNECTED" branch.)
+
+2. CONTROLLED 20s STALL (tools/re/gt_stall.py): suspended ONLY the game thread
+   (tid 48628) for 20s, then resumed. Confirmed real via a clean ~20s HOLE in
+   Loki.log (08:56:40 -> 08:57:00, nothing logged). RESULT: **the connection
+   SURVIVED** — no timeout, log resumed and continued. => A pure game-thread stall
+   is NOT sufficient to drop the connection. (UE buffers the server's packets in the
+   socket during the stall and resets LastReceiveRealtime on resume.) This REFUTES
+   the naive "game thread hitched 20s -> timeout" model.
+
+3. MODE_PLAYABLE INJECTION (tools/sigbypass-mod/ds_hybrid_playable.dll, mode 36):
+   injected into the still-healthy session. Marker (docs/ds-hybrid-marker.txt):
+     spawned hero=0x1E99... at (0,0,650); PC wired; GAS wired (+movement attributes);
+     GetMaxSpeed()=500  <<< MOVEMENT ENABLED  (the S80 hero-movement fix, reproduced);
+     SetViewTargetWithBlend(hero); installed per-frame VTABLE hook slot 269 -> WASD
+     LIVE 180s.
+   RESULT: **connection DROPPED** ~1-2 min later: Connection TIMED OUT, Real: 20.41,
+   Threshold: 15.00 @ log 09:01:41 -> Browse LVL_Login?closed. So PLAYABLE reproduces
+   BOTH the S80 hero win AND the drop, in one clean run.
+
+## THE DROP MECHANISM (nailed with the live sampler — the whole point of building it)
+The gt_sampler.py stream through experiment 3's freeze window (epoch 1784278878..903
+== log 09:01:17..09:01:42, the 25s ending exactly at the drop):
+  * 96/100 samples: RIP pinned in **ntdll.dll** (offset ~0x9DF14, a
+    NtWaitForSingleObject-class KERNEL WAIT), RSP pinned at 0x6032BDF4D8.
+    => the game thread is BLOCKED ON A WAIT, not busy-looping. (During experiment-1
+    idle it also waits ~80% but in the FRAME-PACING path; here it's a DIFFERENT
+    caller ending in the same generic ntdll wait.)
+  * 80%-consistent EXE caller chain (the blocking stack), all in the CHARACTER-
+    MOVEMENT code region:
+      +0x5512397 +0x555D723 +0x56CEA46 +0x56CC961 +0x544CF74   (0x54x-0x56x =
+        LokiCharacterMovementComponent region: GetMaxSpeed@0x55ACB90,
+        MoveForward@0x569A1B1 both live here)
+      +0x33AAE10 +0x33962F2 +0x3396280 +0x33A3D31 +0x338C9FE +0x3383236  (0x33x =
+        tick/movement-component tick region)
+      +0x137A64F +0x1225FD6 +0x1221597 +0x13453A5  (UWorld/UObject tick +
+        ProcessInternal region — ProcessInternal is base+0x13454A0)
+  * **+0x3BCC310 (AddMovementInput, per the marker) present in 41% of freeze samples**
+    -> the per-frame WASD path is what drives into the wait.
+CONCLUSION: enabling movement on the locally-spawned hero + driving per-frame input
+makes the game's CMC tick (PerformMovement / a physics sweep or a render/scene
+sync it triggers) BLOCK the game thread ~20s on a kernel object -> netdriver
+timeout. Prime suspect = a physics-scene lock or a FlushRenderingCommands-style
+game->render fence that hangs because the hero is a LOCALLY-spawned actor in a
+networked world whose physics/render state isn't what the movement code expects.
+NOT yet pinned to the exact sync object (would need an ALL-THREADS minidump during
+the freeze to see which thread holds the lock — dump_all_threads.py is ready for it).
+
+## ALL-THREADS MINIDUMP DURING A 2ND FRESH FREEZE (this session — narrows the wait)
+Relaunched the client (pid 29544, gameTid 0xCE2C), re-injected PLAYABLE (hero + GetMaxSpeed
+=500 reproduced again), and caught the freeze with a log-quiet detector that fired ONE
+MiniDumpNormal (tools/re/minidump.py + freeze_dump.sh); analyzed with tools/re/dump_rips.py.
+RESULT: the game thread (0xCE2C) sits in **ntdll+0x9DAB4** (a wait). Of ~123 threads, the
+only "busy" (non-ntdll/kernelbase/win32u) ones are ALL inside **runtime.dll** — the game's
+67MB packer/anti-tamper runtime (\Loki\Binaries\Win64\runtime.dll, mapped twice) — and one
+in ws2_32 (the network recv). **ZERO threads are executing in Chaos physics, D3D12/D3D12Core,
+or nvwgf2umx (the NVIDIA render driver).** => the game thread is NOT waiting on a physics or
+render thread that's actively crunching; it's a LOCK or a TIMED wait (the ~15-20s duration
+varies session-to-session, consistent with a resource that frees on a variable schedule or a
+wait-with-timeout, NOT a fixed watchdog). Packer note: `runtime.dll` masks the true callee of
+those worker threads and the game thread's own stack didn't resolve to exe frames in the dump
+(MiniDumpNormal + packer redirection) — the CLEAN movement-chain evidence is from gt_sampler
+(above), not the dump. Also: after the 2nd drop the client cleanly EXITED (RequestExit @
+09:17:05) — travelling to the menu with PLAYABLE's per-frame vtable hook still installed
+(now pointing into the torn-down tutorial world) likely faulted the next frame. So a durable
+PLAYABLE must UNINSTALL its hook on NetworkFailure/travel.
+
+## WHY A REAL FREEZE DROPS BUT A SUSPEND DOESN'T (reconciliation)
+Experiment 2 (suspend) leaves the game thread frozen but the server keeps sending;
+on resume TickDispatch drains the buffered packets and resets the receive timer ->
+no timeout. Experiment 3's freeze is INSIDE a frame holding the movement/physics
+path; the connection's "Real" (time since last GOOD packet) climbs to 20s and the
+first tick after the wait sees >15s -> timeout. (The prior S80/this-morning drops —
+frame [843] stuck 20s with feature-toggle spam, Real 20.54, DriverTime 97/102/111/
+270/720s — are the SAME mechanism; the variable DriverTime = when the movement/
+hero path first hits the blocking wait, which depends on session activity.)
+
+## WHAT THIS MEANS FOR THE ROUTE (big)
+* The S70 spectator milestone is ROCK SOLID — the connection holds indefinitely idle.
+* The handoff's proposed fix ("do discovery OFF-thread, cache handles") targets the
+  ForEachObject DISCOVERY sweeps. Those are NOT the drop cause here — the drop is the
+  MOVEMENT TICK entering a kernel wait. Off-thread discovery won't fix it (though it's
+  still good hygiene for choppiness).
+* NEXT-SESSION FIX DIRECTION (make the hero movable WITHOUT the drop):
+  (a) Identify the exact sync object: re-establish the tutorial session, re-inject
+      PLAYABLE, and during the freeze grab ONE all-threads minidump (procdump -ma or
+      MiniDumpWriteDump; a SINGLE dump is safe — do NOT loop dumps, that starves the
+      thread). Run tools/re/dump_all_threads.py: the thread NOT in a wait (holding the
+      lock the game thread waits on) names the subsystem (physics vs render vs nav).
+  (b) Likely fix once known — cheapest first, all in ds_hybrid.cpp MODE_PLAYABLE:
+       1. **kMoveMode (ds_hybrid.cpp:189)**: change 1 (MOVE_Walking) -> 5 (MOVE_Flying)
+          and rebuild to a test DLL. Flying skips the per-tick FindFloor DOWNWARD sweep;
+          if the ~20s wait is in that ground sweep, this alone fixes it. ONE-LINE test.
+       2. If still drops: disable collision on the hero's UpdatedComponent (set
+          NoCollision / bGenerateOverlapEvents=false) so SafeMoveUpdatedComponent takes
+          no physics sweep at all — movement becomes fly-through but the CMC tick can't
+          block on the scene lock.
+       3. If still drops: drive input in short BURSTS (feed AddMovementInput a few frames,
+          then idle) instead of every frame, so the blocking tick is entered rarely.
+      Test live each: hero should MOVE (X changes, GetMaxSpeed=500 already works) AND the
+      connection HOLD past the ~2min mark. Use gt_sampler.py across the run to confirm the
+      game thread no longer parks in the ntdll wait.
+  (b2) DURABILITY BUG found this session: PLAYABLE's per-frame vtable hook is NOT
+      uninstalled on drop/travel, so after a ConnectionTimeout the client faults into the
+      torn-down world and RequestExits. Any durable PLAYABLE MUST detect NetworkFailure/
+      world-teardown and restore the swapped vtable pointer (g_vt* / the copied vtable).
+  (c) The "proper" fix remains a stub-side attribute/replication implementation so the
+      hero is a real replicated pawn (S80 note), but the movement-wait must be solved
+      regardless.
+
+## ★ FLYING-MODE TEST (S81, user-requested) — kMoveMode=5 does NOT fix the drop; ONE freeze location
+Tested MOVE_Flying to skip the FindFloor ground sweep. Fixed the shim first: DoPlayableSetup HARDCODED
+MOVE_Walking (ds_hybrid.cpp:2639 `g_pbuf[0]=1`, ignoring kMoveMode); PlayableTick never re-asserted the mode.
+- Flying + per-frame SetMovementMode re-assert: froze IMMEDIATELY, ~29s, RSP-varying (multiple waits) — the
+  per-frame re-assert fires OnMovementModeChanged->a physics wait each frame = WORSE. Removed the re-assert.
+- Flying set-ONCE (readback confirmed `MovementMode now 5 <<< MODE SET`): STILL dropped (Real 28.6s).
+⇒ the ~20s wait is NOT the ground/floor sweep. It is ONE consistent location hit via the CMC-movement chain,
+  the SAME stack whether it fires during the hero SPAWN (FinishSpawningActor -> component/physics registration)
+  or during the movement tick — proven by matching 80%+-consistent frames across runs:
+    +0x5512397 +0x555D723 +0x56CEA46 +0x56CC961 +0x544CF74  (LokiCharacterMovementComponent, 0x54x-0x56x)
+    +0x33962F2 +0x3396280 +0x33A3D31 +0x338C9FE            (component tick, 0x33x)
+    +0x137A64F +0x13453A5 +0x1225FD6 +0x1221597 +0x77395B8 (UWorld/UObject tick + ProcessInternal 0x13454A0)
+    innermost waiter = +0x38463CB (and +0x36E9F84)
+- DISASM of the waiter (dumps/merged.dump.exe, base+0x38463CB): it is a VIRTUAL call
+    `mov rcx,[rdi+0xF0]; lea rdx,[rsp+0x30]; mov r8b,1; mov rax,[rcx]; call [rax+0x110]` (vtable slot 34),
+  bool=true + an out-param, result checked signed — the shape of a blocking SCENE/PHYSICS QUERY. `[rdi+0xF0]`
+  is a member of the CMC/hero. Second minidump during this freeze again shows NO physics/render thread busy
+  (all non-waiting threads inside the 67MB packer runtime.dll) ⇒ a LOCK or a query that waits, not compute.
+- The client sometimes CRASHES instead of dropping (Sentry) when the freeze hits during spawn.
+CONCLUSION: a hacked movable Character reliably hits this one wait within ~1-2 min (or at spawn); no movement
+mode avoids it. Fix requires identifying what the slot-34 virtual on [CMC+0xF0] waits on (relaunch + live
+disasm the vtable target / the object at CMC+0xF0), OR avoid spawning a Character entirely.
+PATHS to actually SEE the tutorial world ("the fruits"), recommended order:
+  (A) SPECTATOR free-cam: the client already has a live SpectatorPawn (SpectatorPawnMovement, NOT a Character
+      CMC) in the stable S70 world. Move IT (no Character spawn) + SetViewTargetWithBlend + hide the pre-drop
+      widgets -> reveals the live world with NO CMC freeze. Fastest visible win. (MODE_PLAYABLE already resolves
+      the SpectatorPawn in its [SPEC] block — a spectator-only mode reuses that and drops the hero spawn.)
+  (B) REAL drop-in (the intended way past the pre-drop/BRALL screen): call the drop machinery that exists here —
+      Comp_PlayerState_DropPlane_C (SetDropPodDestination / BP_OnDropPodLaunched) + BP_DropPlane_MultiStationary_C
+      (a PlayerState component). This fires the game's OWN drop sequence with the REAL hero -> genuine gameplay,
+      and likely sidesteps the hacked-Character freeze. Needs RE of the DropPlane component's functions.
+  (C) Crack the slot-34 CMC wait (enables the hacked controllable hero). Deep RE.
+
+## ★★★ S81 DROP-IN BREAKTHROUGH — client-side drop-in ADVANCES PAST the BRALL pre-drop screen (no freeze)
+User goal: get past the pre-drop/BRALL screen into visible gameplay. Chose path B (real drop-in) over the
+hacked-hero (which hits the CMC freeze). RE (tools/re/find_func + ufunc_survey on the live client): the local
+networked PC is a real **LokiPlayerController @ (heap)** (S73 by-path mirror) that owns two NATIVE, directly-
+callable drop functions — **UpdateIsInDropPod(bool)** and **FinishDropPhaseHiding()** [0 params, BPCallable].
+(The old S74/S79 route thought these needed BP_LokiPlayerController_Dev_C, which isn't loaded — but they are on
+the native base class, reachable now.) Built **MODE_DROPIN (39)** in ds_hybrid.cpp: find LocalPlayer->PC, call
+UpdateIsInDropPod(false)+FinishDropPhaseHiding() each hook tick. **LIVE RESULT: the client left the BRALL pre-
+drop preview and advanced to the "ENTERING THE BREACH — Pick your drop… LOADING" match-transition screen (user
+screenshot-confirmed) — CONNECTION STABLE (TIMED-OUT=0), NO freeze, NO crash.** No map reload (same LVL_Tutorial
+/ LokiGameState, frame counter kept climbing) — it is a CLIENT-SIDE UI/state advance over the still-live world.
+The "ENTERING THE BREACH" loading screen = **WBP_UI_MatchTransition_Screen_C / _Root_C** (found=5 instances).
+MODE_DROPIN v2 collapses them (SetVisibility Collapsed, found=5 collapsed=5) to reveal the live world behind.
+CEILING REACHED (expected): the match-transition screen is "LOADING" because the actual match/drop START is
+SERVER-AUTHORITATIVE and the stub doesn't run the real round (same S62-S73 ceiling) — so real gameplay (drop
+plane spawn -> pod launch -> land -> combat) won't proceed without server-side round logic. The realistic
+visible endpoint is a SPECTATOR view of the live tutorial world. NEXT levers (all native on the PC, surveyed):
+SwitchToSpectatorState (8-byte params, get exact layout first), SetViewTargetWithBlend/ClientSetViewTarget (40
+bytes, proven in MODE_PLAYABLE) aimed at a live SpectatorPawn -> free-cam the tutorial map. MODE_DROPIN is the
+keystone: past the pre-drop screen, client-side, safely.
+
+## ★ S81 LIVE-COMBAT PUSH — the hero-spawn wall is SERVER AUTHORITY, crystallized (all client-side spawn dead)
+User goal shifted to LIVE COMBAT (controllable hero + abilities + fighting). Systematically tried every
+client-side way to get a controllable hero into the drop-in-advanced live world:
+1. HACKED spawn (MODE_PLAYABLE, GameplayStatics): spawns a BP_HERO but the CMC-movement path hits the ~20s
+   ntdll wait (slot-34 virtual on [CMC+0xF0]) -> drop; OR crashes in BP-construction (post-drop-in state). DEAD.
+2. CHEAT spawn (LokiPlayerCheats.CheatChangeHero(FString) via GetLocalLokiPlayerCheatsBP): the getter returns
+   NULL — the shipping build never creates the CheatManager. PC->EnableCheats()+AddLokiPlayerCheats() ran
+   (fault=0) but the getter STILL returns null (client-side cheat creation is no-op'd). DEAD.
+3. AUTH spawn (PC->AuthCheatChangeCharacter(Class BP_HERO_Assault_C), the game's own char-change primitive):
+   ran CLEAN (fault=0, NO freeze, NO crash — the game path is safe) but did NOTHING locally — it is
+   [Native,BPCallable,NetServer], so on a networked CLIENT the _Implementation is a no-op (the real spawn is
+   server-authoritative). Verified: no BP_HERO actor exists after; PC->Pawn unchanged. DEAD (client-side).
+CRYSTALLIZED WALL: spawning+possessing a HERO is SERVER-AUTHORITATIVE. Our client is a networked CLIENT
+(RemoteRole) — it cannot authoritatively spawn+possess a hero; the game's own primitives no-op on it; the
+hacked spawn integrates badly (freeze/crash). The STUB (the server) doesn't run the hero-spawn logic. So no one
+spawns the hero. This is the SAME wall as S62-S73, now confirmed against the game's OWN spawn primitives too.
+WHAT WORKS / WHAT'S LEFT: the client already HAS a server-possessed pawn — PC->Pawn = the stub's DefaultPawn
+(S71 possession, and S73 made the client's PC a real LokiPlayerController so the possession link is valid). The
+ONLY viable route to a real playable hero is SERVER-SIDE: make the STUB spawn+possess+REPLICATE a real hero
+(LokiCharacter: ~182 props + LokiCharacterMovementComponent ~218 props w/ custom NetSerialize) — the "huge"
+mirror option flagged in S71. That is a large multi-session reconstruction (like the GameState mirror but far
+bigger, and combat also needs GAS/abilities replicated). The proper trigger already exists: the client sends
+AuthCheatChangeCharacter as a ServerRPC; a stub that HANDLED it (spawn hero server-side) would flow correctly.
+NEW MODES this session: MODE_DROPIN(39) [works], MODE_CHEATHERO(40) [confirms the auth wall]. Cheat surface:
+LokiPlayerController owns EnableCheats/AddLokiPlayerCheats/GetPlayerCheats/AuthCheatChangeCharacter(Class)/
+FinishAddLokiPlayerCheats; LokiPlayerCheats owns CheatChangeHero(FString)/ServerCheatSpawnActor/... (getter null
+in shipping). tools/re/cheat_enum.py enumerates them live.
+
+## NEW REUSABLE TOOLS (this session)
+* tools/re/gt_sampler.py <pid> <out> [secs=800] [hz=3] [gameTid=0] [exeBase=0]
+    Single-thread SAMPLING profiler. Suspends ONLY the game thread a few ms/sample
+    (invisible to the anti-tamper, which hooks thread CREATION only), captures RIP+
+    stack, resolves EXE frames to +RVA, writes a module map header. Auto-detects the
+    game thread = earliest-created thread (verified: tid == the shim's gameTid). This
+    is the keystone: it turns a silent freeze into a named blocking call chain.
+* tools/re/gt_stall.py <pid> <secs> [gameTid]
+    Suspends the game thread N seconds (controlled-freeze experiment). Proved a pure
+    stall does NOT drop the connection.
+* tools/re/sample_analyze.py <samples.txt> [tail_n]
+    Ranks EXE frames in the freeze window. NB: trim by EPOCH correlation, not the
+    "last N" — the sampler runs past the drop into the menu, so the tail is menu-idle,
+    not the freeze (epoch->log offset: gt_stall's resume ts maps to the log gap end).
+
+## STATE AT HANDOFF
+Client pid 14068 is at the MAIN MENU (dropped by experiment 3), still running. Stub
+(UnrealEditor-Cmd pid 57256) idle-listening on UDP 7777. ags (pid 29848) up. Steam up.
+Nothing left injected that matters (PLAYABLE's 180s WASD window elapsed; the game
+travelled to menu which tore down the hook's world). To resume: relaunch the client
+(kill 14068 first) with the -ini overrides — it auto-joins the tutorial in ~8s.
+Exact -ini list: configs/launch-redirect.ps1 lines 292-310 (AccelByte BaseUrl/Iam/
+Platform/Basic + LobbyServerUrl ws + Loki ProdPostAuthURL/ProdClientConfigURL on both
+Engine and Game, plus -log). Launch the exe DIRECTLY (Start-Process), NOT
+launch-redirect.ps1 (it would kill+restart ags).
+================================================================================

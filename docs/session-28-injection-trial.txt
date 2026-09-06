@@ -1,0 +1,21 @@
+714:[2026.07.01-07.24.12:321][  0]LogLokiStub: Display: InjectServerVerifyViewTarget: found UFunction on APlayerController (NumParms=0, ParmsSize=0, FunctionFlags=0x80220CC2)
+715:[2026.07.01-07.24.12:321][  0]LogLokiStub: Display: InjectServerVerifyViewTarget: added FVector+FRotator+FString params. New NumParms=3, ParmsSize=64
+1147:[2026.07.01-07.24.50:940][163]LogLokiActorChannel: Verbose: ReceivedBunch: ChIndex=3 ChSeq=286 bReliable=1 bOpen=0 bClose=0 NumBits=2339 StartPos=0 remaining=2339 bits
+1151:[2026.07.01-07.24.50:941][163]LogRep: Error: ReceivedRPC: ReceivePropertiesForRPC - Reader.IsError() == true: Function: ServerVerifyViewTarget, Object: PlayerController /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0
+1155:[2026.07.01-07.24.50:943][163]LogNet:  - Result=ObjectReplicatorReceivedBunchFail, ErrorContext="ObjectReplicatorReceivedBunchFail"
+1184:[2026.07.01-07.24.50:955][163]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from ReceivedJoin to CleanedUp
+1276:[2026.07.01-07.25.06:164][623]LogNet:  - Result=Cleanup, ErrorContext="Cleanup"
+1285:[2026.07.01-07.25.06:166][623]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from Welcomed to CleanedUp
+
+=== SESSION 28 SUMMARY ===
+
+Trial signature: (FVector Location, FRotator Rotation, FString ClientMapName)
+Injection: NumParms 0 -> 3, ParmsSize 0 -> 64 (SUCCESS)
+Bit budget: 96 (FVector) + 96 (FRotator) + FString ≠ 2298
+Test: Reader.IsError() == true — FString overflow after 224 bits consumed by FVector+FRotator
+
+First 32 bits of RPC payload = 0x05C6000B = 96862219 (int32) or 1.86e-35 (float32 denormal)
+Neither is a valid FVector.X, FString count, or reasonable value.
+
+Session 29: try more diverse signatures (TArray<uint8>, FVector_NetQuantize,
+FQuat, ints/floats/bools, USTRUCT with custom NetSerialize).

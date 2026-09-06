@@ -1,0 +1,141 @@
+SESSION 63 — PlayerState wall SOLVED (force-open tutorial); new gate = server-side match orchestration
+=========================================================================================================
+Date: 2026-07-11. Continues S62 (custom-Login trampoline built; root cause of "PlayerState is null" =
+the force-open Loki PC has a null PlayerState because it defers PlayerState creation to network
+replication, and a standalone force-open has no server). This session was LIVE and fully autonomous:
+the elevated shell + a game sitting at the menu let me inject + read markers with NO user clicks (the
+force-open route is a native console `open`, needs no menu interaction).
+
+STATE AT START
+--------------
+- Game ALIVE at the main menu (PID 98412, fresh relaunch; the S62 marker was stale from a prior process).
+- ags PID 2360 + Steam up. Shell ELEVATED (so inject.exe works against the elevated game).
+- S62 marker confirmed the wall verbatim: [LOGIN1] gm=BP_LokiGameMode_Tutorial_C
+  PCClass=BP_LokiPlayerController_Dev_C pc=0x0 PSClass=BP_LokiPlayerState_C err='PlayerState is null'.
+
+WHAT S63 SHIPPED (tools/sigbypass-mod/tutorial_launch.cpp — builds clean, both fixes live-verified)
+---------------------------------------------------------------------------------------------------
+Replaced the naked CustomLoginTramp with a plain C++ CustomLogin(gm,np,rr,portal,options,uid,err) at
+GameMode vtable slot 285 (the Win64 ABI matches the vtable call site, so no naked asm needed). CustomLogin:
+  PrepareLogin(gm)  ->  stock Login  ->  LogLoginResult  ->  RestoreLoginPatches  ->  return PC.
+PrepareLogin runs INSIDE Login (game thread paused in our code — no sampling race), and does two things:
+  (1) INSTRUMENT: diff the Loki PC C++ vtable vs stock APlayerController's, .text-guarded (rva 0x1000..
+      0x7649000, break on 8 consecutive non-.text stock slots = past the vtable end), and flag override
+      slots whose STOCK function references GameMode+0x3E0 (PlayerStateClass) = the InitPlayerState
+      candidate(s). BP_LokiPlayerController_Dev_C's CDO is loaded only during travel, so this MUST run
+      in-shim at Login-time (found via FindObjByName("Default__BP_LokiPlayerController_Dev_C"); its first
+      qword = the C++ vtable; stock ref = "Default__PlayerController").
+  (2) FIX (compile-time kFixMode):
+      FIX_A2_STOCKPC     -> poke GM+0x3D8 (PlayerControllerClass) = stock APlayerController so
+                            SpawnPlayerController makes a fully-stock PC (stock InitPlayerState creates the
+                            PlayerState in standalone). Diagnostic; loses Loki PC input/camera/possession.
+      FIX_TARGETED_INITPS -> de-override the InitPlayerState slot(s) in the Loki PC vtable to stock so the
+                            Loki PC creates its OWN BP_LokiPlayerState locally, keeping full Loki behavior.
+  All patches TRANSIENT: restored right after stock Login returns (integrity check covers .rdata vtables).
+
+LIVE RESULTS (base 0x7FF6B54F0000; RVAs stable, marker-confirmed)
+------------------------------------------------------------------
+RUN 1 — FIX_A2_STOCKPC (cheap sanity check, prompt's "fast alternative"):
+  [DIFF] overrideCount=18  psCandidates=2  (slots 260 [stockRva 0x36E1D40] and 273 [stockRva 0x36DEE20])
+  [FIX] A2: GM+0x3D8 PlayerControllerClass -> stock APlayerController.
+  [LOGIN1] gm=BP_LokiGameMode_Tutorial_C PCClass=PlayerController pc=0x26C80B8D580(PlayerController)
+           PSClass=BP_LokiPlayerState_C err='(empty=approved)'   <-- LOGIN GATE CLEARED (was fatal in S62).
+  Loki.log: Browse LVL_Tutorial -> Game class BP_LokiGameMode_Tutorial_C -> world up -> LokiGameModeInitializer
+  Stage 0->1->2 -> "Transitioning from MemoryReport to WaitingForClientsReady". Real BP_LokiGameState_Tutorial_C
+  present (the old S60 "IsBattleRoyaleBP failed to find game state" is GONE). Game STAYED ALIVE, PARKED at
+  WaitingForClientsReady for ~3 min (working set 568MB->1676MB). The stock PC never signals client-ready, so
+  the gamemode waits forever. => A2 clears login but a stock PC can't play (as predicted). It also handed us
+  the InitPlayerState slots for the real fix.
+
+RUN 2 — FIX_TARGETED_INITPS (de-override PC slots 260+273 to stock; keeps the REAL Loki PC):
+  [FIX] targeted: de-overrode 2 PC vtable slot(s) -> stock InitPlayerState.
+  [LOGIN1] gm=BP_LokiGameMode_Tutorial_C PCClass=BP_LokiPlayerController_Dev_C
+           pc=0x26CF4470010(BP_LokiPlayerController_Dev_C) err='(empty=approved)'  <-- REAL Loki PC, LOGIN APPROVED.
+  *** THIS IS THE DURABLE PLAYERSTATE FIX. *** The Loki PC spawned, created its own BP_LokiPlayerState locally
+  via the de-overridden stock InitPlayerState, and login approved — full Loki PC (input/camera/possession) intact.
+  Loki.log (the Loki PC got MUCH further than the stock PC — past WaitingForClientsReady):
+    LogLokiRoundGameMode: Setting Phase to 1 (BeginInit); Transitioning EGP_ServerStartup -> EGP_BeginInit
+    LogLokiPlayerState: [UIREADY] ALokiBaseController::BeginPlay        <- the Loki controller BeginPlay ran
+    LogLokiGameState: Entering game state BP_LokiGameState_Tutorial_C ; [ALokiGameState::BeginPlay] HeightMap Built
+    LogLokiGameModeInitializer: Finished Stage 0 -> Transitioning to Priming
+    LogLokiGameMode: Display: Client is ready to play.   <-- CLEARS the WaitingForClientsReady gate A2 stuck at!
+    LogLokiGameMode: Display: UNKNOWN is ready to play.
+    LogLokiPlayerState: [UIREADY] ALokiBaseController::TryUIReady SUCCESS
+    ...(many "ULokiGameFeatureToggles::Get X called when feature toggles were not ready" errors)...
+    (~184ms later) UEngine::Browse Started Browse: "/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent"   <-- REVERT
+    LogLokiGameMode: Error: failed to get ULokiServerPlatformInstance
+    -> BeginTearingDown LVL_Tutorial -> back to BP_MainMenuGameMode -> then a CRASH ~3s later at the menu
+       (LogBlueprintLogLibrary: Error: failed to load avatar on lobby platform; repeated UMG SMeshWidget
+        "Brush: nullptr" warnings -> Sentry crashpad). The crash is a SIDE EFFECT of the abnormal tutorial->
+        menu transition, NOT the primary gate.
+
+★★★ NEW FRONTIER (root-caused this session): the SERVER-SIDE MATCH-ORCHESTRATION gate ★★★
+------------------------------------------------------------------------------------------
+With the real Loki PC, login is approved, the tutorial gamemode initializes, the client reports READY — then
+the gamemode REVERTS TO THE MENU (a raw Browse to LVL_LobbyV2, NOT a ClientTravel/ReturnToMainMenu/TravelFailure)
+right after "Client is ready to play", logging "failed to get ULokiServerPlatformInstance".
+DISAMBIGUATION (decisive): the ags HTTP capture during the tutorial window (15:05:37..43) shows the client
+polled ONLY /storefront/battlepass/progressiontracks + /mmr/leaderboard?queueId=tutorialNew — NEVER
+/core-game/players. So the revert is NOT backend-driven (ruling out the "client polls core-game, sees no match,
+leaves" hypothesis). It is a CLIENT-SIDE, SERVER-AUTHORITY decision: BP_LokiGameMode_Tutorial is server-
+authoritative logic; on a pure-client force-open it acts as the authority but ULokiServerPlatformInstance (a
+dedicated-server platform singleton) is absent, so once the client is ready the server-side match progression
+can't proceed and the gamemode bails to the menu.
+=> This is the "match-setup / server layer" the S60/S61 handoffs flagged as the remaining deep work. It is a
+   fresh multi-session RE problem, NOT a one-shot shim tweak. It connects to the DS route (a real server would
+   supply the ServerPlatformInstance + match context).
+
+GATE LADDER (updated)
+---------------------
+  [DONE]  force-open LVL_Tutorial travels + loads (S60).
+  [DONE]  native ALokiGameMode::Login reject — GameMode C++ vtable SLOT 285 de-override to stock (S61).
+  [DONE]  "PlayerState is null" — the Loki PC's InitPlayerState is de-overridden to stock (slots 260+273) so it
+          creates its BP_LokiPlayerState locally; login APPROVED with the real Loki PC (S63). <-- THIS SESSION
+  [DONE]  WaitingForClientsReady — the Loki PC fires "Client is ready to play" + TryUIReady SUCCESS (S63).
+  [NEXT]  server-side match orchestration: gamemode reverts to menu after "ready to play" ("failed to get
+          ULokiServerPlatformInstance"). Must satisfy/stub the server platform instance OR route the tutorial
+          through a context where the server-side progression is valid.
+  [LATER] drop-in spawn (Comp_GameMode_DropPlane_Tutorial), a selectable hero, controllable pawn = PLAYABLE.
+
+KEY ADDRESSES / DATA (this build; re-verify each launch)
+--------------------------------------------------------
+- Stock AGameModeBase CDO vtable rva 0x806EDD8; GameMode Login = C++ vtable SLOT 285; stock Login = gmb[285]
+  = 0x7FF6B8CD0C50. Match-mode CDO vtables: Tutorial 0x8A94C48, Round 0x8A52A98, ALokiGameMode 0x8951FA0,
+  BattleRoyale 0x88B7CB0, DropIn 0x8936948 (slot addr = vtRva + 285*8).
+- GameMode config members: GameStateClass@+0x3D0, PlayerControllerClass@+0x3D8, PlayerStateClass@+0x3E0.
+- BP_LokiPlayerController_Dev_C C++ vtable rva 0x8A1AEE0 (= its native parent ALokiPlayerController's vtable).
+  Stock APlayerController (Default__PlayerController) C++ vtable rva 0x81A82F8. overrideCount = 18.
+  InitPlayerState candidate slots (stock fn references GM+0x3E0 PlayerStateClass): 260 (stockRva 0x36E1D40)
+  and 273 (stockRva 0x36DEE20). De-overriding BOTH to stock cleared the login gate with the Loki PC. (Refine
+  next session which single slot is InitPlayerState vs the other 0x3E0-referencing virtual, but both worked.)
+- .text range for the vtable-end guard: rva 0x1000 .. 0x7649000.
+
+TOOLING / STATE AT END
+----------------------
+- tutorial_launch.dll on disk = the FIX_TARGETED_INITPS build (the durable login+PlayerState fix). kFixMode
+  flips A2<->targeted with one constant; kOverrideSlots={285} still de-overrides GameMode Login.
+- Injector tools/inject/inject.exe mmap SUPERVIVE-Win64-Shipping.exe <dll> works (elevated shell).
+- Game CRASHED at end (the post-revert menu crash) -> relaunch fresh for the next pass. ags PID 2360 still up.
+- Preserved to scratchpad: marker-A2-success.txt, marker-targeted-loki-pc.txt, Loki-S63-both-runs.log (714KB,
+  both travels + the revert window + the crash).
+- The force-open route is fully autonomous when the shell is elevated + the game is at the menu (no clicks).
+
+NEXT SESSION (S64) — attack the server-side match-orchestration revert
+----------------------------------------------------------------------
+Goal: make BP_LokiGameMode_Tutorial STAY in the match after "Client is ready to play" instead of Browsing to
+the lobby. Leads:
+  1. RE the revert trigger: what runs between "Client is ready to play" (Priming) and the Browse to
+     LVL_LobbyV2 (~184ms). Prime suspect = the server-side match progression failing on the missing
+     ULokiServerPlatformInstance. Find where ULokiServerPlatformInstance is looked up (string xref
+     "failed to get ULokiServerPlatformInstance") and what consumes its absence to trigger the browse.
+  2. Consider providing/stubbing a ULokiServerPlatformInstance (what class/singleton is it? is it a
+     GameInstance subsystem only created for dedicated servers?), via a shim, so the gamemode doesn't bail.
+  3. Cross-check the DS route (dedicated-server-stub.md): a real server hosts the tutorial with the server
+     platform present; the force-open lacks it. The two routes converge here.
+  4. Instrument in-shim at "ready to play": the game thread is reachable via the ProcessInternal primitive;
+     add a hold/dump right after the tutorial world is up to sample the gamemode/round state + why it browses.
+  5. When it stays: verify drop-in (Comp_GameMode_DropPlane_Tutorial) fires, inject catalog_store_fix for a
+     hero, confirm a controllable pawn = PLAYABLE.
+Recipe: relaunch (elevated shell, .\configs\launch-redirect.ps1 -NoHook; or re-use a menu-parked game),
+inject tutorial_launch.dll (targeted mode), read docs/tutorial-launch-marker.txt + Loki.log. The PlayerState
+fix is now baked in, so every force-open reaches the "ready to play"/revert frontier directly.

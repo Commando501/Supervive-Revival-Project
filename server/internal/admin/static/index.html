@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SUPERVIVE Revival — Admin</title>
+<style>
+  :root {
+    --bg: #0d1017; --bg2: #141926; --bg3: #1b2233; --line: #2a3350;
+    --fg: #dbe2f4; --dim: #8b94ad; --accent: #7c5cff; --accent2: #35d0ba;
+    --warn: #e8b339; --danger: #e05a6d; --ok: #4fca7c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 14px/1.45 "Segoe UI", system-ui, sans-serif; }
+  a { color: var(--accent2); }
+
+  header { display: flex; align-items: baseline; gap: 14px; padding: 14px 22px;
+           background: var(--bg2); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 17px; margin: 0; letter-spacing: .06em; }
+  header h1 b { color: var(--accent); }
+  header .sub { color: var(--dim); font-size: 12px; }
+
+  .layout { display: flex; min-height: calc(100vh - 55px); }
+  nav { width: 190px; flex: none; background: var(--bg2); border-right: 1px solid var(--line);
+        padding: 12px 0; }
+  nav button { display: block; width: 100%; text-align: left; padding: 10px 20px;
+               background: none; border: none; color: var(--dim); font: inherit;
+               cursor: pointer; border-left: 3px solid transparent; }
+  nav button:hover { color: var(--fg); }
+  nav button.on { color: var(--fg); background: var(--bg3); border-left-color: var(--accent); }
+  main { flex: 1; padding: 20px 26px 80px; max-width: 1100px; }
+
+  h2 { font-size: 16px; margin: 4px 0 12px; }
+  h3 { font-size: 13.5px; margin: 18px 0 8px; color: var(--accent2); text-transform: uppercase;
+       letter-spacing: .08em; }
+  .note { background: var(--bg3); border: 1px solid var(--line); border-left: 3px solid var(--accent2);
+          padding: 8px 12px; border-radius: 4px; color: var(--dim); font-size: 12.5px; margin: 10px 0; }
+  .note.warn { border-left-color: var(--warn); }
+  .note b { color: var(--fg); }
+
+  .card { background: var(--bg2); border: 1px solid var(--line); border-radius: 6px;
+          padding: 14px 16px; margin: 12px 0; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1; }
+
+  input[type=text], input[type=number], select, textarea {
+    background: var(--bg); color: var(--fg); border: 1px solid var(--line);
+    border-radius: 4px; padding: 6px 9px; font: inherit; }
+  input[type=number] { width: 90px; }
+  textarea { width: 100%; min-height: 180px; font: 12px/1.5 Consolas, monospace; }
+  input:focus, select:focus, textarea:focus { outline: 1px solid var(--accent); }
+  label.chk { display: flex; gap: 7px; align-items: center; padding: 3px 6px; border-radius: 3px;
+              cursor: pointer; }
+  label.chk:hover { background: var(--bg3); }
+  label.chk.off span { color: var(--dim); }
+
+  button.btn { background: var(--bg3); border: 1px solid var(--line); color: var(--fg);
+               border-radius: 4px; padding: 6px 14px; font: inherit; cursor: pointer; }
+  button.btn:hover { border-color: var(--accent); }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.btn.danger { border-color: var(--danger); color: var(--danger); }
+  button.btn.mini { padding: 2px 8px; font-size: 12px; }
+
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--dim); font-weight: 600; font-size: 12px; text-transform: uppercase;
+       letter-spacing: .05em; }
+  tr:hover td { background: var(--bg3); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 2px; }
+  .listbox { max-height: 420px; overflow-y: auto; border: 1px solid var(--line);
+             border-radius: 4px; padding: 6px; background: var(--bg); }
+  .counts { color: var(--dim); font-size: 12px; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11.5px;
+          background: var(--bg3); border: 1px solid var(--line); color: var(--dim); }
+  .pill.ok { color: var(--ok); border-color: var(--ok); }
+  .pill.warn { color: var(--warn); border-color: var(--warn); }
+
+  #savebar { position: fixed; bottom: 0; left: 190px; right: 0; padding: 10px 26px;
+             background: var(--bg2); border-top: 1px solid var(--line); display: none;
+             align-items: center; gap: 14px; z-index: 5; }
+  #savebar.show { display: flex; }
+  #savebar .dirty { color: var(--warn); font-size: 12.5px; }
+
+  #toast { position: fixed; top: 14px; right: 16px; z-index: 10; display: flex;
+           flex-direction: column; gap: 8px; }
+  .toastmsg { background: var(--bg3); border: 1px solid var(--ok); color: var(--fg);
+              border-radius: 5px; padding: 9px 14px; font-size: 13px; max-width: 420px;
+              box-shadow: 0 4px 18px rgba(0,0,0,.45); }
+  .toastmsg.err { border-color: var(--danger); }
+  .mono { font-family: Consolas, monospace; font-size: 12.5px; }
+  /* WS push console (FK-15) */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin: 8px 0; }
+  .grid2 label, .wsform label { display: block; font-size: 12px; color: var(--dim); }
+  .grid2 input, .grid2 select { width: 100%; margin-top: 3px; }
+  main .sub { color: var(--dim); font-size: 12px; }
+  h2 .sub { margin-left: 8px; }
+  #wsPreview { background: var(--bg3); border: 1px solid var(--line); padding: 10px;
+               white-space: pre-wrap; word-break: break-all; max-height: 240px; overflow: auto; }
+  #wsPreview:empty { display: none; }
+  textarea.mono { min-height: 90px; }
+  .kv-row { display: flex; gap: 8px; margin: 4px 0; align-items: center; }
+  .kv-row input[type=text] { width: 320px; }
+  details { margin: 10px 0; }
+  summary { cursor: pointer; color: var(--dim); }
+
+  /* ---- implementation-status dashboard (Overview tab) ---- */
+  .bigbar { height: 26px; border-radius: 13px; }
+  .pbar { position: relative; height: 16px; background: var(--bg); border: 1px solid var(--line);
+          border-radius: 9px; overflow: hidden; }
+  .pfill { height: 100%; border-radius: 9px; transition: width .35s ease; }
+  .pnum { position: absolute; top: 0; right: 8px; line-height: 16px; font-size: 11px;
+          font-weight: 700; color: var(--fg); text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+  .bigbar .pnum { line-height: 26px; font-size: 14px; right: 12px; }
+
+  .cathead { display: flex; align-items: center; gap: 16px; margin: 22px 0 6px; }
+  .cathead h3 { margin: 0; flex: none; min-width: 210px; color: var(--fg);
+                text-transform: none; letter-spacing: 0; font-size: 14.5px; }
+  .cathead .pbar { flex: 1; max-width: 340px; }
+  .cathead .catdesc { color: var(--dim); font-size: 12px; }
+
+  .statrow { display: grid; grid-template-columns: 220px 66px 150px 1fr; gap: 12px;
+             align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .statrow:last-child { border-bottom: none; }
+  .statname { font-weight: 600; font-size: 13px; }
+  .statnote { color: var(--dim); font-size: 12.5px; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 10.5px;
+         font-weight: 700; text-transform: uppercase; letter-spacing: .04em; border: 1px solid; }
+  .tag.in       { color: var(--ok);     border-color: var(--ok); }
+  .tag.partial  { color: var(--warn);   border-color: var(--warn); }
+  .tag.blocked  { color: var(--danger); border-color: var(--danger); }
+  .tag.planned  { color: var(--dim);    border-color: var(--dim); }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; color: var(--dim); font-size: 12px; margin-top: 6px; }
+  .legend .sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px;
+                vertical-align: middle; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SUPERVIVE <b>REVIVAL</b> — backend admin</h1>
+  <span class="sub" id="cfgpath"></span>
+</header>
+
+<div class="layout">
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+
+<div id="savebar">
+  <span class="dirty">Unsaved config changes</span>
+  <button class="btn primary" onclick="saveConfig()">Save &amp; apply config</button>
+  <button class="btn" onclick="revertConfig()">Discard changes</button>
+  <span class="counts">Applies live in the backend; the client picks it up on its next menu re-entry / relaunch.</span>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ------------------------------------------------------------------ state -- */
+let DATA = { config: null, defaults: null, path: "" };  // /api/config
+let CFG = null;          // working copy the checklists mutate
+let dirty = false;
+let MISSIONS = { manifest: [], objectives: {}, status: { summary: {}, missions: [] },
+                 coverage: { summary: {}, unmappedObjectives: [], unusedRules: [] } };
+let PLAYERS = [];
+let curTab = "overview";
+let curPlayer = null;    // {id, state} being edited
+
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg, err) {
+  const d = document.createElement("div");
+  d.className = "toastmsg" + (err ? " err" : "");
+  d.textContent = msg;
+  $("#toast").appendChild(d);
+  setTimeout(() => d.remove(), err ? 8000 : 3500);
+}
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.error || (r.status + " " + r.statusText));
+  return body;
+}
+
+function setDirty(v) {
+  dirty = v;
+  $("#savebar").classList.toggle("show", v);
+}
+
+/* ---------------------------------------------------------------- loaders -- */
+async function loadConfig() {
+  DATA = await api("/api/config");
+  CFG = JSON.parse(JSON.stringify(DATA.config));
+  $("#cfgpath").textContent = DATA.path ? ("config: " + DATA.path) : "config persistence disabled (-config \"\")";
+  setDirty(false);
+}
+async function loadMissions() {
+  // Merge defensively instead of wholesale-replacing: if the page is newer than
+  // the running ags build (browser kept a tab open across a rebuild), absent
+  // keys must not crash the renderers — that's how the panel got stuck on a
+  // permanent "Loading…" (2026-07-10).
+  const d = await api("/api/missions");
+  MISSIONS = {
+    manifest:   d.manifest   || [],
+    objectives: d.objectives || {},
+    status:     d.status     || { summary: {}, missions: [] },
+    coverage:   d.coverage   || { summary: {}, unmappedObjectives: [], unusedRules: [] },
+  };
+}
+async function loadPlayers()  { PLAYERS = (await api("/api/players")).players; }
+
+async function saveConfig() {
+  try {
+    const res = await api("/api/config", { method: "PUT",
+      headers: {"Content-Type": "application/json"}, body: JSON.stringify(CFG) });
+    if (res.saveError) toast("Applied live, but NOT persisted: " + res.saveError, true);
+    else toast("Config saved & applied");
+    DATA.config = res.config;
+    CFG = JSON.parse(JSON.stringify(res.config));
+    setDirty(false);
+    render();
+  } catch (e) { toast("Save failed: " + e.message, true); }
+}
+function revertConfig() {
+  CFG = JSON.parse(JSON.stringify(DATA.config));
+  setDirty(false);
+  render();
+}
+
+/* ------------------------------------------------------------------- tabs -- */
+const TABS = [
+  ["overview", "Overview"],
+  ["hunters",  "Hunters"],
+  ["store",    "Store"],
+  ["economy",  "Wallet & Prices"],
+  ["missions", "Missions"],
+  ["players",  "Players"],
+  ["wspush",   "WS Push (FK-15)"],
+];
+function renderNav() {
+  $("#nav").innerHTML = TABS.map(([id, label]) =>
+    `<button class="${curTab===id?'on':''}" onclick="go('${id}')">${label}</button>`).join("");
+}
+function go(tab) {
+  curTab = tab; curPlayer = null;
+  // Leaving the WS tab must stop its 2s poll, or the panel keeps hitting the
+  // backend (and patching a table that is no longer on screen) forever.
+  if (tab !== "wspush") clearTimeout(WS.pollTimer);
+  render();
+  // Sockets are volatile (the client reconnects the messenger every ~60-70s),
+  // so fetch them on entry rather than trusting a cached list.
+  if (tab === "wspush") Promise.all([loadSockets(), loadVocabulary()]).then(render);
+}
+
+function render() {
+  renderNav();
+  const m = $("#main");
+  if (!CFG) {
+    // Boot hasn't succeeded yet. Show WHY (dead/restarting backend) instead of a
+    // bare "Loading…" — and boot() auto-retries until ags answers.
+    m.innerHTML = bootError ? `
+      <div class="note warn"><b>Can't reach the ags backend:</b> ${esc(bootError)}<br>
+        Retrying every 3s — is ags running? (panel = same process, port from the -admin flag)</div>
+      <button class="btn" onclick="boot()">Retry now</button>` : "<p>Loading…</p>";
+    return;
+  }
+  try {
+    ({overview: renderOverview, hunters: renderHunters, store: renderStore,
+      economy: renderEconomy, missions: renderMissions, players: renderPlayers,
+      wspush: renderWsPush}[curTab])(m);
+  } catch (e) {
+    // A renderer must never leave stale content behind (looked like a hang).
+    m.innerHTML = `<div class="note warn"><b>Render error on this tab:</b> ${esc(e.message)}<br>
+      If ags was just rebuilt, hard-refresh (Ctrl+F5) so the page matches the backend.</div>`;
+  }
+}
+
+/* --------------------------------------------------------------- overview -- */
+/* Implementation-status board. Percentages/notes are a hand-curated snapshot of
+   what actually works in the client vs. what's still blocked — sourced from
+   CLAUDE.md + the memory topic files. Keep this HONEST: bump a % only when the
+   underlying feature really moves, and cite the wall in the note when blocked.
+   Last curated: 2026-07-23 (S90). */
+const STATUS = [
+  { cat: "Client Front-End / Menu", desc: "The entire out-of-match menu experience", items: [
+    { n: "Login &amp; authentication",          p: 100, s: "in",
+      note: "Full 3-service login online; Steam must be running first (else Auth Failure 14005)." },
+    { n: "ALL HUNTERS roster",                   p: 100, s: "in",
+      note: "Hero grid renders live + click-to-refresh; fixed via the CatMgr+0x354 catalog-ready flag (catalog_store_fix.dll)." },
+    { n: "Store (bundles / skins / packs)",      p: 90,  s: "in",
+      note: "Storefront advertises &amp; marks owned; per-SKU PRICES are inert (client renders from packed catalog data)." },
+    { n: "Cosmetics browser",                    p: 100, s: "in",
+      note: "977 cosmetics render with ownership; skins/accessories toggle live from the Store tab." },
+    { n: "Missions page",                        p: 100, s: "in",
+      note: "Full page + working progress bars via the native-call primitive; progress served per-account." },
+    { n: "Passes — Hunter's Journey",            p: 95,  s: "in",
+      note: "85-tier ladder renders + live XP/progress earned from matches; seasonal pass &amp; reward CLAIMING still open." },
+    { n: "Avatar / Callsign customization",      p: 100, s: "in",
+      note: "Renders, switches, persists, updates in ~1.5s — backend-only, no shim." },
+    { n: "Wallet",                               p: 80,  s: "partial",
+      note: "Vive Points (vp) settable &amp; live; gold Theorycraft Coins aren't wallet-driven (battlepass claim state)." },
+  ]},
+  { cat: "Backend Infrastructure", desc: "The local Go server (ags) standing in for the dead official backend", items: [
+    { n: "Client redirect (ags server)",         p: 100, s: "in",
+      note: "hosts-file + self-signed HTTPS redirect of the client onto the local Go backend." },
+    { n: "Endpoint surface",                      p: 95,  s: "in",
+      note: "Nearly all menu / profile / lobby endpoints handled — see docs/endpoints.md." },
+    { n: "Admin panel",                           p: 100, s: "in",
+      note: "This loopback GUI + JSON API for hunters, store, wallet, missions, and player state." },
+    { n: "Per-account state persistence",         p: 100, s: "in",
+      note: "state/interactive.json: selected hunter, backdrop, equips, profile, pass progress." },
+    { n: "Mission progress engine",               p: 100, s: "in",
+      note: "match-result → objective fan-out + server-computed completion status &amp; coverage." },
+    { n: "Pass XP earning",                       p: 100, s: "in",
+      note: "Matches grant Hunter's Journey XP against the server-owned non-monotonic 85-tier ladder." },
+  ]},
+  { cat: "Match / Gameplay", desc: "The current frontier — getting into a playable map", items: [
+    { n: "DS netcode (handshake/join/spawn)",    p: 100, s: "in",
+      note: "Handshake, login, join, PC-spawn + class-net-cache suppression all verified." },
+    { n: "GameState replication",                 p: 100, s: "in",
+      note: "ALokiGameState mirror (43 net props) → client leaves the loading screen into the live world." },
+    { n: "Pawn replication + possession",         p: 70,  s: "blocked",
+      note: "Server spawns+possesses a replicating pawn, but a stock APlayerController blocks the possession-ack (control is tied to the real Loki PC)." },
+    { n: "Tutorial force-launch",                 p: 50,  s: "partial",
+      note: "Real gamemode/gamestate, world renders, hero spawn/possess/teleport, phases 1→4; blocked — 0 quest objects exist so objectives can't complete." },
+    { n: "Player movement",                       p: 20,  s: "blocked",
+      note: "CMC per-frame tick pins the game thread → netdriver timeout/disconnect. Fix = stop the CMC tick from blocking." },
+    { n: "Game-feature-toggle delivery",          p: 40,  s: "partial",
+      note: "RPC signature RE'd + readiness-bit shim, but OnClientGameFeatureTogglesReady never fires → stuck on the drop-in loading overlay." },
+    { n: "Playable match",                        p: 10,  s: "planned",
+      note: "The end goal — launching into a fully playable map. Not yet reached; converges on the possession + movement walls." },
+  ]},
+  { cat: "Reverse-Engineering Tooling", desc: "The RE/extraction toolchain everything above is built on", items: [
+    { n: "Asset extractor (CUE4Parse)",           p: 100, s: "in",
+      note: "enumerate / dump / schema / assetregistry; the full 68,228-asset catalog is mapped." },
+    { n: "usmap + RPM RE commands",               p: 100, s: "in",
+      note: "mappings.usmap regen + strings/xref/disasm/peek/threads live read-process-memory probes." },
+    { n: "Image dump / merge / IAT rebuild",      p: 100, s: "in",
+      note: "dumpimage / mergedumps / deobfimports — 1107/1107 VMProtect-protected imports resolved." },
+    { n: "Native-call primitive",                 p: 100, s: "in",
+      note: "ProcessInternal direct-thunk game-thread calls with params + OUT-params." },
+    { n: "Native shims",                          p: 100, s: "in",
+      note: "catalog_store_fix, missions_fix, loadout_fix, battlepass_adopt, mainmenu_refresh_pi8… coexist via a shared mutex." },
+    { n: "AssetRegistry patch deployment",        p: 60,  s: "partial",
+      note: "Extractor patch works end-to-end, but loose-file AR.bin deploy is proven INERT (needs an IoStore mod-pak overlay)." },
+  ]},
+];
+
+function pctColor(p) {
+  if (p >= 90) return "var(--ok)";      // green  — done / live
+  if (p >= 60) return "var(--accent2)"; // teal   — mostly there
+  if (p >= 35) return "var(--warn)";    // amber  — partial
+  return "var(--danger)";               // red    — early / blocked
+}
+function pbar(p, big) {
+  return `<div class="pbar${big ? " bigbar" : ""}">
+    <div class="pfill" style="width:${p}%;background:${pctColor(p)}"></div>
+    <span class="pnum">${p}%</span></div>`;
+}
+const catAvg = c => Math.round(c.items.reduce((a, it) => a + it.p, 0) / c.items.length);
+
+function renderOverview(m) {
+  const c = CFG, d = DATA.defaults;
+  const missionKeys = Object.keys(MISSIONS.objectives || {}).length;
+  const allItems = STATUS.flatMap(x => x.items);
+  const overall = Math.round(allItems.reduce((a, it) => a + it.p, 0) / allItems.length);
+  const countBy = s => allItems.filter(it => it.s === s).length;
+
+  m.innerHTML = `
+    <h2>Overview — implementation status</h2>
+
+    <div class="card">
+      <div class="row" style="gap:18px; margin-bottom:6px">
+        <b style="font-size:15px; min-width:210px">Overall project progress</b>
+        <div class="grow" style="max-width:520px">${pbar(overall, true)}</div>
+      </div>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--ok)"></span>90–100% done</span>
+        <span><span class="sw" style="background:var(--accent2)"></span>60–89% mostly</span>
+        <span><span class="sw" style="background:var(--warn)"></span>35–59% partial</span>
+        <span><span class="sw" style="background:var(--danger)"></span>&lt;35% early / blocked</span>
+        <span style="margin-left:auto">
+          <span class="tag in">${countBy("in")} IN</span>
+          <span class="tag partial">${countBy("partial")} PARTIAL</span>
+          <span class="tag blocked">${countBy("blocked")} BLOCKED</span>
+          <span class="tag planned">${countBy("planned")} PLANNED</span>
+        </span>
+      </div>
+    </div>
+
+    ${STATUS.map(cat => {
+      const avg = catAvg(cat);
+      return `
+      <div class="cathead">
+        <h3>${cat.cat}</h3>
+        <div class="pbar">${`<div class="pfill" style="width:${avg}%;background:${pctColor(avg)}"></div><span class="pnum">${avg}%</span>`}</div>
+        <span class="catdesc">${cat.desc}</span>
+      </div>
+      <div class="card" style="margin-top:0">
+        ${cat.items.map(it => `
+          <div class="statrow">
+            <span class="statname">${it.n}</span>
+            <span class="tag ${it.s}">${it.s === "in" ? "IN" : it.s}</span>
+            ${pbar(it.p)}
+            <span class="statnote">${it.note}</span>
+          </div>`).join("")}
+      </div>`;
+    }).join("")}
+
+    <h3 style="margin-top:26px">Live backend snapshot</h3>
+    <div class="card">
+      <table>
+        <tr><td>Hunters unlocked</td><td><b>${c.heroes.length}</b> / ${d.heroes.length}</td></tr>
+        <tr><td>Store bundles advertised</td><td><b>${c.store.bundles.length}</b> / ${d.store.bundles.length}</td></tr>
+        <tr><td>Featured carousel</td><td><b>${c.store.featured.length}</b></td></tr>
+        <tr><td>Skins owned/advertised</td><td><b>${c.store.skins.length}</b> / ${d.store.skins.length}</td></tr>
+        <tr><td>Accessories owned/advertised</td><td><b>${c.store.accessories.length}</b> / ${d.store.accessories.length}</td></tr>
+        <tr><td>Wallet</td><td class="mono">${esc(JSON.stringify(c.wallet))}</td></tr>
+        <tr><td>Mission objectives tracked</td><td><b>${missionKeys}</b> (manifest: ${(MISSIONS.manifest||[]).length} entries)</td></tr>
+        <tr><td>Player accounts with state</td><td><b>${PLAYERS.length}</b></td></tr>
+      </table>
+    </div>
+    <div class="note"><b>How changes reach the game:</b> the client refetches inventory, storefront and
+      wallet when it re-enters the menu (or on relaunch) — config edits are not pushed mid-screen.
+      Mission progress is fetched by the client-side missions shim on menu load and re-polled, so those
+      edits appear on the next modal open.</div>
+    <div class="note warn"><b>Known-inert knobs:</b> per-SKU <b>prices</b> are stored but the client currently
+      renders prices from packed catalog data (see Wallet &amp; Prices tab). Mission <b>requirements</b>
+      (objective names, maxes, descriptions) live in client-side data assets — only <b>progress</b> is
+      server-controlled.</div>`;
+}
+
+/* ---------------------------------------------------------------- hunters -- */
+function renderHunters(m) {
+  const owned = new Set(CFG.heroes);
+  const defHero = CFG.heroes[0] || "";
+  m.innerHTML = `
+    <h2>Hunters — unlock / lock</h2>
+    <div class="note">Checked hunters are marked <b>IsOwned</b> in the inventory feed → unlocked in the
+      ALL HUNTERS roster. Unchecked hunters show the not-owned lock. The <b>default</b> hunter is the
+      IsDefault starting entry (first in the list sent to the client).</div>
+    <div class="card">
+      <div class="row" style="margin-bottom:8px">
+        <button class="btn mini" onclick="huntersAll(true)">Unlock all</button>
+        <button class="btn mini" onclick="huntersAll(false)">Lock all</button>
+        <span class="counts">${owned.size} / ${DATA.defaults.heroes.length} unlocked</span>
+      </div>
+      <div class="grid">
+        ${DATA.defaults.heroes.map(h => `
+          <label class="chk ${owned.has(h)?'':'off'}">
+            <input type="checkbox" ${owned.has(h)?'checked':''} onchange="toggleHero('${h}', this.checked)">
+            <span>${esc(h)}</span>
+            <input type="radio" name="defhero" title="default hunter" ${h===defHero?'checked':''}
+                   onchange="setDefaultHero('${h}')">
+          </label>`).join("")}
+      </div>
+      <div class="counts" style="margin-top:6px">checkbox = unlocked &nbsp;·&nbsp; radio = default (IsDefault) hunter</div>
+    </div>`;
+}
+function toggleHero(h, on) {
+  const s = new Set(CFG.heroes);
+  on ? s.add(h) : s.delete(h);
+  const def = CFG.heroes[0];
+  CFG.heroes = DATA.defaults.heroes.filter(x => s.has(x));
+  if (def && s.has(def)) setDefaultHero(def, true);
+  setDirty(true); render();
+}
+function setDefaultHero(h, skipRender) {
+  const rest = CFG.heroes.filter(x => x !== h);
+  if (!CFG.heroes.includes(h)) rest.unshift(h); // picking a locked hero as default unlocks it
+  CFG.heroes = [h, ...rest.filter(x => x !== h)];
+  setDirty(true);
+  if (!skipRender) render();
+}
+function huntersAll(on) {
+  CFG.heroes = on ? [...DATA.defaults.heroes] : [];
+  setDirty(true); render();
+}
+
+/* ------------------------------------------------------------------ store -- */
+const STORE_LISTS = [
+  ["bundles",     "Bundles (StoreOffer packs — BUNDLES / SUPPORTER PACKS tabs)"],
+  ["featured",    "Featured carousel (StoreOffer names; needs WideSplashArt to render — see note)"],
+  ["currency",    "Currency top-ups (real-money store)"],
+  ["skins",       "Skins (HeroCosmeticsBundle — SKINS tab + COSMETICS ownership)"],
+  ["accessories", "Accessories (SlotCosmetics — ACCESSORIES tab + COSMETICS ownership)"],
+];
+let storeFilter = {};
+function renderStore(m) {
+  m.innerHTML = `
+    <h2>Store — advertised &amp; owned SKUs</h2>
+    <div class="note"><b>These lists drive two things at once:</b> what the storefront advertises AND what
+      the account owns (the inventory feed marks every listed asset IsOwned). Unchecking a skin locks it in
+      the COSMETICS browser too. Prices shown in-game come from packed data, not from here.</div>
+    <div class="note warn">Featured carousel gotcha: only offers whose packed asset has non-null
+      <b>WideSplashArt</b> render (the skin packs do; Starter/Superviver/Patron supporter packs spin).</div>
+    ${STORE_LISTS.map(([key, label]) => storeSection(key, label)).join("")}`;
+}
+function storeSection(key, label) {
+  const all = [...new Set([...DATA.defaults.store[key], ...CFG.store[key]])];
+  const cur = new Set(CFG.store[key]);
+  const f = (storeFilter[key] || "").toLowerCase();
+  const shown = f ? all.filter(x => x.toLowerCase().includes(f)) : all;
+  return `
+    <div class="card">
+      <h3 style="margin-top:0">${label}</h3>
+      <div class="row" style="margin-bottom:6px">
+        <input type="text" placeholder="filter…" value="${esc(storeFilter[key]||"")}"
+               oninput="storeFilter['${key}']=this.value; render()">
+        <button class="btn mini" onclick="storeAll('${key}', true)">Check shown</button>
+        <button class="btn mini" onclick="storeAll('${key}', false)">Uncheck shown</button>
+        <span class="counts">${cur.size} / ${all.length} enabled${f ? " · showing "+shown.length : ""}</span>
+      </div>
+      <div class="listbox grid">
+        ${shown.map(sku => `
+          <label class="chk ${cur.has(sku)?'':'off'}">
+            <input type="checkbox" ${cur.has(sku)?'checked':''}
+                   onchange="toggleSku('${key}', '${esc(sku)}', this.checked)">
+            <span>${esc(sku)}</span>
+          </label>`).join("") || '<span class="counts">no matches</span>'}
+      </div>
+      <div class="row" style="margin-top:6px">
+        <input type="text" id="add-${key}" placeholder="add custom SKU name…">
+        <button class="btn mini" onclick="addSku('${key}')">Add</button>
+      </div>
+    </div>`;
+}
+function toggleSku(key, sku, on) {
+  const s = new Set(CFG.store[key]);
+  on ? s.add(sku) : s.delete(sku);
+  const all = [...new Set([...DATA.defaults.store[key], ...CFG.store[key], sku])];
+  CFG.store[key] = all.filter(x => s.has(x));
+  setDirty(true); render();
+}
+function storeAll(key, on) {
+  const f = (storeFilter[key] || "").toLowerCase();
+  const all = [...new Set([...DATA.defaults.store[key], ...CFG.store[key]])];
+  const s = new Set(CFG.store[key]);
+  for (const sku of all) if (!f || sku.toLowerCase().includes(f)) on ? s.add(sku) : s.delete(sku);
+  CFG.store[key] = all.filter(x => s.has(x));
+  setDirty(true); render();
+}
+function addSku(key) {
+  const v = $("#add-" + key).value.trim();
+  if (!v) return;
+  if (!CFG.store[key].includes(v)) CFG.store[key] = [...CFG.store[key], v];
+  setDirty(true); render();
+}
+
+/* ---------------------------------------------------------------- economy -- */
+function renderEconomy(m) {
+  const wallet = Object.entries(CFG.wallet);
+  const prices = Object.entries(CFG.prices);
+  m.innerHTML = `
+    <h2>Wallet &amp; Prices</h2>
+    <h3>Wallet balances</h3>
+    <div class="note">Confirmed: <b>vp</b> = Vive Points (the purple counter). The gold counter
+      (Theorycraft Coins, premium) is NOT wallet-driven — it comes from battlepass claim state, so no
+      wallet key can set it.</div>
+    <div class="card" id="walletcard">
+      ${wallet.map(([k, v], i) => `
+        <div class="kv-row">
+          <input type="text" value="${esc(k)}" onchange="walletKey(${i}, this.value)">
+          <input type="number" value="${v}" onchange="walletVal(${i}, this.value)">
+          <button class="btn mini danger" onclick="walletDel(${i})">✕</button>
+        </div>`).join("")}
+      <div class="row" style="margin-top:8px">
+        <input type="text" id="wk" placeholder="currency code (e.g. vp)">
+        <input type="number" id="wv" placeholder="amount" value="0">
+        <button class="btn mini" onclick="walletAdd()">Add balance</button>
+      </div>
+    </div>
+    <h3>Per-SKU prices</h3>
+    <div class="note warn"><b>Currently INERT in the client.</b> The game renders a tile's price from the
+      packed CatalogEntry offers (native), and probes proved the backend Costs field is ignored. Values set
+      here are stored/persisted so they're ready if/when the price bridge (native cost injection) lands.</div>
+    <div class="card">
+      <table>
+        <tr><th>SKU (PrimaryAssetName)</th><th>Price</th><th>Discounted</th><th>Currency</th><th></th></tr>
+        ${prices.map(([sku, p], i) => `
+          <tr>
+            <td class="mono">${esc(sku)}</td>
+            <td><input type="number" value="${p.price}" onchange="priceEdit('${esc(sku)}','price',this.value)"></td>
+            <td><input type="number" value="${p.discountedPrice}" onchange="priceEdit('${esc(sku)}','discountedPrice',this.value)"></td>
+            <td><input type="text" style="width:70px" value="${esc(p.currency)}" onchange="priceEdit('${esc(sku)}','currency',this.value)"></td>
+            <td><button class="btn mini danger" onclick="priceDel('${esc(sku)}')">✕</button></td>
+          </tr>`).join("")}
+      </table>
+      <div class="row" style="margin-top:8px">
+        <input type="text" id="psku" placeholder="SKU name">
+        <input type="number" id="pval" placeholder="price" value="0">
+        <input type="text" id="pcur" placeholder="currency" value="vp" style="width:70px">
+        <button class="btn mini" onclick="priceAdd()">Add price</button>
+      </div>
+    </div>`;
+}
+function walletKey(i, k) { const e = Object.entries(CFG.wallet); e[i][0] = k.trim(); CFG.wallet = Object.fromEntries(e); setDirty(true); }
+function walletVal(i, v) { const e = Object.entries(CFG.wallet); e[i][1] = +v || 0; CFG.wallet = Object.fromEntries(e); setDirty(true); }
+function walletDel(i)    { const e = Object.entries(CFG.wallet); e.splice(i, 1); CFG.wallet = Object.fromEntries(e); setDirty(true); render(); }
+function walletAdd() {
+  const k = $("#wk").value.trim(); if (!k) return;
+  CFG.wallet[k] = +$("#wv").value || 0; setDirty(true); render();
+}
+function priceEdit(sku, field, v) {
+  const p = CFG.prices[sku]; if (!p) return;
+  p[field] = (field === "currency") ? v.trim() : (+v || 0);
+  setDirty(true);
+}
+function priceDel(sku) { delete CFG.prices[sku]; setDirty(true); render(); }
+function priceAdd() {
+  const sku = $("#psku").value.trim(); if (!sku) return;
+  CFG.prices[sku] = { price: +$("#pval").value || 0, discountedPrice: 0, currency: $("#pcur").value.trim() || "vp" };
+  setDirty(true); render();
+}
+
+/* --------------------------------------------------------------- missions -- */
+let missionFilter = "";
+let missionEdits = {};   // composite key -> pending absolute value
+function renderMissions(m) {
+  const man = MISSIONS.manifest || [];
+  const obj = MISSIONS.objectives || {};
+  // Server-computed views (ags derives these): completion status + match-result coverage.
+  const st  = MISSIONS.status   || { summary: {} };
+  const cov = MISSIONS.coverage || { summary: {}, unmappedObjectives: [], unusedRules: [] };
+  const ss = st.summary || {}, cs = cov.summary || {};
+  const rows = man.map(e => {
+    const key = e.mission + "/" + e.objective;
+    return { key, mission: e.mission, objective: e.objective, max: e.max,
+             cur: obj[key] !== undefined ? obj[key] : 0 };
+  });
+  const extraKeys = Object.keys(obj).filter(k => !rows.some(r => r.key === k));
+  const f = missionFilter.toLowerCase();
+  const shown = f ? rows.filter(r => r.key.toLowerCase().includes(f)) : rows;
+  m.innerHTML = `
+    <h2>Missions — progress control</h2>
+    <div class="note">Progress keys are <span class="mono">&lt;mission&gt;/&lt;objective&gt;</span>. The
+      client-side missions shim fetches these on menu load and writes them into the modal's bars.
+      <b>Requirements</b> (objective names / maxes / text) come from the game's data assets — server
+      controls progress only. The manifest below is registered by the shim; if it's empty, launch the game
+      to the menu once (the missions shim injects by default) and it will populate.</div>
+    ${man.length ? `
+    <div class="card">
+      <h3 style="margin-top:0">Server-computed status <span class="counts">(ags derives these — not just raw progress)</span></h3>
+      <div class="row">
+        <span class="counts"><b>${ss.complete||0}</b> / ${ss.total||0} missions complete</span>
+        <span class="counts">· <b>${ss.xpEarned||0}</b> XP earned</span>
+        <span class="counts">· coverage: ${cs.missionsFullyTrackable||0} full / ${cs.missionsPartial||0} partial / <b>${cs.missionsUntrackable||0}</b> untrackable</span>
+        <span class="counts">· ${cs.objectivesMapped||0}/${cs.objectivesTotal||0} objectives mapped</span>
+      </div>
+      ${(cov.unmappedObjectives||[]).length ? `<h3>Unmapped objectives <span class="counts">(no rule in objectiveRules → won't advance from a match)</span></h3>
+        <div class="listbox mono counts" style="max-height:160px">${cov.unmappedObjectives.map(esc).join("<br>")}</div>` : ""}
+      ${(cov.unusedRules||[]).length ? `<h3>Unused rules <span class="counts">(match no registered objective — usually a name typo)</span></h3>
+        <div class="listbox mono counts" style="max-height:120px">${cov.unusedRules.map(esc).join("<br>")}</div>` : ""}
+    </div>` : ""}
+    <div class="card">
+      <div class="row" style="margin-bottom:8px">
+        <input type="text" class="grow" placeholder="filter missions…" value="${esc(missionFilter)}"
+               oninput="missionFilter=this.value; render()">
+        <button class="btn mini" onclick="missionsCompleteAll()">Complete all</button>
+        <button class="btn mini danger" onclick="missionsResetAll()">Reset all to 0</button>
+        <span class="counts">${man.length} manifest entries · ${Object.keys(obj).length} tracked keys</span>
+      </div>
+      ${man.length === 0 ? '<div class="note warn">No manifest registered yet — mission rows appear after one menu load with the missions shim active.</div>' : `
+      <div class="listbox" style="max-height:520px">
+        <table>
+          <tr><th>Mission</th><th>Objective</th><th>Progress</th><th>Max</th><th></th></tr>
+          ${shown.map(r => `
+            <tr>
+              <td>${esc(r.mission)}</td>
+              <td>${esc(r.objective)}</td>
+              <td><input type="number" step="any" value="${missionEdits[r.key] !== undefined ? missionEdits[r.key] : r.cur}"
+                         onchange="missionEdits['${esc(r.key)}'] = +this.value"></td>
+              <td>${r.max}</td>
+              <td>
+                <button class="btn mini" onclick="missionSet('${esc(r.key)}', 0)">0</button>
+                <button class="btn mini" onclick="missionSet('${esc(r.key)}', ${r.max})">max</button>
+              </td>
+            </tr>`).join("")}
+        </table>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" onclick="missionsApplyEdits()">Apply edited values</button>
+        <span class="counts">${Object.keys(missionEdits).length} pending edit(s)</span>
+      </div>`}
+      ${extraKeys.length ? `<h3>Tracked keys not in manifest</h3>
+        <div class="mono counts">${extraKeys.map(k => esc(k) + " = " + obj[k]).join("<br>")}</div>` : ""}
+      <div class="row" style="margin-top:10px">
+        <input type="text" id="mkey" class="grow" placeholder="custom key: <mission>/<objective>">
+        <input type="number" id="mval" value="0" step="any">
+        <button class="btn mini" onclick="missionCustom()">Set</button>
+      </div>
+    </div>
+    <h3>Simulate a match result</h3>
+    <div class="note">Runs the same stat→objective engine as
+      <span class="mono">POST /revival/missions/match-result</span>: deltas fan out to every mission
+      sharing the objective. It also grants <b>Hunter's Journey pass XP</b> to the player picked
+      below. The real in-game POST credits whoever is authenticated (from the Bearer token), so it
+      never guesses; "(infer)" here only works when exactly ONE account has state — with several on
+      file the grant is skipped rather than credited to the wrong one.</div>
+    <div class="card" id="matchform">
+      <div class="row">
+        <label class="chk"><span>pass XP to</span>
+          <select id="m_playerId">
+            <option value="">(infer)</option>
+            ${PLAYERS.map(p => `<option value="${esc(p.id)}">${esc(p.id)}</option>`).join("")}
+          </select></label>
+        <label class="chk"><input type="checkbox" id="m_win"><span>Win</span></label>
+        ${["placement","knocks","assists","teamWipes","minionKills","bossKills","chestsOpened",
+           "vaultsOpened","bonfiresCaptured","sunrises","purchases","uniqueHeroes"].map(f => `
+          <label class="chk"><span>${f}</span><input type="number" id="m_${f}" value="0" style="width:70px"></label>`).join("")}
+        <label class="chk"><span>gameMode</span>
+          <select id="m_gameMode">
+            <option value="tournament">tournament</option><option value="br">br</option>
+            <option value="trios">trios</option><option value="coop">coop</option>
+          </select></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" onclick="simMatch()">Record match</button>
+        <span class="counts mono" id="matchout"></span>
+      </div>
+    </div>`;
+}
+async function missionSet(key, val) {
+  try {
+    MISSIONS.objectives = (await api("/api/missions/progress", { method: "PUT",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ objectives: { [key]: val } }) })).objectives;
+    delete missionEdits[key];
+    toast(key + " → " + val); render();
+  } catch (e) { toast(e.message, true); }
+}
+async function missionsApplyEdits() {
+  if (!Object.keys(missionEdits).length) { toast("No edits pending"); return; }
+  try {
+    MISSIONS.objectives = (await api("/api/missions/progress", { method: "PUT",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ objectives: missionEdits }) })).objectives;
+    toast(Object.keys(missionEdits).length + " objective value(s) applied");
+    missionEdits = {}; render();
+  } catch (e) { toast(e.message, true); }
+}
+async function missionsResetAll() {
+  if (!confirm("Zero ALL mission progress?")) return;
+  try {
+    MISSIONS.objectives = (await api("/api/missions/progress", { method: "PUT",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ objectives: {}, replace: true }) })).objectives;
+    missionEdits = {}; toast("All mission progress reset"); render();
+  } catch (e) { toast(e.message, true); }
+}
+async function missionsCompleteAll() {
+  const vals = {};
+  for (const e of MISSIONS.manifest || []) vals[e.mission + "/" + e.objective] = e.max;
+  if (!Object.keys(vals).length) { toast("No manifest to complete", true); return; }
+  try {
+    MISSIONS.objectives = (await api("/api/missions/progress", { method: "PUT",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ objectives: vals }) })).objectives;
+    missionEdits = {}; toast("All manifest objectives set to max"); render();
+  } catch (e) { toast(e.message, true); }
+}
+async function missionCustom() {
+  const k = $("#mkey").value.trim(); if (!k) return;
+  await missionSet(k, +$("#mval").value || 0);
+}
+async function simMatch() {
+  const body = { win: $("#m_win").checked, gameMode: $("#m_gameMode").value };
+  for (const f of ["placement","knocks","assists","teamWipes","minionKills","bossKills",
+                   "chestsOpened","vaultsOpened","bonfiresCaptured","sunrises","purchases","uniqueHeroes"])
+    body[f] = +$("#m_" + f).value || 0;
+  const who = $("#m_playerId") ? $("#m_playerId").value : "";
+  if (who) body.playerId = who;
+  try {
+    const res = await api("/api/missions/match-result", { method: "POST",
+      headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
+    MISSIONS.objectives = res.objectives;
+    const n = Object.keys(res.applied || {}).length;
+    // Report the pass grant too, including the "nobody credited" case — otherwise a skipped
+    // grant looks identical to a successful one and the operator has no idea why the pass
+    // did not move.
+    const p = res.pass || {};
+    let passMsg;
+    if (!p.playerId) {
+      passMsg = "no pass XP (no player resolved — pick one above)";
+    } else {
+      passMsg = `+${p.xpGained||0} pass XP → ${p.playerId}, tier ${p.after ? p.after.level : "?"}`
+              + (p.tiersUp ? ` (+${p.tiersUp} tier${p.tiersUp>1?"s":""})` : "");
+    }
+    $("#matchout").textContent = `${n} objective key(s) advanced · ${passMsg}`;
+    toast(`Match recorded — ${n} objective(s), ${passMsg}`);
+    await loadPlayers(); // keep the players tab's Hunter's Journey column honest
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ---------------------------------------------------------------- players -- */
+function renderPlayers(m) {
+  if (curPlayer) return renderPlayerEditor(m);
+  m.innerHTML = `
+    <h2>Players — per-account state</h2>
+    <div class="note">Everything persisted in <span class="mono">state/interactive.json</span>: selected
+      hunter, menu backdrop, cosmetic equips, saved client profile. Loadout edits auto-bump the loadout
+      version so the client reconciler adopts them on its next fetch.</div>
+    <div class="card">
+      ${PLAYERS.length === 0 ? '<span class="counts">No player state yet — log in with the client once.</span>' : `
+      <table>
+        <tr><th>Player ID</th><th>Selected hunter</th><th>Backdrop</th><th>Hunter's Journey</th><th>Loadout ver</th><th></th></tr>
+        ${PLAYERS.map(p => {
+          const st = p.state || {};
+          return `<tr>
+            <td class="mono">${esc(p.id)}</td>
+            <td>${esc(st.selectedHeroAssetId || "(default)")}</td>
+            <td>${esc(st.lobbyPlatformAssetId || "—")}</td>
+            <td>tier ${st.accountPassLevel || 0}${(st.accountPassXP ? ` · ${st.accountPassXP} XP` : "")}${st.accountPassCleared ? " · cleared" : ""}</td>
+            <td>${st.loadoutVersion || 0}</td>
+            <td>
+              <button class="btn mini" onclick="editPlayer('${esc(p.id)}')">Edit</button>
+              <button class="btn mini danger" onclick="deletePlayer('${esc(p.id)}')">Reset</button>
+            </td>
+          </tr>`; }).join("")}
+      </table>`}
+    </div>`;
+}
+function editPlayer(id) {
+  const p = PLAYERS.find(x => x.id === id);
+  if (!p) return;
+  curPlayer = { id, state: JSON.parse(JSON.stringify(p.state || {})) };
+  render();
+}
+function renderPlayerEditor(m) {
+  const st = curPlayer.state;
+  const heroOpts = DATA.defaults.heroes.map(h => "Hero:" + h);
+  const kvSection = (title, field, hint) => {
+    const entries = Object.entries(st[field] || {});
+    return `
+      <h3>${title}</h3>
+      ${hint ? `<div class="counts" style="margin-bottom:4px">${hint}</div>` : ""}
+      ${entries.map(([k, v]) => `
+        <div class="kv-row">
+          <input type="text" value="${esc(k)}" onchange="pKvKey('${field}','${esc(k)}',this.value)">
+          <input type="text" value="${esc(v)}" onchange="pKvVal('${field}','${esc(k)}',this.value)">
+          <button class="btn mini danger" onclick="pKvDel('${field}','${esc(k)}')">✕</button>
+        </div>`).join("") || '<span class="counts">none</span>'}
+      <div class="kv-row">
+        <input type="text" id="nk-${field}" placeholder="key">
+        <input type="text" id="nv-${field}" placeholder="value">
+        <button class="btn mini" onclick="pKvAdd('${field}')">Add</button>
+      </div>`;
+  };
+  m.innerHTML = `
+    <h2>Player <span class="mono">${esc(curPlayer.id)}</span></h2>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn" onclick="curPlayer=null; render()">← back</button>
+      <button class="btn primary" onclick="savePlayer()">Save player</button>
+      <span class="pill">loadout version auto-bumps on save</span>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Selected hunter (party / menu preview)</h3>
+      <select onchange="st_set('selectedHeroAssetId', this.value)">
+        <option value="">(server default)</option>
+        ${heroOpts.map(h => `<option ${st.selectedHeroAssetId===h?'selected':''}>${esc(h)}</option>`).join("")}
+      </select>
+      <h3>Hunter's Journey — account pass (PASSES)</h3>
+      <div class="counts" style="margin-bottom:4px">Real effect, no relaunch: served on
+        <span class="mono">/progression/players/{id}</span>, whose handler feeds the client's native
+        progression ingester — the PASSES tier ladder updates on its next poll (~61s).
+        <b>Level</b> is a 0-based tier INDEX (the ladder lights up to it and auto-scrolls there).
+        <b>XP</b> is progress toward the NEXT tier; the client computes that tier's requirement itself
+        from the packed ladder, so an XP above it just fills the bar — raise Level to advance.</div>
+      <div class="kv-row">
+        <input type="number" min="0" value="${st.accountPassLevel || 0}"
+               onchange="st_setNum('accountPassLevel', this.value)" placeholder="Level (tier index)">
+        <input type="number" min="0" value="${st.accountPassXP || 0}"
+               onchange="st_setNum('accountPassXP', this.value)" placeholder="XP toward next tier">
+        <label class="counts" style="white-space:nowrap">
+          <input type="checkbox" ${st.accountPassCleared ? "checked" : ""}
+                 onchange="st_setBool('accountPassCleared', this.checked)"> cleared
+        </label>
+      </div>
+
+      <h3>Menu backdrop (lobby platform)</h3>
+      <input type="text" style="width:420px" value="${esc(st.lobbyPlatformAssetId || "")}"
+             placeholder="LobbyPlatform:Base" onchange="st_set('lobbyPlatformAssetId', this.value)">
+      ${kvSection("Equipped skins per hunter", "heroCosmeticsBundles",
+        'key = <span class="mono">Hero:&lt;name&gt;</span>, value = <span class="mono">HeroCosmeticsBundle:&lt;name&gt;</span>')}
+      ${kvSection("Slot cosmetics (glider / emotes-slot / wisp / spray / avatar)", "slotCosmetics",
+        'key = slot name, value = <span class="mono">SlotCosmetics:&lt;name&gt;</span>')}
+      ${kvSection("Luxe chromas", "luxeChromas", "")}
+      <details>
+        <summary>Raw state JSON (advanced — full document)</summary>
+        <textarea id="rawstate">${esc(JSON.stringify(st, null, 2))}</textarea>
+        <button class="btn mini" style="margin-top:6px" onclick="applyRawState()">Load raw JSON into editor</button>
+      </details>
+    </div>`;
+}
+function st_set(field, v) {
+  if (v) curPlayer.state[field] = v; else delete curPlayer.state[field];
+}
+/* Typed setters. st_set stores STRINGS and drops falsy values, which is wrong for the
+   account-pass fields: the server decodes the player doc with DisallowUnknownFields into
+   typed Go fields, so a "12" string or a "" bool fails the whole save. */
+function st_setNum(field, v) {
+  const n = parseInt(v, 10);
+  if (Number.isFinite(n) && n > 0) curPlayer.state[field] = n; else delete curPlayer.state[field]; // absent == 0
+}
+function st_setBool(field, v) { curPlayer.state[field] = !!v; }
+function pKvKey(field, oldK, newK) {
+  const m = curPlayer.state[field] || {};
+  if (newK && newK !== oldK) { m[newK.trim()] = m[oldK]; delete m[oldK]; curPlayer.state[field] = m; render(); }
+}
+function pKvVal(field, k, v) { (curPlayer.state[field] = curPlayer.state[field] || {})[k] = v.trim(); }
+function pKvDel(field, k) { delete (curPlayer.state[field] || {})[k]; render(); }
+function pKvAdd(field) {
+  const k = $("#nk-" + field).value.trim(), v = $("#nv-" + field).value.trim();
+  if (!k) return;
+  (curPlayer.state[field] = curPlayer.state[field] || {})[k] = v;
+  render();
+}
+function applyRawState() {
+  try { curPlayer.state = JSON.parse($("#rawstate").value); toast("Raw JSON loaded — press Save player to persist"); render(); }
+  catch (e) { toast("Bad JSON: " + e.message, true); }
+}
+async function savePlayer() {
+  try {
+    await api("/api/players/" + encodeURIComponent(curPlayer.id), { method: "PUT",
+      headers: {"Content-Type":"application/json"}, body: JSON.stringify(curPlayer.state) });
+    toast("Player saved (loadout version bumped)");
+    await loadPlayers();
+    curPlayer = null; render();
+  } catch (e) { toast("Save failed: " + e.message, true); }
+}
+async function deletePlayer(id) {
+  if (!confirm("Reset ALL state for " + id + "? (equips, profile, selected hunter)")) return;
+  try {
+    await api("/api/players/" + encodeURIComponent(id), { method: "DELETE" });
+    toast("Player state reset");
+    await loadPlayers(); render();
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ------------------------------------------------- WS push console (FK-15) -- */
+/* Why this tab exists: the "server->client push is measured non-functional"
+   belief rests on 5 probes of ONE message type, each bundling 20+ speculative
+   fields, each costing a whole game launch. Here a probe costs a button press,
+   so the experiment can finally be run one variable at a time.
+   Rules encoded in the UI: every push needs a LABEL (so it can be found in
+   capture.log afterwards), the builder sends EXACTLY the fields listed, and the
+   Drop button is the POSITIVE CONTROL -- the messenger drop is the project's one
+   demonstrated server->client control signal (S85), so if Drop still produces its
+   resync while a pushed frame does nothing, the null belongs to the frame. */
+let WS = { sockets: [], pollTimer: null };
+let WSFORM = {
+  label: "", target: "", mode: "lobby",
+  type: "", id: "", fields: [{k:"",v:""}], raw: "", binary: false, hexBody: false,
+};
+let WSSENT = [];   // this session's push history, newest first
+let VOCAB = [];    // the client's own notif type table, from /api/ws/vocabulary
+let RECO  = [];    // ranked pre-authored probes, same endpoint
+let SWEEP = { gapMs: 3000, skip: true };
+
+async function loadSockets() {
+  try { WS.sockets = (await api("/api/ws/sockets")).sockets || []; }
+  catch (e) { WS.sockets = []; }
+}
+async function loadVocabulary() {
+  try {
+    const d = await api("/api/ws/vocabulary");
+    VOCAB = d.notifTypes  || [];
+    RECO  = d.recommended || [];
+  } catch (e) { VOCAB = []; RECO = []; }
+}
+function wsLoadProbe(rank) {
+  const p = RECO.find(x => x.rank === rank);
+  if (!p) return;
+  if (p.raw) {
+    // The messenger channel's body is a JSON object, not a key:value document,
+    // so it goes out verbatim rather than through the lobby builder.
+    WSFORM.mode = "raw";
+    WSFORM.raw  = p.raw;
+  } else {
+    WSFORM.mode   = "lobby";
+    WSFORM.type   = p.type;
+    WSFORM.id     = "";
+    WSFORM.fields = (p.fields || []).map(f => ({ k: f.key, v: f.value }));
+  }
+  WSFORM.label = "fk15-p" + rank + "-" + (p.type || p.channel);
+  // Auto-target the socket this probe is for; the two channels are different
+  // protocols and a messenger frame on /lobby (or vice versa) tests nothing.
+  const want = (WS.sockets || []).find(s => s.kind === p.channel);
+  if (want) WSFORM.target = want.handle;
+  render();
+  toast(want ? `Loaded probe ${rank} → ${want.handle} (${p.channel}). Preview, then Push.`
+             : `Loaded probe ${rank} — no live ${p.channel} socket yet`, !want);
+}
+function wsPickType(t) {
+  WSFORM.mode = "lobby";
+  WSFORM.type = t;
+  if (!WSFORM.label) WSFORM.label = t + "-1";
+  render();
+  window.scrollTo(0, 0);
+}
+async function wsSweep() {
+  const n = SWEEP.skip ? VOCAB.length - VOCAB.filter(v => v.probed).length : VOCAB.length;
+  if (!WSFORM.label) { toast("Set a label first — it prefixes every frame's capture.log line", true); return; }
+  if (!WSFORM.target) { toast("Pick a target socket first", true); return; }
+  if (!confirm(`Push ${n} frames, ${SWEEP.gapMs}ms apart (~${Math.round(n*SWEEP.gapMs/1000)}s).\n\n` +
+               `Watch Loki.log for the whole window. Any reaction must then be re-run as a single ` +
+               `frame before it counts as a result.`)) return;
+  try {
+    const r = await api("/api/ws/sweep", { method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ socket: WSFORM.target, gapMs: SWEEP.gapMs,
+                             skipProbed: SWEEP.skip, label: WSFORM.label }) });
+    const t = new Date().toISOString().slice(11, 19);
+    (r.pushed || []).forEach(p => WSSENT.unshift({ t, label: "(sweep) " + WSFORM.label,
+      handle: p.handle, bytes: p.bytes, payload: p.payload }));
+    if (r.error) toast("Sweep aborted: " + r.error, true);
+    else toast(`Sweep complete — ${(r.pushed||[]).length} frames pushed`);
+    await loadSockets(); render();
+  } catch (e) { toast(e.message, true); }
+}
+function wsPoll() {
+  clearTimeout(WS.pollTimer);
+  if (curTab !== "wspush") return;
+  WS.pollTimer = setTimeout(async () => {
+    await loadSockets();
+    // Patch ONLY the socket table, never the whole tab -- a full re-render
+    // would wipe whatever the operator is mid-way through typing.
+    const el = $("#wsSockets");
+    if (el && curTab === "wspush") el.innerHTML = wsSocketsHTML();
+    wsPoll();
+  }, 2000);
+}
+
+function wsSocketsHTML() {
+  if (!WS.sockets.length) {
+    return `<div class="note warn">No live WebSocket connections.
+      The game must be running and past login. (The client opens <span class="mono">/lobby</span>
+      and <span class="mono">/notifications/players/{id}</span>.)</div>`;
+  }
+  return `<table><thead><tr><th>Handle</th><th>Kind</th><th>Path</th><th>Up</th>
+    <th>Pushes</th><th>Last label</th><th></th></tr></thead><tbody>` +
+    WS.sockets.map(s => `<tr>
+      <td class="mono">${esc(s.handle)}</td>
+      <td>${esc(s.kind)}</td>
+      <td class="mono">${esc(s.path)}</td>
+      <td>${s.uptimeSec}s</td>
+      <td>${s.pushes}</td>
+      <td>${esc(s.lastPush || "-")}</td>
+      <td>
+        <button class="btn" onclick="wsUse('${esc(s.handle)}')">Target</button>
+        <button class="btn" onclick="wsDrop('${esc(s.handle)}')" title="Positive control: forces a reconnect+resync">Drop</button>
+      </td></tr>`).join("") + `</tbody></table>`;
+}
+
+function renderWsPush(m) {
+  const f = WSFORM;
+  m.innerHTML = `
+    <h2>Server &rarr; client WebSocket push console <span class="sub">FK-15</span></h2>
+
+    <div class="note">
+      <b>What this is for.</b> The belief <i>"server&rarr;client push is measured non-functional"</i>
+      rests on <b>5 probes of one message type</b> (<span class="mono">matchmakingNotif</span>), each
+      bundling 20+ speculative fields in a single frame, and each costing a full game launch.
+      This console makes a probe cost a button press so the question can be asked
+      <b>one variable at a time</b>, which is what this project's own conventions require.
+      <br><b>Nothing is ever pushed unless you press Push.</b> A sitting with this tab closed is
+      byte-identical to one taken before the console existed.
+    </div>
+
+    <h3>Live sockets</h3>
+    <div id="wsSockets">${wsSocketsHTML()}</div>
+    <p class="sub">Both channels are addressable. The <b>messenger</b>
+      (<span class="mono">/notifications/players/{id}</span>) has never had an application frame
+      pushed at it &mdash; only binary <span class="mono">hb</span> &mdash; yet it is the socket
+      already proven to drive client behaviour (S85's avatar resync works by dropping it).
+      <b>Drop</b> is your positive control: if a drop still causes a resync but your frame does
+      nothing, the socket was alive and the null belongs to the frame, not the channel.</p>
+
+    <h3>Recommended probes <span class="sub">ranked by the S117 dispatch RE</span></h3>
+    <p class="sub">Probes <b>1 and 2 need no ini change at all</b> &mdash; their diagnostic lines
+      are emitted at <span class="mono">Warning</span>, which the shipped ini already allows. They
+      answer the question every earlier probe skipped: <b>does our frame reach the client's lobby
+      dispatcher?</b> Run those first.</p>
+    ${RECO.map(p => `<div class="note">
+      <b>${p.rank}. ${esc(p.name)}</b>
+      <span class="sub"> [${esc(p.channel)}]</span>
+      ${p.needsIni ? `<span class="sub"> &mdash; needs <span class="mono">-Preset Ws</span></span>`
+                   : `<span class="sub"> &mdash; <b>works today, no ini change</b></span>`}
+      <br>${esc(p.why)}
+      <br><b>Expect:</b> <span class="mono">${esc(p.expect)}</span>
+      <br><button class="btn" onclick="wsLoadProbe(${p.rank})">Load this frame</button>
+    </div>`).join("")}
+
+    <h3>Compose a frame</h3>
+    <div class="grid2">
+      <label>Label <span class="sub">(required &mdash; tags the capture.log line)</span>
+        <input type="text" id="wsLabel" value="${esc(f.label)}" placeholder="e.g. partyinvite-minimal-1"
+               oninput="WSFORM.label=this.value"></label>
+      <label>Target socket
+        <select id="wsTarget" onchange="WSFORM.target=this.value">
+          <option value="">— pick a socket —</option>
+          ${WS.sockets.map(s => `<option value="${esc(s.handle)}" ${f.target===s.handle?"selected":""}>
+            ${esc(s.handle)} (${esc(s.kind)})</option>`).join("")}
+        </select></label>
+    </div>
+
+    <div class="grid2">
+      <label>Body format
+        <select onchange="WSFORM.mode=this.value; render()">
+          <option value="lobby" ${f.mode==="lobby"?"selected":""}>AccelByte v1 lobby (type + ordered key: value lines)</option>
+          <option value="raw"   ${f.mode==="raw"?"selected":""}>Raw text (verbatim &mdash; e.g. a JSON envelope)</option>
+          <option value="hex"   ${f.mode==="hex"?"selected":""}>Binary from hex (e.g. 68 62 = "hb")</option>
+        </select></label>
+    </div>
+
+    ${f.mode === "lobby" ? `
+      <div class="grid2">
+        <label>type <input type="text" value="${esc(f.type)}" oninput="WSFORM.type=this.value"
+                placeholder="e.g. partyInviteNotif"></label>
+        <label>id <span class="sub">(left blank = no id: line at all)</span>
+          <input type="text" value="${esc(f.id)}" oninput="WSFORM.id=this.value"></label>
+      </div>
+      <h4>Fields <span class="sub">sent in this exact order, nothing added</span></h4>
+      <table><tbody>
+      ${f.fields.map((row, i) => `<tr>
+        <td><input type="text" value="${esc(row.k)}" placeholder="key" oninput="WSFORM.fields[${i}].k=this.value"></td>
+        <td><input type="text" value="${esc(row.v)}" placeholder="value" oninput="WSFORM.fields[${i}].v=this.value"></td>
+        <td><button class="btn" onclick="WSFORM.fields.splice(${i},1); render()">&times;</button></td>
+      </tr>`).join("")}
+      </tbody></table>
+      <button class="btn" onclick="WSFORM.fields.push({k:'',v:''}); render()">+ field</button>
+    ` : `
+      <label>Body
+        <textarea rows="6" class="mono" oninput="WSFORM.raw=this.value"
+          placeholder="${f.mode==='hex' ? '68 62' : 'exact bytes to send'}">${esc(f.raw)}</textarea></label>
+    `}
+
+    <div style="margin-top:14px">
+      <button class="btn" onclick="wsPreview()">Preview bytes</button>
+      <button class="btn primary" onclick="wsPush()">Push frame</button>
+    </div>
+    <pre id="wsPreview" class="mono"></pre>
+
+    <h3>Sweep the vocabulary</h3>
+    <p class="sub">The client's own message-type table holds <b>${VOCAB.length} server-pushable
+      notif types</b> (recovered from the .rdata-complete dump). The five historical probes used
+      <b>one</b> of them &mdash; <span class="mono">matchmakingNotif</span>, whose handler is the
+      one most likely to be gated on a matchmaking ticket the client never issued. A sweep pushes
+      one minimal frame per type so a single launch walks the whole vocabulary.</p>
+    <div class="note warn">
+      <b>A sweep finds candidates; it does not produce results.</b> Frames are individually
+      minimal and individually labelled, but they are not isolated from each other in time.
+      Any reaction must be re-run as a <i>single</i> push, alone, before it is written down.
+    </div>
+    <div class="grid2">
+      <label>Gap between frames (ms)
+        <input type="text" value="${SWEEP.gapMs}" oninput="SWEEP.gapMs=+this.value||3000"></label>
+      <label>Skip already-probed types
+        <select onchange="SWEEP.skip = this.value === 'yes'">
+          <option value="yes" ${SWEEP.skip?"selected":""}>yes — don't re-spend on matchmakingNotif</option>
+          <option value="no" ${SWEEP.skip?"":"selected"}>no — push all ${VOCAB.length}</option>
+        </select></label>
+    </div>
+    <button class="btn" onclick="wsSweep()">Sweep ${SWEEP.skip ? VOCAB.length - VOCAB.filter(v=>v.probed).length : VOCAB.length} types
+      (~${Math.round((SWEEP.skip ? VOCAB.length - VOCAB.filter(v=>v.probed).length : VOCAB.length) * SWEEP.gapMs / 1000)}s)</button>
+    <details style="margin-top:10px"><summary class="sub">show the ${VOCAB.length} types</summary>
+      <table><thead><tr><th>Type</th><th>Already probed?</th><th></th></tr></thead><tbody>
+      ${VOCAB.map(v => `<tr><td class="mono">${esc(v.type)}</td>
+        <td class="sub">${v.probed ? esc(v.probed) : "—"}</td>
+        <td><button class="btn" onclick="wsPickType('${esc(v.type)}')">Compose</button></td></tr>`).join("")}
+      </tbody></table></details>
+
+    <h3>Pushed this session</h3>
+    ${WSSENT.length ? `<table><thead><tr><th>Time</th><th>Label</th><th>Socket</th>
+      <th>Bytes</th><th>Payload</th></tr></thead><tbody>` +
+      WSSENT.map(s => `<tr><td class="mono">${esc(s.t)}</td><td>${esc(s.label)}</td>
+        <td class="mono">${esc(s.handle)}</td><td>${s.bytes}</td>
+        <td class="mono" style="max-width:420px;overflow:auto">${esc(s.payload)}</td></tr>`).join("") +
+      `</tbody></table>` : `<p class="sub">Nothing pushed yet.</p>`}
+
+    <div class="note warn" style="margin-top:16px">
+      <b>Before you read a null as a result:</b> raise the client's log verbosity first
+      (<span class="mono">configs\\set-log-verbosity.ps1</span>). A muted category cannot
+      complain, and "silent absorption" against a muted diagnostic channel is an
+      instrument artifact, not a measurement &mdash; which is exactly how FK-11 went
+      unchallenged for ~60 sessions.
+    </div>`;
+  wsPoll();
+}
+
+function wsUse(h) { WSFORM.target = h; render(); }
+
+function wsBody() {
+  const f = WSFORM;
+  const req = { label: f.label, socket: f.target };
+  if (f.mode === "lobby") {
+    req.type = f.type;
+    req.id = f.id;
+    // Map the form's internal {k,v} rows onto the API's {key,value} shape. The
+    // push API sets DisallowUnknownFields on purpose, so a mismatch here is a
+    // hard 400 rather than a frame that quietly ships without its fields.
+    req.fields = f.fields
+      .filter(r => r.k.trim() !== "")
+      .map(r => ({ key: r.k, value: r.v }));
+  } else {
+    req.raw = f.raw;
+    req.hexBody = f.mode === "hex";
+  }
+  return req;
+}
+
+async function wsPreview() {
+  try {
+    const r = await api("/api/ws/preview", { method: "POST",
+      headers: {"Content-Type":"application/json"}, body: JSON.stringify(wsBody()) });
+    $("#wsPreview").textContent = `${r.bytes} bytes:\n${r.payload}`;
+  } catch (e) { $("#wsPreview").textContent = ""; toast(e.message, true); }
+}
+
+async function wsPush() {
+  try {
+    const r = await api("/api/ws/push", { method: "POST",
+      headers: {"Content-Type":"application/json"}, body: JSON.stringify(wsBody()) });
+    const t = new Date().toISOString().slice(11, 19);
+    (r.pushed || []).forEach(p => {
+      WSSENT.unshift({ t, label: WSFORM.label, handle: p.handle, bytes: p.bytes, payload: p.payload });
+      if (p.error) toast("Push wrote but errored: " + p.error, true);
+    });
+    toast(`Pushed ${(r.pushed || []).length} frame(s) — now watch Loki.log`);
+    await loadSockets(); render();
+  } catch (e) { toast(e.message, true); }
+}
+
+async function wsDrop(h) {
+  try {
+    await api("/api/ws/drop/" + encodeURIComponent(h), { method: "POST" });
+    toast("Dropped " + h + " — client should reconnect + resync (positive control)");
+    await loadSockets(); render();
+  } catch (e) { toast(e.message, true); }
+}
+
+/* ------------------------------------------------------------------- boot -- */
+let bootError = null;
+let bootTimer = null;
+async function boot() {
+  clearTimeout(bootTimer);
+  try {
+    await Promise.all([loadConfig(), loadMissions(), loadPlayers()]);
+    bootError = null;
+  } catch (e) {
+    // Page can load while ags is mid-restart (rebuild loop) — keep retrying so
+    // the panel comes alive as soon as the backend does, instead of sitting on
+    // "Loading…" until a manual refresh.
+    bootError = e.message;
+    bootTimer = setTimeout(boot, 3000);
+  }
+  render();
+}
+boot();
+</script>
+</body>
+</html>

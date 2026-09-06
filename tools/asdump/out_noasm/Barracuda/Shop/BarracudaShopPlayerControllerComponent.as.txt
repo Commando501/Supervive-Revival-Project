@@ -1,0 +1,217 @@
+// ============================================================================
+//  MODULE   Barracuda.Shop.BarracudaShopPlayerControllerComponent
+//  SOURCE   Barracuda/Shop/BarracudaShopPlayerControllerComponent.as
+//  CONTENT  1 class(es), 13 function(s), 0 enum(s), 1 global(s), 1416 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaShopPlayerControllerComponent;
+
+UBarracudaShopPlayerControllerComponent@ UBarracudaShopPlayerControllerComponent()   // traits=0x20
+{
+    UBarracudaShopPlayerControllerComponent v2;
+
+    v2 = UBarracudaShopPlayerControllerComponent();
+    return v2;
+}
+
+UClass@ UBarracudaShopPlayerControllerComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaShopPlayerControllerComponent);
+    return v2;
+}
+
+UBarracudaShopPlayerControllerComponent@ UBarracudaShopPlayerControllerComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaShopPlayerControllerComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaShopPlayerControllerComponent, v2, typeid(UBarracudaShopPlayerControllerComponent@), WithName);
+    return v2;
+}
+
+UBarracudaShopPlayerControllerComponent@ UBarracudaShopPlayerControllerComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaShopPlayerControllerComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaShopPlayerControllerComponent, v2, typeid(UBarracudaShopPlayerControllerComponent@), WithName);
+    return v2;
+}
+
+UBarracudaShopPlayerControllerComponent@ UBarracudaShopPlayerControllerComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaShopPlayerControllerComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaShopPlayerControllerComponent, v2, typeid(UBarracudaShopPlayerControllerComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class UBarracudaShopPlayerControllerComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaShopPlayerControllerComponent
+{
+    UBarracudaShopPlayerControllerComponent()   // traits=0x21
+    {
+        return;
+    }
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        UGameEventRouterComponent v6;
+        FUIEvent_Barracuda_Shop_BuyItem v12;
+        auto v13;
+        FGameEventListenerHandle v26;
+        FUIEvent_Barracuda_Shop_SellItem v30;
+
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v6 = UGameEventRouterSubsystem::GetUIGameEventRouter(__WorldContext);
+            if (v6 != nullptr) {
+                v13 = false;
+                v12 = FUIEvent_Barracuda_Shop_BuyItem();
+                v26 = v6.RegisterForEvent(this, v12, typeid(FUIEvent_Barracuda_Shop_BuyItem), nullptr, n"ClientOnBuyItem", v13);
+                v13 = false;
+                v30 = FUIEvent_Barracuda_Shop_SellItem();
+                v26 = v6.RegisterForEvent(this, v30, typeid(FUIEvent_Barracuda_Shop_SellItem), nullptr, n"ClientOnSellItem", v13);
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(CanOverrideEvent)
+    void ClientOnBuyItem(const FUIEvent_Barracuda_Shop_BuyItem& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.ServerBuyItem(Event.ItemClass);
+        return;
+    }
+
+    void ServerBuyItem(const TSubclassOf<ALokiBaseItem@>& ItemToBuy)   // traits=0x20
+    {
+        __Evt_PushArgument(ItemToBuy, typeid(TSubclassOf));
+        __Evt_Execute(this, n"ServerBuyItem");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ServerBuyItem, BlueprintCallable, BlueprintEvent, NetServer)
+    void ServerBuyItem_Implementation(const TSubclassOf<ALokiBaseItem@>& ItemToBuy)   // traits=0x20
+    {
+        ABarracudaShop v4;
+        auto v5;
+        AActor v8;
+        ALokiPlayerController v10;
+        ALokiPlayerController v12;
+        ALokiPlayerState v16;
+        auto v17;
+        UAbilitySystemComponent v20;
+        auto v21;
+
+        v4 = GetBarracudaShop();
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v8 = this.GetOwner();
+            if (v8 != nullptr) {
+                v10 = cast<ALokiPlayerController@>(v8);
+            } else {
+                v10 = nullptr;
+            }
+            v12 = v10;
+            if (v12 == nullptr) {
+                return;
+            } else {
+                v16 = v12.GetLokiPlayerState();
+                if (v16 == nullptr) {
+                    return;
+                } else {
+                    v20 = AbilitySystem::GetAbilitySystemComponent(v16);
+                    v5 = v20.HasMatchingGameplayTag(GameplayTags::GameMode_Barracuda_InBase)  /* UFunction Script_HasMatchingGameplayTag */;
+                    v20 = AbilitySystem::GetAbilitySystemComponent(v16);
+                    v17 = v20.HasMatchingGameplayTag(GameplayTags::State_Dead)  /* UFunction Script_HasMatchingGameplayTag */;
+                    v21 = v17;
+                    v21 = !v21;
+                    if (v21) {
+                        v21 = v5;
+                        v21 = !v21;
+                        if (v21) {
+                            return;
+                        }
+                    } else {
+                        v4.AuthBuyItem(v16, ItemToBuy);
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(CanOverrideEvent)
+    void ClientOnSellItem(const FUIEvent_Barracuda_Shop_SellItem& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.ServerSellItem(Event.Item);
+        return;
+    }
+
+    void ServerSellItem(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiBaseItem(Item);
+        __Evt_Execute(this, n"ServerSellItem");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ServerSellItem, BlueprintCallable, BlueprintEvent, NetServer)
+    void ServerSellItem_Implementation(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        ABarracudaShop v4;
+        auto v5;
+        AActor v8;
+        ALokiPlayerController v10;
+        ALokiPlayerController v12;
+        ALokiPlayerState v16;
+        UAbilitySystemComponent v18;
+        auto v19;
+
+        v4 = GetBarracudaShop();
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v8 = this.GetOwner();
+            if (v8 != nullptr) {
+                v10 = cast<ALokiPlayerController@>(v8);
+            } else {
+                v10 = nullptr;
+            }
+            v12 = v10;
+            if (v12 == nullptr) {
+                return;
+            } else {
+                v16 = v12.GetLokiPlayerState();
+                if (v16 == nullptr) {
+                    return;
+                } else {
+                    v18 = AbilitySystem::GetAbilitySystemComponent(v16);
+                    v5 = v18.HasMatchingGameplayTag(GameplayTags::GameMode_Barracuda_InBase)  /* UFunction Script_HasMatchingGameplayTag */;
+                    v5 = !v5;
+                    v19 = false;
+                    v19 = !v19;
+                    if (v5 == v19) {
+                        return;
+                    } else {
+                        v4.AuthSellItem(v16, Item);
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+}
+

@@ -1,0 +1,748 @@
+# Asset:         Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardScreen.uasset
+# UFunction:     ExecuteUbergraph_WBP_UI_LeaderboardScreen
+# FunctionFlags: FUNC_Final, FUNC_UbergraphFunction, FUNC_HasDefaults
+# Outer class:   WBP_UI_LeaderboardScreen_C
+# ScriptBytecode entries: 63
+# ChildProperties: 36
+# --- Parameters / locals (FField chain) ---
+#   [0] FIntProperty  ?
+#   [1] FIntProperty  ?
+#   [2] FObjectProperty  ?
+#   [3] FStrProperty  ?
+#   [4] FObjectProperty  ?
+#   [5] FStrProperty  ?
+#   [6] FObjectProperty  ?
+#   [7] FDelegateProperty  ?
+#   [8] FStructProperty  ?
+#   [9] FBoolProperty  ?
+#   [10] FDelegateProperty  ?
+#   [11] FBoolProperty  ?
+#   [12] FStrProperty  ?
+#   [13] FStructProperty  ?
+#   [14] FBoolProperty  ?
+#   [15] FBoolProperty  ?
+#   [16] FBoolProperty  ?
+#   [17] FBoolProperty  ?
+#   [18] FBoolProperty  ?
+#   [19] FBoolProperty  ?
+#   [20] FBoolProperty  ?
+#   [21] FBoolProperty  ?
+#   [22] FIntProperty  ?
+#   [23] FBoolProperty  ?
+#   [24] FStructProperty  ?
+#   [25] FFloatProperty  ?
+#   [26] FStrProperty  ?
+#   [27] FStrProperty  ?
+#   [28] FStrProperty  ?
+#   [29] FStructProperty  ?
+#   [30] FBoolProperty  ?
+#   [31] FObjectProperty  ?
+#   [32] FStrProperty  ?
+#   [33] FStructProperty  ?
+#   [34] FBoolProperty  ?
+#   [35] FBoolProperty  ?
+
+# --- ScriptBytecode tree ---
+[  0] EX_PushExecutionFlow
+  PushingAddress: 1620
+  StatementIndex: 0
+[  1] EX_ComputedJump
+  CodeOffsetExpression:
+    EX_LocalVariable
+      Variable: EntryPoint
+      StatementIndex: 6
+  StatementIndex: 5
+[  2] EX_LocalVirtualFunction
+  VirtualFunctionName: Update Timer
+  Parameters: [0]
+  StatementIndex: 15
+[  3] EX_PopExecutionFlow
+  StatementIndex: 29
+[  4] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: LeaderboardContainer
+      StatementIndex: 31
+  Offset: 15
+  RValuePointer: 0
+  ContextExpression:
+    EX_VirtualFunction
+      VirtualFunctionName: SetIsEnabled
+      Parameters: [1]
+        [  0] EX_True
+          StatementIndex: 65
+      StatementIndex: 52
+  StatementIndex: 30
+[  5] EX_PopExecutionFlow
+  StatementIndex: 67
+[  6] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: LoadingIndicator
+      StatementIndex: 69
+  Offset: 16
+  RValuePointer: 0
+  ContextExpression:
+    EX_VirtualFunction
+      VirtualFunctionName: SetVisibility
+      Parameters: [1]
+        [  0] EX_ByteConst
+          Value: 3
+          StatementIndex: 103
+      StatementIndex: 90
+  StatementIndex: 68
+[  7] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: LeaderboardContainer
+      StatementIndex: 107
+  Offset: 15
+  RValuePointer: 0
+  ContextExpression:
+    EX_VirtualFunction
+      VirtualFunctionName: SetIsEnabled
+      Parameters: [1]
+        [  0] EX_False
+          StatementIndex: 141
+      StatementIndex: 128
+  StatementIndex: 106
+[  8] EX_PopExecutionFlow
+  StatementIndex: 143
+[  9] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: LoadingIndicator
+      StatementIndex: 145
+  Offset: 16
+  RValuePointer: 0
+  ContextExpression:
+    EX_VirtualFunction
+      VirtualFunctionName: SetVisibility
+      Parameters: [1]
+        [  0] EX_ByteConst
+          Value: 2
+          StatementIndex: 179
+      StatementIndex: 166
+  StatementIndex: 144
+[ 10] EX_Jump
+  CodeOffset: 30
+  StatementIndex: 182
+[ 11] EX_LocalVirtualFunction
+  VirtualFunctionName: Update Leaderboard
+  Parameters: [1]
+    [  0] EX_StructConst
+      Struct: LokiPlayerStatsLeaderboard
+      StructSize: 104
+      Properties: [8]
+        [  0] EX_StringConst
+          Value: 
+          StatementIndex: 213
+        [  1] EX_StringConst
+          Value: 
+          StatementIndex: 215
+        [  2] EX_NameConst
+          Value: None
+          StatementIndex: 217
+        [  3] EX_StringConst
+          Value: 
+          StatementIndex: 230
+        [  4] EX_ArrayConst
+          InnerProperty: Entries.Entries
+          Elements: [0]
+          StatementIndex: 232
+        [  5] EX_Int64Const
+          Value: 0
+          StatementIndex: 246
+        [  6] EX_Int64Const
+          Value: 0
+          StatementIndex: 255
+        [  7] EX_IntConst
+          Value: 0
+          StatementIndex: 264
+      StatementIndex: 200
+  StatementIndex: 187
+[ 12] EX_Jump
+  CodeOffset: 144
+  StatementIndex: 271
+[ 13] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: LeaderboardRankings
+      StatementIndex: 277
+  Offset: 14
+  RValuePointer: 0
+  ContextExpression:
+    EX_VirtualFunction
+      VirtualFunctionName: ClearChildren
+      Parameters: [0]
+      StatementIndex: 298
+  StatementIndex: 276
+[ 14] EX_Jump
+  CodeOffset: 68
+  StatementIndex: 312
+[ 15] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_IsActivated_ReturnValue
+      StatementIndex: 318
+  Assignment:
+    EX_FinalFunction
+      StackNode: IsActivated
+      Parameters: [0]
+      StatementIndex: 327
+  StatementIndex: 317
+[ 16] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: CallFunc_IsActivated_ReturnValue
+      StatementIndex: 338
+  StatementIndex: 337
+[ 17] EX_Let
+  Property: CallFunc_PrimaryAssetIDFromString_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_PrimaryAssetIDFromString_ReturnValue
+      StatementIndex: 356
+  Assignment:
+    EX_CallMath
+      StackNode: PrimaryAssetIDFromString
+      Parameters: [1]
+        [  0] EX_Context
+          ObjectExpression:
+            EX_InstanceVariable
+              Variable: WBP_UI_Leaderboard_ComboBox_Heroes
+              StatementIndex: 375
+          Offset: 9
+          RValuePointer: SelectedItemKey
+          ContextExpression:
+            EX_InstanceVariable
+              Variable: SelectedItemKey
+              StatementIndex: 396
+          StatementIndex: 374
+      StatementIndex: 365
+  StatementIndex: 347
+[ 18] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_IsEmpty_ReturnValue
+      StatementIndex: 407
+  Assignment:
+    EX_CallMath
+      StackNode: IsEmpty
+      Parameters: [1]
+        [  0] EX_InstanceVariable
+          Variable: Period
+          StatementIndex: 425
+      StatementIndex: 416
+  StatementIndex: 406
+[ 19] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Not_PreBool_ReturnValue
+      StatementIndex: 436
+  Assignment:
+    EX_CallMath
+      StackNode: Not_PreBool
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_IsEmpty_ReturnValue
+          StatementIndex: 454
+      StatementIndex: 445
+  StatementIndex: 435
+[ 20] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_IsEmpty_ReturnValue_1
+      StatementIndex: 465
+  Assignment:
+    EX_CallMath
+      StackNode: IsEmpty
+      Parameters: [1]
+        [  0] EX_Context
+          ObjectExpression:
+            EX_InstanceVariable
+              Variable: WBP_UI_Leaderboard_ComboBox_Queues
+              StatementIndex: 484
+          Offset: 9
+          RValuePointer: SelectedItemKey
+          ContextExpression:
+            EX_InstanceVariable
+              Variable: SelectedItemKey
+              StatementIndex: 505
+          StatementIndex: 483
+      StatementIndex: 474
+  StatementIndex: 464
+[ 21] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Not_PreBool_ReturnValue_1
+      StatementIndex: 516
+  Assignment:
+    EX_CallMath
+      StackNode: Not_PreBool
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_IsEmpty_ReturnValue_1
+          StatementIndex: 534
+      StatementIndex: 525
+  StatementIndex: 515
+[ 22] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_IsEmpty_ReturnValue_2
+      StatementIndex: 545
+  Assignment:
+    EX_CallMath
+      StackNode: IsEmpty
+      Parameters: [1]
+        [  0] EX_Context
+          ObjectExpression:
+            EX_InstanceVariable
+              Variable: WBP_UI_Leaderboard_ComboBox_Stats
+              StatementIndex: 564
+          Offset: 9
+          RValuePointer: SelectedItemKey
+          ContextExpression:
+            EX_InstanceVariable
+              Variable: SelectedItemKey
+              StatementIndex: 585
+          StatementIndex: 563
+      StatementIndex: 554
+  StatementIndex: 544
+[ 23] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_BooleanAND_ReturnValue
+      StatementIndex: 596
+  Assignment:
+    EX_CallMath
+      StackNode: BooleanAND
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_Not_PreBool_ReturnValue_1
+          StatementIndex: 614
+        [  1] EX_LocalVariable
+          Variable: CallFunc_Not_PreBool_ReturnValue
+          StatementIndex: 623
+      StatementIndex: 605
+  StatementIndex: 595
+[ 24] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Not_PreBool_ReturnValue_2
+      StatementIndex: 634
+  Assignment:
+    EX_CallMath
+      StackNode: Not_PreBool
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_IsEmpty_ReturnValue_2
+          StatementIndex: 652
+      StatementIndex: 643
+  StatementIndex: 633
+[ 25] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_BooleanAND_ReturnValue_1
+      StatementIndex: 663
+  Assignment:
+    EX_CallMath
+      StackNode: BooleanAND
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_BooleanAND_ReturnValue
+          StatementIndex: 681
+        [  1] EX_LocalVariable
+          Variable: CallFunc_Not_PreBool_ReturnValue_2
+          StatementIndex: 690
+      StatementIndex: 672
+  StatementIndex: 662
+[ 26] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_IsValidPrimaryAssetId_ReturnValue
+      StatementIndex: 701
+  Assignment:
+    EX_CallMath
+      StackNode: IsValidPrimaryAssetId
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_PrimaryAssetIDFromString_ReturnValue
+          StatementIndex: 719
+      StatementIndex: 710
+  StatementIndex: 700
+[ 27] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_BooleanAND_ReturnValue_2
+      StatementIndex: 730
+  Assignment:
+    EX_CallMath
+      StackNode: BooleanAND
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_BooleanAND_ReturnValue_1
+          StatementIndex: 748
+        [  1] EX_LocalVariable
+          Variable: CallFunc_IsValidPrimaryAssetId_ReturnValue
+          StatementIndex: 757
+      StatementIndex: 739
+  StatementIndex: 729
+[ 28] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: CallFunc_BooleanAND_ReturnValue_2
+      StatementIndex: 768
+  StatementIndex: 767
+[ 29] EX_CallMulticastDelegate
+  StackNode: On Filters Updated__DelegateSignature
+  Delegate:
+    EX_InstanceVariable
+      Variable: On Filters Updated
+      StatementIndex: 786
+  Parameters: [3]
+    [  0] EX_Context
+      ObjectExpression:
+        EX_InstanceVariable
+          Variable: WBP_UI_Leaderboard_ComboBox_Heroes
+          StatementIndex: 796
+      Offset: 9
+      RValuePointer: SelectedItemKey
+      ContextExpression:
+        EX_InstanceVariable
+          Variable: SelectedItemKey
+          StatementIndex: 817
+      StatementIndex: 795
+    [  1] EX_Context
+      ObjectExpression:
+        EX_InstanceVariable
+          Variable: WBP_UI_Leaderboard_ComboBox_Stats
+          StatementIndex: 827
+      Offset: 9
+      RValuePointer: SelectedItemKey
+      ContextExpression:
+        EX_InstanceVariable
+          Variable: SelectedItemKey
+          StatementIndex: 848
+      StatementIndex: 826
+    [  2] EX_Context
+      ObjectExpression:
+        EX_InstanceVariable
+          Variable: WBP_UI_Leaderboard_ComboBox_Queues
+          StatementIndex: 858
+      Offset: 9
+      RValuePointer: SelectedItemKey
+      ContextExpression:
+        EX_InstanceVariable
+          Variable: SelectedItemKey
+          StatementIndex: 879
+      StatementIndex: 857
+  StatementIndex: 777
+[ 30] EX_Let
+  Property: CallFunc_MakeLiteralInt_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_MakeLiteralInt_ReturnValue
+      StatementIndex: 898
+  Assignment:
+    EX_CallMath
+      StackNode: MakeLiteralInt
+      Parameters: [1]
+        [  0] EX_IntConst
+          Value: 25
+          StatementIndex: 916
+      StatementIndex: 907
+  StatementIndex: 889
+[ 31] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetPlayerStatsManager_ReturnValue
+      StatementIndex: 923
+  Assignment:
+    EX_CallMath
+      StackNode: GetPlayerStatsManager
+      Parameters: [1]
+        [  0] EX_Self
+          StatementIndex: 941
+      StatementIndex: 932
+  StatementIndex: 922
+[ 32] EX_BindDelegate
+  FunctionName: On Leaderboard
+  Delegate:
+    EX_LocalVariable
+      Variable: K2Node_CreateDelegate_OutputDelegate
+      StatementIndex: 956
+  ObjectTerm:
+    EX_Self
+      StatementIndex: 965
+  StatementIndex: 943
+[ 33] EX_BindDelegate
+  FunctionName: On Leaderboard Error
+  Delegate:
+    EX_LocalVariable
+      Variable: K2Node_CreateDelegate_OutputDelegate_1
+      StatementIndex: 979
+  ObjectTerm:
+    EX_Self
+      StatementIndex: 988
+  StatementIndex: 966
+[ 34] EX_Let
+  Property: CallFunc_MakeLiteralInt_ReturnValue_1
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_MakeLiteralInt_ReturnValue_1
+      StatementIndex: 998
+  Assignment:
+    EX_CallMath
+      StackNode: MakeLiteralInt
+      Parameters: [1]
+        [  0] EX_IntConst
+          Value: 1
+          StatementIndex: 1016
+      StatementIndex: 1007
+  StatementIndex: 989
+[ 35] EX_Context
+  ObjectExpression:
+    EX_LocalVariable
+      Variable: CallFunc_GetPlayerStatsManager_ReturnValue
+      StatementIndex: 1023
+  Offset: 126
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: GetLeaderboard
+      Parameters: [8]
+        [  0] EX_Context
+          ObjectExpression:
+            EX_InstanceVariable
+              Variable: WBP_UI_Leaderboard_ComboBox_Queues
+              StatementIndex: 1054
+          Offset: 9
+          RValuePointer: SelectedItemKey
+          ContextExpression:
+            EX_InstanceVariable
+              Variable: SelectedItemKey
+              StatementIndex: 1075
+          StatementIndex: 1053
+        [  1] EX_InstanceVariable
+          Variable: Period
+          StatementIndex: 1084
+        [  2] EX_Context
+          ObjectExpression:
+            EX_InstanceVariable
+              Variable: WBP_UI_Leaderboard_ComboBox_Stats
+              StatementIndex: 1094
+          Offset: 9
+          RValuePointer: SelectedItemKey
+          ContextExpression:
+            EX_InstanceVariable
+              Variable: SelectedItemKey
+              StatementIndex: 1115
+          StatementIndex: 1093
+        [  3] EX_LocalVariable
+          Variable: CallFunc_PrimaryAssetIDFromString_ReturnValue
+          StatementIndex: 1124
+        [  4] EX_LocalVariable
+          Variable: CallFunc_MakeLiteralInt_ReturnValue_1
+          StatementIndex: 1133
+        [  5] EX_LocalVariable
+          Variable: CallFunc_MakeLiteralInt_ReturnValue
+          StatementIndex: 1142
+        [  6] EX_LocalVariable
+          Variable: K2Node_CreateDelegate_OutputDelegate
+          StatementIndex: 1151
+        [  7] EX_LocalVariable
+          Variable: K2Node_CreateDelegate_OutputDelegate_1
+          StatementIndex: 1160
+      StatementIndex: 1044
+  StatementIndex: 1022
+[ 36] EX_Jump
+  CodeOffset: 276
+  StatementIndex: 1170
+[ 37] EX_Jump
+  CodeOffset: 317
+  StatementIndex: 1175
+[ 38] EX_Let
+  Property: Leaderboard
+  Variable:
+    EX_InstanceVariable
+      Variable: Leaderboard
+      StatementIndex: 1189
+  Assignment:
+    EX_LocalVariable
+      Variable: K2Node_CustomEvent_Leaderboard
+      StatementIndex: 1198
+  StatementIndex: 1180
+[ 39] EX_Let
+  Property: CallFunc_UtcNow_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_UtcNow_ReturnValue
+      StatementIndex: 1216
+  Assignment:
+    EX_CallMath
+      StackNode: UtcNow
+      Parameters: [0]
+      StatementIndex: 1225
+  StatementIndex: 1207
+[ 40] EX_Let
+  Property: LeaderboardLastUpdated
+  Variable:
+    EX_InstanceVariable
+      Variable: LeaderboardLastUpdated
+      StatementIndex: 1244
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_UtcNow_ReturnValue
+      StatementIndex: 1253
+  StatementIndex: 1235
+[ 41] EX_LocalVirtualFunction
+  VirtualFunctionName: Update Leaderboard
+  Parameters: [1]
+    [  0] EX_InstanceVariable
+      Variable: Leaderboard
+      StatementIndex: 1275
+  StatementIndex: 1262
+[ 42] EX_LocalVirtualFunction
+  VirtualFunctionName: Update Timer
+  Parameters: [0]
+  StatementIndex: 1285
+[ 43] EX_Jump
+  CodeOffset: 144
+  StatementIndex: 1299
+[ 44] EX_LocalFinalFunction
+  StackNode: BP_OnActivated
+  Parameters: [0]
+  StatementIndex: 1304
+[ 45] EX_LocalVirtualFunction
+  VirtualFunctionName: Update Timer
+  Parameters: [0]
+  StatementIndex: 1314
+[ 46] EX_LocalVirtualFunction
+  VirtualFunctionName: Current Leaderboard Is Stale
+  Parameters: [1]
+    [  0] EX_LocalVariable
+      Variable: CallFunc_Current_Leaderboard_Is_Stale_Is_Stale
+      StatementIndex: 1341
+  StatementIndex: 1328
+[ 47] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: CallFunc_Current_Leaderboard_Is_Stale_Is_Stale
+      StatementIndex: 1352
+  StatementIndex: 1351
+[ 48] EX_Jump
+  CodeOffset: 317
+  StatementIndex: 1361
+[ 49] EX_FinalFunction
+  StackNode: PreConstruct
+  Parameters: [1]
+    [  0] EX_LocalVariable
+      Variable: K2Node_Event_IsDesignTime
+      StatementIndex: 1375
+  StatementIndex: 1366
+[ 50] EX_PopExecutionFlow
+  StatementIndex: 1385
+[ 51] EX_Jump
+  CodeOffset: 187
+  StatementIndex: 1386
+[ 52] EX_FinalFunction
+  StackNode: Tick
+  Parameters: [2]
+    [  0] EX_LocalVariable
+      Variable: K2Node_Event_MyGeometry
+      StatementIndex: 1400
+    [  1] EX_LocalVariable
+      Variable: K2Node_Event_InDeltaTime
+      StatementIndex: 1409
+  StatementIndex: 1391
+[ 53] EX_CallMath
+  StackNode: Delay
+  Parameters: [3]
+    [  0] EX_Self
+      StatementIndex: 1428
+    [  1] EX_FloatConst
+      Value: 1
+      StatementIndex: 1429
+    [  2] EX_StructConst
+      Struct: LatentActionInfo
+      StructSize: 32
+      Properties: [4]
+        [  0] EX_SkipOffsetConst
+          Value: 15
+          StatementIndex: 1447
+        [  1] EX_IntConst
+          Value: -561035668
+          StatementIndex: 1452
+        [  2] EX_NameConst
+          Value: ExecuteUbergraph_WBP_UI_LeaderboardScreen
+          StatementIndex: 1457
+        [  3] EX_Self
+          StatementIndex: 1470
+      StatementIndex: 1434
+  StatementIndex: 1419
+[ 54] EX_PopExecutionFlow
+  StatementIndex: 1473
+[ 55] EX_Jump
+  CodeOffset: 317
+  StatementIndex: 1474
+[ 56] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: WBP_UI_Leaderboard_ComboBox_Heroes
+      StatementIndex: 1480
+  Offset: 23
+  RValuePointer: 0
+  ContextExpression:
+    EX_LocalVirtualFunction
+      VirtualFunctionName: SelectOption
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: K2Node_CustomEvent_Hero
+          StatementIndex: 1514
+      StatementIndex: 1501
+  StatementIndex: 1479
+[ 57] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: WBP_UI_Leaderboard_ComboBox_Stats
+      StatementIndex: 1525
+  Offset: 23
+  RValuePointer: 0
+  ContextExpression:
+    EX_LocalVirtualFunction
+      VirtualFunctionName: SelectOption
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: K2Node_CustomEvent_Stat
+          StatementIndex: 1559
+      StatementIndex: 1546
+  StatementIndex: 1524
+[ 58] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: WBP_UI_Leaderboard_ComboBox_Queues
+      StatementIndex: 1570
+  Offset: 23
+  RValuePointer: 0
+  ContextExpression:
+    EX_LocalVirtualFunction
+      VirtualFunctionName: SelectOption
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: K2Node_CustomEvent_Queue
+          StatementIndex: 1604
+      StatementIndex: 1591
+  StatementIndex: 1569
+[ 59] EX_PopExecutionFlow
+  StatementIndex: 1614
+[ 60] EX_Jump
+  CodeOffset: 317
+  StatementIndex: 1615
+[ 61] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 1621
+  StatementIndex: 1620
+[ 62] EX_EndOfScript
+  StatementIndex: 1622

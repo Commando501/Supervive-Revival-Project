@@ -1,0 +1,835 @@
+// ============================================================================
+//  MODULE   UAV.LokiPlayerControllerUAVComponent
+//  SOURCE   UAV/LokiPlayerControllerUAVComponent.as
+//  CONTENT  1 class(es), 15 function(s), 0 enum(s), 1 global(s), 3420 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiPlayerControllerUAVComponent;
+
+ULokiPlayerControllerUAVComponent@ ULokiPlayerControllerUAVComponent()   // traits=0x20
+{
+    v2 = ULokiPlayerControllerUAVComponent();
+    return v2;
+}
+/* ---- ULokiPlayerControllerUAVComponent: 7 dwords / 4 instructions (cache offset 0xbb923) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         85393 ULokiPlayerControllerUAVComponent     
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ULokiPlayerControllerUAVComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ULokiPlayerControllerUAVComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0xbb9f1) ----
+    0000  PshGPtr       __StaticType_ULokiPlayerControllerUAVComponent
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ULokiPlayerControllerUAVComponent@ ULokiPlayerControllerUAVComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiPlayerControllerUAVComponent, v2, typeid(ULokiPlayerControllerUAVComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0xbbb3c) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972736                                    ; ULokiPlayerControllerUAVComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiPlayerControllerUAVComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiPlayerControllerUAVComponent@ ULokiPlayerControllerUAVComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerUAVComponent, v2, typeid(ULokiPlayerControllerUAVComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0xbbc9f) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972736                                    ; ULokiPlayerControllerUAVComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiPlayerControllerUAVComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiPlayerControllerUAVComponent@ ULokiPlayerControllerUAVComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerUAVComponent, v2, typeid(ULokiPlayerControllerUAVComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0xbbdfd) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972736                                    ; ULokiPlayerControllerUAVComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiPlayerControllerUAVComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ULokiPlayerControllerUAVComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiPlayerControllerUAVComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    TSubclassOf<AUAVMapActor@> UAVMapActorClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    TSubclassOf<AUAVVaultContentActor@> UAVVaultContentActorClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    float64 UAVActivatedEventNotifyCooldown;
+    private float64 LastEventNotifyTime;
+    private int LastRadarID;
+    private TArray<FLokiFuzzyPlayerLocationItem> LocalRadarPlayers;
+    private ALokiPlayerState@ LastRadarPlayer;
+
+    ULokiPlayerControllerUAVComponent()   // traits=0x21
+    {
+        this.UAVMapActorClass = TSubclassOf();
+        this.UAVVaultContentActorClass = TSubclassOf();
+        this.LocalRadarPlayers = TArray();
+        v2 = 4627730092099895296;
+        this.UAVActivatedEventNotifyCooldown = v2;
+        v2 = 0;
+        this.LastEventNotifyTime = v2;
+        v3 = -1;
+        this.LastRadarID = v3;
+        return;
+    }
+    /* ---- ULokiPlayerControllerUAVComponent: 40 dwords / 21 instructions (cache offset 0xbdcf0) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230912                                 ; .UAVMapActorClass
+        000C  CALLSYS       TSubclassOf::$beh0                          
+        0018  PshVPtr       this                                        
+        001C  ADDSi         216 134230912                                 ; .UAVVaultContentActorClass
+        0024  CALLSYS       TSubclassOf::$beh0                          
+        0030  PshVPtr       this                                        
+        0034  ADDSi         248 134230912                                 ; .LocalRadarPlayers
+        003C  CALLSYS       TArray::$beh0                               
+        0048  SetV8         v2 0x4039000000000000                       
+        0054  LoadThisR     224 134230912                                 ; this.UAVActivatedEventNotifyCooldown
+        005C  WRTV8         v2                                          
+        0060  SetV8         v2 0x0                                      
+        006C  LoadThisR     232 134230912                                 ; this.LastEventNotifyTime
+        0074  WRTV8         v2                                          
+        0078  SetV4         v3 -1                                       
+        0080  LoadThisR     240 134230912                                 ; this.LastRadarID
+        0088  WRTV4         v3                                          
+        008C  PshVPtr       this                                        
+        0090  FinConstruct  ULokiPlayerControllerUAVComponent           
+        009C  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            return;
+        } else {
+            v4 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+            if (v4 != nullptr) {
+                v35 = false;
+                v34 = FGameEvent_FuzzyPlayerLocation_Add();
+                v48 = v4.RegisterForEvent(this, v34, typeid(FGameEvent_FuzzyPlayerLocation_Add), nullptr, n"OnLocationAdded", v35);
+                v35 = false;
+                v68 = FGameEvent_TeamVaultData_Add();
+                v48 = v4.RegisterForEvent(this, v68, typeid(FGameEvent_TeamVaultData_Add), nullptr, n"OnVaultDataAdded", v35);
+            }
+            v70 = TSubclassOf();
+            v70 = this.UAVMapActorClass;
+            v1 = v70 == nullptr;
+            if (v1) {
+                v76 = this.GetOwner();
+                v78 = v76.GetName();
+                v74 = FString();
+                v74.Append("[");
+                v74.Append("[").Append(v78);
+                v74.Append("[").Append(v78).Append("] ULokiPlayerControllerUAVComponent doesn't have UAVMapActorClass set on instance. This is required to show UAV Map Icons");
+                Log::Error(v74.Append("[").Append(v78).Append("] ULokiPlayerControllerUAVComponent doesn't have UAVMapActorClass set on instance. This is required to show UAV Map Icons"));
+            }
+            v80 = TSubclassOf();
+            v80 = this.UAVVaultContentActorClass;
+            v1 = v80 == nullptr;
+            if (v1) {
+                v76 = this.GetOwner();
+                v78 = v76.GetName();
+                v74 = FString();
+                v74.Append("[");
+                v74.Append("[").Append(v78);
+                v74.Append("[").Append(v78).Append("] ULokiPlayerControllerUAVComponent doesn't have UAVVaultContentActorClass set on instance. This is required to show UAV Map Icons");
+                Log::Error(v74.Append("[").Append(v78).Append("] ULokiPlayerControllerUAVComponent doesn't have UAVVaultContentActorClass set on instance. This is required to show UAV Map Icons"));
+            }
+        }
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 205 dwords / 112 instructions (cache offset 0xbc21c) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsServer                                
+        0018  JLowZ         2                                             -> L0028
+        0020  JMP           194                                           -> L0330
+      L0028:
+        0028  PshGPtr       __WorldContext                              
+        0034  CALLSYS       GetGlobalGameEventRouter                    
+        0040  STOREOBJ      v4                                          
+        0044  CmpPtrNull    v4                                          
+        0048  JZ            62                                            -> L0148
+        0050  SetV1         v35 0                                       
+        0058  PshV4         v35                                         
+        005C  PshC4         88                                          
+        0064  CALLSYS       __STATIC_NAME                               
+        0070  PshRPtr                                                   
+        0074  PshNull                                                   
+        0078  TYPEID        67120892                                      ; FGameEvent_FuzzyPlayerLocation_Add
+        0080  PSF           v34                                         
+        0084  CALLSYS       FGameEvent_FuzzyPlayerLocation_Add::$beh0   
+        0090  PSF           v34                                         
+        0094  PshVPtr       this                                        
+        0098  PSF           v48                                         
+        009C  PshVPtr       v4                                          
+        00A0  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        00AC  PSF           v34                                         
+        00B0  CALLSYS       FGameEvent_FuzzyPlayerLocation_Add::$beh2   
+        00BC  PSF           v48                                         
+        00C0  CALLSYS       FGameEventListenerHandle::$beh2             
+        00CC  SetV1         v35 0                                       
+        00D4  PshV4         v35                                         
+        00D8  PshC4         89                                          
+        00E0  CALLSYS       __STATIC_NAME                               
+        00EC  PshRPtr                                                   
+        00F0  PshNull                                                   
+        00F4  TYPEID        67120960                                      ; FGameEvent_TeamVaultData_Add
+        00FC  PSF           v68                                         
+        0100  CALLSYS       FGameEvent_TeamVaultData_Add::$beh0         
+        010C  PSF           v68                                         
+        0110  PshVPtr       this                                        
+        0114  PSF           v48                                         
+        0118  PshVPtr       v4                                          
+        011C  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        0128  PSF           v68                                         
+        012C  CALLSYS       FGameEvent_TeamVaultData_Add::$beh2         
+        0138  PSF           v48                                         
+        013C  CALLSYS       FGameEventListenerHandle::$beh2             
+      L0148:
+        0148  PSF           v70                                         
+        014C  CALLSYS       TSubclassOf::$beh0                          
+        0158  PshVPtr       this                                        
+        015C  ADDSi         208 134230912                                 ; .UAVMapActorClass
+        0164  PSF           v70                                         
+        0168  CALLSYS       TSubclassOf::opAssign                       
+        0174  PshNull                                                   
+        0178  PSF           v70                                         
+        017C  CALLSYS       TSubclassOf::opEquals                       
+        0188  CpyRtoV4      v1                                          
+        018C  CpyVtoR1      v1                                          
+        0190  JLowZ         41                                            -> L023C
+        0198  PGA           "] ULokiPlayerControllerUAVComponent doesn't have UAVMapActorClass set on instance. This is required to show UAV Map Icons"
+        01A4  PSF           v78                                         
+        01A8  PshVPtr       this                                        
+        01AC  CALLSYS       UActorComponent::GetOwner                   
+        01B8  STOREOBJ      v76                                         
+        01BC  PshVPtr       v76                                         
+        01C0  CALLSYS       UObject::GetName                            
+        01CC  PSF           v78                                         
+        01D0  PGA           "["                                         
+        01DC  PSF           v74                                         
+        01E0  CALLSYS       FString::$beh0                              
+        01EC  PSF           v74                                         
+        01F0  CALLSYS       FString::Append                             
+        01FC  PshRPtr                                                   
+        0200  CALLSYS       FString::Append                             
+        020C  PshRPtr                                                   
+        0210  CALLSYS       FString::Append                             
+        021C  PshRPtr                                                   
+        0220  CALLSYS       Error                                       
+        022C  PSF           v74                                         
+        0230  CALLSYS       FString::$beh2                              
+      L023C:
+        023C  PSF           v80                                         
+        0240  CALLSYS       TSubclassOf::$beh0                          
+        024C  PshVPtr       this                                        
+        0250  ADDSi         216 134230912                                 ; .UAVVaultContentActorClass
+        0258  PSF           v80                                         
+        025C  CALLSYS       TSubclassOf::opAssign                       
+        0268  PshNull                                                   
+        026C  PSF           v80                                         
+        0270  CALLSYS       TSubclassOf::opEquals                       
+        027C  CpyRtoV4      v1                                          
+        0280  CpyVtoR1      v1                                          
+        0284  JLowZ         41                                            -> L0330
+        028C  PGA           "] ULokiPlayerControllerUAVComponent doesn't have UAVVaultContentActorClass set on instance. This is required to show UAV Map Icons"
+        0298  PSF           v78                                         
+        029C  PshVPtr       this                                        
+        02A0  CALLSYS       UActorComponent::GetOwner                   
+        02AC  STOREOBJ      v76                                         
+        02B0  PshVPtr       v76                                         
+        02B4  CALLSYS       UObject::GetName                            
+        02C0  PSF           v78                                         
+        02C4  PGA           "["                                         
+        02D0  PSF           v74                                         
+        02D4  CALLSYS       FString::$beh0                              
+        02E0  PSF           v74                                         
+        02E4  CALLSYS       FString::Append                             
+        02F0  PshRPtr                                                   
+        02F4  CALLSYS       FString::Append                             
+        0300  PshRPtr                                                   
+        0304  CALLSYS       FString::Append                             
+        0310  PshRPtr                                                   
+        0314  CALLSYS       Error                                       
+        0320  PSF           v74                                         
+        0324  CALLSYS       FString::$beh2                              
+      L0330:
+        0330  RET           2                                           
+    */
+
+    void ClientNotifyLocalRadarEmpty()   // traits=0x20
+    {
+        __Evt_Execute(this, n"ClientNotifyLocalRadarEmpty");
+        return;
+    }
+    /* ---- ClientNotifyLocalRadarEmpty: 11 dwords / 6 instructions (cache offset 0xbc80a) ----
+        0000  PshC4         201                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=ClientNotifyLocalRadarEmpty, BlueprintCallable, BlueprintEvent, NetClient, Unreliable)
+    void ClientNotifyLocalRadarEmpty_Implementation()   // traits=0x20
+    {
+        v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v2 != nullptr) {
+            v14 = FGameEvent_FuzzyPlayerLocation_LocalRadar();
+            this.LastRadarPlayer = v14.PlayerState;
+            v2.BroadcastEvent(v14, typeid(FGameEvent_FuzzyPlayerLocation_LocalRadar), nullptr);
+        }
+        return;
+    }
+    /* ---- ClientNotifyLocalRadarEmpty_Implementation: 36 dwords / 22 instructions (cache offset 0xbc8d9) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetGlobalGameEventRouter                    
+        0018  STOREOBJ      v2                                          
+        001C  CmpPtrNull    v2                                          
+        0020  JZ            25                                            -> L008C
+        0028  PSF           v14                                         
+        002C  CALLSYS       FGameEvent_FuzzyPlayerLocation_LocalRadar::$beh0
+        0038  PshVPtr       this                                        
+        003C  ADDSi         264 134230912                                 ; .LastRadarPlayer
+        0044  RDSPtr                                                    
+        0048  PSF           v14                                         
+        004C  ADDSi         24 67120895                                   ; .PlayerState
+        0054  REFCPY                                                    
+        0058  PopPtr                                                    
+        005C  PshNull                                                   
+        0060  TYPEID        67120895                                      ; FGameEvent_FuzzyPlayerLocation_LocalRadar
+        0068  PSF           v14                                         
+        006C  PshVPtr       v2                                          
+        0070  CALLSYS       UGameEventRouterComponent::BroadcastEvent   
+        007C  PSF           v14                                         
+        0080  CALLSYS       FGameEvent_FuzzyPlayerLocation_LocalRadar::$beh2
+      L008C:
+        008C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    void AuthNotifyLocalRadarTeammates(ALokiPlayerState@ Instigator)   // traits=0x20
+    {
+        v4 = Instigator.GetTeamState();
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v10 = v4.GetLivingPlayers();
+            v20 = v10.Iterator();
+            while (true) {
+                v5 = v20.CanProceed;
+                if (!v5) break;
+                v28 = v20.Proceed();
+                v20.Proceed();
+                v32 = v28.GetPlayerController();
+                if (v32 != nullptr) {
+                    v34 = ULokiPlayerControllerUAVComponent::StaticClass();
+                    v36 = TSubclassOf(v34);
+                    v38 = v32.GetComponentByClass(v36);
+                    if (v38 != nullptr) {
+                        v40 = cast<ULokiPlayerControllerUAVComponent@>(v38);
+                    } else {
+                        v40 = nullptr;
+                    }
+                    v42 = v40;
+                    if (v42 != nullptr) {
+                        v42.ClientNotifyLocalRadarInstigator(Instigator);
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- AuthNotifyLocalRadarTeammates: 89 dwords / 58 instructions (cache offset 0xbcafe) ----
+        0000  PshVPtr       Instigator                                  
+        0004  CALLSYS       ALokiPlayerState::GetTeamState              
+        0010  STOREOBJ      v4                                          
+        0014  CmpPtrNull    v4                                          
+        0018  JNZ           2                                             -> L0028
+        0020  JMP           78                                            -> L0160
+      L0028:
+        0028  PSF           v10                                         
+        002C  PshVPtr       v4                                          
+        0030  CALLSYS       ALokiTeamState::GetLivingPlayers            
+        003C  PSF           v20                                         
+        0040  PSF           v10                                         
+        0044  CALLSYS       TArray::Iterator                            
+        0050  JMP           55                                            -> L0134
+      L0058:
+        0058  SUSPEND                                                   
+        005C  PSF           v20                                         
+        0060  CALLSYS       TArrayIterator::Proceed                     
+        006C  PshRPtr                                                   
+        0070  RDSPtr                                                    
+        0074  RefCpyV       v28                                         
+        0078  PshVPtr       v28                                         
+        007C  CALLSYS       APlayerState::GetPlayerController           
+        0088  STOREOBJ      v32                                         
+        008C  CmpPtrNull    v32                                         
+        0090  JZ            37                                            -> L012C
+        0098  CALL          85395                                         ; StaticClass
+        00A0  STOREOBJ      v34                                         
+        00A4  PshVPtr       v34                                         
+        00A8  PSF           v36                                         
+        00AC  CALLSYS       TSubclassOf::$beh0                          
+        00B8  PSF           v36                                         
+        00BC  PshVPtr       v32                                         
+        00C0  CALLSYS       AActor::GetComponentByClass                 
+        00CC  STOREOBJ      v38                                         
+        00D0  CmpPtrNull    v38                                         
+        00D4  JZ            9                                             -> L0100
+        00DC  TYPEID        1207972736                                    ; ULokiPlayerControllerUAVComponent@
+        00E4  PSF           v40                                         
+        00E8  PshVPtr       v38                                         
+        00EC  CALLSYS       UObject::opCast                             
+        00F8  JMP           1                                             -> L0104
+      L0100:
+        0100  ClrVPtr       v40                                         
+      L0104:
+        0104  PshVPtr       v40                                         
+        0108  RefCpyV       v42                                         
+        010C  CmpPtrNull    v42                                         
+        0110  JZ            4                                             -> L0128
+        0118  PshVPtr       Instigator                                  
+        011C  PshVPtr       v42                                         
+        0120  CALLINTF      85389                                         ; ULokiPlayerControllerUAVComponent::ClientNotifyLocalRadarInstigator
+      L0128:
+        0128  FreeNullV8    v42                                         
+      L012C:
+        012C  FreeNullV8    v32                                         
+        0130  FreeNullV8    v28                                         
+      L0134:
+        0134  LoadVObjR     v20 16 268448510                              ; .CanProceed
+        0140  RDR1          v5                                          
+        0144  CpyVtoR1      v5                                          
+        0148  JLowNZ        -62                                           -> L0058
+        0150  PSF           v10                                         
+        0154  CALLSYS       TArray::$beh2                               
+      L0160:
+        0160  RET           4                                           
+    */
+
+    void ClientNotifyLocalRadarInstigator(ALokiPlayerState@ Instigator)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiPlayerState(Instigator);
+        __Evt_Execute(this, n"ClientNotifyLocalRadarInstigator");
+        return;
+    }
+    /* ---- ClientNotifyLocalRadarInstigator: 15 dwords / 8 instructions (cache offset 0xbcef8) ----
+        0000  PSF           Instigator                                  
+        0004  CALLSYS       __Evt_PushArgument__ALokiPlayerState        
+        0010  PshC4         202                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientNotifyLocalRadarInstigator, BlueprintCallable, BlueprintEvent, NetClient, Unreliable)
+    void ClientNotifyLocalRadarInstigator_Implementation(ALokiPlayerState@ Instigator)   // traits=0x20
+    {
+        Instigator = this.LastRadarPlayer;
+        return;
+    }
+    /* ---- ClientNotifyLocalRadarInstigator_Implementation: 7 dwords / 6 instructions (cache offset 0xbd017) ----
+        0000  PshVPtr       Instigator                                  
+        0004  PshVPtr       this                                        
+        0008  ADDSi         264 134230912                                 ; .LastRadarPlayer
+        0010  REFCPY                                                    
+        0014  PopPtr                                                    
+        0018  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnLocationAdded(const FGameEvent_FuzzyPlayerLocation_Add& Event, const AActor@& Context)   // traits=0x28
+    {
+        v24 = FLokiFuzzyPlayerLocationItem(Event.PlayerLocationItem);
+        v25 = v24.Source;
+        v26 = int(v25);
+        if (v26 != 1) {
+            return;
+        } else {
+            v30 = TSubclassOf();
+            v30 = this.UAVMapActorClass;
+            v28 = v30 == nullptr;
+            if (v28) {
+                return;
+            } else {
+                v26 = v24.UAVID;
+                if (v26 != -1) {
+                    v27 = v24.UAVID;
+                    v26 = this.LastRadarID;
+                    if (v27 != v26) {
+                        this.LocalRadarPlayers.Reset(0);
+                    }
+                    v27 = v24.UAVID;
+                    this.LastRadarID = v27;
+                    this.LocalRadarPlayers.Add(v24);
+                    v26 = v24.TotalPlayerCount;
+                    if (v26 == -1) {
+                        v28 = 0;
+                    } else {
+                        v27 = this.LocalRadarPlayers.Num();
+                        v26 = v24.TotalPlayerCount;
+                        v31 = v27 == v26;
+                        v28 = v31;
+                    }
+                    if (v28) {
+                        v34 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+                        if (v34 != nullptr) {
+                            v44 = FGameEvent_FuzzyPlayerLocation_LocalRadar();
+                            v48 = TArray();
+                            v54 = this.LocalRadarPlayers.Iterator();
+                            while (true) {
+                                v28 = v54.CanProceed;
+                                if (!v28) break;
+                                v62 = v54.Proceed();
+                                v74 = FLokiLocalRadarEntry();
+                                v27 = v62.TeamIndex;
+                                v74.TeamIndex = v27;
+                                v74.Location = v62.Location;
+                                v74.CharacterClass = v62.CharacterClasses[0];
+                                v75 = v62.AverageLevel;
+                                v74.PlayerLevel = v75;
+                                v48.Add(v74);
+                            }
+                            this.LastRadarPlayer = v44.PlayerState;
+                            v44.PlayerLocationItems = v48;
+                            v34.BroadcastEvent(v44, typeid(FGameEvent_FuzzyPlayerLocation_LocalRadar), nullptr);
+                        }
+                    }
+                    return;
+                } else {
+                    v28 = false;
+                    v78 = SpawnActor(this.UAVMapActorClass, v24.Location, FRotator::ZeroRotator, NAME_None, v28, nullptr);
+                    v78.Init(v24);
+                    v75 = Gameplay::GetServerTime(__WorldContext);
+                    v84 = float64(v75);
+                    v82 = v84;
+                    v84 = this.LastEventNotifyTime;
+                    v86 = this.UAVActivatedEventNotifyCooldown;
+                    v84 = v84 + v86;
+                    if (v82 > v84) {
+                        ULokiFuzzyPlayerLocationComponent::BroadcastUAVActivatedEvent(this);
+                        this.LastEventNotifyTime = v82;
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- OnLocationAdded: 313 dwords / 174 instructions (cache offset 0xbd19e) ----
+        0000  PshVPtr       Event                                       
+        0004  ADDSi         8 67120892                                    ; .PlayerLocationItem
+        000C  PSF           v24                                         
+        0010  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh0         
+        001C  LoadVObjR     v24 16 67120891                               ; .Source
+        0028  RDR1          v25                                         
+        002C  sbTOi         v26 v25                                     
+        0034  CMPIi         v26 1                                       
+        003C  JZ            6                                             -> L005C
+        0044  PSF           v24                                         
+        0048  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh2         
+        0054  JMP           289                                           -> L04E0
+      L005C:
+        005C  PSF           v30                                         
+        0060  CALLSYS       TSubclassOf::$beh0                          
+        006C  PshVPtr       this                                        
+        0070  ADDSi         208 134230912                                 ; .UAVMapActorClass
+        0078  PSF           v30                                         
+        007C  CALLSYS       TSubclassOf::opAssign                       
+        0088  PshNull                                                   
+        008C  PSF           v30                                         
+        0090  CALLSYS       TSubclassOf::opEquals                       
+        009C  CpyRtoV4      v28                                         
+        00A0  CpyVtoR1      v28                                         
+        00A4  JLowZ         6                                             -> L00C4
+        00AC  PSF           v24                                         
+        00B0  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh2         
+        00BC  JMP           263                                           -> L04E0
+      L00C4:
+        00C4  LoadVObjR     v24 80 67120891                               ; .UAVID
+        00D0  RDR4          v26                                         
+        00D4  CMPIi         v26 -1                                      
+        00DC  JZ            197                                           -> L03F8
+        00E4  LoadVObjR     v24 80 67120891                               ; .UAVID
+        00F0  RDR4          v27                                         
+        00F4  LoadThisR     240 134230912                                 ; this.LastRadarID
+        00FC  RDR4          v26                                         
+        0100  CMPi          v27 v26                                     
+        0108  JZ            8                                             -> L0130
+        0110  PshC4         0                                           
+        0118  PshVPtr       this                                        
+        011C  ADDSi         248 134230912                                 ; .LocalRadarPlayers
+        0124  CALLSYS       TArray::Reset                               
+      L0130:
+        0130  LoadVObjR     v24 80 67120891                               ; .UAVID
+        013C  RDR4          v27                                         
+        0140  LoadThisR     240 134230912                                 ; this.LastRadarID
+        0148  WRTV4         v27                                         
+        014C  PSF           v24                                         
+        0150  PshVPtr       this                                        
+        0154  ADDSi         248 134230912                                 ; .LocalRadarPlayers
+        015C  CALLSYS       TArray::Add                                 
+        0168  LoadVObjR     v24 84 67120891                               ; .TotalPlayerCount
+        0174  RDR4          v26                                         
+        0178  CMPIi         v26 -1                                      
+        0180  JNZ           4                                             -> L0198
+        0188  SetV4         v28 0                                       
+        0190  JMP           17                                            -> L01DC
+      L0198:
+        0198  PshVPtr       this                                        
+        019C  ADDSi         248 134230912                                 ; .LocalRadarPlayers
+        01A4  CALLSYS       TArray::Num                                 
+        01B0  CpyRtoV4      v27                                         
+        01B4  LoadVObjR     v24 84 67120891                               ; .TotalPlayerCount
+        01C0  RDR4          v26                                         
+        01C4  CMPi          v27 v26                                     
+        01CC  TZ                                                        
+        01D0  CpyRtoV4      v31                                         
+        01D4  CpyVtoV4      v28 v31                                     
+      L01DC:
+        01DC  CpyVtoR1      v28                                         
+        01E0  JLowZ         126                                           -> L03E0
+        01E8  PshGPtr       __WorldContext                              
+        01F4  CALLSYS       GetGlobalGameEventRouter                    
+        0200  STOREOBJ      v34                                         
+        0204  CmpPtrNull    v34                                         
+        0208  JZ            115                                           -> L03DC
+        0210  PSF           v44                                         
+        0214  CALLSYS       FGameEvent_FuzzyPlayerLocation_LocalRadar::$beh0
+        0220  PSF           v48                                         
+        0224  CALLSYS       TArray::$beh0                               
+        0230  PSF           v54                                         
+        0234  PshVPtr       this                                        
+        0238  ADDSi         248 134230912                                 ; .LocalRadarPlayers
+        0240  CALLSYS       TArray::Iterator                            
+        024C  JMP           59                                            -> L0340
+      L0254:
+        0254  SUSPEND                                                   
+        0258  PSF           v54                                         
+        025C  CALLSYS       TArrayIterator::Proceed                     
+        0268  CpyRtoV8      v62                                         
+        026C  PSF           v74                                         
+        0270  CALLSYS       FLokiLocalRadarEntry::$beh0                 
+        027C  LoadRObjR     v62 56 67120891                               ; .TeamIndex
+        0288  RDR4          v27                                         
+        028C  LoadVObjR     v74 0 67120896                                ; .TeamIndex
+        0298  WRTV4         v27                                         
+        029C  PshVPtr       v62                                         
+        02A0  ADDSi         24 67120891                                   ; .Location
+        02A8  PSF           v74                                         
+        02AC  ADDSi         8 67120896                                    ; .Location
+        02B4  CALLSYS       FVector::opAssign                           
+        02C0  PshC4         0                                           
+        02C8  PshVPtr       v62                                         
+        02CC  ADDSi         64 67120891                                   ; .CharacterClasses
+        02D4  Thiscall1     TArray::opIndex                             
+        02E0  PshRPtr                                                   
+        02E4  PSF           v74                                         
+        02E8  ADDSi         32 67120896                                   ; .CharacterClass
+        02F0  CALLSYS       TSubclassOf::opAssign                       
+        02FC  LoadRObjR     v62 60 67120891                               ; .AverageLevel
+        0308  RDR4          v75                                         
+        030C  LoadVObjR     v74 40 67120896                               ; .PlayerLevel
+        0318  WRTV4         v75                                         
+        031C  PSF           v74                                         
+        0320  PSF           v48                                         
+        0324  CALLSYS       TArray::Add                                 
+        0330  PSF           v74                                         
+        0334  CALLSYS       FLokiLocalRadarEntry::$beh2                 
+      L0340:
+        0340  LoadVObjR     v54 16 268448648                              ; .CanProceed
+        034C  RDR1          v28                                         
+        0350  CpyVtoR1      v28                                         
+        0354  JLowNZ        -66                                           -> L0254
+        035C  PshVPtr       this                                        
+        0360  ADDSi         264 134230912                                 ; .LastRadarPlayer
+        0368  RDSPtr                                                    
+        036C  PSF           v44                                         
+        0370  ADDSi         24 67120895                                   ; .PlayerState
+        0378  REFCPY                                                    
+        037C  PopPtr                                                    
+        0380  PSF           v48                                         
+        0384  PSF           v44                                         
+        0388  ADDSi         8 67120895                                    ; .PlayerLocationItems
+        0390  CALLSYS       TArray::opAssign                            
+        039C  PshNull                                                   
+        03A0  TYPEID        67120895                                      ; FGameEvent_FuzzyPlayerLocation_LocalRadar
+        03A8  PSF           v44                                         
+        03AC  PshVPtr       v34                                         
+        03B0  CALLSYS       UGameEventRouterComponent::BroadcastEvent   
+        03BC  PSF           v48                                         
+        03C0  CALLSYS       TArray::$beh2                               
+        03CC  PSF           v44                                         
+        03D0  CALLSYS       FGameEvent_FuzzyPlayerLocation_LocalRadar::$beh2
+      L03DC:
+        03DC  FreeNullV8    v34                                         
+      L03E0:
+        03E0  PSF           v24                                         
+        03E4  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh2         
+        03F0  JMP           58                                            -> L04E0
+      L03F8:
+        03F8  PshNull                                                   
+        03FC  SetV1         v28 0                                       
+        0404  PshV4         v28                                         
+        0408  PshGPtr       NAME_None                                   
+        0414  PshGPtr       FRotator::ZeroRotator                       
+        0420  PSF           v24                                         
+        0424  ADDSi         24 67120891                                   ; .Location
+        042C  PshVPtr       this                                        
+        0430  ADDSi         208 134230912                                 ; .UAVMapActorClass
+        0438  CALLSYS       SpawnActor                                  
+        0444  STOREOBJ      v78                                         
+        0448  PSF           v24                                         
+        044C  PshVPtr       v78                                         
+        0450  CALLINTF      85418                                         ; AUAVMapActor::Init
+        0458  PshGPtr       __WorldContext                              
+        0464  CALLSYS       GetServerTime                               
+        0470  CpyRtoV4      v75                                         
+        0474  fTOd          v84 v75                                     
+        047C  CpyVtoV8      v82 v84                                     
+        0484  LoadThisR     232 134230912                                 ; this.LastEventNotifyTime
+        048C  RDR8          v84                                         
+        0490  LoadThisR     224 134230912                                 ; this.UAVActivatedEventNotifyCooldown
+        0498  RDR8          v86                                         
+        049C  ADDd          v84 v84 v86                                 
+        04A4  CMPd          v82 v84                                     
+        04AC  JNP           7                                             -> L04D0
+        04B4  PshVPtr       this                                        
+        04B8  CALLSYS       BroadcastUAVActivatedEvent                  
+        04C4  LoadThisR     232 134230912                                 ; this.LastEventNotifyTime
+        04CC  WRTV8         v82                                         
+      L04D0:
+        04D0  PSF           v24                                         
+        04D4  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh2         
+      L04E0:
+        04E0  RET           6                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnVaultDataAdded(const FGameEvent_TeamVaultData_Add& Event, const AActor@& Context)   // traits=0x28
+    {
+        v2 = TSubclassOf();
+        v2 = this.UAVVaultContentActorClass;
+        v3 = v2 == nullptr;
+        if (v3) {
+            return;
+        } else {
+            v3 = true;
+            v6 = SpawnActor(this.UAVVaultContentActorClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v3, nullptr);
+            v6.VaultDataItem = Event.VaultDataItem;
+            v32 = FTransform(FTransform::Identity);
+            v32.SetLocation(Event.VaultDataItem.Location);
+            FinishSpawningActor(v6, v32);
+        }
+        return;
+    }
+    /* ---- OnVaultDataAdded: 73 dwords / 40 instructions (cache offset 0xbda1d) ----
+        0000  PSF           v2                                          
+        0004  CALLSYS       TSubclassOf::$beh0                          
+        0010  PshVPtr       this                                        
+        0014  ADDSi         216 134230912                                 ; .UAVVaultContentActorClass
+        001C  PSF           v2                                          
+        0020  CALLSYS       TSubclassOf::opAssign                       
+        002C  PshNull                                                   
+        0030  PSF           v2                                          
+        0034  CALLSYS       TSubclassOf::opEquals                       
+        0040  CpyRtoV4      v3                                          
+        0044  CpyVtoR1      v3                                          
+        0048  JLowZ         2                                             -> L0058
+        0050  JMP           50                                            -> L0120
+      L0058:
+        0058  PshNull                                                   
+        005C  SetV1         v3 1                                        
+        0064  PshV4         v3                                          
+        0068  PshGPtr       NAME_None                                   
+        0074  PshGPtr       FRotator::ZeroRotator                       
+        0080  PshGPtr       FVector::ZeroVector                         
+        008C  PshVPtr       this                                        
+        0090  ADDSi         216 134230912                                 ; .UAVVaultContentActorClass
+        0098  CALLSYS       SpawnActor                                  
+        00A4  STOREOBJ      v6                                          
+        00A8  PshVPtr       Event                                       
+        00AC  ADDSi         8 67120960                                    ; .VaultDataItem
+        00B4  PshVPtr       v6                                          
+        00B8  ADDSi         912 134230921                                 ; .VaultDataItem
+        00C0  CALLSYS       FLokiTeamVaultDataItem::opAssign            
+        00CC  PshGPtr       FTransform::Identity                        
+        00D8  PSF           v32                                         
+        00DC  CALLSYS       FTransform::$beh0                           
+        00E8  PshVPtr       Event                                       
+        00EC  ADDSi         8 67120960                                    ; .VaultDataItem
+        00F4  ADDSi         32 67120959                                   ; .Location
+        00FC  PSF           v32                                         
+        0100  CALLSYS       FTransform::SetLocation                     
+        010C  PSF           v32                                         
+        0110  PshVPtr       v6                                          
+        0114  CALLSYS       FinishSpawningActor                         
+      L0120:
+        0120  RET           6                                           
+    */
+
+    void ~ULokiPlayerControllerUAVComponent()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ULokiPlayerControllerUAVComponent: 7 dwords / 4 instructions (cache offset 0xbde77) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         248 134230912                                 ; .LocalRadarPlayers
+        000C  CALLSYS       TArray::$beh2                               
+        0018  RET           2                                           
+    */
+
+}
+

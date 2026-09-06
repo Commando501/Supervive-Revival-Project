@@ -1,0 +1,300 @@
+// ============================================================================
+//  MODULE   Character.LokiHeroGroundIndicator
+//  SOURCE   Character/LokiHeroGroundIndicator.as
+//  CONTENT  1 class(es), 8 function(s), 0 enum(s), 1 global(s), 1120 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiHeroGroundIndicator;
+
+ULokiHeroGroundIndicator@ ULokiHeroGroundIndicator()   // traits=0x20
+{
+    ULokiHeroGroundIndicator v2;
+
+    v2 = ULokiHeroGroundIndicator();
+    return v2;
+}
+/* ---- ULokiHeroGroundIndicator: 7 dwords / 4 instructions (cache offset 0x458e4) ----
+    0000  PSF           v2
+    0004  ALLOC         84486 ULokiHeroGroundIndicator                ; new ULokiHeroGroundIndicator  ctor=void ULokiHeroGroundIndicator::ULokiHeroGroundIndicator()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ ULokiHeroGroundIndicator::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiHeroGroundIndicator);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x459a9) ----
+    0000  PshGPtr       __StaticType_ULokiHeroGroundIndicator
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+ULokiHeroGroundIndicator@ ULokiHeroGroundIndicator::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiHeroGroundIndicator v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiHeroGroundIndicator, v2, typeid(ULokiHeroGroundIndicator@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x45aeb) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972654                                    ; ULokiHeroGroundIndicator@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiHeroGroundIndicator
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetComponentByClass                   ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+ULokiHeroGroundIndicator@ ULokiHeroGroundIndicator::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiHeroGroundIndicator v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiHeroGroundIndicator, v2, typeid(ULokiHeroGroundIndicator@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x45c45) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972654                                    ; ULokiHeroGroundIndicator@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiHeroGroundIndicator
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass           ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+ULokiHeroGroundIndicator@ ULokiHeroGroundIndicator::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiHeroGroundIndicator v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiHeroGroundIndicator, v2, typeid(ULokiHeroGroundIndicator@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x45d9a) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972654                                    ; ULokiHeroGroundIndicator@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiHeroGroundIndicator
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_CreateComponentByClass                ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiHeroGroundIndicator : ULokiHeroGroundIndicatorBase
+// unreal base : /Script/Loki.LokiHeroGroundIndicatorBase
+// C++ header  : ../../../Loki/Source/Loki/Character/Hero/LokiHeroGroundIndicatorBase.h
+// static class global: __StaticType_ULokiHeroGroundIndicator
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=GroundIndicator|Shadow)
+    protected FVector ShadowDecalSize;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=GroundIndicator|Shadow)
+    protected FRotator ShadowDecalRotation;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=GroundIndicator|Ring)
+    protected FVector RingDecalSize;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=GroundIndicator|Ring)
+    protected FRotator RingDecalRotation;
+
+    ULokiHeroGroundIndicator()   // traits=0x21
+    {
+        FVector v6;
+        FRotator v18;
+
+        v6 = FVector(50.0, 100.0, 100.0);
+        this.ShadowDecalSize = FVector(v6);
+        v18 = FRotator(-90.0, 0, 0);
+        this.ShadowDecalRotation = FRotator(v18);
+        v6 = FVector(200.0, 300.0, 300.0);
+        this.RingDecalSize = FVector(v6);
+        v18 = FRotator(-90.0, 0, 0);
+        this.RingDecalRotation = FRotator(v18);
+        return;
+    }
+    /* ---- ULokiHeroGroundIndicator: 85 dwords / 39 instructions (cache offset 0x465f2) ----
+        0000  PshC8         0x4059000000000000
+        000C  PshC8         0x4059000000000000
+        0018  PshC8         0x4049000000000000
+        0024  PSF           v6
+        0028  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        0034  PSF           v6
+        0038  PshVPtr       this
+        003C  ADDSi         304 134230830                                 ; .ShadowDecalSize
+        0044  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+        0050  PshC8         0x0
+        005C  PshC8         0x0
+        0068  PshC8         0xc056800000000000
+        0074  PSF           v18
+        0078  CALLSYS       FRotator::$beh0                               ; void FRotator::$beh0(float64, float64, float64)
+        0084  PSF           v18
+        0088  PshVPtr       this
+        008C  ADDSi         328 134230830                                 ; .ShadowDecalRotation
+        0094  CALLSYS       FRotator::$beh0                               ; void FRotator::$beh0(const FRotator&)
+        00A0  PshC8         0x4072c00000000000
+        00AC  PshC8         0x4072c00000000000
+        00B8  PshC8         0x4069000000000000
+        00C4  PSF           v6
+        00C8  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        00D4  PSF           v6
+        00D8  PshVPtr       this
+        00DC  ADDSi         352 134230830                                 ; .RingDecalSize
+        00E4  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+        00F0  PshC8         0x0
+        00FC  PshC8         0x0
+        0108  PshC8         0xc056800000000000
+        0114  PSF           v18
+        0118  CALLSYS       FRotator::$beh0                               ; void FRotator::$beh0(float64, float64, float64)
+        0124  PSF           v18
+        0128  PshVPtr       this
+        012C  ADDSi         376 134230830                                 ; .RingDecalRotation
+        0134  CALLSYS       FRotator::$beh0                               ; void FRotator::$beh0(const FRotator&)
+        0140  PshVPtr       this
+        0144  FinConstruct  ULokiHeroGroundIndicator
+        0150  RET           2
+    */
+
+    UFUNCTION(UnrealName=CreateShadowDecal, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void CreateShadowDecal_Implementation()   // traits=0x20
+    {
+        UDecalComponent v4;
+        EMIDCreationFlags v5;
+        UMaterialInterface v8;
+        UMaterialInstanceDynamic v10;
+
+        v4 = Gameplay::SpawnDecalAtLocation(__WorldContext, this.ShadowDecalMaterial, this.ShadowDecalSize, FVector::ZeroVector, this.ShadowDecalRotation, 0);
+        this.ShadowDecalComponent = v4;
+        v5 = EMIDCreationFlags::None;
+        v8 = this.ShadowDecalComponent.GetDecalMaterial();
+        v10 = Material::CreateDynamicMaterialInstance(__WorldContext, v8, NAME_None, v5);
+        this.ShadowDecalMID = v10;
+        this.ShadowDecalComponent.SetDecalMaterial(this.ShadowDecalMID);
+        return;
+    }
+    /* ---- CreateShadowDecal_Implementation: 68 dwords / 42 instructions (cache offset 0x46178) ----
+        0000  PshC4         0
+        0008  PshVPtr       this
+        000C  ADDSi         328 134230830                                 ; .ShadowDecalRotation
+        0014  PshGPtr       FVector::ZeroVector
+        0020  PshVPtr       this
+        0024  ADDSi         304 134230830                                 ; .ShadowDecalSize
+        002C  PshVPtr       this
+        0030  ADDSi         216 67115181                                  ; .ShadowDecalMaterial
+        0038  RDSPtr
+        003C  PshGPtr       __WorldContext
+        0048  CALLSYS       SpawnDecalAtLocation                          ; UDecalComponent@ Gameplay::SpawnDecalAtLocation(const UObject@, UMaterialInterface@, FVector, FVector, FRotator, float32)
+        0054  STOREOBJ      v4
+        0058  PshVPtr       v4
+        005C  PshVPtr       this
+        0060  ADDSi         208 67115181                                  ; .ShadowDecalComponent
+        0068  REFCPY
+        006C  PopPtr
+        0070  SetV1         v5 0
+        0078  PshV4         v5
+        007C  PshGPtr       NAME_None
+        0088  PshVPtr       this
+        008C  ADDSi         208 67115181                                  ; .ShadowDecalComponent
+        0094  RDSPtr
+        0098  CALLSYS       UDecalComponent::GetDecalMaterial             ; UMaterialInterface@ UDecalComponent::GetDecalMaterial() const
+        00A4  STOREOBJ      v8
+        00A8  PshVPtr       v8
+        00AC  PshGPtr       __WorldContext
+        00B8  CALLSYS       CreateDynamicMaterialInstance                 ; UMaterialInstanceDynamic@ Material::CreateDynamicMaterialInstance(UObject@, UMaterialInterface@, FName, EMIDCreationFlags)
+        00C4  STOREOBJ      v10
+        00C8  PshVPtr       v10
+        00CC  PshVPtr       this
+        00D0  ADDSi         224 67115181                                  ; .ShadowDecalMID
+        00D8  REFCPY
+        00DC  PopPtr
+        00E0  PshVPtr       this
+        00E4  ADDSi         224 67115181                                  ; .ShadowDecalMID
+        00EC  RDSPtr
+        00F0  PshVPtr       this
+        00F4  ADDSi         208 67115181                                  ; .ShadowDecalComponent
+        00FC  RDSPtr
+        0100  CALLSYS       UDecalComponent::SetDecalMaterial             ; void UDecalComponent::SetDecalMaterial(UMaterialInterface@)
+        010C  RET           2
+    */
+
+    UFUNCTION(UnrealName=CreateRingDecal, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void CreateRingDecal_Implementation()   // traits=0x20
+    {
+        UDecalComponent v4;
+        EMIDCreationFlags v5;
+        UMaterialInterface v8;
+        UMaterialInstanceDynamic v10;
+
+        v4 = Gameplay::SpawnDecalAtLocation(__WorldContext, this.RingDecalMaterial, this.RingDecalSize, FVector::ZeroVector, this.RingDecalRotation, 0);
+        this.RingDecalComponent = v4;
+        v5 = EMIDCreationFlags::None;
+        v8 = this.RingDecalComponent.GetDecalMaterial();
+        v10 = Material::CreateDynamicMaterialInstance(__WorldContext, v8, NAME_None, v5);
+        this.RingDecalMID = v10;
+        this.RingDecalComponent.SetDecalMaterial(this.RingDecalMID);
+        return;
+    }
+    /* ---- CreateRingDecal_Implementation: 68 dwords / 42 instructions (cache offset 0x463a9) ----
+        0000  PshC4         0
+        0008  PshVPtr       this
+        000C  ADDSi         376 134230830                                 ; .RingDecalRotation
+        0014  PshGPtr       FVector::ZeroVector
+        0020  PshVPtr       this
+        0024  ADDSi         352 134230830                                 ; .RingDecalSize
+        002C  PshVPtr       this
+        0030  ADDSi         240 67115181                                  ; .RingDecalMaterial
+        0038  RDSPtr
+        003C  PshGPtr       __WorldContext
+        0048  CALLSYS       SpawnDecalAtLocation                          ; UDecalComponent@ Gameplay::SpawnDecalAtLocation(const UObject@, UMaterialInterface@, FVector, FVector, FRotator, float32)
+        0054  STOREOBJ      v4
+        0058  PshVPtr       v4
+        005C  PshVPtr       this
+        0060  ADDSi         232 67115181                                  ; .RingDecalComponent
+        0068  REFCPY
+        006C  PopPtr
+        0070  SetV1         v5 0
+        0078  PshV4         v5
+        007C  PshGPtr       NAME_None
+        0088  PshVPtr       this
+        008C  ADDSi         232 67115181                                  ; .RingDecalComponent
+        0094  RDSPtr
+        0098  CALLSYS       UDecalComponent::GetDecalMaterial             ; UMaterialInterface@ UDecalComponent::GetDecalMaterial() const
+        00A4  STOREOBJ      v8
+        00A8  PshVPtr       v8
+        00AC  PshGPtr       __WorldContext
+        00B8  CALLSYS       CreateDynamicMaterialInstance                 ; UMaterialInstanceDynamic@ Material::CreateDynamicMaterialInstance(UObject@, UMaterialInterface@, FName, EMIDCreationFlags)
+        00C4  STOREOBJ      v10
+        00C8  PshVPtr       v10
+        00CC  PshVPtr       this
+        00D0  ADDSi         248 67115181                                  ; .RingDecalMID
+        00D8  REFCPY
+        00DC  PopPtr
+        00E0  PshVPtr       this
+        00E4  ADDSi         248 67115181                                  ; .RingDecalMID
+        00EC  RDSPtr
+        00F0  PshVPtr       this
+        00F4  ADDSi         232 67115181                                  ; .RingDecalComponent
+        00FC  RDSPtr
+        0100  CALLSYS       UDecalComponent::SetDecalMaterial             ; void UDecalComponent::SetDecalMaterial(UMaterialInterface@)
+        010C  RET           2
+    */
+
+}
+

@@ -1,0 +1,48 @@
+dump : dumps/crashpad-20260806-234816-s111pi-I5_1/reports/006b2788-25bc-42b0-a263-9729f87a97b1.dmp
+  exc 0xC0000005 addr 0x7FFD3B400001  rip 0x7FFD3B400001  rsp 0x349E31FA18  tid 12348
+  hidden MEM_IMAGE allocs: [('0xff760000', '0x4066000'), ('0x1c219f40000', '0xa9e1000'), ('0x7ffd3b400000', '0x4066000')]
+  crashed-thread MINIDUMP_THREAD: Stack.StartOfMemoryRange=0x349E31B000 size=0x5000
+  MemoryList ranges: 722 ; range covering RSP: [('0x349e31b000', '0x5000')]
+  --- first 0x5E8 bytes at RSP, qwords that resolve to a mapping ---
+     [rsp+0x000] 0x00007FFD3A9A7374     KERNEL32.DLL+0x17374
+     [rsp+0x030] 0x00007FFD3B19CC91     ntdll.dll+0x4CC91
+  CONTROL: qwords resolving to a LOADED module: 2   (if 0, the scan is broken)
+  qwords resolving into a HIDDEN image        : 0
+
+dump : dumps/crashpad-20260814-155530/reports/271d081e-c5de-43b4-aab6-c4e15da9877f.dmp
+  exc 0xC0000005 addr 0x1D5D5B419F2  rip 0x1D5D5B419F2  rsp 0x81465BF680  tid 45240
+  hidden MEM_IMAGE allocs: [('0xff760000', '0x4066000'), ('0x1d569580000', '0xa9e1000'), ('0x7ffa42600000', '0x4066000')]
+  crashed-thread MINIDUMP_THREAD: Stack.StartOfMemoryRange=0x81465BA000 size=0x6000
+  MemoryList ranges: 697 ; range covering RSP: [('0x81465ba000', '0x6000')]
+  --- first 0x800 bytes at RSP, qwords that resolve to a mapping ---
+     [rsp+0x000] 0x00007FF7BFF50000     SUPERVIVE-Win64-Shipping.exe+0x0
+     [rsp+0x008] 0x00007FFA42ED9082  ** HIDDEN@0x7FFA42600000+0x8D9082
+     [rsp+0x070] 0x00007FF7BFF51000     SUPERVIVE-Win64-Shipping.exe+0x1000
+     [rsp+0x078] 0x00007FF7BFF50000     SUPERVIVE-Win64-Shipping.exe+0x0
+     [rsp+0x090] 0x0000000100001000  ** HIDDEN@0xFF760000+0x8A1000
+     [rsp+0x0C0] 0x00007FFA42ED9040  ** HIDDEN@0x7FFA42600000+0x8D9040
+     [rsp+0x0C8] 0x00007FF7BFF52000     SUPERVIVE-Win64-Shipping.exe+0x2000
+     [rsp+0x0E0] 0x00007FF7BFF50000     SUPERVIVE-Win64-Shipping.exe+0x0
+     [rsp+0x0E8] 0x00007FF7C759A000     SUPERVIVE-Win64-Shipping.exe+0x764A000
+     [rsp+0x0F0] 0x00007FFA415BC4E0     KERNEL32.DLL+0x1C4E0
+     [rsp+0x0F8] 0x00007FF7BFF51000     SUPERVIVE-Win64-Shipping.exe+0x1000
+     [rsp+0x100] 0x00007FF7BFF51000     SUPERVIVE-Win64-Shipping.exe+0x1000
+     [rsp+0x110] 0x00007FF7BFF52000     SUPERVIVE-Win64-Shipping.exe+0x2000
+     [rsp+0x118] 0x00007FF7BFF51000     SUPERVIVE-Win64-Shipping.exe+0x1000
+     [rsp+0x158] 0x00007FF7BFF50000     SUPERVIVE-Win64-Shipping.exe+0x0
+     [rsp+0x170] 0x0000000100001000  ** HIDDEN@0xFF760000+0x8A1000
+     [rsp+0x278] 0x00007FFA42E80E70  ** HIDDEN@0x7FFA42600000+0x880E70
+  CONTROL: qwords resolving to a LOADED module: 15   (if 0, the scan is broken)
+  qwords resolving into a HIDDEN image        : 5
+
+dump : dumps/crashpad-20260820-143225/reports/4c2b7a2d-6169-4fe6-bcb6-fdaa185824d7.dmp
+  exc 0xC0000005 addr 0x7FFB57400001  rip 0x7FFB57400001  rsp 0xDB3B13FDE8  tid 33332
+  hidden MEM_IMAGE allocs: [('0xff760000', '0x4066000'), ('0x1db52f90000', '0xa9e1000'), ('0x7ffb57400000', '0x4066000')]
+  crashed-thread MINIDUMP_THREAD: Stack.StartOfMemoryRange=0xDB3B13B000 size=0x5000
+  MemoryList ranges: 695 ; range covering RSP: [('0xdb3b13b000', '0x5000')]
+  --- first 0x218 bytes at RSP, qwords that resolve to a mapping ---
+     [rsp+0x000] 0x00007FFB56647374     KERNEL32.DLL+0x17374
+     [rsp+0x030] 0x00007FFB5709CC91     ntdll.dll+0x4CC91
+  CONTROL: qwords resolving to a LOADED module: 2   (if 0, the scan is broken)
+  qwords resolving into a HIDDEN image        : 0
+

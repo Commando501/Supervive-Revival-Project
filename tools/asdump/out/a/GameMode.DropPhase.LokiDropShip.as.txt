@@ -1,0 +1,393 @@
+==============================================================================
+MODULE   GameMode.DropPhase.LokiDropShip
+SOURCE   GameMode/DropPhase/LokiDropShip.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ALokiDropShip;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ALokiDropShip@ ALokiDropShip()
+// 4 instr, 28 B bytecode, id=0x87A3BB90, varspace=2
+------------------------------------------------------------------------------
+{
+    ALokiDropShip v2;
+
+    v2 = ALokiDropShip();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85088 q:0x26e6ed7af00; new ALokiDropShip   ctor=ALokiDropShip::ALokiDropShip
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x617DBCDA, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ALokiDropShip);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057d558         ; __StaticType_ALokiDropShip
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ALokiDropShip@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0xA330DBA5, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiDropShip v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ALokiDropShip.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ALokiDropShip>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6057d558         ; __StaticType_ALokiDropShip
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972705            ; ALokiDropShip@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class ALokiDropShip : ALokiDropPlane
+// base /Script/Loki.LokiDropPlane  ->  ../../../Loki/Source/Loki/DropPhase/LokiDropPlane.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) protected TSubclassOf<ALokiDropPod@> TeamDropPodClass;
+
+}
+
+------------------------------------------------------------------------------
+ALokiDropShip() const
+// 10 instr, 72 B bytecode, id=0xBF4E6DCA, varspace=0
+------------------------------------------------------------------------------
+{
+    this.TeamDropPodClass = TSubclassOf<ALokiDropPod@>();
+    this.TeamDropPodClass = null;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshNull
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:1144 d:134230881     ; ALokiDropShip::TeamDropPodClass  (+1144)
+    //     4  CALLSYS        q:0x26e6ef57240         ; void TSubclassOf<ALokiDropPod@>::$beh0()
+    //     7  PshVPtr        rW0:0
+    //     8  ADDSi          W0:1144 d:134230881     ; ALokiDropShip::TeamDropPodClass  (+1144)
+    //    10  CALLSYS        q:0x26e6ef560c0         ; void TSubclassOf<ALokiDropPod@>::opAssign(UClass@)
+    //    13  PshVPtr        rW0:0
+    //    14  FinConstruct   q:0x26e6ed7af00         ; ALokiDropShip
+    //    17  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool SpawnDropPodForTeam(const int TeamIndex, const FVector&inout SpawnLocation, const FVector&inout LandingLocation)
+// 95 instr, 600 B bytecode, id=0x01818A81, varspace=52
+------------------------------------------------------------------------------
+{
+    TSubclassOf<ALokiDropPod@> v2;
+    auto v3;
+    ALokiDropPod v6;
+    FTransform v32;
+    ALokiPlayerState v38;
+    ULokiRideableComponent v42;
+    ULokiPlayerDropPlaneComponent v46;
+    ALokiServerAnalyticsManager v50;
+
+    v2 = TSubclassOf<ALokiDropPod@>();
+    v2 = this.TeamDropPodClass;
+    v3 = v2 == null;
+    if (!v3) {
+        v32 = FTransform(SpawnLocation);
+        v6 = LokiGameplay::SpawnPoolableActorFromClassDeferred(__WorldContext, this.TeamDropPodClass, v32, null, null, false, true);
+        if (v6 != null) {
+            v38 = this.GetTeamDropLeader(TeamIndex);
+            v3 = true;
+            v6.InitializeDropPod(TeamIndex, v38, LandingLocation, true, this, null);
+            v32 = FTransform(SpawnLocation);
+            FinishSpawningActor(v6, v32);
+            this.RemovePlayerFromPlane(v38);
+            v42 = ULokiRideableComponent::Get(v6, NAME_None);
+            if (v42 != null) {
+                v42.AuthPlayerEnterWorldAttachedToRidable(v38, LandingLocation);
+            }
+            if (v38 != null) {
+                v46 = ULokiPlayerDropPlaneComponent::Get(v38, NAME_None);
+                if (v46 != null) {
+                    v46.MulticastOnDropPodLaunched(v6);
+                }
+            }
+            v50 = ALokiServerAnalyticsManager::GetFromContext(__WorldContext);
+            if (v50 != null) {
+                v50.AddTeamDropEvent(TeamIndex, LandingLocation, v38);
+            }
+            v3 = true;
+        } else {
+            v3 = false;
+        }
+    } else {
+        v3 = false;
+    }
+    return v3;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  CALLSYS        q:0x26e6ef57240         ; void TSubclassOf<ALokiDropPod@>::$beh0()
+    //     4  PshVPtr        rW0:0
+    //     5  ADDSi          W0:1144 d:134230881     ; ALokiDropShip::TeamDropPodClass  (+1144)
+    //     7  PSF            rW0:2
+    //     8  CALLSYS        q:0x26e6ee05640         ; TSubclassOf<ALokiDropPod@>& TSubclassOf<ALokiDropPod@>::opAssign(const TSubclassOf<ALokiDropPod@>&)
+    //    11  PshNull
+    //    12  PSF            rW0:2
+    //    13  CALLSYS        q:0x26e6ef50400         ; bool TSubclassOf<ALokiDropPod@>::opEquals(UClass@) const
+    //    16  CpyRtoV4       wW0:3
+    //    17  CpyVtoR1       rW0:3
+    //    18  JLowZ          ->25
+    //    20  SetV1          wW0:3 d:0
+    //    22  CpyVtoR4       rW0:3
+    //    23  JMP            ->149
+    //    25  SetV1          wW0:33 d:1
+    //    27  PshV4          rW0:33
+    //    28  SetV1          wW0:34 d:0
+    //    30  PshV4          rW0:34
+    //    31  PshNull
+    //    32  PshNull
+    //    33  PshVPtr        rW0:-3
+    //    34  PSF            rW0:32
+    //    35  CALLSYS        q:0x26e70615d40         ; void FTransform::$beh0(const FVector&)
+    //    38  PSF            rW0:32
+    //    39  PshVPtr        rW0:0
+    //    40  ADDSi          W0:1144 d:134230881     ; ALokiDropShip::TeamDropPodClass  (+1144)
+    //    42  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    45  CALLSYS        q:0x26e7a25cf00         ; AActor@ LokiGameplay::SpawnPoolableActorFromClassDeferred(UObject@, TSubclassOf<AActor@>, const FTransform&, AActor@, APawn@, ESpawnActorCollisionHandlingMethod, ESpawnActorScaleMethod)
+    //    48  STOREOBJ       wW0:36
+    //    49  PshVPtr        rW0:36
+    //    50  RefCpyV        wW0:6
+    //    51  CmpPtrNull     rW0:6
+    //    52  JNZ            ->59
+    //    54  SetV1          wW0:3 d:0
+    //    56  CpyVtoR4       rW0:3
+    //    57  JMP            ->149
+    //    59  PshV4          rW0:-2
+    //    60  PshVPtr        rW0:0
+    //    61  CALLINTF       d:85087                 ; ALokiPlayerState@ ALokiDropShip::GetTeamDropLeader(const int)
+    //    63  STOREOBJ       wW0:38
+    //    64  PshNull
+    //    65  PshVPtr        rW0:0
+    //    66  SetV1          wW0:3 d:1
+    //    68  PshV4          rW0:3
+    //    69  PshVPtr        rW0:-5
+    //    70  PshVPtr        rW0:38
+    //    71  PshV4          rW0:-2
+    //    72  PshVPtr        rW0:6
+    //    73  CALLINTF       d:84969                 ; void ALokiDropPod::InitializeDropPod(const int, ALokiPlayerState@, const FVector&, const bool, ALokiDropShip@, ALokiDropPod@)
+    //    75  PshVPtr        rW0:-3
+    //    76  PSF            rW0:32
+    //    77  CALLSYS        q:0x26e70615d40         ; void FTransform::$beh0(const FVector&)
+    //    80  PSF            rW0:32
+    //    81  PshVPtr        rW0:6
+    //    82  CALLSYS        q:0x26e7b1a2000         ; void FinishSpawningActor(AActor@, const FTransform&)
+    //    85  PshVPtr        rW0:38
+    //    86  PshVPtr        rW0:0
+    //    87  CALLSYS        q:0x26e7a206ec0         ; void ALokiDropPlane::RemovePlayerFromPlane(ALokiPlayerState@)
+    //    90  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    93  PshVPtr        rW0:6
+    //    94  CALLSYS        q:0x26e7b135100         ; ULokiRideableComponent@ ULokiRideableComponent::Get(const AActor@, const FName&)
+    //    97  STOREOBJ       wW0:42
+    //    98  CmpPtrNull     rW0:42
+    //    99  JZ             ->107
+    //   101  PshVPtr        rW0:-5
+    //   102  PshVPtr        rW0:38
+    //   103  PshVPtr        rW0:42
+    //   104  CALLSYS        q:0x26e7a3be080         ; void ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable(ALokiPlayerState@, const FVector&)
+    //   107  CmpPtrNull     rW0:38
+    //   108  JZ             ->129
+    //   110  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   113  PshVPtr        rW0:38
+    //   114  CALLSYS        q:0x26e7b1321c0         ; ULokiPlayerDropPlaneComponent@ ULokiPlayerDropPlaneComponent::Get(const AActor@, const FName&)
+    //   117  STOREOBJ       wW0:46
+    //   118  CmpPtrNull     rW0:46
+    //   119  JZ             ->126
+    //   121  PshVPtr        rW0:6
+    //   122  PshVPtr        rW0:46
+    //   123  CALLSYS        q:0x26e7a357b00         ; void ULokiPlayerDropPlaneComponent::MulticastOnDropPodLaunched(AActor@)
+    //   126  FreeNullV8     wW0:46
+    //   127  JMP            ->129
+    //   129  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   132  CALLSYS        q:0x26e7a3beb00         ; ALokiServerAnalyticsManager@ ALokiServerAnalyticsManager::GetFromContext(UObject@)
+    //   135  STOREOBJ       wW0:50
+    //   136  CmpPtrNull     rW0:50
+    //   137  JZ             ->146
+    //   139  PshVPtr        rW0:38
+    //   140  PshVPtr        rW0:-5
+    //   141  PshV4          rW0:-2
+    //   142  PshVPtr        rW0:50
+    //   143  CALLSYS        q:0x26e7a3becc0         ; void ALokiServerAnalyticsManager::AddTeamDropEvent(const int, const FVector&, const ALokiPlayerState@)
+    //   146  SetV1          wW0:3 d:1
+    //   148  CpyVtoR4       rW0:3
+    //   149  RET            W0:7
+
+------------------------------------------------------------------------------
+ALokiPlayerState@ GetTeamDropLeader(const int TeamIndex)
+// 69 instr, 460 B bytecode, id=0x9DAD3DFB, varspace=30
+------------------------------------------------------------------------------
+{
+    TArray<ALokiPlayerState@> v8;
+    auto v11;
+    TArrayIterator<ALokiPlayerState@> v18;
+    TArrayIterator<ALokiPlayerState@> v24;
+    ALokiPlayerState v26;
+    auto v27;
+    ALokiPlayerState v30;
+
+    v8 = LokiGameplay::GetPlayerStatesOnTeam(__WorldContext, TeamIndex);
+    if (v8.Num() > 0) {
+        v18 = v8.Iterator();
+        while (true) {
+            v11 = v18.CanProceed;
+            if (!v11) break;
+            v26 = v18.Proceed();
+            if (v26 != null) {
+                v27 = v26.IsSpawnTeamLeader();
+                v11 = v27;
+            } else {
+                v11 = 0;
+            }
+            if (v11) {
+                goto L114;
+            }
+        }
+        v24 = v8.Iterator();
+        while (true) {
+            v27 = v24.CanProceed;
+            if (!v27) break;
+            v26 = v24.Proceed();
+        }
+    }
+    L114:
+    return v30;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshV4          rW0:-2
+    //     1  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     4  PSF            rW0:8
+    //     5  CALLSYS        q:0x26e7a250400         ; TArray<ALokiPlayerState@> LokiGameplay::GetPlayerStatesOnTeam(const UObject@, int)
+    //     8  PSF            rW0:8
+    //     9  CALLSYS        q:0x26e6ee8d280         ; int TArray<ALokiPlayerState@>::Num() const
+    //    12  CpyRtoV4       wW0:9
+    //    13  CMPIi          rW0:9 d:0
+    //    15  JNP            ->108
+    //    17  PSF            rW0:18
+    //    18  PSF            rW0:8
+    //    19  CALLSYS        q:0x26e6ee8c9c0         ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+    //    22  JMP            ->57
+    //    24  SUSPEND
+    //    25  PSF            rW0:18
+    //    26  CALLSYS        q:0x26e6ee8c640         ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+    //    29  PshRPtr
+    //    30  RDSPtr
+    //    31  RefCpyV        wW0:26
+    //    32  CmpPtrNull     rW0:26
+    //    33  JNZ            ->39
+    //    35  SetV4          wW0:11 d:0
+    //    37  JMP            ->46
+    //    39  PshVPtr        rW0:26
+    //    40  CALLSYS        q:0x26e7a394bc0         ; bool ALokiPlayerState::IsSpawnTeamLeader() const
+    //    43  CpyRtoV4       wW0:27
+    //    44  CpyVtoV4       wW0:11 rW1:27
+    //    46  CpyVtoR1       rW0:11
+    //    47  JLowZ          ->56
+    //    49  PSF            rW0:8
+    //    50  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //    53  LOADOBJ        rW0:26
+    //    54  JMP            ->114
+    //    56  FreeNullV8     wW0:26
+    //    57  LoadVObjR      rW0:18 W1:16 DW2:268448510; TArrayIterator::CanProceed  (+16)
+    //    60  RDR1           wW0:11
+    //    61  CpyVtoR1       rW0:11
+    //    62  JLowNZ         ->24
+    //    64  PSF            rW0:24
+    //    65  PSF            rW0:8
+    //    66  CALLSYS        q:0x26e6ee8c9c0         ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+    //    69  JMP            ->99
+    //    71  SUSPEND
+    //    72  PSF            rW0:24
+    //    73  CALLSYS        q:0x26e6ee8c640         ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+    //    76  PshRPtr
+    //    77  RDSPtr
+    //    78  RefCpyV        wW0:26
+    //    79  CmpPtrNull     rW0:26
+    //    80  JZ             ->98
+    //    82  PshVPtr        rW0:26
+    //    83  CALLSYS        q:0x26e7a394a00         ; bool ALokiPlayerState::IsSpectator() const
+    //    86  JLowZ          ->88
+    //    88  PshVPtr        rW0:26
+    //    89  CALLSYS        q:0x26e7a394bc0         ; bool ALokiPlayerState::IsSpawnTeamLeader() const
+    //    92  JLowZ          ->96
+    //    94  JMP            ->96
+    //    96  JMP            ->98
+    //    98  FreeNullV8     wW0:26
+    //    99  LoadVObjR      rW0:24 W1:16 DW2:268448510; TArrayIterator::CanProceed  (+16)
+    //   102  RDR1           wW0:27
+    //   103  CpyVtoR1       rW0:27
+    //   104  JLowNZ         ->71
+    //   106  JMP            ->108
+    //   108  FreeNullV8     wW0:30
+    //   109  PSF            rW0:8
+    //   110  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //   113  LOADOBJ        rW0:30
+    //   114  RET            W0:3
+
