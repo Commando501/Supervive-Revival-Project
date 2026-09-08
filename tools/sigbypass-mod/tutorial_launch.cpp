@@ -231,6 +231,13 @@ static void* g_ecc=nullptr; static uintptr_t g_eccThunk=0, g_eccChild=0;   // Ex
 static uint32_t g_offWCO=0xFFFFFFFF, g_offCmd=0xFFFFFFFF, g_offSP=0xFFFFFFFF;
 static uint8_t* g_pi=nullptr; static uint8_t g_stolen[5]={0}; static uint8_t* g_stub=nullptr;
 static volatile long g_inHook=0,g_done=0,g_hitsGT=0,g_called=0; static DWORD g_gameTid=0;
+#if KFOVERBOSE
+// S181 Rank 3 (docs/s180 §"Ranked S181 flights"): pre-filter PI counter (increments on every OnPI
+// entry BEFORE the g_gameTid filter). Discriminates H2 (hook reverted -> hitsAny=0) from H3(c)
+// (dispatch moved to non-game-thread -> hitsAny>0 while hitsGT=0). Declaration guarded so stock
+// fo (.text) stays byte-identical.
+static volatile long g_hitsAny=0;
+#endif
 static uint8_t g_template[0x180]={0}, g_myframe[0x180]={0};
 static uint64_t g_pbuf[16]={0}, g_rbuf[4]={0};
 static uint64_t g_spbuf[32]={0};   // S74 B2 exp3: larger param buffer for SpawnPlayer (96-byte FTransform OUT)
@@ -809,6 +816,13 @@ static void DumpCrashCtx(EXCEPTION_POINTERS* ep){
 // Build with `build.ps1 -Name tutorial_launch -Variant fo-verbose`.
 #ifndef KFOVERBOSE
 #define KFOVERBOSE 0     // 0 = OFF (default) -> the `fo` artifact is byte-unchanged.  1 = per-gate + per-Resolve-iter markers.
+#endif
+// S180 Rank 1 knob (docs/s180-fk32-post-defeat-analysis-settled.md): RM_FORCEOPEN's post-InstallHook
+// g_done wait in milliseconds. Default 8000 preserves stock fo byte identity. `fo-verbose` overrides to
+// 60000 to test H4d (8s window too short for game-thread PI dispatch after S177 F9). ⚠ Do not raise for
+// stock fo -- KFOVERBOSE=0 must stay byte-identical to the deployed fo artifact.
+#ifndef KFOWAITMS
+#define KFOWAITMS 8000
 #endif
 #if KWPROBE
 #ifndef KWPARMAT
@@ -1485,6 +1499,11 @@ static void SetFStringAt(uint8_t* pbuf, uint32_t byteOff, const wchar_t* s){
 }
 
 extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
+#if KFOVERBOSE
+    // S181 Rank 3 pre-filter counter (S180-b): incremented on EVERY OnPI entry, regardless of
+    // thread, g_done, g_inHook, or LooksLikePtr. Only present under KFOVERBOSE (stock fo unchanged).
+    InterlockedIncrement(&g_hitsAny);
+#endif
 #if KBFSELFCAL
     if(BfS148DoneLoad()) return;
 #else
@@ -24728,7 +24747,16 @@ static DWORD WINAPI Worker(LPVOID){
         InstallCustomLogin(false);
 #endif
         return 6;}
-    DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<8000) Sleep(20);
+    DWORD t0=GetTickCount(); while(!g_done && GetTickCount()-t0<KFOWAITMS) Sleep(20);
+#if KFOVERBOSE
+    // S181 Rank 3: sample the 5 bytes at ProcessInternal AFTER the wait but BEFORE UninstallHook.
+    // If bytes[0..4] == fo's E9 rel32 jmp -> hook stayed intact -> H2 (protector reverted) REFUTED.
+    // If bytes[0] == kPiProlog[0] (i.e. bytes match the pre-install prologue) -> hook was reverted
+    // during the wait -> H2 promoted to [M].
+    { uint8_t nowB[5]={0}; bool ok=SafeReadable(g_pi,5) && (memcpy(nowB,g_pi,5),true);
+      Markerf("[4v] PI bytes after wait: %02x %02x %02x %02x %02x  (installed[0]=0xE9 / kPiProlog[0]=0x%02x / read_ok=%d / hitsAny=%ld)\r\n",
+              nowB[0],nowB[1],nowB[2],nowB[3],nowB[4],(unsigned)kPiProlog[0],ok?1:0,(long)g_hitsAny); }
+#endif
     UninstallHook();
     if(g_done){
         Markerf("[4] CALLED (called=%ld hitsGT=%ld) — de-override held; %s across travel...\r\n",(long)g_called,(long)g_hitsGT, kPokeMatchModel?"POKING match model valid":"sampling tutorial state");
@@ -24746,7 +24774,11 @@ static DWORD WINAPI Worker(LPVOID){
             Sleep(1500);
         }
     } else {
+#if KFOVERBOSE
+        Markerf("[4] TIMEOUT no game-thread PI in %us (hitsGT=%ld hitsAny=%ld)\r\n",(unsigned)(KFOWAITMS/1000),(long)g_hitsGT,(long)g_hitsAny);
+#else
         Markerf("[4] TIMEOUT no game-thread PI in 8s (hitsGT=%ld)\r\n",(long)g_hitsGT);
+#endif
     }
 #if KNOLOGINVT
     Marker("[5] done (KNOLOGINVT: nothing to restore -- no .rdata write was made)\r\n");

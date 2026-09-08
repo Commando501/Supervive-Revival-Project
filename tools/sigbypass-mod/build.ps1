@@ -157,7 +157,12 @@ $Variants = @{
         #   ★ Byte-identical to `fo` when KFOVERBOSE=0 (default); flip only in the -verbose build.
         #   ⚠ Do not fly this as `-Hook` in a default sitting: the marker file will grow with per-iter
         #    lines and the point is diagnostic, not shippable.
-        'fo-verbose' = @('-DKRUNMODE=RM_FORCEOPEN','-DKFOVERBOSE=1')              # +1 dim: per-gate + per-Resolve-iter Marker
+        # S180 Rank 1 (docs/s180-fk32-post-defeat-analysis-settled.md): 60 s wait post-InstallHook
+        # to test H4d (8s window too short for game-thread PI dispatch after S177 F9). If
+        # hitsGT>0 with time-to-first-hit in [8s,60s] -> H4d confirmed, H1/H2/H3/H4c moot for
+        # this phenotype. If hitsGT=0 at 60s -> halt is durable >60s, promoting the other four
+        # candidates. See §"Ranked S181 flights" in the settled doc.
+        'fo-verbose' = @('-DKRUNMODE=RM_FORCEOPEN','-DKFOVERBOSE=1','-DKFOWAITMS=60000')  # +1 dim: per-gate + per-Resolve-iter Marker + 60s wait
         'sp'         = @('-DKRUNMODE=RM_SPAWNPOSSESS')
         # ★ S111 — control arm for the ability-system GATE fix (KGASSTORAGE, default ON in 'sp').
         #   The fix writes the carrier's ASC into the hero's AbilitySystemComponentStorage@0xF00,
