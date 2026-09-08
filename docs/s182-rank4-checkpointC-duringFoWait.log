@@ -1,0 +1,102 @@
+[GT] pid=9672 gameTid=33704 (from RPM) iters=10 interval=3.0s
+[GT] 215 modules loaded; ntdll base: 0x7ffca1030000
+[GT] 2434 ntdll exports resolved (via our own ntdll — shared base per boot)
+[1/10] t+0ms rip=ntdll.dll!NtDelayExecution+0x14
+    regs: rax=0x0000000000000034 rcx=0x0000000000000000 rdx=0x0000004ec29df2f0
+          r8= 0x0000004ec1063000 r9= 0x000000007ffee000 r10=0x00007ff6dab6c590
+    DRs:  dr0=0x00007ffca1c0f7f0 dr1=0x00007ffca10cdb80 dr7=0x0000000000000405
+    delay: relative 29.0 ms (0x46cd0 in 100ns units)
+    stack (module-attributed only, RSP=0x4ec29df2c8):
+      [rsp+0x000] -> 0x00007ffc9e9b62de = KERNELBASE.dll+0x462de
+      [rsp+0x010] -> 0x00007ff6d8598f8e = SUPERVIVE-Win64-Shipping.exe+0x13d8f8e
+      [rsp+0x030] -> 0x00007ff6d81b984c = SUPERVIVE-Win64-Shipping.exe+0xff984c
+      [rsp+0x0a0] -> 0x00007ff6db0bea8c = SUPERVIVE-Win64-Shipping.exe+0x3efea8c
+[2/10] t+0ms rip=ntdll.dll!NtDelayExecution+0x14
+    regs: rax=0x0000000000000034 rcx=0x0000000000000000 rdx=0x0000004ec29df2f0
+          r8= 0x0000004ec1063000 r9= 0x000000007ffee000 r10=0x00007ff6dab6c590
+    DRs:  dr0=0x00007ffca1c0f7f0 dr1=0x00007ffca10cdb80 dr7=0x0000000000000405
+    delay: relative 29.0 ms (0x46cd0 in 100ns units)
+    stack (module-attributed only, RSP=0x4ec29df2c8):
+      [rsp+0x000] -> 0x00007ffc9e9b62de = KERNELBASE.dll+0x462de
+      [rsp+0x010] -> 0x00007ff6d8598f8e = SUPERVIVE-Win64-Shipping.exe+0x13d8f8e
+      [rsp+0x030] -> 0x00007ff6d81b984c = SUPERVIVE-Win64-Shipping.exe+0xff984c
+      [rsp+0x0a0] -> 0x00007ff6db0bea8c = SUPERVIVE-Win64-Shipping.exe+0x3efea8c
+[3/10] t+0ms rip=ntdll.dll!NtDelayExecution+0x14
+    regs: rax=0x0000000000000034 rcx=0x0000000000000000 rdx=0x0000004ec29df2f0
+          r8= 0x0000004ec1063000 r9= 0x000000007ffee000 r10=0x00007ff6dab6c590
+    DRs:  dr0=0x00007ffca1c0f7f0 dr1=0x00007ffca10cdb80 dr7=0x0000000000000405
+    delay: relative 29.0 ms (0x46cd0 in 100ns units)
+    stack (module-attributed only, RSP=0x4ec29df2c8):
+      [rsp+0x000] -> 0x00007ffc9e9b62de = KERNELBASE.dll+0x462de
+      [rsp+0x010] -> 0x00007ff6d8598f8e = SUPERVIVE-Win64-Shipping.exe+0x13d8f8e
+      [rsp+0x030] -> 0x00007ff6d81b984c = SUPERVIVE-Win64-Shipping.exe+0xff984c
+      [rsp+0x0a0] -> 0x00007ff6db0bea8c = SUPERVIVE-Win64-Shipping.exe+0x3efea8c
+[4/10] t+0ms rip=ntdll.dll!NtDelayExecution+0x14
+    regs: rax=0x0000000000000034 rcx=0x0000000000000000 rdx=0x0000004ec29df2f0
+          r8= 0x0000004ec1063000 r9= 0x000000007ffee000 r10=0x00007ff6dab6c590
+    DRs:  dr0=0x00007ffca1c0f7f0 dr1=0x00007ffca10cdb80 dr7=0x0000000000000405
+    delay: relative 29.0 ms (0x46cd0 in 100ns units)
+    stack (module-attributed only, RSP=0x4ec29df2c8):
+      [rsp+0x000] -> 0x00007ffc9e9b62de = KERNELBASE.dll+0x462de
+      [rsp+0x010] -> 0x00007ff6d8598f8e = SUPERVIVE-Win64-Shipping.exe+0x13d8f8e
+      [rsp+0x030] -> 0x00007ff6d81b984c = SUPERVIVE-Win64-Shipping.exe+0xff984c
+      [rsp+0x0a0] -> 0x00007ff6db0bea8c = SUPERVIVE-Win64-Shipping.exe+0x3efea8c
+[5/10] t+0ms rip=ntdll.dll!NtDelayExecution+0x14
+    regs: rax=0x0000000000000034 rcx=0x0000000000000000 rdx=0x0000004ec29df2f0
+          r8= 0x0000004ec1063000 r9= 0x000000007ffee000 r10=0x00007ff6dab6c590
+    DRs:  dr0=0x00007ffca1c0f7f0 dr1=0x00007ffca10cdb80 dr7=0x0000000000000405
+    delay: relative 29.0 ms (0x46cd0 in 100ns units)
+    stack (module-attributed only, RSP=0x4ec29df2c8):
+      [rsp+0x000] -> 0x00007ffc9e9b62de = KERNELBASE.dll+0x462de
+      [rsp+0x010] -> 0x00007ff6d8598f8e = SUPERVIVE-Win64-Shipping.exe+0x13d8f8e
+      [rsp+0x030] -> 0x00007ff6d81b984c = SUPERVIVE-Win64-Shipping.exe+0xff984c
+      [rsp+0x0a0] -> 0x00007ff6db0bea8c = SUPERVIVE-Win64-Shipping.exe+0x3efea8c
+[6/10] t+0ms rip=ntdll.dll!NtDelayExecution+0x14
+    regs: rax=0x0000000000000034 rcx=0x0000000000000000 rdx=0x0000004ec29df2f0
+          r8= 0x0000004ec1063000 r9= 0x000000007ffee000 r10=0x00007ff6dab6c590
+    DRs:  dr0=0x00007ffca1c0f7f0 dr1=0x00007ffca10cdb80 dr7=0x0000000000000405
+    delay: relative 29.0 ms (0x46cd0 in 100ns units)
+    stack (module-attributed only, RSP=0x4ec29df2c8):
+      [rsp+0x000] -> 0x00007ffc9e9b62de = KERNELBASE.dll+0x462de
+      [rsp+0x010] -> 0x00007ff6d8598f8e = SUPERVIVE-Win64-Shipping.exe+0x13d8f8e
+      [rsp+0x030] -> 0x00007ff6d81b984c = SUPERVIVE-Win64-Shipping.exe+0xff984c
+      [rsp+0x0a0] -> 0x00007ff6db0bea8c = SUPERVIVE-Win64-Shipping.exe+0x3efea8c
+[7/10] t+0ms rip=ntdll.dll!NtDelayExecution+0x14
+    regs: rax=0x0000000000000034 rcx=0x0000000000000000 rdx=0x0000004ec29df2f0
+          r8= 0x0000004ec1063000 r9= 0x000000007ffee000 r10=0x00007ff6dab6c590
+    DRs:  dr0=0x00007ffca1c0f7f0 dr1=0x00007ffca10cdb80 dr7=0x0000000000000405
+    delay: relative 29.0 ms (0x46cd0 in 100ns units)
+    stack (module-attributed only, RSP=0x4ec29df2c8):
+      [rsp+0x000] -> 0x00007ffc9e9b62de = KERNELBASE.dll+0x462de
+      [rsp+0x010] -> 0x00007ff6d8598f8e = SUPERVIVE-Win64-Shipping.exe+0x13d8f8e
+      [rsp+0x030] -> 0x00007ff6d81b984c = SUPERVIVE-Win64-Shipping.exe+0xff984c
+      [rsp+0x0a0] -> 0x00007ff6db0bea8c = SUPERVIVE-Win64-Shipping.exe+0x3efea8c
+[8/10] t+0ms rip=ntdll.dll!NtDelayExecution+0x14
+    regs: rax=0x0000000000000034 rcx=0x0000000000000000 rdx=0x0000004ec29df2f0
+          r8= 0x0000004ec1063000 r9= 0x000000007ffee000 r10=0x00007ff6dab6c590
+    DRs:  dr0=0x00007ffca1c0f7f0 dr1=0x00007ffca10cdb80 dr7=0x0000000000000405
+    delay: relative 29.0 ms (0x46cd0 in 100ns units)
+    stack (module-attributed only, RSP=0x4ec29df2c8):
+      [rsp+0x000] -> 0x00007ffc9e9b62de = KERNELBASE.dll+0x462de
+      [rsp+0x010] -> 0x00007ff6d8598f8e = SUPERVIVE-Win64-Shipping.exe+0x13d8f8e
+      [rsp+0x030] -> 0x00007ff6d81b984c = SUPERVIVE-Win64-Shipping.exe+0xff984c
+      [rsp+0x0a0] -> 0x00007ff6db0bea8c = SUPERVIVE-Win64-Shipping.exe+0x3efea8c
+[9/10] t+0ms rip=ntdll.dll!NtDelayExecution+0x14
+    regs: rax=0x0000000000000034 rcx=0x0000000000000000 rdx=0x0000004ec29df2f0
+          r8= 0x0000004ec1063000 r9= 0x000000007ffee000 r10=0x00007ff6dab6c590
+    DRs:  dr0=0x00007ffca1c0f7f0 dr1=0x00007ffca10cdb80 dr7=0x0000000000000405
+    delay: relative 29.0 ms (0x46cd0 in 100ns units)
+    stack (module-attributed only, RSP=0x4ec29df2c8):
+      [rsp+0x000] -> 0x00007ffc9e9b62de = KERNELBASE.dll+0x462de
+      [rsp+0x010] -> 0x00007ff6d8598f8e = SUPERVIVE-Win64-Shipping.exe+0x13d8f8e
+      [rsp+0x030] -> 0x00007ff6d81b984c = SUPERVIVE-Win64-Shipping.exe+0xff984c
+      [rsp+0x0a0] -> 0x00007ff6db0bea8c = SUPERVIVE-Win64-Shipping.exe+0x3efea8c
+[10/10] t+0ms rip=ntdll.dll!NtDelayExecution+0x14
+    regs: rax=0x0000000000000034 rcx=0x0000000000000000 rdx=0x0000004ec29df2f0
+          r8= 0x0000004ec1063000 r9= 0x000000007ffee000 r10=0x00007ff6dab6c590
+    DRs:  dr0=0x00007ffca1c0f7f0 dr1=0x00007ffca10cdb80 dr7=0x0000000000000405
+    delay: relative 29.0 ms (0x46cd0 in 100ns units)
+    stack (module-attributed only, RSP=0x4ec29df2c8):
+      [rsp+0x000] -> 0x00007ffc9e9b62de = KERNELBASE.dll+0x462de
+      [rsp+0x010] -> 0x00007ff6d8598f8e = SUPERVIVE-Win64-Shipping.exe+0x13d8f8e
+      [rsp+0x030] -> 0x00007ff6d81b98

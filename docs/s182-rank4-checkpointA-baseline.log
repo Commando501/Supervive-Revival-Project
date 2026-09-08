@@ -1,0 +1,32 @@
+﻿[GT] pid=9672 gameTid=33704 (from RPM) iters=3 interval=2.0s
+[GT] 215 modules loaded; ntdll base: 0x7ffca1030000
+[GT] 2434 ntdll exports resolved (via our own ntdll — shared base per boot)
+[1/3] t+0ms rip=SUPERVIVE-Win64-Shipping.exe+0x388dd6d
+    regs: rax=0x0000000000000000 rcx=0x0000018de24f1f90 rdx=0x000000000000935f
+          r8= 0x0000018de24f1ba0 r9= 0x000000003ff00000 r10=0x0000004ec29de860
+    DRs:  dr0=0x0000000000000000 dr1=0x0000000000000000 dr7=0x0000000000000000
+    stack (module-attributed only, RSP=0x4ec29de770):
+      [rsp+0x038] -> 0x00007ff6d8525ef6 = SUPERVIVE-Win64-Shipping.exe+0x1365ef6
+      [rsp+0x048] -> 0x00007ff6db0f3a5d = SUPERVIVE-Win64-Shipping.exe+0x3f33a5d
+      [rsp+0x068] -> 0x00007ff6da54c9fe = SUPERVIVE-Win64-Shipping.exe+0x338c9fe
+      [rsp+0x098] -> 0x00007ff6daa5c196 = SUPERVIVE-Win64-Shipping.exe+0x389c196
+      [rsp+0x0c8] -> 0x00007ff6db0d38b0 = SUPERVIVE-Win64-Shipping.exe+0x3f138b0
+[2/3] t+0ms rip=ntdll.dll!NtDelayExecution+0x14
+    regs: rax=0x0000000000000034 rcx=0x0000000000000000 rdx=0x0000004ec29df2f0
+          r8= 0x0000004ec1063000 r9= 0x000000007ffee000 r10=0x00007ff6d71c0000
+    DRs:  dr0=0x0000000000000000 dr1=0x0000000000000000 dr7=0x0000000000000000
+    stack (module-attributed only, RSP=0x4ec29df2c8):
+      [rsp+0x000] -> 0x00007ffc9e9b62de = KERNELBASE.dll+0x462de
+      [rsp+0x010] -> 0x00007ff6d8598f8e = SUPERVIVE-Win64-Shipping.exe+0x13d8f8e
+      [rsp+0x030] -> 0x00007ff6d81b984c = SUPERVIVE-Win64-Shipping.exe+0xff984c
+      [rsp+0x0a0] -> 0x00007ff6db0bea8c = SUPERVIVE-Win64-Shipping.exe+0x3efea8c
+[3/3] t+0ms rip=ntdll.dll!NtDelayExecution+0x14
+    regs: rax=0x0000000000000034 rcx=0x0000000000000000 rdx=0x0000004ec29df2f0
+          r8= 0x0000004ec1063000 r9= 0x000000007ffee000 r10=0x00007ff6d71c0000
+    DRs:  dr0=0x0000000000000000 dr1=0x0000000000000000 dr7=0x0000000000000000
+    stack (module-attributed only, RSP=0x4ec29df2c8):
+      [rsp+0x000] -> 0x00007ffc9e9b62de = KERNELBASE.dll+0x462de
+      [rsp+0x010] -> 0x00007ff6d8598f8e = SUPERVIVE-Win64-Shipping.exe+0x13d8f8e
+      [rsp+0x030] -> 0x00007ff6d81b984c = SUPERVIVE-Win64-Shipping.exe+0xff984c
+      [rsp+0x0a0] -> 0x00007ff6db0bea8c = SUPERVIVE-Win64-Shipping.exe+0x3efea8c
+[GT] done
