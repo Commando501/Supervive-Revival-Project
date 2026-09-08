@@ -237,6 +237,19 @@ static volatile long g_inHook=0,g_done=0,g_hitsGT=0,g_called=0; static DWORD g_g
 // (dispatch moved to non-game-thread -> hitsAny>0 while hitsGT=0). Declaration guarded so stock
 // fo (.text) stays byte-identical.
 static volatile long g_hitsAny=0;
+// S182 Rank 6 (docs/s182-companion-kill-mechanism-not-thread-wedge-settled.md §"What is now open"
+// #1): capture the CALLER of ProcessInternal at each hook fire, to discriminate H4a-refined
+// (game-exe code calls PI -> callers in SUPERVIVE.exe) from H4b (external source fires PI ->
+// callers in runtime.dll or a heap thunk region owned by the protector).
+//   g_piLastCaller = the caller's return address, written by the stub (BuildHook) BEFORE calling
+//                    OnPI. OnPI then samples it into a ring buffer during its own critical
+//                    section (protected by g_inHook, so no cross-thread race on the SAME slot).
+//   The ring is bounded (128 slots). Cross-thread PI dispatches share the ring; the intent is
+//   qualitative "distribution of callers", not exact accounting.
+#define PI_CALLER_RING 128
+static volatile uint64_t g_piLastCaller=0;
+static volatile uint64_t g_piCallerRing[PI_CALLER_RING]={0};
+static volatile long g_piCallerIdx=0;
 #endif
 static uint8_t g_template[0x180]={0}, g_myframe[0x180]={0};
 static uint64_t g_pbuf[16]={0}, g_rbuf[4]={0};
@@ -1503,6 +1516,15 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     // S181 Rank 3 pre-filter counter (S180-b): incremented on EVERY OnPI entry, regardless of
     // thread, g_done, g_inHook, or LooksLikePtr. Only present under KFOVERBOSE (stock fo unchanged).
     InterlockedIncrement(&g_hitsAny);
+    // S182 Rank 6: sample g_piLastCaller (written by stub) into ring buffer. Cross-thread races
+    // are accepted (diagnostic, not accounting). Reading g_piLastCaller BEFORE any C++ work in
+    // OnPI is the safest place — subsequent code paths might allocate a stack frame that would
+    // shift the stub's slot.
+    {
+        uint64_t c = g_piLastCaller;
+        long i = InterlockedIncrement(&g_piCallerIdx) - 1;
+        g_piCallerRing[((unsigned long)i) & (PI_CALLER_RING - 1)] = c;
+    }
 #endif
 #if KBFSELFCAL
     if(BfS148DoneLoad()) return;
@@ -1600,6 +1622,15 @@ static uint8_t* BuildHook(uintptr_t fn,const uint8_t stolen[5]){
     Emit t{blk}; for(int i=0;i<5;i++)EB(t,stolen[i]); EB(t,0xE9); int32_t rel=(int32_t)((intptr_t)(fn+5)-((intptr_t)t.w+4)); EU32(t,(uint32_t)rel); g_tramp=(PFN_PE)blk;
     uint8_t* stub=blk+0x20; Emit e{stub};
     EB(e,0x51);EB(e,0x52);EB(e,0x41);EB(e,0x50);EB(e,0x41);EB(e,0x51); EB(e,0x48);EB(e,0x83);EB(e,0xEC);EB(e,0x28);
+#if KFOVERBOSE
+    // S182 Rank 6: stash the caller's return address (= game's PI call site) into g_piLastCaller
+    // BEFORE calling OnPI. Stack layout at this point (after push rcx/rdx/r8/r9 + sub rsp,0x28):
+    //   [rsp+0x00..0x28) = shadow space
+    //   [rsp+0x28] = r9  [rsp+0x30] = r8  [rsp+0x38] = rdx  [rsp+0x40] = rcx
+    //   [rsp+0x48] = the return address the game pushed when it CALLed ProcessInternal
+    EB(e,0x48);EB(e,0x8B);EB(e,0x44);EB(e,0x24);EB(e,0x48);                        // mov rax, [rsp+0x48]
+    EB(e,0x48);EB(e,0xA3);EU64(e,(uint64_t)&g_piLastCaller);                        // mov [g_piLastCaller], rax
+#endif
     EB(e,0x48);EB(e,0xB8);EU64(e,(uint64_t)&OnPI); EB(e,0xFF);EB(e,0xD0);
     EB(e,0x48);EB(e,0x83);EB(e,0xC4);EB(e,0x28); EB(e,0x41);EB(e,0x59);EB(e,0x41);EB(e,0x58);EB(e,0x5A);EB(e,0x59);
     EB(e,0x48);EB(e,0xB8);EU64(e,(uint64_t)blk); EB(e,0xFF);EB(e,0xE0);
@@ -24756,6 +24787,40 @@ static DWORD WINAPI Worker(LPVOID){
     { uint8_t nowB[5]={0}; bool ok=SafeReadable(g_pi,5) && (memcpy(nowB,g_pi,5),true);
       Markerf("[4v] PI bytes after wait: %02x %02x %02x %02x %02x  (installed[0]=0xE9 / kPiProlog[0]=0x%02x / read_ok=%d / hitsAny=%ld)\r\n",
               nowB[0],nowB[1],nowB[2],nowB[3],nowB[4],(unsigned)kPiProlog[0],ok?1:0,(long)g_hitsAny); }
+    // S182 Rank 6: dump the caller-RIP ring buffer. Deduplicate as we go so identical callers
+    // print once with a count. Discriminates H4a-refined (callers in SUPERVIVE.exe) from H4b
+    // (callers in runtime.dll / protector heap thunks).
+    {
+        long total = g_piCallerIdx;
+        long n = total < (long)PI_CALLER_RING ? total : (long)PI_CALLER_RING;
+        Markerf("[4c] PI callers ring: total_hits=%ld sampled=%ld (unique callers below)\r\n",
+                (long)g_piCallerIdx, n);
+        uint64_t seen[PI_CALLER_RING]={0}; int seen_n=0; int counts[PI_CALLER_RING]={0};
+        for(long i=0;i<n;i++){
+            uint64_t v = g_piCallerRing[i];
+            if(!v) continue;
+            int found=-1;
+            for(int j=0;j<seen_n;j++) if(seen[j]==v){found=j;break;}
+            if(found>=0) counts[found]++;
+            else if(seen_n<PI_CALLER_RING){ seen[seen_n]=v; counts[seen_n]=1; seen_n++; }
+        }
+        for(int j=0;j<seen_n;j++){
+            uint64_t caller = seen[j];
+            // Attribute to game exe by RVA if in [g_modBase, g_modBase+g_modSize). We don't know
+            // g_modSize exactly, but a heuristic: report as SUPERVIVE+RVA if caller >= g_modBase
+            // and caller < g_modBase + 0x10000000 (256 MB — larger than the game exe's true size).
+            uintptr_t base = g_modBase;
+            if(caller >= base && caller < base + 0x10000000){
+                Markerf("    [%d] count=%d  SUPERVIVE.exe + 0x%llx  (raw 0x%llx)\r\n",
+                        j, counts[j],
+                        (unsigned long long)((uintptr_t)caller - base),
+                        (unsigned long long)caller);
+            } else {
+                Markerf("    [%d] count=%d  raw=0x%llx (non-SUPERVIVE.exe: runtime.dll or heap-thunk)\r\n",
+                        j, counts[j], (unsigned long long)caller);
+            }
+        }
+    }
 #endif
     UninstallHook();
     if(g_done){
