@@ -699,6 +699,14 @@ $Variants = @{
         # InitAbilityActorInfo(asc,carrier,hero) at BfS148DoCalibration entry so PREFLIGHT can
         # finally reach the S153 AdjustHealth thunkExact path.
         'botfight-damage-self-cal-bindavatar' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1')
+        # S156 (2026-09-08): S155 bind + explicit MaxHealth seed BEFORE PREFLIGHT. Single variable
+        # vs -bindavatar (adds -DKBFSEEDMAXHEALTH=1). S155 flight 2 cleared 14 of 14 pre-existing
+        # sub-blockers and refused with issues=0x200 (S148_ISSUE_MAX_HEALTH_BELOW_SEED alone); this
+        # arm seeds target.maxHealthOff+0x8 pair to 0x447A0000/0x447A0000 with the same 8-byte
+        # volatile write pattern the Health seed uses, so PREFLIGHT can reach CALL_ISSUED
+        # AdjustHealth and finally exercise the S153 thunkExact fix live. Keep -bindavatar UNCHANGED
+        # as the controlled negative -- attribution of any S156 null falls on the seed alone.
+        'botfight-damage-self-cal-bindavatar-seedmax' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1')
         # SITTING 4 -- WALL E full: spawn -> wire the bot's ASC -> AdjustHealth to KILL it. 0x31.
         'botfight-kill'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x31','-DKBFDMGTGT=1')
         # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.

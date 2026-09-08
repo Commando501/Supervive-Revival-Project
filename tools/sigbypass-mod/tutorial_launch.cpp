@@ -17977,6 +17977,15 @@ static void DoBotSpawn(){
                         // Does NOT re-enable any KBFARMS bit; KBFARMS stays 0. Default 0 keeps the
                         // base botfight-damage-self-cal artifact byte-identical.
 #endif
+#ifndef KBFSEEDMAXHEALTH
+#define KBFSEEDMAXHEALTH 0 // S156 (2026-09-08): under KBFBINDAVATAR, seed the resolved LokiAttributeSetHealth
+                           // MaxHealth pair (base,current) to S148_HEALTH_SEED_BITS=0x447A0000 BEFORE the
+                           // S148 PREFLIGHT call at BfS148DoCalibration, so S148_ISSUE_MAX_HEALTH_BELOW_SEED
+                           // (s148_damage_calibration.h:485-487) can clear. Requires KBFBINDAVATAR=1 -- no bind
+                           // means no resolvable target to write into. Default 0 keeps the S155
+                           // -bindavatar artifact byte-identical as the controlled negative for the S156
+                           // treatment (bind alone vs bind+seed differ in exactly this one variable).
+#endif
 // KBFBINDCENSUS's own defines live earlier (near KFRAMEINIT) so FsThunk / FsDisarm can reference
 // the forward-declared helpers. The compile-time policy check for KBFHANDLEACT/KBFHANDLEMISS
 // (which are declared in this KBF block) stays here.
@@ -18001,6 +18010,9 @@ static void DoBotSpawn(){
 #endif
 #if KBFBINDAVATAR && (!KBFSELFCAL || (KBFARMS != 0) || KBFNATURALINPUT || KBFBINDONLY)
 #error S155 bind-avatar requires KBFSELFCAL=1, KBFARMS=0, and no KBFNATURALINPUT/KBFBINDONLY
+#endif
+#if KBFSEEDMAXHEALTH && !KBFBINDAVATAR
+#error S156 seed-max-health requires KBFBINDAVATAR=1 (no bind means no resolvable target to write into)
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -22044,6 +22056,66 @@ static void BfS148DoCalibration(){
         BfS148FinishTerminal(); return;
     }
     Marker("[S155] proceed=yes preflight_reached=1 handing off to S148 PREFLIGHT\r\n");
+#if KBFSEEDMAXHEALTH
+    // S156 (2026-09-08): seed the LokiAttributeSetHealth MaxHealth pair (base@+0x8, current@+0xC)
+    // BEFORE S148 PREFLIGHT so S148_ISSUE_MAX_HEALTH_BELOW_SEED clears. S155 flight 2 landed with
+    // 14 of 14 pre-existing sub-blockers cleared and only issues=0x200 remaining; only MaxHealth
+    // being 0/0 blocks CALL_ISSUED AdjustHealth. S148 PREFLIGHT below re-resolves via
+    // BfS148ResolveHealthTarget which reads MaxBits fresh -- a write here becomes visible in
+    // facts.maxBaseBits/maxCurrentBits and the gate at s148_damage_calibration.h:485-487 passes
+    // with S148PositiveAtLeastSeed(0x447A0000)==true. Same 8-byte packed volatile write pattern
+    // as the Health seed at :22150-ish (base=low32, current=high32 on x64 little-endian; both =
+    // S148_HEALTH_SEED_BITS so endianness cannot discriminate). Fail closed: if the target/pair
+    // cannot be safely written, refuse without proceeding to PREFLIGHT (a half-completed seed
+    // would manufacture a false PREFLIGHT_REFUSED attribution and confound any post-mortem).
+    Marker("[S156] ===== max-health seed preflight (KBFSEEDMAXHEALTH=1) =====\r\n");
+    BfS148HealthTarget s156Pre{};
+    uint32_t s156PreIssues=BfS148ResolveHealthTarget(0,0,0,true,&s156Pre,true);
+    bool s156LayoutOk=s156Pre.facts.attributeLayoutValid && s156Pre.facts.structPayloadValid &&
+                      s156Pre.facts.candidateReadable && s156Pre.facts.maxHealthPresent;
+    bool s156TargetOk=LooksLikePtr(s156Pre.set) && s156Pre.maxHealthOff!=0xFFFFFFFF && s156LayoutOk;
+    uintptr_t s156MaxPair=s156TargetOk?(s156Pre.set+s156Pre.maxHealthOff+0x8):0;
+    bool s156PairAligned=s156MaxPair!=0 && (s156MaxPair&7)==0;
+    bool s156PairWritable=s156PairAligned && SafeWritable((void*)s156MaxPair,8);
+    uint32_t s156MaxPreBase=s156Pre.facts.maxBaseBits;
+    uint32_t s156MaxPreCurrent=s156Pre.facts.maxCurrentBits;
+    bool s156SeedFaulted=false;
+    const char* s156Result="SKIPPED_TARGET_UNRESOLVED";
+    if(s156TargetOk && s156PairWritable){
+        const uint64_t s156SeedPair=((uint64_t)S148_HEALTH_SEED_BITS<<32)|S148_HEALTH_SEED_BITS;
+        __try{
+            *(volatile uint64_t*)s156MaxPair=s156SeedPair;
+            MemoryBarrier();
+            s156Result="ok";
+        }__except(SEH_FILTER(GetExceptionInformation())){
+            s156SeedFaulted=true; s156Result="FAULTED";
+        }
+    } else if(s156TargetOk && !s156PairAligned){
+        s156Result="SKIPPED_PAIR_MISALIGNED";
+    } else if(s156TargetOk){
+        s156Result="SKIPPED_PAIR_NOT_WRITABLE";
+    }
+    BfS148HealthTarget s156Post{};
+    uint32_t s156PostIssues=BfS148ResolveHealthTarget(0,0,0,true,&s156Post,true);
+    uint32_t s156MaxPostBase=s156Post.facts.maxBaseBits;
+    uint32_t s156MaxPostCurrent=s156Post.facts.maxCurrentBits;
+    bool s156SeedExact=!s156SeedFaulted &&
+                       s156MaxPostBase==S148_HEALTH_SEED_BITS &&
+                       s156MaxPostCurrent==S148_HEALTH_SEED_BITS;
+    Markerf("[S156] MAX_HEALTH_SEEDED result=%s pair=0x%llX maxPre=%08X/%08X maxPost=%08X/%08X "
+            "structPayload=%u layoutValid=%u writable=%u preIssues=0x%X postIssues=0x%X exact=%s\r\n",
+            s156Result,(unsigned long long)s156MaxPair,
+            s156MaxPreBase,s156MaxPreCurrent,s156MaxPostBase,s156MaxPostCurrent,
+            (unsigned)s156Pre.facts.structPayloadValid,(unsigned)s156Pre.facts.attributeLayoutValid,
+            (unsigned)(s156PairWritable?1:0),
+            s156PreIssues,s156PostIssues,s156SeedExact?"yes":"NO");
+    if(!s156SeedExact){
+        Marker("[S156] SEED_GATE_REFUSED reason=max-seed-not-exact RESULT=MAX_SEED_REFUSED; "
+               "PREFLIGHT not attempted\r\n");
+        BfS148FinishTerminal(); return;
+    }
+    Marker("[S156] proceed=yes handing off to S148 PREFLIGHT with MaxHealth=1000/1000\r\n");
+#endif
 #endif
 
     BfS148HealthTarget target{};

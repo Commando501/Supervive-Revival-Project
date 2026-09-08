@@ -64,6 +64,25 @@ The ASC is still **the shim's own**, because the designed wiring sits inside FK-
   followed by `0xDEAD`, while a matched `INDEX_NONE=-1` call enters the same wrapper, returns
   `AL=0`, restores the CDO/state, and survives. Therefore reflected dispatch and wrapper entry/ABI
   are not sufficient causes; the valid-handle/downstream path is implicated.
+- **S156-A (2026-09-08):** ★★★★★★★ **THE GAME'S OWN `AdjustHealth` PATH RUNS END-TO-END AND
+  APPLIES DAMAGE CORRECTLY. `[S148] RESULT=SELF_DAMAGE_CALIBRATED`, first time in project
+  history. Read `docs/s156-seedmax-flight5-SELF_DAMAGE_CALIBRATED.md`.** [M] on the flight-5
+  process (game PID 12808, 6.8min uptime post-injection, no FK-32). Chain: S155 bind
+  (`avatarBound=1`) → S156 seed (`MaxHealth 0→1000, preIssues=0x200 → postIssues=0x0 exact=yes`)
+  → S148 preflight (`issues=0x0`) → **S153 thunkExact validated live** (`thunkExact=yes
+  ownerExact=yes chainComplete=yes resolved=yes`) → `AdjustHealth(-250.0)` invoked → **HealthBits
+  447A0000 → 443B8000 = 1000/1000 → 750/750, exact match** (`elapsed=265ms callCount=1`
+  `receipt=yes`) → clean disarm (`restored=17563 of 17563` funcswaps). **This is the first live
+  validation of the S153 thunkExact fix** (S152/S153's UHT-wrapper Func-vs-impl distinction, which
+  had rejected every prior AdjustHealth attempt). **⚠ Session cost: 4 launches lost to staging
+  hazards (F1 Login-race, F2/F3/F4 FK-31) before F5 succeeded**; the losses were hazard variance
+  (`fo`/`sp`/`gft` unchanged from S155 F2 which had succeeded 2h earlier), NOT the S156-A variant's
+  fault — the shim never ran on F1-F4. ⚠ SCOPE: this is the DAMAGE-application track — the S147
+  MiniDash-body-execution-durability question (WALL P proper) is UNAFFECTED. What is closed is
+  that AdjustHealth-shaped mutation writes reach the game's own attribute code and read back
+  correctly with no protector kill. **Arm:** `-Variant botfight-damage-self-cal-bindavatar-seedmax`
+  RAW `b47d1bfd04e44921` VSIZE `f87ac23d7c1a4c05`. **Regression gates unchanged:** base
+  `botfight-damage-self-cal 167d1552c73bfd7a`, bindavatar `d8c08912816162a7`.
 - **S158 (2026-09-03):** ★★★★★ **the ability body EXECUTES end-to-end via natural input after a
   clean shim abort.** Read `docs/s158-wallp-natinput-settled.md`. The shim's SETUP_ABORT
   (on `spec.flags==0x50 ≠ required 0x00`) releases CDO ownership and unswaps all UFunctions; a
