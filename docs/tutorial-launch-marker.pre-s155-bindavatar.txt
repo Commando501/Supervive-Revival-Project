@@ -1,0 +1,20 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[S148] RM_BOTFIGHT isolated self-damage calibration: require the unique local possessed hero's existing live ASC; no wiring, bot, team, grant, activation, or legacy damage arm.
+[BF] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF6D85054A0 stub=0x1A786053030 funcCls=0x1A61ED8B000 gameTid=30048
+[S148] ===== isolated self-owned ASC damage calibration =====
+[S148] policy KBFARMS=0 seedBits=447A0000/447A0000 delta=-250 expectedCurrent=443B8000 laterMin=250ms laterTimeoutGrace=5000ms
+[S148] owner-census class-chain mode=CLASSIFY_ONLY directChecks=5
+[FS] arm: swapped=17563 BP UFunctions  (scan 3250 ms over 161662 objects, 34253 UFunctions total) -- NO .text WRITE
+[S148] local-owner candidate[0] GI=0x1A66E876340 LocalPlayers[0]=0x1A66DEB0E00 PC=0x1A783C9B140
+[S148] active owner GI=0x1A66E876340 class=0x1A70B62E080 LocalPlayers@0x40 Data=0x1A700088340 Num=1 Max=4 memberIndex=0 membership=1 scanComplete=1
+[S148] owner LocalPlayer=0x1A66DEB0E00 class=0x1A633352680 PC@0x38 candidates=1 PC=0x1A783C9B140 class=0x1A77A543340 Player@0x458 Pawn@0x3F8 hero=0x1A83A868020 class=0x1A781EC3F10 Controller@0x400 ASCStorage@0xF00 ASC=0x1A798D2CD00 class=0x1A634100100 AvatarActor@0x410=0x0 avatarBound=0 ascOwned=1
+[S148] world identity PCLevel=0x1A777EC9000 HeroLevel=0x1A777EC9000 LevelClass=0x1A63005AB00 OwningWorld@0xC8 World=0x1A77A40B5A0 class=0x1A62FFB6F00 OwningGameInstance@0x2D0 valid=1
+[S148] SpawnedAttributes@0x0 prop=0x0 inner=0x0 expectedOwner=AbilitySystemComponent type=ArrayProperty innerType=ObjectProperty<AttributeSet> provenance=0 memberTypes=0 Data=0x0 Num=0 Max=0 healthCandidates=0 candidateIndex=0
+[S148] registration scan complete=0 count=0 selectedAscOwns=0 censusClosure=0 set=0x0 ASC=0x1A798D2CD00
+[S148] target set=0x0 class=0x0 Health@0x0 MaxHealth@0x0 HealthOwner=- MaxOwner=- HealthStruct=- MaxStruct=- expected=GameplayAttributeData HealthStructPtr=0x0 MaxHealthStructPtr=0x0 structPayload=0 superPropertiesSize=0 setPropertiesSize=0 layoutValid=0 HealthBits=00000000/00000000 MaxBits=00000000/00000000 CDO=0(certain=0) CDOOuter=0(chainValid=0) writable=0 issues=0x3EC13F
+[S148] PREFLIGHT_REFUSED RESULT=PREFLIGHT_REFUSED issues=0x3EC13F; no Health write and no AdjustHealth call
+[S148] funcswap drain complete; no admitted FsThunk body/OnPI overlaps restoration; new/prefetched roots parked at gate
+[FS] disarm: restored=17563 of 17563 swapped (scan 3391 ms, 34253 UFunctions live)
+[BF] worker done (hits=1 hitsGT=1)

@@ -1,0 +1,1959 @@
+Building community backend...
+Starting community backend (:8080 HTTP + :443 HTTPS)...
+Server up; cert chain generated.
+#1 GET /revival/missions/progress -> 200
+Backend serving HTTP (probe http://127.0.0.1:8080/revival/missions/progress -> 200).
+Appending Root CA to game cacert.pem...
+Hosts entries added:
+  127.0.0.1  accounts.projectloki.theorycraftgames.com
+  127.0.0.1  client-config-jx-prod.prodcluster.awsinfra.theorycraftgames.com
+bVerifyPeer override already present.
+  (Engine.ini set read-only)
+[crashdump] no pending crash reports to archive (and no crashpad handoff in Loki.log).
+Crash-capture armed: dumps/crash-20260908-173950 (log: docs/crashwatch.out.log)
+  idle until the game crashes; then suspends it and dumps before it exits.
+Launching SUPERVIVE (PostAuth -> http://localhost:8080)...
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/global.utoc
+LogIoDispatcher: Display: Toc signature hash: 6709D97A0C606F95DA1A17081E4BBB2079C25138
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/global.utoc' in location slot 0
+LogPakFile: Display: Initialized I/O dispatcher file backend. Mounted the global container: ../../../Loki/Content/Paks/global.utoc
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s9-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s9-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s9-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: 9E91FE73F51FA79B9EFD04C5EC902B93377968AA
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s9-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s9-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s9-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s8-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s8-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s8-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: 29E51C9F8F0B853B4F683528B71084A306CC7450
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s8-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s8-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s8-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s7-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s7-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s7-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: C2CBCFBEA2930104DDEB9545E65A373DBB08A0CB
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s7-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s7-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s7-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s6-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s6-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s6-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: 66413AD92E0B002A60BF0332D0C2F47188F345B4
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s6-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s6-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s6-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s5-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s5-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s5-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: 96FA4145642275F65DC17A74D32FD3588E1FB37B
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s5-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s5-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s5-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s4-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s4-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s4-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: 93D43002105EEB7CDA9EB596A793DA483CBAFC85
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s4-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s4-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s4-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s3-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s3-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s3-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: C0FD66BD6978E52297932E5A7C4A3AE695420303
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s3-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s3-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s3-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s2-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s2-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s2-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: DBDF2F8B6BBF4D297CBAAC46BB6B009584051499
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s2-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s2-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s2-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s15-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s15-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s15-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: 590B5B647F0922BE274F933F48F77ECE4FF082EF
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s15-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s15-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s15-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s14-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s14-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s14-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: 18BF491C85E4C76574DF2ACF69DFD31D593810D1
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s14-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s14-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s14-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s13-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s13-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s13-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: D7C4759563D60285A358F70DFA47489666442C4D
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s13-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s13-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s13-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s12-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s12-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s12-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: 6318D0E39F049AC21CA88ABEA076BB2A7267AC20
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s12-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s12-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s12-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s11-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s11-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s11-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: DA1FDE713671C45AA4027A163448472463C5F21E
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s11-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s11-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s11-WindowsClient.pak', mount point: '../../../Loki/Content/Loki/UI/Fonts/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s10-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s10-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s10-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: 4B620821F63D7A4B2664EA189186FBB03B444EA8
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s10-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s10-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s10-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0_s1-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0_s1-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0_s1-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: E9F3D2C935AF17B2E42EB8FE0FA4213160E26FE5
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0_s1-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0_s1-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0_s1-WindowsClient.pak', mount point: '/'
+LogPakFile: Display: Found Pak file ../../../Loki/Content/Paks/pakchunk0-WindowsClient.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../Loki/Content/Paks/pakchunk0-WindowsClient.pak.
+LogIoDispatcher: Display: Reading toc: ../../../Loki/Content/Paks/pakchunk0-WindowsClient.utoc
+LogIoDispatcher: Display: Toc signature hash: 444F784573B50335020F676060F69EA60C28A579
+LogIoDispatcher: Display: Mounting container '../../../Loki/Content/Paks/pakchunk0-WindowsClient.utoc' in location slot 0
+LogPakFile: Display: Mounted IoStore container "../../../Loki/Content/Paks/pakchunk0-WindowsClient.utoc"
+LogPakFile: Display: Mounted Pak file '../../../Loki/Content/Paks/pakchunk0-WindowsClient.pak', mount point: '../../../'
+LogStreaming: Display: AsyncLoading2 - Created: Event Driven Loader: false, Async Loading Thread: true, Async Post Load: true
+LogStreaming: Display: AsyncLoading2 - Initialized
+LogHAL: Display: Platform has ~ 48 GB [51481124864 / 68719476736 / 48], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
+LogD3D12RHI: Display: Creating D3D12 RHI with Max Feature Level SM6
+LogD3D12RHI: Display: Not using pipeline state disk cache per r.D3D12.PSO.DiskCache=0
+LogD3D12RHI: Display: Not using driver-optimized pipeline state disk cache per r.D3D12.PSO.DriverOptimizedDiskCache=0
+LogShaderLibrary: Display: Using IoDispatcher for shader code library Global. Total 5064 unique shaders.
+LogShaderLibrary: Display: Cooked Context: Using Shared Shader Library Global
+LogShaderLibrary: Display: Logical shader library 'Global' has been created as a monolithic library
+LogShaderLibrary: Display: Tried to open shader library 'Paper2D', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ACLPlugin', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ControlRig', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'OpenColorIO', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ConcertSyncClient', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'MeshLODToolset', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'AnimationSharing', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'IKRig', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'SkeletalMeshModelingTools', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ModelingToolsEditorMode', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'BlueprintHeaderView', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ChaosCaching', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ConsoleVariables', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'FullBodyIK', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'GeometryFlow', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ChaosSolverPlugin', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'GameplayCameras', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'SequencerScripting', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Dataflow', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'PCGGeometryScriptInterop', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'CommonUI', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Landmass', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'GeometryScripting', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'HairStrands', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'StaticMeshEditorModeling', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'PCG', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'CascadeToNiagaraConverter', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'PythonScriptPlugin', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'HDRIBackdrop', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'UVEditor', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Niagara', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'LokiFogOfWar', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Volumetrics', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ThumbnailGenerator', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'TraceUtilities', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'MovieRenderPipeline', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'MeshModelingToolset', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Takes', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'DeformerGraph', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Wwise', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'GeometryMode', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'DebugFunctionLibrary', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'LokiWinter', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'RigVM', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'MORT', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'LowEntryExtStdLib', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'WebBrowserWidget', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'NvidiaGfn', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'PythonAutomationTest', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'GeometryProcessing', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Tox', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'MeshModelingToolsetExp', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ChaosClothEditor', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Substance', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ChaosNiagara', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'GeometryCollectionPlugin', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'MinimapPlugin', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'SplineArea', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'HairModelingToolset', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'NiagaraUIRenderer', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'DiscordPartnerSDK', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Paper2D', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ACLPlugin', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ControlRig', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'DeformerGraph', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'IKRig', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'GameplayCameras', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'OpenColorIO', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'AnimationSharing', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ConcertSyncClient', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'BlueprintHeaderView', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ConsoleVariables', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'GeometryMode', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'MeshLODToolset', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ModelingToolsEditorMode', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'StaticMeshEditorModeling', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'UVEditor', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'SkeletalMeshModelingTools', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ChaosCaching', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ChaosClothEditor', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ChaosNiagara', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ChaosSolverPlugin', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Dataflow', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'FullBodyIK', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'GeometryCollectionPlugin', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'GeometryFlow', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'HairModelingToolset', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Landmass', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'MeshModelingToolsetExp', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'PythonScriptPlugin', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Volumetrics', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'CascadeToNiagaraConverter', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Niagara', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'LokiFogOfWar', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'MovieRenderPipeline', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'SequencerScripting', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'NiagaraUIRenderer', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'PCGGeometryScriptInterop', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'PCG', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'CommonUI', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'GeometryProcessing', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'GeometryScripting', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'HDRIBackdrop', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'HairStrands', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'MeshModelingToolset', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'RigVM', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Substance', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'WebBrowserWidget', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'PythonAutomationTest', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'ThumbnailGenerator', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'TraceUtilities', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Takes', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Wwise', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'DebugFunctionLibrary', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'DiscordPartnerSDK', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'LowEntryExtStdLib', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'MORT', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'MinimapPlugin', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'NvidiaGfn', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'SplineArea', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Tried to open shader library 'Tox', but could not find it (only tried to open it as a monolithic library).
+LogShaderLibrary: Display: Using IoDispatcher for shader code library Loki_Chunk0. Total 69770 unique shaders.
+LogShaderLibrary: Display: Cooked Context: Using Shared Shader Library Loki_Chunk0
+LogShaderLibrary: Display: Logical shader library 'Loki' has been created, components 1
+LogRHI: Display: FPipelineCacheFile[Loki] opened Loki, filename Loki, guid 9105826F4A98E24D0F77C59D24922090. 
+LogRHI: Display: FShaderPipelineCache starting pipeline cache 'Loki' and enqueued 19487 tasks for precompile. (cache contains 19487, 19487 eligible, 0 had missing shaders. 0 already compiled). BatchSize 50 and BatchTime 16.000000.
+LogRHI: Display: FPipelineCacheFile User cache [key:Loki_usr] opened 'Loki'=1, filename Loki, guid C2004D274765A37AFA50D790A4C9A0FC. 
+LogShaderLibrary: Display: Tried to open again shader library 'Loki', but could not find new components for it (existing components: 1).
+LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
+LogTextureEncodingSettings: Display: Texture Encode Speed: Final (cook).
+LogTextureEncodingSettings: Display: Oodle Texture Encode Speed settings: Fast: RDO Off Lambda=0, Effort=Normal Final: RDO Off Lambda=0, Effort=Normal
+LogTextureEncodingSettings: Display: Shared linear texture encoding: Disabled
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Alchemist/Abilities/CinnabarBomb/BP_Alchemist_CinnabarBomb_Proj.BP_Alchemist_CinnabarBomb_Proj_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Alchemist/Abilities/LMB/BP_Alchemist_RocketArrow.BP_Alchemist_RocketArrow_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Alchemist/BP_HERO_Alchemist.BP_HERO_Alchemist_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Assault/Abilities/AssaultRifle/BP_HERO_Assault_AssaultRifle_Projectile_V2.BP_HERO_Assault_AssaultRifle_Projectile_V2_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Assault/BP_HERO_Assault.BP_HERO_Assault_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Assault/Cosmetics/Default/AssaultRifle/BP_Assault_AssaultRifle_ProjectileCosmetics.BP_Assault_AssaultRifle_ProjectileCosmetics_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Assault/Cosmetics/SpaceMarine/Abilities/AssaultRifle/BP_Assault_SpaceMarine_AssaultRifle_ProjectileCosmetics.BP_Assault_SpaceMarine_AssaultRifle_ProjectileCosmetics_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Assault/Cosmetics/SpaceMarine/Chromas/BLA/Abilities/AssaultRifle/BP_Assault_SPACE_BLA_AssaultRifle_ProjectileCosmetics.BP_Assault_SPACE_BLA_AssaultRifle_ProjectileCosmetics_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Assault/Cosmetics/SpaceMarine/Chromas/CRI/Abilities/AssaultRifle/BP_Assault_SpaceMarine_CRI_AssaultRifle_ProjectileCosmetics.BP_Assault_SpaceMarine_CRI_AssaultRifle_ProjectileCosmetics_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Assault/Cosmetics/SpaceMarine/Chromas/SYN/Abilities/AssaultRifle/BP_Assault_SPACE_SYN_AssaultRifle_ProjectileCosmetics.BP_Assault_SPACE_SYN_AssaultRifle_ProjectileCosmetics_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/BacklineHealer/BP_HERO_BacklineHealer.BP_HERO_BacklineHealer_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Beebo/Abilities/C4/BP_Beebo_C4_Minion.BP_Beebo_C4_Minion_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Beebo/BP_HERO_Beebo.BP_HERO_Beebo_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/BountyHunter/Abilities/LMB/BP_BountyHunter_Proj_LazerDeagle.BP_BountyHunter_Proj_LazerDeagle_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/BountyHunter/Abilities/RMB_Disable/BP_BountyHunter_Disable_proj.BP_BountyHunter_Disable_proj_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/BountyHunter/BP_HERO_BountyHunter.BP_HERO_BountyHunter_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/BountyHunter/Cosmetics/Default/Abilities/LMB/BP_BountyHunter_LazerDeagle_Default.BP_BountyHunter_LazerDeagle_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/BountyHunter/Cosmetics/Default/Abilities/RMB_Disable/BP_BountyHunter_Disable_Cosmetic_Default.BP_BountyHunter_Disable_Cosmetic_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/BurstCaster/BP_HERO_BurstCaster.BP_HERO_BurstCaster_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Earthtank/Abilities/QuickStone/BP_EarthTank_QuickStone_Large.BP_EarthTank_QuickStone_Large_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Earthtank/Abilities/QuickStone/BP_EarthTank_QuickStone_Small.BP_EarthTank_QuickStone_Small_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Earthtank/Abilities/RockTwo/BP_EarthTank_CreateRock_Projectile.BP_EarthTank_CreateRock_Projectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Earthtank/BP_HERO_Earthtank.BP_HERO_Earthtank_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/FarShot/Abilities/ScoutRifle/BP_FarShot_Blaster.BP_FarShot_Blaster_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/FarShot/Abilities/ScoutRifle/BP_FarShot_Blaster_Charged_Empowered.BP_FarShot_Blaster_Charged_Empowered_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/FarShot/Abilities/UltEmpowerment/BP_UnstablePortal_Farshot.BP_UnstablePortal_Farshot_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/FarShot/BP_HERO_FarShot.BP_HERO_FarShot_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/FireFox/Abilities/FireBolt/BP_FireBolt_Projectile.BP_FireBolt_Projectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/FireFox/Abilities/FireBolt/Talents/ChargeupRMB/BP_FireBolt_Projectile_Chargeup.BP_FireBolt_Projectile_Chargeup_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/FireFox/Abilities/Flamethrower/BP_Flamethrower_Projectile_EmpoweredV2.BP_Flamethrower_Projectile_EmpoweredV2_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/FireFox/BP_HERO_FireFox.BP_HERO_FireFox_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/FireFox/Cosmetics/Default/Abilities/Flamethrower/BP_Firefox_Flamethrower_Projectile_Cosmetic_Default.BP_Firefox_Flamethrower_Projectile_Cosmetic_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Flex/Abilities/BasicAttack/BP_Flex_Blaster.BP_Flex_Blaster_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Flex/BP_HERO_Flex.BP_HERO_Flex_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Flex/Cosmetics/Default/Abilities/BasicAttack/BP_Flex_Blaster_ProjectileCosmetics_Default.BP_Flex_Blaster_ProjectileCosmetics_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Flex/Cosmetics/Demoness/Abilities/BasicAttack/BP_Flex_Blaster_ProjectileCosmetics_Demoness.BP_Flex_Blaster_ProjectileCosmetics_Demoness_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Flex/Cosmetics/Demoness/Chromas/INF/Abilities/BasicAttack/BP_Flex_DEMON_INF_Blaster_ProjectileCosmetics.BP_Flex_DEMON_INF_Blaster_ProjectileCosmetics_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Flex/Cosmetics/Demoness/Chromas/PLA/Abilities/BasicAttack/BP_Flex_DEMON_PLA_Blaster_ProjectileCosmetics.BP_Flex_DEMON_PLA_Blaster_ProjectileCosmetics_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Flex/Cosmetics/Demoness/Chromas/PRI/Abilities/BasicAttack/BP_Flex_DEMON_PRI_Blaster_ProjectileCosmetics.BP_Flex_DEMON_PRI_Blaster_ProjectileCosmetics_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Abilities/IceDart/BP_IceDart_Projectile.BP_IceDart_Projectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Abilities/IceDart/BP_IceDart_Projectile_Skating.BP_IceDart_Projectile_Skating_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Abilities/IceDart/BP_IceDart_ProjectileBig.BP_IceDart_ProjectileBig_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Abilities/IceDart/BP_IceDart_ProjectileBig_Skating.BP_IceDart_ProjectileBig_Skating_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/BP_HERO_Freeze.BP_HERO_Freeze_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Abilities/IceDart/BP_Freeze_IceDart_Empowered_ProjectileCosmetics_BrideOfSwords.BP_Freeze_IceDart_Empowered_ProjectileCosmetics_BrideOfSwords_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Abilities/IceDart/BP_Freeze_IceDart_Empowered_Skating_ProjectileCosmetics_BrideOfSwords.BP_Freeze_IceDart_Empowered_Skating_ProjectileCosmetics_BrideOfSwords_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Abilities/IceDart/BP_Freeze_IceDart_ProjectileCosmetics_BrideOfSwords.BP_Freeze_IceDart_ProjectileCosmetics_BrideOfSwords_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Abilities/IceDart/BP_Freeze_IceDart_Skating_ProjectileCosmetics_BrideOfSwords.BP_Freeze_IceDart_Skating_ProjectileCosmetics_BrideOfSwords_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Chromas/BRI/Abilities/IceDart/BP_Freeze_IceDart_Empowered_ProjectileCosmetics_BRIDE_BRI.BP_Freeze_IceDart_Empowered_ProjectileCosmetics_BRIDE_BRI_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Chromas/BRI/Abilities/IceDart/BP_Freeze_IceDart_Empowered_Skating_ProjectileCosmetics_BRIDE_BRI.BP_Freeze_IceDart_Empowered_Skating_ProjectileCosmetics_BRIDE_BRI_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Chromas/BRI/Abilities/IceDart/BP_Freeze_IceDart_ProjectileCosmetics_BRIDE_BRI.BP_Freeze_IceDart_ProjectileCosmetics_BRIDE_BRI_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Chromas/BRI/Abilities/IceDart/BP_Freeze_IceDart_Skating_ProjectileCosmetics_BRIDE_BRI.BP_Freeze_IceDart_Skating_ProjectileCosmetics_BRIDE_BRI_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Chromas/ROY/Abilities/IceDart/BP_Freeze_IceDart_Empowered_ProjectileCosmetics_BRIDE_ROY.BP_Freeze_IceDart_Empowered_ProjectileCosmetics_BRIDE_ROY_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Chromas/ROY/Abilities/IceDart/BP_Freeze_IceDart_Empowered_Skating_ProjectileCosmetics_BRIDE_ROY.BP_Freeze_IceDart_Empowered_Skating_ProjectileCosmetics_BRIDE_ROY_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Chromas/ROY/Abilities/IceDart/BP_Freeze_IceDart_ProjectileCosmetics_BRIDE_ROY.BP_Freeze_IceDart_ProjectileCosmetics_BRIDE_ROY_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Chromas/ROY/Abilities/IceDart/BP_Freeze_IceDart_Skating_ProjectileCosmetics_BRIDE_ROY.BP_Freeze_IceDart_Skating_ProjectileCosmetics_BRIDE_ROY_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Chromas/UNH/Abilities/IceDart/BP_Freeze_IceDart_Empowered_ProjectileCosmetics_BRIDE_UNH.BP_Freeze_IceDart_Empowered_ProjectileCosmetics_BRIDE_UNH_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Chromas/UNH/Abilities/IceDart/BP_Freeze_IceDart_Empowered_Skating_ProjectileCosmetics_BRIDE_UNH.BP_Freeze_IceDart_Empowered_Skating_ProjectileCosmetics_BRIDE_UNH_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Chromas/UNH/Abilities/IceDart/BP_Freeze_IceDart_ProjectileCosmetics_BRIDE_UNH.BP_Freeze_IceDart_ProjectileCosmetics_BRIDE_UNH_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/BrideOfSwords/Chromas/UNH/Abilities/IceDart/BP_Freeze_IceDart_Skating_ProjectileCosmetics_BRIDE_UNH.BP_Freeze_IceDart_Skating_ProjectileCosmetics_BRIDE_UNH_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/Default/Abilities/IceDart/BP_Freeze_IceDart_Empowered_ProjectileCosmetics_Default.BP_Freeze_IceDart_Empowered_ProjectileCosmetics_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/Default/Abilities/IceDart/BP_Freeze_IceDart_Empowered_Skating_ProjectileCosmetics_Default.BP_Freeze_IceDart_Empowered_Skating_ProjectileCosmetics_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/Default/Abilities/IceDart/BP_Freeze_IceDart_ProjectileCosmetics_Default.BP_Freeze_IceDart_ProjectileCosmetics_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Freeze/Cosmetics/Default/Abilities/IceDart/BP_Freeze_IceDart_Skating_ProjectileCosmetics_Default.BP_Freeze_IceDart_Skating_ProjectileCosmetics_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Gunner/Abilities/Minigun/BP_Gunner_Minigun_Projectile.BP_Gunner_Minigun_Projectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Gunner/Abilities/Minigun/BP_Gunner_Minigun_ProjectileCosmetics_Default.BP_Gunner_Minigun_ProjectileCosmetics_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Gunner/Abilities/Minigun/BP_Gunner_Minigun_Siege_ProjectileCosmetics_Default.BP_Gunner_Minigun_Siege_ProjectileCosmetics_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Gunner/Abilities/Minigun/BP_HERO_Gunner_Minigun_SiegeProjectile.BP_HERO_Gunner_Minigun_SiegeProjectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Abilities/HookGuyChargeBlast/BP_HookGuy_ChargeBlast_ProjectileV2.BP_HookGuy_ChargeBlast_ProjectileV2_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Abilities/Shotgun/BP_HERO_HookGuy_Shotgun_CloseRange_ProjectileV2.BP_HERO_HookGuy_Shotgun_CloseRange_ProjectileV2_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Abilities/Shotgun/BP_HERO_HookGuy_Shotgun_CloseRange_ProjectileV2_CenterShot.BP_HERO_HookGuy_Shotgun_CloseRange_ProjectileV2_CenterShot_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/BP_Hero_HookGuy.BP_Hero_HookGuy_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Cyberpunk/Abilities/HookGuyChargeBlast/BP_HookGuy_ChargeBlast_TrailActor_Cyberpunk.BP_HookGuy_ChargeBlast_TrailActor_Cyberpunk_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Cyberpunk/Abilities/Shotgun/BP_HookGuy_Cyberpunk_LMB_Trail.BP_HookGuy_Cyberpunk_LMB_Trail_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Cyberpunk/Abilities/Shotgun/BP_HookGuy_Shotgun_CenterShot_Cosmetics_Cyberpunk.BP_HookGuy_Shotgun_CenterShot_Cosmetics_Cyberpunk_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Cyberpunk/Abilities/Shotgun/BP_HookGuy_Shotgun_Cosmetics_Cyberpunk.BP_HookGuy_Shotgun_Cosmetics_Cyberpunk_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Cyberpunk/Chromas/Bane/Abilities/HookGuyChargeBlast/BP_HookGuy_ChargeBlast_TrailActor_BaneCyberpunk.BP_HookGuy_ChargeBlast_TrailActor_BaneCyberpunk_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Cyberpunk/Chromas/NightOwl/Abilities/HookGuyChargeBlast/BP_HookGuy_ChargeBlast_TrailActor_NightOwlCyberpunk.BP_HookGuy_ChargeBlast_TrailActor_NightOwlCyberpunk_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Cyberpunk/Chromas/Rainbow/Abilities/HookGuyChargeBlast/BP_HookGuy_ChargeBlast_TrailActor_RainbowCyberpunk.BP_HookGuy_ChargeBlast_TrailActor_RainbowCyberpunk_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Default/Abilities/HookGuyChargeBlast/BP_HookGuy_ChargeBlast_TrailActor_Default.BP_HookGuy_ChargeBlast_TrailActor_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Default/Abilities/Shotgun/BP_HookGuy_Shotgun_Cosmetics_CenterShot_Default.BP_HookGuy_Shotgun_Cosmetics_CenterShot_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Default/Abilities/Shotgun/BP_HookGuy_Shotgun_Cosmetics_Default.BP_HookGuy_Shotgun_Cosmetics_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Oni/Abilities/HookGuyChargeBlast/BP_HookGuy_ChargeBlast_TrailActor_Oni.BP_HookGuy_ChargeBlast_TrailActor_Oni_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Oni/Chromas/Ghostly/Abilities/HookGuyChargeBlast/BP_HookGuy_ChargeBlast_TrailActor_GhostlyOni.BP_HookGuy_ChargeBlast_TrailActor_GhostlyOni_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Oni/Chromas/Luxurious/Abilities/HookGuyChargeBlast/BP_HookGuy_ChargeBlast_TrailActor_LuxuriousOni.BP_HookGuy_ChargeBlast_TrailActor_LuxuriousOni_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/HookGuy/Cosmetics/Oni/Chromas/Mystic/Abilities/HookGuyChargeBlast/BP_HookGuy_ChargeBlast_TrailActor_MysticOni.BP_HookGuy_ChargeBlast_TrailActor_MysticOni_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Huntress/BP_HERO_Huntress.BP_HERO_Huntress_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Reaper/BP_HERO_Reaper.BP_HERO_Reaper_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Abilities/MoonShot/BP_ResHealer_Moon_ProjectileV2.BP_ResHealer_Moon_ProjectileV2_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Abilities/MoonShot/BP_ResHealer_Moon_ProjectileV2_Pistol.BP_ResHealer_Moon_ProjectileV2_Pistol_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Abilities/MoonShot/BP_ResHealer_MoonEmpowered_Projectile.BP_ResHealer_MoonEmpowered_Projectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Abilities/MoonShot/BP_ResHealer_Sun_ProjectileV2.BP_ResHealer_Sun_ProjectileV2_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/BP_HERO_ResHealer.BP_HERO_ResHealer_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/Default/Abilities/MoonShot/BP_ResHealer_Moon_ProjectileCosmetics_Default.BP_ResHealer_Moon_ProjectileCosmetics_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/Default/Abilities/MoonShot/BP_ResHealer_MoonEmpowered_ProjectileCosmetics_Default.BP_ResHealer_MoonEmpowered_ProjectileCosmetics_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/Default/Abilities/MoonShot/BP_ResHealer_Sun_ProjectileCosmetics_Default.BP_ResHealer_Sun_ProjectileCosmetics_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/GuardianAngel/Abilities/MoonShot/BP_ResHealer_Moon_ProjectileCosmetics_GuardianAngel.BP_ResHealer_Moon_ProjectileCosmetics_GuardianAngel_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/GuardianAngel/Abilities/MoonShot/BP_ResHealer_MoonEmpowered_ProjectileCosmetics_GuardianAngel.BP_ResHealer_MoonEmpowered_ProjectileCosmetics_GuardianAngel_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/GuardianAngel/Abilities/MoonShot/BP_ResHealer_Sun_ProjectileCosmetics_GuardianAngel.BP_ResHealer_Sun_ProjectileCosmetics_GuardianAngel_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/GuardianAngel/Chromas/Moonlight/Abilities/MoonShot/BP_ResHealer_Moon_ProjectileCosmetics_MoonLightGuardianAngel.BP_ResHealer_Moon_ProjectileCosmetics_MoonLightGuardianAngel_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/GuardianAngel/Chromas/Moonlight/Abilities/MoonShot/BP_ResHealer_Sun_ProjectileCosmetics_MoonLightGuardianAngel.BP_ResHealer_Sun_ProjectileCosmetics_MoonLightGuardianAngel_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/GuardianAngel/Chromas/Shrouded/Abilities/MoonShot/BP_ResHealer_Moon_ProjectileCosmetics_ShroudedGuardianAngel.BP_ResHealer_Moon_ProjectileCosmetics_ShroudedGuardianAngel_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/GuardianAngel/Chromas/Shrouded/Abilities/MoonShot/BP_ResHealer_MoonEmpowered_ProjectileCosmetics_ShroudedGuardianAngel.BP_ResHealer_MoonEmpowered_ProjectileCosmetics_ShroudedGuardianAngel_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/GuardianAngel/Chromas/Shrouded/Abilities/MoonShot/BP_ResHealer_Sun_ProjectileCosmetics_ShroudedGuardianAngel.BP_ResHealer_Sun_ProjectileCosmetics_ShroudedGuardianAngel_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/GuardianAngel/Chromas/XGuardian/Abilities/MoonShot/BP_ResHealer_Moon_ProjectileCosmetics_XGuardianGuardianAngel.BP_ResHealer_Moon_ProjectileCosmetics_XGuardianGuardianAngel_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/GuardianAngel/Chromas/XGuardian/Abilities/MoonShot/BP_ResHealer_MoonEmpowered_ProjectileCosmetics_XGuardianGuardianAngel.BP_ResHealer_MoonEmpowered_ProjectileCosmetics_XGuardianGuardianAngel_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ResHealer/Cosmetics/GuardianAngel/Chromas/XGuardian/Abilities/MoonShot/BP_ResHealer_Sun_ProjectileCosmetics_XGuardianGuardianAngel.BP_ResHealer_Sun_ProjectileCosmetics_XGuardianGuardianAngel_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/RocketJumper/Abilities/Rocket/BP_RocketJumper_RocketProjectile.BP_RocketJumper_RocketProjectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/RocketJumper/Abilities/Rocket_BasicAttack/BP_RocketJumper_Rocket_BasicAttack.BP_RocketJumper_Rocket_BasicAttack_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/RocketJumper/Abilities/Rocket_BasicAttack/BP_RocketJumper_Rocket_BasicAttack_Big.BP_RocketJumper_Rocket_BasicAttack_Big_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/RocketJumper/Abilities/RocketJump/BP_RocketJumper_RocketJump_Projectile.BP_RocketJumper_RocketJump_Projectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/RocketJumper/BP_HERO_RocketJumper.BP_HERO_RocketJumper_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Ronin/BP_HERO_Ronin.BP_HERO_Ronin_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Shared/Abilities/BP_LokiBaseProjectileTrail.BP_LokiBaseProjectileTrail_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/ShieldBot/BP_HERO_ShieldBot.BP_HERO_ShieldBot_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Sniper/Abilities/SniperShot/BP_SniperShot_ProjectileCosmetics_Default.BP_SniperShot_ProjectileCosmetics_Default_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Sniper/BP_HERO_Sniper.BP_HERO_Sniper_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Sniper/Cosmetics/Phoenix/Abilities/SniperShot/BP_SniperShot_ProjectileCosmetics_Phoenix.BP_SniperShot_ProjectileCosmetics_Phoenix_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Stalker/Abilities/FlashDagger/BP_Stalker_ThrowingKnife_ProjectileV2.BP_Stalker_ThrowingKnife_ProjectileV2_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Stalker/Abilities/StalkerTeleport/Projectile/BP_Stalker_Teleport_Projectile.BP_Stalker_Teleport_Projectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Stalker/BP_Hero_Stalker.BP_Hero_Stalker_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Storm/BP_Hero_Storm.BP_Hero_Storm_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Succubus/Abilities/Succubus_LMB/BP_Succubus_Blaster.BP_Succubus_Blaster_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Succubus/Abilities/Succubus_LMB/BP_Succubus_Blaster_Targeted.BP_Succubus_Blaster_Targeted_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Succubus/BP_HERO_Succubus.BP_HERO_Succubus_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Void/Abilities/LostSoul/BP_LostSoul_Heavy_ProjectileV2.BP_LostSoul_Heavy_ProjectileV2_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Void/Abilities/LostSoul/BP_LostSoul_Heavy_ProjectileV2_Charged.BP_LostSoul_Heavy_ProjectileV2_Charged_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Void/BP_HERO_Void.BP_HERO_Void_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Wukong/Abilities/Clone/BP_Minion_Wukong_Clone.BP_Minion_Wukong_Clone_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Heroes/Wukong/BP_HERO_Wukong.BP_HERO_Wukong_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/_Core/VFX/LastHitBoss/BP_LastHitBoss_Vacuum.BP_LastHitBoss_Vacuum_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/BombBoss/Abilities/Mortar/Bomber_MultiMortar_LobbedProjectile.Bomber_MultiMortar_LobbedProjectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/BombBoss/Abilities/Mortar/Bomber_MultiMortar_LobbedProjectile_Secondary.Bomber_MultiMortar_LobbedProjectile_Secondary_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/BombBoss/Abilities/Mortar/Bomber_MultiMortar_LobbedProjectile_Tertiary.Bomber_MultiMortar_LobbedProjectile_Tertiary_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/Charger/BP_Minion_Charger.BP_Minion_Charger_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/Charger/BP_Minion_Charger_BrushBoar.BP_Minion_Charger_BrushBoar_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/Charger/BP_Minion_ChargerBoss.BP_Minion_ChargerBoss_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/Charger/Ice/BP_Minion_Charger_Ice.BP_Minion_Charger_Ice_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/FireGrunt/BP_Grunt_EMP_Ball.BP_Grunt_EMP_Ball_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/KaijuAxeLeader/Abilities/LeapAttack/BP_KaijuAxeLeader_SmashProjectile.BP_KaijuAxeLeader_SmashProjectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/KaijuCaster/Zoner/BP_KaijuCaster_Zoner_LobbedProjectile.BP_KaijuCaster_Zoner_LobbedProjectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/KaijuCaster/Zoner/BP_Molotov_Projectile.BP_Molotov_Projectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/KaijuHealer/BP_Minion_KaijuHealer.BP_Minion_KaijuHealer_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/KaijuSniper/BP_Minion_Sniper_SniperShot_ProjectileV2.BP_Minion_Sniper_SniperShot_ProjectileV2_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/StoneBasilisk/Abilities/Tremor/BP_HomingRock_Projectile.BP_HomingRock_Projectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/StoneBasilisk/Abilities/Tremor/BP_Tremor_Projectile.BP_Tremor_Projectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/TownGuard/BP_TownGuard_Projectile_2.BP_TownGuard_Projectile_2_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Minions/WaveMaker/Abilities/Wavemaker/BP_Wavemaker_Projectile.BP_Wavemaker_Projectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Characters/Shared/Abilities/Execute/BP_ExecuteCamera.BP_ExecuteCamera_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Core/AimingVis/HeightIndicator/BP_HeroHeightIndicator.BP_HeroHeightIndicator_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Core/Characters/BP_LokiHeroCharacter.BP_LokiHeroCharacter_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Core/Characters/BP_LokiHeroCharacter_Code.BP_LokiHeroCharacter_Code_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Core/Components/BP_DamageNumbersContainer.BP_DamageNumbersContainer_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Core/Components/BP_DamageNumbersContainer_Unattached.BP_DamageNumbersContainer_Unattached_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Core/GameModes/Barracuda/Minions/BP_Minion_Charger_Barracuda.BP_Minion_Charger_Barracuda_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Core/GameModes/Barracuda/Minions/Megaboar/BP_Charger_Boss_Barracuda.BP_Charger_Boss_Barracuda_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Core/GameModes/Objectives/Tutorial/Basics/BP_DropPod_Tutorial.BP_DropPod_Tutorial_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Core/Maps/BP_MinimapEventMarker.BP_MinimapEventMarker_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Core/Maps/BP_MinimapEventTimer.BP_MinimapEventTimer_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Environment/DropPlane/DropPod/BP_DropPod.BP_DropPod_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Environment/DropPlane/DropPod/BP_DropPod_Child.BP_DropPod_Child_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/ActiveItems/BeeboBoomBox/BP_Beebo_Boombox_Projectile.BP_Beebo_Boombox_Projectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/ActiveItems/DimensionalTunnel/BP_DimensionalTunnel.BP_DimensionalTunnel_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/Equipment/Weapons/Weapon_GenericUpgradeScrap/BP_GoldPile_VacuumProjectile_Tutorial.BP_GoldPile_VacuumProjectile_Tutorial_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/Equipment/Weapons/Weapon_GenericUpgradeScrap/BP_UpgradeScrap_VacuumProjectile.BP_UpgradeScrap_VacuumProjectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/Gems/BP_GemPickup_10_VacuumProjectile.BP_GemPickup_10_VacuumProjectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/Gems/BP_GemPickup_50_VacuumProjectile.BP_GemPickup_50_VacuumProjectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/Gems/BP_GemPickup_VacuumProjectile.BP_GemPickup_VacuumProjectile_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/Gems/BP_GemV2.BP_GemV2_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/Gems/BP_GemV2_10.BP_GemV2_10_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/Gems/BP_GemV2_50.BP_GemV2_50_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/Gems/BP_GemV2_10_DelayedPickup.BP_GemV2_10_DelayedPickup_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/Gems/BP_GemV2_DelayedPickup.BP_GemV2_DelayedPickup_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/Items/HeroShard/BP_ITEM_HeroShard.BP_ITEM_HeroShard_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/UI/Widgets/Gameplay/Cursor/BP_Cursor_AbilityFeedback.BP_Cursor_AbilityFeedback_C to list of poolable actors.
+LogActorPooling: Display: Adding /Game/Loki/UI/Widgets/Gameplay/FloatingText/BP_InWorld_XPNumbers.BP_InWorld_XPNumbers_C to list of poolable actors.
+LogLokiHeightMap: Display: [<Unknown>][Default__LokiHeightMap] HeightMap Constructor Called
+LogLokiHeightMap: Display: [<Unknown>][Default__LokiBuiltHeightMap] HeightMap Constructor Called
+LogLokiHeightMap: Display: [<Unknown>][Default__LokiJitHeightMap] HeightMap Constructor Called
+LogLokiHeightMap: Display: [<Unknown>][Default__LokiNullHeightMap] HeightMap Constructor Called
+LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+LogWwiseSoundEngine: Display: Loading Wwise SoundEngine 2024.1.3 (Integration 2024.1)
+LogAkAudio: Display: Wwise(R) SDK Version 2024.1.3 Build 8749 [Release(StaticCRT)]. (C) 2006-2025. Audiokinetic Inc. All rights reserved.
+LogSteamShared: Display: Loading Steam SDK 1.57
+Angelscript: Warning: Using fully precompiled scripts. Hot reloading is disabled for this run.
+Angelscript: Warning: Delete PrecompiledScript.Cache or run with -as-development-mode flag to enable hot reload.
+LogStreaming: Display: AsyncLoading2 - NotifyRegistrationComplete: Registered 38651 public script object entries (1041.80 KB)
+LogStreaming: Display: AsyncLoading2 - Thread Started: true, IsInitialLoad: false
+LogGameFeatures: Display: Creating GameFeaturePlugin StateMachine using Identifier:LokiWinter.uplugin from PluginURL:file:../../../Loki/Plugins/GameFeatures/LokiWinter/LokiWinter.uplugin
+LogShaderLibrary: Display: Opening a chunked shader library for plugin 'LokiWinter' is ignored. Chunked libraries for plugins are not supported.
+LogShaderLibrary: Display: Tried to open shader library 'LokiWinter', but could not find it (only tried to open it as a monolithic library).
+LogGameFeatures: Display: Game feature 'LokiWinter' loaded successfully. Ending state: Registered, [Registered, Active]
+LogAudio: Display: Initializing Audio Device Manager...
+LogAudio: Display: Loading Default Audio Settings Objects...
+LogAudio: Display: No default SoundConcurrencyObject specified (or failed to load).
+LogAudio: Display: Registering Engine Module Parameter Interfaces...
+LogAudio: Display: AudioInfo: 'OPUS' Registered
+LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
+LogAudio: Display: AudioInfo: 'OGG' Registered
+LogAudio: Display: AudioInfo: 'ADPCM' Registered
+LogAudio: Display: AudioInfo: 'PCM' Registered
+LogAudio: Display: AudioInfo: 'BINKA' Registered
+LogAudio: Display: AudioInfo: 'RADA' Registered
+LogAudio: Display: Audio Device Manager Initialized
+LogAudio: Display: Creating Audio Device:                 Id: 1, Scope: Shared, Realtime: True
+LogAudioMixer: Display: Audio Mixer Platform Settings:
+LogAudioMixer: Display: 	Sample Rate:						  48000
+LogAudioMixer: Display: 	Callback Buffer Frame Size Requested: 1024
+LogAudioMixer: Display: 	Callback Buffer Frame Size To Use:	  1024
+LogAudioMixer: Display: 	Number of buffers to queue:			  1
+LogAudioMixer: Display: 	Max Channels (voices):				  32
+LogAudioMixer: Display: 	Number of Async Source Workers:		  4
+LogAudio: Display: AudioDevice MaxSources: 32
+LogAudio: Display: Audio Spatialization Plugin: None (built-in).
+LogAudio: Display: Audio Reverb Plugin: None (built-in).
+LogAudio: Display: Audio Occlusion Plugin: None (built-in).
+LogAudioMixer: Display: Initializing audio mixer using platform API: 'XAudio2'
+LogAudioMixer: Display: Using Audio Hardware Device Speakers (FxSound Audio Enhancer)
+LogAudioMixer: Display: Initializing Sound Submixes...
+LogAudioMixer: Display: Creating Master Submix 'MasterSubmixDefault'
+LogAudioMixer: Display: Creating Master Submix 'MasterReverbSubmixDefault'
+LogAudioMixer: Display: Output buffers initialized: Frames=1024, Channels=8, Samples=8192, InstanceID=1
+LogAudioMixer: Display: Starting AudioMixerPlatformInterface::RunInternal(), InstanceID=1
+LogAudioMixer: Display: FMixerPlatformXAudio2::SubmitBuffer() called for the first time. InstanceID=1
+LogLokiGameInstance: Warning: Using Sentry: Yes
+LogLokiGameInstance: Warning: initializing game instance for client
+LogAccelByte: Warning: "Client ID" is not configured yet.
+Check DefaultEngine.ini or Edit/ProjectSettings/Plugins/
+LogAccelByte: Warning: "Namespace" is not configured yet.
+Check DefaultEngine.ini or Edit/ProjectSettings/Plugins/
+LogAccelByte: Warning: "Base URL" is not configured yet.
+Check DefaultEngine.ini or Edit/ProjectSettings/Plugins/
+#2 GET /configuration/public -> 200
+LogAudio: Display: Audio Device (ID: 1) registered with world 'Untitled'.
+LogUIActionRouter: Display: Found 1 derived classes when attemping to create action router (CommonUIActionRouterBase)
+LogUIActionRouter: Display: Found 0 derived classes when attemping to create action router (LokiCommonUIActionRouterBase)
+LogInit: Display: Game Engine Initialized.
+LogInit: Display: Starting Game.
+LogAudio: Display: Audio Device unregistered from world 'None'.
+LogStreaming: Display: 0.639 ms for processing 280 objects in RemoveUnreachableObjects(Queued=0, Async=0). Removed 1 (2522->2521) packages and 205 (5899->5694) public exports.
+LogAudio: Display: Audio Device (ID: 1) registered with world 'LVL_Login'.
+LogGameState: Display: Lazily creating actor pool manager of type Class /Script/Engine.ActorPoolManager
+LogLokiGameState: Display: Entering game state BP_LoginGameState_C_2147482279
+LogViewport: Display: Viewport MouseLockMode Changed, DoNotLock -> LockAlways
+LogViewport: Display: Viewport HideCursorDuringCapture Changed, False -> True
+LogViewport: Display: Viewport MouseCaptureMode Changed, NoCapture -> CaptureDuringMouseDown
+LogViewport: Display: Viewport MouseCaptureMode Changed, CaptureDuringMouseDown -> NoCapture
+LogLokiPlayerState: Warning: [UIREADY] ALokiBaseController::BeginPlay (0.00)
+#3 GET /basic/v1/public/misc/time -> 200
+LogRHI: Display: ShaderPipelineCache: Paused Batching. 1
+LogRHI: Display: ShaderPipelineCache: Resumed Batching. 0
+LogRHI: Display: ShaderPipelineCache: Batching Resumed.
+LogInit: Display: Engine is initialized. Leaving FEngineLoop::Init()
+LogLokiPlayerState: Warning: [UIREADY] ALokiBaseController::TryUIReady (0.03)
+LogLokiPlayerState: Warning: [UIREADY] ALokiBaseController::TryUIReady SUCCESS (0.03)
+LogUIActionRouter: Display: Applying input config for leaf-most node [WBP_UI_Login_Screen_Default]
+LogUIActionRouter: Display: UIInputConfig being changed. bForceRefresh: 1
+LogUIActionRouter: Display: 	InputMode: Previous (None), New (ECommonInputMode::Menu)
+LogViewport: Display: Viewport HideCursorDuringCapture Changed, True -> False
+LogViewport: Display: Viewport MouseLockMode Changed, LockAlways -> DoNotLock
+LogUIActionRouter: Display: [User 0] Focused desired target Button_SteamLogin
+LogLokiLoginManager: Warning: No command line argument for a launcher login method found
+LogOnline: Warning: STEAM: Failed to obtain steam user stats, user: JohnGotti@TheMob.org [0x1100001013F6048] has no stats entries
+#4 POST /iam/v4/oauth/platforms/steam/token -> 200
+LogOnline: Warning: STEAM: Failed to obtain steam user stats, user: JohnGotti@TheMob.org [0x1100001013F6048] has no stats entries
+LogStreaming: Display: FlushAsyncLoading(1145): 1 QueuedPackages, 0 AsyncPackages
+#5 GET /iam/v3/public/users/me -> 200
+#6 POST /postauth/reconcileRoles -> 200
+#7 GET /configuration/client -> 200
+LogTox: Display: Creating ToxModManager
+#8 GET /iam/v3/public/inputValidations -> 200
+LogBattlepassHeroUnlocker: Warning: Failed to get hero token amount
+#9 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:40:27.673  WS connected /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 (subproto="wss") envelope=[""..""]
+#11 GET /personalization/players/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+#10 GET /content-service/manifest/release2.4.live-156430-shipping -> 200
+#13 GET /player-stats/players/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+#12 GET /personalization/players/9b9d2c887e2524f918e383a895f2f1c2/clientprofile -> 200
+LogArmoryManager: Display: last seen account level update [0]
+#14 POST /discord-api/account/token -> 200
+
+* 17:40:27.713  WS connected /lobby (subproto="wss") envelope=["LbS".."LbE"]
+#17 GET /party/players/9b9d2c887e2524f918e383a895f2f1c2/voice -> 200
+#15 GET /iam/v4/public/namespaces/supervive/users/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+#18 GET /progression/players/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+#16 GET /storefront/battlepass/progressiontracks -> 200
+#19 GET /storefront/heroes -> 200
+#24 GET /inventory/free -> 200
+#25 GET /referral/player/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+LogPartyManager: Warning: skipping set referral code, player not in party
+#20 GET /inventory/players/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+#26 GET /storefront/offers/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+#29 GET /core-game/regions -> 200
+LogLatencyManager: Display: Creating new latency measurer for us-east-1 default
+#28 GET /core-game/players/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+#27 GET /match-history/players/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+#30 GET /mmr/player-ratings/9b9d2c887e2524f918e383a895f2f1c2/rank -> 200
+LogBattlepassHeroUnlocker: Warning: Failed to get hero token amount
+#23 GET /progression/players/9b9d2c887e2524f918e383a895f2f1c2/tracks -> 200
+#21 GET /storefront/wallet/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+LogBattlepassHeroUnlocker: Warning: Failed to get hero token amount
+#22 GET /storefront/real/offers/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+#31 GET /party/players/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+
+* 17:40:28.119  WS <- /lobby TEXT "type: listIncomingFriendsRequest\nid: friends-9723"
+#32 GET /party/matchmaking/info -> 200
+#33 GET /party/matchmaking/customGameModes -> 200
+#34 GET /mailbox/config/version -> 200
+#35 GET /storefront/battlepass/progressiontracks -> 200
+#37 GET /core-game/matches/match-9b9d2c887e2524f918e383a895f2f1c2 -> 200
+VivoxCore: Warning: req_account_anonymous_login failed for 20127:Access Token Service Unavailable
+LogLokiEndOfGameManager: Warning: Could not battlepass progress without match XP
+LogLokiEndOfGameManager: Warning: Could not battlepass progress without match XP
+#36 GET /referral/player/9b9d2c887e2524f918e383a895f2f1c2/points -> 200
+
+* 17:40:28.678  WS -> /lobby TEXT "type: listIncomingFriendsResponse\nid: friends-9723\ncode: 0\nfriendsId: []"
+#38 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:40:28.986  WS <- /lobby TEXT "type: listOutgoingFriendsRequest\nid: friends-9452"
+#39 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:40:29.094  WS -> /lobby TEXT "type: listOutgoingFriendsResponse\nid: friends-9452\ncode: 0\nfriendsId: []"
+#40 GET /revival/admin/state -> 200
+
+* 17:40:29.178  WS <- /lobby TEXT "type: listOfFriendsRequest\nid: friends-4175"
+#41 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:40:29.261  WS -> /lobby TEXT "type: listOfFriendsResponse\nid: friends-4175\ncode: 0\nfriendsId: []"
+#42 GET /core-game/players/9b9d2c887e2524f918e383a895f2f1c2 -> 200
+#43 GET /party/parties/party-9b9d2c887e2524f918e383a895f2f1c2 -> 200
+
+* 17:40:29.336  WS <- /lobby TEXT "type: setUserStatusRequest\nid: presence-6378\navailability: online\nactivity: eyJhIjoiT2ZmbGluZSIsImNWIjoicmVsZWFzZTIuNC5saXZlLTE1NjQzMC1zaGlwcGluZyIsInBJZCI6IiIsInBRcyI6W10sInBPIjowLCJwUyI6MCwibVBTIjowLCJyayI6MCwicmtQIjowLCJyIjpbXSwiYXZJZCI6IlNsb3RDb3NtZXRpY3M6QVZBVEFSX0FsY2hlbWlzdEhNIiwidCI6W10sImRzSWQiOiIifQ==\n"
+LogStreaming: Display: FlushAsyncLoading(): 0 QueuedPackages, 521 AsyncPackages
+#44 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:40:29.494  WS -> /lobby TEXT "type: setUserStatusResponse\nid: presence-6378\ncode: 0"
+LogLokiHUDLayout: Display: Start Dismantling WidgetTree (WBP_UI_Login_RootV2_C_2147482245)
+LogLokiHUDLayout: Display: End Dismantling WidgetTree (WBP_UI_Login_RootV2_C_2147482245) 88
+#45 POST /party/parties/party-9b9d2c887e2524f918e383a895f2f1c2/members/9b9d2c887e2524f918e383a895f2f1c2/latencies -> 200
+
+* 17:40:29.595  WS <- /lobby TEXT ""
+
+* 17:40:29.678  WS <- /lobby TEXT "type: setUserStatusRequest\nid: presence-9077\navailability: online\nactivity: eyJhIjoiT2ZmbGluZSIsImNWIjoicmVsZWFzZTIuNC5saXZlLTE1NjQzMC1zaGlwcGluZyIsInBJZCI6IiIsInBRcyI6W10sInBPIjowLCJwUyI6MCwibVBTIjowLCJyayI6MTIsInJrUCI6MTg1MCwiciI6W3sicSI6InR1dG9yaWFsTmV3IiwicmsiOjEyLCJya1AiOjE4NTB9XSwiYXZJZCI6IlNsb3RDb3NtZXRpY3M6QVZBVEFSX0FsY2hlbWlzdEhNIiwidCI6W10sImRzSWQiOiIifQ==\n"
+
+* 17:40:29.736  WS -> /lobby TEXT "type: setUserStatusResponse\nid: presence-9077\ncode: 0"
+
+* 17:40:29.778  WS <- /lobby TEXT "type: setUserStatusRequest\nid: presence-6970\navailability: online\nactivity: eyJhIjoiSW5NYXRjaCIsImNWIjoicmVsZWFzZTIuNC5saXZlLTE1NjQzMC1zaGlwcGluZyIsInBJZCI6IiIsInBRcyI6WyJ0dXRvcmlhbE5ldyJdLCJwTyI6MCwicFMiOjAsIm1QUyI6MCwicmsiOjEyLCJya1AiOjE4NTAsInIiOlt7InEiOiJ0dXRvcmlhbE5ldyIsInJrIjoxMiwicmtQIjoxODUwfV0sImF2SWQiOiJTbG90Q29zbWV0aWNzOkFWQVRBUl9BbGNoZW1pc3RITSIsInQiOltdLCJkc0lkIjoiIn0=\n"
+
+* 17:40:29.819  WS -> /lobby TEXT "type: setUserStatusResponse\nid: presence-6970\ncode: 0"
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Heal.GenericHealthbarConst,/Game/Loki/Core/VFX/Abilities/Heal_Generic/GC_Heal_constant_generic.GC_Heal_constant_generic_C] when it already existed [GameplayCue.Ability.Heal.GenericHealthbarConst,/Game/Loki/Core/VFX/Antiheal/GC_Antiheal_Healthbar.GC_Antiheal_Healthbar_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.State.Slowed.General,/Game/Loki/Characters/Shared/Cues/Slowed/GC_StateSlowed.GC_StateSlowed_C] when it already existed [GameplayCue.State.Slowed.General,/Game/Loki/Characters/Shared/Cues/Slowed/GC_StateSlowed_Firefox.GC_StateSlowed_Firefox_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Event.Tau.RifleReady,/Game/Loki/Characters/Heroes/Sniper/GC_Sniper_SniperShot_RifleReady.GC_Sniper_SniperShot_RifleReady_C] when it already existed [GameplayCue.Event.Tau.RifleReady,/Game/Loki/Characters/Heroes/Sniper/Abilities/SniperShot/GC_DMR_Ready_Persist.GC_DMR_Ready_Persist_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.State.Grounded.Flex,/Game/Loki/Characters/Heroes/Flex/Cosmetics/Demoness/Abilities/Trickshot/GC_Grounded_Flex_Demoness.GC_Grounded_Flex_Demoness_C] when it already existed [GameplayCue.State.Grounded.Flex,/Game/Loki/Characters/Heroes/Flex/Cosmetics/Default/Abilities/Trickshot/GC_Grounded_Flex.GC_Grounded_Flex_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.State.Grounded.Flex,/Game/Loki/Characters/Heroes/Flex/Cosmetics/Demoness/Chromas/INF/Abilities/Trickshot/GC_Flex_ARCHD_INF_Grounded.GC_Flex_ARCHD_INF_Grounded_C] when it already existed [GameplayCue.State.Grounded.Flex,/Game/Loki/Characters/Heroes/Flex/Cosmetics/Default/Abilities/Trickshot/GC_Grounded_Flex.GC_Grounded_Flex_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.State.Grounded.Flex,/Game/Loki/Characters/Heroes/Flex/Cosmetics/Demoness/Chromas/PLA/Abilities/Trickshot/GC_Flex_ARCHD_PLA_Grounded.GC_Flex_ARCHD_PLA_Grounded_C] when it already existed [GameplayCue.State.Grounded.Flex,/Game/Loki/Characters/Heroes/Flex/Cosmetics/Default/Abilities/Trickshot/GC_Grounded_Flex.GC_Grounded_Flex_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.State.Grounded.Flex,/Game/Loki/Characters/Heroes/Flex/Cosmetics/Demoness/Chromas/PRI/Abilities/Trickshot/GC_Flex_ARCHD_PRI_Grounded.GC_Flex_ARCHD_PRI_Grounded_C] when it already existed [GameplayCue.State.Grounded.Flex,/Game/Loki/Characters/Heroes/Flex/Cosmetics/Default/Abilities/Trickshot/GC_Grounded_Flex.GC_Grounded_Flex_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Assault.RPGEpic.AnimCast,/Game/Loki/Characters/Heroes/Assault/Cosmetics/SpaceMarine/Abilities/MiniNuke/GC_Assault_SpaceMarine_MiniNuke_Cast.GC_Assault_SpaceMarine_MiniNuke_Cast_C] when it already existed [GameplayCue.Ability.Assault.RPGEpic.AnimCast,/Game/Loki/Characters/Heroes/Assault/Cosmetics/Default/MiniNuke/GC_Assault_MiniNuke_Cast.GC_Assault_MiniNuke_Cast_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Assault.RPGEpic.AnimCast,/Game/Loki/Characters/Heroes/Assault/Cosmetics/SpaceMarine/Chromas/CRI/Abilities/MiniNuke/GC_Assault_SpaceMarine_CRI_MiniNuke_Cast.GC_Assault_SpaceMarine_CRI_MiniNuke_Cast_C] when it already existed [GameplayCue.Ability.Assault.RPGEpic.AnimCast,/Game/Loki/Characters/Heroes/Assault/Cosmetics/Default/MiniNuke/GC_Assault_MiniNuke_Cast.GC_Assault_MiniNuke_Cast_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Beebo.SlingShot.Ice.Explosion,/Game/Loki/Characters/Heroes/Beebo/Abilities/SlingShot/Ice/GC_Beebo_Ice_Explosion_AoE.GC_Beebo_Ice_Explosion_AoE_C] when it already existed [GameplayCue.Ability.Beebo.SlingShot.Ice.Explosion,/Game/Loki/Characters/Heroes/Beebo/Abilities/SlingShot/Ice/GC_Beebo_Bomb_TimeOut.GC_Beebo_Bomb_TimeOut_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Assault.Beam.OffCooldown.BaseCosmetic,/Game/Loki/Characters/Heroes/BurstCaster/Abilities/Ult/GC_LaserUlt_OffCooldown.GC_LaserUlt_OffCooldown_C] when it already existed [GameplayCue.Ability.Assault.Beam.OffCooldown.BaseCosmetic,/Game/Loki/Characters/Heroes/Assault/Abilities/BeamUlt/GC_BeamUlt_OffCooldown.GC_BeamUlt_OffCooldown_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Weapon.OnAbilityHit.RefundMana,/Game/Loki/Core/LevelingPassives/OnAbilityHitManaBack/GC_OnAbilityHit_RefundMana.GC_OnAbilityHit_RefundMana_C] when it already existed [GameplayCue.Weapon.OnAbilityHit.RefundMana,/Game/Loki/Core/LevelingPassives/OnActivatePowerRefundCD/GC_OnPowerActivateRefundCD.GC_OnPowerActivateRefundCD_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Stalker.Combo.Sheen.StalkerDefault,/Game/Loki/Characters/Heroes/Stalker/Cosmetics/Default/Abilities/StalkerLMB/GC_Stalker_Default_Sheen_Instant.GC_Stalker_Default_Sheen_Instant_C] when it already existed [GameplayCue.Ability.Stalker.Combo.Sheen.StalkerDefault,/Game/Loki/Characters/Heroes/Stalker/Cosmetics/Default/VFX/LMB/GC_Stalker_Sheen_Instant_Default.GC_Stalker_Sheen_Instant_Default_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Stalker.AirSlash.Spin.StalkerDefault,/Game/Loki/Characters/Heroes/Stalker/Cosmetics/Default/Abilities/AirSlash/GC_Stalker_Default_AirSlash_Spin.GC_Stalker_Default_AirSlash_Spin_C] when it already existed [GameplayCue.Ability.Stalker.AirSlash.Spin.StalkerDefault,/Game/Loki/Characters/Heroes/Stalker/Cosmetics/Default/VFX/Q/GC_AirSlash_Spin_Default.GC_AirSlash_Spin_Default_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.ActionJump,/Game/Loki/Characters/Heroes/Sniper/Cosmetics/Phoenix/Abilities/SniperShot/GC_Sniper_LMB_Impact_SniperPhoenix.GC_Sniper_LMB_Impact_SniperPhoenix_C] when it already existed [GameplayCue.Ability.ActionJump,/Game/Loki/Characters/Shared/Abilities/ChargeJump/GC_ActionJump.GC_ActionJump_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.ShieldBot.DashAttack.OffCooldown.ShieldBot_SanctuarySentinel_SAC,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Chromas/SAC/Abilities/RMB/ActiveShield/GC_ShieldBot_SANCT_SAC_DashAttack_OffCooldown_Cosmetic_Default.GC_ShieldBot_SANCT_SAC_DashAttack_OffCooldown_Cosmetic_Default_C] when it already existed [GameplayCue.Ability.ShieldBot.DashAttack.OffCooldown.ShieldBot_SanctuarySentinel_SAC,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Chromas/SAC/Abilities/RMB/ShieldBash/GC_ShieldBot_SANCT_SAC_DashAttack_OffCooldown.GC_ShieldBot_SANCT_SAC_DashAttack_OffCooldown_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.ShieldBot.DashAttack.OffCooldown.ShieldBot_SanctuarySentinel_NIG,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Chromas/NIG/Abilities/RMB/ActiveShield/GC_ShieldBot_SANCT_NIG_DashAttack_OffCooldown_Cosmetic_Default.GC_ShieldBot_SANCT_NIG_DashAttack_OffCooldown_Cosmetic_Default_C] when it already existed [GameplayCue.Ability.ShieldBot.DashAttack.OffCooldown.ShieldBot_SanctuarySentinel_NIG,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Chromas/NIG/Abilities/RMB/ShieldBash/GC_ShieldBot_SANCT_NIG_DashAttack_OffCooldown.GC_ShieldBot_SANCT_NIG_DashAttack_OffCooldown_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.ShieldBot.DashAttack.OffCooldown.ShieldBot_SanctuarySentinel_FIE,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Chromas/FIE/Abilities/RMB/ActiveShield/GC_ShieldBot_SANCT_FIE_DashAttack_OffCooldown_Cosmetic_Default.GC_ShieldBot_SANCT_FIE_DashAttack_OffCooldown_Cosmetic_Default_C] when it already existed [GameplayCue.Ability.ShieldBot.DashAttack.OffCooldown.ShieldBot_SanctuarySentinel_FIE,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Chromas/FIE/Abilities/RMB/ShieldBash/GC_ShieldBot_SANCT_FIE_DashAttack_OffCooldown.GC_ShieldBot_SANCT_FIE_DashAttack_OffCooldown_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.ShieldBot.DashAttack.OffCooldown.ShieldBot_SanctuarySentinel,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Abilities/RMB/ActiveShield/GC_ShieldBot_SANCT_DashAttack_OffCooldown_Cosmetic_Default.GC_ShieldBot_SANCT_DashAttack_OffCooldown_Cosmetic_Default_C] when it already existed [GameplayCue.Ability.ShieldBot.DashAttack.OffCooldown.ShieldBot_SanctuarySentinel,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Abilities/RMB/ShieldBash/GC_ShieldBot_SANCT_DashAttack_OffCooldown.GC_ShieldBot_SANCT_DashAttack_OffCooldown_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Flash.OffCD,/Game/Loki/Characters/Heroes/Shared/Abilities/Flash/GC_Instant_HasFlash.GC_Instant_HasFlash_C] when it already existed [GameplayCue.Ability.Flash.OffCD,/Game/Loki/Characters/Heroes/Shared/Abilities/Flash/GC_HasFlash.GC_HasFlash_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Hook.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/HolyKnight/Abilities/Hook/GC_HookGuy_Hook_Impact_HellKnight_HOL.GC_HookGuy_Hook_Impact_HellKnight_HOL_C] when it already existed [GameplayCue.Ability.Hook.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/LUX/Abilities/Hook/GC_HookGuy_Hook_Impact_HellKnight_LUX.GC_HookGuy_Hook_Impact_HellKnight_LUX_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Hook.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/DeathKnight/Abilities/Hook/GC_HookGuy_Hook_Impact_HellKnight_DEA.GC_HookGuy_Hook_Impact_HellKnight_DEA_C] when it already existed [GameplayCue.Ability.Hook.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/LUX/Abilities/Hook/GC_HookGuy_Hook_Impact_HellKnight_LUX.GC_HookGuy_Hook_Impact_HellKnight_LUX_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Hook.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/BrimstoneKnight/Abilities/Hook/GC_HookGuy_Hook_Impact_HellKnight_BRI.GC_HookGuy_Hook_Impact_HellKnight_BRI_C] when it already existed [GameplayCue.Ability.Hook.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/LUX/Abilities/Hook/GC_HookGuy_Hook_Impact_HellKnight_LUX.GC_HookGuy_Hook_Impact_HellKnight_LUX_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Hook.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Abilities/Hook/GC_HookGuy_Hook_Impact_HellKnight.GC_HookGuy_Hook_Impact_HellKnight_C] when it already existed [GameplayCue.Ability.Hook.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/LUX/Abilities/Hook/GC_HookGuy_Hook_Impact_HellKnight_LUX.GC_HookGuy_Hook_Impact_HellKnight_LUX_C]. Skipping.
+LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.HookGuy.ChargeBlast.Fire,/Game/Loki/Characters/Heroes/HookGuy/Abilities/HookGuyChargeBlast/GC_HookGuy_ChargeBlast_Fire.GC_HookGuy_ChargeBlast_Fire_C] when it already existed [GameplayCue.Ability.HookGuy.ChargeBlast.Fire,/Game/Loki/Characters/Heroes/HookGuy/Abilities/HookGuyChargeBlast/GC_HookGuy_ChargeBlast_Fire_BaseCosmetic.GC_HookGuy_ChargeBlast_Fire_BaseCosmetic_C]. Skipping.
+LogLokiGameState: Display: Exiting game state BP_LoginGameState_C_2147482279
+LogStreaming: Display: 0.076 ms for processing 1902 objects in RemoveUnreachableObjects(Queued=0, Async=0). Removed 69 (3116->3047) packages and 356 (7652->7296) public exports.
+LogAudio: Display: Audio Device unregistered from world 'None'.
+LogAudio: Display: Audio Device (ID: 1) registered with world 'LVL_LobbyV2_Persistent'.
+LogGameState: Display: Lazily creating actor pool manager of type Class /Script/Engine.ActorPoolManager
+LogLokiGameState: Display: Entering game state BP_MainMenuGameState_C_2147479921
+LogBlueprintLogLibrary: Warning: Could not find default camera. Setting default camera to 
+LogActor: Warning: BP_LokiShipComputer_C /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.BP_LokiShipComputer_C_2147479827 has natively added scene component(s), but none of them were set as the actor's RootComponent - picking one arbitrarily
+LogViewport: Display: Viewport MouseLockMode Changed, DoNotLock -> LockAlways
+LogViewport: Display: Viewport HideCursorDuringCapture Changed, False -> True
+LogViewport: Display: Viewport MouseCaptureMode Changed, NoCapture -> CaptureDuringMouseDown
+LogViewport: Display: Viewport MouseCaptureMode Changed, CaptureDuringMouseDown -> NoCapture
+LogLokiPlayerState: Warning: [UIREADY] ALokiBaseController::BeginPlay (0.00)
+LogRHI: Warning: FShaderPipelineCache Loki completed 19487 tasks in 3.82s (37.20s wall time since intial open).
+LogStringTable: Warning: Failed to find string table entry for '/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Party/Latency/ST_ServerLocations.ST_ServerLocations' ''. Did you forget to add a string table redirector?
+LogStringTable: Warning: Failed to find string table entry for '/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Monetization/Shared/ST_Cosmetics_Categories.ST_Cosmetics_Categories' 'none'. Did you forget to add a string table redirector?
+LogStreamableManager: Display: RequestAsyncLoad() called with empty or only null assets!
+LogStreamableManager: Display: RequestAsyncLoad() called with empty or only null assets!
+LogStreamableManager: Display: RequestAsyncLoad() called with empty or only null assets!
+LogStreamableManager: Display: RequestAsyncLoad() called with empty or only null assets!
+LogStreamableManager: Display: RequestAsyncLoad() called with empty or only null assets!
+LogStreamableManager: Display: RequestAsyncLoad() called with empty or only null assets!
+LogStreamableManager: Display: RequestAsyncLoad() called with empty or only null assets!
+LogStreamableManager: Display: RequestAsyncLoad() called with empty or only null assets!
+LogAssetManager: Warning: Invalid Primary Asset Type : ChangeBundleStateForPrimaryAssets failed to find NameData
+#46 GET /mmr/leaderboard -> 200
+LogLokiPlayerState: Warning: [UIREADY] ALokiBaseController::TryUIReady (0.03)
+LogLokiPlayerState: Warning: [UIREADY] ALokiBaseController::TryUIReady SUCCESS (0.03)
+LogRHI: Display: FShaderPipelineCache starting pipeline cache 'Loki_usr' and enqueued 37 tasks for precompile. (cache contains 7841, 3648 eligible, 3611 had missing shaders. 0 already compiled). BatchSize 945 and BatchTime 16.000000.
+LogUIActionRouter: Display: Applying input config for leaf-most node [UI_CoreGameScreenRoot]
+LogUIActionRouter: Display: UIInputConfig being changed. bForceRefresh: 1
+LogUIActionRouter: Display: 	InputMode: Previous (None), New (ECommonInputMode::All)
+LogViewport: Display: Viewport HideCursorDuringCapture Changed, True -> False
+LogViewport: Display: Viewport MouseLockMode Changed, LockAlways -> DoNotLock
+LogUIActionRouter: Display: [User 0] No focus target for leaf-most node [UI_CoreGameScreenRoot], and the widget isn't focusable - focusing the game viewport.
+#47 GET /revival/banner/splash.png -> 200
+#48 GET /revival/banner/splash.png -> 200
+#49 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:40:44.067  WS <- /lobby TEXT "type: setUserStatusRequest\nid: presence-6732\navailability: online\nactivity: eyJhIjoiSW5NYXRjaCIsImNWIjoicmVsZWFzZTIuNC5saXZlLTE1NjQzMC1zaGlwcGluZyIsInBJZCI6InBhcnR5LTliOWQyYzg4N2UyNTI0ZjkxOGUzODNhODk1ZjJmMWMyIiwicFFzIjpbImJvdHMiXSwicE8iOjAsInBTIjoxLCJtUFMiOjMsInJrIjoxMiwicmtQIjoxODUwLCJyIjpbeyJxIjoidHV0b3JpYWxOZXciLCJyayI6MTIsInJrUCI6MTg1MH1dLCJhdklkIjoiU2xvdENvc21ldGljczpBVkFUQVJfQWxjaGVtaXN0SE0iLCJ0IjpbXSwiZHNJZCI6IiJ9\n"
+
+* 17:40:44.139  WS -> /lobby TEXT "type: setUserStatusResponse\nid: presence-6732\ncode: 0"
+LogRenderTargetPool: Warning: r.RenderTargetPoolMin exceeded 1035/1000 MB (ok in editor, bad on fixed memory platform)
+#50 GET /party/players/9b9d2c887e2524f918e383a895f2f1c2/voice -> 200
+
+* 17:40:44.181  WS <- /lobby TEXT "type: friendsStatusRequest\nid: presence-8471"
+#51 GET /storefront/battlepass/progressiontracks -> 200
+#52 GET /storefront/battlepass/progressiontracks -> 200
+#53 GET /storefront/battlepass/progressiontracks -> 200
+#54 GET /storefront/battlepass/progressiontracks -> 200
+#55 GET /storefront/battlepass/progressiontracks -> 200
+#56 GET /storefront/battlepass/progressiontracks -> 200
+#57 GET /storefront/battlepass/progressiontracks -> 200
+#58 GET /storefront/battlepass/progressiontracks -> 200
+#59 GET /storefront/battlepass/progressiontracks -> 200
+#60 GET /storefront/battlepass/progressiontracks -> 200
+#61 GET /storefront/battlepass/progressiontracks -> 200
+VivoxCore: Warning: req_account_anonymous_login failed for 20127:Access Token Service Unavailable
+#62 GET /storefront/battlepass/progressiontracks -> 200
+#63 GET /storefront/battlepass/progressiontracks -> 200
+#64 GET /storefront/battlepass/progressiontracks -> 200
+#65 GET /storefront/battlepass/progressiontracks -> 200
+#66 GET /storefront/battlepass/progressiontracks -> 200
+#67 GET /storefront/battlepass/progressiontracks -> 200
+LogRHI: Warning: FShaderPipelineCache Loki_usr completed 37 tasks in 0.00s (1.97s wall time since intial open).
+#68 GET /storefront/battlepass/progressiontracks -> 200
+#69 GET /storefront/battlepass/progressiontracks -> 200
+#70 GET /storefront/battlepass/progressiontracks -> 200
+#71 GET /storefront/battlepass/progressiontracks -> 200
+#72 GET /storefront/battlepass/progressiontracks -> 200
+#73 GET /storefront/battlepass/progressiontracks -> 200
+#74 GET /storefront/battlepass/progressiontracks -> 200
+#75 GET /storefront/battlepass/progressiontracks -> 200
+#76 GET /storefront/battlepass/progressiontracks -> 200
+#77 GET /storefront/battlepass/progressiontracks -> 200
+#78 GET /storefront/battlepass/progressiontracks -> 200
+#79 GET /storefront/battlepass/progressiontracks -> 200
+#80 GET /storefront/battlepass/progressiontracks -> 200
+#81 GET /storefront/battlepass/progressiontracks -> 200
+#82 GET /storefront/battlepass/progressiontracks -> 200
+#83 GET /storefront/battlepass/progressiontracks -> 200
+#84 GET /storefront/battlepass/progressiontracks -> 200
+#85 GET /storefront/battlepass/progressiontracks -> 200
+#86 GET /party/players/9b9d2c887e2524f918e383a895f2f1c2/voice -> 200
+#87 GET /storefront/battlepass/progressiontracks -> 200
+#88 GET /storefront/battlepass/progressiontracks -> 200
+#89 GET /storefront/battlepass/progressiontracks -> 200
+#90 GET /storefront/battlepass/progressiontracks -> 200
+#91 GET /storefront/battlepass/progressiontracks -> 200
+#92 GET /storefront/battlepass/progressiontracks -> 200
+#93 GET /storefront/battlepass/progressiontracks -> 200
+#94 GET /storefront/battlepass/progressiontracks -> 200
+#95 GET /storefront/battlepass/progressiontracks -> 200
+#96 GET /storefront/battlepass/progressiontracks -> 200
+#97 GET /storefront/battlepass/progressiontracks -> 200
+VivoxCore: Warning: req_account_anonymous_login failed for 20127:Access Token Service Unavailable
+#98 GET /storefront/battlepass/progressiontracks -> 200
+#99 GET /storefront/battlepass/progressiontracks -> 200
+#100 GET /storefront/battlepass/progressiontracks -> 200
+#101 GET /storefront/battlepass/progressiontracks -> 200
+#102 GET /storefront/battlepass/progressiontracks -> 200
+#103 GET /storefront/battlepass/progressiontracks -> 200
+#104 GET /storefront/battlepass/progressiontracks -> 200
+#105 GET /storefront/battlepass/progressiontracks -> 200
+#106 GET /storefront/battlepass/progressiontracks -> 200
+#107 GET /storefront/battlepass/progressiontracks -> 200
+#108 GET /storefront/battlepass/progressiontracks -> 200
+#109 GET /storefront/battlepass/progressiontracks -> 200
+#110 GET /storefront/battlepass/progressiontracks -> 200
+#111 GET /storefront/battlepass/progressiontracks -> 200
+#112 GET /storefront/battlepass/progressiontracks -> 200
+#113 GET /storefront/battlepass/progressiontracks -> 200
+#114 GET /storefront/battlepass/progressiontracks -> 200
+#115 GET /storefront/battlepass/progressiontracks -> 200
+#116 GET /storefront/battlepass/progressiontracks -> 200
+#117 GET /storefront/battlepass/progressiontracks -> 200
+#118 GET /storefront/battlepass/progressiontracks -> 200
+#119 GET /storefront/battlepass/progressiontracks -> 200
+#120 GET /storefront/battlepass/progressiontracks -> 200
+#121 GET /storefront/battlepass/progressiontracks -> 200
+#122 GET /storefront/battlepass/progressiontracks -> 200
+#123 GET /storefront/battlepass/progressiontracks -> 200
+#124 GET /storefront/battlepass/progressiontracks -> 200
+#125 GET /storefront/battlepass/progressiontracks -> 200
+#126 GET /storefront/battlepass/progressiontracks -> 200
+#127 GET /storefront/battlepass/progressiontracks -> 200
+#128 GET /storefront/battlepass/progressiontracks -> 200
+#129 GET /storefront/battlepass/progressiontracks -> 200
+#130 GET /storefront/battlepass/progressiontracks -> 200
+#131 GET /storefront/battlepass/progressiontracks -> 200
+#132 GET /storefront/battlepass/progressiontracks -> 200
+#133 GET /storefront/battlepass/progressiontracks -> 200
+#134 GET /storefront/battlepass/progressiontracks -> 200
+#135 GET /storefront/battlepass/progressiontracks -> 200
+#136 GET /storefront/battlepass/progressiontracks -> 200
+#137 GET /storefront/battlepass/progressiontracks -> 200
+#138 GET /storefront/battlepass/progressiontracks -> 200
+#139 GET /storefront/battlepass/progressiontracks -> 200
+#140 GET /storefront/battlepass/progressiontracks -> 200
+#141 GET /storefront/battlepass/progressiontracks -> 200
+#142 GET /storefront/battlepass/progressiontracks -> 200
+#143 GET /storefront/battlepass/progressiontracks -> 200
+#144 GET /storefront/battlepass/progressiontracks -> 200
+#145 GET /storefront/battlepass/progressiontracks -> 200
+#146 GET /storefront/battlepass/progressiontracks -> 200
+#147 GET /storefront/battlepass/progressiontracks -> 200
+#148 GET /storefront/battlepass/progressiontracks -> 200
+#149 GET /storefront/battlepass/progressiontracks -> 200
+#150 GET /storefront/battlepass/progressiontracks -> 200
+#151 GET /storefront/battlepass/progressiontracks -> 200
+#152 GET /storefront/battlepass/progressiontracks -> 200
+#153 GET /party/players/9b9d2c887e2524f918e383a895f2f1c2/voice -> 200
+#154 GET /storefront/battlepass/progressiontracks -> 200
+#155 GET /storefront/battlepass/progressiontracks -> 200
+#156 GET /storefront/battlepass/progressiontracks -> 200
+LogTexture: Error: Loading non-streamed mips from an external bulk file.  This is not desireable.  File 32b20fb18c381e2c00000002
+#157 GET /storefront/battlepass/progressiontracks -> 200
+#158 GET /storefront/battlepass/progressiontracks -> 200
+#159 GET /storefront/battlepass/progressiontracks -> 200
+#160 GET /storefront/battlepass/progressiontracks -> 200
+#161 GET /storefront/battlepass/progressiontracks -> 200
+#162 GET /storefront/battlepass/progressiontracks -> 200
+#163 GET /storefront/battlepass/progressiontracks -> 200
+#164 GET /storefront/battlepass/progressiontracks -> 200
+#165 GET /storefront/battlepass/progressiontracks -> 200
+#166 GET /storefront/battlepass/progressiontracks -> 200
+#167 GET /storefront/battlepass/progressiontracks -> 200
+#168 GET /storefront/battlepass/progressiontracks -> 200
+#169 GET /storefront/battlepass/progressiontracks -> 200
+#170 GET /storefront/battlepass/progressiontracks -> 200
+#171 GET /storefront/battlepass/progressiontracks -> 200
+#172 GET /storefront/battlepass/progressiontracks -> 200
+#173 GET /storefront/battlepass/progressiontracks -> 200
+#174 GET /storefront/battlepass/progressiontracks -> 200
+#175 GET /storefront/battlepass/progressiontracks -> 200
+#176 GET /storefront/battlepass/progressiontracks -> 200
+#177 GET /storefront/battlepass/progressiontracks -> 200
+#178 GET /storefront/battlepass/progressiontracks -> 200
+#179 GET /storefront/battlepass/progressiontracks -> 200
+#180 GET /storefront/battlepass/progressiontracks -> 200
+#181 GET /storefront/battlepass/progressiontracks -> 200
+#182 GET /storefront/battlepass/progressiontracks -> 200
+#183 GET /storefront/battlepass/progressiontracks -> 200
+#184 GET /storefront/battlepass/progressiontracks -> 200
+#185 GET /storefront/battlepass/progressiontracks -> 200
+#186 GET /storefront/battlepass/progressiontracks -> 200
+#187 GET /storefront/battlepass/progressiontracks -> 200
+#188 GET /storefront/battlepass/progressiontracks -> 200
+#189 GET /storefront/battlepass/progressiontracks -> 200
+#190 GET /storefront/battlepass/progressiontracks -> 200
+#191 GET /storefront/battlepass/progressiontracks -> 200
+#192 GET /storefront/battlepass/progressiontracks -> 200
+#193 GET /storefront/battlepass/progressiontracks -> 200
+#194 GET /storefront/battlepass/progressiontracks -> 200
+#195 GET /storefront/battlepass/progressiontracks -> 200
+#196 GET /storefront/battlepass/progressiontracks -> 200
+#197 GET /storefront/battlepass/progressiontracks -> 200
+#198 GET /storefront/battlepass/progressiontracks -> 200
+#199 GET /storefront/battlepass/progressiontracks -> 200
+#200 GET /storefront/battlepass/progressiontracks -> 200
+#201 GET /storefront/battlepass/progressiontracks -> 200
+#202 GET /storefront/battlepass/progressiontracks -> 200
+#203 GET /storefront/battlepass/progressiontracks -> 200
+#204 GET /storefront/battlepass/progressiontracks -> 200
+#205 GET /storefront/battlepass/progressiontracks -> 200
+#206 GET /storefront/battlepass/progressiontracks -> 200
+#207 GET /storefront/battlepass/progressiontracks -> 200
+#208 GET /storefront/battlepass/progressiontracks -> 200
+#209 GET /storefront/battlepass/progressiontracks -> 200
+#210 GET /storefront/battlepass/progressiontracks -> 200
+#211 GET /storefront/battlepass/progressiontracks -> 200
+#212 GET /storefront/battlepass/progressiontracks -> 200
+#213 GET /storefront/battlepass/progressiontracks -> 200
+#214 GET /storefront/battlepass/progressiontracks -> 200
+#215 GET /storefront/battlepass/progressiontracks -> 200
+#216 GET /storefront/battlepass/progressiontracks -> 200
+#217 GET /storefront/battlepass/progressiontracks -> 200
+#218 GET /storefront/battlepass/progressiontracks -> 200
+#219 GET /storefront/battlepass/progressiontracks -> 200
+#220 GET /storefront/battlepass/progressiontracks -> 200
+#221 GET /storefront/battlepass/progressiontracks -> 200
+#222 GET /storefront/battlepass/progressiontracks -> 200
+#223 GET /storefront/battlepass/progressiontracks -> 200
+#224 GET /storefront/battlepass/progressiontracks -> 200
+#225 GET /storefront/battlepass/progressiontracks -> 200
+#226 GET /storefront/battlepass/progressiontracks -> 200
+#227 GET /storefront/battlepass/progressiontracks -> 200
+#228 GET /storefront/battlepass/progressiontracks -> 200
+#229 GET /storefront/battlepass/progressiontracks -> 200
+#230 GET /storefront/battlepass/progressiontracks -> 200
+#231 GET /storefront/battlepass/progressiontracks -> 200
+#232 GET /storefront/battlepass/progressiontracks -> 200
+#233 GET /storefront/battlepass/progressiontracks -> 200
+#234 GET /storefront/battlepass/progressiontracks -> 200
+#235 GET /storefront/battlepass/progressiontracks -> 200
+#236 GET /storefront/battlepass/progressiontracks -> 200
+#237 GET /storefront/battlepass/progressiontracks -> 200
+#238 GET /storefront/battlepass/progressiontracks -> 200
+#239 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:40:57.729  WS -> /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 BINARY hb (proactive 30s keepalive)
+#240 GET /storefront/battlepass/progressiontracks -> 200
+#241 GET /storefront/battlepass/progressiontracks -> 200
+#242 GET /storefront/battlepass/progressiontracks -> 200
+#243 GET /storefront/battlepass/progressiontracks -> 200
+#244 GET /storefront/battlepass/progressiontracks -> 200
+#245 GET /storefront/battlepass/progressiontracks -> 200
+#246 GET /storefront/battlepass/progressiontracks -> 200
+LogSkeletalMesh: Display: OnRegister[/Game/Loki/Characters/Heroes/Ronin/Modeling/Default/SK_Ronin_Default.SK_Ronin_Default]: [ClothingSimulationFactoryNv] is currently unable to provide a fully functional simulation for each of this SkeletalMesh's clothing assets.
+LogSkeletalMesh: Display: OnRegister[/Game/Loki/Characters/Heroes/Ronin/Modeling/Default/SK_Ronin_Default.SK_Ronin_Default]: The ClothingSimulationFactory property will now be automatically updated to use the most functional simulation that can be found.
+#247 GET /storefront/battlepass/progressiontracks -> 200
+#248 GET /storefront/battlepass/progressiontracks -> 200
+#249 GET /storefront/battlepass/progressiontracks -> 200
+#250 GET /storefront/battlepass/progressiontracks -> 200
+#251 GET /storefront/battlepass/progressiontracks -> 200
+#252 GET /storefront/battlepass/progressiontracks -> 200
+#253 GET /storefront/battlepass/progressiontracks -> 200
+#254 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:40:58.667  WS <- /lobby TEXT ""
+#255 GET /storefront/battlepass/progressiontracks -> 200
+#256 GET /storefront/battlepass/progressiontracks -> 200
+#257 GET /storefront/battlepass/progressiontracks -> 200
+#258 GET /storefront/battlepass/progressiontracks -> 200
+#259 GET /storefront/battlepass/progressiontracks -> 200
+#260 GET /storefront/battlepass/progressiontracks -> 200
+#261 GET /storefront/battlepass/progressiontracks -> 200
+#262 GET /storefront/battlepass/progressiontracks -> 200
+#263 GET /storefront/battlepass/progressiontracks -> 200
+#264 GET /storefront/battlepass/progressiontracks -> 200
+#265 GET /storefront/battlepass/progressiontracks -> 200
+#266 GET /storefront/battlepass/progressiontracks -> 200
+#267 GET /storefront/battlepass/progressiontracks -> 200
+#268 GET /storefront/battlepass/progressiontracks -> 200
+#269 GET /storefront/battlepass/progressiontracks -> 200
+#270 GET /storefront/battlepass/progressiontracks -> 200
+#271 GET /storefront/battlepass/progressiontracks -> 200
+#272 GET /storefront/battlepass/progressiontracks -> 200
+#273 GET /storefront/battlepass/progressiontracks -> 200
+#274 GET /storefront/battlepass/progressiontracks -> 200
+#275 GET /storefront/battlepass/progressiontracks -> 200
+#276 GET /storefront/battlepass/progressiontracks -> 200
+#277 GET /storefront/battlepass/progressiontracks -> 200
+#278 GET /storefront/battlepass/progressiontracks -> 200
+#279 GET /storefront/battlepass/progressiontracks -> 200
+#280 GET /storefront/battlepass/progressiontracks -> 200
+#281 GET /storefront/battlepass/progressiontracks -> 200
+#282 GET /storefront/battlepass/progressiontracks -> 200
+#283 GET /storefront/battlepass/progressiontracks -> 200
+#284 GET /storefront/battlepass/progressiontracks -> 200
+#285 GET /storefront/battlepass/progressiontracks -> 200
+#286 GET /storefront/battlepass/progressiontracks -> 200
+#287 GET /storefront/battlepass/progressiontracks -> 200
+#288 GET /storefront/battlepass/progressiontracks -> 200
+#289 GET /storefront/battlepass/progressiontracks -> 200
+#290 GET /storefront/battlepass/progressiontracks -> 200
+#291 GET /storefront/battlepass/progressiontracks -> 200
+#292 GET /storefront/battlepass/progressiontracks -> 200
+#293 GET /storefront/battlepass/progressiontracks -> 200
+#294 GET /storefront/battlepass/progressiontracks -> 200
+#295 GET /storefront/battlepass/progressiontracks -> 200
+#296 GET /storefront/battlepass/progressiontracks -> 200
+#297 GET /storefront/battlepass/progressiontracks -> 200
+#298 GET /storefront/battlepass/progressiontracks -> 200
+#299 GET /storefront/battlepass/progressiontracks -> 200
+#300 GET /storefront/battlepass/progressiontracks -> 200
+#301 GET /storefront/battlepass/progressiontracks -> 200
+#302 GET /storefront/battlepass/progressiontracks -> 200
+#303 GET /storefront/battlepass/progressiontracks -> 200
+#304 GET /storefront/battlepass/progressiontracks -> 200
+#305 GET /storefront/battlepass/progressiontracks -> 200
+#306 GET /storefront/battlepass/progressiontracks -> 200
+#307 GET /storefront/battlepass/progressiontracks -> 200
+#308 GET /storefront/battlepass/progressiontracks -> 200
+#309 GET /storefront/battlepass/progressiontracks -> 200
+#310 GET /storefront/battlepass/progressiontracks -> 200
+#311 GET /storefront/battlepass/progressiontracks -> 200
+#312 GET /storefront/battlepass/progressiontracks -> 200
+#313 GET /storefront/battlepass/progressiontracks -> 200
+#314 GET /storefront/battlepass/progressiontracks -> 200
+#315 GET /storefront/battlepass/progressiontracks -> 200
+#316 GET /storefront/battlepass/progressiontracks -> 200
+#317 GET /storefront/battlepass/progressiontracks -> 200
+#318 GET /storefront/battlepass/progressiontracks -> 200
+#319 GET /storefront/battlepass/progressiontracks -> 200
+#320 GET /storefront/battlepass/progressiontracks -> 200
+#321 GET /storefront/battlepass/progressiontracks -> 200
+#322 GET /storefront/battlepass/progressiontracks -> 200
+#323 GET /storefront/battlepass/progressiontracks -> 200
+#324 GET /storefront/battlepass/progressiontracks -> 200
+#325 GET /storefront/battlepass/progressiontracks -> 200
+#326 GET /storefront/battlepass/progressiontracks -> 200
+#327 GET /storefront/battlepass/progressiontracks -> 200
+#328 GET /storefront/battlepass/progressiontracks -> 200
+#329 GET /storefront/battlepass/progressiontracks -> 200
+#330 GET /storefront/battlepass/progressiontracks -> 200
+#331 GET /storefront/battlepass/progressiontracks -> 200
+#332 GET /storefront/battlepass/progressiontracks -> 200
+#333 GET /storefront/battlepass/progressiontracks -> 200
+#334 GET /storefront/battlepass/progressiontracks -> 200
+#335 GET /storefront/battlepass/progressiontracks -> 200
+#336 GET /storefront/battlepass/progressiontracks -> 200
+#337 GET /storefront/battlepass/progressiontracks -> 200
+#338 GET /storefront/battlepass/progressiontracks -> 200
+#339 GET /storefront/battlepass/progressiontracks -> 200
+#340 GET /storefront/battlepass/progressiontracks -> 200
+#341 GET /storefront/battlepass/progressiontracks -> 200
+#342 GET /storefront/battlepass/progressiontracks -> 200
+#343 GET /storefront/battlepass/progressiontracks -> 200
+#344 GET /storefront/battlepass/progressiontracks -> 200
+#345 GET /storefront/battlepass/progressiontracks -> 200
+#346 GET /storefront/battlepass/progressiontracks -> 200
+#347 GET /storefront/battlepass/progressiontracks -> 200
+#348 GET /storefront/battlepass/progressiontracks -> 200
+#349 GET /storefront/battlepass/progressiontracks -> 200
+#350 GET /storefront/battlepass/progressiontracks -> 200
+#351 GET /storefront/battlepass/progressiontracks -> 200
+#352 GET /storefront/battlepass/progressiontracks -> 200
+#353 GET /storefront/battlepass/progressiontracks -> 200
+#354 GET /storefront/battlepass/progressiontracks -> 200
+#355 GET /storefront/battlepass/progressiontracks -> 200
+#356 GET /storefront/battlepass/progressiontracks -> 200
+#357 GET /storefront/battlepass/progressiontracks -> 200
+#358 GET /storefront/battlepass/progressiontracks -> 200
+#359 GET /storefront/battlepass/progressiontracks -> 200
+#360 GET /storefront/battlepass/progressiontracks -> 200
+#361 GET /storefront/battlepass/progressiontracks -> 200
+#362 GET /storefront/battlepass/progressiontracks -> 200
+#363 GET /storefront/battlepass/progressiontracks -> 200
+#364 GET /storefront/battlepass/progressiontracks -> 200
+#365 GET /storefront/battlepass/progressiontracks -> 200
+#366 GET /storefront/battlepass/progressiontracks -> 200
+#367 GET /storefront/battlepass/progressiontracks -> 200
+#368 GET /storefront/battlepass/progressiontracks -> 200
+#369 GET /storefront/battlepass/progressiontracks -> 200
+#370 GET /storefront/battlepass/progressiontracks -> 200
+#371 GET /storefront/battlepass/progressiontracks -> 200
+#372 GET /storefront/battlepass/progressiontracks -> 200
+#373 GET /storefront/battlepass/progressiontracks -> 200
+#374 GET /storefront/battlepass/progressiontracks -> 200
+#375 GET /storefront/battlepass/progressiontracks -> 200
+#376 GET /storefront/battlepass/progressiontracks -> 200
+#377 GET /storefront/battlepass/progressiontracks -> 200
+#378 GET /storefront/battlepass/progressiontracks -> 200
+#379 GET /storefront/battlepass/progressiontracks -> 200
+#380 GET /storefront/battlepass/progressiontracks -> 200
+#381 GET /storefront/battlepass/progressiontracks -> 200
+#382 GET /storefront/battlepass/progressiontracks -> 200
+#383 GET /storefront/battlepass/progressiontracks -> 200
+#384 GET /storefront/battlepass/progressiontracks -> 200
+#385 GET /storefront/battlepass/progressiontracks -> 200
+#386 GET /storefront/battlepass/progressiontracks -> 200
+#387 GET /storefront/battlepass/progressiontracks -> 200
+#388 GET /storefront/battlepass/progressiontracks -> 200
+#389 GET /storefront/battlepass/progressiontracks -> 200
+#390 GET /storefront/battlepass/progressiontracks -> 200
+#391 GET /storefront/battlepass/progressiontracks -> 200
+#392 GET /storefront/battlepass/progressiontracks -> 200
+#393 GET /storefront/battlepass/progressiontracks -> 200
+#394 GET /storefront/battlepass/progressiontracks -> 200
+#395 GET /storefront/battlepass/progressiontracks -> 200
+#396 GET /storefront/battlepass/progressiontracks -> 200
+#397 GET /storefront/battlepass/progressiontracks -> 200
+#398 GET /storefront/battlepass/progressiontracks -> 200
+#399 GET /storefront/battlepass/progressiontracks -> 200
+#400 GET /storefront/battlepass/progressiontracks -> 200
+#401 GET /storefront/battlepass/progressiontracks -> 200
+#402 GET /storefront/battlepass/progressiontracks -> 200
+#403 GET /storefront/battlepass/progressiontracks -> 200
+#404 GET /storefront/battlepass/progressiontracks -> 200
+#405 GET /storefront/battlepass/progressiontracks -> 200
+#406 GET /storefront/battlepass/progressiontracks -> 200
+#407 GET /storefront/battlepass/progressiontracks -> 200
+#408 GET /storefront/battlepass/progressiontracks -> 200
+#409 GET /storefront/battlepass/progressiontracks -> 200
+#410 GET /storefront/battlepass/progressiontracks -> 200
+#411 GET /storefront/battlepass/progressiontracks -> 200
+#412 GET /storefront/battlepass/progressiontracks -> 200
+#413 GET /storefront/battlepass/progressiontracks -> 200
+#414 GET /storefront/battlepass/progressiontracks -> 200
+#415 GET /storefront/battlepass/progressiontracks -> 200
+#416 GET /storefront/battlepass/progressiontracks -> 200
+#417 GET /storefront/battlepass/progressiontracks -> 200
+#418 GET /storefront/battlepass/progressiontracks -> 200
+#419 GET /storefront/battlepass/progressiontracks -> 200
+#420 GET /storefront/battlepass/progressiontracks -> 200
+#421 GET /storefront/battlepass/progressiontracks -> 200
+#422 GET /storefront/battlepass/progressiontracks -> 200
+#423 GET /storefront/battlepass/progressiontracks -> 200
+#424 GET /storefront/battlepass/progressiontracks -> 200
+#425 GET /storefront/battlepass/progressiontracks -> 200
+#426 GET /storefront/battlepass/progressiontracks -> 200
+#427 GET /storefront/battlepass/progressiontracks -> 200
+#428 GET /storefront/battlepass/progressiontracks -> 200
+#429 GET /storefront/battlepass/progressiontracks -> 200
+#430 GET /storefront/battlepass/progressiontracks -> 200
+#431 GET /storefront/battlepass/progressiontracks -> 200
+#432 GET /storefront/battlepass/progressiontracks -> 200
+#433 GET /storefront/battlepass/progressiontracks -> 200
+#434 GET /storefront/battlepass/progressiontracks -> 200
+#435 GET /storefront/battlepass/progressiontracks -> 200
+#436 GET /storefront/battlepass/progressiontracks -> 200
+#437 GET /storefront/battlepass/progressiontracks -> 200
+#438 GET /storefront/battlepass/progressiontracks -> 200
+#439 GET /storefront/battlepass/progressiontracks -> 200
+#440 GET /storefront/battlepass/progressiontracks -> 200
+#441 GET /storefront/battlepass/progressiontracks -> 200
+#442 GET /storefront/battlepass/progressiontracks -> 200
+#443 GET /storefront/battlepass/progressiontracks -> 200
+#444 GET /storefront/battlepass/progressiontracks -> 200
+#445 GET /storefront/battlepass/progressiontracks -> 200
+#446 GET /storefront/battlepass/progressiontracks -> 200
+#447 GET /configuration/client -> 200
+#448 GET /storefront/battlepass/progressiontracks -> 200
+#449 GET /content-service/manifest/release2.4.live-156430-shipping -> 200
+#450 GET /storefront/battlepass/progressiontracks -> 200
+#451 GET /storefront/battlepass/progressiontracks -> 200
+#452 GET /party/matchmaking/info -> 200
+#453 GET /storefront/battlepass/progressiontracks -> 200
+#454 GET /storefront/battlepass/progressiontracks -> 200
+#455 GET /storefront/battlepass/progressiontracks -> 200
+#456 GET /storefront/battlepass/progressiontracks -> 200
+#457 GET /storefront/battlepass/progressiontracks -> 200
+#458 GET /storefront/battlepass/progressiontracks -> 200
+#459 GET /storefront/battlepass/progressiontracks -> 200
+#460 GET /storefront/battlepass/progressiontracks -> 200
+#461 GET /storefront/battlepass/progressiontracks -> 200
+#462 GET /storefront/battlepass/progressiontracks -> 200
+#463 GET /storefront/battlepass/progressiontracks -> 200
+#464 GET /storefront/battlepass/progressiontracks -> 200
+#465 POST /party/parties/party-9b9d2c887e2524f918e383a895f2f1c2/members/9b9d2c887e2524f918e383a895f2f1c2/latencies -> 200
+#466 GET /storefront/battlepass/progressiontracks -> 200
+#467 GET /storefront/battlepass/progressiontracks -> 200
+#468 GET /storefront/battlepass/progressiontracks -> 200
+#469 GET /storefront/battlepass/progressiontracks -> 200
+#470 GET /storefront/battlepass/progressiontracks -> 200
+#471 GET /storefront/battlepass/progressiontracks -> 200
+#472 GET /storefront/battlepass/progressiontracks -> 200
+#473 GET /storefront/battlepass/progressiontracks -> 200
+#474 GET /storefront/battlepass/progressiontracks -> 200
+#475 GET /storefront/battlepass/progressiontracks -> 200
+#476 GET /storefront/battlepass/progressiontracks -> 200
+#477 GET /storefront/battlepass/progressiontracks -> 200
+#478 GET /storefront/battlepass/progressiontracks -> 200
+#479 GET /storefront/battlepass/progressiontracks -> 200
+#480 GET /storefront/battlepass/progressiontracks -> 200
+#481 GET /storefront/battlepass/progressiontracks -> 200
+#482 GET /storefront/battlepass/progressiontracks -> 200
+#483 GET /storefront/battlepass/progressiontracks -> 200
+#484 GET /storefront/battlepass/progressiontracks -> 200
+#485 GET /storefront/battlepass/progressiontracks -> 200
+#486 GET /storefront/battlepass/progressiontracks -> 200
+#487 GET /storefront/battlepass/progressiontracks -> 200
+#488 GET /storefront/battlepass/progressiontracks -> 200
+#489 GET /storefront/battlepass/progressiontracks -> 200
+#490 GET /storefront/battlepass/progressiontracks -> 200
+#491 GET /storefront/battlepass/progressiontracks -> 200
+#492 GET /storefront/battlepass/progressiontracks -> 200
+#493 GET /storefront/battlepass/progressiontracks -> 200
+#494 GET /storefront/battlepass/progressiontracks -> 200
+#495 GET /storefront/battlepass/progressiontracks -> 200
+#496 GET /storefront/battlepass/progressiontracks -> 200
+#497 GET /storefront/battlepass/progressiontracks -> 200
+#498 GET /storefront/battlepass/progressiontracks -> 200
+#499 GET /storefront/battlepass/progressiontracks -> 200
+#500 GET /storefront/battlepass/progressiontracks -> 200
+#501 GET /storefront/battlepass/progressiontracks -> 200
+#502 GET /storefront/battlepass/progressiontracks -> 200
+#503 GET /storefront/battlepass/progressiontracks -> 200
+#504 GET /storefront/battlepass/progressiontracks -> 200
+#505 GET /storefront/battlepass/progressiontracks -> 200
+#506 GET /storefront/battlepass/progressiontracks -> 200
+#507 GET /storefront/battlepass/progressiontracks -> 200
+#508 GET /storefront/battlepass/progressiontracks -> 200
+#509 GET /storefront/battlepass/progressiontracks -> 200
+#510 GET /storefront/battlepass/progressiontracks -> 200
+#511 GET /storefront/battlepass/progressiontracks -> 200
+#512 GET /storefront/battlepass/progressiontracks -> 200
+#513 GET /storefront/battlepass/progressiontracks -> 200
+#514 GET /storefront/battlepass/progressiontracks -> 200
+#515 GET /storefront/battlepass/progressiontracks -> 200
+#516 GET /storefront/battlepass/progressiontracks -> 200
+#517 GET /storefront/battlepass/progressiontracks -> 200
+#518 GET /storefront/battlepass/progressiontracks -> 200
+#519 GET /storefront/battlepass/progressiontracks -> 200
+#520 GET /storefront/battlepass/progressiontracks -> 200
+#521 GET /storefront/battlepass/progressiontracks -> 200
+#522 GET /storefront/battlepass/progressiontracks -> 200
+#523 GET /storefront/battlepass/progressiontracks -> 200
+#524 GET /storefront/battlepass/progressiontracks -> 200
+#525 GET /storefront/battlepass/progressiontracks -> 200
+#526 GET /storefront/battlepass/progressiontracks -> 200
+#527 GET /storefront/battlepass/progressiontracks -> 200
+#528 GET /storefront/battlepass/progressiontracks -> 200
+#529 GET /storefront/battlepass/progressiontracks -> 200
+#530 GET /storefront/battlepass/progressiontracks -> 200
+#531 GET /storefront/battlepass/progressiontracks -> 200
+#532 GET /storefront/battlepass/progressiontracks -> 200
+#533 GET /storefront/battlepass/progressiontracks -> 200
+#534 GET /storefront/battlepass/progressiontracks -> 200
+#535 GET /storefront/battlepass/progressiontracks -> 200
+#536 GET /storefront/battlepass/progressiontracks -> 200
+#537 GET /storefront/battlepass/progressiontracks -> 200
+#538 GET /storefront/battlepass/progressiontracks -> 200
+#539 GET /storefront/battlepass/progressiontracks -> 200
+#540 GET /storefront/battlepass/progressiontracks -> 200
+#541 GET /storefront/battlepass/progressiontracks -> 200
+#542 GET /storefront/battlepass/progressiontracks -> 200
+#543 GET /storefront/battlepass/progressiontracks -> 200
+#544 GET /storefront/battlepass/progressiontracks -> 200
+#545 GET /storefront/battlepass/progressiontracks -> 200
+#546 GET /storefront/battlepass/progressiontracks -> 200
+#547 GET /storefront/battlepass/progressiontracks -> 200
+#548 GET /storefront/battlepass/progressiontracks -> 200
+#549 GET /storefront/battlepass/progressiontracks -> 200
+#550 GET /storefront/battlepass/progressiontracks -> 200
+#551 GET /storefront/battlepass/progressiontracks -> 200
+#552 GET /storefront/battlepass/progressiontracks -> 200
+#553 GET /storefront/battlepass/progressiontracks -> 200
+#554 GET /storefront/battlepass/progressiontracks -> 200
+#555 GET /storefront/battlepass/progressiontracks -> 200
+#556 GET /storefront/battlepass/progressiontracks -> 200
+#557 GET /storefront/battlepass/progressiontracks -> 200
+#558 GET /storefront/battlepass/progressiontracks -> 200
+#559 GET /storefront/battlepass/progressiontracks -> 200
+#560 GET /storefront/battlepass/progressiontracks -> 200
+#561 GET /storefront/battlepass/progressiontracks -> 200
+#562 GET /storefront/battlepass/progressiontracks -> 200
+#563 GET /storefront/battlepass/progressiontracks -> 200
+#564 GET /storefront/battlepass/progressiontracks -> 200
+#565 GET /storefront/battlepass/progressiontracks -> 200
+#566 GET /storefront/battlepass/progressiontracks -> 200
+#567 GET /storefront/battlepass/progressiontracks -> 200
+#568 GET /storefront/battlepass/progressiontracks -> 200
+#569 GET /storefront/battlepass/progressiontracks -> 200
+#570 GET /storefront/battlepass/progressiontracks -> 200
+#571 GET /storefront/battlepass/progressiontracks -> 200
+#572 GET /storefront/battlepass/progressiontracks -> 200
+#573 GET /storefront/battlepass/progressiontracks -> 200
+#574 GET /storefront/battlepass/progressiontracks -> 200
+#575 GET /storefront/battlepass/progressiontracks -> 200
+#576 GET /storefront/battlepass/progressiontracks -> 200
+#577 GET /storefront/battlepass/progressiontracks -> 200
+#578 GET /storefront/battlepass/progressiontracks -> 200
+#579 GET /storefront/battlepass/progressiontracks -> 200
+#580 GET /storefront/battlepass/progressiontracks -> 200
+#581 GET /storefront/battlepass/progressiontracks -> 200
+#582 GET /storefront/battlepass/progressiontracks -> 200
+#583 GET /storefront/battlepass/progressiontracks -> 200
+#584 GET /storefront/battlepass/progressiontracks -> 200
+#585 GET /storefront/battlepass/progressiontracks -> 200
+#586 GET /storefront/battlepass/progressiontracks -> 200
+#587 GET /storefront/battlepass/progressiontracks -> 200
+#588 GET /storefront/battlepass/progressiontracks -> 200
+#589 GET /storefront/battlepass/progressiontracks -> 200
+#590 GET /storefront/battlepass/progressiontracks -> 200
+#591 GET /storefront/battlepass/progressiontracks -> 200
+#592 GET /storefront/battlepass/progressiontracks -> 200
+#593 GET /storefront/battlepass/progressiontracks -> 200
+#594 GET /storefront/battlepass/progressiontracks -> 200
+#595 GET /storefront/battlepass/progressiontracks -> 200
+#596 GET /storefront/battlepass/progressiontracks -> 200
+#597 GET /storefront/battlepass/progressiontracks -> 200
+#598 GET /storefront/battlepass/progressiontracks -> 200
+#599 GET /storefront/battlepass/progressiontracks -> 200
+#600 GET /storefront/battlepass/progressiontracks -> 200
+#601 GET /storefront/battlepass/progressiontracks -> 200
+#602 GET /storefront/battlepass/progressiontracks -> 200
+#603 GET /storefront/battlepass/progressiontracks -> 200
+#604 GET /storefront/battlepass/progressiontracks -> 200
+#605 GET /storefront/battlepass/progressiontracks -> 200
+#606 GET /storefront/battlepass/progressiontracks -> 200
+#607 GET /storefront/battlepass/progressiontracks -> 200
+#608 GET /storefront/battlepass/progressiontracks -> 200
+#609 GET /storefront/battlepass/progressiontracks -> 200
+#610 GET /storefront/battlepass/progressiontracks -> 200
+#611 GET /storefront/battlepass/progressiontracks -> 200
+#612 GET /storefront/battlepass/progressiontracks -> 200
+#613 GET /storefront/battlepass/progressiontracks -> 200
+#614 GET /storefront/battlepass/progressiontracks -> 200
+#615 GET /storefront/battlepass/progressiontracks -> 200
+#616 GET /storefront/battlepass/progressiontracks -> 200
+#617 GET /storefront/battlepass/progressiontracks -> 200
+#618 GET /storefront/battlepass/progressiontracks -> 200
+#619 GET /storefront/battlepass/progressiontracks -> 200
+#620 GET /storefront/battlepass/progressiontracks -> 200
+#621 GET /storefront/battlepass/progressiontracks -> 200
+#622 GET /storefront/battlepass/progressiontracks -> 200
+#623 GET /storefront/battlepass/progressiontracks -> 200
+#624 GET /storefront/battlepass/progressiontracks -> 200
+#625 GET /storefront/battlepass/progressiontracks -> 200
+#626 GET /storefront/battlepass/progressiontracks -> 200
+#627 GET /storefront/battlepass/progressiontracks -> 200
+#628 GET /storefront/battlepass/progressiontracks -> 200
+#629 GET /storefront/battlepass/progressiontracks -> 200
+#630 GET /storefront/battlepass/progressiontracks -> 200
+#631 POST /game-telemetry/v1/protected/events -> 200
+#632 GET /storefront/battlepass/progressiontracks -> 200
+#633 GET /storefront/battlepass/progressiontracks -> 200
+#634 GET /storefront/battlepass/progressiontracks -> 200
+#635 GET /storefront/battlepass/progressiontracks -> 200
+#636 GET /storefront/battlepass/progressiontracks -> 200
+#637 GET /storefront/battlepass/progressiontracks -> 200
+#638 GET /storefront/battlepass/progressiontracks -> 200
+#639 GET /storefront/battlepass/progressiontracks -> 200
+#640 GET /storefront/battlepass/progressiontracks -> 200
+#641 GET /storefront/battlepass/progressiontracks -> 200
+#642 GET /storefront/battlepass/progressiontracks -> 200
+#643 GET /storefront/battlepass/progressiontracks -> 200
+#644 GET /storefront/battlepass/progressiontracks -> 200
+#645 GET /storefront/battlepass/progressiontracks -> 200
+#646 GET /storefront/battlepass/progressiontracks -> 200
+#647 GET /storefront/battlepass/progressiontracks -> 200
+#648 GET /storefront/battlepass/progressiontracks -> 200
+#649 GET /storefront/battlepass/progressiontracks -> 200
+#650 GET /storefront/battlepass/progressiontracks -> 200
+#651 GET /storefront/battlepass/progressiontracks -> 200
+#652 GET /storefront/battlepass/progressiontracks -> 200
+#653 GET /storefront/battlepass/progressiontracks -> 200
+#654 GET /storefront/battlepass/progressiontracks -> 200
+#655 GET /storefront/battlepass/progressiontracks -> 200
+#656 GET /storefront/battlepass/progressiontracks -> 200
+#657 GET /storefront/battlepass/progressiontracks -> 200
+#658 GET /storefront/battlepass/progressiontracks -> 200
+#659 GET /storefront/battlepass/progressiontracks -> 200
+#660 GET /storefront/battlepass/progressiontracks -> 200
+#661 GET /storefront/battlepass/progressiontracks -> 200
+#662 GET /storefront/battlepass/progressiontracks -> 200
+#663 GET /storefront/battlepass/progressiontracks -> 200
+#664 GET /storefront/battlepass/progressiontracks -> 200
+#665 GET /storefront/battlepass/progressiontracks -> 200
+#666 GET /storefront/battlepass/progressiontracks -> 200
+#667 GET /storefront/battlepass/progressiontracks -> 200
+#668 GET /storefront/battlepass/progressiontracks -> 200
+#669 GET /storefront/battlepass/progressiontracks -> 200
+#670 GET /storefront/battlepass/progressiontracks -> 200
+LogStreaming: Display: 0.721 ms for processing 13375 objects in RemoveUnreachableObjects(Queued=0, Async=0). Removed 1456 (12388->10932) packages and 6935 (49929->42994) public exports.
+#671 GET /storefront/battlepass/progressiontracks -> 200
+#672 GET /storefront/battlepass/progressiontracks -> 200
+#673 GET /storefront/battlepass/progressiontracks -> 200
+#674 GET /storefront/battlepass/progressiontracks -> 200
+#675 GET /storefront/battlepass/progressiontracks -> 200
+#676 GET /storefront/battlepass/progressiontracks -> 200
+#677 GET /storefront/battlepass/progressiontracks -> 200
+#678 GET /storefront/battlepass/progressiontracks -> 200
+#679 GET /storefront/battlepass/progressiontracks -> 200
+#680 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:41:27.751  WS -> /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 BINARY hb (proactive 30s keepalive)
+#681 GET /storefront/battlepass/progressiontracks -> 200
+#682 GET /storefront/battlepass/progressiontracks -> 200
+#683 GET /storefront/battlepass/progressiontracks -> 200
+#684 GET /storefront/battlepass/progressiontracks -> 200
+#685 GET /storefront/battlepass/progressiontracks -> 200
+#686 GET /storefront/battlepass/progressiontracks -> 200
+#687 GET /storefront/battlepass/progressiontracks -> 200
+#688 GET /storefront/battlepass/progressiontracks -> 200
+#689 GET /storefront/battlepass/progressiontracks -> 200
+#690 GET /storefront/battlepass/progressiontracks -> 200
+#691 GET /storefront/battlepass/progressiontracks -> 200
+#692 GET /storefront/battlepass/progressiontracks -> 200
+#693 GET /storefront/battlepass/progressiontracks -> 200
+#694 GET /storefront/battlepass/progressiontracks -> 200
+#695 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:41:28.697  WS <- /lobby TEXT ""
+#696 GET /storefront/battlepass/progressiontracks -> 200
+#697 GET /storefront/battlepass/progressiontracks -> 200
+#698 GET /storefront/battlepass/progressiontracks -> 200
+#699 GET /storefront/battlepass/progressiontracks -> 200
+#700 GET /storefront/battlepass/progressiontracks -> 200
+#701 GET /storefront/battlepass/progressiontracks -> 200
+#702 GET /storefront/battlepass/progressiontracks -> 200
+#703 GET /storefront/battlepass/progressiontracks -> 200
+#704 GET /storefront/battlepass/progressiontracks -> 200
+#705 GET /storefront/battlepass/progressiontracks -> 200
+#706 GET /storefront/battlepass/progressiontracks -> 200
+#707 GET /storefront/battlepass/progressiontracks -> 200
+#708 GET /storefront/battlepass/progressiontracks -> 200
+#709 GET /storefront/battlepass/progressiontracks -> 200
+#710 GET /storefront/battlepass/progressiontracks -> 200
+#711 GET /storefront/battlepass/progressiontracks -> 200
+#712 GET /storefront/battlepass/progressiontracks -> 200
+#713 GET /storefront/battlepass/progressiontracks -> 200
+#714 GET /storefront/battlepass/progressiontracks -> 200
+#715 GET /storefront/battlepass/progressiontracks -> 200
+#716 GET /storefront/battlepass/progressiontracks -> 200
+#717 GET /storefront/battlepass/progressiontracks -> 200
+#718 GET /storefront/battlepass/progressiontracks -> 200
+#719 GET /storefront/battlepass/progressiontracks -> 200
+#720 GET /storefront/battlepass/progressiontracks -> 200
+#721 GET /storefront/battlepass/progressiontracks -> 200
+#722 GET /storefront/battlepass/progressiontracks -> 200
+#723 GET /storefront/battlepass/progressiontracks -> 200
+#724 GET /storefront/battlepass/progressiontracks -> 200
+#725 GET /storefront/battlepass/progressiontracks -> 200
+#726 GET /storefront/battlepass/progressiontracks -> 200
+#727 GET /storefront/battlepass/progressiontracks -> 200
+#728 GET /storefront/battlepass/progressiontracks -> 200
+#729 GET /storefront/battlepass/progressiontracks -> 200
+#730 GET /storefront/battlepass/progressiontracks -> 200
+#731 GET /storefront/battlepass/progressiontracks -> 200
+#732 GET /storefront/battlepass/progressiontracks -> 200
+#733 GET /storefront/battlepass/progressiontracks -> 200
+#734 GET /storefront/battlepass/progressiontracks -> 200
+#735 GET /storefront/battlepass/progressiontracks -> 200
+#736 GET /storefront/battlepass/progressiontracks -> 200
+#737 GET /storefront/battlepass/progressiontracks -> 200
+#738 GET /storefront/battlepass/progressiontracks -> 200
+#739 GET /storefront/battlepass/progressiontracks -> 200
+#740 GET /storefront/battlepass/progressiontracks -> 200
+#741 GET /storefront/battlepass/progressiontracks -> 200
+#742 GET /storefront/battlepass/progressiontracks -> 200
+#743 GET /storefront/battlepass/progressiontracks -> 200
+#744 GET /storefront/battlepass/progressiontracks -> 200
+#745 GET /storefront/battlepass/progressiontracks -> 200
+#746 GET /storefront/battlepass/progressiontracks -> 200
+#747 GET /storefront/battlepass/progressiontracks -> 200
+#748 GET /storefront/battlepass/progressiontracks -> 200
+#749 GET /storefront/battlepass/progressiontracks -> 200
+#750 GET /storefront/battlepass/progressiontracks -> 200
+#751 GET /storefront/battlepass/progressiontracks -> 200
+#752 GET /storefront/battlepass/progressiontracks -> 200
+#753 GET /storefront/battlepass/progressiontracks -> 200
+#754 GET /storefront/battlepass/progressiontracks -> 200
+#755 GET /storefront/battlepass/progressiontracks -> 200
+#756 GET /storefront/battlepass/progressiontracks -> 200
+#757 GET /storefront/battlepass/progressiontracks -> 200
+#758 GET /storefront/battlepass/progressiontracks -> 200
+#759 GET /storefront/battlepass/progressiontracks -> 200
+#760 GET /storefront/battlepass/progressiontracks -> 200
+#761 GET /storefront/battlepass/progressiontracks -> 200
+#762 GET /storefront/battlepass/progressiontracks -> 200
+#763 GET /storefront/battlepass/progressiontracks -> 200
+#764 GET /storefront/battlepass/progressiontracks -> 200
+#765 GET /storefront/battlepass/progressiontracks -> 200
+#766 GET /storefront/battlepass/progressiontracks -> 200
+#767 GET /storefront/battlepass/progressiontracks -> 200
+#768 GET /storefront/battlepass/progressiontracks -> 200
+#769 GET /storefront/battlepass/progressiontracks -> 200
+#770 GET /storefront/battlepass/progressiontracks -> 200
+#771 GET /storefront/battlepass/progressiontracks -> 200
+#772 GET /storefront/battlepass/progressiontracks -> 200
+#773 GET /storefront/battlepass/progressiontracks -> 200
+#774 GET /storefront/battlepass/progressiontracks -> 200
+#775 GET /storefront/battlepass/progressiontracks -> 200
+#776 GET /storefront/battlepass/progressiontracks -> 200
+#777 GET /storefront/battlepass/progressiontracks -> 200
+#778 GET /storefront/battlepass/progressiontracks -> 200
+#779 GET /storefront/battlepass/progressiontracks -> 200
+#780 GET /storefront/battlepass/progressiontracks -> 200
+#781 GET /storefront/battlepass/progressiontracks -> 200
+#782 GET /storefront/battlepass/progressiontracks -> 200
+#783 GET /storefront/battlepass/progressiontracks -> 200
+#784 GET /storefront/battlepass/progressiontracks -> 200
+#785 GET /storefront/battlepass/progressiontracks -> 200
+#786 GET /storefront/battlepass/progressiontracks -> 200
+#787 GET /storefront/battlepass/progressiontracks -> 200
+#788 GET /storefront/battlepass/progressiontracks -> 200
+#789 GET /storefront/battlepass/progressiontracks -> 200
+#790 GET /storefront/battlepass/progressiontracks -> 200
+#791 GET /storefront/battlepass/progressiontracks -> 200
+#792 GET /storefront/battlepass/progressiontracks -> 200
+#793 GET /storefront/battlepass/progressiontracks -> 200
+#794 GET /storefront/battlepass/progressiontracks -> 200
+#795 GET /storefront/battlepass/progressiontracks -> 200
+#796 GET /storefront/battlepass/progressiontracks -> 200
+#797 GET /storefront/battlepass/progressiontracks -> 200
+#798 GET /storefront/battlepass/progressiontracks -> 200
+#799 GET /storefront/battlepass/progressiontracks -> 200
+#800 GET /storefront/battlepass/progressiontracks -> 200
+#801 GET /storefront/battlepass/progressiontracks -> 200
+#802 GET /storefront/battlepass/progressiontracks -> 200
+#803 GET /storefront/battlepass/progressiontracks -> 200
+#804 GET /storefront/battlepass/progressiontracks -> 200
+#805 GET /storefront/battlepass/progressiontracks -> 200
+#806 GET /storefront/battlepass/progressiontracks -> 200
+#807 GET /storefront/battlepass/progressiontracks -> 200
+#808 GET /storefront/battlepass/progressiontracks -> 200
+#809 GET /storefront/battlepass/progressiontracks -> 200
+#810 GET /storefront/battlepass/progressiontracks -> 200
+#811 GET /storefront/battlepass/progressiontracks -> 200
+#812 GET /storefront/battlepass/progressiontracks -> 200
+#813 GET /storefront/battlepass/progressiontracks -> 200
+#814 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:41:36.910  WS <- /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 BINARY (2 bytes) 6862
+#815 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:41:36.936  WS -> /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 TEXT hb reply {"Resource":"hb","Version":0,"Payload":""}
+#816 GET /storefront/battlepass/progressiontracks -> 200
+#817 GET /storefront/battlepass/progressiontracks -> 200
+#818 GET /storefront/battlepass/progressiontracks -> 200
+#819 GET /storefront/battlepass/progressiontracks -> 200
+#820 GET /storefront/battlepass/progressiontracks -> 200
+#821 GET /storefront/battlepass/progressiontracks -> 200
+#822 GET /storefront/battlepass/progressiontracks -> 200
+#823 GET /storefront/battlepass/progressiontracks -> 200
+#824 GET /storefront/battlepass/progressiontracks -> 200
+#825 GET /storefront/battlepass/progressiontracks -> 200
+#826 GET /storefront/battlepass/progressiontracks -> 200
+#827 GET /storefront/battlepass/progressiontracks -> 200
+#828 GET /storefront/battlepass/progressiontracks -> 200
+#829 GET /storefront/battlepass/progressiontracks -> 200
+#830 GET /storefront/battlepass/progressiontracks -> 200
+#831 GET /storefront/battlepass/progressiontracks -> 200
+#832 GET /storefront/battlepass/progressiontracks -> 200
+#833 GET /storefront/battlepass/progressiontracks -> 200
+#834 GET /storefront/battlepass/progressiontracks -> 200
+#835 GET /storefront/battlepass/progressiontracks -> 200
+#836 GET /storefront/battlepass/progressiontracks -> 200
+#837 GET /storefront/battlepass/progressiontracks -> 200
+#838 GET /storefront/battlepass/progressiontracks -> 200
+#839 GET /storefront/battlepass/progressiontracks -> 200
+#840 GET /storefront/battlepass/progressiontracks -> 200
+#841 GET /storefront/battlepass/progressiontracks -> 200
+#842 GET /storefront/battlepass/progressiontracks -> 200
+#843 GET /storefront/battlepass/progressiontracks -> 200
+#844 GET /storefront/battlepass/progressiontracks -> 200
+#845 GET /storefront/battlepass/progressiontracks -> 200
+#846 GET /storefront/battlepass/progressiontracks -> 200
+#847 GET /storefront/battlepass/progressiontracks -> 200
+#848 GET /storefront/battlepass/progressiontracks -> 200
+#849 GET /storefront/battlepass/progressiontracks -> 200
+#850 GET /storefront/battlepass/progressiontracks -> 200
+#851 GET /storefront/battlepass/progressiontracks -> 200
+#852 GET /storefront/battlepass/progressiontracks -> 200
+#853 GET /storefront/battlepass/progressiontracks -> 200
+#854 GET /storefront/battlepass/progressiontracks -> 200
+#855 GET /storefront/battlepass/progressiontracks -> 200
+#856 GET /storefront/battlepass/progressiontracks -> 200
+#857 GET /storefront/battlepass/progressiontracks -> 200
+#858 GET /storefront/battlepass/progressiontracks -> 200
+#859 GET /storefront/battlepass/progressiontracks -> 200
+#860 GET /storefront/battlepass/progressiontracks -> 200
+#861 GET /storefront/battlepass/progressiontracks -> 200
+#862 GET /storefront/battlepass/progressiontracks -> 200
+#863 GET /storefront/battlepass/progressiontracks -> 200
+#864 GET /storefront/battlepass/progressiontracks -> 200
+#865 GET /storefront/battlepass/progressiontracks -> 200
+#866 GET /storefront/battlepass/progressiontracks -> 200
+#867 GET /storefront/battlepass/progressiontracks -> 200
+#868 GET /storefront/battlepass/progressiontracks -> 200
+#869 GET /storefront/battlepass/progressiontracks -> 200
+#870 GET /storefront/battlepass/progressiontracks -> 200
+#871 GET /storefront/battlepass/progressiontracks -> 200
+#872 GET /storefront/battlepass/progressiontracks -> 200
+#873 GET /storefront/battlepass/progressiontracks -> 200
+#874 GET /storefront/battlepass/progressiontracks -> 200
+#875 GET /storefront/battlepass/progressiontracks -> 200
+#876 GET /configuration/client -> 200
+#877 GET /content-service/manifest/release2.4.live-156430-shipping -> 200
+#878 GET /storefront/battlepass/progressiontracks -> 200
+#879 GET /storefront/battlepass/progressiontracks -> 200
+#880 GET /core-game/regions -> 200
+#882 GET /storefront/battlepass/progressiontracks -> 200
+#881 GET /party/matchmaking/info -> 200
+#883 GET /storefront/battlepass/progressiontracks -> 200
+#884 GET /storefront/battlepass/progressiontracks -> 200
+#885 GET /storefront/battlepass/progressiontracks -> 200
+#886 GET /storefront/battlepass/progressiontracks -> 200
+#887 GET /storefront/battlepass/progressiontracks -> 200
+#888 GET /storefront/battlepass/progressiontracks -> 200
+#889 GET /storefront/battlepass/progressiontracks -> 200
+#890 GET /storefront/battlepass/progressiontracks -> 200
+#891 GET /storefront/battlepass/progressiontracks -> 200
+#892 GET /storefront/battlepass/progressiontracks -> 200
+#893 GET /storefront/battlepass/progressiontracks -> 200
+#894 GET /storefront/battlepass/progressiontracks -> 200
+#895 GET /storefront/battlepass/progressiontracks -> 200
+#896 POST /party/parties/party-9b9d2c887e2524f918e383a895f2f1c2/members/9b9d2c887e2524f918e383a895f2f1c2/latencies -> 200
+#897 GET /storefront/battlepass/progressiontracks -> 200
+#898 GET /storefront/battlepass/progressiontracks -> 200
+#899 GET /storefront/battlepass/progressiontracks -> 200
+#900 GET /storefront/battlepass/progressiontracks -> 200
+#901 GET /storefront/battlepass/progressiontracks -> 200
+#902 GET /storefront/battlepass/progressiontracks -> 200
+#903 GET /storefront/battlepass/progressiontracks -> 200
+#904 GET /storefront/battlepass/progressiontracks -> 200
+#905 GET /storefront/battlepass/progressiontracks -> 200
+#906 GET /storefront/battlepass/progressiontracks -> 200
+#907 GET /storefront/battlepass/progressiontracks -> 200
+#908 GET /storefront/battlepass/progressiontracks -> 200
+#909 GET /storefront/battlepass/progressiontracks -> 200
+#910 GET /storefront/battlepass/progressiontracks -> 200
+#911 GET /storefront/battlepass/progressiontracks -> 200
+#912 GET /storefront/battlepass/progressiontracks -> 200
+#913 GET /storefront/battlepass/progressiontracks -> 200
+#914 GET /storefront/battlepass/progressiontracks -> 200
+#915 GET /storefront/battlepass/progressiontracks -> 200
+#916 GET /storefront/battlepass/progressiontracks -> 200
+#917 GET /storefront/battlepass/progressiontracks -> 200
+#918 GET /storefront/battlepass/progressiontracks -> 200
+#919 GET /storefront/battlepass/progressiontracks -> 200
+#920 GET /storefront/battlepass/progressiontracks -> 200
+#921 GET /storefront/battlepass/progressiontracks -> 200
+#922 GET /storefront/battlepass/progressiontracks -> 200
+#923 GET /storefront/battlepass/progressiontracks -> 200
+#924 GET /storefront/battlepass/progressiontracks -> 200
+#925 GET /storefront/battlepass/progressiontracks -> 200
+#926 GET /storefront/battlepass/progressiontracks -> 200
+#927 GET /storefront/battlepass/progressiontracks -> 200
+#928 GET /storefront/battlepass/progressiontracks -> 200
+#929 GET /storefront/battlepass/progressiontracks -> 200
+#930 GET /storefront/battlepass/progressiontracks -> 200
+#931 GET /storefront/battlepass/progressiontracks -> 200
+#932 GET /storefront/battlepass/progressiontracks -> 200
+#933 GET /storefront/battlepass/progressiontracks -> 200
+#934 GET /storefront/battlepass/progressiontracks -> 200
+#935 GET /storefront/battlepass/progressiontracks -> 200
+#936 GET /storefront/battlepass/progressiontracks -> 200
+#937 GET /storefront/battlepass/progressiontracks -> 200
+#938 GET /storefront/battlepass/progressiontracks -> 200
+#939 GET /storefront/battlepass/progressiontracks -> 200
+#940 GET /storefront/battlepass/progressiontracks -> 200
+#941 GET /storefront/battlepass/progressiontracks -> 200
+#942 GET /storefront/battlepass/progressiontracks -> 200
+#943 GET /storefront/battlepass/progressiontracks -> 200
+#944 GET /storefront/battlepass/progressiontracks -> 200
+#945 GET /storefront/battlepass/progressiontracks -> 200
+#946 GET /storefront/battlepass/progressiontracks -> 200
+#947 GET /storefront/battlepass/progressiontracks -> 200
+#948 GET /storefront/battlepass/progressiontracks -> 200
+#949 GET /storefront/battlepass/progressiontracks -> 200
+#950 GET /storefront/battlepass/progressiontracks -> 200
+#951 GET /storefront/battlepass/progressiontracks -> 200
+#952 GET /storefront/battlepass/progressiontracks -> 200
+#953 GET /storefront/battlepass/progressiontracks -> 200
+#954 GET /storefront/battlepass/progressiontracks -> 200
+#955 GET /storefront/battlepass/progressiontracks -> 200
+#956 GET /storefront/battlepass/progressiontracks -> 200
+#957 GET /storefront/battlepass/progressiontracks -> 200
+#958 GET /storefront/battlepass/progressiontracks -> 200
+#959 GET /storefront/battlepass/progressiontracks -> 200
+#960 GET /storefront/battlepass/progressiontracks -> 200
+#961 GET /storefront/battlepass/progressiontracks -> 200
+#962 GET /storefront/battlepass/progressiontracks -> 200
+#963 GET /storefront/battlepass/progressiontracks -> 200
+#964 GET /storefront/battlepass/progressiontracks -> 200
+#965 GET /storefront/battlepass/progressiontracks -> 200
+#966 GET /storefront/battlepass/progressiontracks -> 200
+#967 GET /storefront/battlepass/progressiontracks -> 200
+#968 GET /storefront/battlepass/progressiontracks -> 200
+#969 GET /storefront/battlepass/progressiontracks -> 200
+#970 GET /storefront/battlepass/progressiontracks -> 200
+#971 GET /storefront/battlepass/progressiontracks -> 200
+#972 GET /storefront/battlepass/progressiontracks -> 200
+#973 GET /storefront/battlepass/progressiontracks -> 200
+#974 GET /storefront/battlepass/progressiontracks -> 200
+#975 GET /storefront/battlepass/progressiontracks -> 200
+#976 GET /storefront/battlepass/progressiontracks -> 200
+#977 GET /storefront/battlepass/progressiontracks -> 200
+#978 GET /storefront/battlepass/progressiontracks -> 200
+#979 GET /storefront/battlepass/progressiontracks -> 200
+#980 GET /storefront/battlepass/progressiontracks -> 200
+#981 GET /storefront/battlepass/progressiontracks -> 200
+#982 GET /storefront/battlepass/progressiontracks -> 200
+#983 GET /storefront/battlepass/progressiontracks -> 200
+#984 GET /storefront/battlepass/progressiontracks -> 200
+#985 GET /storefront/battlepass/progressiontracks -> 200
+#986 GET /storefront/battlepass/progressiontracks -> 200
+#987 GET /storefront/battlepass/progressiontracks -> 200
+#988 GET /storefront/battlepass/progressiontracks -> 200
+#989 GET /storefront/battlepass/progressiontracks -> 200
+#990 GET /storefront/battlepass/progressiontracks -> 200
+#991 GET /storefront/battlepass/progressiontracks -> 200
+#992 GET /storefront/battlepass/progressiontracks -> 200
+#993 GET /storefront/battlepass/progressiontracks -> 200
+#994 GET /storefront/battlepass/progressiontracks -> 200
+#995 GET /storefront/battlepass/progressiontracks -> 200
+#996 GET /storefront/battlepass/progressiontracks -> 200
+#997 GET /storefront/battlepass/progressiontracks -> 200
+#998 GET /storefront/battlepass/progressiontracks -> 200
+#999 GET /storefront/battlepass/progressiontracks -> 200
+#1000 GET /storefront/battlepass/progressiontracks -> 200
+#1001 GET /storefront/battlepass/progressiontracks -> 200
+#1002 GET /storefront/battlepass/progressiontracks -> 200
+#1003 GET /storefront/battlepass/progressiontracks -> 200
+#1004 GET /storefront/battlepass/progressiontracks -> 200
+#1005 GET /storefront/battlepass/progressiontracks -> 200
+#1006 GET /storefront/battlepass/progressiontracks -> 200
+#1007 GET /storefront/battlepass/progressiontracks -> 200
+#1008 GET /storefront/battlepass/progressiontracks -> 200
+#1009 GET /storefront/battlepass/progressiontracks -> 200
+#1010 GET /storefront/battlepass/progressiontracks -> 200
+#1011 GET /storefront/battlepass/progressiontracks -> 200
+#1012 GET /storefront/battlepass/progressiontracks -> 200
+#1013 GET /storefront/battlepass/progressiontracks -> 200
+#1014 GET /storefront/battlepass/progressiontracks -> 200
+#1015 GET /storefront/battlepass/progressiontracks -> 200
+#1016 GET /storefront/battlepass/progressiontracks -> 200
+#1017 GET /storefront/battlepass/progressiontracks -> 200
+#1018 GET /storefront/battlepass/progressiontracks -> 200
+#1019 GET /storefront/battlepass/progressiontracks -> 200
+#1020 GET /storefront/battlepass/progressiontracks -> 200
+#1021 GET /storefront/battlepass/progressiontracks -> 200
+#1022 GET /storefront/battlepass/progressiontracks -> 200
+#1023 GET /storefront/battlepass/progressiontracks -> 200
+#1024 GET /storefront/battlepass/progressiontracks -> 200
+#1025 GET /storefront/battlepass/progressiontracks -> 200
+#1026 GET /storefront/battlepass/progressiontracks -> 200
+#1027 GET /storefront/battlepass/progressiontracks -> 200
+#1028 GET /storefront/battlepass/progressiontracks -> 200
+#1029 GET /storefront/battlepass/progressiontracks -> 200
+#1030 GET /storefront/battlepass/progressiontracks -> 200
+#1031 GET /storefront/battlepass/progressiontracks -> 200
+#1032 GET /storefront/battlepass/progressiontracks -> 200
+#1033 GET /storefront/battlepass/progressiontracks -> 200
+#1034 GET /storefront/battlepass/progressiontracks -> 200
+#1035 GET /storefront/battlepass/progressiontracks -> 200
+#1036 GET /storefront/battlepass/progressiontracks -> 200
+#1037 GET /storefront/battlepass/progressiontracks -> 200
+#1038 GET /storefront/battlepass/progressiontracks -> 200
+#1039 GET /storefront/battlepass/progressiontracks -> 200
+#1040 GET /storefront/battlepass/progressiontracks -> 200
+#1041 GET /storefront/battlepass/progressiontracks -> 200
+#1042 GET /storefront/battlepass/progressiontracks -> 200
+#1043 GET /storefront/battlepass/progressiontracks -> 200
+#1044 GET /storefront/battlepass/progressiontracks -> 200
+#1045 GET /storefront/battlepass/progressiontracks -> 200
+#1046 GET /storefront/battlepass/progressiontracks -> 200
+#1047 GET /storefront/battlepass/progressiontracks -> 200
+#1048 GET /storefront/battlepass/progressiontracks -> 200
+#1049 GET /storefront/battlepass/progressiontracks -> 200
+#1050 GET /storefront/battlepass/progressiontracks -> 200
+#1051 GET /storefront/battlepass/progressiontracks -> 200
+#1052 GET /storefront/battlepass/progressiontracks -> 200
+#1053 GET /storefront/battlepass/progressiontracks -> 200
+#1054 GET /storefront/battlepass/progressiontracks -> 200
+#1055 GET /storefront/battlepass/progressiontracks -> 200
+#1056 GET /storefront/battlepass/progressiontracks -> 200
+#1057 GET /storefront/battlepass/progressiontracks -> 200
+#1058 GET /storefront/battlepass/progressiontracks -> 200
+#1059 GET /storefront/battlepass/progressiontracks -> 200
+#1060 GET /storefront/battlepass/progressiontracks -> 200
+#1061 GET /storefront/battlepass/progressiontracks -> 200
+#1062 GET /storefront/battlepass/progressiontracks -> 200
+#1063 GET /storefront/battlepass/progressiontracks -> 200
+#1064 GET /storefront/battlepass/progressiontracks -> 200
+#1065 GET /storefront/battlepass/progressiontracks -> 200
+#1066 GET /storefront/battlepass/progressiontracks -> 200
+#1067 GET /storefront/battlepass/progressiontracks -> 200
+#1068 GET /storefront/battlepass/progressiontracks -> 200
+#1069 GET /storefront/battlepass/progressiontracks -> 200
+#1070 GET /storefront/battlepass/progressiontracks -> 200
+#1071 GET /storefront/battlepass/progressiontracks -> 200
+#1072 GET /storefront/battlepass/progressiontracks -> 200
+#1073 GET /storefront/battlepass/progressiontracks -> 200
+#1074 GET /storefront/battlepass/progressiontracks -> 200
+#1075 GET /storefront/battlepass/progressiontracks -> 200
+#1076 GET /storefront/battlepass/progressiontracks -> 200
+#1077 GET /storefront/battlepass/progressiontracks -> 200
+#1078 GET /storefront/battlepass/progressiontracks -> 200
+#1079 GET /storefront/battlepass/progressiontracks -> 200
+#1080 GET /storefront/battlepass/progressiontracks -> 200
+#1081 GET /storefront/battlepass/progressiontracks -> 200
+#1082 GET /storefront/battlepass/progressiontracks -> 200
+#1083 GET /storefront/battlepass/progressiontracks -> 200
+#1084 GET /storefront/battlepass/progressiontracks -> 200
+#1085 GET /storefront/battlepass/progressiontracks -> 200
+#1086 GET /storefront/battlepass/progressiontracks -> 200
+#1087 GET /storefront/battlepass/progressiontracks -> 200
+#1088 GET /storefront/battlepass/progressiontracks -> 200
+#1089 GET /storefront/battlepass/progressiontracks -> 200
+#1090 GET /storefront/battlepass/progressiontracks -> 200
+#1091 GET /storefront/battlepass/progressiontracks -> 200
+#1092 GET /storefront/battlepass/progressiontracks -> 200
+#1093 GET /storefront/battlepass/progressiontracks -> 200
+#1094 GET /storefront/battlepass/progressiontracks -> 200
+#1095 GET /storefront/battlepass/progressiontracks -> 200
+#1096 GET /storefront/battlepass/progressiontracks -> 200
+#1097 GET /storefront/battlepass/progressiontracks -> 200
+#1098 GET /storefront/battlepass/progressiontracks -> 200
+#1099 GET /storefront/battlepass/progressiontracks -> 200
+#1100 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:41:59.013  WS <- /lobby TEXT ""
+#1101 GET /storefront/battlepass/progressiontracks -> 200
+#1102 GET /storefront/battlepass/progressiontracks -> 200
+#1103 GET /storefront/battlepass/progressiontracks -> 200
+#1104 GET /storefront/battlepass/progressiontracks -> 200
+#1105 GET /storefront/battlepass/progressiontracks -> 200
+#1106 GET /storefront/battlepass/progressiontracks -> 200
+#1107 GET /storefront/battlepass/progressiontracks -> 200
+#1108 GET /storefront/battlepass/progressiontracks -> 200
+#1109 GET /storefront/battlepass/progressiontracks -> 200
+#1110 GET /storefront/battlepass/progressiontracks -> 200
+#1111 GET /storefront/battlepass/progressiontracks -> 200
+#1112 GET /storefront/battlepass/progressiontracks -> 200
+#1113 GET /storefront/battlepass/progressiontracks -> 200
+#1114 GET /storefront/battlepass/progressiontracks -> 200
+#1115 GET /storefront/battlepass/progressiontracks -> 200
+#1116 GET /storefront/battlepass/progressiontracks -> 200
+#1117 GET /storefront/battlepass/progressiontracks -> 200
+#1118 GET /storefront/battlepass/progressiontracks -> 200
+#1119 GET /storefront/battlepass/progressiontracks -> 200
+#1120 GET /storefront/battlepass/progressiontracks -> 200
+#1121 GET /storefront/battlepass/progressiontracks -> 200
+#1122 GET /storefront/battlepass/progressiontracks -> 200
+#1123 GET /storefront/battlepass/progressiontracks -> 200
+#1124 GET /storefront/battlepass/progressiontracks -> 200
+#1125 GET /storefront/battlepass/progressiontracks -> 200
+#1126 GET /storefront/battlepass/progressiontracks -> 200
+#1127 GET /storefront/battlepass/progressiontracks -> 200
+#1128 GET /storefront/battlepass/progressiontracks -> 200
+#1129 GET /storefront/battlepass/progressiontracks -> 200
+#1130 GET /storefront/battlepass/progressiontracks -> 200
+#1131 GET /storefront/battlepass/progressiontracks -> 200
+#1132 GET /storefront/battlepass/progressiontracks -> 200
+#1133 GET /storefront/battlepass/progressiontracks -> 200
+#1134 GET /storefront/battlepass/progressiontracks -> 200
+#1135 GET /storefront/battlepass/progressiontracks -> 200
+#1136 GET /storefront/battlepass/progressiontracks -> 200
+#1137 GET /storefront/battlepass/progressiontracks -> 200
+#1138 GET /storefront/battlepass/progressiontracks -> 200
+#1139 GET /storefront/battlepass/progressiontracks -> 200
+#1140 GET /storefront/battlepass/progressiontracks -> 200
+#1141 GET /storefront/battlepass/progressiontracks -> 200
+#1142 GET /storefront/battlepass/progressiontracks -> 200
+#1143 GET /storefront/battlepass/progressiontracks -> 200
+#1144 GET /storefront/battlepass/progressiontracks -> 200
+#1145 GET /storefront/battlepass/progressiontracks -> 200
+#1146 GET /storefront/battlepass/progressiontracks -> 200
+#1147 GET /storefront/battlepass/progressiontracks -> 200
+#1148 GET /storefront/battlepass/progressiontracks -> 200
+#1149 GET /storefront/battlepass/progressiontracks -> 200
+#1150 GET /storefront/battlepass/progressiontracks -> 200
+#1151 GET /storefront/battlepass/progressiontracks -> 200
+#1152 GET /storefront/battlepass/progressiontracks -> 200
+#1153 GET /storefront/battlepass/progressiontracks -> 200
+#1154 GET /storefront/battlepass/progressiontracks -> 200
+#1155 GET /storefront/battlepass/progressiontracks -> 200
+#1156 GET /storefront/battlepass/progressiontracks -> 200
+#1157 GET /storefront/battlepass/progressiontracks -> 200
+#1158 GET /storefront/battlepass/progressiontracks -> 200
+#1159 GET /storefront/battlepass/progressiontracks -> 200
+#1160 GET /storefront/battlepass/progressiontracks -> 200
+#1161 GET /storefront/battlepass/progressiontracks -> 200
+#1162 GET /storefront/battlepass/progressiontracks -> 200
+#1163 GET /storefront/battlepass/progressiontracks -> 200
+#1164 GET /storefront/battlepass/progressiontracks -> 200
+#1165 GET /storefront/battlepass/progressiontracks -> 200
+#1166 GET /storefront/battlepass/progressiontracks -> 200
+#1167 GET /storefront/battlepass/progressiontracks -> 200
+#1168 GET /storefront/battlepass/progressiontracks -> 200
+#1169 GET /storefront/battlepass/progressiontracks -> 200
+#1170 GET /storefront/battlepass/progressiontracks -> 200
+#1171 GET /storefront/battlepass/progressiontracks -> 200
+#1172 GET /storefront/battlepass/progressiontracks -> 200
+#1173 GET /storefront/battlepass/progressiontracks -> 200
+#1174 GET /storefront/battlepass/progressiontracks -> 200
+#1175 GET /storefront/battlepass/progressiontracks -> 200
+#1176 GET /storefront/battlepass/progressiontracks -> 200
+#1177 GET /storefront/battlepass/progressiontracks -> 200
+#1178 GET /storefront/battlepass/progressiontracks -> 200
+#1179 GET /storefront/battlepass/progressiontracks -> 200
+#1180 GET /storefront/battlepass/progressiontracks -> 200
+#1181 GET /storefront/battlepass/progressiontracks -> 200
+#1182 GET /storefront/battlepass/progressiontracks -> 200
+#1183 GET /storefront/battlepass/progressiontracks -> 200
+#1184 GET /storefront/battlepass/progressiontracks -> 200
+#1185 GET /storefront/battlepass/progressiontracks -> 200
+#1186 GET /storefront/battlepass/progressiontracks -> 200
+#1187 GET /storefront/battlepass/progressiontracks -> 200
+#1188 GET /storefront/battlepass/progressiontracks -> 200
+#1189 GET /storefront/battlepass/progressiontracks -> 200
+#1190 GET /storefront/battlepass/progressiontracks -> 200
+#1191 GET /storefront/battlepass/progressiontracks -> 200
+#1192 GET /storefront/battlepass/progressiontracks -> 200
+#1193 GET /storefront/battlepass/progressiontracks -> 200
+#1194 GET /storefront/battlepass/progressiontracks -> 200
+#1195 GET /storefront/battlepass/progressiontracks -> 200
+#1196 GET /storefront/battlepass/progressiontracks -> 200
+#1197 GET /storefront/battlepass/progressiontracks -> 200
+#1198 GET /storefront/battlepass/progressiontracks -> 200
+#1199 GET /storefront/battlepass/progressiontracks -> 200
+#1200 GET /storefront/battlepass/progressiontracks -> 200
+#1201 GET /storefront/battlepass/progressiontracks -> 200
+#1202 GET /storefront/battlepass/progressiontracks -> 200
+#1203 GET /storefront/battlepass/progressiontracks -> 200
+#1204 GET /storefront/battlepass/progressiontracks -> 200
+#1205 GET /storefront/battlepass/progressiontracks -> 200
+#1206 GET /storefront/battlepass/progressiontracks -> 200
+#1207 GET /storefront/battlepass/progressiontracks -> 200
+#1208 GET /storefront/battlepass/progressiontracks -> 200
+
+* 17:42:06.986  WS -> /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 BINARY hb (proactive 30s keepalive)
+#1209 GET /storefront/battlepass/progressiontracks -> 200
+#1210 GET /storefront/battlepass/progressiontracks -> 200
+#1211 GET /storefront/battlepass/progressiontracks -> 200
+#1212 GET /storefront/battlepass/progressiontracks -> 200
+#1213 GET /storefront/battlepass/progressiontracks -> 200
+#1214 GET /storefront/battlepass/progressiontracks -> 200
+#1215 GET /storefront/battlepass/progressiontracks -> 200
+#1216 GET /storefront/battlepass/progressiontracks -> 200
+#1217 GET /storefront/battlepass/progressiontracks -> 200
+#1218 GET /storefront/battlepass/progressiontracks -> 200
+#1219 GET /storefront/battlepass/progressiontracks -> 200
+#1220 GET /storefront/battlepass/progressiontracks -> 200
+#1221 GET /storefront/battlepass/progressiontracks -> 200
+#1222 GET /storefront/battlepass/progressiontracks -> 200
+#1223 GET /storefront/battlepass/progressiontracks -> 200
+#1224 GET /storefront/battlepass/progressiontracks -> 200
+#1225 GET /storefront/battlepass/progressiontracks -> 200
+#1226 GET /storefront/battlepass/progressiontracks -> 200
+#1227 GET /storefront/battlepass/progressiontracks -> 200
+#1228 GET /storefront/battlepass/progressiontracks -> 200
+#1229 GET /storefront/battlepass/progressiontracks -> 200
+#1230 GET /storefront/battlepass/progressiontracks -> 200
+#1231 GET /storefront/battlepass/progressiontracks -> 200
+#1232 GET /storefront/battlepass/progressiontracks -> 200
+#1233 GET /storefront/battlepass/progressiontracks -> 200
+#1234 GET /storefront/battlepass/progressiontracks -> 200
+LogStreaming: Display: UWorld::AddToWorld: unregistering components for /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_PartyMenu took (less than) 118.74 ms
+LogLokiHUDLayout: Display: Start Dismantling WidgetTree (WBP_UI_MainMenu_RootV2_C_2147479808)
+LogLokiHUDLayout: Display: End Dismantling WidgetTree (WBP_UI_MainMenu_RootV2_C_2147479808) 1061
+LogLokiGameState: Display: Exiting game state BP_MainMenuGameState_C_2147479921
+LogStreaming: Display: 7.561 ms for processing 123988 objects in RemoveUnreachableObjects(Queued=0, Async=0). Removed 7802 (10932->3130) packages and 35587 (42994->7407) public exports.
+LogAudio: Display: Audio Device unregistered from world 'None'.
+LogStreaming: Display: FlushAsyncLoading(2076): 1 QueuedPackages, 0 AsyncPackages
+
+* 17:42:37.017  WS -> /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 BINARY hb (proactive 30s keepalive)
+LogLokiHeightMap: Display: [<Unknown>][LokiBuiltHeightMap_UAID_60CF84A053C7D85D02_2003327722] HeightMap Constructor Called
+LogTexture: Error: Loading non-streamed mips from an external bulk file.  This is not desireable.  File 32b20fb18c381e2c00000002
+LogLokiHeightMap: Display: [LVL_Tutorial][LokiBuiltHeightMap_UAID_60CF84A053C7D85D02_2003327722] HeightMap PostLoad Deserializing 83076 Cells
+LogLokiHeightMap: Display: [LVL_Tutorial][LokiBuiltHeightMap_UAID_60CF84A053C7D85D02_2003327722] ALokiBuiltHeightMap::DeserializeCells CellCount: 83076
+LogAudio: Display: Audio Device (ID: 1) registered with world 'LVL_Tutorial'.
+LogWorldPartition: Display: WorldPartition initialize started...
+LogWorldPartition: Display: WorldPartition initialize took 21.117 ms
+LogNavigation: Warning: Recreating dtNavMesh instance due mismatch in number of bytes required to store serialized maxTiles (117056, 17 bits) vs calculated maxtiles (7192, 13 bits)
+LogNavigation: Warning: Recreating dtNavMesh instance due mismatch in number of bytes required to store serialized maxTiles (117056, 17 bits) vs calculated maxtiles (7192, 13 bits)
+LogNavigationDataBuild: Display:    ANavigationData::RebuildAll load time: 0.00s
+LogNavigationDataBuild: Display:    ANavigationData::RebuildAll load time: 0.00s
+LogNavigationDataBuild: Display:    ANavigationData::RebuildAll load time: 0.00s
+LogSpawn: Warning: Login failed: ALokiGameMode::Login failed to Login
+LogWindows: Error: appError called: Fatal error: [File:C:\TheoryCraft\build-staging\Engine\Source\Runtime\Engine\Private\UnrealEngine.cpp] [Line: 15551] 
+Couldn't spawn player: ALokiGameMode::Login failed to Login
+
+
+
+LogOutputDevice: Error: === FDebug::DumpStackTrace(): ===
+LogOutputDevice: Error: 
+LogOutputDevice: Error: 
+LogWindows: Error: === Critical error: ===
+LogWindows: Error: 
+LogWindows: Error: Fatal error: [File:C:\TheoryCraft\build-staging\Engine\Source\Runtime\Engine\Private\UnrealEngine.cpp] [Line: 15551] 
+LogWindows: Error: Couldn't spawn player: ALokiGameMode::Login failed to Login
+LogWindows: Error: 
+LogWindows: Error: 
+LogWindows: Error: [Callstack] 0x00007ff7c5619cf5 SUPERVIVE-Win64-Shipping.exe!UnknownFunction []
+LogWindows: Error: [Callstack] 0x00007ff7c55f5faf SUPERVIVE-Win64-Shipping.exe!UnknownFunction []
+LogWindows: Error: [Callstack] 0x00007ff7c562b466 SUPERVIVE-Win64-Shipping.exe!UnknownFunction []
+LogWindows: Error: [Callstack] 0x00007ff7c4f28b73 SUPERVIVE-Win64-Shipping.exe!UnknownFunction []
+LogWindows: Error: [Callstack] 0x00007ff7c5758924 SUPERVIVE-Win64-Shipping.exe!UnknownFunction []
+LogWindows: Error: [Callstack] 0x00007ff7c576005f SUPERVIVE-Win64-Shipping.exe!UnknownFunction []
+LogWindows: Error: [Callstack] 0x00007ff7c57600da SUPERVIVE-Win64-Shipping.exe!UnknownFunction []
+LogWindows: Error: [Callstack] 0x00007ff7c5760f6c SUPERVIVE-Win64-Shipping.exe!UnknownFunction []
+LogWindows: Error: [Callstack] 0x00007ff7c5769696 SUPERVIVE-Win64-Shipping.exe!UnknownFunction []
+LogWindows: Error: [Callstack] 0x00007ff7c8c4ef62 SUPERVIVE-Win64-Shipping.exe!UnknownFunction []
+LogWindows: Error: [Callstack] 0x00007ffc9fad7374 KERNEL32.DLL!UnknownFunction []
+LogWindows: Error: 
+
+* 17:42:53.774  WS read end /notifications/players/9b9d2c887e2524f918e383a895f2f1c2: read tcp [::1]:8080->[::1]:58092: wsarecv: An existing connection was forcibly closed by the remote host.
+
+* 17:42:53.857  WS read end /lobby: read tcp 127.0.0.1:443->127.0.0.1:58093: wsarecv: An existing connection was forcibly closed by the remote host.
+
+* 17:42:53.889  WS closed /notifications/players/9b9d2c887e2524f918e383a895f2f1c2
+
+* 17:42:53.923  WS closed /lobby
+#1236 GET /lobby -> 101
+#1235 GET /notifications/players/9b9d2c887e2524f918e383a895f2f1c2 -> 101

@@ -1,0 +1,25 @@
+crashwatch: pid 16120 (SUPERVIVE-Win64-Shipping.exe)
+  log     : C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log
+  outDir  : G:\git\Supervive Revival Project\dumps\crash-20260908-173950
+  poll    : 50 ms   suspend-on-trigger: true
+  log tail starts at offset 1566696 (older markers ignored)
+
+*** TRIGGER: "Fatal error"  at T+177.1s ***
+  SUSPENDED 66 ms after trigger (NtSuspendProcess took 0.5 ms)
+  dumping into G:\git\Supervive Revival Project\dumps\crash-20260908-173950 ...
+PID 16120  module "SUPERVIVE-Win64-Shipping.exe"
+  base 0x7FF7C1730000  SizeOfImage 0xA9E1000 (169.9 MB)  sections 10
+  wrote G:\git\Supervive Revival Project\dumps\crash-20260908-173950\SUPERVIVE-Win64-Shipping.dump.exe  (169.9 MB, 66.26% of image readable)
+  exec regions: 2750 total (2514 in-module), 10 private-extern dumped (0.6 MB)
+  wrote G:\git\Supervive Revival Project\dumps\crash-20260908-173950\SUPERVIVE-Win64-Shipping.dump.txt
+  wrote G:\git\Supervive Revival Project\dumps\crash-20260908-173950\SUPERVIVE-Win64-Shipping.exports.txt (40623 exports)
+
+Done. Load the .dump.exe in Ghidra/IDA (ImageBase already set to the live base).
+IAT is NOT reconstructed — indirect API calls will show as unresolved thunks;
+that's the follow-up. Read <stem>.dump.txt for coverage + the exec-region inventory.
+  DUMP COMPLETE in 1.6s
+  resumed — letting crashpad finish its own report
+  waiting for exit to capture the code ...
+  wrote G:\git\Supervive Revival Project\dumps\crash-20260908-173950\CRASHWATCH-INFO.txt
+EXIT 3 (0x00000003) — unclassified
+done. Dump is in G:\git\Supervive Revival Project\dumps\crash-20260908-173950

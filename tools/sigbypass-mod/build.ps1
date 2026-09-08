@@ -692,6 +692,13 @@ $Variants = @{
         # AdjustHealth(-250) once, and require immediate plus distinct >=250 ms later Current=750
         # receipts. Exact reflected-property provenance; no legacy KBF arm.
         'botfight-damage-self-cal' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1')
+        # S155 (2026-09-08): base self-cal + explicit AvatarActor bind BEFORE PREFLIGHT. Single
+        # variable vs base (adds -DKBFBINDAVATAR=1). Same flags otherwise -- KBFARMS stays 0x00,
+        # KBFSELFCAL stays 1, KBFOWNER defaults to 0 (carrier). S154 flight 2 REFUSED with
+        # avatarBound=0 despite sp.dll's WireAbilitySystem running; this arm calls
+        # InitAbilityActorInfo(asc,carrier,hero) at BfS148DoCalibration entry so PREFLIGHT can
+        # finally reach the S153 AdjustHealth thunkExact path.
+        'botfight-damage-self-cal-bindavatar' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1')
         # SITTING 4 -- WALL E full: spawn -> wire the bot's ASC -> AdjustHealth to KILL it. 0x31.
         'botfight-kill'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x31','-DKBFDMGTGT=1')
         # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.

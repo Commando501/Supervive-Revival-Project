@@ -17971,6 +17971,12 @@ static void DoBotSpawn(){
 #ifndef KBFSELFLATERMS
 #define KBFSELFLATERMS 250 // minimum return-to-game interval before the delayed durability read.
 #endif
+#ifndef KBFBINDAVATAR
+#define KBFBINDAVATAR 0 // S155: under KBFSELFCAL, call InitAbilityActorInfo(asc,carrier,hero) BEFORE
+                        // BfS148ResolveHealthTarget so PREFLIGHT can pass S148_ISSUE_AVATAR_BINDING.
+                        // Does NOT re-enable any KBFARMS bit; KBFARMS stays 0. Default 0 keeps the
+                        // base botfight-damage-self-cal artifact byte-identical.
+#endif
 // KBFBINDCENSUS's own defines live earlier (near KFRAMEINIT) so FsThunk / FsDisarm can reference
 // the forward-declared helpers. The compile-time policy check for KBFHANDLEACT/KBFHANDLEMISS
 // (which are declared in this KBF block) stays here.
@@ -17992,6 +17998,9 @@ static void DoBotSpawn(){
 #endif
 #if KBFSELFCAL && ((KBFARMS != 0) || KBFNATURALINPUT)
 #error S148 self calibration must be isolated: KBFARMS=0 and KBFNATURALINPUT=0
+#endif
+#if KBFBINDAVATAR && (!KBFSELFCAL || (KBFARMS != 0) || KBFNATURALINPUT || KBFBINDONLY)
+#error S155 bind-avatar requires KBFSELFCAL=1, KBFARMS=0, and no KBFNATURALINPUT/KBFBINDONLY
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -21992,6 +22001,50 @@ static void BfS148DoCalibration(){
             S148_HEALTH_SEED_BITS,S148_HEALTH_SEED_BITS,S148_HEALTH_EXPECTED_BITS,
             (int)KBFSELFLATERMS,(int)KBFSELFTIMEOUTMS);
     Marker(S148_OWNER_CENSUS_CHAIN_MODE_MARKER);
+
+#if KBFBINDAVATAR
+    // S155 auto-bind Avatar so KBFSELFCAL PREFLIGHT can pass S148_ISSUE_AVATAR_BINDING. Same
+    // resolve chain the existing K_BIND arm uses (see :22429-22444) but without KBFARMS. sp.dll's
+    // WireAbilitySystem already populated hero+0xF00 and PS.HeroAffiliatedObject; we only need
+    // to issue InitAbilityActorInfo. If the bind cannot land, refuse cleanly and do NOT proceed
+    // into PREFLIGHT with an unbound Avatar (that would manufacture a false PREFLIGHT_REFUSED).
+    Marker("[S155] ===== bind-avatar preflight (KBFBINDAVATAR=1) =====\r\n");
+    uintptr_t s155Pc=FindInstByClass("LokiPlayerController_Dev",nullptr);
+    if(!LooksLikePtr(s155Pc)) s155Pc=FindInstByClass("LokiPlayerController",nullptr);
+    uint32_t s155PawnOff=LooksLikePtr(s155Pc)?PropOffsetSuper(ClassOf(s155Pc),"Pawn"):0xFFFFFFFF;
+    uintptr_t s155Hero=(LooksLikePtr(s155Pc)&&s155PawnOff!=0xFFFFFFFF&&SafeReadable((void*)(s155Pc+s155PawnOff),8))
+                       ?*(uintptr_t*)(s155Pc+s155PawnOff):0;
+    uint32_t s155PsOff=LooksLikePtr(s155Pc)?PropOffsetSuper(ClassOf(s155Pc),"PlayerState"):0xFFFFFFFF;
+    uintptr_t s155Ps=(LooksLikePtr(s155Pc)&&s155PsOff!=0xFFFFFFFF&&SafeReadable((void*)(s155Pc+s155PsOff),8))
+                     ?*(uintptr_t*)(s155Pc+s155PsOff):0;
+    uintptr_t s155Asc=LooksLikePtr(s155Hero)?BfGetAsc(s155Hero):0;
+    uintptr_t s155Carrier=LooksLikePtr(s155Ps)?BfCarrier(s155Ps):0;
+    uintptr_t s155Owner=LooksLikePtr(s155Carrier)?s155Carrier:s155Ps; // matches KBFOWNER=0 semantics
+    uintptr_t s155AvatarPre=0,s155AvatarPost=0;
+    if(LooksLikePtr(s155Asc)&&SafeReadable((void*)(s155Asc+0x410),8))
+        s155AvatarPre=*(uintptr_t*)(s155Asc+0x410);
+    bool s155BindFaulted=true, s155BindOk=false;
+    const char* s155Result="SKIPPED_NULL_INPUT";
+    if(LooksLikePtr(s155Asc)&&LooksLikePtr(s155Owner)&&LooksLikePtr(s155Hero)){
+        s155BindFaulted=BfCallInitAAI(s155Asc,s155Owner,s155Hero);
+        if(s155BindFaulted){ s155Result="FAULTED"; }
+        else if(SafeReadable((void*)(s155Asc+0x410),8)){
+            s155AvatarPost=*(uintptr_t*)(s155Asc+0x410);
+            s155BindOk=(s155AvatarPost==s155Hero);
+            s155Result=s155BindOk?"ok":"MISMATCH";
+        } else { s155Result="POST_UNREADABLE"; }
+    }
+    Markerf("[S155] BIND_AVATAR result=%s pc=0x%llX hero=0x%llX ps=0x%llX asc=0x%llX carrier=0x%llX owner=0x%llX\r\n",
+            s155Result,(unsigned long long)s155Pc,(unsigned long long)s155Hero,(unsigned long long)s155Ps,
+            (unsigned long long)s155Asc,(unsigned long long)s155Carrier,(unsigned long long)s155Owner);
+    Markerf("[S155] AvatarActor@0x410 pre=0x%llX post=0x%llX avatarBound=%u\r\n",
+            (unsigned long long)s155AvatarPre,(unsigned long long)s155AvatarPost,(unsigned)(s155BindOk?1:0));
+    if(!s155BindOk){
+        Marker("[S155] proceed=no BIND_REFUSED RESULT=BIND_REFUSED; PREFLIGHT not attempted\r\n");
+        BfS148FinishTerminal(); return;
+    }
+    Marker("[S155] proceed=yes preflight_reached=1 handing off to S148 PREFLIGHT\r\n");
+#endif
 
     BfS148HealthTarget target{};
     uint32_t issues=BfS148ResolveHealthTarget(0,0,0,true,&target,true);

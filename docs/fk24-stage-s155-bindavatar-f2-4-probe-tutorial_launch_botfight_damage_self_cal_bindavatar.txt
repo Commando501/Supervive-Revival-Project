@@ -1,0 +1,5 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[S148] RM_BOTFIGHT isolated self-damage calibration: require the unique local possessed hero's existing live ASC; no wiring, bot, team, grant, activation, or legacy damage arm.
+[BF] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7C2A754A0 stub=0x2CC874E2440 funcCls=0x2CB77DCB000 gameTid=28652
