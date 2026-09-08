@@ -250,6 +250,13 @@ static volatile long g_hitsAny=0;
 static volatile uint64_t g_piLastCaller=0;
 static volatile uint64_t g_piCallerRing[PI_CALLER_RING]={0};
 static volatile long g_piCallerIdx=0;
+// S185 Rank 7 (docs/s184 §"S185 candidates"): capture the UFunction* being dispatched
+// (from FFrame.Node at [rdx+0x90]) at each PI hit, so we can enumerate WHICH UFunctions
+// are being called in baseline. Names WHICH subsystem is doing the 29 dispatches
+// (UMG widgets? timer delegates? animation? input?) — points at what stopped ticking
+// post-companion-kill. Also written by the stub (BuildHook) BEFORE calling OnPI.
+static volatile uint64_t g_piLastUFunc=0;
+static volatile uint64_t g_piUFuncRing[PI_CALLER_RING]={0};
 #endif
 static uint8_t g_template[0x180]={0}, g_myframe[0x180]={0};
 static uint64_t g_pbuf[16]={0}, g_rbuf[4]={0};
@@ -1516,14 +1523,16 @@ extern "C" void OnPI(void* /*ctx*/, void* frame, void*){
     // S181 Rank 3 pre-filter counter (S180-b): incremented on EVERY OnPI entry, regardless of
     // thread, g_done, g_inHook, or LooksLikePtr. Only present under KFOVERBOSE (stock fo unchanged).
     InterlockedIncrement(&g_hitsAny);
-    // S182 Rank 6: sample g_piLastCaller (written by stub) into ring buffer. Cross-thread races
-    // are accepted (diagnostic, not accounting). Reading g_piLastCaller BEFORE any C++ work in
-    // OnPI is the safest place — subsequent code paths might allocate a stack frame that would
-    // shift the stub's slot.
+    // S182 Rank 6 + S185 Rank 7: sample g_piLastCaller AND g_piLastUFunc (both written by stub)
+    // into parallel ring buffers. Cross-thread races are accepted (diagnostic, not accounting).
+    // Both are indexed by the SAME slot number so caller-RIP[i] and UFunction[i] pair up.
     {
         uint64_t c = g_piLastCaller;
+        uint64_t uf = g_piLastUFunc;
         long i = InterlockedIncrement(&g_piCallerIdx) - 1;
-        g_piCallerRing[((unsigned long)i) & (PI_CALLER_RING - 1)] = c;
+        unsigned long slot = ((unsigned long)i) & (PI_CALLER_RING - 1);
+        g_piCallerRing[slot] = c;
+        g_piUFuncRing[slot] = uf;
     }
 #endif
 #if KBFSELFCAL
@@ -1630,6 +1639,15 @@ static uint8_t* BuildHook(uintptr_t fn,const uint8_t stolen[5]){
     //   [rsp+0x48] = the return address the game pushed when it CALLed ProcessInternal
     EB(e,0x48);EB(e,0x8B);EB(e,0x44);EB(e,0x24);EB(e,0x48);                        // mov rax, [rsp+0x48]
     EB(e,0x48);EB(e,0xA3);EU64(e,(uint64_t)&g_piLastCaller);                        // mov [g_piLastCaller], rax
+    // S185 Rank 7: also stash the UFunction* being dispatched. ProcessInternal signature is
+    //   ProcessInternal(UObject* Object, FFrame& Stack, RESULT_DECL Result)
+    // -> rdx = FFrame*; FFrame.Node (the currently-executing UFunction*) is at FFrame+0x90 in
+    // this build (established by S184 §"The function, byte for byte" via UObject::CallFunction's
+    // FFrame.Node swap pattern at [rsi+0x90]). We saved rdx into shadow at [rsp+0x38] two
+    // pushes ago, so re-read it from there rather than clobbering the still-live rdx register.
+    EB(e,0x48);EB(e,0x8B);EB(e,0x44);EB(e,0x24);EB(e,0x38);                        // mov rax, [rsp+0x38]  ; rax = FFrame*
+    EB(e,0x48);EB(e,0x8B);EB(e,0x80);EU32(e,0x00000090);                            // mov rax, [rax+0x90]  ; rax = FFrame.Node = UFunction*
+    EB(e,0x48);EB(e,0xA3);EU64(e,(uint64_t)&g_piLastUFunc);                         // mov [g_piLastUFunc], rax
 #endif
     EB(e,0x48);EB(e,0xB8);EU64(e,(uint64_t)&OnPI); EB(e,0xFF);EB(e,0xD0);
     EB(e,0x48);EB(e,0x83);EB(e,0xC4);EB(e,0x28); EB(e,0x41);EB(e,0x59);EB(e,0x41);EB(e,0x58);EB(e,0x5A);EB(e,0x59);
@@ -24819,6 +24837,36 @@ static DWORD WINAPI Worker(LPVOID){
                 Markerf("    [%d] count=%d  raw=0x%llx (non-SUPERVIVE.exe: runtime.dll or heap-thunk)\r\n",
                         j, counts[j], (unsigned long long)caller);
             }
+        }
+    }
+    // S185 Rank 7: dedup UFunction* ring, resolve each unique UFunction to its name via
+    // NameId + GetFNameStr (already used elsewhere in this file). Points AT WHICH subsystem
+    // is doing the baseline dispatches — the one that stops post-companion-kill.
+    {
+        long total = g_piCallerIdx;
+        long n = total < (long)PI_CALLER_RING ? total : (long)PI_CALLER_RING;
+        Markerf("[4u] PI UFunctions ring: total_hits=%ld sampled=%ld (unique UFunctions below)\r\n",
+                (long)g_piCallerIdx, n);
+        uint64_t useen[PI_CALLER_RING]={0}; int useen_n=0; int ucounts[PI_CALLER_RING]={0};
+        for(long i=0;i<n;i++){
+            uint64_t v = g_piUFuncRing[i];
+            if(!v) continue;
+            int found=-1;
+            for(int j=0;j<useen_n;j++) if(useen[j]==v){found=j;break;}
+            if(found>=0) ucounts[found]++;
+            else if(useen_n<PI_CALLER_RING){ useen[useen_n]=v; ucounts[useen_n]=1; useen_n++; }
+        }
+        for(int j=0;j<useen_n;j++){
+            uint64_t uf = useen[j];
+            char fname[160]={0}; char cname[160]={0};
+            if(LooksLikePtr((uintptr_t)uf)){
+                GetFNameStr(NameId((uintptr_t)uf), fname, sizeof(fname));
+                uintptr_t cls = ClassOf((uintptr_t)uf);
+                if(LooksLikePtr(cls)) GetFNameStr(NameId(cls), cname, sizeof(cname));
+            }
+            Markerf("    [%d] count=%d  UFunction=0x%llx  name='%s'  class='%s'\r\n",
+                    j, ucounts[j], (unsigned long long)uf,
+                    fname[0]?fname:"?", cname[0]?cname:"?");
         }
     }
 #endif

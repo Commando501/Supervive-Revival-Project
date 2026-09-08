@@ -1,0 +1,20 @@
+[cw] game pid=42924
+[cw] t=+  2.39s NEW CHILD pid=41672  name=conhost.exe  path=C:\Windows\System32\conhost.exe
+[cw]     SKIP kill (name 'conhost.exe' != --only-name 'runtime.dll')
+[cw] t=+  8.61s NEW CHILD pid=37864  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     SKIP kill (name 'EpicWebHelper.exe' != --only-name 'runtime.dll')
+[cw] t=+  8.81s NEW CHILD pid=6820  name=crashpad_handler.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Plugins\SentrySDK\Binaries\Win64\crashpad_handler.exe
+[cw]     SKIP kill (name 'crashpad_handler.exe' != --only-name 'runtime.dll')
+[cw] t=+ 12.17s NEW CHILD pid=33024  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     SKIP kill (name 'EpicWebHelper.exe' != --only-name 'runtime.dll')
+[cw] t=+ 12.17s NEW CHILD pid=45072  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     SKIP kill (name 'EpicWebHelper.exe' != --only-name 'runtime.dll')
+[cw] t=+128.54s NEW CHILD pid=21844  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     SKIP kill (name 'EpicWebHelper.exe' != --only-name 'runtime.dll')
+[cw] t=+129.53s CHILD EXITED pid=21844 name=EpicWebHelper.exe
+[cw] t=+171.00s CHILD EXITED pid=41672 name=conhost.exe
+[cw] t=+171.00s CHILD EXITED pid=37864 name=EpicWebHelper.exe
+[cw] t=+171.00s CHILD EXITED pid=33024 name=EpicWebHelper.exe
+[cw] t=+171.00s CHILD EXITED pid=45072 name=EpicWebHelper.exe
+[cw] t=+171.38s CHILD EXITED pid=6820 name=crashpad_handler.exe
+[cw] game process gone (t=+171.39s), stopping. polls=1302
