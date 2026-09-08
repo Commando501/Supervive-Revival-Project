@@ -64,13 +64,385 @@ The ASC is still **the shim's own**, because the designed wiring sits inside FK-
   followed by `0xDEAD`, while a matched `INDEX_NONE=-1` call enters the same wrapper, returns
   `AL=0`, restores the CDO/state, and survives. Therefore reflected dispatch and wrapper entry/ABI
   are not sufficient causes; the valid-handle/downstream path is implicated.
+- **S158 (2026-09-03):** ★★★★★ **the ability body EXECUTES end-to-end via natural input after a
+  clean shim abort.** Read `docs/s158-wallp-natinput-settled.md`. The shim's SETUP_ABORT
+  (on `spec.flags==0x50 ≠ required 0x00`) releases CDO ownership and unswaps all UFunctions; a
+  subsequent Tab-Tab-LeftShift via P/Invoke drives the natural input path with NO shim
+  interference. Full trace: Warmup → Channeling → Invoke → InvokePhase.Begin → **Pre Dash Start
+  → GameplayCue GC_GlobalImpulse_DASH → Post Dash Start**. **Then silent kill** — no `0xDEAD`, no
+  crashpad, no artifact, preceded by ~30 identical `SetReplicatedEvent [Type:3][AbilityHandle:1]`
+  in ONE millisecond. ⇒ **WALL P is between Post Dash Start and the Winddown/EndAbility
+  transition**. Three-state page census: WALLP-M2 (`0x4413000` [12] `GetAbilityByBaseClass`),
+  WALLP-M1-revised (`0x535f000` [39] `Dash`), WALLP-S156c (`0x4480000` `InternalTryActivateAbility`)
+  ALL **[M] REACHED**; WALLP-S156a (`0x4450000` EndAbility Super) reached during SETUP alone
+  (ambiguous); WALLP-S156e (CDO-disqualification) still [I,strong] REFUTED (0 tokens from all 5
+  discriminator sites). **[I,strong]** the shim's own observation apparatus is what suppressed
+  body execution in S146/S147 — S158's SETUP-abort-then-natural-input path proves the body runs
+  when the shim is out of the way. **Do NOT re-fly the shim-observation path first** without
+  understanding this. **Do NOT try to relax the shim's `flags==0` baseline check** without
+  understanding what the `0x50` bits imply.
 
-**Historical S146 status, superseded by S147:** the direct injected valid-handle call had no return,
-active/body/cost/effect/damage receipt. S147's later natural-input flight did measure a real
-InputID-5 active-state transition and Mana cost, but not the strict Ability3 Blueprint witness,
-durable ability-body/effect execution, or damage. The canonical-input experiment described in
-`docs/next-session-prompt-s147.md` is completed history, not the current next step; use the S150
-override at the top of this file.
+- **S175-S177 (2026-09-03 → 2026-09-04):** ★★★★★★★ **FK-32 IS NOT VIA runtime.dll's KILL
+  PRIMITIVE [M]; 8 candidates refuted; mechanism narrowed to JIT-stub / kernel-side / DR-clearing.
+  Read `docs/next-session-prompt-s177.md` FIRST, then the top-5 evidence docs it names.** One-day
+  intensive: **7 live flights + 6 offline workflows + 5 read-only launches**. Every previously
+  suspected FK-32 dispatch mechanism has been refuted with [M] or [M-caveat] grade.
+  ★★ **[M] FK-31 IS DEFEATABLE. Uptime 920s = project record** (S175 P1+P4: 13-thread suspend
+  + packer2 syscall poke).
+  ★★★★★ **[M] KILL PRIMITIVE AT `0x80F7F0` IS NOT THE FK-32 SOURCE.** Move F's read-verify loop
+  polled the S169-B poke byte at `0x94A803` at 200ms cadence for 12m22s (3,702 samples, ZERO
+  changes) — poke held bit-stable — and FK-32 STILL FIRED with `0x0000DEAD`. Combined with Move I's
+  HW BP no-fire on the same address, this DEFINITIVELY refutes the entire "S169-B poke defeats
+  FK-32" model that motivated ~5 prior flights. Read [docs/s176-move-f-poke-holds-fk32-fires-anyway.md](docs/s176-move-f-poke-holds-fk32-fires-anyway.md).
+  ★★★★ **[M] ALL 18 PACKER2 XOR CONSTANTS LIVE-MSB-READ.** Move K enumerated 18 XOR constants
+  driving 160-168 obfuscated syscalls (Move H's 122/14 was undercount). Live read via `ReadProcessMemory`:
+  ONLY `0x94A800` (MSB=0xAA) produces kill syscall 0x2C. All 17 others resolve to non-kill syscalls.
+  Refutes "alternate XOR constant hosts kill primitive". Read [docs/s176-move-k-all-18-msbs-only-known-kill-active.md](docs/s176-move-k-all-18-msbs-only-known-kill-active.md).
+  ★★★ **[M] NO ALTERNATE KILL PRIMITIVE in 121 MB of hidden Image mappings.** Move M ran
+  `dumpimage -includehiddenimages` (S164 flag) and captured 25 hidden regions totaling ~121 MB.
+  Byte-scan for `mov edx, 0xDEAD; syscall` (`BA AD DE 00 00 0F 05`) found exactly 2 hits — both
+  are LOW+HIGH mirrors of the ONE known kill primitive at runtime.dll `0x80F7F0`. Read
+  [docs/s176-move-m-hidden-mappings-no-alt-kill.md](docs/s176-move-m-hidden-mappings-no-alt-kill.md).
+  ★★★★ **[M-caveat] SIX ntdll process-termination paths ALL RULED OUT via HW BP**. Move I: DR0
+  on runtime.dll `0x80F7F0` + DR1 on `NtTerminateProcess` — neither fired. Move I-2: DR0-3 on
+  `RtlExitUserProcess`, `NtRaiseException`, `NtRaiseHardError`, `RtlReportSilentProcessExit` —
+  none fired. Both flights died `0x0000DEAD` without producing STATUS_SINGLE_STEP crashpad dumps.
+  Caveat: BP install may have been detected (Move I fired FK-32 ~150s post-install, target =
+  kill primitive; Move I-2 fired ~370s, target = alternate exports) — protector monitors DRs
+  pointing at specific kill-adjacent addresses. Read [docs/s176-move-i2-4-alternate-ntdll-exports-ruled-out.md](docs/s176-move-i2-4-alternate-ntdll-exports-ruled-out.md).
+  ★★★ **[M] `mov edx, 0xDEAD` is UNIQUE in the process.** Move H L1+L2+L3: only 1 hit in runtime.dll
+  (the known kill), 0 in preloader.dll, 0 in 8 other shipped DLLs, 0 in 252 unique private-exec
+  regions across 30 crash dumps. UE4SS.dll has 1 hit but is NOT loaded by shipped game. Move E lane 1
+  extended scans (add/or/xor/sub imm32, mov r16/r64, push, shr-mask, all 8 ModR/M forms) also 0
+  hits. Move H L3: no djb2/FNV/CRC32/ROR13 hash constants in runtime.dll → hash-resolved PEB-walk
+  dispatch REFUTED. Module-name table exists at packer0 `0x8373` (ntdll/kernel32/user32) but has
+  ZERO RIP-relative LEAs to it. Read [docs/s176-move-h-119-uncovered-syscalls.md](docs/s176-move-h-119-uncovered-syscalls.md).
+  ★★ **All refuted FK-32 candidates**: (a) self-check reverts poke [M], (b) alt syscall stub via
+  low-MSB XOR [M], (c) NearAlloc accumulator [M], (d) VEH chain accumulator [M — VEH silently
+  returns NULL for manually-mapped shim body], (e) `.rdata` slot-285 vtable write [M — KNOLOGINVT
+  variant], (f) manually-mapped kill stub in hidden Image [M], (g) hash-resolved PEB-walk [M], (h)
+  direct IAT-imported kill [M], plus 6 ntdll exports [M-caveat via HW BP no-fire].
+  ★ **REMAINING FK-32 candidates**: (i) JIT-generated kill stub at kill moment (allocates RWX,
+  writes primitive, executes, may free — not in Move M's menu-time snapshot); (ii) kernel-side
+  termination via protector driver (`PsTerminateProcess`, needs ETW); (iii) protector clears DRs
+  before firing a normal kill path (needs DR-poll variant of Move I to detect).
+  ★ **HIGHEST-PRIORITY NEXT MOVE (Move I-3)**: dumpimage diff pre-kill vs Move M's menu baseline.
+  Any new MEM_PRIVATE RWX region OR new hidden Image mapping in the pre-kill snapshot is a
+  candidate JIT stub. Byte-scan for `mov edx, 0xDEAD` in the diff. Cost: 1 armed session + offline
+  scan (~30 min). ⚠ Take pre-kill snapshot ~20s before expected kill (~t+126s post-reinject given
+  Move F's 146s FK-32 timing).
+  ⚠⚠ **INSTRUMENT-ARTIFACT INSTANCE #134 THIS SESSION**: S176-f3 re-ran KNOLOGINVT despite this
+  file's explicit `KNOLOGINVT FALSIFIED — do not re-run it` at line 842 / line 891. Rule:
+  **before spawning any shim variant for a controlled experiment, grep CLAUDE.md for its name
+  and check for "REFUTED" / "FALSIFIED" / "do not re-run" callouts.**
+  ⚠ Fresh CLAIMS REFUTED this session (do not restate as [M] anymore): CLAUDE.md's various "the
+  kill primitive at 0x80F7F0 is FK-10's mechanism" style claims are BYTE-CORRECT but do NOT
+  establish that primitive IS the FK-32 route in S175/S176 recipes. Move F held its defeat
+  throughout the kill. Whichever wall it satisfies for OTHER FK-* deaths, it does not satisfy
+  FK-32's under the standard poke.
+  ★ **Session ledger**: 7 live flights (S175 P1+P4, S176-f1/f2/f3, Move F, Move I, Move I-2),
+  6 offline workflows (S176 hunt, Move E, Move H, Move K, Move K live-read scan, Move M scan),
+  5 read-only launches. Uptime record 920s. All flights except S175 died to 0xDEAD; S175 was
+  the ONLY flight where FK-32 was measured after a RE-inject rather than during initial staging.
+  ⚠ Source edits in worktree (uncommitted, effect null on FK-32 timing but genuine bug fix):
+  `tools/sigbypass-mod/tutorial_launch.cpp` lines 227, 23734, 24702-24703 add matched
+  `RemoveVectoredExceptionHandler` + `VirtualFree` at fo Worker exit. Deployed fo hash moved
+  `CFB1B0B5EF37E910` → `51E56E00341A218A`. Backup at `.pre-s176-cleanup.bak`. Revert if desired.
+
+- **S174 (2026-09-03):** ★★★★★ **Progressive-resume delayed FK-31 to 4 min but didn't pinpoint
+  specific check thread. Read `docs/s174-progressive-resume-fk31-still-fires.md`.** Built
+  `scratchpad/s174/progressive_resume.py` (auto: scan → suspend all top-hit → poke → verify
+  → resume 1-at-a-time until FK-31 fires). Result: 9 threads suspended (>=20 hit threshold),
+  15s survival PASSED, then progressive resume. **6 of 9 resumes returned prev count=-1** —
+  those threads had exited between suspend and resume. Only 3 successfully resumed. **Game
+  eventually died 4 min post-poke with `0xC0000005`** (FK-31). Cumulative timing: no suspend
+  = 20s, 3 wrong threads = 10s, 7 top threads (S173) = 91s+, 9 top threads (S174) = 4 min.
+  ⇒ **Suspension delays but check has REDUNDANCY or RESTART-on-resume behavior**. Path
+  forward: (1) suspend ALL runtime.dll-hitting threads incl long-tail; (2) investigate why 6
+  resumes failed (thread termination pattern?); (3) skip thread ID, focus on making poke SURVIVE
+  the check (double-buffer, race, or hash constant defeat); (4) pivot to FK-32 instead of FK-31.
+- **S173 (2026-09-03):** ★★★★★★★★ **THREAD SUSPENSION DEFEATS FK-31 [M]. Read
+  `docs/s173-thread-suspend-DEFEATS-fk31-fk32-survives.md`.** Following S172's finding of more
+  candidate threads, S173 relaunched, rescanned, identified 7 top-hit threads (3 at 100% hit
+  rate, 2 at 99%, 1 at 79%, 1 at 21%), suspended ALL 7, then applied packer2 syscall byte poke.
+  **Game survived 91+ seconds** vs prior baseline of ~20s. **4.5x survival extension proves
+  FK-31 check runs on one/more of the 7 suspended threads.** Then attempted staging (gft + fo)
+  → **FK-32 fired at t+312s with `0x0000DEAD`** despite FK-31 being disabled AND packer2 syscall
+  byte still poked. ⇒ **FK-32 IS SEPARATE from FK-31 [M, definitive]**: disabling one doesn't
+  disable the other. FK-32 was triggered by shim staging (gft/fo modifying game exe state),
+  consistent with prior WALL P behavior. And **the packer2 poke did NOT prevent FK-32's syscall
+  from producing 0xDEAD** — either FK-32 uses a different syscall stub, the byte was restored
+  by another thread, or FK-32's stub reads a different XOR constant.
+  ★★★★★ **NEW RULES (S173-a..c)**: (a) FK-31 check thread(s) live among the top-hit runtime.dll
+  threads. Suspending them prevents FK-31 for at least 91s — enough for any single modification.
+  (b) FK-31 and FK-32 are DEFINITIVELY separate mechanisms (S168's split now confirmed by
+  direct disable-one-observe-other measurement). (c) Thread suspend of 7 top-hit threads doesn't
+  obviously break menu but DOES break staging (game-thread heavy workflow); RSS stable at 4970 MB.
+  ⇒ **S174 recipe**: (Priority 1) progressive-resume to identify SPECIFIC FK-31 check thread.
+  Suspend all 7, poke, resume threads one at a time until FK-31 fires — that's the check thread.
+  Then permanently kill just that specific thread cleanly, no gameplay collateral. (Priority 2)
+  investigate FK-32's alternate syscall path. (Priority 3) test if shim injection alone triggers
+  FK-32 (no staging, just gft alone).
+- **S172 (2026-09-03):** ★★★★ **Thread RIP-scan identified 9 protector threads; suspending top 3
+  didn't prevent FK-31. Read `docs/s172-thread-scan-more-candidates-suspend-not-enough.md`.**
+  Built `scratchpad/s171/thread_scan.py` (external GetThreadContext sampler, 100ms cadence).
+  Scanned live game for 20s (200 samples). **9 threads spend >30% of time in runtime.dll code
+  range** (`0x7FFCA1400000 + 0..0x4066000`): 3 threads at 100% hit rate (tid=2644/20268/19696),
+  2 more at 75-90% (tid=28652/29348), 4 at 30-36% (tid=32964/12324/23856/6652). **Suspended
+  ONLY the "top 3" from my visual scan** (12324/23856/6652), applied packer2 poke — **game died
+  10s later with `0xC0000005`** (still FK-31). ⇒ **The check thread is likely among the 5
+  threads I did NOT suspend** (the higher-hit ones I missed in my initial output). ★ **New rule
+  S172-b**: tool output that "prints top N" without explicit sort direction is a hazard — my
+  scanner printed 13 threads in enumeration order but I only investigated the top 3 SHOWN, not
+  top 3 SORTED. The actual highest-hit threads (2644 at 200/200) were in the log but not in my
+  visual scan. **Always sort by the specific metric and print MORE items than the cutoff.**
+  **S173 path forward**: (A) suspend ALL 9 top-hit threads at once, then progressively resume;
+  (B) enrich thread_scan to capture call stacks (identify threads that call into packer30's giant
+  check functions specifically); (C) pivot to data-defeat — search packer2 for a HEAP pointer
+  where target's `+0x10` looks like a Process HANDLE (that's the kill primitive's rcx object).
+- **S170 (2026-09-03):** ★★★★★★★ **VEH intercept FAILS on FK-31; baseline shows no natural
+  death within 6 min. Read `docs/s170-veh-intercept-failed-veh-not-called-on-fk31.md`.** Built
+  `tools/sigbypass-mod/veh_stop_fk31.dll` (via existing build.ps1; 111 KB, KERNEL32-only) that
+  installs an `AddVectoredExceptionHandler` catching FK-31 fault (0xC0000005 at base+1 outside
+  loaded-module ranges) and calling `ExitThread(0)` on the check thread. **Injected + baseline
+  observation in ONE session**: (1) launched clean, waited 350+s — game SURVIVED (no natural
+  death within 6 min → prior "detection kills" are genuine, not coincidental); (2) injected
+  veh_stop_fk31.dll — game SURVIVED 48s+ post-install (VEH install alone doesn't trigger
+  check); (3) applied S169-B packer2 syscall byte poke — game **DIED 20s later** with
+  `0xC0000005` at `runtime.dll+1`, and VEH marker showed `intercepts=0`. ⇒ **[M] VEH callback
+  is NEVER INVOKED on the FK-31 fault**; the protector's exception dispatch bypasses the
+  user-mode VEH chain (likely via patched KiUserExceptionDispatcher or ProcessInstrumentationCallback).
+  ⇒ **[M] packer2 modification is DETECTED within 20s** (much faster than S168's ~3 min for
+  packer1; different check periods per section, or timing luck). Prior claim of ~3-min FK-31
+  check period is REVISED — check firings are variable, and the DETECTION WINDOW for a
+  successful defeat via race is at most 20s. ★★★★★ **NEW RULES (S170-a..c)**: (a) A "successful"
+  VEH install (returns non-null, marker writes) does NOT imply the VEH will actually be invoked.
+  Verify by triggering a KNOWN exception (int3) after install. If VEH marker doesn't capture,
+  it's defunct. (b) When protector-triggered kill produces exit code EQUAL to fault code (not
+  a special termination code like 0xDEAD), it's the OS default UnhandledExceptionFilter doing
+  the termination, NOT an intentional call to NtTerminateProcess. Different mechanism, but same
+  observable outcome. (c) Baseline testing is CHEAP and CLARIFYING — one clean-launch-wait-N
+  minutes fly resolves many "was that natural or detection-triggered" ambiguities. Do it EARLY.
+  ⇒ **S171 path forward (revised)**: (Option A) Race the check timing — poke, IMMEDIATELY
+  activate, syscall fails during 40-70s window, restore before check catches (tight if check
+  period is 20s). (Option B) Identify and suspend the check thread. (Option C) Find and null
+  the check's expected hash value. (Option D) Interpose page-level shadow via NOACCESS + fault
+  handler. **All are complex; race is cheapest to try but tight on timing.**
+- **S169 (2026-09-03):** ★★★★★★ **runtime.dll self-check ALSO covers packer2 [M]; kill primitive
+  syscall number is runtime-patched at packer2 RVA 0x94a800. Read
+  `docs/s169-packer2-syscall-poke-refuted-self-check-covers-packer2.md`.** S167 offline disasm of
+  kill primitive revealed syscall number is computed via `eax ^= [rip+0x13affc]` where the XOR
+  constant lives at packer2 RVA `0x94a800`. On disk X = `0x10bfa9ce` (yields invalid syscall
+  `0xFFFFFFFF`); runtime protector patches MSB byte at RVA `0x94a803` from `0x10` to `0xAA`, making
+  X = `0xaabfa9ce` and yielding syscall = `0x2C` (Win10/11 NtTerminateProcess). **S169-B flew a
+  1-byte data poke** on that byte back to `0x10` (would invalidate the syscall so the kill call
+  fails harmlessly). **Result: died with `0xC0000005` at `runtime.dll+1`** — same FK-31 signature
+  as S168's packer1 patch. ⇒ **packer2 is ALSO integrity-checked** by the same runtime.dll
+  self-check. ⚠⚠ **The two runtime.dll mappings carry DIFFERENT content**: LOW (`0xFF760000`) is
+  pristine/on-disk (X = `0x10bfa9ce`), HIGH (`0x7FFCA1400000`) is runtime-patched
+  (X = `0xaabfa9ce`). HIGH is the ACTIVE view. LOW is a decoy/backup. This is a new observation —
+  prior sessions poked both mappings uniformly. **S169-lite bonus HW BP test** (DR0=LOW-kill,
+  DR1=HIGH-kill on 137 threads) died with `0xDEAD` 4s after install, but n=1; S167-B with 1 BP
+  survived to natural FK-31, so BP install detection is [I, moderate], not [M].
+  ★★★★ **NEW RULES (S169-a..d)**: (a) When two mappings of the same region carry different
+  content, the runtime-modified one is the ACTIVE view; only poke the active one. (b) The
+  runtime.dll self-check covers packer0/1/2/30/31; only packer42 is safe to WPM (S166 measurement),
+  but packer42 poke doesn't defeat WALL P. (c) `syscall` with invalid service number returns
+  `STATUS_INVALID_SYSTEM_SERVICE` = the caller CONTINUES executing; for defeating an obfuscated
+  Nt call, invalidating its syscall number is potentially defeat-equivalent to blocking it. (d)
+  Dry-run poke tools should print pre-poke values for BOTH mappings; discrepancy is diagnostic
+  of runtime-patch coverage.
+  ★★★★ **S170 next moves**: (A) inject a shim that installs a VEH for `STATUS_ACCESS_VIOLATION`
+  at addresses matching `runtime.dll+1` — catches the FK-31 fault before it kills. Combine with
+  S168 patch OR S169-B poke to defeat FK-32. (B) race approach: poke, activate, restore before
+  FK-31 check fires (~3-min window per S168 timing). Cost: 1 flight. Big payoff if VEH works.
+- **S168 (2026-09-03):** ★★★★★★★ **runtime.dll HAS ITS OWN SELF-INTEGRITY CHECK, DISTINCT FROM
+  WALL P/FK-32 [M]. Read `docs/s168-runtime-dll-self-checks-fk31-fk32-are-different.md`.** S167
+  offline fully disassembled the kill primitive at packer1 RVA `0x80F7F0`: **it is CONDITIONAL on
+  `[rcx+0x10] != NULL`** — `mov r10, [rcx+0x10]; test r10, r10; je 0x80F814` (which is
+  `xor eax,eax; ret`). ⇒ identified a 1-byte patch (`0x74` → `0xEB` at RVA `0x80F7F7`) that turns
+  the JE into an unconditional JMP, neutralizing the kill regardless of caller. **S168 flew the
+  patch**: found 2 runtime.dll mappings (LOW `0xFF760000` + HIGH `0x7FFCA1400000`), verified surrounding
+  bytes matched the kill primitive signature (`4c 8b 51 10 4d 85 d2 74 1b …`), wrote `0xEB` at
+  both. Both writes readback-verified. **Game died within 3 minutes with `0xC0000005` at
+  `runtime.dll+1` (= 0x7FFCA1400001)** — the S131 constant-kill-address signature. No shim
+  injected, no game-state mutated, only the 1-byte packer1 patch. ⇒ **runtime.dll integrity-checks
+  its own `.text` and fires a controlled FK-31-style crash (deliberate EXECUTE fault on the MZ
+  header byte at base+1).** ★★★★★ **This SPLITS FK-31 and FK-32 into distinct mechanisms**:
+  **FK-31** = `0xC0000005` at `runtime.dll+1`, fires on runtime.dll `.text` tampering (S168 direct
+  measurement); **FK-32** = `0x0000DEAD` via `NtTerminateProcess`, fires on game exe/shim tampering
+  (S158-S166); different exit codes, different fault RIPs, different trigger classes. Prior CLAUDE.md
+  entries treating them as one mechanism are corrected. ★ **NEW REUSABLE RULES**: (S168-a) when a
+  patch fires an unexpected death, you've discovered a SECOND check that also monitors the spot;
+  the unexpected result is a positive finding. (S168-b) a `.text` patch on runtime.dll's packer1 is
+  LETHAL within minutes via the self-check; do not attempt without a bypass for the self-check.
+  (S168-c) verify each protector kill by exit code AND fault RIP — two kills can share a code but
+  differ in mechanism (S131 FK-31 base-rate death and S168 detection-triggered kill both produce
+  0xC0000005 at runtime.dll+1). (S168-d) `VirtualProtectEx` + WPM + `FlushInstructionCache` works
+  cleanly on packer1 (2/2 patches landed readback-verified); the FAILURE isn't the tool, it's the
+  strategy (any runtime.dll .text patch is caught). ⚠⚠ **[M] runtime.dll's ONLY ntdll import is
+  `RtlPcToFileHeader`** (return module base from PC) — 0 static direct/JMP callers found for the
+  IAT slot; protector must use it via unrecognized indirect pattern (MBA); if identified, the
+  caller is likely on the FK-31 detonator path (that's what computes `base+1`). Path forward for
+  WALL P (FK-32 specifically): **S169 HW breakpoint on 0x80F7F0** — capture rcx at kill time,
+  identify the object it points to, NULL its `[+0x10]` field as a **data-only** defeat (matches
+  S130/S131/S166's 0/22 lethal data-write class).
+- **S166 (2026-09-03):** ★★★★★ **S165's WALL P DISPATCH IDENTIFICATION IS REFUTED [M] BY LIVE POKE
+  TEST. Read `docs/s166-poke-refuted-wallp-dispatch-elsewhere.md`.** Flew S165's proposed fix path:
+  `WriteProcessMemory`-poked `BeginAddress = 0xFFFFFFFF` on each of the 16 packer42 kill scope
+  entries × 2 mappings (32 writes, 32/32 readback-verified, pre-poke state saved to JSON). Persisted
+  through activation window (verified via `poke_persistence.py` on AFTER-POKE + POSTCAST dumps: 16/16
+  entries still poked in both mappings at t+25s, kill was 45s away). **Kill fired at t+69.6s with
+  `0x0000DEAD`** — identical timing and exit code to prior 5 sessions. Post-mortem static scans:
+  0 E8/E9 direct callers to `0x80F7F0` in runtime.dll's 55.9 MB executable sections, 0 FF-15 indirect
+  callers via any of the 16 kill-pointer sites, 0 callers of the vtable ctor at `0x7F86F0`. The
+  1,458-entry function pointer table at `packer0 RVA 0x7C80E2..0x7C97AA` (kill is entry #240) has
+  0 rel32 LEAs referencing its base. Image-wide `mov r32, 0xDEAD` scan across runtime.dll + game exe
+  + preloader.dll finds only 1 hit (the one known kill primitive at packer1 RVA `0x80F80C`).
+  ⇒ **The 16 packer42 scope entries are NOT the WALL P dispatch.** They are either decoys, a backup
+  handler for a different tamper class, or reached via a mechanism static analysis cannot see (MBA-
+  obfuscated indirect call, VEH chain, or dynamically-mapped code we haven't captured). What
+  survives from S165: kill primitive at `0x80F7F0` identity, packer42 byte-identity live vs on-disk,
+  packer1/30/31 byte-identity, `.pdata` 82% runtime-overwrite finding, existence of 16 scope entries
+  in packer42. ⚠⚠ **CLAUDE.md's "WALL P DISPATCH IS FULLY MAPPED" [M] grade below is now REFUTED —
+  read as [I, wrong] until this line's finding is incorporated into any planning.** The kill (n=6
+  now: S158/S159/S160/S161/S165/S166) is real and reproducible; what fires it is UNKNOWN.
+  ★★★★★ **NEW RULES BANKED**: (S166-a) a "successful" poke can hide the true mechanism — poking
+  something else in the same neighborhood would have appeared to work too if the fix hits somewhere
+  downstream. **Prefer a failed poke that VERIFIES the target was reached over a successful poke
+  that attributes the effect.** (S166-b) `WriteProcessMemory` to a PAGE_WRITECOPY region triggers
+  CoW, splitting a contiguous MEM_IMAGE region into fragments visible via `VirtualQueryEx` as N
+  smaller regions. Reassemble by address range, not size. (S166-c) size-based captured-bin filters
+  fail after CoW fragmentation — parse filename VA+size and cover the original mapping's virtual
+  range. (S166-d) zero visible static callers of a code address is NOT evidence the code is
+  unreachable at runtime — MBA-obfuscated indirect dispatch is invisible to rel32/FF-15 scans.
+  (S166-e) choose the safest poke value that preserves target structure well-formedness AND makes
+  the target condition unreachable — `BeginAddress = 0xFFFFFFFF` beats `HandlerAddress = 0` because
+  the entry stays syntactically valid, the walker skips it cleanly, and no nested-exception risk.
+  ★★★★ **S167 next move (recommended in the settled doc)**: set a hardware breakpoint (Dr0-Dr3) on
+  `0x80F7F0` execution before activation; when kill hits, the breakpoint dumps the call stack and
+  names the actual caller. HW breakpoints are user-mode DRs, invisible to protector integrity
+  checks. If HW breakpoint never fires, `0x80F7F0` is a decoy and the kill uses a different route.
+- **S165 (2026-09-03):** ★★★★★★★ **WALL P DISPATCH IS FULLY MAPPED — 100% STATIC. S163's LSDA-
+  obfuscation hypothesis REFUTED by LIVE MEASUREMENT [M]. Read `docs/s165-wallp-scope-tables-settled.md`.**  ⚠⚠⚠ **S166 REFUTED this [M]** — see the S166 entry above.
+  Two flights + offline walk. Chain, all [M] end-to-end: tamper check in **`packer30` fn `0x1318c6c-
+  0x1351d9a` (233 KB) or fn `0x13f7d92-0x14371fe` (259 KB)** deliberately faults into one of **16
+  guarded 5-45 byte code ranges** → OS `KiUserExceptionDispatcher` finds the covering `RUNTIME_FUNCTION`
+  in the loader table at RVA `0x14D8758` (18,580 entries) → reads `UNWIND_INFO` (in `packer42` at RVA
+  `0x3ff7b68` or `0x3f80310`) → `ExceptionHandler = 0x836fa0` = OS's `__C_specific_handler` in `packer1`
+  → walks inline SCOPE_TABLE (18,898 or 20,769 entries in `packer42`) → matches one of 16 entries with
+  `HandlerAddress = 0x80F7F0`, `JumpTarget = 0` → **calls kill primitive → `NtTerminateProcess(0xDEAD)`**.
+  ★★ **VERIFIED LIVE**: `packer42` byte-identical to on-disk (0 bytes changed in 1 MB, all 16 kill
+  scope entries preserved); `packer1/30/31` also byte-identical (0 bytes in 48 MB). **No LSDA
+  decryption, no runtime scope-table population.** S162's "46,364 scope records, 16 with kill" is
+  CONFIRMED EXACTLY. Kill fired at t+47.7s post-real-activation (n=5 with S165: 40/43/47.7/67/47.7s).
+  ⚠⚠ **NEW FINDING — `.pdata` MEMORY is 82.27% overwritten at runtime** (on-disk is a vestigial 1,854-
+  record table; RUNTIME memory is heavily different). This may explain S163's "227 obfuscated LSDAs"
+  reading — likely walked live `.pdata` memory (protector-modified) rather than on-disk. `packer2`
+  fragments also 74-93% modified; `packer0` has 0.10% patches (likely IAT). ★★★★★ **FIX PATH IDENTIFIED
+  [M]**: poke the 16 kill scope entries' `HandlerAddress` in live `packer42` from `0x80F7F0` to `0`
+  (or a benign return) — risk class DATA (aligned qword writes on RW pages, readback-verifiable), no
+  `.text` write. Same class as S130/S131 CDO pokes (measured 0/22 lethal in this project). RVAs
+  enumerated in `docs/s165-wallp-scope-tables-settled.md` Appendix A. ⚠ Not yet flown; the offline
+  finding is complete. ★★ **New rules from S165**: (S165-a) walking a data structure with a size field
+  requires no clamp OR log when clamping — my first walker used `count > 10000` and found "0 kill
+  records", matching S163's error by coincidence; raising to 100,000 found all 16. (S165-b) `.pdata` on
+  this build is vestigial AND runtime-overwritten — always use the loader table at RVA `0x14D8758`.
+  (S165-c) `dumpimage`'s `-includehiddenimages` (S164) missed `packer42` because it filtered for
+  executable pages only — extended in flight to capture non-exec MEM_IMAGE regions too. (S165-d) a
+  single failed keystroke script CAN be a focus race, not a broken shim — retry before diagnosing.
+  (S165-e) death-detection loops must sample BEFORE sleeping. ⚠⚠ **`docs/s163-s162-unification-
+  partially-refuted.md` is now itself REFUTED**; its S162-partial-refutation stands only for the
+  "5 orchestrator functions are WinHttp/Sentry" part, NOT for the SEH dispatch mechanism (which is
+  100% confirmed).
+- **S162 (2026-09-03):** ★★★★★★★ **FK-10 + FK-31 + FK-32 + WALL P ALL UNIFIED via Windows SEH scope
+  filter mechanism [M]** (**S162 CONFIRMED at S165; the S163 partial-refutation of this claim is itself
+  REFUTED, see S165 entry above**). Read `docs/s162-seh-kill-dispatch-unified-settled.md`. The prior FK-10
+  "MBA-hidden vtable dispatch via `[reg+0x20]`" hypothesis is REFUTED: byte-scan of the entire
+  packer set returned 0 real `call [reg+0x20]` dispatches. **Actual mechanism**: SEH scope table.
+  Chain: some integrity check faults (probably to `runtime.dll+1`) → `KiUserExceptionDispatcher` →
+  `__C_specific_handler` at LSDA RVA `0x836fa0` → SCOPE record's `HandlerAddress = 0x80F7F0` (the
+  kill) → `NtTerminateProcess(0xDEAD)`. **11 packer30 functions register with this LSDA; 46,364
+  total SCOPE records; 16 have kill as HandlerAddress** across 2 giant packer30 functions. The 13
+  CALL TARGETS inside those scope bodies contain the specific integrity check. **`packer31
+  0x03C8EDF2` CONFIRMED MSVC inline-buffer idiom, NOT the kill dispatch** (CLAUDE.md [S] was right).
+  This CLOSES the FK-10 Wall #7 "how does dispatch happen" half; residual is which of 13 targets is
+  the check. It also unifies S131's `runtime.dll+1 constant kill address` finding — the fault target
+  is a deliberate EXECUTE violation on runtime.dll's MZ header, SEH catches, scope filter fires.
+- **S161 (2026-09-03):** ★★★★★★ **FK-32 TRIGGER IS SPECIFICALLY MiniDash ACTIVATION [M, n=4]**.
+  Read `docs/s161-fk32-trigger-localized-settled.md`. Three-way discriminator in ONE launch:
+  T1 (stage-only, no probe, no activation) survived 425s+; T2 (probe SETUP_ABORT injected, no
+  activation) survived 585s+; T3 (LeftShift activation) died at **t+67s post-LeftShift** with
+  `0x0000DEAD`. **Rules out**: staging alone, probe SETUP alone, DLL-injection alone, fixed-cadence
+  protector polling. **Confirms**: activation triggers FK-32 with ~50-70s delay (n=4: S159 ~40s,
+  S160/E ~43s, S161/T3 67s). Agent 4 also nailed the kill primitive: runtime.dll IS on disk at
+  `G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Binaries\Win64\runtime.dll` (67.5 MB
+  plaintext); kill @ RVA `0x80F7F0` = `mov edx,0xDEAD; syscall` (`NtTerminateProcess`, [M] end-to-
+  end now); vtable at packer0 RVA `0x1831C0` has 5 slots (0-indexed: slot 3 = NtCreateThreadEx,
+  slot 4 = KILL; 1-indexed: 4th = NtCreateThreadEx, 5th = KILL — **CLAUDE.md's flagged 0/1-indexed
+  ambiguity resolved: both correct, different conventions**); constructor @ RVA `0x7F86F0` installs
+  vtable but doesn't fill the handle field. Backward callers are MBA-hidden (0 direct rel32 xrefs).
+  **Next seed** (unread since S132): CLAUDE.md's `packer31 0x03C8EDF2 computes variable +
+  ImageBase + 1, dereferenced at 0x03C8EFF3`.
+- **S160/Recipe E (2026-09-03):** ★★★★★★ **WALL P IS A SUBSET OF FK-32 [M via crashwatch exit
+  code]**. Read `docs/s160-recipe-e-fk32-connection-settled.md`. Recipe E (LeftShift KeyDown only,
+  no KeyUp, 30s hold) — the InputReleased hypothesis is REFUTED (game still dies) but crashwatch
+  caught the exit: **`exit code 57005 (0x0000DEAD)` at elapsed 252.8s** = the protector's
+  `NtTerminateProcess(0xDEAD)` at `runtime.dll RVA 0x80f7f0` per FK-10. **Correction to
+  S158/S159**: their "silent kill with no artifact" was wrong — `configs/archive-crashdumps.ps1`
+  reports no crashpad handoff because `0xDEAD` is an intentional exit (not a crash), but
+  crashwatch's exit-code poll catches it every time. Log at `docs/crashwatch.out.log` (OVERWRITTEN
+  per launch — preserve before relaunching). **Time from activation to kill: ~40-60 seconds**,
+  consistent with a periodic protector integrity sweep. **The SetReplicatedEvent spam is BOUNDED
+  to ~58ms** (4130-4522 lines at ~78,000/sec then stops); game continues silently for another
+  ~40s before FK-32 fires. ⇒ **The wall is not the ability system, it's the protector**. Preventing
+  the kill requires reducing FK-10 detection surface (see FK-10 Wall #7 open target — the SHA-256
+  multi-buffer hasher at `runtime.dll RVA 0x8ffcd4..0x93e886`), not fixing MiniDash. Recipe E's
+  ~40-60s survival window makes MORE testing per launch possible (e.g., multi-cast, other
+  abilities, extended observation).
+- **S160 offline (2026-09-03):** ★★★★★ **WALL P ROOT CAUSE IDENTIFIED [I,strong]** — read
+  `docs/next-session-prompt-s160.md` §"ROUND 2". **Type 3 in the spam is `InputReleased`, NOT
+  `TargetData`** (S158/S159 label was wrong; enum table at `.rdata 0x083C25A0`). **Emitter is
+  stock UE `UAbilitySystemComponent::ServerSetReplicatedEvent_Implementation` at RVA
+  `0x0448E4F0`** (LEA site `0x0448E694`, format string `0x083E9C50`, pointer-table gadget
+  `0x083E9C30`). **Mechanism**: ability activation → InputReleased event fires with PredictionKey
+  `[1/0/1]` → NM_Standalone client has no NetDriver to Ack → `FPredictionKeyDelegates` catch-up
+  re-broadcasts the un-Ack'd key at ~78,000/sec → loop unconditional until EndAbility or ASC
+  destruction → EndAbility never fires (Winddown never transitions on this client) → infinite
+  loop → watchdog/OOM silent kill. **S160's cheapest experiment**: HOLD LeftShift indefinitely
+  (skip KeyUp) — if InputReleased doesn't fire, no spam, game may survive the whole ability
+  cycle. Do NOT chase the "cue async-load" hypothesis first — that was a co-symptom, not the
+  cause. `GC_GlobalImpulse_DASH` IS shipped; its `GameplayCueTag = "GameplayCue.Event.Global.
+  Impulse.Dash"` is fired by native `ULokiCharacterMovementComponent::Dash 0x535F3A0` but has
+  no direct connection to the InputReleased loop.
+- **S159/F-1 (2026-09-03):** ★★★★★ **n=2 REPRODUCIBILITY CONFIRMED, but 5 findings overturn parts of
+  S158**. Read `docs/s159-f1-reproducibility-settled.md`. Same recipe, same DLL, same fk24-stage
+  sequence: activation path executes with byte-identical page census (M2/M1r/S156c pages identical
+  LIT counts). ⚠⚠ **`flags=0x50 exact=NO` was RUN-TO-RUN VARIANCE**, not systemic — F-1 got
+  `flags=0x00 exact=yes` (shim baseline PASSED, reached READY). ⚠⚠ **The shim's input monitoring is
+  BROKEN**: `sawShiftDown=no ToggleMap=0 Ability3=0` yet MiniDash activated per Loki.log. Do NOT
+  trust the shim's `sawShiftDown` as evidence of input — verify via Loki.log spell-state
+  transitions instead. **Second cast at t+1.5s produced NO new spell activation** (no `going from
+  nullptr to Targeting` #2). **Game survived 12+ sec then silently died** — kill timing is
+  non-deterministic (S158 died in ms). **The spam is 3787-4130 lines / ~45-53 ms / ~78,000 lines/sec
+  all `Type: 3 (TargetData)` with PredictionKey `[1/0/1]` NEVER Ack'd**; `GC_GlobalImpulse_DASH`
+  async-loads at EXACTLY the ms the spam starts. ⇒ **[I,strong] LEADING WALL P HYPOTHESIS**: cue
+  async-load never completes → PredictionKey never Ack'd → server keeps re-sending TargetData →
+  silent kill. S160's cheapest experiment (`docs/next-session-prompt-s160.md` §"Recipe A"): preload
+  the cue before LeftShift; if MiniDash executes cleanly, root cause named. Also from Agent 2: bits
+  `0x01/0x02/0x04/0x08` at `FGameplayAbilitySpec+0x39` are declared UPROPERTIES
+  (`InputPressed/RemoveAfterActivation/PendingRemove/bActivateOnce`); bits `0x10/0x40` are NOT
+  UHT-declared and have no writer visible in decrypted `.text` — likely transient/routing bits
+  set by code on undecrypted pages.
+
+**Historical S146/S147 status, superseded by S158:** the direct injected valid-handle call had no
+return, active/body/cost/effect/damage receipt. S147's later natural-input flight did measure a
+real InputID-5 active-state transition and Mana cost, but not the strict Ability3 Blueprint
+witness, durable ability-body/effect execution, or damage. S158 measured all three of those
+excluded items (Pre/Post Dash Start are BP-authored log lines; the full phase machine ran through
+Invoke; damage was not measured because no bot spawner was exercised on this flight). The
+canonical-input experiment described in `docs/next-session-prompt-s147.md` is completed history,
+not the current next step; use the S150 override at the top of this file.
 ⚠ `KWIREGAS` remains a confound outside the controlled `RM_BOTFIGHT` recipe: it creates the carrier,
 ASC and attributes and writes the hero cache. Do not generalize these results to an unshimmed world.
 
@@ -452,6 +824,23 @@ executable region covers it**. A corrupted pointer does not reproduce to the bit
   deaths (`s127-fk31-staging-death`, `s128-fk31-longpark`, `s130-cdopoke-att1`, S131's launch-1) and the S114/S115
   menu-route deaths all land on their boot's one address. ⇒ **[M] one kill routine, not three.** ⚠ It says nothing
   about the TRIGGER — two detections can call one killer.
+- ★★★ **S157 (2026-09-03) EXTENDS THE KILL-ADDRESS REGISTER — Sep 1 2026 boot era = `0x7FFE9B600001` (base
+  `0x7FFE9B600000`).** 7 crashpad minidumps sampled across 2 recent boot eras — Aug 23-24
+  (`0x7FFB57400001`, matching S131) and Sep 1 (`0x7FFE9B600001`, new) — all show `0xC0000005` / EXECUTE
+  (`ExceptionInformation[0]==8`) / RIP at their boot's constant kill address. **7/7 land at
+  `runtime.dll+1`, 0/7 in any candidate DARK page** on the game exe (measured against S157's 8-page WALL P
+  candidate list; full details in `docs/s157-final-judgment-settled.md`).
+  ⇒ ★★★ **[M] the FK-10 kill primitive is architecturally decoupled from any specific dispatch site**:
+  the fault RIP always lands at `runtime.dll+1` regardless of what triggered it. Recorded as **R-S157-a**
+  in `docs/method-rules.md` §1: purely-offline evidence cannot promote a runtime dispatch mechanism past
+  `[I,strong]` when the kill primitive is FK-10-family, because the fault RIP does not name the trigger.
+  6 S157 offline workflows produced 0 `[M]` promotions on WALL P dispatch-site attribution — this is not
+  accidental, it is the expected shape.
+  ⚠ **ORDINAL of Sep 1 era is UNSETTLED (5th vs 6th vs later).** S157 verifier flagged that the register
+  has been extended twice already beyond S131's original 3: FK-8/FK-20 catalog `0x7FF90E000001` (docs/fk20-
+  coverage-settled.md:533); S109 records `0x7FF8F0400001` (docs/s109-dump-forensics.md:331/432/904). A
+  definitive ordinal audit against those citations remains OPEN — writing "Sep 1 is the 5th" would
+  under-count.
 - ★★★★★ **AND THE TARGET IS NAMED: IT IS `runtime.dll + 1`, MEASURED LIVE.** One `VirtualQueryEx` on the
   live client (`scratchpad/s131/tools/fk31_map_kill_page.py`, read-only) reports the page as
   **`MEM_COMMIT / READONLY / MEM_IMAGE`, `AllocationBase == the address itself`**, and at that base sit
@@ -4573,7 +4962,7 @@ with another is the exact error FK-10 exists to correct.
 - ★★ **FK-32 (`0x0000DEAD`) is CLOSED on mechanism:** `runtime.dll` RVA `0x80f7f0` is
   `mov edx,0xDEAD; syscall` = **`NtTerminateProcess(h, 0xDEAD)`** — the protector deliberately kills
   the process. Reached via a NULL-bounded 5-entry pointer table at `packer0 0x1831c0` whose 4th entry
-  is `NtCreateThreadEx`. ⚠ **INDEX-BASE AMBIGUITY, FLAGGED NOT RESOLVED (S132):** FK-10 describes the **4th entry** of the `packer0 0x1831C0` table as `NtCreateThreadEx`, while S132 describes the `0xDEAD` kill primitive as **slot 4** of the same 5-method table. Those reconcile only if one is 0-indexed and the other 1-indexed. **Neither source states its convention**, so do not build on either index until one is re-read from the bytes. Caught by an independent verifier, not by either author. `preloader.dll` is ELIMINATED (0 occurrences; control: 2 in runtime.dll).
+  is `NtCreateThreadEx`. ⚠ **INDEX-BASE AMBIGUITY RESOLVED (S161 Agent 4, 2026-09-03):** the 5-entry vtable is `[0] 0x871030, [1] 0x8D9480, [2] 0x8B8B60, [3] 0x8131D0=NtCreateThreadEx (obfuscated-syscall prologue), [4] 0x80F7F0=KILL`. FK-10's "4th entry = NtCreateThreadEx" = **1-indexed** convention (slot 3 in 0-indexed); S132's "slot 4 = kill" = **0-indexed** convention. Both correct, different conventions. Kill is at packer0 RVA `0x1831C0 + 0x20 = 0x1831E0` (slot 4 × 8 bytes = +0x20). Confirmed via `mov r32, 0xDEAD` byte search: EXACTLY ONE occurrence in the entire 67.5MB runtime.dll, at packer1 RVA `0x80f80c` (which is `0x80F7F0 + 0x1c` inside the kill primitive). `preloader.dll` is ELIMINATED (0 occurrences; control: 2 in runtime.dll).
 - ⚠ **The game exe's `IMAGE_DIRECTORY_ENTRY_EXCEPTION` is RVA=0 / size=0** while it ships a 6.28 MB
   *encrypted* `.pdata` (controls: runtime/tbb/steam_api64/preloader all read fine). So
   `RtlLookupFunctionEntry` finds nothing for the main image. **The "no C++-exception payloads" rule
@@ -4615,6 +5004,74 @@ piggyback one game-thread call → uninstall — serialized through a shared nam
 `Local\SuperviveMissionsPIHook`, so only one has the hook installed at any instant.
 That retired the old "mutually exclusive launch modes" split: all three now coexist and
 inject together as the default set (see the launch procedure below).
+
+### Before touching anything F10-mystery- / GFrameCounter- / halt-shaped / companion-kill-shaped
+★★★★★★★ **S189 SETTLED (2026-09-08) — the caller chain of the 293-byte GFrameCounter helper
+is FULLY MAPPED [M], and the helper's role in the S187 freeze is REFUTED [M]. Read
+[docs/s189-caller-hunt-settled.md](docs/s189-caller-hunt-settled.md) AND
+[docs/s189-caveat2-second-gfc-site-settled.md](docs/s189-caveat2-second-gfc-site-settled.md)
+BEFORE any F10-mystery work.** The S189-caveat2 doc supersedes half of S189-primary's gate
+attribution; reading only one produces a wrong picture. Two multi-agent workflows
+(`wf_81017226-276` + `wf_eeaf0460-b51`), zero live flights, ~10 subagent instruments converging
+byte-for-byte.
+- **[M] The 293-byte helper at `0x29EF3D3` is the middle chained-unwind region of a 351-byte
+  composite whose REAL entry is `0x29EF3A0`** (per R-S184-a). 3 rel32 callers of `0x29EF3A0`
+  (vs 0 at `0x29EF3D3`), the load-bearing one `0x29F3DB0` called from FEngineLoop::Init / Tick
+  / Exit each behind predicates `0x29F0940` (inner) / `0x29F0A30` (outer).
+- **[M] The composite helper is FPreLoadScreenManager** (7 independent instruments: 6
+  `FPreLoadScreenManager::*` method-name strings clustered at .rdata:`0x7BB4120..0x7BB4245`,
+  0xA8-byte malloc = sizeof(FPreLoadScreenManager), `[obj+0x40] = -1` = `ActivePreLoadScreenIndex`
+  sentinel, TArray<TSharedPtr<IPreLoadScreen>> layout, FPreLoadScreenSlateSynchMechanism-shaped
+  destructor). Singleton at **.data:`0x9F327E0`** (reads NULL in menu-era merged14 — post-cleanup
+  lifecycle). Predicates test `IPreLoadScreen::GetPreLoadScreenType() == EngineLoadingScreen(=2)`.
+  During gameplay both return FALSE ⇒ helper does NOT execute per gameplay frame.
+- **[M] The real 30 Hz driver is the inline site at `0x4029349-0x4029353` inside real
+  FEngineLoop::Tick** (`mov rbx,[rip+X] / inc rbx / mov [rip+Y],rbx`, both operands
+  resolving to GFrameCounter @ .data:`0x9D49138`). Sits in end-of-frame block between
+  `"FrameCounter"` and `"EndFrame"` FScopedNamedEvent LEAs. Fires UNCONDITIONALLY per Tick
+  invocation (recursive-descent CFG: 1340 instructions, 1 ret in the entire body, all 133
+  conditional branches diamonds, the 4 apparent early-exits are MSVC `_Init_thread`
+  dispatches that jmp back to main flow). 5-writer census complete; sites 2/4/5 are
+  on-demand or statically unreached, site 1 is subsystem-conditional, site 3 alone accounts
+  for the 30 Hz baseline.
+- ★★★★★ **CORRECTION TO S188 (structural claim SURVIVES): S188 identified fn `0x4027850`
+  as FEngineLoop::Tick — that function is actually FEngineLoop::Init** (strings
+  `"Engine is initialized"`, `"FCoreDelegates::OnFEngineLoopInitComplete.Broadcast()"`,
+  `"WaitForEngineLoadingScreenToFinish"`). **Real FEngineLoop::Tick is at `0x4028110`**
+  (~5.7 KiB across 15 chained pdata rows through `0x4029797`; strings `"Replicated properties
+  changed during Slate tick!"`, `"FScene_EndFrame"`, `"FEngineLoop::Tick.Benchmarking"`, etc.).
+  Called from GuardedMain-like `0x402FD90` at `0x403005A` (after `"Tick loop starting"` LEA)
+  vs Init called at `0x402FF8F` (before `"(Engine Initialization) Total time"` LEA).
+  **S188's "1 ret, no early-exit paths" claim is STRUCTURALLY TRUE OF THE REAL TICK TOO**
+  (1 ret in 1340 blocks per S189-caveat2 Lane B) — the mechanism-level finding was correct;
+  only the label needed fixing.
+- ⇒ **[M] The halt gate is UPSTREAM of FEngineLoop::Tick.** Combining S186 (ProcessEvent stock,
+  no gate inside), S188 (Tick has 1 ret + no early-exits), S189-caveat2 (Site 3 unconditional
+  per Tick call), S187 (GFrameCounter frozen post-kill): if Tick had run, Site 3 would have
+  fired and the counter would have advanced. It didn't. So Tick was not called. The gate is
+  in the GuardedMain-like caller chain at `0x402FD90` / `0x403005A`, or in a Tick callee that
+  blocks the game thread indefinitely.
+- **Three candidate halt mechanisms** (all detailed in the caveat-2 doc §"What this means for
+  the halt gate hunt"): (a) shutdown byte at `.data:0x9d29104` flips non-zero, exiting the
+  `while(!byte) Tick()` loop; (b) a Tick callee blocks the game thread indefinitely; (c) the
+  game thread itself is blocked/sleeping/deadlocked before re-entering GuardedMain's next
+  iteration.
+- ⛔ **DO NOT chase the FPreLoadScreenManager predicates `0x29F0940` / `0x29F0A30`** — [M]
+  irrelevant to the S187 freeze. During gameplay both return FALSE regardless of companion
+  state, and R-S186-a independently refutes any FPreLoadScreenManager-based gate (halt spans
+  AActor + UAnimInstance + UUserWidget = shared downstream = UE frame pump, not
+  FPreLoadScreenManager).
+- ⛔ **DO NOT hunt for a gate inside FEngineLoop::Tick body** — S188 [M] on Init and
+  S189-caveat2 [M] on real Tick both establish 1 ret + no early-exits. Refuted twice.
+- ★ **S190 opens on the offline task list in [docs/next-session-prompt-s190.md](docs/next-session-prompt-s190.md)**:
+  enumerate `.data:0x9d29104` writers image-wide, full CFG on GuardedMain-like `0x402FD90` +
+  its outer caller, rank Tick's ~148 direct callees by blocking-primitive risk, prepare
+  live-probe design if offline can't close.
+- **Instrument-artifact instances banked as R-S189-a and R-S189-b** in
+  [docs/method-rules.md](docs/method-rules.md) §1. Recipe worth carrying: **a byte-verified
+  writer site is a FLOOR, not a semantic role — enumerate ALL writer sites of a global
+  counter and match cadence against measured frequency before naming any single site "the
+  driver".**
 
 ## Launch / run procedure
 
@@ -4825,15 +5282,21 @@ chain). See `docs/hero-roster-attempts.md` "How to reproduce" for the exact reci
   produces `mappings.usmap`. Needed when game updates.
 - **usmapdump RE commands:** `strings`, `wstrings`, `xref`, `disasm`, `peek`,
   `threads`, `findgametid`, `assetmgr` — read-only RPM, no injection.
-- **usmapdump dumpimage:** `usmapdump.exe dumpimage <proc> [outDir]` — snapshots the
-  live UNPACKED image to a cold PE for offline Ghidra/IDA (file-offset==RVA, ImageBase
-  set to the live base, so project `base+0x…` addresses map 1:1). Also dumps private
-  exec regions outside the module + a coverage manifest. Pure RPM (safe). CAVEAT: the
-  build demand-decrypts `.text` pages on execution, so a single dump only captures pages
-  the game has RUN — ~50% of `.text` at a fresh menu. Coverage rises the more code the
-  game exercises; re-dump from a richer state (in-game) for more. Also writes
-  `<stem>.exports.txt` (addr→module!export map, captured live) so `reconstructiat` can
-  rebuild imports OFFLINE later. Dumps land in `/dumps/` (git-ignored).
+- **usmapdump dumpimage:** `usmapdump.exe dumpimage <proc> [outDir] [-includehiddenimages]` —
+  snapshots the live UNPACKED image to a cold PE for offline Ghidra/IDA (file-offset==RVA,
+  ImageBase set to the live base, so project `base+0x…` addresses map 1:1). Also dumps private
+  exec regions outside the module + a coverage manifest. Pure RPM (safe). CAVEAT: the build
+  demand-decrypts `.text` pages on execution, so a single dump only captures pages the game has
+  RUN — ~50% of `.text` at a fresh menu. Coverage rises the more code the game exercises;
+  re-dump from a richer state (in-game) for more. Also writes `<stem>.exports.txt`
+  (addr→module!export map, captured live) so `reconstructiat` can rebuild imports OFFLINE later.
+  Dumps land in `/dumps/` (git-ignored).
+  ★★ **S164 flag `-includehiddenimages` (2026-09-03)**: also captures manually-mapped MEM_IMAGE
+  regions whose base is NOT in the loaded module list — the protector's `runtime.dll` per FK-10
+  (~46 MB main + ~44 MB double-mapping per S131). Needed for S163's LSDA-obfuscation verification:
+  packer42 contains runtime-decrypted SCOPE tables that are invisible on the on-disk file. Files
+  saved as `<stem>.exec_0xVA_SZ_hidden.bin`. Default OFF preserves prior behavior for existing
+  callers (crashwatch, etc.). See `docs/s164-dumpimage-includehidden-patch-settled.md`.
 - **usmapdump mergedumps:** `usmapdump.exe mergedumps <outFile> <in.dump.exe…|dir>` —
   unions several `dumpimage` snapshots into one maximally-covered image (fills each dump's
   demand-decrypt `.text` gaps from the others). A directory arg recurses for `*.dump.exe`.
@@ -5173,7 +5636,18 @@ which is a bad property for a project whose value is its retraction history).
 - **`docs/<fk-n>-*-settled.md`** — the primary evidence for each settled unknown, with the
   measurements and the controls. These are ground truth; this file is a summary of them.
 - **`docs/method-rules.md`** — the two method rules above.
-- **`docs/next-session-prompt-*.md`** — chronological handoffs. **Latest: `docs/next-session-prompt-s156.md`** (S155 → S156, session-end 2026-09-02): ★★★★★ **14 S153-through-S155 offline commits `1941246..3cbf8aa` on origin.** Full session package in `docs/next-session-prompt-s154.md` §0-§9 (still authoritative for the S153 body of work); S154 added the state-tracker profile (`docs/wall-p-statetracker-class-s154.md`) identifying the WALL P subobject class as `ALokiPlayerController` [STRONG_INFER pending §1 verification], mapping 8 state bytes to 4 phases + auth gate + latch + timing floats, and REFUTING `0x56A5370` as the delegate broadcast (2-D vector commit helper); S155 folded 16 rules into `docs/method-rules.md` (row total 131 → 136; 5 new table rows S153-a/b + S154-a/c/e, 4 new "How to apply" items 16-19). **s156 recommends starting with ONE offline verification BEFORE flying: disassemble `0x4453EC0` to verify its return type** — the WALL P class-id chain depends on it returning a pawn (so `[+0x400]`=Controller), and that citation has never been ground-truthed. 3 pre-registered outcomes; either CONFIRMS `ALokiPlayerController` [→MEASURED] or SHIFTS class-id [→re-derive R-S154-b]. **Once §1 lands, the WALL P live-read recipe from s154 doc §1 is the first live action.** The three S151 unflown arms (DLP, Move 3 BINDCENSUS superseded by the state-byte read, Move 4 WALL E unblocked by S153 thunkExact fix) are still ready. **Predecessor S147/S146 blocks below are unchanged history**. ⚠ **Do NOT rebuild S148 from the codex worktree** — main-worktree fix at commit `1941246` is canonical. ⚠ **Do NOT trust S154's class-id as MEASURED** until §1 verifies.
+- **`docs/next-session-prompt-*.md`** — chronological handoffs. **Latest: `docs/next-session-prompt-s177.md`** (session-close S175 → S177, 2026-09-04): ★★★★★ **paste-ready fresh-session opening prompt**. Consolidates the intensive S175→S176→S177 arc: **7 live flights + 6 offline workflows + 5 read-only launches** refuted 8 FK-32 dispatch candidates with [M]/[M-caveat] grade. **Uptime 920s = project record** (S175 P1+P4). **[M] FK-32 IS NOT via runtime.dll's kill primitive at 0x80F7F0** — Move F held S169-B poke bit-stable for 12m22s (3,702 samples, 0 changes) and FK-32 fired anyway. **[M] 6 ntdll process-termination paths all HW-BP-tested with NONE firing** (Move I + Move I-2). **[M] Only 1 `mov edx, 0xDEAD` primitive in the entire process** (runtime.dll 0x80F80C, byte-verified across 121 MB of hidden mappings via Move M's `dumpimage -includehiddenimages`). Remaining FK-32 candidates: JIT-generated kill stub (Move I-3 memory diff), kernel-side termination (ETW), or protector clears DRs before firing (Move I-4 DR-poll). Read this first, then the top 5 docs it names. **Prior: `docs/next-session-prompt-s175.md`** (session-close S174 → S175, 2026-09-03) — its recommended combined P1+P4 recipe was flown; FK-31 defeated but FK-32 uses a mechanism unrelated to the packer2 syscall poke. Prior: `docs/s174-progressive-resume-fk31-still-fires.md`, `docs/s173-thread-suspend-DEFEATS-fk31-fk32-survives.md`, `docs/s170-veh-intercept-failed-veh-not-called-on-fk31.md`. — it proves thread suspension defeats FK-31 (game survived 91+s post-poke with 7 threads suspended, vs prior 20s baseline) and confirms FK-32 is a separate mechanism triggered by shim staging. S174's recipe: progressive-resume to identify specific FK-31 check thread. Prior: `docs/s170-veh-intercept-failed-veh-not-called-on-fk31.md` — it proves baseline is stable (350s+ survival), VEH bypass is dead (0 intercepts on FK-31), and packer2 detection is FAST (20s). Path forward is race-based or thread-suspension. Prior: `docs/s169-packer2-syscall-poke-refuted-self-check-covers-packer2.md` — it establishes that packer2 is also runtime.dll-self-checked (not just packer1 from S168) and identifies the VEH-injection path forward for S170. Prior: `docs/s168-runtime-dll-self-checks-fk31-fk32-are-different.md` established that runtime.dll has its own self-integrity check (0xC0000005 at runtime.dll+1) distinct from WALL P (0xDEAD). Prior: `docs/next-session-prompt-s167.md` (session-close S166 → S167, 2026-09-03): S166 flew S165's proposed fix (poke 16 packer42 kill scope entries). Poke landed AND persisted; kill fired anyway at t+70s. ⇒ the 16 scope entries are NOT the WALL P dispatch. S167's task: set a hardware breakpoint (Dr0-Dr3) on `0x80F7F0` before activation, wait for kill, dump call stack. HW breakpoints are user-mode DRs invisible to integrity checks. First-priority read: `docs/s166-poke-refuted-wallp-dispatch-elsewhere.md` (esp. Open hypotheses + Path forward).
+- **Prior: `docs/next-session-prompt-s166.md`** (session-close S165 → S166, 2026-09-03): ⚠ its central claim ("poke the 16 scope entries to defeat WALL P") is REFUTED by S166's flight — the S166 doc supersedes.
+- **Prior: `docs/next-session-prompt-s165.md`** (session-close S164 → S165, 2026-09-03): ★★★ **paste-ready fresh-session opening prompt**. Consolidates the entire S158→S164 one-day chain. Central S165 question: does `packer42` (in runtime.dll's LIVE-DECRYPTED state) contain SCOPE_TABLE records with `HandlerAddress = 0x80F7F0` (the kill) that AREN'T visible in the on-disk file? Answer confirms/refutes S163's LSDA-obfuscation hypothesis for WALL P dispatch. Recipe: launch, take BEFORE-hidden dumpimage, stage, take AFTER-STAGE-hidden, activate MiniDash via LeftShift, take AFTER-ACTIVATION-hidden — all with the new `-includehiddenimages` flag S164 shipped. All 3 dumps should contain `*_hidden.bin` files matching runtime.dll's expected mappings (~46 MB + ~44 MB double-map per S131). Then offline: parse hidden dumps as PE images, walk `.pdata`, count kill scopes in packer42.
+  ⚠ **S164: `docs/s164-dumpimage-includehidden-patch-settled.md`** (2026-09-03): Added `-includehiddenimages` flag to `tools/usmapdump/dumpimage.go` per Agent 4's recommendation. Default OFF preserves prior behavior. When set, captures MEM_IMAGE regions whose base is NOT in the loaded module list (manually-mapped module-list-hidden images) — e.g. the protector's `runtime.dll` per FK-10 (46 MB main + 44 MB double-mapping per S131 + smaller LOW mapping). Enables S163's leading-hypothesis test: **capture runtime.dll's live-decrypted packer42 SCOPE tables** to find kill-scope records that don't show up in the on-disk file (which only has the encrypted form). Usage: `usmapdump.exe dumpimage SUPERVIVE-Win64-Shipping.exe dumps/label -includehiddenimages`. Build verified clean; wrapper pattern preserves all existing callers (crashwatch.go, etc.).
+  ⚠ **Previous: `docs/s163-s162-unification-partially-refuted.md`** (S163, 2026-09-03): ⚠⚠⚠ **CRITICAL CORRECTION to S162** — the "SEH scope filter IS the WALL P dispatch" claim is PARTIALLY REFUTED. The pointer tables at 0x8148/0x8150/0x8160 that Agent 5/6 called "call target stubs" are actually WinHttp API NAME STRINGS (`WinHttpCloseHandle`, `WinHttpConnect`, `WinHttpOpen`, etc. in `<ORD:u16>\x00Name\x00` format). The 5 packer30 "orchestrators" are Sentry crashpad HTTP upload OR the protector's telemetry call-home. The SEH scopes with kill as HandlerAddress are HTTP-error fallback paths, NOT anti-tamper dispatch. Also my independent SCOPE_TABLE walker found 0 kill records via LSDA=0x836fa0, contradicting Agent 5's byte-pattern-based count of 17 (byte hits are not all real SCOPE records). **What stands**: kill primitive 0x80F7F0 [M], hasher 0x920c00 [M] (Intel ISA-L 8-lane SHA-256, byte-verified via K[0]=0x428a2f98 replication + AVX-512 dispatch), packer31 0x03C8EDF2 = MSVC inline-buffer NOT kill [M]. **What is retracted**: the S162 "unification" and the "13 CALL TARGETS contain integrity check" claim. **NEW leading hypothesis [S]**: protector calls home via WinHttp; hosts redirect blocks it; SEH catches; kill fires. Verifiable by finding runtime.dll's call-home URL. **WALL P anti-tamper dispatch chain remains UNKNOWN.**
+  ⚠ **Previous: `docs/s162-seh-kill-dispatch-unified-settled.md`** (S162, 2026-09-03, PARTIALLY REFUTED — see above): claim was ★★★★★★★ **FK-10 + FK-31 + FK-32 + WALL P ALL UNIFIED via Windows SEH scope filter mechanism [M]**. Prior "MBA-hidden vtable dispatch" hypothesis is REFUTED: byte-scan for `call [reg+0x20]` in the entire packer set returns 0 real dispatches. **Actual chain**: some integrity check deliberately faults (probably to `runtime.dll+1` per S131) → Windows `KiUserExceptionDispatcher` → `__C_specific_handler` at runtime.dll RVA `0x836fa0` → SCOPE_TABLE record's `HandlerAddress = 0x80F7F0` (the kill primitive) → `NtTerminateProcess(0xDEAD)`. Measured: 46,364 total SCOPE records in 11 packer30 functions, **16 records** have kill as HandlerAddress across 2 giant packer30 functions (`fn[0x1318c6c..0x1351d9a]`, `fn[0x13f7d92..0x14371fe]`); 20 records have ctor `0x7F86F0` as HandlerAddress. Kill-guarded ranges 5-45 bytes. **13 candidate CALL TARGETS** inside those 16 scopes — one contains the SHA-256 integrity check. **`packer31 0x03C8EDF2` CONFIRMED as MSVC inline-buffer idiom** (CLAUDE.md's [S] was correct). Retract "MBA-hidden dispatch" from FK-10; upgrade dispatch mechanism to [M]. S163+ can enumerate the 13 targets to name the specific check.
+  ⚠ **Previous: `docs/s161-fk32-trigger-localized-settled.md`** (S161, 2026-09-03): ★★★★★★ **FK-32 TRIGGER LOCALIZED TO ACTIVATION [M, n=4]**. ★★★★★★ **FK-32 TRIGGER LOCALIZED TO ACTIVATION [M, n=4]**. Three-way discriminator in ONE launch (T1 stage alive 425s+, T2 probe SETUP_ABORT alive 585s+, T3 LeftShift dies at t+67s with `0x0000DEAD`). Rules out staging/DLL-injection/fixed-timer as triggers; confirms activation-specific. Combined with S160 Recipe E (activation→kill ~50-70s, n=4). Also Agent 4: **runtime.dll IS on disk** at `G:\git\GAME BACKUPS...\runtime.dll` (67.5 MB plaintext), full kill primitive disassembled at RVA `0x80F7F0`, vtable at packer0 RVA `0x1831C0` fully mapped (5 slots), CLAUDE.md's 0-vs-1-indexed ambiguity resolved. Next offline seed: CLAUDE.md's `packer31 0x03C8EDF2` remains unread.
+  ⚠ **Previous: `docs/s160-recipe-e-fk32-connection-settled.md`** (S160/Recipe E, 2026-09-03): ★★★★★★ **WALL P IS A SUBSET OF FK-32 [M]**. Recipe E test result: game survived 40s of shift-held then died with **`0x0000DEAD`** at elapsed **252.8s** per `docs/crashwatch.out.log`. This CORRECTS S158/S159's "silent kill with no artifact" — the kill IS `0xDEAD` (FK-32 protector kill via `NtTerminateProcess` at `runtime.dll RVA 0x80f7f0`), just doesn't produce a crashpad dump because it's intentional exit. crashwatch.out.log catches it via exit-code polling. Time from activation to kill: ~40-60s (consistent with periodic protector integrity sweep). SetReplicatedEvent spam is bounded to ~58ms (4130-4522 lines) then stops; game continues silently for ~40s before FK-32 fires. ⇒ **The wall is not the ability system, it's the protector.** Fix requires reducing FK-10 detection surface (Wall #7 open target: SHA-256 multi-buffer hasher at `runtime.dll RVA 0x8ffcd4..0x93e886`), not fixing MiniDash. Also: the InputReleased hypothesis (from S160 offline round 2) is REFUTED by Recipe E — holding shift doesn't prevent the kill.
+  ⚠ **Previous: `docs/s159-f1-reproducibility-settled.md`** (S159/F-1, 2026-09-03): ★★★★★ **n=2 REPRODUCIBILITY CONFIRMED** for the S158 recipe. Activation path executes identically (byte-identical page census — every LIT count matches to the byte). **BUT 5 new findings overturn parts of S158's interpretation**: (1) `flags=0x50 exact=NO` was RUN-TO-RUN VARIANCE, not systemic — F-1 got `flags=0x00 exact=yes` and reached READY; (2) the shim's INPUT MONITORING is BROKEN (`sawShiftDown=no` yet MiniDash activated per Loki.log — the shim's PC-delegate observation misses input); (3) second cast attempted 1.5s after first produced NO new spell activation; (4) game SURVIVED 12+ seconds this run (S158 died in ms) — kill timing is non-deterministic; (5) SetReplicatedEvent spam is actually **4130 lines / 53 ms / ~78,000 lines/sec** all `Type: 3 (TargetData)` with PredictionKey `[1/0/1]` never Ack'd, and `GC_GlobalImpulse_DASH` async-loads at EXACTLY the spam start ms. **Leading WALL P hypothesis**: `GC_GlobalImpulse_DASH` async load never completes on client → PredictionKey never Ack'd → server keeps re-sending TargetData → eventual silent kill. **S160's cheapest experiment**: pre-load `GC_GlobalImpulse_DASH` before LeftShift; if MiniDash executes cleanly, root cause named. Do NOT trust shim's `sawShiftDown` — verify input via Loki.log's spell state transitions instead.
+  ⚠ **Previous: `docs/s158-wallp-natinput-settled.md`** (S158, 2026-09-03): ★★★★★ **THE HERO DASHED — MiniDash's full ability body ran end to end**: Warmup → Channeling → Invoke → InvokePhase.Begin → **Pre Dash Start → GameplayCue GC_GlobalImpulse_DASH → Post Dash Start**, then silent kill (no `0xDEAD`, no crashpad handoff, no Fatal/Error/Assert, no artifact) preceded by ~30 identical `SetReplicatedEvent [Type: 3][AbilityHandle: 1]` in ONE millisecond. **This EXCEEDS S147's finding of "no durable ability body execution".** Three-state page census (BEFORE/AFTER-setup/AFTER-natinput) locates WALL P **between Post Dash Start and Winddown/EndAbility transitions** — the ubergraph reaches [12] `GetAbilityByBaseClass` (0x4413000 LIT), [39] `Dash` (0x535f000 LIT), the S156c `InternalTryActivateAbility` framework (0x4480000 LIT), + `aux 0x55a2000` LIT + 0x4497000 LIT. **[M] WALLP-M2 + WALLP-M1-revised + WALLP-S156c CONFIRMED REACHED**; S156-a (0x4450000 EndAbility) reached during SETUP alone, ambiguous. **S156-e still [I,strong] REFUTED** (0 tokens from all 5 discriminator sites). **[I,strong] mechanism for exceeding S147**: the shim's OWN observation apparatus (CDO ownership across LeftShift) may be what suppresses body execution — S158's shim aborted at SETUP_ABORT before that ownership took effect, letting the natural-input LeftShift hit the ability-system path with no interference. `dumps/merged15.dump.exe` (52.04% non-zero, +50 pages, `strxref.py DEFAULT_DUMP` moved). Recipe: `configs/fk24-stage.ps1 -Probe naturalinput.dll` (SETUP aborts on `exact=NO` for `flags=0x50`, harmless) → `scratchpad/s158/tools/s158-send-shift.ps1` (bypasses shim READY handshake, sends Tab-Tab-LeftShift directly via P/Invoke). Evidence: `scratchpad/s158/evidence/Loki-flight-attempt2.log`. Do NOT try to relax the shim's `flags==0` check without understanding what `0x50` implies; do NOT re-fly the shim-observation path first without understanding why S158's SETUP-abort-then-natural-input worked.
+  ⚠ **Previous: `docs/next-session-prompt-s157.md`** (S156 → S157, session-end 2026-09-02): ★★★★★ **S156 was a 15-pass offline session** producing 15 new evidence docs (`docs/s156-*.md`). It moved WALL P from "somewhere in the S154 handler tails (mislocalized)" to **5 concrete candidate mechanisms** with a complete offline model of MiniDash's activation dispatch chain — every mechanism discriminable by ONE live session (page census on 4 pages + 2 RPM byte reads + 1 LokiLog grep). **The MASSIVE finding**: `MiniDash's ubergraph directly calls the `Dash` UFunction (`CallFunc_Dash_ReturnValue` local variable) at RVA `0x535F3A0` on universally-DARK page `0x535F000`** — byte-level confirmation from bpdump that MiniDash reaches into a dark page. Combined with 4 other WALL P candidates identified (ApplyCost silent-exit gate on MiniDash's charge subclass; EndAbility Super to DARK 0x4450000; InternalTryActivateAbility DARK 0x4480000; CheckSimultaneousActivation reject with LOUD logs). **S154's handler-tail hypothesis DEFINITIVELY REFUTED across three passes**. **New: `OnGameplaySpellEnded` delegate storage at `[ULokiAbilitySystemComponent+0x1608]`** (owner class corrected — S154 assumed ALokiPlayerController via `[pawn+0x400]` chain, which was for a DIFFERENT delegate at `+0x5B0`). **s157 recommends starting with ONE offline task: dump the full 301-entry MiniDash ubergraph via `bpdump` and identify the FIRST DARK-page dispatch after `EntryPoint=15`** — that names which page kills MiniDash's `0xDEAD` first. Then bpdump the CDO subobjects for MiniDash's `bCanActivateSimultaneously` / `Charges` / `Item` configured values. Then optionally a pure-Mana spell comparison. **The 5-mechanism live discriminator payload is written in `docs/next-session-prompt-s157.md` §4**. ⚠ **Do NOT relaunch the "S154 handler tail" hypothesis** — refuted 3x. ⚠ **Do NOT re-run the 15 S156 passes** — read the evidence docs; don't re-derive.
+  ⚠ **Previous: `docs/next-session-prompt-s156.md`** (S155 → S156, session-end 2026-09-02): recommended verifying `0x4453EC0`'s return type first before flying. S156 confirmed it returns AvatarActor (pawn) — but the whole S156 arc then discovered the WALL P block is `NOT` at the S154-identified state-tracker layer at all. The 5-candidate model in s157 supersedes s156's "WALL P live-read is next" recommendation.
   ⚠ **Previous: `docs/next-session-prompt-s147.md`** (S146 → S147): ★★★★★ **WALL P is localized to a valid-handle/downstream activation path, not wrapper entry.** With every measured MiniDash gate open, direct native Handle `1` at `base+0x4493420` produced no return and exit `0xDEAD`; the matched `INDEX_NONE=-1` entry control returned `AL=0`, restored the CDO and all observed state, restored `17,563/17,563` funcswaps, and later exited cleanly after `52,540.2 s`. No activation receipt exists. **Next = canonical engine-originated input:** grant MiniDash at `InputID=5`, Tab/`Toggle Map` twice as a state-restoring open/close focus/action-stack control, then LeftShift/`Ability3`, with no shim activation call; observe BP input hits plus raw spec/primary/charge/Mana state. Read `docs/s146-wallp3-native-handle-fk32.md`, then `docs/s145-wallp3-canactivate-open.md`. **Superseded by s151 Move 3 (BINDCENSUS)** which implements exactly the "observe BP input hits" prescription.
   ⚠ The separate MOVEMENT-track handoff is **`docs/next-session-prompt-s142.md`** (S141 Tier 3 -> S142): ★★★★★ **THE ENGINE MOVER CHAIN RUNS.** One 4-byte `GravityScale = 1.0f` write and the PLAYER hero FELL **23,189 uu** at terminal velocity -- from `Velocity.Z` EXACTLY ZERO ⇒ **gravity integrates from `Vz == 0` and "`Velocity == 0` stops the mover" is DEAD.** The player's non-fall was OUR OWN `sp` LIFT step zeroing `GravityScale` (`CMC+0x1A0`), which also resolves S132's dismount. **[M] the fixed-point gate is 2-D -- `Velocity.Z` is NOT zeroed.** ⇒ **The BOT is now the only thing that does not move, and it is the pawn WITH INPUT** (|Accel| 50000 vs the player's 0, same world/frame/pass). S142's first move is ONE READ: `AnalogInputModifier` + `GetMaxSpeed()` on both pawns, against engine `CalcVelocity`'s all-three-component `ZeroVector` clamp at `0x035D6511-0x035D652F` (guard `comisd` vs `(double)(float)1e-4`, on the ACCELERATE branch). ⚠ ALL S141 adversarial verification was lost to API 529s -- anything marked "pending verification" in `docs/s141-tier3-settled.md` has ONE derivation. ⚠ `docs/next-session-prompt-s141.md` and `docs/next-session-prompt-s141-tier3.md` are SUPERSEDED.
   ⚠ **Previous: `docs/next-session-prompt-s140.md`** (S139 → S140). ⚠⚠ **SUPERSEDED by the Latest line above (S140 T2 / S141 T3): `StartNewPhysics` RUNS (the `+0x16C8` "latch" is an invalid instrument, reads 0 in every world), the whole mover chain runs (the player fell 23,189 uu), and the bot/player fields read identical only on the fields that were READ — `GravityScale` differs 1.0/0.0. So "bails before StartNewPhysics (latch reads 0)", "IsSimulatingPhysics … the whole next session", and "identical on every structural field" below are all OBSOLETE; kept as the dated s140 summary.** The movement wall is down to **THREE INSTRUCTIONS**. `ULokiCMC::PerformMovement` RUNS with a real DeltaTime and reaches its Super unconditionally; the ENGINE `PerformMovement` then bails before `StartNewPhysics` (whose latch reads 0 on both pawns). Two of its three gates are measured passing (`MovementMode` 3, `Mobility` Movable); the third — **`UpdatedComponent->IsSimulatingPhysics()` at `0x035E9FB5`/`jne 0x035EB7CF`** — has never been read. **That one read is the whole next session.** ⚠ `docs/next-session-prompt-s139.md` is superseded and its §1 plan is REFUTED: `play` is **not** a moving control (it writes `CMC+0xE8`/`+0x328` directly and enables no tick), and the bot/player diff it proposed comes back **identical on every structural field** — the question was mis-framed for the third time in the same shape.
