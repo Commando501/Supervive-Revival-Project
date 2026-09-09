@@ -751,6 +751,16 @@ $Variants = @{
         # and floor, only delta sign flipped). A future overshoot/cap test would use +500 or
         # higher to push above MaxHealth.
         'botfight-damage-self-cal-bindavatar-seedmax-postshots1-heal100' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=1','-DKBFPOSTSHOT_DELTABITS=0x42C80000u')
+
+        # S156-B MaxHealth cap test (2026-09-08, marker tag [S189]): N=1 post-shot with +500.0f
+        # (0x43FA0000u), overshoots MaxHealth. Trajectory: primary 1000->750 (unchanged), SHOT_2
+        # pre=750 + 500 = 1250 requested. Two possible outcomes: (A) game clamps at MaxHealth 1000
+        # -> observedDeltaHP=+250 NOT +500, arithmeticOK=NO, postHP=1000; (B) no clamp -> postHP=1250
+        # (invariant violation), observedDeltaHP=+500 arithmeticOK=yes. Both outcomes measure
+        # something specific about the game's health invariant enforcement. Floor at default 300
+        # (pre 750 > 300, shot fires). Keeps -postshots1-heal100 as within-family control (same N=1
+        # + positive delta; only magnitude and cap-crossing differ).
+        'botfight-damage-self-cal-bindavatar-seedmax-postshots1-heal500' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=1','-DKBFPOSTSHOT_DELTABITS=0x43FA0000u')
         # SITTING 4 -- WALL E full: spawn -> wire the bot's ASC -> AdjustHealth to KILL it. 0x31.
         'botfight-kill'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x31','-DKBFDMGTGT=1')
         # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.
