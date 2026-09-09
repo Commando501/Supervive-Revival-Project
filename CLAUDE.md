@@ -84,6 +84,7 @@ The ASC is still **the shim's own**, because the designed wiring sits inside FK-
   botfight-damage-self-cal-bindavatar-seedmax-postshots1` RAW `1925e9e80646a4fb` VSIZE
   `66252fd5355723cb`. **Regression gate:** parent `-bindavatar-seedmax` RAW `b47d1bfd04e44921`
   UNCHANGED (KBFPOSTSHOTS=0 default truly dead-strips), both s148 contract tests PASS.
+  **★ N=2 follow-up flown same day (2026-09-08, `docs/s156b-postshots2-flight1-N2_BACK_TO_BACK_THREE_ADJUSTHEALTH_CALLS.md`): [M] three consecutive AdjustHealth(-250) calls all commit correctly, one per OnPI dispatch — 1000→750 (primary) → 500 (SHOT_2) → 250 (SHOT_3), every arithmetic/continuity/identity check exact. Landed at 250 HP (BELOW the 300 floor value), game continued normally, no FK-32 (game alive 10.9min+ post-flight). Cross-dispatch continuity holds across at least 3 dispatches. Floor code-covered and silent (both pre-checks passed 750>300, 500>300). First-try F1 success (no launches lost).** Arm: `-Variant botfight-damage-self-cal-bindavatar-seedmax-postshots2` RAW `ad87408901f481c5`. Zero source changes vs postshots1 — pure build.ps1 variant addition (`-DKBFPOSTSHOTS=1 → =2`). Zero-crossing (N≥3 blocked by static_assert), heal (positive delta), and floor-firing (would need floor override or larger N) remain OPEN.
 - **S156-A (2026-09-08):** ★★★★★★★ **THE GAME'S OWN `AdjustHealth` PATH RUNS END-TO-END AND
   APPLIES DAMAGE CORRECTLY. `[S148] RESULT=SELF_DAMAGE_CALIBRATED`, first time in project
   history. Read `docs/s156-seedmax-flight5-SELF_DAMAGE_CALIBRATED.md`.** [M] on the flight-5

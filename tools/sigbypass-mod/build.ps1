@@ -720,6 +720,17 @@ $Variants = @{
         # under distinct [S189] prefix so s148_damage_calibration_test.ps1 grep on [S148]
         # callCount=1 stays intact. Keep -bindavatar-seedmax UNCHANGED as controlled negative.
         'botfight-damage-self-cal-bindavatar-seedmax-postshots1' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=1')
+
+        # S156-B N=2 (2026-09-08, marker tag [S189]): same as -postshots1 but requests 2 additional
+        # AdjustHealth calls. Trajectory: primary 1000->750, SHOT_2 750->500, SHOT_3 500->250.
+        # 300 HP safety floor is ABOVE post-SHOT_3 (250) but BELOW both pre-shot checks (750, 500),
+        # so the floor stays armed but should not fire — a "floor armed but silent" outcome is the
+        # correct success path here. Firing the floor would only happen if SHOT_2 landed unexpectedly
+        # below 300 HP or if the primary shot's arithmetic diverged. static_assert(KBFPOSTSHOTS <= 2)
+        # blocks N=3+ which would cross 0 HP and risk silent FK-32 via GameplayCue OnDeath (S158
+        # precedent). Keep -postshots1 UNCHANGED as within-family controlled comparison
+        # (N=1 vs N=2 differ in exactly the number of post-shots).
+        'botfight-damage-self-cal-bindavatar-seedmax-postshots2' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=2')
         # SITTING 4 -- WALL E full: spawn -> wire the bot's ASC -> AdjustHealth to KILL it. 0x31.
         'botfight-kill'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x31','-DKBFDMGTGT=1')
         # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.
