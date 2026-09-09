@@ -1,8 +1,25 @@
+> ⚠⚠ **ADDENDUM 2026-09-09 (S189-MV-WASD F2b / F3 / shipping arm):** This doc's leading hypothesis
+> that engine `CalcVelocity`'s clamp at `0x035D6511-0x035D652F` (fires when
+> `MaxInputSpeed = GetMaxSpeed() × AnalogInputModifier < 1e-4`) is the Velocity-zeroing mechanism
+> is **REFUTED** by direct live measurement on the S189-MV-treated player:
+> `AnalogInputModifier @ CMC+0x3D0 = 1.0000 DURABLY` during W-hold →
+> `MaxInputSpeed = 500 × 1.0 = 500 ≫ 1e-4` → clamp cannot fire. Yet Velocity stays zero in
+> `MOVE_Falling` with `Vz=0`. The actual mechanism for the Falling-with-Vz=0 zero-Velocity
+> phenomenon remains UNNAMED but is bypassed by the SHIPPING PATH:
+> `GravityScale=1 → fall → land → MovementMode 3→1 (Walking) → WASD drives full walk at
+> seeded 500 uu/s cap`. F3 measured 2300 uu horizontal traversal in 3s. Shipping arm
+> `botfight-damage-self-cal-bindavatar-seedmax-mv-play` (RAW `87c764b6d235b7a3`) packages the
+> full chain — no external RPM required. Read `docs/s189-mv-wasd-f3-THE_PLAYER_WALKED.md` and
+> `docs/s189-mv-wasd-ship-f1-SHIPPING_ARM_VALIDATED.md`.
+
 # S141 TIER 3 — THE FIXED POINT IS 2-D, THE PLAYER'S NON-FALL WAS OURS, AND THE MOVER RUNS
 
 **2026-08-23/24.** Six offline lanes over `dumps/merged14.dump.exe` + **one** staged flight
 (PID 25800, base `0x7FF704F00000`, one injection, `armk` RAW `8278c6031d05756c`).
-Pre-registration: `docs/s141-t3-armk-PREREGISTERED.txt`, committed at `825aeda`/`ee0f0a1`
+Pre-registration: `docs/s141-t3-armk-PREREGISTERED.txt`, committed at `825aeda`, then refined at
+`de4d418` (the `-600` kick that was actually flown) — **both pre-flight** (flight is `b5c2519`).
+⚠ audit-S142: the previously-cited second hash `ee0f0a1` is a PHANTOM (absent from git history); the
+real intermediate is `de4d418`.
 **before** the client was launched. Evidence: `docs/s141-t3-marker-armk.txt` (377 lines),
 `docs/s141-t3-Loki-armk.log`, `docs/s141-autostage.out.txt`, `scratchpad/s141/`.
 
@@ -251,7 +268,9 @@ describes a write to **`[rsi+0x12F0]`/`[rsi+0x1300]`**, not to `Velocity`.)
 
 ### 4.1 THE LEADING CANDIDATE — engine `CalcVelocity`'s clamp `[I, strong]`
 
-⚠ **Pending adversarial verification at the time of writing** (`scratchpad/s141/verify2/`).
+⚠ **Pending adversarial verification at the time of writing** (`scratchpad/s141/verify2/` — ⚠ audit-S142:
+that directory was NEVER PRODUCED; S141 verification was lost to API 529s, so this remains ONE
+derivation, [I]. The surviving `scratchpad/s141/verify/V1/` is the dead L1 verifier's re-run scripts).
 
 ```
 035d6467  call   [rax+0x4d0]              ; IsExceedingMaxSpeed(xmm1 = MaxInputSpeed)
@@ -533,6 +552,11 @@ rank-1 `PendingLaunchVelocity` route**, which was previously single-derivation.
 
 ### 5.5 ★★★★★ `DoJump` FOUND — CMC vtable disp `0x730`. THE WHOLE KICK CHAIN IS NOW `[M]`, ZERO FOLDS
 
+⚠ audit-S142: the `[M]` here is a **static byte-level** grade — the chain was LOCATED and TRANSCRIBED
+offline, and every callee three-state-graded (independently re-confirmed this audit). It was **never
+invoked at runtime**: ARM L made the bot walk by writing `Velocity` directly, not via `Jump`/`DoJump`.
+"[M], zero folds" means measured-from-the-bytes, not flight-demonstrated.
+
 Found by **completing the enumeration from the caller** rather than guessing from position — the
 discipline S141-k prescribes. `0x3520930` makes exactly three virtual calls; disp `0x728` and
 `0x0A10` were eliminated, leaving **disp `0x730`**:
@@ -759,6 +783,8 @@ one thing that would have been worth having, and it is the cost of leaving the d
 `botai 5e47c13cf7f0a158` · `gasattr 2fcc2536e21f18e3` · `gasattr-ctrl 4465ebc4d7168c03` —
 **all three reproduce EXACTLY.**
 **Arms:** `armk` RAW `8278c6031d05756c` (FLOWN) · `armk-ctrl` RAW `3f7323f6f4ba3e57` (built,
-unflown, verified DISTINCT). Archived to `dumps/s141-arms/`.
+unflown, verified DISTINCT). Archived to `dumps/s141-arms/`. ⚠ audit-S142: `build/tutorial_launch_armk.dll`
+now digests `988fd61853669d5c` (= the never-flown `armk_v2`, S141 added the `AnalogInputModifier` read),
+NOT the flown `8278c` — cite `dumps/s141-arms/tutorial_launch_armk.dll` for the flown gate.
 ⚠ `sentinel-big`/`gasattr-sentinel`/`sentinel-burst`/`sentinel-nogas` `.text` **has moved** — the
 new free reads live inside `#if (KBSPSARMS & 0x200)`. Re-digest before reusing any of them.

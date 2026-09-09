@@ -1,3 +1,13 @@
+> ⛔⛔⛔ **SUPERSEDED 2026-09-09**: F3 was flown same-session, hit BRANCH A, and the shipping arm
+> was built + validated on a fresh launch. Read:
+> - `docs/s189-mv-wasd-f3-THE_PLAYER_WALKED.md` — F3 result (BRANCH A, 2300 uu at 500 uu/s)
+> - `docs/s189-mv-wasd-ship-f1-SHIPPING_ARM_VALIDATED.md` — shipping arm F1 (10/10 predictions hit)
+> - CLAUDE.md's WALL P S156-B block for the compact chain summary.
+>
+> This file's AirControl-hypothesis plan is HISTORICAL and was answered in F3 (AirControl=0.015
+> live, but poking it to 1.0 did NOT unlock lateral velocity — the true unlock was GravityScale→1.0
+> then wait for Walking mode). The rest of this file is preserved for the record.
+
 # Fresh session opening prompt — S189-MV-WASD Flight 3 (AirControl hypothesis)
 
 You are continuing work on the SUPERVIVE Revival Project. Read `CLAUDE.md` in full before doing anything.

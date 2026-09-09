@@ -3814,6 +3814,15 @@ static void DoWakeMove(){
         if(g_satThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(g_oSatEn!=0xFFFFFFFF)pb[g_oSatEn]=1; bool f=CallNativeGuarded(g_satFn,g_satThunk,g_satChild,(void*)g_wmHero,g_pbuf,g_rbuf); Markerf("[WM] SetActorTickEnabled(true)%s\r\n",f?" FAULTED":""); }
         if(g_smmThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); if(g_oSmmMode!=0xFFFFFFFF)pb[g_oSmmMode]=3; if(g_oSmmCustom!=0xFFFFFFFF)pb[g_oSmmCustom]=0; bool f=CallNativeGuarded(g_smmFn,g_smmThunk,g_smmChild,(void*)g_wmCMC,g_pbuf,g_rbuf); Markerf("[WM] SetMovementMode(Falling=3)%s\r\n",f?" FAULTED":""); }
         // Clear the PC's IgnoreMoveInput counter: AddMovementInput no-ops (ControlInputVector stays 0) while it's >0.
+        // ⚠⚠ HISTORICAL — the following claim is REFUTED by S189-MV-WASD F1 [M] (2026-09-09,
+        // docs/s189-mv-wasd-f1-BRANCH_B_W_DRIVES_ACCEL.md). input_watch had an instrument-artifact
+        // (single-read CIV sampling loses the ConsumeMovementInputVector race ~90% of samples);
+        // burst-reading CIV 3x per sample catches CIV=(0,-1,0) on W-hold, and the durable
+        // Acceleration=(0,-50000,0) proves the input reaches the mover end-to-end. Kept here as
+        // the original note that motivated ResetIgnoreMoveInput; the reset is still correct (a
+        // non-zero IgnoreMoveInput counter WOULD block AddMovementInput), just no longer the sole
+        // reason CIV read zero. See R-S189-MV-WASD-a (burst-read defense) + -e (shim source
+        // comment != measurement) in docs/method-rules.md.
         // input_watch proved WASD produces ZERO ControlInputVector while jump works => movement input is being ignored.
         if(g_rimThunk){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf)); bool f=CallNativeGuarded(g_rimFn,g_rimThunk,g_rimChild,(void*)g_wmPC,g_pbuf,g_rbuf); Markerf("[WM] ResetIgnoreMoveInput(PC)%s\r\n",f?" FAULTED":""); }
         g_wmLastMs=now; g_wmSample=1; return;

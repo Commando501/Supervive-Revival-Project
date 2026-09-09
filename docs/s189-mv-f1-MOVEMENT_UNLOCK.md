@@ -183,8 +183,16 @@ Both s148 contract tests PASS.
 
 ## Still open — the actionable follow-ups
 
-- **MaxAcceleration unlock via engine Super's own UPROPERTY**: on MOVE_Falling the getter returns CMC's own MaxAcceleration UPROPERTY (stock 50000). To seed it to a different value, need to locate CMC's `MaxAcceleration` UPROPERTY offset (not on the attribute set) and write it directly. Alternative: poke CMC's MovementMode from 3 → 1 (Walking) so the Walking-arm reads the seeded +0x120 attribute. Untested. Highest-value next flight for the movement wall.
-- **WASD input hookup**: with GetMaxSpeed now returning 500, the ULokiCMC's tick chain should compute `Acceleration = ControlInputVector × GetMaxAcceleration` on the Walking arm. Adding an S158-style natural input arm (Tab/Tab/WASD via P/Invoke) would test whether the seeded 500 uu/s player MOVES. The S141 T3 dictionary tells us all the required pieces are now in place.
+**[STATUS UPDATE 2026-09-09]** The WASD input hookup follow-up (item #2 below) was flown as
+`S189-MV-WASD F1/F2b/F3` same day and DELIVERED playability:
+- F1 refuted `tutorial_launch.cpp:3817` and proved W drives durable Acceleration
+- F2b measured `AnalogInputModifier=1.0` and REFUTED S141 T3's CalcVelocity clamp hypothesis
+- F3 saw the hero WALK 2300 uu at bit-exact 500 uu/s (docs/s189-mv-wasd-f3-THE_PLAYER_WALKED.md)
+- Shipping arm `-mv-play` (KBFPOKEGRAVITY knob) built + flown 10/10 predictions
+  (docs/s189-mv-wasd-ship-f1-SHIPPING_ARM_VALIDATED.md)
+
+- **MaxAcceleration unlock via engine Super's own UPROPERTY**: on MOVE_Falling the getter returns CMC's own MaxAcceleration UPROPERTY (stock 50000). To seed it to a different value, need to locate CMC's `MaxAcceleration` UPROPERTY offset (not on the attribute set) and write it directly. Alternative: poke CMC's MovementMode from 3 → 1 (Walking) so the Walking-arm reads the seeded +0x120 attribute. Untested. ⚠ SUPERSEDED — the shipping arm's GravityScale poke + landing transitions MovementMode 3→1 automatically, so the Walking arm reads the seeded +0x120 in practice.
+- **WASD input hookup**: with GetMaxSpeed now returning 500, the ULokiCMC's tick chain should compute `Acceleration = ControlInputVector × GetMaxAcceleration` on the Walking arm. Adding an S158-style natural input arm (Tab/Tab/WASD via P/Invoke) would test whether the seeded 500 uu/s player MOVES. The S141 T3 dictionary tells us all the required pieces are now in place. ✅ DONE — F3 measured it; shipping arm packages it.
 - **Bot pawn (SpawnAIFromClass) untouched**: this flight was on the PLAYER-possessed hero (S148 target). The S141 T3 BOT (SpawnAIFromClass) also has GetMaxSpeed=0 but for a different reason — it needs the whole DS-hybrid ARM G recipe (CDO subobject borrow). This flight's mechanism doesn't directly apply.
 - **Multi-shot movement**: could re-seed movement attrs across dispatch cycles (no reason not to, but untested).
 - **Seed persistence across a NEXT AdjustMana call**: KBFPOSTSHOT_MANA was not enabled this flight; if it were, does the AdjustMana call reset any movement attributes as a side effect? Untested.

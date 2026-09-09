@@ -588,13 +588,74 @@ Also from S124, tool-level and worth knowing before they cost a session:
     "shared SRW leaked by any of the 9,448 possible triggers" (plausible with live probe) was
     decisive for whether the mechanism survived offline scrutiny. (R-S190-b)
 
+24. **★★★★★ S189-MV-WASD (2026-09-09): BURST-READ CONSUMED-PER-FRAME FIELDS OR PUBLISH A
+    RACE-INDUCED NULL.** `UPawn::ControlInputVector @+0x418` is accumulated by `AddMovementInput`
+    and zeroed by `ConsumeMovementInputVector` at `0x036037FE` every tick. A single RPM read at
+    100ms cadence lands post-consume ~90% of the time and reads (0,0,0) during active input.
+    `tools/re/input_watch.py` had this defect and its "WASD produces ZERO ControlInputVector"
+    reading (`tutorial_launch.cpp:3817`) stood for months as a definitive-sounding claim, driving
+    the whole RM_PUPPET workaround architecture. **Burst-reading CIV 3× per sample with ~1ms gap**
+    caught CIV=(0,-1,0) on 3/30 W-arm samples, and durable **`Acceleration=(0,-50000,0)`** (one
+    tick DOWNSTREAM of the consume) held for the full 3s hold — proving the pipeline is alive
+    end-to-end. ⇒ **Corollary (R-S189-MV-WASD-b): a durable derivative beats a race-y source**
+    — when a value is consumed each tick, read one hop DOWNSTREAM for the stable receipt.
+    Applies to every UE input axis, every `TOptional`-like snapshot cache, every per-frame-reset
+    latch. And **(R-S189-MV-WASD-e)**: a shim source comment describing prior evidence is not
+    the evidence itself; a claim like `tutorial_launch.cpp:3817` that "input_watch proved …"
+    describes what a TOOL said, not what the game did. Replicate the measurement with a
+    controlled instrument before citing the comment. (R-S189-MV-WASD-a, -b, -e)
+
+25. **★★★ S189-MV-WASD (2026-09-09): MEASURE THE LEADING HYPOTHESIS WHEN IT'S CHEAP.** S141 T3
+    named `MaxInputSpeed = GetMaxSpeed() × AnalogInputModifier` as the primary Velocity-zeroing
+    candidate but never READ `AnalogInputModifier` live. One 4-byte read at CMC+0x3D0 during
+    W-hold returned **1.0000 durably** → MaxInputSpeed = 500 × 1.0 = 500 ≫ 1e-4 → the
+    `CalcVelocity` clamp cannot fire → hypothesis REFUTED. Cost: one field added to a probe.
+    Value: eliminates a whole class of downstream investigation. **Any long-standing hypothesis
+    with a measurable predicate should be MEASURED before spawning follow-up experiments that
+    assume it.** (R-S189-MV-WASD-f)
+
+26. **★★★★ S189-MV-WASD (2026-09-09): PEAK VALUE = SEEDED VALUE, BIT-EXACT, IS THE
+    DISCRIMINATOR.** F3's W-hold produced `peak_vel_2d = 500.000` (not 499.7 or 500.2). That
+    bit-exact match ties the observed motion to the SPECIFIC seed value written — if we'd seeded
+    MoveSpeed to 300 or 700, the peak would match that. This is R-S189-MV-a-compliant
+    (pre-registered discriminator on stock-collision values): **the observed cap is exactly the
+    value we wrote, and no other code path in the process could have produced it**. When the
+    predicted behavior involves a clamp/cap that reads from a seed, choose a non-round seed
+    value and verify BIT-EXACT match — not just "in the right range". (R-S189-MV-WASD-i)
+
+27. **★★★★ S189-MV-WASD SHIPPING (2026-09-09): SHIPPING-ARM VALIDATION IS RECEIPT + DIRECT
+    EFFECT, NOT COMPOUND DOWNSTREAM.** When a shipping arm packages proven-individually-live
+    ingredients (each already [M] separately in prior flights) into one one-shot inject,
+    validating the arm requires only (a) each ingredient's receipt line lands in sequence, and
+    (b) the ingredient's OWN direct effect fires (here: seed values reach the getter; poke moves
+    the byte; hero falls after gravity flips). RE-PROVING downstream compound effects (like
+    Walking-mode WASD drive) is REDUNDANT — those were established in the individual ingredient
+    flights. FK-32 preventing the compound test does NOT invalidate the shipping arm. The S189-MV
+    shipping-arm F1 flight's 10/10 pre-registered predictions plus the fall-trajectory (which
+    requires the poke to have engaged physics) was sufficient. Applies wherever a packaging
+    change ships proven parts. (R-S189-MV-WASD-l)
+
+28. **★★★ S189-MV-WASD (2026-09-09): SwitchToThisWindow + AttachThreadInput IS THE FOCUS-GRAB
+    PRIMITIVE for a script that does not own foreground.** `SetForegroundWindow` alone is
+    silently denied when the caller is not the foreground process (which every backgrounded
+    orchestration script is). `SwitchToThisWindow(hwnd, TRUE)` + `AttachThreadInput(selfTid,
+    targetTid, TRUE)` around `BringWindowToTop + SetForegroundWindow + ShowWindow(SW_RESTORE)`
+    bypasses that policy on this build (first-attempt success recorded). Add to any script
+    requiring foreground of a specific window. And **(R-S189-MV-WASD-d)**: for `keybd_event`
+    sustained axis input, emit KEYDOWN at ~30Hz (33ms) across the hold — a single KEYDOWN
+    reaches UE for one frame and axis input decays. (R-S189-MV-WASD-c, -d)
+
 Also of a piece: **findings that die in commit messages get re-litigated.** `46d873a` and `b420a69`
 had the input mechanism right on 2026-07-16 and were never promoted to a doc, so four later sessions
 re-derived it. **Promote findings out of commit bodies into `docs/`.**
 
 Related: [strxref-open-questions.md](strxref-open-questions.md),
 [fk2-input-settled.md](fk2-input-settled.md), [fk1-angelscript-settled.md](fk1-angelscript-settled.md),
-[fk1-native-sweep-s153.md](fk1-native-sweep-s153.md), [wall-p-statetracker-class-s154.md](wall-p-statetracker-class-s154.md).
+[fk1-native-sweep-s153.md](fk1-native-sweep-s153.md), [wall-p-statetracker-class-s154.md](wall-p-statetracker-class-s154.md),
+[s189-mv-wasd-f1-BRANCH_B_W_DRIVES_ACCEL.md](s189-mv-wasd-f1-BRANCH_B_W_DRIVES_ACCEL.md),
+[s189-mv-wasd-f2-ANALOG_MOD_1_CLAMP_REFUTED.md](s189-mv-wasd-f2-ANALOG_MOD_1_CLAMP_REFUTED.md),
+[s189-mv-wasd-f3-THE_PLAYER_WALKED.md](s189-mv-wasd-f3-THE_PLAYER_WALKED.md),
+[s189-mv-wasd-ship-f1-SHIPPING_ARM_VALIDATED.md](s189-mv-wasd-ship-f1-SHIPPING_ARM_VALIDATED.md).
 
 ---
 

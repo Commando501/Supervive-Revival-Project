@@ -1,3 +1,10 @@
+> ★★ **ADDENDUM 2026-09-09 (S189-MV-WASD F3): THE PLAYER EQUIVALENT NOW ALSO WALKS.** This doc's
+> BOT result is now matched by the PLAYER. `docs/s189-mv-wasd-f3-THE_PLAYER_WALKED.md` measured
+> the KWIREGAS-wired player traversing 2300 uu at exactly 500 uu/s (bit-exact MoveSpeed cap) after
+> S189-MV seed + `hero+0xF08` wire + `GravityScale=1` poke + hero landing on tutorial floor
+> Z=90.15. The shipping arm `botfight-damage-self-cal-bindavatar-seedmax-mv-play` packages the
+> full chain in one injection. Read `docs/s189-mv-wasd-ship-f1-SHIPPING_ARM_VALIDATED.md`.
+
 # S140 TIER 2, FLIGHT 3 — **THE BOT FALLS, LANDS, AND WALKS AT EXACTLY ITS CONFIGURED SPEED.**
 
 **2026-08-23. One staged client, one injection. ARM J, `sentinel-big 52fceb9be6de532f`, PID 64680.**
@@ -127,6 +134,16 @@ refuted is only *"the clamp explains the BOT's null"* — and the bot's null had
 ---
 
 ## 4. SO WHY DID THE BOT NOT MOVE BEFORE? — THE FIXED POINT
+
+⚠⚠⚠ **AUDIT-S142 BANNER (governs §4 AND §4b): the "FIXED POINT — not even gravity moves it off zero"
+framing is REFUTED.** §4b's "SETTLED NEGATIVELY AT S141" block below already corrects the mechanism
+(the gate is 2-D, `Velocity.Z` free, gravity NOT suppressed); this banner records that the §4 headline
+(*"nothing — not the acceleration integration, not gravity — moves it off zero"*) and §4b's grade
+(*"[M, offline; retrodicts 4/4 in both directions]"*) are therefore SUPERSEDED. The player fell
+23,189 uu from `Vz == 0` (S141 T3), so `(0,0,0)` is not a passive fixed point; the retrodiction is
+**2 independent points (rows 1 & 3)**, not 4 (row 2 is degenerate — written-to-zero and never-written
+are the same bytes; row 4 is a resample of row 3); and the bot's zero-from-rest is UNEXPLAINED, not a
+passive equilibrium. See `docs/s142-audit.md` §2.
 
 The bot had `Acceleration = 50000 × input`, `MaxSpeed = 500`, `MovementMode = MOVE_Falling`,
 `GravityScale = 1.000`, `StartNewPhysics` running every frame — **and `Velocity == (0,0,0)`, zero

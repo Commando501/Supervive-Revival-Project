@@ -29,13 +29,75 @@
 > Start at `docs/next-session-prompt-s142.md`, then `docs/s141-tier3-settled.md` (§4 and §6 govern)
 > and `docs/s140-tier1-cfg.md` (§4 and §5 govern).
 
+> ★★★★★ **S143–S146 WALL-P UPDATE (2026-08-25) — overrides the old FK-30 and FK-2 operational
+> status below.** Direct `InitAbilityActorInfo(base+0x447F410)` binds AvatarActor; native
+> `GiveAbility` commits a real spec; MiniDash has a real primary instance and every measured
+> eligibility gate can be opened. With that state, direct native Handle `1` activation from the
+> injected callback produced no return and exit `0xDEAD`, while a matched `INDEX_NONE=-1` call
+> returned `AL=0`, restored state, and exited cleanly after `52,540.2 s`. Wrapper entry/ABI is not
+> the sufficient trigger; valid-handle/downstream activation is implicated. No activation receipt
+> exists. Current next experiment = canonical Ability3 input (`InputID=5`, LeftShift) with a
+> Tab/`Toggle Map` open-close pair as the state-restoring focus/input-stack control and no
+> shim-originated activation call. Read
+> `docs/s146-wallp3-native-handle-fk32.md` and `docs/next-session-prompt-s147.md`.
+
+> ★★★★★★★★ **S189-SEED / S189-MV / S189-MV-WASD (2026-09-09) — THE PLAYER WALKED. Full playability
+> chain proven end-to-end + packaged as a one-inject shipping arm.** Six [M] flights in one
+> session, culminating in a canonical WASD-drivable player hero. Overrides "the movement wall's
+> practical consequence (WASD moves the hero) is UNRESOLVED" in FK-47.
+>
+> The chain: **S189-SEED F3** proved direct-offset seed on `ULokiAttributeSet` (Mana@+0x210 landed
+> exact, first project write to a new attribute set); **S189-MV F1** extended it to 6 movement attrs
+> and closed the S141 T3 "why does GetMaxSpeed return 0" question via ONE seed + ONE pointer-poke
+> (`hero+0xF08 = spawnedSet0` — MoveSpeed=500 seed reaches the getter, MaxAccel=45000-vs-50000
+> discriminator settled both branches of the read-path model in ONE flight);
+> **S189-MV-WASD F1** REFUTED the pre-existing `tutorial_launch.cpp:3817` claim ("WASD produces
+> ZERO ControlInputVector") as an INSTRUMENT ARTIFACT — burst-reading CIV 3× per sample against
+> the ConsumeMovementInputVector race caught CIV=(0,-1,0) on 3/30 W-arm samples, and durable
+> `Acceleration=(0,-50000,0)` for the full 3s hold proved the input pipeline is alive end-to-end;
+> **F2b** REFUTED S141 T3's leading CalcVelocity-clamp hypothesis via one live read
+> (`AnalogInputModifier @ CMC+0x3D0 = 1.0000` durably during W-hold → MaxInputSpeed = 500×1.0 = 500
+> ≫ 1e-4, clamp cannot fire); **F3** was THE PLAYER WALKED — poked `GravityScale=1`, hero fell to
+> tutorial floor Z=90.15, MovementMode transitioned 3→1 Walking, WASD hold traversed **2300 uu at
+> exactly 500 uu/s = seeded MoveSpeed cap** (bit-exact discriminator); **SHIPPING ARM `-mv-play`
+> BUILT + FLOWN** — new `KBFPOKEGRAVITY` knob adds one in-shim CMC+GravityScale=1.0f poke to the
+> `-mv-obs-wiref08` chain, all 10 prior S189-family regression gates BYTE-IDENTICAL after edit,
+> `verify_dll` PASS (KERNEL32-only, no CxxFrame, no CRT), flown on a FRESH launch (PID 49256,
+> different ASLR base, different heap addresses) with 10/10 pre-registered predictions hit, hero
+> fell 13240→386 (same ledge as F3), FK-32 at t+342s prevented capturing the walking half but that
+> ingredient was already [M] in F3.
+>
+> **Overrides in FK-47**: the "practical consequence unresolved" and "downstream mechanism unnamed"
+> lines are answered. The Falling-with-Vz=0 zero-Velocity phenomenon survives as an open cosmetic
+> — the SHIPPING PATH goes around it via Walking-mode WASD which is proven-live.
+>
+> **New rules R-S189-MV-WASD-a..l**: burst-read defense for consumed-per-frame fields; durable
+> derivative beats race-y source (Accel > CIV); SwitchToThisWindow+AttachThreadInput bypasses
+> denied SetForegroundWindow; auto-repeat @30Hz sustains axis input for keybd_event; shim source
+> comment != measurement; measure the leading hypothesis when it's cheap; single-flight anomalies
+> are not results (reproduce or discard); a fall doesn't always land on the floor; peak velocity
+> = seeded value bit-exact is a discriminator; single-arm test yields compound receipt;
+> shipping-arm validation via receipt + direct-effect fire is sufficient when compound downstream
+> was already [M]. See `docs/method-rules.md` §1.
+>
+> Read `docs/s189-mv-wasd-ship-f1-SHIPPING_ARM_VALIDATED.md`, then
+> `docs/s189-mv-wasd-f3-THE_PLAYER_WALKED.md`, then `docs/s189-mv-f1-MOVEMENT_UNLOCK.md`. The
+> shipping arm variant is `botfight-damage-self-cal-bindavatar-seedmax-mv-play` RAW
+> `87c764b6d235b7a3`.
+>
+> **Follow-up still open**: (1) full one-flight Walking-mode WASD demo (needs pre-warmed
+> send-wasd or longer probe — this flight's 35s Add-Type JIT delay let the probe finish before
+> input arrived); (2) what triggers PhysFalling to start ticking when Vz=0 (~9.5s spontaneous
+> delay observed both in F3 external poke and shipping-arm in-shim poke); (3) bot-pawn ARM G port
+> for `SpawnAIFromClass` path (extends S189-MV to bots).
+
 # SUPERVIVE Revival — The Ignorance Map (S101, inverted audit)
 
 **Companion to `docs/coverage-audit-s101.md`.** That document asked *"how much do we have?"*
 This one asks *"what don't we know we don't know?"* — and, more dangerously, *"what do we believe
 that isn't true?"*
 
-> ### 📌 LIVE DOCUMENT — the title says S101, the content runs to S130
+> ### 📌 LIVE DOCUMENT — the title says S101, the content runs to S146
 > Entries are updated in place with dated banners; **a banner always overrides the table beneath it.**
 > The original S101 text is never deleted, because the retraction history is the value.
 >
@@ -53,7 +115,7 @@ that isn't true?"*
 > | **FK-25** — the marker file | **S108** | ⚠ **STILL UNFIXED**; cost evidence again. Cheapest unspent item in this document. |
 > | **FK-26** — leftover S9x shim diagnostics | **S108** | ✅ **NEW + SETTLED.** `KSTATICTEST` was killing the hero's walk/run animation every session. |
 > | **FK-31** — `fo`'s `.rdata` patch "is obsolete" | **S112** | ✅ **NEW + FALSIFIED**, and it **carries FK-7's successor problem**: the **staging hazard, 22/82 launches (27 %)**, now the dominant tutorial-route failure. `KNOLOGINVT` **must not be re-run** (4/4 died, 0/4 map loads). `docs/fk31-fk32-successors.md` |
-> | **FK-32** — "the artifact-less deaths are hangs" | **S112** | ✅ **NEW + FALSIFIED.** At least some are **`0x0000DEAD` silent kills**, recovered by reading the process exit code. ⚠ N=2 — suggestive, not established. Residual **3/36**. |
+> | **FK-32** — "the artifact-less deaths are hangs" | **S146** | ✅ **FALSIFIED; mechanism known; one trigger subset localized.** S113 identifies the deliberate protector termination mechanism. S145 adds two reflected-activation-correlated `0xDEAD` exits; S146 adds one native valid-handle exit and a matched `INDEX_NONE` call that returned, restored state, and exited cleanly after 14.6 h. This localizes the controlled activation subset to valid activation selection/downstream, not wrapper entry. ⚠ The historical S112 residual was 3/36; do not universalize the S146 trigger to every artifact-less death. |
 > | **FK-33** — S112 instrument false-knowns (batched) | **S112** | ✅ **NEW + SETTLED.** The FK-7 "candidate" build was a commit stale; the mandated 3x `play_novtguard` control voids ~4 sittings in 5; a new crashpad dir is not a death; `fk8_classify.py` reports 1 report for 105 dirs. |
 > | **FK-34** — `UECC-C13252F5` "is the last FK-7 survivor" | **S112** | ✅ **NEW + FALSIFIED.** It is the ANIM family (a shim-lifetime bug). ⇒ **zero** FK-7 death records survive a mechanism filter. |
 > | **FK-35** — S118 lobby/notif false-knowns (batched) | **S118** | ✅ **NEW + ALL FOUR FALSIFIED.** (a) the shipped 33-name notif list is **wrong at the tail** — `signalingP2PNotif` IS enum 32, `messageSessionNotif` is absent, caused by **two off-by-one boundary errors that CANCELLED into a plausible 33** (and a unit test asserted the false half); (b) `entries=3` is an **allocation size**, not a subscriber count (single-cast `FDelegateBase`); (c) "16 bound, 46 unbound" — the scan **stepped 0x10 over a structure with members at ≡8 (mod 16)** and the published list was **truncated at 12 with a literal `…`**, which changed the answer from 6 reachable types to 7; (d) presence "both directions" was **published unobserved** — offline needs `activity` OMITTED, because the activity blob **overrides** availability. |
@@ -532,8 +594,9 @@ Ordered by **(load-bearing) × (weakness of evidence)**.
 > 65 is correct.
 >
 > **Re-graded MEDIUM:** FK-6 was HIGH *because* it gates enemies/damage/abilities. It does not.
-> S103 measured the hero with **no ability system at all**, so a perfect enemy spawn still yields no
-> damage; and a minion's ASC is self-owned, so damage is provable **today** with one `AdjustHealth`
+> **Historical S103 status, superseded by FK-30/S143–S146:** S103 read the pawn cache and reported no
+> ability system; the shim-owned ASC was later found, bound, granted, and made fully eligible. A
+> minion's ASC is self-owned, so damage is still provable **today** with one `AdjustHealth`
 > float on an ASC that already exists. §6 of the settled doc has the corrected plan.
 >
 > **Cheapest next step (~2 min, plain menu, no injection):** fix `cheat_enum.py:175`
@@ -1708,7 +1771,8 @@ reachable no other way**, incl. character-movement code (`GetMaxJumpHeight`, `Ge
 
 ### FK-30 — "The force-open hero has NO ability system"
 **Severity: HIGH — it mis-sized the whole simulation route. Settled 2026-08-05 (S111) → `docs/s111-asc-census.md`.**
-**Status: the belief is DEAD. The ASC exists, is populated, and is missing ONE field.**
+**Status: the belief is DEAD. S111 found the shim-owned ASC; S143 bound AvatarActor; S144 granted a
+real spec; S145 opened eligibility; S146 localized the remaining activation boundary.**
 
 | | |
 |---|---|
@@ -1719,6 +1783,7 @@ reachable no other way**, incl. character-movement code (`GetMaxJumpHeight`, `Ge
 | **⚠ PROVENANCE — corrected same day** | **Those objects are the SHIM'S**, not the game's. `EnsureHeroAffiliatedCarrier` (`tutorial_launch.cpp:4511`) *spawns* the carrier, its constructor builds the ASC, and the shim's own `K2_InitStats` calls make both attribute sets (`[GAS] HeroAffiliatedObject@0x4F8 = 0x0` before → `carrier=0x27617F91750` after, the exact address the census attributed to the game). So the corrected claim is **"the shim's S101 carrier route got further than its own verdict line reported"**, not "the game wires the hero up". I swept live objects without asking which ones my own shim had created — the artifact question has to include *"…or about my own shim?"*. **The belief FK-30 kills is still dead**: the pawn's `@0xF00` fields are a cache, the ASC does exist, and the gap is two fields — but the reason it exists is us. |
 | **The real gap** | `AvatarActor` is **NULL** (every scenery ASC has `Owner == Avatar == the actor`), so the ASC is never bound to the pawn — the second half of `InitAbilityActorInfo`. And `ActivatableAbilities` **Num=0**. The *granting* API is reachable as native thunks (`BP_AuthGiveAbilityWithInputID`, `AuthGiveAbilityWithSourceObject`, `TryActivateAbilityByInputID`). |
 | **⚠ The BIND is not reachable that way** | Measured live: `LokiCharacter` has **`RemoveFromAbilitySystem` and NO add**; `LokiPlayerState` has only `TryUpdateAbilitySystem` (already called twice by the shim, verdict `0 -> 0`, and its own comment says "TryUpdate is update-not-create"); `LokiPlayerState_HeroAffiliated` has **zero UFunctions**. The Angelscript bindings expose `GetAvatarActorFromASC()` and no setter. `InitAbilityActorInfo` is C++-only. Writing the reflected `AvatarActor@0x410` alone is NOT equivalent — `AbilityActorInfo` (the `TSharedPtr` abilities actually read) is not reflected. **Offline anchors, base `0x7FF6505C0000`: `RemoveFromAbilitySystem` exec thunk RVA `0x5302ED0`, `TryUpdateAbilitySystem` `0x5438C20`.** The paired Add is usually adjacent. |
+| **S143–S146 successor** | The two rows immediately above are the historical S111 gap. S143 called the non-reflected native directly and bound AvatarActor; S144's native grant made `Items.Num=1`; S145 found the real MiniDash primary at `spec+0x90` and opened full CanActivate; S146's valid/invalid native-handle A/B moved the frontier below valid-handle resolution. Do not re-run the bind or grant. |
 | **Steers** | The size of the whole simulation route ("reconstruct the ability-system init the server-authoritative deploy performs" — `gas_probe.py`'s own case (B)); FK-6's re-grade; and the S111 brief's Task One, which asked the right question and would have got the wrong answer from the existing tools. |
 | **Second belief killed in the same sweep** | *"Nothing in this world has ever run the init; we would be first."* — which this probe itself emitted **from a world that was not loaded**. With `LVL_Tutorial` up there are **344 initialised ability systems** (`BP_Brush_C` x199, pine trees x134, and `BP_CapturePoint_Tutorial_C`). A negative measured in an empty world is not a negative. |
 | **Cheapest experiment** | Already run, and it needed **no armed `play` window** — `gft` + `fo` to load the world, `sp` for the contrast, then `python tools\re\asc_census.py`. Three injections. |

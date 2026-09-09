@@ -1,3 +1,19 @@
+> ★★★★★ **ADDENDUM 2026-09-09 (S189-MV-WASD chain): VERDICT C IS NOW MEASURED — WASD DRIVES THE
+> HERO ON THE FORCE-OPEN TUTORIAL ROUTE, INCLUDING VIA THE STOCK INPUT PATH.** F1 (`docs/s189-mv-
+> wasd-f1-BRANCH_B_W_DRIVES_ACCEL.md`) REFUTED the pre-existing shim source claim
+> (`tutorial_launch.cpp:3817`, "input_watch proved WASD produces ZERO ControlInputVector") as an
+> INSTRUMENT ARTIFACT — single-read CIV sampling loses the ConsumeMovementInputVector race ~90%
+> of samples. **Burst-reading CIV 3× per sample** with ~1ms gap caught CIV=(0,-1,0) on W-hold,
+> and the durable `Acceleration=(0,-50000,0)` for the full 3s hold proved input reaches the mover
+> end-to-end. F3 (`docs/s189-mv-wasd-f3-THE_PLAYER_WALKED.md`) then measured the hero walking
+> 2300 uu at exactly 500 uu/s (bit-exact MoveSpeed cap) once gravity was restored and Walking
+> mode engaged. Shipping arm `botfight-damage-self-cal-bindavatar-seedmax-mv-play` packages
+> the full chain. **Verdict C ("does the legacy mapping drive input in our force-open tutorial
+> state?") upgrades from UNKNOWN to ★★★★ YES with a preserved caveat: the ACTUAL native handler
+> bound to the hero's `Forward`/`Right` axes remains UNIDENTIFIED (§H6a still open) — WASD
+> drives motion, but the specific `AController`-subclass method that consumes the axis on this
+> build has not been disassembled.** Read `docs/s189-mv-wasd-ship-f1-SHIPPING_ARM_VALIDATED.md`.
+
 # FK-2 SETTLED — the input path
 
 **Session:** S104 · **Date:** 2026-07-26 · **Status of this document:** definitive; supersedes
@@ -567,7 +583,8 @@ SpeechMappings`). Use it wherever FK-14 bites. **Never take an array STRIDE from
 ## 5. The exploitation plan
 
 Ordered by cost. Each step is **one variable** and yields **one bit**. Steps 0-2 need no injection.
-Step 3 is the decisive one. Step 5 is gated on someone else's unfinished work.
+Step 3 was the decisive input-map question. **Historical status:** Step 5 was gated on GAS work that
+S143–S145 have now completed; S146 makes canonical input the preferred next activation provenance.
 
 > **HARD CONSTRAINTS, restated because two of them are currently mis-stated in the project record:**
 > - ⚠ **`tutorial_launch.dll` does NOT take the shared PI mutex.** `grep -n 'CreateMutex|SuperviveMissionsPIHook|WaitForSingleObject' tools/sigbypass-mod/tutorial_launch.cpp`
@@ -693,6 +710,16 @@ experiment in force-open.
 
 ### Step 5 — Verbs, by DIRECT CALL, not by input *(separate session, separate mode each)*
 
+> **S146/S147 UPDATE:** GAS has landed: AvatarActor binding, native grant, a durable MiniDash primary
+> instance, and full eligibility are all measured. Direct valid-handle activation from the injected
+> callback reproduces a no-return/`0xDEAD` outcome, while `INDEX_NONE` enters the same wrapper and
+> returns normally. S147 therefore deliberately returns to the canonical input path to change call
+> provenance: grant MiniDash with `InputID=5`, use a Tab/`Toggle Map` open-close pair as the
+> focus/action-stack control, then LeftShift/`Ability3`, and observe the BP events plus raw spec
+> input/active state. This update
+> supersedes the historical “5b BLOCKED until GAS lands” status below; its cautions still explain
+> why the earlier direct-call attempt was uninterpretable.
+
 **5a.** `CallBPGuarded` on one `InpActEvt_*` UFunction from Step 1. Start with `ToggleScoreboard` or
 `Toggle Map` — pure UI, no economy state, no GAS.
 > **One bit:** the widget appears.
@@ -723,7 +750,9 @@ single-variable convention on the exact frontier S101-S103 are still chasing.
 
 **Movement was never the prize.** The velocity puppet already moves the hero, and 0 of the 186 actions
 are reachable through it. The prize is the **action surface**, and it has **two** direct-call routes
-that bypass the input stack entirely — which is why Step 5 outranks any input driver.
+that bypass the input stack entirely. **S146 exception:** direct valid-handle activation from the
+injected callback reproduces a no-return/`0xDEAD` outcome, so for WALL P the canonical input driver
+now outranks another direct call because call provenance is the variable under test.
 
 ### 6.1 GAS half — ~30 verbs, one native call each
 
@@ -819,8 +848,8 @@ sections; read-only defeats it). Precedence: command line > `Saved/Config` > `Lo
 | **U2** | **Does the legacy axis path deliver in FORCE-OPEN?** (§1 verdict C) | **§5 Step 4.** One guarded read of `ControlInputVector` in the same game-thread hit as the existing forced `AddMovementInput`, offsets from Step 2. | The first honest measurement of C. |
 | **U3** | H4 — which sink receives the config manager's 186/16 (`UPlayerInput` / `UInputSettings` / a virtual `GetKeysFor*` override) | §5 Step 2's exact-count scan across all three objects. **Refuse any TArray shape that is not exactly 186 or 16.** | Mechanism completeness. **Moot for exploitation if Step 3 passes.** |
 | **U4** | Which UFunction (or raw member pointer) is bound to `Forward`/`Right`? | Only if U2 reads zero. Walk `PC->InputComponent`; the binding arrays are plain C++ TArrays, so this is **disassembly of `BindAxis`**, not reflection. **Do not infer a TArray from a `{ptr,i32,i32}` byte shape** (the S80n error). | Whether a UFunction handler exists to call directly. |
-| **U5** | Are the hero's `FGameplayAbilitySpec.InputID`s populated? | Walk `ActivatableAbilities.Items` on the ASC; cross-check with `GetInputIdOfAbility`. Blocked on S102/S103. | If all −1, input can never activate abilities and `TryActivateAbilityByInputID` is mandatory. |
-| **U6** | Does the ASC's `ActorInfo.AvatarActor == hero`? | `GetAvatarActorFromASC()` on the S103 carrier's ASC. **There is no BlueprintCallable `InitAbilityActorInfo` in this build** — if wrong, the fix is `BP_OnRep_PlayerState` / `OnLocalASCInitialized`, not a direct init. | **Crash gate for §5 Step 5b.** Do not fire abilities before this reads true. |
+| **U5 — S147 successor** | Do canonical Ability3 bindings deliver input to a deliberately populated spec? Historical grants measured `InputID=-1` because the spec ctor was called that way; that is not a game default. | Grant MiniDash with `InputID=5`, require exact live spec membership, then press LeftShift and read spec `InputPressed`/`ActiveCount` plus primary state. | Separates named-action delivery from the GAS ability-input binding/ordering/consumption path. |
+| **U6 — SOLVED S143** | `ASC.ActorInfo.AvatarActor == hero`. | Direct non-reflected `InitAbilityActorInfo(base+0x447F410)` succeeded and persisted; every S145/S146 flight revalidated the exact ActorInfo/Avatar. The historical claim that the fix could not be a direct init was operationally false. | Closed prerequisite; keep as a hard preflight, not an open question. |
 | **U7** | Is `TryActivateAbilityByInputID` `FUNC_BlueprintAuthorityOnly` or `FUNC_Net`? | `tools/re/ufunc_params.py` → read `FunctionFlags`. | Force-open is standalone authority so it should pass; the DS-route client never could. |
 | **U8** | Is `ALLOW_CONSOLE` compiled in? | Press `~` at the menu and in a force-open match. Measurement alternative: read `GEngine->GameViewport->ViewportConsole` for non-null and look up `/Script/Engine.Console` via `find_uclass.py`. | **FK-13.** Cheapest high-value probe in the project. |
 | **U9** | Do `ShowCheats`(RightAlt) / `ToggleDebugMenu`(Ctrl+\\) / `DevCheatToggleHUD`(Ctrl+F12) do anything? | Press them in a force-open match. Zero setup. | A shim-free debug surface, or confirmation of the §3.12 orphan finding. |
