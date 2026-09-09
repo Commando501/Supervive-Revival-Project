@@ -18108,6 +18108,26 @@ static void DoBotSpawn(){
                      // hero+0xF08 to its pre-value in the disarm path? NO -- this is a diagnosis
                      // arm, not a shipping shim. Do NOT add to the default set.
 #endif
+#ifndef KBFPOKEGRAVITY
+#define KBFPOKEGRAVITY 0 // S189-MV-WASD F3 [M] SHIPPING ARM (2026-09-09, tag [S189-MV] POKEGRAVITY):
+                         // in-shim poke of CMC+GravityScale = 1.0f on the KWIREGAS PLAYER hero,
+                         // AFTER KBFSEEDMOVEMENT+KBFWIREF08 have wired the seeded attribute set at
+                         // hero+0xF08. sp's LIFT step zeros GravityScale on stage; this restores it
+                         // so the player falls from Z=13240 to the tutorial floor Z=90.15,
+                         // MovementMode transitions 3(Falling)->1(Walking) on landing, and WASD
+                         // via natural input drives the mover at 500 uu/s cap = seeded MoveSpeed.
+                         // F3 walking-Whold measured 2300 uu horizontal displacement in ~3s
+                         // (docs/s189-mv-wasd-f3-THE_PLAYER_WALKED.md). Risk class DATA: single
+                         // aligned 4-byte write to a CMC UPROPERTY, readback-verifiable
+                         // (S130/S132 measured 0/22 lethal). Precedent: S141 T3 armk in-shim
+                         // GravityScale poke, and this file's own RM_WAKEMOVE `[WM] GravityScale=1.0`
+                         // step at line 3810. Uses PropOffsetSuper("CharacterMovement") + PropOffset
+                         // Super("GravityScale") so offsets are resolved BY NAME (survives layout
+                         // shift). Requires KBFSEEDMOVEMENT=1 AND KBFWIREF08=1 (without both, the
+                         // fallen hero cannot walk because GetMaxSpeed returns 0). SHIPPING ARM:
+                         // safe to enable in the default variant set once flown; the whole S189-MV
+                         // chain unlocks canonical player-hero WASD drivability.
+#endif
 // KBFBINDCENSUS's own defines live earlier (near KFRAMEINIT) so FsThunk / FsDisarm can reference
 // the forward-declared helpers. The compile-time policy check for KBFHANDLEACT/KBFHANDLEMISS
 // (which are declared in this KBF block) stays here.
@@ -18180,6 +18200,18 @@ static void DoBotSpawn(){
 #endif
 #if (KBFOBSMOVGETTERS != 0) && (KBFOBSMOVGETTERS != 1)
 #error S189-MV KBFOBSMOVGETTERS is a bool: 0 (dead-strip) or 1 (call GetMaxSpeed/GetMaxAcceleration via CMC vtable dispatch and emit result in marker)
+#endif
+#if KBFPOKEGRAVITY && !KBFSEEDMOVEMENT
+#error S189-MV-WASD KBFPOKEGRAVITY requires KBFSEEDMOVEMENT=1 (without the seed, GetMaxSpeed returns 0 and a fallen player cannot walk)
+#endif
+#if KBFPOKEGRAVITY && !KBFWIREF08
+#error S189-MV-WASD KBFPOKEGRAVITY requires KBFWIREF08=1 (without hero+0xF08 wired to spawnedSet0, GetMaxSpeed's helper early-outs to 0)
+#endif
+#if KBFPOKEGRAVITY && (KBFBINDONLY || KBFNATURALINPUT)
+#error S189-MV-WASD KBFPOKEGRAVITY must exclude S147 natural input and S149 bind-only setup
+#endif
+#if (KBFPOKEGRAVITY != 0) && (KBFPOKEGRAVITY != 1)
+#error S189-MV-WASD KBFPOKEGRAVITY is a bool: 0 (dead-strip) or 1 (poke CMC+GravityScale = 1.0f on the KWIREGAS PLAYER so it falls to the tutorial floor and enters Walking mode for WASD drivability)
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -23053,6 +23085,57 @@ static void BfS148DoCalibration(){
 #if (KBFSEEDMOVEMENT || KBFOBSMOVGETTERS)
     BfObsMovGetters(s156Pre.hero, "AFTER");
 #endif
+#if KBFPOKEGRAVITY
+    // S189-MV-WASD F3 [M] SHIPPING ARM: restore GravityScale so the hero falls to the tutorial
+    // floor and Walking mode engages. sp's LIFT step (tutorial_launch.cpp:13727) zeroed
+    // CMC+0x1A0 on stage. F3 flight measured live: with GravityScale=1.0 + the S189-MV
+    // wire in place, one W-hold traversed 2300 uu at exactly 500 uu/s = seeded MoveSpeed cap.
+    //
+    // Order rationale: runs AFTER GETTER_AFTER so the seed-reaches-getter observation is captured
+    // BEFORE gravity changes the MovementMode (Falling arm vs Walking arm read paths differ per
+    // S189-MV F1 [M]). Poke lands cleanly, hero starts falling, and by the time WASD is applied
+    // externally the pawn has landed (~3.3s at terminal Vz=-4000).
+    //
+    // Risk class DATA (one aligned 4-byte write to a CMC UPROPERTY, readback-verifiable, class
+    // measured 0/22 lethal per S130/S132). Zero .text write. Precedent: S141 T3 armk in-shim
+    // poke of this exact field; RM_WAKEMOVE's `[WM] GravityScale=1.0 set` at line 3810 uses
+    // the same PropOffsetSuper("GravityScale") name-resolved offset pattern (survives layout
+    // shift). NOT restored on disarm -- this is a persistent player-state change for the whole
+    // process lifetime (shipping semantic: the player is meant to be drivable).
+    if(LooksLikePtr(s156Pre.hero)){
+        uintptr_t heroForGrav = s156Pre.hero;
+        uintptr_t heroCls = ClassOf(heroForGrav);
+        uint32_t cmcOff = LooksLikePtr(heroCls) ? PropOffsetSuper(heroCls, "CharacterMovement") : 0xFFFFFFFFu;
+        uintptr_t cmc = 0;
+        if(cmcOff != 0xFFFFFFFFu && SafeReadable((void*)(heroForGrav+cmcOff), sizeof(uintptr_t))){
+            cmc = *(uintptr_t*)(heroForGrav+cmcOff);
+        }
+        uintptr_t cmcCls = LooksLikePtr(cmc) ? ClassOf(cmc) : 0;
+        uint32_t gravOff = LooksLikePtr(cmcCls) ? PropOffsetSuper(cmcCls, "GravityScale") : 0xFFFFFFFFu;
+        bool pokeOk = false;
+        float gravPre = 0.0f, gravPost = 0.0f;
+        if(LooksLikePtr(cmc) && gravOff != 0xFFFFFFFFu &&
+           SafeReadable((void*)(cmc+gravOff), 4) && SafeWritable((void*)(cmc+gravOff), 4)){
+            gravPre = *(float*)(cmc+gravOff);
+            __try {
+                *(volatile float*)(cmc+gravOff) = 1.0f;
+                MemoryBarrier();
+                pokeOk = true;
+            } __except(SEH_FILTER(GetExceptionInformation())){ pokeOk = false; }
+            gravPost = *(float*)(cmc+gravOff);
+        }
+        uint32_t gravPreBits = 0, gravPostBits = 0;
+        memcpy(&gravPreBits,  &gravPre,  4);
+        memcpy(&gravPostBits, &gravPost, 4);
+        Markerf("[S189-MV] POKEGRAVITY pokeOk=%d hero=0x%llX cmc=0x%llX cmcOff=0x%X gravOff=0x%X "
+                "gravPre=%.4f(%08X) gravPost=%.4f(%08X) expectPost=1.0000(3F800000) exactPost=%s\r\n",
+                pokeOk?1:0, (unsigned long long)heroForGrav, (unsigned long long)cmc,
+                cmcOff, gravOff, (double)gravPre, gravPreBits, (double)gravPost, gravPostBits,
+                (gravPostBits==0x3F800000u)?"yes":"NO");
+    } else {
+        Marker("[S189-MV] POKEGRAVITY REFUSED reason=s156Pre.hero-null (bind chain never resolved)\r\n");
+    }
+#endif // KBFPOKEGRAVITY
 #endif
 
     BfS148HealthTarget target{};

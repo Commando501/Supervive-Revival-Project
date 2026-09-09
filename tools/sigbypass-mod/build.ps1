@@ -802,6 +802,15 @@ $Variants = @{
         # 50000 collides with engine Super's stock CMC UPROPERTY return on MOVE_Falling, making
         # Branch A indistinguishable from Super bypass. 45000 is non-stock and discriminates cleanly.
         'botfight-damage-self-cal-bindavatar-seedmax-mv-obs-wiref08' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=0','-DKBFSEEDMOVEMENT=1','-DKBFOBSMOVGETTERS=1','-DKBFWIREF08=1')
+        # S189-MV-WASD F3 [M] SHIPPING ARM: full playability chain in one injection. Adds
+        # KBFPOKEGRAVITY=1 on top of the -mv-obs-wiref08 variant so the KWIREGAS PLAYER falls
+        # to the tutorial floor (Z=13240 -> Z=90.15), MovementMode transitions 3->1 Walking,
+        # and WASD via natural input drives the mover at 500 uu/s cap = seeded MoveSpeed.
+        # Zero .text write, one additional aligned 4-byte DATA write to CMC+GravityScale
+        # (readback-verified in the [S189-MV] POKEGRAVITY marker line). F3 walking-Whold
+        # 2026-09-09 measured 2300 uu horizontal displacement in ~3s. All prior gates
+        # BYTE-IDENTICAL (KBFPOKEGRAVITY=0 defaults to dead-strip).
+        'botfight-damage-self-cal-bindavatar-seedmax-mv-play' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=0','-DKBFSEEDMOVEMENT=1','-DKBFOBSMOVGETTERS=1','-DKBFWIREF08=1','-DKBFPOKEGRAVITY=1')
         # SITTING 4 -- WALL E full: spawn -> wire the bot's ASC -> AdjustHealth to KILL it. 0x31.
         'botfight-kill'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x31','-DKBFDMGTGT=1')
         # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.
