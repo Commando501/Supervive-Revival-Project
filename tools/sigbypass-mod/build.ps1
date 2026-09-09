@@ -741,6 +741,16 @@ $Variants = @{
         # KBFPOSTSHOT_FLOORBITS branch that was armed-but-silent in -postshots1 and -postshots2.
         # Keep -postshots2 UNCHANGED as within-family controlled comparison (floor-silent).
         'botfight-damage-self-cal-bindavatar-seedmax-postshots2-floor600' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=2','-DKBFPOSTSHOT_FLOORBITS=0x44160000u')
+
+        # S156-B heal test (2026-09-08, marker tag [S189]): N=1 post-shot with a POSITIVE delta of
+        # +100.0f (0x42C80000u), replacing the default -250.0f. Trajectory: primary 1000->750
+        # (unchanged), SHOT_2 pre=750 + 100 -> post=850. Well below MaxHealth 1000, so no cap
+        # interaction — this is a clean "does positive delta work at all" test. observedDeltaHP
+        # should be +100.00 exact, arithmeticOK=yes. Floor gate is armed at default 300 (pre 750
+        # is above floor, so shot fires). Keeps -postshots1 as within-family control (same N=1
+        # and floor, only delta sign flipped). A future overshoot/cap test would use +500 or
+        # higher to push above MaxHealth.
+        'botfight-damage-self-cal-bindavatar-seedmax-postshots1-heal100' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=1','-DKBFPOSTSHOT_DELTABITS=0x42C80000u')
         # SITTING 4 -- WALL E full: spawn -> wire the bot's ASC -> AdjustHealth to KILL it. 0x31.
         'botfight-kill'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x31','-DKBFDMGTGT=1')
         # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.

@@ -18010,6 +18010,17 @@ static void DoBotSpawn(){
                                           // any hypothetical shot 3. Emits [S189] SHOT_N FLOOR_REACHED and
                                           // aborts loop; final RESULT= line shows aborted=yes reason=floor.
 #endif
+#ifndef KBFPOSTSHOT_DELTABITS
+#define KBFPOSTSHOT_DELTABITS 0xC37A0000u // S156-B post-shot delta bits: raw uint32 bit-pattern of the FLOAT delta
+                                          // passed to each post-shot AdjustHealth call. Default 0xC37A0000 =
+                                          // -250.0f (same as primary S148 shot, backward-compatible with
+                                          // -postshots1/-postshots2/-postshots2-floor600). Override at build
+                                          // time to test heal (positive delta), overshoot (delta beyond MaxHealth),
+                                          // or fractional/edge values. Applied to ALL post-shots in the loop; no
+                                          // per-shot variation. Safety floor still guards pre-value regardless of
+                                          // delta sign, so a positive delta whose pre is above floor still fires
+                                          // (heal is always permitted when floor precondition holds).
+#endif
 // KBFBINDCENSUS's own defines live earlier (near KFRAMEINIT) so FsThunk / FsDisarm can reference
 // the forward-declared helpers. The compile-time policy check for KBFHANDLEACT/KBFHANDLEMISS
 // (which are declared in this KBF block) stays here.
@@ -22070,7 +22081,7 @@ static void BfS148DoCalibration(){
                        "have reached SELF_DAMAGE_CALIBRATED via unexpected path\r\n");
             } else {
                 auto bitsToHP=[](uint32_t b)->float{ float f; memcpy(&f,&b,4); return f; };
-                const uint32_t postDeltaBits=0xC37A0000u; // -250.0f, same as primary shot
+                const uint32_t postDeltaBits=(uint32_t)KBFPOSTSHOT_DELTABITS; // default 0xC37A0000u = -250.0f (same as primary)
                 const float    postDeltaHP  =bitsToHP(postDeltaBits);
                 const uint32_t floorBits    =(uint32_t)KBFPOSTSHOT_FLOORBITS;
                 uint32_t prevPostBase=laterBase;      // continuity anchor: primary's later-read
