@@ -32,6 +32,7 @@ CMC_VEL = 0xE8
 CMC_GRAV = 0x1A0
 CMC_MODE = 0x231
 CMC_ACCEL = 0x328
+CMC_ANALOGMOD = 0x3D0  # AnalogInputModifier per S141 T3 [I,strong]
 
 k32 = ctypes.WinDLL("kernel32", use_last_error=True)
 k32.OpenProcess.restype = wintypes.HANDLE
@@ -85,7 +86,7 @@ print("# start=%s" % time.strftime("%Y-%m-%d %H:%M:%S"), file=sys.stderr)
 print("# NOTE: CIV columns are burst-read x3 per sample (V2 verifier fix for ConsumeMovementInputVector race)", file=sys.stderr)
 
 # CSV header
-print("t_sec,t_wall,LocX,LocY,LocZ,VelX,VelY,VelZ,AccX,AccY,AccZ,CIV1x,CIV1y,CIV1z,CIV2x,CIV2y,CIV2z,CIV3x,CIV3y,CIV3z,CIVmaxMag2D,Mode,GravScale")
+print("t_sec,t_wall,LocX,LocY,LocZ,VelX,VelY,VelZ,AccX,AccY,AccZ,CIV1x,CIV1y,CIV1z,CIV2x,CIV2y,CIV2z,CIV3x,CIV3y,CIV3z,CIVmaxMag2D,Mode,GravScale,AnalogMod")
 
 t0 = time.time()
 first_loc = None
@@ -122,6 +123,7 @@ while time.time() - t0 < DUR:
 
     mode = u8(CMC + CMC_MODE)
     grav = f32(CMC + CMC_GRAV)
+    amod = f32(CMC + CMC_ANALOGMOD)
 
     civ_max_mag = 0.0
     for c in (civ1, civ2, civ3):
@@ -157,13 +159,14 @@ while time.time() - t0 < DUR:
     def fv(v):
         return "%.3f,%.3f,%.3f" % v if v else ",,"
 
-    print("%.3f,%.3f,%s,%s,%s,%s,%s,%s,%.4f,%s,%s" % (
+    print("%.3f,%.3f,%s,%s,%s,%s,%s,%s,%.4f,%s,%s,%s" % (
         ts, ts_wall,
         fv(loc), fv(vel), fv(acc),
         fv(civ1), fv(civ2), fv(civ3),
         civ_max_mag,
         mode if mode is not None else "",
         ("%.4f" % grav) if grav is not None else "",
+        ("%.4f" % amod) if amod is not None else "",
     ))
     sys.stdout.flush()
     n += 1
