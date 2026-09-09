@@ -18041,6 +18041,32 @@ static void DoBotSpawn(){
                                                // together. Override for negative (0xC2480000 = -50.0f), overshoot,
                                                // or 0 for a no-delta call.
 #endif
+#ifndef KBFSEEDMAXMANA
+#define KBFSEEDMAXMANA 0 // S189-SEED (2026-09-08, tag [S189-SEED] MAX_MANA_SEEDED): under
+                         // KBFBINDAVATAR, seed the resolved ULokiAttributeSet MaxMana pair
+                         // (base@manaSet+0x228, current@manaSet+0x22C) plus its 3 compound
+                         // siblings BaseMaxMana@+0x230, MaxManaPerLevel@+0x240, BonusMaxMana@
+                         // +0x250 (per S189-seed workflow adversarial verifier -- MaxMana on
+                         // ULokiAttributeSet is a COMPOUND-derived attr, unlike MaxHealth on
+                         // LokiAttributeSetHealth which is a leaf; S156-B precedent does NOT
+                         // transfer. Seeding all 4 defeats any PostGameplayEffectExecute
+                         // recompute that would revert a solo MaxMana write). Fires BEFORE
+                         // any downstream AdjustMana probe (KBFPOSTSHOT_MANA). Byte-identical
+                         // resolver instrument to KBFPOSTSHOT_MANA (both use BfS189ResolveManaTarget
+                         // for manaSet + PropOffsetSuper contract Mana@0x210 / MaxMana@0x220).
+                         // Requires KBFSELFCAL=1 AND KBFBINDAVATAR=1 AND KBFSEEDMAXHEALTH=1
+                         // (s_seeded.asc precondition chain). Default 0 keeps every prior
+                         // variant byte-identical.
+#endif
+#ifndef KBFSEEDMAXMANA_BITS
+#define KBFSEEDMAXMANA_BITS 0x447A0000u // Default = 1000.0f (S148_HEALTH_SEED_BITS parity).
+                                        // Chosen so a +50 KBFPOSTSHOT_MANA_DELTABITS delta lands
+                                        // at 50/1000 well below cap (unambiguous "APPLIED" vs
+                                        // "CLAMPED" result). Alt: 0x42C80000u = 100.0f pairs with
+                                        // +50 for a near-cap arithmetic test. Alt: 0x00000000u
+                                        // DISABLES the write (writes 0 back over 0, seed contract
+                                        // still fires as a controlled negative).
+#endif
 // KBFBINDCENSUS's own defines live earlier (near KFRAMEINIT) so FsThunk / FsDisarm can reference
 // the forward-declared helpers. The compile-time policy check for KBFHANDLEACT/KBFHANDLEMISS
 // (which are declared in this KBF block) stays here.
@@ -18086,6 +18112,15 @@ static void DoBotSpawn(){
 #endif
 #if (KBFPOSTSHOT_MANA != 0) && (KBFPOSTSHOT_MANA != 1)
 #error S189 KBFPOSTSHOT_MANA is a bool: 0 (dead-strip) or 1 (fire one AdjustMana call). Use KBFPOSTSHOT_MANA_DELTABITS to set the delta.
+#endif
+#if KBFSEEDMAXMANA && (!KBFSELFCAL || !KBFBINDAVATAR || !KBFSEEDMAXHEALTH)
+#error S189-SEED requires the full S155+S156 primary chain (s_seeded.asc precondition): KBFSELFCAL=1 AND KBFBINDAVATAR=1 AND KBFSEEDMAXHEALTH=1
+#endif
+#if KBFSEEDMAXMANA && (KBFBINDONLY || KBFNATURALINPUT)
+#error S189-SEED seed-max-mana must exclude S147 natural input and S149 bind-only setup
+#endif
+#if (KBFSEEDMAXMANA != 0) && (KBFSEEDMAXMANA != 1)
+#error S189-SEED KBFSEEDMAXMANA is a bool: 0 (dead-strip) or 1 (seed the 4 Mana-family compound attrs once, before any AdjustMana probe)
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -22026,8 +22061,10 @@ static void BfS148FinishTerminal(){
     BfS148DoneStore();
 }
 
-#if KBFPOSTSHOT_MANA
-// S189 Mana probe helpers. Gated by KBFPOSTSHOT_MANA so they dead-strip in every other variant.
+#if (KBFPOSTSHOT_MANA || KBFSEEDMAXMANA)
+// S189 Mana probe helpers. Gated by KBFPOSTSHOT_MANA || KBFSEEDMAXMANA so they dead-strip in every other variant.
+// (S189-SEED reuses BfS189ResolveManaTarget verbatim as the only name-resolved instrument for manaSet+MaxMana offset;
+// BfS189DecodeAdjustManaTail is only used by the AdjustMana call in the probe, not by the seed.)
 // The resolver walks ASC.SpawnedAttributes (Num=2 expected: [0]=LokiAttributeSet, [1]=LokiAttributeSetHealth)
 // and picks the LokiAttributeSet entry by exact FName equality (same discriminator BfSeedDiagnosticMana uses).
 // The tail decoder resolves AdjustMana's impl RVA at runtime from the E8 rel32 at wrapper+0x6F --
@@ -22145,7 +22182,7 @@ static bool BfS189DecodeAdjustManaTail(uintptr_t wrapper, uintptr_t* implOut, co
     if(reasonOut) *reasonOut = "ok";
     return true;
 }
-#endif // KBFPOSTSHOT_MANA
+#endif // KBFPOSTSHOT_MANA || KBFSEEDMAXMANA
 
 static void BfS148DoCalibration(){
     static BfS148HealthTarget s_seeded{};
@@ -22408,6 +22445,28 @@ static void BfS148DoCalibration(){
                                 bitsToMP(mana.preBaseBits), bitsToMP(mana.preCurrentBits),
                                 mana.maxBaseBits, mana.maxCurrentBits,
                                 bitsToMP(mana.maxBaseBits), bitsToMP(mana.maxCurrentBits));
+#if KBFSEEDMAXMANA
+                        // S189-SEED compound diagnostic: snapshot BaseMaxMana/MaxManaPerLevel/BonusMaxMana
+                        // at PRECHECK time (after primary AdjustHealth ran, before AdjustMana fires) so a
+                        // subsequent MANASHOT_POST maxBits revert can be attributed. If any of the 3 has
+                        // reverted from the [S189-SEED] MAX_MANA_SEEDED post values, a lifecycle callback
+                        // between the seed and the probe recomputed them; if all 3 are still seeded but
+                        // maxBits reverts at POST, the recompute happens inside AdjustMana's PostAttributeChange.
+                        {
+                            uintptr_t manaCls_pre = ClassOf(mana.manaSet);
+                            uint32_t baseOff_pre  = manaCls_pre?PropOffsetSuper(manaCls_pre,"BaseMaxMana"):0xFFFFFFFFu;
+                            uint32_t perLvlOff_pre=manaCls_pre?PropOffsetSuper(manaCls_pre,"MaxManaPerLevel"):0xFFFFFFFFu;
+                            uint32_t bonusOff_pre =manaCls_pre?PropOffsetSuper(manaCls_pre,"BonusMaxMana"):0xFFFFFFFFu;
+                            uint32_t bmB=(baseOff_pre!=0xFFFFFFFFu&&SafeReadable((void*)(mana.manaSet+baseOff_pre+8),4))?*(uint32_t*)(mana.manaSet+baseOff_pre+8):0xDEADBEEFu;
+                            uint32_t bmC=(baseOff_pre!=0xFFFFFFFFu&&SafeReadable((void*)(mana.manaSet+baseOff_pre+0xC),4))?*(uint32_t*)(mana.manaSet+baseOff_pre+0xC):0xDEADBEEFu;
+                            uint32_t plB=(perLvlOff_pre!=0xFFFFFFFFu&&SafeReadable((void*)(mana.manaSet+perLvlOff_pre+8),4))?*(uint32_t*)(mana.manaSet+perLvlOff_pre+8):0xDEADBEEFu;
+                            uint32_t plC=(perLvlOff_pre!=0xFFFFFFFFu&&SafeReadable((void*)(mana.manaSet+perLvlOff_pre+0xC),4))?*(uint32_t*)(mana.manaSet+perLvlOff_pre+0xC):0xDEADBEEFu;
+                            uint32_t buB=(bonusOff_pre!=0xFFFFFFFFu&&SafeReadable((void*)(mana.manaSet+bonusOff_pre+8),4))?*(uint32_t*)(mana.manaSet+bonusOff_pre+8):0xDEADBEEFu;
+                            uint32_t buC=(bonusOff_pre!=0xFFFFFFFFu&&SafeReadable((void*)(mana.manaSet+bonusOff_pre+0xC),4))?*(uint32_t*)(mana.manaSet+bonusOff_pre+0xC):0xDEADBEEFu;
+                            Markerf("[S189] MANASHOT_COMPOUND_PRE baseMax=%08X/%08X perLevel=%08X/%08X bonusMax=%08X/%08X\r\n",
+                                    bmB,bmC,plB,plC,buB,buC);
+                        }
+#endif
                         memset(g_pbuf, 0, sizeof(g_pbuf));
                         memset(g_rbuf, 0, sizeof(g_rbuf));
                         memcpy((uint8_t*)g_pbuf + manaDeltaOff, &manaDeltaBits, sizeof(manaDeltaBits));
@@ -22444,6 +22503,26 @@ static void BfS148DoCalibration(){
                                     observedDeltaCurrent, observedDeltaBase,
                                     arithmeticOK ? "yes" : "NO", rvalBits,
                                     identityStable ? "yes" : "NO", afterOk ? "yes" : "NO");
+#if KBFSEEDMAXMANA
+                            // S189-SEED compound diagnostic: snapshot the 3 sibling attrs AFTER AdjustMana ran.
+                            // Discriminator: if MANASHOT_COMPOUND_PRE showed seeded values but MANASHOT_COMPOUND_POST
+                            // shows any reverted, AdjustMana's PostAttributeChange recomputed the compound formula.
+                            // If both COMPOUND_PRE and COMPOUND_POST show reverted, revert happened before probe fires.
+                            if(afterOk){
+                                uintptr_t manaCls_post = ClassOf(after.manaSet);
+                                uint32_t baseOff_post  = manaCls_post?PropOffsetSuper(manaCls_post,"BaseMaxMana"):0xFFFFFFFFu;
+                                uint32_t perLvlOff_post=manaCls_post?PropOffsetSuper(manaCls_post,"MaxManaPerLevel"):0xFFFFFFFFu;
+                                uint32_t bonusOff_post =manaCls_post?PropOffsetSuper(manaCls_post,"BonusMaxMana"):0xFFFFFFFFu;
+                                uint32_t bmB=(baseOff_post!=0xFFFFFFFFu&&SafeReadable((void*)(after.manaSet+baseOff_post+8),4))?*(uint32_t*)(after.manaSet+baseOff_post+8):0xDEADBEEFu;
+                                uint32_t bmC=(baseOff_post!=0xFFFFFFFFu&&SafeReadable((void*)(after.manaSet+baseOff_post+0xC),4))?*(uint32_t*)(after.manaSet+baseOff_post+0xC):0xDEADBEEFu;
+                                uint32_t plB=(perLvlOff_post!=0xFFFFFFFFu&&SafeReadable((void*)(after.manaSet+perLvlOff_post+8),4))?*(uint32_t*)(after.manaSet+perLvlOff_post+8):0xDEADBEEFu;
+                                uint32_t plC=(perLvlOff_post!=0xFFFFFFFFu&&SafeReadable((void*)(after.manaSet+perLvlOff_post+0xC),4))?*(uint32_t*)(after.manaSet+perLvlOff_post+0xC):0xDEADBEEFu;
+                                uint32_t buB=(bonusOff_post!=0xFFFFFFFFu&&SafeReadable((void*)(after.manaSet+bonusOff_post+8),4))?*(uint32_t*)(after.manaSet+bonusOff_post+8):0xDEADBEEFu;
+                                uint32_t buC=(bonusOff_post!=0xFFFFFFFFu&&SafeReadable((void*)(after.manaSet+bonusOff_post+0xC),4))?*(uint32_t*)(after.manaSet+bonusOff_post+0xC):0xDEADBEEFu;
+                                Markerf("[S189] MANASHOT_COMPOUND_POST baseMax=%08X/%08X perLevel=%08X/%08X bonusMax=%08X/%08X\r\n",
+                                        bmB,bmC,plB,plC,buB,buC);
+                            }
+#endif
                             const char* result = arithmeticOK ? "MANASHOT_APPLIED"
                                                 : (postCurrent == mana.preCurrentBits ? "MANASHOT_NO_OP"
                                                 : (postCurrent == 0 ? "MANASHOT_CLAMPED_ZERO"
@@ -22571,6 +22650,119 @@ static void BfS148DoCalibration(){
         BfS148FinishTerminal(); return;
     }
     Marker("[S156] proceed=yes handing off to S148 PREFLIGHT with MaxHealth=1000/1000\r\n");
+#endif
+#if KBFSEEDMAXMANA
+    // S189-SEED (2026-09-08): seed the resolved ULokiAttributeSet MaxMana pair
+    // (base@manaSet+0x228, current@manaSet+0x22C) PLUS the 3 compound-formula siblings
+    // BaseMaxMana@+0x230, MaxManaPerLevel@+0x240 (=0.0f), BonusMaxMana@+0x250 (=0.0f).
+    // Per S189-seed workflow adversarial verifier: MaxMana on ULokiAttributeSet is a
+    // COMPOUND-derived attribute (4 sibling UPROPERTIES), unlike MaxHealth on the
+    // singleton LokiAttributeSetHealth. Seeding all 4 defeats any PostGameplayEffectExecute
+    // recompute that would revert a solo MaxMana write via f(BaseMaxMana, PerLevel*Level,
+    // BonusMaxMana). Fail-open: if the resolver refuses or any pair cannot be written,
+    // proceed to PREFLIGHT anyway -- MaxMana seed is not required for S148 AdjustHealth
+    // to succeed. Downstream MANASHOT_PRECHECK will then read whatever survived and the
+    // outcome remains interpretable via the [S189-SEED] receipt line.
+    Marker("[S189-SEED] ===== max-mana seed preflight (KBFSEEDMAXMANA=1) =====\r\n");
+    // Use s156Pre.asc: the S156 max-health seed just resolved the same ASC via the local-owner
+    // census; s_seeded is not populated until AFTER the AdjustHealth PRESEED_REVALIDATION at
+    // line ~22893 (which runs downstream of this block in the initial dispatch), so reading
+    // s_seeded.asc here yields 0 and the resolver refuses with "asc-unreadable" -- observed on
+    // S189-seed F2 flight. s156Pre is the CANONICAL asc at this dispatch point.
+    BfS189ManaTarget s189Pre{};
+    bool s189PreResolved=BfS189ResolveManaTarget(s156Pre.asc,&s189Pre);
+    bool s189TargetOk=s189PreResolved&&LooksLikePtr(s189Pre.manaSet)&&s189Pre.maxManaOff==0x220;
+    uintptr_t s189SetCls=s189TargetOk?ClassOf(s189Pre.manaSet):0;
+    uint32_t s189BaseMaxOff  =s189SetCls?PropOffsetSuper(s189SetCls,"BaseMaxMana"):0xFFFFFFFFu;
+    uint32_t s189PerLevelOff =s189SetCls?PropOffsetSuper(s189SetCls,"MaxManaPerLevel"):0xFFFFFFFFu;
+    uint32_t s189BonusMaxOff =s189SetCls?PropOffsetSuper(s189SetCls,"BonusMaxMana"):0xFFFFFFFFu;
+    bool s189CompoundLayoutOk=s189BaseMaxOff==0x230&&s189PerLevelOff==0x240&&s189BonusMaxOff==0x250;
+    uintptr_t s189MaxPair   =s189TargetOk?(s189Pre.manaSet+s189Pre.maxManaOff+0x8):0;
+    uintptr_t s189BasePair  =(s189TargetOk&&s189CompoundLayoutOk)?(s189Pre.manaSet+s189BaseMaxOff+0x8):0;
+    uintptr_t s189PerLvlPair=(s189TargetOk&&s189CompoundLayoutOk)?(s189Pre.manaSet+s189PerLevelOff+0x8):0;
+    uintptr_t s189BonusPair =(s189TargetOk&&s189CompoundLayoutOk)?(s189Pre.manaSet+s189BonusMaxOff+0x8):0;
+    bool s189AllAligned=s189MaxPair&&(s189MaxPair&7)==0&&
+                         s189BasePair&&(s189BasePair&7)==0&&
+                         s189PerLvlPair&&(s189PerLvlPair&7)==0&&
+                         s189BonusPair&&(s189BonusPair&7)==0;
+    bool s189AllWritable=s189AllAligned&&SafeWritable((void*)s189MaxPair,8)&&
+                          SafeWritable((void*)s189BasePair,8)&&
+                          SafeWritable((void*)s189PerLvlPair,8)&&
+                          SafeWritable((void*)s189BonusPair,8);
+    uint32_t s189MaxPreBase   =s189Pre.maxBaseBits;
+    uint32_t s189MaxPreCurrent=s189Pre.maxCurrentBits;
+    uint32_t s189BasePreBase   =(s189BasePair&&SafeReadable((void*)s189BasePair,8))?*(uint32_t*)s189BasePair:0xDEADBEEFu;
+    uint32_t s189BasePreCurrent=(s189BasePair&&SafeReadable((void*)(s189BasePair+4),4))?*(uint32_t*)(s189BasePair+4):0xDEADBEEFu;
+    uint32_t s189PerLvlPreBase   =(s189PerLvlPair&&SafeReadable((void*)s189PerLvlPair,8))?*(uint32_t*)s189PerLvlPair:0xDEADBEEFu;
+    uint32_t s189PerLvlPreCurrent=(s189PerLvlPair&&SafeReadable((void*)(s189PerLvlPair+4),4))?*(uint32_t*)(s189PerLvlPair+4):0xDEADBEEFu;
+    uint32_t s189BonusPreBase   =(s189BonusPair&&SafeReadable((void*)s189BonusPair,8))?*(uint32_t*)s189BonusPair:0xDEADBEEFu;
+    uint32_t s189BonusPreCurrent=(s189BonusPair&&SafeReadable((void*)(s189BonusPair+4),4))?*(uint32_t*)(s189BonusPair+4):0xDEADBEEFu;
+    bool s189SeedFaulted=false;
+    const char* s189Result="SKIPPED_TARGET_UNRESOLVED";
+    const uint32_t s189SeedBits=(uint32_t)KBFSEEDMAXMANA_BITS;
+    if(s189TargetOk&&s189CompoundLayoutOk&&s189AllWritable){
+        const uint64_t s189SeedPair=((uint64_t)s189SeedBits<<32)|s189SeedBits;
+        const uint64_t s189ZeroPair=0;
+        __try{
+            // Seed all 4 Mana-family compound attrs. Per-attr 8-byte atomic store (Base@+0/Current@+4
+            // packed as a single volatile uint64_t just like S156 does for MaxHealth). MaxMana +
+            // BaseMaxMana get s189SeedBits (both slots); MaxManaPerLevel + BonusMaxMana get zero
+            // to defeat Level-scaled inflation and bonus-subtraction in a formula recompute.
+            *(volatile uint64_t*)s189MaxPair  =s189SeedPair;
+            *(volatile uint64_t*)s189BasePair =s189SeedPair;
+            *(volatile uint64_t*)s189PerLvlPair=s189ZeroPair;
+            *(volatile uint64_t*)s189BonusPair =s189ZeroPair;
+            MemoryBarrier();
+            s189Result="ok";
+        }__except(SEH_FILTER(GetExceptionInformation())){
+            s189SeedFaulted=true; s189Result="FAULTED";
+        }
+    } else if(s189TargetOk&&!s189CompoundLayoutOk){
+        s189Result="SKIPPED_COMPOUND_LAYOUT_MISMATCH";
+    } else if(s189TargetOk&&!s189AllAligned){
+        s189Result="SKIPPED_PAIR_MISALIGNED";
+    } else if(s189TargetOk){
+        s189Result="SKIPPED_PAIR_NOT_WRITABLE";
+    }
+    BfS189ManaTarget s189Post{};
+    bool s189PostResolved=BfS189ResolveManaTarget(s156Pre.asc,&s189Post);
+    uint32_t s189MaxPostBase   =s189PostResolved?s189Post.maxBaseBits   :0xDEADBEEFu;
+    uint32_t s189MaxPostCurrent=s189PostResolved?s189Post.maxCurrentBits:0xDEADBEEFu;
+    uint32_t s189BasePostBase   =(s189BasePair&&SafeReadable((void*)s189BasePair,8))?*(uint32_t*)s189BasePair:0xDEADBEEFu;
+    uint32_t s189BasePostCurrent=(s189BasePair&&SafeReadable((void*)(s189BasePair+4),4))?*(uint32_t*)(s189BasePair+4):0xDEADBEEFu;
+    uint32_t s189PerLvlPostBase   =(s189PerLvlPair&&SafeReadable((void*)s189PerLvlPair,8))?*(uint32_t*)s189PerLvlPair:0xDEADBEEFu;
+    uint32_t s189PerLvlPostCurrent=(s189PerLvlPair&&SafeReadable((void*)(s189PerLvlPair+4),4))?*(uint32_t*)(s189PerLvlPair+4):0xDEADBEEFu;
+    uint32_t s189BonusPostBase   =(s189BonusPair&&SafeReadable((void*)s189BonusPair,8))?*(uint32_t*)s189BonusPair:0xDEADBEEFu;
+    uint32_t s189BonusPostCurrent=(s189BonusPair&&SafeReadable((void*)(s189BonusPair+4),4))?*(uint32_t*)(s189BonusPair+4):0xDEADBEEFu;
+    bool s189SeedExact=!s189SeedFaulted&&s189PostResolved&&
+                        s189MaxPostBase==s189SeedBits&&s189MaxPostCurrent==s189SeedBits&&
+                        s189BasePostBase==s189SeedBits&&s189BasePostCurrent==s189SeedBits&&
+                        s189PerLvlPostBase==0&&s189PerLvlPostCurrent==0&&
+                        s189BonusPostBase==0&&s189BonusPostCurrent==0;
+    Markerf("[S189-SEED] MAX_MANA_SEEDED result=%s seedBits=%08X spawnedIndex=%d exactMatches=%d "
+            "writable=%u preResolved=%s postResolved=%s compoundLayoutOk=%s refuseReason=%s exact=%s\r\n"
+            "[S189-SEED]   MaxMana@0x%X pair=0x%llX pre=%08X/%08X post=%08X/%08X\r\n"
+            "[S189-SEED]   BaseMaxMana@0x%X pair=0x%llX pre=%08X/%08X post=%08X/%08X\r\n"
+            "[S189-SEED]   MaxManaPerLevel@0x%X pair=0x%llX pre=%08X/%08X post=%08X/%08X\r\n"
+            "[S189-SEED]   BonusMaxMana@0x%X pair=0x%llX pre=%08X/%08X post=%08X/%08X\r\n",
+            s189Result,s189SeedBits,s189Pre.spawnedIndex,s189Pre.exactMatches,
+            (unsigned)(s189AllWritable?1:0),
+            s189PreResolved?"yes":"NO",s189PostResolved?"yes":"NO",
+            s189CompoundLayoutOk?"yes":"NO",
+            s189Pre.refuseReason?s189Pre.refuseReason:"-",
+            s189SeedExact?"yes":"NO",
+            s189Pre.maxManaOff,(unsigned long long)s189MaxPair,s189MaxPreBase,s189MaxPreCurrent,s189MaxPostBase,s189MaxPostCurrent,
+            s189BaseMaxOff,(unsigned long long)s189BasePair,s189BasePreBase,s189BasePreCurrent,s189BasePostBase,s189BasePostCurrent,
+            s189PerLevelOff,(unsigned long long)s189PerLvlPair,s189PerLvlPreBase,s189PerLvlPreCurrent,s189PerLvlPostBase,s189PerLvlPostCurrent,
+            s189BonusMaxOff,(unsigned long long)s189BonusPair,s189BonusPreBase,s189BonusPreCurrent,s189BonusPostBase,s189BonusPostCurrent);
+    if(!s189SeedExact){
+        Marker("[S189-SEED] SEED_GATE_REFUSED reason=max-mana-seed-not-exact RESULT=MAX_MANA_SEED_REFUSED; "
+               "PREFLIGHT proceeds without full Mana seed (interpretable null via MANASHOT_PRECHECK)\r\n");
+    } else {
+        Markerf("[S189-SEED] proceed=yes handing off to S148 PREFLIGHT with MaxMana=%08X/%08X BaseMaxMana=%08X/%08X "
+                "MaxManaPerLevel=0/0 BonusMaxMana=0/0\r\n",
+                s189SeedBits,s189SeedBits,s189SeedBits,s189SeedBits);
+    }
 #endif
 #endif
 

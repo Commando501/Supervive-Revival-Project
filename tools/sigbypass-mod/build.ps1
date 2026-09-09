@@ -772,6 +772,19 @@ $Variants = @{
         # (fold), MANASHOT_ADJUST_UNRESOLVED with the specific fold RVA in tailReason. Any outcome is
         # informative. Keeps parent -bindavatar-seedmax UNCHANGED as the byte-identical baseline.
         'botfight-damage-self-cal-bindavatar-seedmax-postshots-mana' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=0','-DKBFPOSTSHOT_MANA=1','-DKBFPOSTSHOT_MANA_DELTABITS=0x42480000u')
+        # S189-SEED flight (2026-09-08, marker tag [S189-SEED] MAX_MANA_SEEDED + [S189] MANASHOT_APPLIED expected):
+        # seed MaxMana=1000.0f (0x447A0000u -- S148_HEALTH_SEED_BITS parity) PLUS the 3 Mana-family compound
+        # siblings BaseMaxMana=1000/MaxManaPerLevel=0/BonusMaxMana=0 BEFORE the KBFPOSTSHOT_MANA probe fires
+        # its +50.0f AdjustMana call. Adversarial-verifier amendment vs a naive MaxMana-only seed: MaxMana on
+        # ULokiAttributeSet is a COMPOUND-derived attribute (4 sibling UPROPERTIES per S189-seed workflow),
+        # unlike MaxHealth on singleton LokiAttributeSetHealth. Seeding all 4 defeats any PostGameplayEffect
+        # Execute recompute f(BaseMaxMana, MaxManaPerLevel*Level, BonusMaxMana). Single-variable delta vs the
+        # parent -postshots-mana (adds -DKBFSEEDMAXMANA=1, seed value pinned). Trajectory: MaxMana 0/0 ->
+        # seeded 1000/1000; Mana pre 0/0; +50 delta -> MANASHOT_APPLIED postMP=50/50 arithmeticOK=yes (was
+        # MANASHOT_NO_OP on the parent because MaxMana=0). Keeps parent -postshots-mana UNCHANGED as the
+        # byte-identical baseline; the MANASHOT_COMPOUND_PRE/POST diagnostic lines are only emitted under
+        # KBFSEEDMAXMANA=1 so they cannot affect the parent's .text hash.
+        'botfight-damage-self-cal-bindavatar-seedmax-mana-seedcompound1000' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=0','-DKBFPOSTSHOT_MANA=1','-DKBFPOSTSHOT_MANA_DELTABITS=0x42480000u','-DKBFSEEDMAXMANA=1','-DKBFSEEDMAXMANA_BITS=0x447A0000u')
         # SITTING 4 -- WALL E full: spawn -> wire the bot's ASC -> AdjustHealth to KILL it. 0x31.
         'botfight-kill'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x31','-DKBFDMGTGT=1')
         # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.
