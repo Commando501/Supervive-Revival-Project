@@ -785,6 +785,23 @@ $Variants = @{
         # byte-identical baseline; the MANASHOT_COMPOUND_PRE/POST diagnostic lines are only emitted under
         # KBFSEEDMAXMANA=1 so they cannot affect the parent's .text hash.
         'botfight-damage-self-cal-bindavatar-seedmax-mana-seedcompound1000' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=0','-DKBFPOSTSHOT_MANA=1','-DKBFPOSTSHOT_MANA_DELTABITS=0x42480000u','-DKBFSEEDMAXMANA=1','-DKBFSEEDMAXMANA_BITS=0x447A0000u')
+        # S189-MV Flight 1 baseline: seed 6 movement attrs on ULokiAttributeSet + read GetMaxSpeed/
+        # GetMaxAcceleration via CMC vtable dispatch BEFORE and AFTER the seed. Per S189-MV workflow
+        # read-path agent [M]: getter reads from hero+0xF08 (NOT ASC.SpawnedAttributes[0]), and
+        # hero+0xF08 = NULL on the KWIREGAS-wired player. EXPECTED OUTCOME: Branch B --
+        # MOVEMENT_SEEDED exact readback on all 6 attrs, GETTER_BEFORE=0/0, GETTER_AFTER=0/0 (getter
+        # can't see our seed). Confirms L6 read-path model live. Sets up the wiref08 variant as
+        # the discriminator flip.
+        'botfight-damage-self-cal-bindavatar-seedmax-mv-obs' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=0','-DKBFSEEDMOVEMENT=1','-DKBFOBSMOVGETTERS=1')
+        # S189-MV Flight 2 discriminator flip: seed + wire hero+0xF08=spawnedSet0. If the L6 read-
+        # path model is [M] and one pointer-write unlocks the movement wall, GETTER_AFTER should
+        # return the SEEDED values (MaxSpeed=43FA0000 = 500.0f, MaxAccel=4732C800 = 45000.0f). If
+        # BOTH getters return the seeded values, the S141 T3 movement wall's core question ("why
+        # does Acceleration=0 -- the getter returns 0") is answered end-to-end via a single poke.
+        # MaxAcceleration seed = 45000.0f (0x4732C800) not 50000.0f: per S189-MV workflow verifiers,
+        # 50000 collides with engine Super's stock CMC UPROPERTY return on MOVE_Falling, making
+        # Branch A indistinguishable from Super bypass. 45000 is non-stock and discriminates cleanly.
+        'botfight-damage-self-cal-bindavatar-seedmax-mv-obs-wiref08' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=0','-DKBFSEEDMOVEMENT=1','-DKBFOBSMOVGETTERS=1','-DKBFWIREF08=1')
         # SITTING 4 -- WALL E full: spawn -> wire the bot's ASC -> AdjustHealth to KILL it. 0x31.
         'botfight-kill'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x31','-DKBFDMGTGT=1')
         # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.

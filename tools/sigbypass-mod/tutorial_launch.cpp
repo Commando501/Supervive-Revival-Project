@@ -18067,6 +18067,47 @@ static void DoBotSpawn(){
                                         // DISABLES the write (writes 0 back over 0, seed contract
                                         // still fires as a controlled negative).
 #endif
+#ifndef KBFSEEDMOVEMENT
+#define KBFSEEDMOVEMENT 0 // S189-MV (2026-09-09, tag [S189-MV] MOVEMENT_SEEDED): under
+                          // KBFBINDAVATAR, seed the 6 S141 T3 movement attrs on
+                          // ULokiAttributeSet at ASC.SpawnedAttributes[0]: MoveSpeed@+0xF0=500,
+                          // MaxMoveSpeed@+0x100=500, MaxAcceleration@+0x120=45000 (NON-STOCK
+                          // per adversarial verifier -- stock UE default is 50000 and would
+                          // COLLIDE with engine Super's return on MOVE_Falling), GroundFriction
+                          // @+0x130=8, BrakingDecelerationWalking@+0x140=2048, Mass@+0x170=100.
+                          // Byte-identical mechanism to KBFSEEDMAXMANA: direct-offset volatile
+                          // writes on the game's ULokiAttributeSet, layout-contracted via
+                          // PropOffsetSuper. NOTE per S189-MV workflow read-path agent [M]:
+                          // GetMaxSpeed/GetMaxAcceleration read from hero+0xF08 (AttributeSet
+                          // Storage), NOT from ASC.SpawnedAttributes[0]. On the KWIREGAS-wired
+                          // PLAYER hero+0xF08 = NULL (KWIREGAS only wires +0xF00). Expected
+                          // Branch B: seed lands byte-verified, getter still returns 0. To
+                          // discriminate and unlock the S141 T3 movement wall, pair with
+                          // KBFWIREF08=1 which writes hero+0xF08 = spawnedSet0 after the seed.
+                          // Requires KBFSELFCAL=1 AND KBFBINDAVATAR=1 AND KBFSEEDMAXHEALTH=1.
+                          // Default 0 keeps all 8 prior variants byte-identical.
+#endif
+#ifndef KBFOBSMOVGETTERS
+#define KBFOBSMOVGETTERS 0 // S189-MV observability: call ULokiCMC::GetMaxSpeed (vtable disp
+                           // 0x4C8) and GetMaxAcceleration (vtable disp 0x7D0) via direct
+                           // vtable dispatch, capture float return as bit-pattern in marker.
+                           // Fired BEFORE and AFTER the seed to directly measure whether the
+                           // getter returns the seeded value or bypasses it. READ-ONLY on the
+                           // CMC; no state mutation. Vtable-identity-validated against
+                           // g_modBase + 0x088F8570 (per S141 T3 measurement) to prevent
+                           // dispatch into garbage on a poisoned CMC pointer.
+#endif
+#ifndef KBFWIREF08
+#define KBFWIREF08 0 // S189-MV Flight 2 companion: after the KBFSEEDMOVEMENT seed writes to
+                     // spawnedSet0, poke hero+0xF08 = spawnedSet0. This wires the AttributeSet
+                     // Storage cache the movement getters read from. Combined with the
+                     // GETTER_AFTER observation (KBFOBSMOVGETTERS=1), this flip is the direct
+                     // discriminator: if MaxSpeed returns 500.0f AFTER the wire, the mechanism
+                     // to unlock the S141 T3 movement wall from a shim is byte-verified. Requires
+                     // KBFSEEDMOVEMENT=1 (needs a resolved spawnedSet0 to point at). Restores
+                     // hero+0xF08 to its pre-value in the disarm path? NO -- this is a diagnosis
+                     // arm, not a shipping shim. Do NOT add to the default set.
+#endif
 // KBFBINDCENSUS's own defines live earlier (near KFRAMEINIT) so FsThunk / FsDisarm can reference
 // the forward-declared helpers. The compile-time policy check for KBFHANDLEACT/KBFHANDLEMISS
 // (which are declared in this KBF block) stays here.
@@ -18121,6 +18162,24 @@ static void DoBotSpawn(){
 #endif
 #if (KBFSEEDMAXMANA != 0) && (KBFSEEDMAXMANA != 1)
 #error S189-SEED KBFSEEDMAXMANA is a bool: 0 (dead-strip) or 1 (seed the 4 Mana-family compound attrs once, before any AdjustMana probe)
+#endif
+#if KBFSEEDMOVEMENT && (!KBFSELFCAL || !KBFBINDAVATAR || !KBFSEEDMAXHEALTH)
+#error S189-MV KBFSEEDMOVEMENT requires the full S155+S156 primary chain (s156Pre.asc precondition): KBFSELFCAL=1 AND KBFBINDAVATAR=1 AND KBFSEEDMAXHEALTH=1
+#endif
+#if KBFSEEDMOVEMENT && (KBFBINDONLY || KBFNATURALINPUT)
+#error S189-MV KBFSEEDMOVEMENT must exclude S147 natural input and S149 bind-only setup
+#endif
+#if (KBFSEEDMOVEMENT != 0) && (KBFSEEDMOVEMENT != 1)
+#error S189-MV KBFSEEDMOVEMENT is a bool: 0 (dead-strip) or 1 (seed 6 movement attrs on ULokiAttributeSet)
+#endif
+#if KBFWIREF08 && !KBFSEEDMOVEMENT
+#error S189-MV KBFWIREF08 requires KBFSEEDMOVEMENT=1 (needs a resolved spawnedSet0 to wire hero+0xF08 to)
+#endif
+#if (KBFWIREF08 != 0) && (KBFWIREF08 != 1)
+#error S189-MV KBFWIREF08 is a bool: 0 (dead-strip) or 1 (poke hero+0xF08 = spawnedSet0 after the seed)
+#endif
+#if (KBFOBSMOVGETTERS != 0) && (KBFOBSMOVGETTERS != 1)
+#error S189-MV KBFOBSMOVGETTERS is a bool: 0 (dead-strip) or 1 (call GetMaxSpeed/GetMaxAcceleration via CMC vtable dispatch and emit result in marker)
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -22061,10 +22120,13 @@ static void BfS148FinishTerminal(){
     BfS148DoneStore();
 }
 
-#if (KBFPOSTSHOT_MANA || KBFSEEDMAXMANA)
-// S189 Mana probe helpers. Gated by KBFPOSTSHOT_MANA || KBFSEEDMAXMANA so they dead-strip in every other variant.
-// (S189-SEED reuses BfS189ResolveManaTarget verbatim as the only name-resolved instrument for manaSet+MaxMana offset;
-// BfS189DecodeAdjustManaTail is only used by the AdjustMana call in the probe, not by the seed.)
+#if (KBFPOSTSHOT_MANA || KBFSEEDMAXMANA || KBFSEEDMOVEMENT || KBFOBSMOVGETTERS || KBFWIREF08)
+// S189 Mana probe helpers. Gated by KBFPOSTSHOT_MANA || KBFSEEDMAXMANA || KBFSEEDMOVEMENT ||
+// KBFOBSMOVGETTERS || KBFWIREF08 so they dead-strip in every other variant. All S189-family arms
+// (Mana probe, MaxMana seed, Movement seed, F08 wire, getter observation) reuse
+// BfS189ResolveManaTarget as the only name-resolved instrument for spawnedSet0 (which IS
+// ULokiAttributeSet regardless of whether we're seeding Mana or Movement — same set, different
+// offsets). BfS189DecodeAdjustManaTail is only used by the AdjustMana call in KBFPOSTSHOT_MANA.
 // The resolver walks ASC.SpawnedAttributes (Num=2 expected: [0]=LokiAttributeSet, [1]=LokiAttributeSetHealth)
 // and picks the LokiAttributeSet entry by exact FName equality (same discriminator BfSeedDiagnosticMana uses).
 // The tail decoder resolves AdjustMana's impl RVA at runtime from the E8 rel32 at wrapper+0x6F --
@@ -22182,7 +22244,123 @@ static bool BfS189DecodeAdjustManaTail(uintptr_t wrapper, uintptr_t* implOut, co
     if(reasonOut) *reasonOut = "ok";
     return true;
 }
-#endif // KBFPOSTSHOT_MANA || KBFSEEDMAXMANA
+
+#if (KBFSEEDMOVEMENT || KBFOBSMOVGETTERS)
+// S189-MV: 6-row seed table for the S141 T3 movement attrs on ULokiAttributeSet.
+// Offsets [M] via S189-seed workflow layout audit (arithmetic 0x40+N*0x10 verified live via
+// PropOffsetSuper on Mana@+0x210/MaxMana@+0x220 in S189-seed F3). Seed values from DS-hybrid
+// ARM G recipe (S139 F4 measured-working on the BOT) EXCEPT MaxAcceleration which is 45000.0f
+// not 50000.0f -- per S189-MV workflow adversarial verifiers BOTH catching that 50000 collides
+// bit-identical with engine Super::GetMaxAcceleration's stock CMC UPROPERTY return on MOVE_
+// Falling, which would make Branch A (getter reads seed) INDISTINGUISHABLE from Super bypass.
+// 45000 is a distinctive non-stock value that discriminates.
+struct S189MvSeedRow {
+    const char* name;
+    uint32_t    off;   // FGameplayAttributeData offset on ULokiAttributeSet
+    uint32_t    bits;  // seed bit-pattern written to BOTH BaseValue@+8 AND CurrentValue@+C
+};
+static const S189MvSeedRow kS189MvSeedTable[] = {
+    { "MoveSpeed",                    0x0F0u, 0x43FA0000u }, // 500.0f
+    { "MaxMoveSpeed",                 0x100u, 0x43FA0000u }, // 500.0f
+    { "MaxAcceleration",              0x120u, 0x4732C800u }, // 45000.0f (NOT 50000 -- avoid stock Super collision)
+    { "GroundFriction",               0x130u, 0x41000000u }, // 8.0f
+    { "BrakingDecelerationWalking",   0x140u, 0x45000000u }, // 2048.0f
+    { "Mass",                         0x170u, 0x42C80000u }, // 100.0f
+};
+static const int kS189MvSeedTableN = (int)(sizeof(kS189MvSeedTable)/sizeof(kS189MvSeedTable[0]));
+// Sibling readback control: an attribute we do NOT seed, sampled BEFORE and AFTER the seed loop.
+// AttackSpeed (property idx 10) at +0xE0 -- one FGameplayAttributeData stride below MoveSpeed@+0xF0.
+// MUST read identically both times: proves no stride/overrun into a neighbouring slot.
+static const uint32_t kS189MvSiblingOff = 0x0E0u;
+
+// S189-MV observability: call ULokiCMC's GetMaxSpeed (vtable disp 0x4C8) and
+// GetMaxAcceleration (vtable disp 0x7D0) via direct vtable dispatch on the character's
+// CMC. Both are UE virtual `float (this)` methods -- Win64 fastcall passes this in RCX,
+// returns float in xmm0. SEH-wrap to survive a malformed CMC vtable. Validates the
+// vtable identity against g_modBase + 0x088F8570 (per S141 T3 [M]) to prevent dispatch
+// into garbage on a poisoned pointer.
+static void BfObsMovGetters(uintptr_t hero, const char* tag){
+    if(!LooksLikePtr(hero)){
+        Markerf("[S189-MV] GETTER_%s hero-null=yes\r\n", tag);
+        return;
+    }
+    // Resolve CharacterMovement UPROPERTY offset on the hero class chain via reflection.
+    uintptr_t heroCls = ClassOf(hero);
+    if(!LooksLikePtr(heroCls)){
+        Markerf("[S189-MV] GETTER_%s heroClass-null=yes\r\n", tag);
+        return;
+    }
+    uint32_t cmcOff = PropOffsetSuper(heroCls, "CharacterMovement");
+    if(cmcOff == 0xFFFFFFFFu){
+        Markerf("[S189-MV] GETTER_%s cmc-resolve-fail=yes\r\n", tag);
+        return;
+    }
+    uintptr_t cmc = 0;
+    if(!SafeReadable((void*)(hero+cmcOff), sizeof(uintptr_t))){
+        Markerf("[S189-MV] GETTER_%s cmc-slot-unreadable=yes cmcOff=0x%X\r\n", tag, cmcOff);
+        return;
+    }
+    cmc = *(uintptr_t*)(hero+cmcOff);
+    if(!LooksLikePtr(cmc)){
+        Markerf("[S189-MV] GETTER_%s cmc-null=yes cmcOff=0x%X\r\n", tag, cmcOff);
+        return;
+    }
+    // Read hero+0xF08 (AttributeSetStorage — what the getter helper actually reads FROM
+    // per S141 T3 [M] and the S189-MV workflow read-path agent). NULL on the KWIREGAS
+    // PLAYER means the getter's own `mov rbx,[rcx+0xf08] / je return-zero` early-outs.
+    uintptr_t heroF08 = 0;
+    if(SafeReadable((void*)(hero+0xF08), sizeof(uintptr_t))){
+        heroF08 = *(uintptr_t*)(hero+0xF08);
+    }
+    // Read MovementMode byte at CMC+0x231 (S141 T3 recorded, ULokiCMC subclass override).
+    uint8_t movementMode = 0xFFu;
+    if(SafeReadable((void*)(cmc+0x231), 1)){
+        movementMode = *(uint8_t*)(cmc+0x231);
+    }
+    // Vtable dispatch. Validate vtable identity first (per verify-obs adversarial defect #2).
+    if(!SafeReadable((void*)cmc, sizeof(uintptr_t))){
+        Markerf("[S189-MV] GETTER_%s cmc-vptr-unreadable=yes cmc=0x%llX\r\n",
+                tag, (unsigned long long)cmc);
+        return;
+    }
+    uintptr_t vtbl = *(uintptr_t*)cmc;
+    uintptr_t expectedVtbl = g_modBase + 0x088F8570ULL; // ULokiCMC vtable per S141 T3
+    bool vtblExact = (vtbl == expectedVtbl);
+    if(!vtblExact){
+        // Not a fatal refuse -- still print the diagnostic so a successor knows what class this is.
+        Markerf("[S189-MV] GETTER_%s vtbl-mismatch=yes cmc=0x%llX vtbl=0x%llX expected=0x%llX "
+                "mode=%u heroF08=0x%llX\r\n",
+                tag, (unsigned long long)cmc, (unsigned long long)vtbl,
+                (unsigned long long)expectedVtbl, (unsigned)movementMode,
+                (unsigned long long)heroF08);
+        return;
+    }
+    // vtable[0x4C8/8] = 0x99 = GetMaxSpeed;  vtable[0x7D0/8] = 0xFA = GetMaxAcceleration.
+    typedef float (*FnCmcThunk)(uintptr_t cmc);
+    if(!SafeReadable((void*)(vtbl + 0x7D0), sizeof(uintptr_t))){
+        Markerf("[S189-MV] GETTER_%s vtbl-slot-unreadable=yes\r\n", tag);
+        return;
+    }
+    FnCmcThunk fnMaxSpeed = (FnCmcThunk)(*(void**)(vtbl + 0x4C8));
+    FnCmcThunk fnMaxAccel = (FnCmcThunk)(*(void**)(vtbl + 0x7D0));
+    float sp = 0.0f, ac = 0.0f;
+    bool spOk = false, acOk = false;
+    __try { sp = fnMaxSpeed(cmc); spOk = true; }
+    __except(SEH_FILTER(GetExceptionInformation())){ spOk = false; }
+    __try { ac = fnMaxAccel(cmc); acOk = true; }
+    __except(SEH_FILTER(GetExceptionInformation())){ acOk = false; }
+    uint32_t spBits = 0, acBits = 0;
+    if(spOk) memcpy(&spBits, &sp, 4);
+    if(acOk) memcpy(&acBits, &ac, 4);
+    Markerf("[S189-MV] GETTER_%s cmc=0x%llX vtbl=0x%llX vtblExact=yes mode=%u heroF08=0x%llX "
+            "MaxSpeed=%08X(ok=%d, MP=%.2f) MaxAccel=%08X(ok=%d, val=%.2f)\r\n",
+            tag, (unsigned long long)cmc, (unsigned long long)vtbl,
+            (unsigned)movementMode, (unsigned long long)heroF08,
+            spBits, spOk?1:0, (double)sp,
+            acBits, acOk?1:0, (double)ac);
+}
+#endif // KBFSEEDMOVEMENT || KBFOBSMOVGETTERS
+#endif // KBFPOSTSHOT_MANA || KBFSEEDMAXMANA || KBFSEEDMOVEMENT || KBFOBSMOVGETTERS || KBFWIREF08
 
 static void BfS148DoCalibration(){
     static BfS148HealthTarget s_seeded{};
@@ -22763,6 +22941,117 @@ static void BfS148DoCalibration(){
                 "MaxManaPerLevel=0/0 BonusMaxMana=0/0\r\n",
                 s189SeedBits,s189SeedBits,s189SeedBits,s189SeedBits);
     }
+#endif
+#if (KBFSEEDMOVEMENT || KBFOBSMOVGETTERS)
+    // S189-MV: 4-station discriminator flight for the S141 T3 movement wall.
+    // Station 1: GETTER_BEFORE (pre-seed baseline; hero+0xF08 is NULL per KWIREGAS, so both
+    //            getters should early-out to 0.0f via helper 0x055AC9F0's `mov rbx,[rcx+0xf08]
+    //            / je return-zero`; but we call the real vtable dispatch to prove it).
+    // Station 2: KBFSEEDMOVEMENT seed (writes 6 movement attrs to ASC.SpawnedAttributes[0]).
+    // Station 3: KBFWIREF08 poke (writes hero+0xF08 = spawnedSet0 so subsequent getter calls
+    //            can find the seeded values).
+    // Station 4: GETTER_AFTER (post-seed [+optional wire] observation; discriminates Branch A
+    //            [seed reaches getter] vs Branch B [seed lands but getter still returns 0]).
+    // Uses s156Pre.asc for the same reason KBFSEEDMAXMANA does: s_seeded is not populated
+    // until line ~22893, downstream of this block in the initial dispatch (rule R-S189-seed-a).
+    BfObsMovGetters(s156Pre.hero, "BEFORE");
+#endif
+#if KBFSEEDMOVEMENT
+    Marker("[S189-MV] ===== movement seed preflight (KBFSEEDMOVEMENT=1) =====\r\n");
+    BfS189ManaTarget s189MvPre{};
+    bool s189MvResolved = BfS189ResolveManaTarget(s156Pre.asc, &s189MvPre);
+    if(!s189MvResolved || !LooksLikePtr(s189MvPre.manaSet)){
+        Markerf("[S189-MV] MOVEMENT_SEEDED aborted=yes reason=%s spawnedIndex=%d\r\n",
+                s189MvPre.refuseReason?s189MvPre.refuseReason:"resolver-refused", s189MvPre.spawnedIndex);
+    } else {
+        uintptr_t s189MvSet = s189MvPre.manaSet;
+        // Sibling readback BEFORE (AttackSpeed@+0xE0, deliberately UNSEEDED -- must stay unchanged
+        // to prove no stride overrun).
+        uint32_t s189MvSibBasePre = 0, s189MvSibCurrPre = 0;
+        bool s189MvSibReadPre = SafeReadable((void*)(s189MvSet + kS189MvSiblingOff + 0x8), 8);
+        if(s189MvSibReadPre){
+            s189MvSibBasePre = *(uint32_t*)(s189MvSet + kS189MvSiblingOff + 0x8);
+            s189MvSibCurrPre = *(uint32_t*)(s189MvSet + kS189MvSiblingOff + 0xC);
+        }
+        Markerf("[S189-MV] SIBLING_READ_PRE name=AttackSpeed off=0x%X readOk=%s base=%08X curr=%08X\r\n",
+                kS189MvSiblingOff, s189MvSibReadPre?"yes":"NO", s189MvSibBasePre, s189MvSibCurrPre);
+        int s189MvWrote = 0, s189MvReadbackOK = 0, s189MvReadbackFAIL = 0, s189MvRefused = 0;
+        bool s189MvFaulted = false;
+        for(int i=0; i<kS189MvSeedTableN; ++i){
+            const S189MvSeedRow& row = kS189MvSeedTable[i];
+            uintptr_t attrAddr = s189MvSet + row.off;
+            if(!SafeReadable((void*)(attrAddr+0x8), 8) || !SafeWritable((void*)(attrAddr+0x8), 8)){
+                Markerf("[S189-MV] SEED_ROW name=%s off=0x%X REFUSED reason=access\r\n", row.name, row.off);
+                s189MvRefused++;
+                continue;
+            }
+            uint32_t basePre = *(uint32_t*)(attrAddr + 0x8);
+            uint32_t currPre = *(uint32_t*)(attrAddr + 0xC);
+            const uint64_t seedPair = ((uint64_t)row.bits << 32) | row.bits;
+            __try {
+                *(volatile uint64_t*)(attrAddr + 0x8) = seedPair;
+                MemoryBarrier();
+                s189MvWrote++;
+            } __except(SEH_FILTER(GetExceptionInformation())) {
+                Markerf("[S189-MV] SEED_ROW name=%s off=0x%X FAULTED\r\n", row.name, row.off);
+                s189MvFaulted = true;
+                continue;
+            }
+            uint32_t basePost = *(uint32_t*)(attrAddr + 0x8);
+            uint32_t currPost = *(uint32_t*)(attrAddr + 0xC);
+            bool exactBase = (basePost == row.bits);
+            bool exactCurr = (currPost == row.bits);
+            if(exactBase && exactCurr) s189MvReadbackOK++; else s189MvReadbackFAIL++;
+            Markerf("[S189-MV] SEED_ROW name=%s off=0x%X bits=%08X pre=(base=%08X curr=%08X) "
+                    "post=(base=%08X curr=%08X) exactBase=%d exactCurr=%d\r\n",
+                    row.name, row.off, row.bits, basePre, currPre, basePost, currPost,
+                    exactBase?1:0, exactCurr?1:0);
+        }
+        uint32_t s189MvSibBasePost = 0, s189MvSibCurrPost = 0;
+        bool s189MvSibReadPost = SafeReadable((void*)(s189MvSet + kS189MvSiblingOff + 0x8), 8);
+        if(s189MvSibReadPost){
+            s189MvSibBasePost = *(uint32_t*)(s189MvSet + kS189MvSiblingOff + 0x8);
+            s189MvSibCurrPost = *(uint32_t*)(s189MvSet + kS189MvSiblingOff + 0xC);
+        }
+        bool s189MvSibUnchanged = s189MvSibReadPre && s189MvSibReadPost &&
+                                   (s189MvSibBasePost == s189MvSibBasePre) &&
+                                   (s189MvSibCurrPost == s189MvSibCurrPre);
+        Markerf("[S189-MV] SIBLING_READ_POST name=AttackSpeed off=0x%X readOk=%s base=%08X curr=%08X unchanged=%d\r\n",
+                kS189MvSiblingOff, s189MvSibReadPost?"yes":"NO", s189MvSibBasePost, s189MvSibCurrPost,
+                s189MvSibUnchanged?1:0);
+        Markerf("[S189-MV] MOVEMENT_SEEDED aborted=no attrs=%d wrote=%d refused=%d readbackOK=%d "
+                "readbackFAIL=%d faulted=%d spawnedSet0=0x%llX siblingUnchanged=%d\r\n",
+                kS189MvSeedTableN, s189MvWrote, s189MvRefused, s189MvReadbackOK, s189MvReadbackFAIL,
+                s189MvFaulted?1:0, (unsigned long long)s189MvSet, s189MvSibUnchanged?1:0);
+#if KBFWIREF08
+        // Station 3: poke hero+0xF08 (AttributeSetStorage) = spawnedSet0.
+        // This is the mechanism the movement getters READ from (per S141 T3 [M] and S189-MV
+        // workflow read-path agent). If GETTER_AFTER now returns the seeded 500/45000 values,
+        // this ONE poke unlocks the S141 T3 movement wall for the KWIREGAS-wired player.
+        uintptr_t heroForWire = s156Pre.hero;
+        bool wireOk = false;
+        uintptr_t heroF08Pre = 0, heroF08Post = 0;
+        if(LooksLikePtr(heroForWire) && SafeReadable((void*)(heroForWire+0xF08), sizeof(uintptr_t)) &&
+           SafeWritable((void*)(heroForWire+0xF08), sizeof(uintptr_t))){
+            heroF08Pre = *(uintptr_t*)(heroForWire+0xF08);
+            __try {
+                *(volatile uintptr_t*)(heroForWire+0xF08) = s189MvSet;
+                MemoryBarrier();
+                wireOk = true;
+            } __except(SEH_FILTER(GetExceptionInformation())){ wireOk = false; }
+            heroF08Post = *(uintptr_t*)(heroForWire+0xF08);
+        }
+        Markerf("[S189-MV] WIREF08 wireOk=%d hero=0x%llX heroF08Pre=0x%llX heroF08Post=0x%llX "
+                "targetSet=0x%llX pointsAtSet=%d\r\n",
+                wireOk?1:0, (unsigned long long)heroForWire,
+                (unsigned long long)heroF08Pre, (unsigned long long)heroF08Post,
+                (unsigned long long)s189MvSet,
+                (heroF08Post == s189MvSet)?1:0);
+#endif // KBFWIREF08
+    }
+#endif // KBFSEEDMOVEMENT
+#if (KBFSEEDMOVEMENT || KBFOBSMOVGETTERS)
+    BfObsMovGetters(s156Pre.hero, "AFTER");
 #endif
 #endif
 
