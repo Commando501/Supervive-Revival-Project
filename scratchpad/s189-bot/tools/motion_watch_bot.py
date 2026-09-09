@@ -258,7 +258,7 @@ while time.time() - t0 < DUR:
 
     def ff(v):
         return "%.4f" % v if v is not None else ""
-    print("%.3f,%.3f,%s,%s,%.3f,%s,%.1f,%.4f,%s,%s,%s,%s,%s,%s,%s,%s" % (
+    print("%.3f,%.3f,%s,%s,%.3f,%s,%.1f,%.4f,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (
         ts, time.time(), fv(loc), fv(vel), v2, fv(acc), a2, civm,
         mode if mode is not None else "", ff(grav), ff(amod), ff(tsfs),
         gate if gate is not None else "", living if living is not None else "",

@@ -645,6 +645,22 @@ Also from S124, tool-level and worth knowing before they cost a session:
     sustained axis input, emit KEYDOWN at ~30Hz (33ms) across the hold — a single KEYDOWN
     reaches UE for one frame and axis input decays. (R-S189-MV-WASD-c, -d)
 
+- **S189-BOT (2026-09-09): the "the bot does not move" wall was an INSTRUMENT-of-spawn artifact.** Every
+  S138–S141 flight measured `SpawnAIFromClass` LokiBots hovering at (600,0,13240) with Velocity=0 and
+  concluded the bot's mover/AI was broken. It was not: those bots were spawned **in the air** (the shim's
+  spawn loc is `playerHero + KBSOFFSET`, and the staged player sits 13 km up after `sp`'s LIFT step). A
+  bot spawned at a MEASURED floor rest point (1356,-409,90.15) comes up `MOVE_Walking` at possess time
+  (`SetDefaultMovementMode` -> `FindFloor` succeeds) and walks under its own AI. **(R-S189-BOT-a): a
+  measured floor spawn is the whole difference; before concluding a subsystem is broken, check the
+  world-state INPUT the harness fed it.** Corollaries banked in
+  [s189-bot-botplay-floor-RESULT.md](s189-bot-botplay-floor-RESULT.md): **(R-S189-BOT-b)** wiring only
+  `hero+0xF08` to a movement `ULokiAttributeSet` is WASD-drivable (the player walked at 487 with `+0xF00`
+  left as the live ASC); **(R-S189-BOT-c)** a floor-spawned wander bot walks off the island in ~2 s, so
+  its on-floor velocity must be sampled by a DIRECT-ADDRESS watcher started at the `[SNP] BOT` marker line
+  during the game-thread hold — auto-discovery (slow `GUObjectArray` sweep) and the in-shim worker sampler
+  (starts ~10 s post-arm) both start too late; **(R-S189-BOT-d)** a 1 uu/s velocity seed above the 2-D
+  `SizeSq2D` gate breaks a post-GravityScale rest hover in ~5 s vs 115 s unseeded.
+
 Also of a piece: **findings that die in commit messages get re-litigated.** `46d873a` and `b420a69`
 had the input mechanism right on 2026-07-16 and were never promoted to a doc, so four later sessions
 re-derived it. **Promote findings out of commit bodies into `docs/`.**
