@@ -761,6 +761,17 @@ $Variants = @{
         # (pre 750 > 300, shot fires). Keeps -postshots1-heal100 as within-family control (same N=1
         # + positive delta; only magnitude and cap-crossing differ).
         'botfight-damage-self-cal-bindavatar-seedmax-postshots1-heal500' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=1','-DKBFPOSTSHOT_DELTABITS=0x43FA0000u')
+
+        # S189 Mana probe (2026-09-08, marker tag [S189] MANASHOT_*): after S148 primary AdjustHealth
+        # completes (1000->750), fire ONE AdjustMana call on s_seeded.asc's LokiAttributeSet.Mana with
+        # +50.0f delta (KBFPOSTSHOT_MANA_DELTABITS=0x42480000u default). KBFPOSTSHOTS=0 keeps the Health
+        # post-loop stripped so this variant tests Mana in isolation. Expected outcomes: (a) if MaxMana
+        # is 0 (likely on this NM_Standalone client with no server-authored GameState), AdjustMana runs
+        # cleanly but Mana stays at 0 due to PreAttributeChange clamp -> MANASHOT_NO_OP; (b) if AdjustMana
+        # writes bypass the clamp, Mana goes 0->50 -> MANASHOT_APPLIED; (c) if AdjustMana is stripped
+        # (fold), MANASHOT_ADJUST_UNRESOLVED with the specific fold RVA in tailReason. Any outcome is
+        # informative. Keeps parent -bindavatar-seedmax UNCHANGED as the byte-identical baseline.
+        'botfight-damage-self-cal-bindavatar-seedmax-postshots-mana' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=0','-DKBFPOSTSHOT_MANA=1','-DKBFPOSTSHOT_MANA_DELTABITS=0x42480000u')
         # SITTING 4 -- WALL E full: spawn -> wire the bot's ASC -> AdjustHealth to KILL it. 0x31.
         'botfight-kill'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x31','-DKBFDMGTGT=1')
         # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.

@@ -18021,6 +18021,26 @@ static void DoBotSpawn(){
                                           // delta sign, so a positive delta whose pre is above floor still fires
                                           // (heal is always permitted when floor precondition holds).
 #endif
+#ifndef KBFPOSTSHOT_MANA
+#define KBFPOSTSHOT_MANA 0 // S189 Mana test (2026-09-08, tag [S189] MANASHOT_* markers): fires one AdjustMana native
+                           // call after the S148 primary AdjustHealth+seed block, using s_seeded.asc as context.
+                           // Requires KBFSELFCAL=1 AND KBFBINDAVATAR=1 AND KBFSEEDMAXHEALTH=1. Orthogonal to
+                           // KBFPOSTSHOTS: both may be set (Health post-loop first, then Mana probe); or
+                           // KBFPOSTSHOTS=0 for Mana-only. Default 0 keeps the parent artifacts byte-identical.
+                           // AdjustMana wrapper RVA 0x52942F0 [M, byte-identical prologue to AdjustHealth
+                           // 0x5294270 per S153 sweep]; impl RVA is DECODED AT RUNTIME from the E8 rel32 tail at
+                           // wrapper+0x6F (never measured offline on this build -- do NOT hardcode). Target set
+                           // is the exact 'LokiAttributeSet' entry in ASC.SpawnedAttributes (index 0 in Num=2).
+#endif
+#ifndef KBFPOSTSHOT_MANA_DELTABITS
+#define KBFPOSTSHOT_MANA_DELTABITS 0x42480000u // S189 Mana delta bits: raw uint32 bit-pattern of the float ManaDelta
+                                               // passed to AdjustMana. Default 0x42480000 = +50.0f. Predicted
+                                               // starting Mana = 0/0 (BfSeedDiagnosticMana enforces this as a
+                                               // precondition); a +50 delta probes (a) whether MaxMana clamp fires
+                                               // (likely if MaxMana=0), (b) whether AdjustMana writes Base+Current
+                                               // together. Override for negative (0xC2480000 = -50.0f), overshoot,
+                                               // or 0 for a no-delta call.
+#endif
 // KBFBINDCENSUS's own defines live earlier (near KFRAMEINIT) so FsThunk / FsDisarm can reference
 // the forward-declared helpers. The compile-time policy check for KBFHANDLEACT/KBFHANDLEMISS
 // (which are declared in this KBF block) stays here.
@@ -18057,6 +18077,15 @@ static void DoBotSpawn(){
 #endif
 #if (KBFPOSTSHOTS < 0) || (KBFPOSTSHOTS > 2)
 #error S156-B post-shots count must be 0..2 (first-flight discipline: N=1 avoids zero-crossing at 750->500; N=2 approaches 250; N>=3 crosses 0 HP and risks silent FK-32 per S158 precedent)
+#endif
+#if KBFPOSTSHOT_MANA && (!KBFSELFCAL || !KBFBINDAVATAR || !KBFSEEDMAXHEALTH)
+#error S189 Mana probe requires the full S155+S156 primary chain (s_seeded.asc must be proven-good): KBFSELFCAL=1 AND KBFBINDAVATAR=1 AND KBFSEEDMAXHEALTH=1
+#endif
+#if KBFPOSTSHOT_MANA && (KBFBINDONLY || KBFNATURALINPUT)
+#error S189 Mana probe must exclude S147 natural input and S149 bind-only setups
+#endif
+#if (KBFPOSTSHOT_MANA != 0) && (KBFPOSTSHOT_MANA != 1)
+#error S189 KBFPOSTSHOT_MANA is a bool: 0 (dead-strip) or 1 (fire one AdjustMana call). Use KBFPOSTSHOT_MANA_DELTABITS to set the delta.
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -21997,6 +22026,127 @@ static void BfS148FinishTerminal(){
     BfS148DoneStore();
 }
 
+#if KBFPOSTSHOT_MANA
+// S189 Mana probe helpers. Gated by KBFPOSTSHOT_MANA so they dead-strip in every other variant.
+// The resolver walks ASC.SpawnedAttributes (Num=2 expected: [0]=LokiAttributeSet, [1]=LokiAttributeSetHealth)
+// and picks the LokiAttributeSet entry by exact FName equality (same discriminator BfSeedDiagnosticMana uses).
+// The tail decoder resolves AdjustMana's impl RVA at runtime from the E8 rel32 at wrapper+0x6F --
+// impl RVA is UNMEASURED offline on this build so DO NOT hardcode (CLAUDE.md S152 THUNKEXACT bug).
+struct BfS189ManaTarget {
+    uintptr_t   manaSet;
+    uint32_t    manaOff;
+    uint32_t    maxManaOff;
+    uint32_t    preBaseBits;
+    uint32_t    preCurrentBits;
+    uint32_t    maxBaseBits;
+    uint32_t    maxCurrentBits;
+    int32_t     spawnedIndex;
+    int32_t     exactMatches;
+    bool        resolveOk;
+    const char* refuseReason;
+};
+
+static bool BfS189ResolveManaTarget(uintptr_t asc, BfS189ManaTarget* out){
+    if(!out) return false;
+    *out = BfS189ManaTarget{};
+    out->manaOff = 0xFFFFFFFFu;
+    out->maxManaOff = 0xFFFFFFFFu;
+    out->spawnedIndex = -1;
+    if(!LooksLikePtr(asc) || !SafeReadable((void*)asc, 0x20) || !LooksLikePtr(ClassOf(asc))){
+        out->refuseReason = "asc-unreadable"; return false;
+    }
+    uint32_t spawnedOff = PropOffsetSuper(ClassOf(asc), "SpawnedAttributes");
+    if(spawnedOff != 0x168 || !SafeReadable((void*)(asc + spawnedOff), 16)){
+        out->refuseReason = "spawned-header-mismatch"; return false;
+    }
+    uintptr_t data = *(uintptr_t*)(asc + spawnedOff);
+    int32_t   num  = *(int32_t*)(asc + spawnedOff + 8);
+    int32_t   max  = *(int32_t*)(asc + spawnedOff + 12);
+    if(!LooksLikePtr(data) || num != 2 || max < num || max > 64){
+        out->refuseReason = "spawned-array-shape"; return false;
+    }
+    uintptr_t manaSet = 0;
+    int matches = 0;
+    int32_t idx = -1;
+    for(int i = 0; i < num; ++i){
+        if(!SafeReadable((void*)(data + (uintptr_t)i * 8), 8)) continue;
+        uintptr_t candidate = *(uintptr_t*)(data + (uintptr_t)i * 8);
+        if(!LooksLikePtr(candidate) || !SafeReadable((void*)candidate, 0x20) ||
+           !LooksLikePtr(ClassOf(candidate))) continue;
+        char clsName[128] = "-";
+        GetFNameStr(NameId(ClassOf(candidate)), clsName, sizeof(clsName));
+        if(!strcmp(clsName, "LokiAttributeSet")){
+            manaSet = candidate;
+            idx = i;
+            ++matches;
+        }
+    }
+    out->spawnedIndex = idx;
+    out->exactMatches = matches;
+    if(matches != 1 || !LooksLikePtr(manaSet)){
+        out->refuseReason = "expected-exactly-one-LokiAttributeSet"; return false;
+    }
+    uintptr_t setCls = ClassOf(manaSet);
+    uint32_t manaOff = PropOffsetSuper(setCls, "Mana");
+    uint32_t maxManaOff = PropOffsetSuper(setCls, "MaxMana");
+    if(manaOff != 0x210 || maxManaOff != 0x220){
+        out->manaOff = manaOff; out->maxManaOff = maxManaOff;
+        out->refuseReason = "mana-layout-mismatch"; return false;
+    }
+    if(!SafeReadable((void*)(manaSet + manaOff + 8), 8) ||
+       !SafeWritable((void*)(manaSet + manaOff + 8), 8) ||
+       !SafeReadable((void*)(manaSet + maxManaOff + 8), 8)){
+        out->refuseReason = "mana-access-contract"; return false;
+    }
+    out->manaSet         = manaSet;
+    out->manaOff         = manaOff;
+    out->maxManaOff      = maxManaOff;
+    out->preBaseBits     = *(uint32_t*)(manaSet + manaOff + 0x8);
+    out->preCurrentBits  = *(uint32_t*)(manaSet + manaOff + 0xC);
+    out->maxBaseBits     = *(uint32_t*)(manaSet + maxManaOff + 0x8);
+    out->maxCurrentBits  = *(uint32_t*)(manaSet + maxManaOff + 0xC);
+    out->resolveOk       = true;
+    return true;
+}
+
+static bool BfS189DecodeAdjustManaTail(uintptr_t wrapper, uintptr_t* implOut, const char** reasonOut){
+    if(implOut) *implOut = 0;
+    if(reasonOut) *reasonOut = "unset";
+    if(!LooksLikePtr(wrapper) || !SafeReadable((void*)(wrapper + 0x6F), 5)){
+        if(reasonOut) *reasonOut = "wrapper-tail-unreadable";
+        return false;
+    }
+    const uint8_t* tp = (const uint8_t*)(wrapper + 0x6F);
+    if(tp[0] != 0xE8){
+        if(reasonOut) *reasonOut = "tail-not-E8";
+        return false;
+    }
+    int32_t rel = *(const int32_t*)(tp + 1);
+    uintptr_t tgt = wrapper + 0x6F + 5 + (intptr_t)rel;
+    if(tgt < g_modBase || (tgt - g_modBase) >= 0x0B000000ULL){
+        if(reasonOut) *reasonOut = "tail-out-of-module";
+        return false;
+    }
+    // Reject the 5 known folds per CLAUDE.md FK-1 register + S131 lane D
+    uintptr_t implRva = tgt - g_modBase;
+    if(implRva == 0x0F7EC20 || implRva == 0x0F7EB60 || implRva == 0x0F7EB50 ||
+       implRva == 0x0FC6CF0 || implRva == 0x00B9E1F0){
+        static char foldReason[64];
+        _snprintf_s(foldReason, sizeof(foldReason), _TRUNCATE,
+                    "tail-hits-fold-0x%llX", (unsigned long long)implRva);
+        if(reasonOut) *reasonOut = foldReason;
+        return false;
+    }
+    if(!SafeReadable((void*)tgt, 16)){
+        if(reasonOut) *reasonOut = "impl-not-readable";
+        return false;
+    }
+    if(implOut) *implOut = tgt;
+    if(reasonOut) *reasonOut = "ok";
+    return true;
+}
+#endif // KBFPOSTSHOT_MANA
+
 static void BfS148DoCalibration(){
     static BfS148HealthTarget s_seeded{};
     static uint32_t s_originalBase=0,s_originalCurrent=0;
@@ -22163,6 +22313,146 @@ static void BfS148DoCalibration(){
                 s_postAdjustThunk=0;
                 s_postAdjustChild=0;
                 s_postDeltaOff=0xFFFFFFFFu;
+            }
+#endif
+#if KBFPOSTSHOT_MANA
+            // S189: fire one AdjustMana native call on s_seeded.asc's LokiAttributeSet.Mana.
+            // Preconditions all satisfied at this point in the calibration flow:
+            //   - s_seeded is the target that passed PRESEED_REVALIDATION identity gate
+            //   - AdjustHealth primary shot has already emitted [S148] SELF_DAMAGE_CALIBRATED
+            //   - Post-loop (if KBFPOSTSHOTS>0) has run to its final MANASHOT_COMPLETE/aborted line
+            // Resolves AdjustMana's wrapper independently (does NOT reuse s_postAdjust* which are
+            // AdjustHealth's), decodes impl RVA at runtime from the E8 rel32 tail at wrapper+0x6F
+            // (never measured on this build offline -- do NOT hardcode; see CLAUDE.md S152 THUNKEXACT bug).
+            {
+                void* manaAdjustFn = nullptr;
+                uintptr_t manaAdjustThunk = 0, manaAdjustChild = 0;
+                ResolveFuncNative(s_seeded.ascClass, "AdjustMana", &manaAdjustFn, &manaAdjustThunk, &manaAdjustChild);
+                uintptr_t manaDeltaProp = 0;
+                uint32_t  manaDeltaOff = 0xFFFFFFFFu, manaDeltaElem = 0, manaDeltaArrayDim = 0;
+                uint64_t  manaDeltaFlags = 0;
+                int       manaParmCount = 0;
+                bool      manaChainComplete = false;
+                bool manaDeltaTyped = BfS148ResolveFloatInputParam(
+                    manaAdjustChild, "ManaDelta", &manaDeltaProp,
+                    &manaDeltaOff, &manaDeltaElem, &manaDeltaArrayDim, &manaDeltaFlags,
+                    &manaParmCount, &manaChainComplete);
+                uintptr_t manaAdjustClass = GcAlive((uintptr_t)manaAdjustFn) ? ClassOf((uintptr_t)manaAdjustFn) : 0;
+                uintptr_t manaAdjustOwner = GcAlive((uintptr_t)manaAdjustFn) &&
+                    SafeReadable((void*)((uintptr_t)manaAdjustFn + 0x28), sizeof(uintptr_t))
+                    ? *(uintptr_t*)((uintptr_t)manaAdjustFn + 0x28) : 0;
+                bool manaFunctionClassExact = BfS148ExactDirectClass(manaAdjustClass, "Function");
+                bool manaFunctionOwnerExact = BfS148ExactDirectClass(manaAdjustOwner, "LokiAbilitySystemComponent");
+                uint32_t manaFunctionFlags = GcAlive((uintptr_t)manaAdjustFn) &&
+                    SafeReadable((void*)((uintptr_t)manaAdjustFn + 0xB8), 4)
+                    ? *(uint32_t*)((uintptr_t)manaAdjustFn + 0xB8) : 0;
+                bool manaNativeFlag = (manaFunctionFlags & 0x400u) != 0; // FUNC_Native
+                bool manaThunkInImage = manaAdjustThunk >= g_modBase &&
+                                        (manaAdjustThunk - g_modBase) < 0x0B000000ULL;
+                bool     manaWrapperExact = manaAdjustThunk == g_modBase + 0x52942F0;
+                uintptr_t manaImplResolved = 0;
+                const char* manaTailReason = "wrapper-not-exact";
+                if(manaWrapperExact){
+                    BfS189DecodeAdjustManaTail(manaAdjustThunk, &manaImplResolved, &manaTailReason);
+                }
+                uint32_t manaPropertiesSize = GcAlive((uintptr_t)manaAdjustFn) &&
+                    SafeReadable((void*)((uintptr_t)manaAdjustFn + USTRUCT_PROPSIZE), 4)
+                    ? *(uint32_t*)((uintptr_t)manaAdjustFn + USTRUCT_PROPSIZE) : 0;
+                bool manaFrameBounded = manaPropertiesSize > 0 &&
+                                        manaPropertiesSize <= sizeof(g_pbuf) &&
+                                        manaDeltaElem <= manaPropertiesSize &&
+                                        manaDeltaOff <= manaPropertiesSize - manaDeltaElem;
+                bool manaAdjustResolved = GcAlive((uintptr_t)manaAdjustFn) &&
+                                          manaFunctionClassExact && manaFunctionOwnerExact &&
+                                          manaNativeFlag && manaThunkInImage &&
+                                          manaWrapperExact && manaImplResolved != 0 &&
+                                          manaAdjustThunk != g_modBase + kPiRva &&
+                                          LooksLikePtr(manaAdjustChild) && manaDeltaTyped && manaFrameBounded;
+                uintptr_t manaImplRva = manaImplResolved ? (manaImplResolved - g_modBase) : 0;
+                Markerf("[S189] MANASHOT_RESOLVE ufunc=0x%llX flags=0x%08X thunk=0x%llX "
+                        "wrapperExact=%s implResolvedRva=0x%llX tailReason=%s "
+                        "class=0x%llX classExact=%s owner=0x%llX ownerExact=%s "
+                        "child=0x%llX PropertiesSize=%u parmCount=%d chainComplete=%s "
+                        "ManaDeltaProp=0x%llX off=0x%X size=%u arrayDim=%u propFlags=0x%016llX "
+                        "resolved=%s\r\n",
+                        (unsigned long long)(uintptr_t)manaAdjustFn, manaFunctionFlags,
+                        (unsigned long long)manaAdjustThunk,
+                        manaWrapperExact ? "yes" : "NO", (unsigned long long)manaImplRva, manaTailReason,
+                        (unsigned long long)manaAdjustClass, manaFunctionClassExact ? "yes" : "NO",
+                        (unsigned long long)manaAdjustOwner, manaFunctionOwnerExact ? "yes" : "NO",
+                        (unsigned long long)manaAdjustChild, manaPropertiesSize,
+                        manaParmCount, manaChainComplete ? "yes" : "NO",
+                        (unsigned long long)manaDeltaProp, manaDeltaOff, manaDeltaElem, manaDeltaArrayDim,
+                        (unsigned long long)manaDeltaFlags, manaAdjustResolved ? "yes" : "NO");
+                if(!manaAdjustResolved){
+                    Marker("[S189] MANASHOT_ADJUST_UNRESOLVED RESULT=MANASHOT_ADJUST_UNRESOLVED; "
+                           "no AdjustMana call issued, callCount=0\r\n");
+                } else {
+                    BfS189ManaTarget mana{};
+                    bool manaResolveOk = BfS189ResolveManaTarget(s_seeded.asc, &mana);
+                    auto bitsToMP = [](uint32_t b) -> float { float f; memcpy(&f, &b, 4); return f; };
+                    if(!manaResolveOk){
+                        Markerf("[S189] MANASHOT_TARGET_REFUSED RESULT=MANASHOT_TARGET_REFUSED "
+                                "reason=%s spawnedIndex=%d exactMatches=%d manaOff=0x%X maxManaOff=0x%X; "
+                                "no AdjustMana call issued, callCount=0\r\n",
+                                mana.refuseReason ? mana.refuseReason : "unknown",
+                                mana.spawnedIndex, mana.exactMatches, mana.manaOff, mana.maxManaOff);
+                    } else {
+                        const uint32_t manaDeltaBits = (uint32_t)KBFPOSTSHOT_MANA_DELTABITS;
+                        const float    manaDeltaMP   = bitsToMP(manaDeltaBits);
+                        Markerf("[S189] MANASHOT_PRECHECK manaSet=0x%llX spawnedIndex=%d "
+                                "preBits=%08X/%08X preMP=%.2f/%.2f "
+                                "maxBits=%08X/%08X maxMP=%.2f/%.2f\r\n",
+                                (unsigned long long)mana.manaSet, mana.spawnedIndex,
+                                mana.preBaseBits, mana.preCurrentBits,
+                                bitsToMP(mana.preBaseBits), bitsToMP(mana.preCurrentBits),
+                                mana.maxBaseBits, mana.maxCurrentBits,
+                                bitsToMP(mana.maxBaseBits), bitsToMP(mana.maxCurrentBits));
+                        memset(g_pbuf, 0, sizeof(g_pbuf));
+                        memset(g_rbuf, 0, sizeof(g_rbuf));
+                        memcpy((uint8_t*)g_pbuf + manaDeltaOff, &manaDeltaBits, sizeof(manaDeltaBits));
+                        Markerf("[S189] MANASHOT_CALL_ISSUED deltaBits=%08X deltaMP=%.2f\r\n",
+                                manaDeltaBits, manaDeltaMP);
+                        bool manaFaulted = CallNativeGuarded(manaAdjustFn, manaAdjustThunk, manaAdjustChild,
+                                                             (void*)s_seeded.asc, g_pbuf, g_rbuf);
+                        if(manaFaulted){
+                            Markerf("[S189] MANASHOT_FAULTED preBits=%08X/%08X preMP=%.2f/%.2f %s\r\n",
+                                    mana.preBaseBits, mana.preCurrentBits,
+                                    bitsToMP(mana.preBaseBits), bitsToMP(mana.preCurrentBits),
+                                    DP_FAULT);
+                        } else {
+                            BfS189ManaTarget after{};
+                            bool afterOk = BfS189ResolveManaTarget(s_seeded.asc, &after);
+                            bool identityStable = afterOk && after.manaSet == mana.manaSet &&
+                                                  after.manaOff == mana.manaOff &&
+                                                  after.maxManaOff == mana.maxManaOff;
+                            uint32_t postBase    = afterOk ? after.preBaseBits    : 0xDEADBEEFu;
+                            uint32_t postCurrent = afterOk ? after.preCurrentBits : 0xDEADBEEFu;
+                            uint32_t postMaxBase = afterOk ? after.maxBaseBits    : 0xDEADBEEFu;
+                            uint32_t postMaxCurrent = afterOk ? after.maxCurrentBits : 0xDEADBEEFu;
+                            float observedDeltaCurrent = bitsToMP(postCurrent) - bitsToMP(mana.preCurrentBits);
+                            float observedDeltaBase    = bitsToMP(postBase)    - bitsToMP(mana.preBaseBits);
+                            bool arithmeticOK = (observedDeltaCurrent > manaDeltaMP - 0.01f) &&
+                                                (observedDeltaCurrent < manaDeltaMP + 0.01f);
+                            uint32_t rvalBits = *(volatile uint32_t*)g_rbuf;
+                            Markerf("[S189] MANASHOT_POST postBits=%08X/%08X postMP=%.2f/%.2f "
+                                    "postMaxBits=%08X/%08X postMaxMP=%.2f/%.2f "
+                                    "observedDeltaCurrentMP=%+.2f observedDeltaBaseMP=%+.2f "
+                                    "arithmeticOK=%s rvalBits=%08X identityStable=%s afterOk=%s\r\n",
+                                    postBase, postCurrent, bitsToMP(postBase), bitsToMP(postCurrent),
+                                    postMaxBase, postMaxCurrent, bitsToMP(postMaxBase), bitsToMP(postMaxCurrent),
+                                    observedDeltaCurrent, observedDeltaBase,
+                                    arithmeticOK ? "yes" : "NO", rvalBits,
+                                    identityStable ? "yes" : "NO", afterOk ? "yes" : "NO");
+                            const char* result = arithmeticOK ? "MANASHOT_APPLIED"
+                                                : (postCurrent == mana.preCurrentBits ? "MANASHOT_NO_OP"
+                                                : (postCurrent == 0 ? "MANASHOT_CLAMPED_ZERO"
+                                                : "MANASHOT_CLAMPED_OR_CAPPED"));
+                            Markerf("[S189] MANASHOT_COMPLETE RESULT=%s callCount=1 identityStable=%s\r\n",
+                                    result, identityStable ? "yes" : "NO");
+                        }
+                    }
+                }
             }
 #endif
         }
