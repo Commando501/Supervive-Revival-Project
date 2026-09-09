@@ -954,6 +954,37 @@ $Variants = @{
         # ARM L control: identical, but kick B is the SAME axis as kick A (horizontal), so a
         # difference between samples 0..2 and 3..4 cannot be attributed to the axis.
         'axisab-ctrl'         = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x3BA0','-DKSHSENTX=600.0','-DKSHSENTZ=0.0','-DKSHAXBZ=0.0','-DKSHPLRY=600.0','-DKSHPLRGRAV=1.0','-DKBSGASPLAYER=1')
+        # ==== S189-BOT (2026-09-09) -- floor-spawn ONE Loki bot on the tutorial floor and let its OWN AI
+        #   wander drive it with NO velocity kick; the player is wired +0xF08-only to the shared CDO
+        #   attribute set + GravityScale 0->1 (K2). Design: workflow wf_9b8a8446-b39 (6 Understand +
+        #   1 Design + 3 adversarial Verify + 1 Adjudicate). Every new knob defaults to the FLOWN
+        #   behaviour, so botai/gasattr/gasattr-ctrl/play/-mv-play/-seedmax must rebuild BYTE-IDENTICAL
+        #   to the 2026-09-09 re-baseline (scratchpad/s189-bot/evidence/00-before-state-digests.txt);
+        #   axisab/armk/sentinel-* MOVE (the K1 mask `if` + sampler statics live in their compiled block).
+        # bits: 0x20 D | 0x80 F | 0x100 G | 0x200 H (poison + worker sampler; ZERO bot sentinel)
+        #       | 0x1000 K2 | 0x4000 M (velocity-gated fallback kick from the sampler) = 0x53A0.
+        #   NO 0x800 (ARM J with KSHPLRY=0 would ZERO a walking player's Velocity), NO 0x2000 (ARM L).
+        #   Seed 487.0f (0x43F38000) is NON-STOCK (R-S189-MV-a): a bot cap in the 487 band cannot be a
+        #   stock 500/600. MaxAcceleration stays 50000 == engine Super and is NOT a discriminator.
+        'botplay-floor'       = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x53A0','-DKSHSENTX=0.0','-DKSHSENTZ=0.0','-DKSHPLRGRAV=1.0','-DKBSGASPLAYER=1','-DKBSGASPLAYERMASK=0x2','-DKBSGASMOVESPEED=487.0f','-DKBSLBSKIPCTRL=1','-DKBSAIFLOOR=1','-DKBSAILOC_X=1356.0','-DKBSAILOC_Y=-409.0','-DKBSAILOC_Z=90.15','-DKSHSAMPLEN=40','-DKSHSAMPLEMS=1000','-DKSHFALLBACKAT=8','-DKSHFALLBACKMAXV=5.0','-DKSHFALLBACKX=600.0','-DKBSGETTERRCPT=1')
+        # PRIMARY FLIGHT VARIANT = botplay-floor + ARM J (0x800) with a 1 uu/s -Y PLAYER seed. A player at
+        #   EXACT rest hovers after GravityScale 0->1 for an unknown-trigger, variable time (ship-f1: the
+        #   fall began ~115 s after the poke; F3: <=45 s) and the armed window is only ~150 s; a horizontal
+        #   velocity breaks the rest fixed point immediately (S141 T3 armk/axisab [M] at 600 uu/s). 1 uu/s
+        #   is 487x below the cap and cannot masquerade as walking (control C1: no player write >= 2 uu/s).
+        'botplay-floor-tinykick' = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x5BA0','-DKSHSENTX=0.0','-DKSHSENTZ=0.0','-DKSHPLRY=-1.0','-DKSHPLRGRAV=1.0','-DKBSGASPLAYER=1','-DKBSGASPLAYERMASK=0x2','-DKBSGASMOVESPEED=487.0f','-DKBSLBSKIPCTRL=1','-DKBSAIFLOOR=1','-DKBSAILOC_X=1356.0','-DKBSAILOC_Y=-409.0','-DKBSAILOC_Z=90.15','-DKSHSAMPLEN=40','-DKSHSAMPLEMS=1000','-DKSHFALLBACKAT=8','-DKSHFALLBACKMAXV=5.0','-DKSHFALLBACKX=600.0','-DKBSGETTERRCPT=1')
+        # AI-ATTRIBUTION CONTROL: identical to botplay-floor but ARM F (0x80) compiled out, so the wander
+        #   gate stays closed. Prediction: the bot does NOT translate before the fallback; after the kick
+        #   an undriven Walking pawn STOPS within ~0.3 s (BrakingDecelerationWalking 2048), one heading
+        #   only. bits 0x5320.
+        'botplay-floor-noai'  = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x5320','-DKSHSENTX=0.0','-DKSHSENTZ=0.0','-DKSHPLRGRAV=1.0','-DKBSGASPLAYER=1','-DKBSGASPLAYERMASK=0x2','-DKBSGASMOVESPEED=487.0f','-DKBSLBSKIPCTRL=1','-DKBSAIFLOOR=1','-DKBSAILOC_X=1356.0','-DKBSAILOC_Y=-409.0','-DKBSAILOC_Z=90.15','-DKSHSAMPLEN=40','-DKSHSAMPLEMS=1000','-DKSHFALLBACKAT=8','-DKSHFALLBACKMAXV=5.0','-DKSHFALLBACKX=600.0','-DKBSGETTERRCPT=1')
+        # PLAN B: the bot-only floor arm as a 5TH manual-map AFTER the flown -mv-play (player chain
+        #   untouched: KBSGASPLAYER=0, no K2, no J). Disjoint sets: player 500 (own spawnedSet0) vs bot
+        #   487 (CDO set). bits 0x20|0x80|0x100|0x200|0x4000 = 0x43A0.
+        'botplay-floor-5th'   = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x43A0','-DKSHSENTX=0.0','-DKSHSENTZ=0.0','-DKBSGASMOVESPEED=487.0f','-DKBSLBSKIPCTRL=1','-DKBSAIFLOOR=1','-DKBSAILOC_X=1356.0','-DKBSAILOC_Y=-409.0','-DKBSAILOC_Z=90.15','-DKSHSAMPLEN=40','-DKSHSAMPLEMS=1000','-DKSHFALLBACKAT=8','-DKSHFALLBACKMAXV=5.0','-DKSHFALLBACKX=600.0','-DKBSGETTERRCPT=1')
+        # ZERO-NEW-LOGIC contingency (design A: the S140 sentinel-big shape minus the player kick, with the
+        #   487 seed). Air spawn, three ARM-D spawns, 600 uu/s bot kick at arm time.
+        'botwalk'             = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x3A0','-DKSHSENTX=600.0','-DKSHSENTZ=0.0','-DKBSGASMOVESPEED=487.0f')
         # READ-ONLY control: runs ARM D + every ARM E pre-flight gate and then makes NO SpawnBot
         # call (bit6 clear). Any world change under THIS build would mean the gates are not read-only.
         'spawnbot-readonly'   = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x60','-DKBSSBCALL=0')

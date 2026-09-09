@@ -1,0 +1,26 @@
+S189-BOT before-state (2026-09-09, HEAD 4e2f609, tools/sigbypass-mod/ clean vs HEAD except two
+untracked files: tutorial_launch_fo.dll.pre-s176-cleanup.bak and veh_stop_fk31.cpp)
+
+Rebuilt from HEAD source with an unmodified build.ps1 BEFORE any edit this session.
+RAW = sha256(.text[PointerToRawData : +SizeOfRawData])[:16]  (tools/sigbypass-mod/text_digest.py)
+
+variant                                                   RAW              VSIZE            rawsize
+tutorial_launch_botfight_damage_self_cal_bindavatar_seedmax_mv_play  87c764b6d235b7a3  97516dd4eb1ad408  159744   <- REPRODUCES the recorded 87c764b6d235b7a3
+tutorial_launch_botai                                     b620e0ff3279e673  0e09664b6984531c  111104   <- recorded 5e47c13cf7f0a158 is STALE
+tutorial_launch_gasattr                                   29f0fa4efffd01da  175d5cc5778ed244  137728   <- recorded 2fcc2536e21f18e3 is STALE
+tutorial_launch_gasattr_ctrl                              4c0ede610baa4629  8d49b98ced284bef  134656   <- recorded 4465ebc4d7168c03 is STALE
+tutorial_launch_sentinel_big                              8347a0df17354239  0b0bd0c57d411ce9  151040   <- recorded 52fceb9be6de532f is STALE (already flagged moved at S141)
+tutorial_launch_armk                                      3ff3ba9f77ae1438  4c59338da9c86bf8  152576   <- recorded 8278c6031d05756c is STALE
+tutorial_launch_axisab                                    01593c0f8f73f1ae  e80e4cf910cfb304  153088   <- recorded 83bcf5c178846022 is STALE
+tutorial_launch_axisab_ctrl                               24367079fcb877ed  3fe5c9df6aee716c  153088   <- (size identical to axisab; hash differs -> distinct)
+tutorial_launch_play                                      31af7667355f39d1  1bcead97f43a0f59  163328   <- recorded 9bc10a4552c596e1 is STALE
+
+Interpretation: every RM_BOTFIGHT-family digest recorded on 2026-09-08/09 reproduces; every
+RM_BOTSPAWN/RM_PLAY digest recorded before 2026-09-03 does not. HEAD contains the S176 VEH cleanup
+(tutorial_launch.cpp:24999 / :26071, committed after those older digests were recorded) which
+touches the shared Worker exit path in every variant. Nobody re-asserted botai/play/gasattr since.
+=> The values in THIS file are the regression gates for this session's edits. A gate that does
+   not reproduce after the edit is a real code change to that variant.
+
+Duplicate sweep (text_digest.py --dupes build): only the already-known hazards
+(driverecompute == gasattr_ctrl; s148 test copies; play == play_nopimutex == play_strictroot).

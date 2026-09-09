@@ -15672,6 +15672,42 @@ static void BsScanWorld(const char* tag,int* botCtl,int* heroes,uintptr_t* heroO
 #ifndef KBSAI
 #define KBSAI 0
 #endif
+// ══ S189-BOT (2026-09-09) floor-spawn knobs. Design: workflow wf_9b8a8446-b39 (6 Understand + 1 Design
+//    + 3 adversarial Verify + 1 Adjudicate). ALL default to the FLOWN behaviour (air spawn at
+//    hero+KBSOFFSET, three ARM-D spawns, no getter receipt) so botai/gasattr/gasattr-ctrl/play stay
+//    byte-identical. Rationale [M, spawnloc lane]: SpawnAIFromClass with bNoCollisionFail=1 is
+//    AlwaysSpawn (0x4631D3F..0x4631D55: no position adjust), the spawn is NON-deferred (0x4631DC5 ->
+//    UWorld::SpawnActor 0x39C5280) so ACharacter::PostInitializeComponents -> CMC
+//    SetDefaultMovementMode (0x35F9B30, slot 288, NOT Loki-overridden) runs AT the spawn transform:
+//    it SetMovementMode(DefaultLandMovementMode=Walking) and reverts to MOVE_Falling ONLY if FindFloor
+//    (engine 0x35E01D0, real) set no MovementBase (0x35F9BC6 cmp [rax+0x470],0). The air spawn at
+//    Z=13240 is the MEASURED revert branch (bot reads MovementMode 3, S138 f9 / S139 f1); a spawn at
+//    the measured rest root over the tutorial floor is the FindFloor-succeeds branch of the SAME code.
+#ifndef KBSAIFLOOR
+#define KBSAIFLOOR 0      // 1 = spawn the SpawnAIFromClass pawn at KBSAILOC_* (a MEASURED floor rest point)
+                          //     instead of hero+KBSOFFSET in the air (the flown air spawn)
+#endif
+#ifndef KBSAILOC_X
+#define KBSAILOC_X 1356.0 // S140 T2 F3 bot rest/walk point (1356.434,-409.393,90.150) MOVE_Walking [M]
+#endif
+#ifndef KBSAILOC_Y
+#define KBSAILOC_Y -409.0
+#endif
+#ifndef KBSAILOC_Z
+#define KBSAILOC_Z 90.15  // the EXACT measured rest root (capsule centre; half-height 88.0504 => capsule
+                          // bottom ~2.1 uu above the surface, inside the MIN/MAX_FLOOR_DIST band). NEVER
+                          // below rest (AlwaysSpawn does no adjust -> a penetrating capsule); not much
+                          // above it (beyond MAX_FLOOR_DIST FindFloor may miss -> MOVE_Falling hover).
+#endif
+#ifndef KBSLBSKIPCTRL
+#define KBSLBSKIPCTRL 0   // 1 = ARM D makes ONLY spawn B (no A/C control spawns) so exactly ONE bot exists.
+                          //     The A-B-A is already [M] (S137 F3/F4); three overlapping pawns at a floor
+                          //     point would be obstacles the walking bot must depenetrate from.
+#endif
+#ifndef KBSGETTERRCPT
+#define KBSGETTERRCPT 0   // 1 = per-pawn 'seed reaches GetMaxSpeed/GetMaxAcceleration' receipt after ARM G
+                          //     / ARM K1 (self-contained: BfObsMovGetters is RM_BOTFIGHT-only by its guards)
+#endif
 
 static uintptr_t g_bsAiCDO=0, g_bsAiFn=0, g_bsAiThunk=0, g_bsAiChild=0, g_bsAiWorldCtx=0;
 static uint32_t  g_bsAiOWco=0xFFFFFFFF,g_bsAiOCls=0xFFFFFFFF,g_bsAiOBt=0xFFFFFFFF,
@@ -15701,6 +15737,14 @@ static void BsResolveAI(uintptr_t hero){
         g_bsLoc[0]=*(double*)(root+lo); g_bsLoc[1]=*(double*)(root+lo+8); g_bsLoc[2]=*(double*)(root+lo+16);
         Markerf("[BS]   heroLoc = (%.1f, %.1f, %.1f)\r\n",g_bsLoc[0],g_bsLoc[1],g_bsLoc[2]);
         g_bsLoc[0]+=(double)(KBSOFFSET); g_bsLocOK=1;
+#if KBSAIFLOOR
+        // S189-BOT: override the AIR spawn (hero+KBSOFFSET, Z=13240 = the MEASURED MOVE_Falling branch)
+        // with an ABSOLUTE measured floor rest point so SetDefaultMovementMode's FindFloor succeeds
+        // at spawn time. Both values are printed; the later [BS] ARGS line prints what is passed.
+        Markerf("[BS] FLOOR OVERRIDE (KBSAIFLOOR): spawnLoc (%.1f,%.1f,%.1f) -> (%.1f,%.1f,%.2f) = measured rest point\r\n",
+                g_bsLoc[0],g_bsLoc[1],g_bsLoc[2],(double)(KBSAILOC_X),(double)(KBSAILOC_Y),(double)(KBSAILOC_Z));
+        g_bsLoc[0]=(double)(KBSAILOC_X); g_bsLoc[1]=(double)(KBSAILOC_Y); g_bsLoc[2]=(double)(KBSAILOC_Z);
+#endif
     }
 
     // The pawn class, verified BY CHAIN (its LEAF name says nothing about being a hero).
@@ -16330,10 +16374,15 @@ static void BsPsLokiBot(){
     if(!PhChainHas(g_psBotCls,"BotController",nullptr,0)){
         Marker("[PS] ARM D REFUSED: the resolved class's chain does not contain BotController.\r\n"); return; }
 
+#if KBSLBSKIPCTRL
+    Marker("[PS] KBSLBSKIPCTRL=1: spawns A and C are compiled out; only spawn B runs (A-B-A already [M] S137 F3/F4). Rows 0/2 print as zeros.\r\n");
+#endif
     // ---- spawn A: BASELINE, no poke.
+#if !KBSLBSKIPCTRL
     Marker("[PS] ---- ARM D / SPAWN A (baseline, CDO untouched) ----\r\n");
     g_bsAiReturned=0; BsCallAI(); g_psLbSpawns++; Sleep(250);
     BsPsLbRead("A-baseline",0);
+#endif
 
     // ---- THE POKE.
     uintptr_t a=g_psDefPawn+g_psOAic;
@@ -16365,9 +16414,11 @@ static void BsPsLokiBot(){
             g_psLbRestoreOK?"READBACK OK":"*** READBACK FAILED -- THE ENGINE CDO IS LEFT MODIFIED ***");
 
     // ---- spawn C: REVERSAL. This is what makes the restore a measurement.
+#if !KBSLBSKIPCTRL
     Marker("[PS] ---- ARM D / SPAWN C (reversal: must be AIController again) ----\r\n");
     g_bsAiReturned=0; BsCallAI(); g_psLbSpawns++; Sleep(250);
     BsPsLbRead("C-reversal",2);
+#endif
 
     // ---- give the bot controller a PlayerState, reusing the two arms already measured working.
     if(LooksLikePtr(g_psLbCtl[1])){
@@ -16504,6 +16555,52 @@ static const uint8_t PS_SIG_SPAWNBOT[16] =
 #ifndef KBSGASPLAYER
 #define KBSGASPLAYER 0
 #endif
+// S189-BOT: which of the three storage pointers ARM K1 writes onto the PLAYER. bit0 +0xF00
+// AbilitySystemComponentStorage, bit1 +0xF08 AttributeSetStorage, bit2 +0xF10 AttributeSetHealthStorage.
+// 0x7 (default) = the flown armk/axisab shape (all three, which OVERWRITES the KWIREGAS ASC at +0xF00).
+// 0x2 = the S189-MV read-path shape: the movement getters read hero+0xF08 -> set+0xF0/+0x100 ONLY
+// (S189-MV F1 [M]); leaving +0xF00 = the live KWIREGAS ASC is the -mv-play wiring the player WALKED with.
+#ifndef KBSGASPLAYERMASK
+#define KBSGASPLAYERMASK 0x7
+#endif
+#if KBSGETTERRCPT
+// S189-BOT: per-pawn 'the seed reaches the getter' receipt. Mirrors BfObsMovGetters (RM_BOTFIGHT,
+// S189-MV F1 [M]) -- vtable identity validated against the ULokiCMC vtable (g_modBase+0x088F8570,
+// S141 T3 [M]), then the two Loki overrides dispatched directly: GetMaxSpeed = disp 0x4C8
+// (0x0055ACB90, reads hero+0xF08 -> AttrSet+0xF0 min +0x100) and GetMaxAcceleration = disp 0x7D0
+// (0x0055AC910; Walking arm reads AttrSet+0x120, Falling arm delegates to engine Super = the CMC's
+// own UPROPERTY 50000). ARM G seeds MaxAcceleration=50000 == that stock value, so the MaxAccel field
+// is NON-discriminating here (R-S189-MV-a); ONLY the MaxSpeed bits prove the wire.
+static void BpGetterReceipt(uintptr_t hero,const char* tag){
+    if(!LooksLikePtr(hero)){ Markerf("[RCPT] GETTER_%s hero=NULL\r\n",tag); return; }
+    uintptr_t heroCls=ClassOf(hero);
+    uint32_t co=LooksLikePtr(heroCls)?PropOffsetSuper(heroCls,"CharacterMovement"):0xFFFFFFFFu;
+    uintptr_t cmc=(co!=0xFFFFFFFFu&&SafeReadable((void*)(hero+co),8))?*(uintptr_t*)(hero+co):0;
+    uintptr_t f08=SafeReadable((void*)(hero+0xF08),8)?*(uintptr_t*)(hero+0xF08):0;
+    uintptr_t f00=SafeReadable((void*)(hero+0xF00),8)?*(uintptr_t*)(hero+0xF00):0;
+    if(!LooksLikePtr(cmc)||!SafeReadable((void*)cmc,8)){
+        Markerf("[RCPT] GETTER_%s cmc unresolved (cmcOff=0x%X cmc=0x%llX) f00=0x%llX f08=0x%llX -> no dispatch\r\n",
+                tag,co,(unsigned long long)cmc,(unsigned long long)f00,(unsigned long long)f08); return; }
+    uintptr_t vt=*(uintptr_t*)cmc;
+    uint8_t mm=SafeReadable((void*)(cmc+0x231),1)?*(uint8_t*)(cmc+0x231):0xFF;
+    if(vt!=g_modBase+0x088F8570ULL){
+        Markerf("[RCPT] GETTER_%s cmc=0x%llX vtbl=0x%llX NOT the ULokiCMC vtable (expected 0x%llX) -> no dispatch; f00=0x%llX f08=0x%llX mode=%u\r\n",
+                tag,(unsigned long long)cmc,(unsigned long long)vt,(unsigned long long)(g_modBase+0x088F8570ULL),
+                (unsigned long long)f00,(unsigned long long)f08,(unsigned)mm); return; }
+    if(!SafeReadable((void*)(vt+0x7D0),8)){ Markerf("[RCPT] GETTER_%s vtbl slot unreadable\r\n",tag); return; }
+    typedef float (*BpCmcGetter)(uintptr_t);
+    BpCmcGetter fnSp=(BpCmcGetter)(*(void**)(vt+0x4C8));
+    BpCmcGetter fnAc=(BpCmcGetter)(*(void**)(vt+0x7D0));
+    float sp=0.0f,ac=0.0f; int spOk=0,acOk=0;
+    __try{ sp=fnSp(cmc); spOk=1; }__except(SEH_FILTER(GetExceptionInformation())){ spOk=0; }
+    __try{ ac=fnAc(cmc); acOk=1; }__except(SEH_FILTER(GetExceptionInformation())){ acOk=0; }
+    uint32_t sb=0,ab=0; memcpy(&sb,&sp,4); memcpy(&ab,&ac,4);
+    Markerf("[RCPT] GETTER_%s vtblExact=yes mode=%u f00=0x%llX f08=0x%llX MaxSpeed=%08X(ok=%d,%.2f) "
+            "MaxAccel=%08X(ok=%d,%.2f NONDISCRIM) seed=%.10g\r\n",
+            tag,(unsigned)mm,(unsigned long long)f00,(unsigned long long)f08,sb,spOk,(double)sp,ab,acOk,(double)ac,
+            (double)(float)(KBSGASMOVESPEED));
+}
+#endif
 static void BsPsGasAttrs(){
     Marker("[GASX] ================ ARM G: port the DS GAS recipe onto the BOT ================\r\n");
     uintptr_t ctl=g_psLbCtl[1];
@@ -16591,6 +16688,11 @@ static void BsPsGasAttrs(){
         Markerf("[GASX] --- ARM K1: same three storages onto the PLAYER hero 0x%llX ---\r\n",
                 (unsigned long long)pp);
         for(int i=0;i<3;i++){
+#if (KBSGASPLAYERMASK) != 0x7
+            if(!(((KBSGASPLAYERMASK)>>i)&1)){
+                Markerf("[GASX]   PLR %-30s MASKED OUT (KBSGASPLAYERMASK=0x%X)\r\n",kDst[i],(unsigned)(KBSGASPLAYERMASK));
+                continue; }
+#endif
             uint32_t po=PropOffsetSuper(ClassOf(pp),kDst[i]);
             if(po==0xFFFFFFFF){ Markerf("[GASX]   PLR %-30s NOT A PROPERTY -> skipped\r\n",kDst[i]); continue; }
             if(!LooksLikePtr(src[i])){ Markerf("[GASX]   PLR %-30s src is NULL -> skipped\r\n",kDst[i]); continue; }
@@ -16603,8 +16705,14 @@ static void BsPsGasAttrs(){
             if(af==src[i]) pwrote++;
         }
         Markerf("[GASX] ARM K1 done: PLAYER storages written %d/3\r\n",pwrote);
+#if KBSGETTERRCPT
+        BpGetterReceipt(pp,"PLR_AFTER_K1");
+#endif
         if(pwrote<1) Marker("[GASX] ⚠ ARM K1 wrote NOTHING -- read the player's behaviour as UNTREATED.\r\n");
     } else Marker("[GASX] ARM K1 SKIPPED: the A0 world scan latched no player hero.\r\n");
+#endif
+#if KBSGETTERRCPT
+    BpGetterReceipt(pawn,"BOT_AFTER_G");
 #endif
     Markerf("[GASX] ARM G done: storages written %d/3, attributes written %d/6\r\n",wrote,attrOk);
     if(wrote<1||attrOk<6)
@@ -17027,6 +17135,36 @@ static uintptr_t g_shBotCmc=0,  g_shPlrCmc=0, g_shBotPawn=0, g_shPlrPawn=0;
 static int  g_shBotPoisoned=0,  g_shPlrPoisoned=0, g_shSentinelOK=0, g_shArmed=0;
 static int  g_shBotFlag0=-1,    g_shPlrFlag0=-1;
 static double g_shLoc0[2][3]={{0,0,0},{0,0,0}};
+// ══ S189-BOT dense sampler + velocity-gated fallback kick (workflow wf_9b8a8446-b39). Defaults keep
+//    the FLOWN 5-point schedule and no fallback, so every existing sentinel-family artifact keeps its
+//    logic (their digests move only because the K1 mask `if` sits in their compiled block).
+#ifndef KSHSAMPLEN
+#define KSHSAMPLEN 0          // 0 = the flown 5-point schedule; N>0 = N samples every KSHSAMPLEMS on the worker
+#endif
+#ifndef KSHSAMPLEMS
+#define KSHSAMPLEMS 1000
+#endif
+#if (KBSPSARMS & 0x4000)
+// ARM M: the fallback kick is WITHHELD until sample KSHFALLBACKAT and fires ONLY if the bot's MAX |Vxy|
+// over samples 0..KSHFALLBACKAT-1 stayed below KSHFALLBACKMAXV (a stationary bot has |V|~0; a wandering
+// one has |V|~cap regardless of NET displacement, which is the wrong quantity -- ai-drive verifier #4).
+// Motion BEFORE the kick with rotating Accel = AI-driven; motion only after a printed 'FALLBACK KICK
+// fired' = the already-[M] S140 shape (kick + AI steering).
+#ifndef KSHFALLBACKAT
+#define KSHFALLBACKAT 8
+#endif
+#ifndef KSHFALLBACKMAXV
+#define KSHFALLBACKMAXV 5.0
+#endif
+#ifndef KSHFALLBACKX
+#define KSHFALLBACKX 600.0
+#endif
+static const double kShFallback[3]={(double)(KSHFALLBACKX),0.0,0.0};
+static int g_shFallbackFired=0; static double g_shBotMaxV=0.0;
+#endif
+#if KSHSAMPLEN
+static DWORD g_shArmTick=0; static double g_shPeakXY[2]={0,0}; static int g_shPeakFrozen[2]={0,0};
+#endif
 
 // 24 raw bytes -> "xx xx xx ..".  RAW FIRST, DERIVE AFTER: a formatted double print hides a signed
 // zero, and that exact defect cost S139 flight 3 its finding for an hour.
@@ -17337,13 +17475,72 @@ static void BsPsSentinel(){
         if(LooksLikePtr(root)&&SafeReadable((void*)(root+0x158),24)) memcpy(g_shLoc0[k],(void*)(root+0x158),24);
     }
     g_shArmed=1;
+#if KSHSAMPLEN
+    g_shArmTick=GetTickCount();
+#endif
     Marker("[SNP] ARM H armed. THE READ HAPPENS ON THE WORKER THREAD AFTER FsDisarm -- this function\r\n"
            "[SNP] runs on the GAME THREAD, so sleeping here would stop the frames the test needs.\r\n");
 }
 
 // ---- THE SAMPLER. Worker thread, AFTER FsDisarm, so Sleep() costs the game nothing.
+#if KSHSAMPLEN
+// S189-BOT: compact per-sample readout for BOTH pawns with per-sample liveness re-validation. A
+// freed/reused block passes SafeReadable (a VirtualQuery commit test) but fails CONTROL1
+// (CharacterOwner@+0x198 == pawn) or the ULokiCMC vptr; on the FIRST failure the pawn's running peak
+// is FROZEN so a garbage read can never poison it (flight-hazard verifier #4). Z and
+// TimeSinceFallingStart timestamp a bot's island exit. AIM is the hardcoded +0x3D0 cross-check only
+// (ShDump resolves it BY NAME every 5th sample).
+static void ShCompact(int i){
+    for(int k=0;k<2;k++){
+        uintptr_t c=k?g_shPlrCmc:g_shBotCmc, pw=k?g_shPlrPawn:g_shBotPawn;
+        const char* tag=k?"PLR":"BOT";
+        if(g_shPeakFrozen[k]) continue;
+        if(!LooksLikePtr(c)||!LooksLikePtr(pw)||!SafeReadable((void*)c,8)||!SafeReadable((void*)(c+0xE8),24)
+           ||!SafeReadable((void*)(c+0x328),24)||!SafeReadable((void*)(c+0x198),8)){
+            g_shPeakFrozen[k]=1;
+            Markerf("[SNP] %s i=%d UNREADABLE -> peak FROZEN at %.10g\r\n",tag,i,g_shPeakXY[k]); continue; }
+        uintptr_t owner=*(uintptr_t*)(c+0x198), vt=*(uintptr_t*)c;
+        if(owner!=pw||vt!=g_modBase+0x088F8570ULL){
+            g_shPeakFrozen[k]=1;
+            Markerf("[SNP] %s i=%d DEAD/REUSED (owner=0x%llX vs pawn 0x%llX, vtbl=0x%llX) -> peak FROZEN at %.10g\r\n",
+                    tag,i,(unsigned long long)owner,(unsigned long long)pw,(unsigned long long)vt,g_shPeakXY[k]); continue; }
+        const double* v=(const double*)(c+0xE8); const double* a=(const double*)(c+0x328);
+        double vxy=__builtin_sqrt(v[0]*v[0]+v[1]*v[1]); double axy=__builtin_sqrt(a[0]*a[0]+a[1]*a[1]);
+        if(!(vxy==vxy)||vxy>1.0e6){ g_shPeakFrozen[k]=1;
+            Markerf("[SNP] %s i=%d ABSURD |Vxy|=%.10g -> peak FROZEN at %.10g\r\n",tag,i,vxy,g_shPeakXY[k]); continue; }
+        if(vxy>g_shPeakXY[k]) g_shPeakXY[k]=vxy;
+        uint8_t mm=SafeReadable((void*)(c+0x231),1)?*(uint8_t*)(c+0x231):0xFF;
+        float tsf=SafeReadable((void*)(c+0x12B0),4)?*(float*)(c+0x12B0):-1.0f;
+        float aim=SafeReadable((void*)(c+0x3D0),4)?*(float*)(c+0x3D0):-999.0f;
+        double lz=0.0; int lzOk=0;
+        { uint32_t rc=PropOffsetSuper(ClassOf(pw),"RootComponent");
+          uintptr_t root=(rc!=0xFFFFFFFF&&SafeReadable((void*)(pw+rc),8))?*(uintptr_t*)(pw+rc):0;
+          if(LooksLikePtr(root)&&SafeReadable((void*)(root+0x158),24)){ lz=((const double*)(root+0x158))[2]; lzOk=1; } }
+        double seed=(double)(float)(KBSGASMOVESPEED); double delta=vxy-seed;
+        Markerf("[SNP] %s i=%d |Vxy|=%.10g peak=%.10g mode=%u Vz=%.3f Z=%.3f%s TSF=%.4f Acc=(%.1f,%.1f) |Axy|=%.1f AIM=%.4g delta=%.3e atCap=%s\r\n",
+                tag,i,vxy,g_shPeakXY[k],(unsigned)mm,v[2],lz,lzOk?"":"?",(double)tsf,a[0],a[1],axy,(double)aim,delta,
+                (delta<=0.02&&delta>=-0.02)?"BAND":"no");
+#if (KBSPSARMS & 0x4000)
+        if(k==0&&i<(KSHFALLBACKAT)&&vxy>g_shBotMaxV) g_shBotMaxV=vxy;
+#endif
+    }
+}
+#endif
 static void ShSampleLoop(){
     if(!g_shArmed){ Marker("[SNP] sampler SKIPPED: ARM H never armed.\r\n"); return; }
+#if KSHSAMPLEN
+    Marker("[SNP] ================ ARM H SAMPLER (worker thread, game thread free) ================\r\n");
+    Markerf("[SNP] S189-BOT dense sampler: %d samples every %d ms; ShDump every 5th sample; compact line every sample\r\n",
+            (int)(KSHSAMPLEN),(int)(KSHSAMPLEMS));
+    DWORD t0=GetTickCount();
+    for(int i=0;i<(KSHSAMPLEN);i++){
+        Sleep((DWORD)(KSHSAMPLEMS));
+        Markerf("[SNP] ---- sample %d at t=+%lu ms (sinceArm %lu ms) ----\r\n",i,
+                (unsigned long)(GetTickCount()-t0),(unsigned long)(GetTickCount()-g_shArmTick));
+        __try {
+        if((i%5)==0){ if(!g_shPeakFrozen[0]) ShDump("BOT",g_shBotCmc); if(!g_shPeakFrozen[1]) ShDump("PLR",g_shPlrCmc); }
+        ShCompact(i);
+#else
     static const DWORD kAt[5]={250,750,2000,5000,10000};
     Marker("[SNP] ================ ARM H SAMPLER (worker thread, game thread free) ================\r\n");
     DWORD t0=GetTickCount(),prev=0;
@@ -17354,6 +17551,7 @@ static void ShSampleLoop(){
                 (unsigned long)(GetTickCount()-t0));
         __try {
         ShDump("BOT",g_shBotCmc); ShDump("PLR",g_shPlrCmc);
+#endif
         for(int k=0;k<2;k++){
             uintptr_t pawn=k?g_shPlrPawn:g_shBotPawn; if(!LooksLikePtr(pawn))continue;
             uint32_t rc=PropOffsetSuper(ClassOf(pawn),"RootComponent");
@@ -17375,6 +17573,29 @@ static void ShSampleLoop(){
             Markerf("[SNP] *** sample %d FAULTED (off-thread read race, or the object was "
                     "collected). Earlier samples still stand; later ones may not. ***\r\n",i);
         }
+#if (KBSPSARMS & 0x4000)
+        // ---- S189-BOT ARM M: the VELOCITY-GATED fallback kick (worker thread; ARM L kick-B precedent
+        //      for an off-thread 24-byte Velocity write). Decided ONCE, at sample KSHFALLBACKAT, from
+        //      the MAX |Vxy| the bot showed over samples 0..KSHFALLBACKAT-1. Both branches print.
+        if(i==(KSHFALLBACKAT)&&!g_shFallbackFired&&LooksLikePtr(g_shBotCmc)&&!g_shPeakFrozen[0]){
+            __try {
+                if(g_shBotMaxV<(double)(KSHFALLBACKMAXV)&&SafeWritable((void*)(g_shBotCmc+0xE8),24)){
+                    memcpy((void*)(g_shBotCmc+0xE8),kShFallback,24); g_shFallbackFired=1;
+                    int okf=ShEq3(g_shBotCmc+0xE8,kShFallback);
+                    uint32_t rc=PropOffsetSuper(ClassOf(g_shBotPawn),"RootComponent");
+                    uintptr_t root=(rc!=0xFFFFFFFF&&SafeReadable((void*)(g_shBotPawn+rc),8))?*(uintptr_t*)(g_shBotPawn+rc):0;
+                    if(LooksLikePtr(root)&&SafeReadable((void*)(root+0x158),24)) memcpy(g_shLoc0[0],(void*)(root+0x158),24);
+                    Markerf("[SNP] FALLBACK KICK fired at sample %d: bot max |Vxy| over samples 0..%d = %.4f < %.1f (stationary) "
+                            "-> Velocity=(%.1f,0,0) readback %s. START LOCATION RE-LATCHED. Motion after this is "
+                            "S140-shape (kick+AI), NOT pure AI.\r\n",i,(KSHFALLBACKAT)-1,g_shBotMaxV,(double)(KSHFALLBACKMAXV),
+                            (double)(KSHFALLBACKX),okf?"OK":"*** FAILED ***");
+                } else
+                    Markerf("[SNP] FALLBACK NOT NEEDED at sample %d: bot max |Vxy| over samples 0..%d = %.4f >= %.1f with NO kick "
+                            "written -> AI-driven (confirm Acc rotates through >=3 headings at |Axy|~50000).\r\n",
+                            i,(KSHFALLBACKAT)-1,g_shBotMaxV,(double)(KSHFALLBACKMAXV));
+            } __except(EXCEPTION_EXECUTE_HANDLER){ Marker("[SNP] FALLBACK: decision/write FAULTED -> fallback VOID.\r\n"); }
+        }
+#endif
 #if (KBSPSARMS & 0x2000)
         // ---- S141 ARM L: after sample 2 (t=+2 s), switch the BOT's kick to the OTHER AXIS.
         // Samples 0..2 observe kick A (whatever kShSentinel holds); samples 3..4 observe kick B.
@@ -17404,6 +17625,13 @@ static void ShSampleLoop(){
         }
 #endif
     }
+#if KSHSAMPLEN
+    Markerf("[SNP] PEAK |Vxy| BOT=%.10g PLR=%.10g seed=%.10g frozenBot=%d frozenPlr=%d\r\n",
+            g_shPeakXY[0],g_shPeakXY[1],(double)(float)(KBSGASMOVESPEED),g_shPeakFrozen[0],g_shPeakFrozen[1]);
+#endif
+#if (KBSPSARMS & 0x4000)
+    Markerf("[SNP] fallbackFired=%d botMaxVpreKick=%.4f\r\n",g_shFallbackFired,g_shBotMaxV);
+#endif
 #if (KBSPSARMS & 0x400)
     // ==========================================================================================
     // ARM H2 -- THE FAST BURST. The ONE alternative ARM H cannot exclude on its own.
@@ -17506,11 +17734,15 @@ static void ShSampleLoop(){
     }
     // ---- RESTORE the one field that could matter. The payload is a scratch buffer with a single
     //      flag-gated reader; Velocity is not. RM_PLAY zeroes it on exit for the same reason.
+#if !(KBSPSARMS & 0x4000)
+    // (S189-BOT: under ARM M the bot is meant to KEEP walking, and g_shSentinelOK is 1 for a zero
+    //  sentinel, so this restore would halt a walking bot once. Compiled out under bit 0x4000.)
     if(LooksLikePtr(g_shBotCmc)&&g_shSentinelOK&&SafeWritable((void*)(g_shBotCmc+0xE8),24)){
         double z[3]={0.0,0.0,0.0}; memcpy((void*)(g_shBotCmc+0xE8),z,24);
         Markerf("[SNP] restore: BOT Velocity -> (0,0,0)  readback %s\r\n",
                 ShIsZero3(g_shBotCmc+0xE8)?"OK":"*** FAILED ***");
     }
+#endif
     Markerf("[SNP] ARM H done (botCmc=0x%llX plrCmc=0x%llX botPoison=%d plrPoison=%d sentinel=%d "
             "botFlag0=%d plrFlag0=%d)\r\n",(unsigned long long)g_shBotCmc,(unsigned long long)g_shPlrCmc,
             g_shBotPoisoned,g_shPlrPoisoned,g_shSentinelOK,g_shBotFlag0,g_shPlrFlag0);
