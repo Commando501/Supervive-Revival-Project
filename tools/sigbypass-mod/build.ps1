@@ -731,6 +731,16 @@ $Variants = @{
         # precedent). Keep -postshots1 UNCHANGED as within-family controlled comparison
         # (N=1 vs N=2 differ in exactly the number of post-shots).
         'botfight-damage-self-cal-bindavatar-seedmax-postshots2' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=2')
+
+        # S156-B N=2 floor-firing test (2026-09-08, marker tag [S189]): same as -postshots2 but
+        # overrides KBFPOSTSHOT_FLOORBITS to 0x44160000u = 600.0f. Trajectory: primary 1000->750
+        # (unchanged), SHOT_2 pre=750 > 600 -> fires normally 750->500, SHOT_3 pre=500 <= 600 ->
+        # FLOOR_REACHED emits at PRECHECK -> POSTSHOTS_COMPLETE fired=1 requested=2 aborted=yes
+        # reason=floor. Discriminator: floor in (500, 750] triggers on SHOT_3 only, preserving
+        # SHOT_2's normal mechanics as within-run control. Purpose: code-cover + fire-test the
+        # KBFPOSTSHOT_FLOORBITS branch that was armed-but-silent in -postshots1 and -postshots2.
+        # Keep -postshots2 UNCHANGED as within-family controlled comparison (floor-silent).
+        'botfight-damage-self-cal-bindavatar-seedmax-postshots2-floor600' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=2','-DKBFPOSTSHOT_FLOORBITS=0x44160000u')
         # SITTING 4 -- WALL E full: spawn -> wire the bot's ASC -> AdjustHealth to KILL it. 0x31.
         'botfight-kill'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x31','-DKBFDMGTGT=1')
         # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.
