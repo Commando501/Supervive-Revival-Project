@@ -17986,6 +17986,30 @@ static void DoBotSpawn(){
                            // -bindavatar artifact byte-identical as the controlled negative for the S156
                            // treatment (bind alone vs bind+seed differ in exactly this one variable).
 #endif
+#ifndef KBFPOSTSHOTS
+#define KBFPOSTSHOTS 0 // S156-B multi-shot (2026-09-08, tag [S189] in markers): under KBFSELFCAL+KBFBINDAVATAR+
+                       // KBFSEEDMAXHEALTH, after the primary AdjustHealth cycle completes with
+                       // RESULT=SELF_DAMAGE_CALIBRATED, fire N additional back-to-back AdjustHealth calls on
+                       // s_seeded.asc using the primary shot's already-resolved wrapper handles. Runs
+                       // synchronously inside the WAIT_LATER OnPI game-thread dispatch (no Sleep, no notBefore
+                       // re-arm, no g_s148Phase re-arm). Cap of 2 (static_assert below) enforces first-flight
+                       // discipline: N=1 tests back-to-back mechanics only (750->500, no zero-crossing); N=2
+                       // approaches 250 with the safety floor still guarding. Deliberately excludes N>=3 which
+                       // would cross 0 HP and risk silent FK-32 via GameplayCue OnDeath dispatch through the
+                       // reflected ability-system channel WALL P sits behind (S158 precedent: ~30
+                       // SetReplicatedEvent Type:3 in 1ms then silent kill 50-70s later, no crashpad handoff).
+                       // Requires KBFSELFCAL=1 AND KBFBINDAVATAR=1 AND KBFSEEDMAXHEALTH=1 (the primary shot's
+                       // success is the precondition for the post-loop even running). Default 0 keeps the
+                       // -bindavatar-seedmax parent artifact byte-identical as the controlled negative.
+#endif
+#ifndef KBFPOSTSHOT_FLOORBITS
+#define KBFPOSTSHOT_FLOORBITS 0x43960000u // S156-B safety floor: refuse to fire any post-shot whose preCurrent
+                                          // HealthBits is <= this value (unsigned compare; ALSO refuse if float
+                                          // sign bit is set). Default 0x43960000 = 300.0f, guarding against a
+                                          // shot 2 that would land at or below 250 HP and cascade to zero on
+                                          // any hypothetical shot 3. Emits [S189] SHOT_N FLOOR_REACHED and
+                                          // aborts loop; final RESULT= line shows aborted=yes reason=floor.
+#endif
 // KBFBINDCENSUS's own defines live earlier (near KFRAMEINIT) so FsThunk / FsDisarm can reference
 // the forward-declared helpers. The compile-time policy check for KBFHANDLEACT/KBFHANDLEMISS
 // (which are declared in this KBF block) stays here.
@@ -18013,6 +18037,15 @@ static void DoBotSpawn(){
 #endif
 #if KBFSEEDMAXHEALTH && !KBFBINDAVATAR
 #error S156 seed-max-health requires KBFBINDAVATAR=1 (no bind means no resolvable target to write into)
+#endif
+#if KBFPOSTSHOTS && (!KBFSELFCAL || !KBFBINDAVATAR || !KBFSEEDMAXHEALTH)
+#error S156-B post-shots loop requires the full S155+S156 primary chain: KBFSELFCAL=1 AND KBFBINDAVATAR=1 AND KBFSEEDMAXHEALTH=1
+#endif
+#if KBFPOSTSHOTS && (KBFBINDONLY || KBFNATURALINPUT)
+#error S156-B post-shots loop must exclude S147 natural input and S149 bind-only setups
+#endif
+#if (KBFPOSTSHOTS < 0) || (KBFPOSTSHOTS > 2)
+#error S156-B post-shots count must be 0..2 (first-flight discipline: N=1 avoids zero-crossing at 750->500; N=2 approaches 250; N>=3 crosses 0 HP and risks silent FK-32 per S158 precedent)
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -21960,6 +21993,16 @@ static void BfS148DoCalibration(){
     static uint32_t s_immediateBase=0,s_immediateCurrent=0;
     static bool s_immediateReceipt=false;
     static ULONGLONG s_callTick=0,s_laterNotBefore=0;
+#if KBFPOSTSHOTS
+    // S156-B: persist the primary shot's resolved wrapper handles + FloatProperty offset so the
+    // WAIT_LATER branch's SELF_DAMAGE_CALIBRATED else-arm can fire additional shots WITHOUT
+    // re-resolving. Captured just before the primary CallNativeGuarded in the initial dispatch;
+    // consumed only inside the SELF_DAMAGE_CALIBRATED post-loop in the WAIT_LATER dispatch.
+    // LooksLikePtr-guarded at loop entry; NULL/stale reads produce POSTSHOTS_REFUSED without firing.
+    static void*     s_postAdjustFn=nullptr;
+    static uintptr_t s_postAdjustThunk=0,s_postAdjustChild=0;
+    static uint32_t  s_postDeltaOff=0xFFFFFFFFu;
+#endif
 
     LONG phase=InterlockedCompareExchange(&g_s148Phase,0,0);
     if(phase==BF_S148_DONE){ BfS148DoneStore(); return; }
@@ -21999,6 +22042,118 @@ static void BfS148DoCalibration(){
                     s_originalBase,s_originalCurrent,s_seedBase,s_seedCurrent,
                     s_immediateBase,s_immediateCurrent,laterBase,laterCurrent,
                     (unsigned long long)elapsed);
+#if KBFPOSTSHOTS
+            // S156-B post-shots loop. Primary shot's RESULT=SELF_DAMAGE_CALIBRATED line above is
+            // ALREADY FLUSHED to disk (Markerf's internal SetFilePointer+WriteFile completed).
+            // Any FK-32 during post-shots leaves that receipt intact.
+            //
+            // Design invariants (verified against source):
+            //   - Uses canonical .facts.originalBaseBits / .originalCurrentBits accessors (not
+            //     raw offset reads which would hit vtable pointer bytes)
+            //   - Calls BfS148ResolveHealthTarget with emitLog=false to suppress ~6 [S148]
+            //     diagnostic lines per resolve (would interleave with [S189] markers otherwise)
+            //   - Identity-checks every re-resolve via BfS148SameIdentity(s_seeded, resolved)
+            //   - Safety floor at KBFPOSTSHOT_FLOORBITS (default 0x43960000 = 300.0f) refuses
+            //     any shot whose preCurrent is <= floor (unsigned compare valid for positive
+            //     normal floats) or whose float sign bit is set (negative)
+            //   - Per-shot continuity check: preBits[N] should equal postBits[N-1]; divergence
+            //     signals game-side deferred commit or async attribute reconciliation
+            //   - Per-shot arithmetic check: postBits[N] - preBits[N] float delta compared to
+            //     the requested delta within FP epsilon; divergence signals clamp/rejection
+            //   - Return-value bytes from g_rbuf[0..3] emitted as rvalBits for later analysis
+            //   - HP printed alongside raw bits as %.2f for at-a-glance readability
+            //   - Terminal exit via BfS148FinishTerminal() (NOT DoneStore) to properly clear
+            //     g_s148TimeoutTick and set g_s148Phase=BF_S148_DONE
+            if(!LooksLikePtr((uintptr_t)s_postAdjustFn)||!LooksLikePtr(s_postAdjustThunk)||
+               !LooksLikePtr(s_postAdjustChild)||s_postDeltaOff==0xFFFFFFFFu){
+                Marker("[S189] POSTSHOTS_REFUSED reason=handles-not-captured; primary shot may "
+                       "have reached SELF_DAMAGE_CALIBRATED via unexpected path\r\n");
+            } else {
+                auto bitsToHP=[](uint32_t b)->float{ float f; memcpy(&f,&b,4); return f; };
+                const uint32_t postDeltaBits=0xC37A0000u; // -250.0f, same as primary shot
+                const float    postDeltaHP  =bitsToHP(postDeltaBits);
+                const uint32_t floorBits    =(uint32_t)KBFPOSTSHOT_FLOORBITS;
+                uint32_t prevPostBase=laterBase;      // continuity anchor: primary's later-read
+                uint32_t prevPostCurrent=laterCurrent;
+                uint32_t finalBase=laterBase;
+                uint32_t finalCurrent=laterCurrent;
+                int shotsFired=0;
+                bool aborted=false;
+                const char* abortReason="none";
+                for(int shotIdx=2; shotIdx<=1+(int)KBFPOSTSHOTS; ++shotIdx){
+                    BfS148HealthTarget before{};
+                    uint32_t beforeIssues=BfS148ResolveHealthTarget(0,0,0,true,&before,false);
+                    bool beforeIdentity=beforeIssues==S148_ISSUE_NONE&&
+                                        BfS148SameIdentity(s_seeded,before);
+                    uint32_t preBase=before.facts.originalBaseBits;
+                    uint32_t preCurrent=before.facts.originalCurrentBits;
+                    bool continuityOK=(preBase==prevPostBase)&&(preCurrent==prevPostCurrent);
+                    if(!beforeIdentity){
+                        Markerf("[S189] SHOT_%d IDENTITY_CHANGED issues=0x%X preBits=%08X/%08X\r\n",
+                                shotIdx,beforeIssues,preBase,preCurrent);
+                        aborted=true; abortReason="identity-changed"; break;
+                    }
+                    if((preCurrent&0x80000000u)||(preCurrent<=floorBits)){
+                        Markerf("[S189] SHOT_%d FLOOR_REACHED preBits=%08X/%08X preHP=%.2f "
+                                "floorBits=%08X floorHP=%.2f\r\n",
+                                shotIdx,preBase,preCurrent,bitsToHP(preCurrent),
+                                floorBits,bitsToHP(floorBits));
+                        aborted=true; abortReason="floor"; break;
+                    }
+                    Markerf("[S189] SHOT_%d PRECHECK preBits=%08X/%08X preHP=%.2f "
+                            "floorBits=%08X continuityOK=%s\r\n",
+                            shotIdx,preBase,preCurrent,bitsToHP(preCurrent),
+                            floorBits,continuityOK?"yes":"NO");
+                    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                    memcpy((uint8_t*)g_pbuf+s_postDeltaOff,&postDeltaBits,sizeof(postDeltaBits));
+                    Markerf("[S189] SHOT_%d CALL_ISSUED deltaBits=%08X deltaHP=%.2f callCount=%d\r\n",
+                            shotIdx,postDeltaBits,postDeltaHP,shotIdx);
+                    bool postFaulted=CallNativeGuarded(s_postAdjustFn,s_postAdjustThunk,
+                                                       s_postAdjustChild,(void*)s_seeded.asc,
+                                                       g_pbuf,g_rbuf);
+                    if(postFaulted){
+                        Markerf("[S189] SHOT_%d FAULTED preBits=%08X/%08X preHP=%.2f %s\r\n",
+                                shotIdx,preBase,preCurrent,bitsToHP(preCurrent),DP_FAULT);
+                        aborted=true; abortReason="call-faulted"; break;
+                    }
+                    BfS148HealthTarget after{};
+                    uint32_t afterIssues=BfS148ResolveHealthTarget(0,0,0,true,&after,false);
+                    bool afterIdentity=afterIssues==S148_ISSUE_NONE&&
+                                       BfS148SameIdentity(s_seeded,after);
+                    uint32_t postBase=after.facts.originalBaseBits;
+                    uint32_t postCurrent=after.facts.originalCurrentBits;
+                    float observedDeltaHP=bitsToHP(postCurrent)-bitsToHP(preCurrent);
+                    bool arithmeticOK=(observedDeltaHP>postDeltaHP-0.01f)&&
+                                      (observedDeltaHP<postDeltaHP+0.01f);
+                    uint32_t rvalBits=*(volatile uint32_t*)g_rbuf;
+                    Markerf("[S189] SHOT_%d POST postBits=%08X/%08X postHP=%.2f "
+                            "observedDeltaHP=%+.2f arithmeticOK=%s rvalBits=%08X "
+                            "identityStable=%s issues=0x%X\r\n",
+                            shotIdx,postBase,postCurrent,bitsToHP(postCurrent),
+                            observedDeltaHP,arithmeticOK?"yes":"NO",rvalBits,
+                            afterIdentity?"yes":"NO",afterIssues);
+                    shotsFired++;
+                    finalBase=postBase; finalCurrent=postCurrent;
+                    prevPostBase=postBase; prevPostCurrent=postCurrent;
+                    if(!afterIdentity){
+                        Markerf("[S189] SHOT_%d POST_IDENTITY_CHANGED issues=0x%X\r\n",
+                                shotIdx,afterIssues);
+                        aborted=true; abortReason="post-identity-changed"; break;
+                    }
+                }
+                Markerf("[S189] POSTSHOTS_COMPLETE fired=%d requested=%d aborted=%s reason=%s "
+                        "finalBits=%08X/%08X finalHP=%.2f\r\n",
+                        shotsFired,(int)KBFPOSTSHOTS,aborted?"yes":"no",abortReason,
+                        finalBase,finalCurrent,bitsToHP(finalCurrent));
+                // Invalidate handles so a hypothetical BfS148DoCalibration re-entry cannot
+                // consume stale pointers. BfS148FinishTerminal below sets phase=DONE so re-entry
+                // is blocked, but defence-in-depth is cheap.
+                s_postAdjustFn=nullptr;
+                s_postAdjustThunk=0;
+                s_postAdjustChild=0;
+                s_postDeltaOff=0xFFFFFFFFu;
+            }
+#endif
         }
         BfS148FinishTerminal(); return;
     }
@@ -22253,6 +22408,18 @@ static void BfS148DoCalibration(){
     const uint32_t deltaBits=0xC37A0000u; // -250.0f
     memcpy((uint8_t*)g_pbuf+deltaOff,&deltaBits,sizeof(deltaBits));
     Markerf("[S148] CALL_ISSUED AdjustHealth HealthDeltaBits=%08X callCount=1\r\n",deltaBits);
+#if KBFPOSTSHOTS
+    // S156-B: capture the exact wrapper handles used by the primary shot so the WAIT_LATER post-loop
+    // hits IDENTICAL dispatch. adjustResolved was already proven yes upstream; s_seeded was populated
+    // in the seed block above; the CallNativeGuarded on the next line uses these same locals. If
+    // KBFPOSTSHOTS=0 this whole block dead-strips and the base arm is byte-identical.
+    s_postAdjustFn=adjustFn;
+    s_postAdjustThunk=adjustThunk;
+    s_postAdjustChild=adjustChild;
+    s_postDeltaOff=deltaOff;
+    Markerf("[S189] POSTSHOTS_ARMED planned=%d adjustFn=0x%p adjustThunk=0x%p adjustChild=0x%p deltaOff=%u\r\n",
+            (int)KBFPOSTSHOTS,adjustFn,(void*)adjustThunk,(void*)adjustChild,(unsigned)deltaOff);
+#endif
     bool callFaulted=CallNativeGuarded(adjustFn,adjustThunk,adjustChild,
                                        (void*)s_seeded.asc,g_pbuf,g_rbuf);
     if(callFaulted){

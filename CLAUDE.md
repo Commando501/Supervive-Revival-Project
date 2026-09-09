@@ -64,6 +64,26 @@ The ASC is still **the shim's own**, because the designed wiring sits inside FK-
   followed by `0xDEAD`, while a matched `INDEX_NONE=-1` call enters the same wrapper, returns
   `AL=0`, restores the CDO/state, and survives. Therefore reflected dispatch and wrapper entry/ABI
   are not sufficient causes; the valid-handle/downstream path is implicated.
+- **S156-B (2026-09-08):** ★★★★★★ **BACK-TO-BACK `AdjustHealth` WORKS — SHOT_2 commits identically
+  to primary (750→500), synchronous cross-dispatch. Read
+  `docs/s156b-postshots1-flight3-BACK_TO_BACK_ADJUSTHEALTH_WORKS.md`.** Multi-shot follow-up flown
+  on a fresh process. Chain: S155 bind + S156 seed + primary S148 shot (1000→750,
+  `RESULT=SELF_DAMAGE_CALIBRATED elapsed=250ms callCount=1`, contract preserved) → S189/SHOT_2
+  post-loop (`preBits=443B8000/443B8000 preHP=750 continuityOK=yes` matches primary's laterBits;
+  `postBits=43FA0000 postHP=500 observedDeltaHP=-250 arithmeticOK=yes identityStable=yes issues=0x0`)
+  → clean disarm (`restored=17563 of 17563` funcswaps). **[M] AdjustHealth writes BOTH Base and
+  Current to the new value** (both slots go 447A0000→443B8000→43FA0000; damage semantic is "set
+  both" not "decrement effective only"). **[M] No FK-32 within 90s of POSTSHOTS_COMPLETE.**
+  Design provenance: multi-agent workflow `wf_7ce5156c-73f` (17 agents, ~25min wall clock;
+  D2-DERIVED-SAFE approach, adversarial-verified against 3 lenses). **⚠ Session cost:** 2 launches
+  lost to FK-31 hazards (F1 ACG-denied sp inject = FK-31-in-progress; F2 same 9s-post-fo signature
+  as S156-A F3/F4). Combined S156-A + S156-B: 6/9 session launches lost to FK-31 variance before
+  landings — variance not systematic. **⚠ Scope:** N=1 tested (750→500). Zero-crossing (N≥3),
+  positive delta (heal), and multi-hero remain OPEN. **300 HP safety floor code-covered but
+  not fire-tested** (SHOT_2 landed at 500, above floor). **Arm:** `-Variant
+  botfight-damage-self-cal-bindavatar-seedmax-postshots1` RAW `1925e9e80646a4fb` VSIZE
+  `66252fd5355723cb`. **Regression gate:** parent `-bindavatar-seedmax` RAW `b47d1bfd04e44921`
+  UNCHANGED (KBFPOSTSHOTS=0 default truly dead-strips), both s148 contract tests PASS.
 - **S156-A (2026-09-08):** ★★★★★★★ **THE GAME'S OWN `AdjustHealth` PATH RUNS END-TO-END AND
   APPLIES DAMAGE CORRECTLY. `[S148] RESULT=SELF_DAMAGE_CALIBRATED`, first time in project
   history. Read `docs/s156-seedmax-flight5-SELF_DAMAGE_CALIBRATED.md`.** [M] on the flight-5

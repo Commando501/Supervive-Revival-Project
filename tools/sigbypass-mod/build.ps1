@@ -707,6 +707,19 @@ $Variants = @{
         # AdjustHealth and finally exercise the S153 thunkExact fix live. Keep -bindavatar UNCHANGED
         # as the controlled negative -- attribution of any S156 null falls on the seed alone.
         'botfight-damage-self-cal-bindavatar-seedmax' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1')
+
+        # S156-B (2026-09-08, marker tag [S189]): S156 bind+seedmax + N=1 additional back-to-back
+        # AdjustHealth(-250) shot after the primary S148 cycle emits RESULT=SELF_DAMAGE_CALIBRATED.
+        # Single-variable delta vs -bindavatar-seedmax (adds -DKBFPOSTSHOTS=1). First-flight
+        # discipline: N=1 tests back-to-back dispatch mechanics on the same OnPI callback ONLY
+        # (750->500, does NOT cross zero HP). Zero-crossing is a SEPARATE experiment (would need
+        # -DKBFPOSTSHOTS=2 to reach 250 with the 300 HP safety floor still guarding, or an explicit
+        # -DKBFPOSTSHOT_FLOORBITS override to fall below that -- neither should be flown until this
+        # N=1 variant confirms mechanics + no FK-32). Primary shot's [S148] CALL_ISSUED / immediate
+        # / RESULT= bytes and callCount=1 pinned record are UNCHANGED. Post-loop evidence lives
+        # under distinct [S189] prefix so s148_damage_calibration_test.ps1 grep on [S148]
+        # callCount=1 stays intact. Keep -bindavatar-seedmax UNCHANGED as controlled negative.
+        'botfight-damage-self-cal-bindavatar-seedmax-postshots1' = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x00','-DKBFSELFCAL=1','-DKBFBINDAVATAR=1','-DKBFSEEDMAXHEALTH=1','-DKBFPOSTSHOTS=1')
         # SITTING 4 -- WALL E full: spawn -> wire the bot's ASC -> AdjustHealth to KILL it. 0x31.
         'botfight-kill'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x31','-DKBFDMGTGT=1')
         # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.
