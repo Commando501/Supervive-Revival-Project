@@ -18457,6 +18457,9 @@ static void DoBotSpawn(){
 #ifndef KBFE4T_SEQUENCE
 #define KBFE4T_SEQUENCE 0 // S191 E4T-A4 (2026-09-10): when set, E4T calls BP_AuthBeginWarmup → Sleep → Invoke → Sleep → DashHit(optional) as a chained sequence instead of first-match. Requires KBFE4T=1.
 #endif
+#ifndef KBFE4T_CHANNEL
+#define KBFE4T_CHANNEL 0 // S191 E4T-A5 (2026-09-10): when set, insert BP_AuthBeginChanneling between Warmup and Invoke. Requires KBFE4T_SEQUENCE=1.
+#endif
 #ifndef KBFE4T
 #define KBFE4T 0 // S191 E4 OPTION T (2026-09-10, tag [E4T] in markers): ProcessEvent K2_ActivateAbility
                 // bypass. Grants ability via plain GiveAbility (K_GRANT), then invokes K2_ActivateAbility
@@ -19034,6 +19037,9 @@ static void DoBotSpawn(){
 #endif
 #if KBFE4T_SEQUENCE && !KBFE4T
 #error S191 KBFE4T_SEQUENCE requires KBFE4T=1
+#endif
+#if KBFE4T_CHANNEL && !KBFE4T_SEQUENCE
+#error S191 KBFE4T_CHANNEL requires KBFE4T_SEQUENCE=1
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -25566,10 +25572,12 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                             typedef void (*PEFn)(void*, void*, void*);
                             PEFn call = (PEFn)pe;
                             uintptr_t fnWarmup=FindBPFunc(ClassOf(inst),"BP_AuthBeginWarmup",nullptr);
+                            uintptr_t fnChannel=FindBPFunc(ClassOf(inst),"BP_AuthBeginChanneling",nullptr);
                             uintptr_t fnInvoke=FindBPFunc(ClassOf(inst),"Invoke",nullptr);
                             uintptr_t fnDashHit=FindBPFunc(ClassOf(inst),"DashHit",nullptr);
-                            Markerf("[E4T-A4] SEQUENCE mode: Warmup=0x%llX Invoke=0x%llX DashHit=0x%llX\r\n",
-                                    (unsigned long long)fnWarmup,(unsigned long long)fnInvoke,(unsigned long long)fnDashHit);
+                            Markerf("[E4T-A4] SEQUENCE mode: Warmup=0x%llX Channel=0x%llX Invoke=0x%llX DashHit=0x%llX\r\n",
+                                    (unsigned long long)fnWarmup,(unsigned long long)fnChannel,
+                                    (unsigned long long)fnInvoke,(unsigned long long)fnDashHit);
                             float hp0 = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
                             Markerf("[E4T-A4] hpStart=%.2f\r\n",(double)hp0);
                             // STEP 1: Warmup
@@ -25584,6 +25592,21 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                                 Markerf("[E4T-A4] STEP1_RESULT fault=%s elapsedMs=%llu hpAfter=%.2f dHP=%+.2f\r\n",
                                         f1?"YES":"no",(unsigned long long)d1,(double)hp1,(double)(hp1-hp0));
                             } else { Marker("[E4T-A4] STEP1_SKIP BP_AuthBeginWarmup not found\r\n"); }
+                            // STEP 1.5: AuthBeginChanneling (transition Warmup → Channeling phase) — E4T-A5 addition
+                            // Gated behind KBFE4T_CHANNEL so A4 and A5 remain distinct experiments.
+#if KBFE4T_CHANNEL
+                            if(fnChannel){
+                                memset(g_bplocals,0,sizeof(g_bplocals));
+                                bool f15=false; uint64_t t15=GetTickCount64();
+                                Markerf("[E4T-A4] STEP1.5_CALL BP_AuthBeginChanneling fn=0x%llX\r\n",(unsigned long long)fnChannel);
+                                __try { call((void*)inst,(void*)fnChannel,(void*)g_bplocals); } __except(EXCEPTION_EXECUTE_HANDLER){ f15=true; }
+                                uint64_t d15=GetTickCount64()-t15;
+                                Sleep(150);
+                                float hp15=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                                Markerf("[E4T-A4] STEP1.5_RESULT fault=%s elapsedMs=%llu hpAfter=%.2f dHP=%+.2f\r\n",
+                                        f15?"YES":"no",(unsigned long long)d15,(double)hp15,(double)(hp15-hp0));
+                            } else { Marker("[E4T-A4] STEP1.5_SKIP BP_AuthBeginChanneling not found\r\n"); }
+#endif // KBFE4T_CHANNEL
                             // STEP 2: Invoke (should transition Warmup → Channel → Invoke phase)
                             if(fnInvoke){
                                 memset(g_bplocals,0,sizeof(g_bplocals));
