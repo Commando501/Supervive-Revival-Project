@@ -18454,6 +18454,24 @@ static void DoBotSpawn(){
                 // of the E4 predicate is unlocked via a direct shim call — bypassing OS input
                 // entirely). Log the return SpecHandle + pre/post Items.Num. Log tag: [E4B].
 #endif
+#ifndef KBFE4F
+#define KBFE4F 0 // S191 E4 OPTION F (2026-09-10, tag [E4F] in markers): after K_GRANT + E4 spawn+seed,
+                // call ULokiAbilitySystemComponent::TryActivateAbilityBySourceObject(hero, true,
+                // hero.Ability1_UClass) via the S55 reflected direct-thunk primitive. Impl @ base+
+                // 0x5297230, S153-graded REAL. This is the THIRD activation surface (after ByClass —
+                // S147 measured LETHAL 0xDEAD — and ByInputID — E4A F1 measured NON-lethal clean-false
+                // return). BySourceObject BYPASSES the InputID→spec map entirely (R-S191-h escape
+                // hatch does NOT apply) and matches on spec.SourceObject which our K_GRANT sets = hero
+                // (S191 F3 measured), so it WILL resolve our spec. WALL-P grade [I] LIKELY LETHAL
+                // generalized via shared downstream — offline recon on 0x5297230 shows it tail-calls
+                // 0x5544FB0 which tail-calls 0x44280E0 (a DIFFERENT downstream from ByClass's
+                // 0x4480B30 InternalTryActivateAbility, so lethality is not [M] on this path).
+                // Pre-call marker written BEFORE CallNativeGuarded so a 0xDEAD flight preserves
+                // attribution. Mutually exclusive with KBFE4A/KBFE4B/KE4DIRECTGE via #error guards
+                // to preserve attribution (each attribution-mixer would drop the minion HP or fault
+                // before E4F's pre/post read). Requires KBFE4=1 AND KBFARMS bits K_BIND(0x02) +
+                // K_GRANT(0x04) + K_ALIVE(0x40) + K_GASATTR(0x80). Log tag: [E4F].
+#endif
 #ifndef KBFE4A
 #define KBFE4A 0 // S191 E4 OPTION A (2026-09-10, tag [E4A] in markers): after K_GRANT + E4 spawn+seed,
                 // call ULokiAbilitySystemComponent::TryActivateAbilityByInputID(LokiAbilityInputID=3)
@@ -18600,6 +18618,42 @@ static void DoBotSpawn(){
 #endif
 #if (KBFE4B != 0) && (KBFE4B != 1)
 #error S191 KBFE4B is a bool: 0 (dead-strip) or 1 (fire BP_AuthGiveAbilityWithInputID before the E4A probe)
+#endif
+#if KBFE4F && !KBFE4
+#error S191 KBFE4F (Option F: TryActivateAbilityBySourceObject) requires KBFE4=1 (needs the spawned+seeded hostile minion in front)
+#endif
+#if (KBFE4F != 0) && (KBFE4F != 1)
+#error S191 KBFE4F is a bool: 0 (dead-strip) or 1 (call ASC.TryActivateAbilityBySourceObject(hero,true,hero.Ability1) via S55 after seed)
+#endif
+#if KBFE4F && (KBFSELFCAL || KBFBINDONLY || KBFBINDAVATAR)
+#error S191 KBFE4F runs the #else K_* path: requires KBFSELFCAL=0, KBFBINDONLY=0, KBFBINDAVATAR=0
+#endif
+#if KBFE4F && KBFNATURALINPUT
+#error S191 KBFE4F must NOT compile the S147 natural-input observation machinery: KBFNATURALINPUT=0 (S158 shim-observation apparatus suppresses body execution)
+#endif
+#if KBFE4F && !(KBFARMS & 0x02)
+#error S191 KBFE4F requires K_BIND (KBFARMS&0x02): the player ASC must be wired
+#endif
+#if KBFE4F && !(KBFARMS & 0x04)
+#error S191 KBFE4F requires K_GRANT (KBFARMS&0x04): a spec must be registered so BySourceObject can match on spec.SourceObject == hero
+#endif
+#if KBFE4F && !(KBFARMS & 0x40)
+#error S191 KBFE4F requires K_ALIVE (KBFARMS&0x40): hero LivingState must be poked to Alive (S144)
+#endif
+#if KBFE4F && !(KBFARMS & 0x80)
+#error S191 KBFE4F requires K_GASATTR (KBFARMS&0x80): complete AttributeSet wiring must be preflight-verified (S145)
+#endif
+#if KBFE4F && (KBFARMS & 0x08)
+#error S191 KBFE4F must NOT set K_ACTIVATE (KBFARMS&0x08): would duplicate the WALL-P attempt E4F is designed to characterize
+#endif
+#if KBFE4F && KE4DIRECTGE
+#error S191 KBFE4F is incompatible with KE4DIRECTGE=1: DIRECTGE fires FIRST and drops minion HP before E4F reads minPreHP, destroying attribution. Fly E4F with KE4DIRECTGE=0.
+#endif
+#if KBFE4F && KBFE4A
+#error S191 KBFE4F is incompatible with KBFE4A=1: E4A fires BEFORE E4F and may drop HP or fault, destroying attribution. Fly each activation surface in its own variant.
+#endif
+#if KBFE4F && KBFE4B
+#error S191 KBFE4F is incompatible with KBFE4B=1: E4B populates the InputID map (orthogonal to BySourceObject's spec-resolution). Co-firing conflates two independent mechanisms.
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -24249,6 +24303,73 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                         Markerf("[E4A] E4A_RESULT   faulted=%s retBool=%u minPreHP=%.2f minPostHP=%.2f minPostBits=%08X/%08X dHP=%+.2f  %s\r\n",
                                 aflt?"YES":"no",(unsigned)retBool,(double)minPreHP,(double)minPostHP,minPostBB,minPostBC,(double)dHP,verdict);
                     } else Marker("[E4A] REFUSE: TryActivateAbilityByInputID not resolved on the ASC\r\n");
+                }
+            }
+        }
+#endif
+#if KBFE4F
+        // ---- OPTION F: call ULokiAbilitySystemComponent::TryActivateAbilityBySourceObject(hero,true,
+        //      hero.Ability1_UClass) via the S55 direct-thunk primitive. Impl @ base+0x5297230 (S153
+        //      REAL, binds_members.csv:39453). THIRD activation surface — bypasses OS input, Enhanced
+        //      Input, BP dispatcher, AND the InputID→spec map (R-S191-h escape hatch does NOT apply).
+        //      Matches on spec.SourceObject which our K_GRANT sets = hero (S191 F3 measured), so
+        //      resolution is guaranteed. WALL-P grade [I] LIKELY LETHAL: offline recon shows the impl
+        //      tail-calls 0x5544FB0 → 0x44280E0, a DIFFERENT downstream from ByClass's 0x4480B30
+        //      InternalTryActivateAbility (S147 lethality's shared-downstream generalization is
+        //      weakened). Pre-call marker written BEFORE CallNativeGuarded so a 0xDEAD flight
+        //      preserves attribution (FK-32 is NOT SEH-catchable per FK-10/S131). ----
+        {
+            uintptr_t pASC=BfGetAsc(hero);
+            uint32_t abilOff=PropOffsetSuper(ClassOf(hero),"Ability1");
+            uintptr_t abilCls=(abilOff!=0xFFFFFFFF&&SafeReadable((void*)(hero+abilOff),8))?*(uintptr_t*)(hero+abilOff):0;
+            char aan[128]="-"; if(LooksLikePtr(pASC)&&ClassOf(pASC))GetFNameStr(NameId(ClassOf(pASC)),aan,sizeof(aan));
+            char abn[128]="-"; if(LooksLikePtr(abilCls))GetFNameStr(NameId(abilCls),abn,sizeof(abn));
+            float minPreHP=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+            Markerf("[E4F] pre-activate: pASC=0x%llX(%s) hero.Ability1=0x%llX(%s) minionPreHP=%.2f\r\n",
+                    (unsigned long long)pASC,LooksLikePtr(pASC)?aan:"NULL",
+                    (unsigned long long)abilCls,LooksLikePtr(abilCls)?abn:"NULL",(double)minPreHP);
+            if(!LooksLikePtr(pASC)){ Marker("[E4F] REFUSE: player ASC not present\r\n"); }
+            else if(!LooksLikePtr(abilCls)){ Marker("[E4F] REFUSE: hero.Ability1 not resolvable\r\n"); }
+            else {
+                void* sf=nullptr; uintptr_t sth=0,sch=0;
+                ResolveFuncSuper(ClassOf(pASC),"TryActivateAbilityBySourceObject",&sf,&sth,&sch);
+                if(!sth){ Marker("[E4F] REFUSE: TryActivateAbilityBySourceObject not resolved on the ASC\r\n"); }
+                else {
+                    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                    // Signature (binds_members.csv:39453): SourceObject@0x00 (UObject*), bAllowRemote-
+                    // Activation@0x08 (bool, default=true), AbilityClass@0x10 (TSubclassOf), Return-
+                    // Value@0x18 (bool). Fallbacks match the declared layout.
+                    uint32_t oSO=ParamOffset(sch,"SourceObject");           if(oSO==0xFFFFFFFF)oSO=0;
+                    uint32_t oBR=ParamOffset(sch,"bAllowRemoteActivation"); if(oBR==0xFFFFFFFF)oBR=8;
+                    uint32_t oAC=ParamOffset(sch,"AbilityClass");           if(oAC==0xFFFFFFFF)oAC=16;
+                    uint32_t rvo=ParamOffset(sch,"ReturnValue");            if(rvo==0xFFFFFFFF)rvo=24;
+                    *(uint64_t*)((uint8_t*)g_pbuf+oSO)=(uint64_t)hero;
+                    *(uint8_t*) ((uint8_t*)g_pbuf+oBR)=(uint8_t)1;
+                    *(uint64_t*)((uint8_t*)g_pbuf+oAC)=(uint64_t)abilCls;
+                    // PRE-CALL RECEIPT: written BEFORE CallNativeGuarded so a 0xDEAD flight
+                    // preserves attribution. WALL-P FK-32 is NOT SEH-catchable (FK-10/S131).
+                    uint64_t tStart=GetTickCount64();
+                    Markerf("[E4F] E4F_CALL_ISSUE: calling ASC.TryActivateAbilityBySourceObject(Source=hero=0x%llX,bAllowRemote=1,Class=0x%llX(%s)) ; target=base+0x5297230 ; param offsets SO=0x%X BR=0x%X AC=0x%X RV=0x%X ; tStart=%llu\r\n",
+                            (unsigned long long)hero,(unsigned long long)abilCls,
+                            LooksLikePtr(abilCls)?abn:"NULL",
+                            oSO,oBR,oAC,rvo,(unsigned long long)tStart);
+                    bool sflt=CallNativeGuarded(sf,sth,sch,(void*)pASC,g_pbuf,g_rbuf);
+                    uint64_t elapsedMs=GetTickCount64()-tStart;
+                    uint8_t  retBool  =SafeReadable((uint8_t*)g_pbuf+rvo,1)?*(uint8_t*)((uint8_t*)g_pbuf+rvo):0xFF;
+                    float    minPostHP=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                    uint32_t minPostBB=SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+                    uint32_t minPostBC=SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+                    float    dHP      =minPostHP-minPreHP;
+                    const char* verdict =
+                        sflt                                ? "*** FAULT: WALL-P-CLASS ON THE SOURCE-OBJECT PATH ***"
+                      : (retBool==1&&dHP<0)                 ? "*** OPTION F SUCCEEDS: return=true AND minion HP dropped -- E4 predicate met via direct callable ***"
+                      : (retBool==1&&dHP==0)                ? "return=true but minion HP unchanged (cast fired but did not damage this frame)"
+                      : (retBool==0&&elapsedMs<100)         ? "return=false FAST (<100ms): possible pre-downstream early-out -- STRUCTURAL FINDING, BySourceObject-analogue of R-S191-h"
+                      : (retBool==0)                        ? "return=false (activation refused: source-object gate or downstream gate)"
+                      :                                       "(unreadable return)";
+                    Markerf("[E4F] E4F_RESULT   faulted=%s retBool=%u elapsedMs=%llu minPreHP=%.2f minPostHP=%.2f minPostBits=%08X/%08X dHP=%+.2f  %s\r\n",
+                            sflt?"YES":"no",(unsigned)retBool,(unsigned long long)elapsedMs,
+                            (double)minPreHP,(double)minPostHP,minPostBB,minPostBC,(double)dHP,verdict);
                 }
             }
         }

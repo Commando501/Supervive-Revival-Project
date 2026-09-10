@@ -858,6 +858,19 @@ $Variants = @{
         # detection. Impl at 0x13D4E60 is a stripped stub that returns INDEX_NONE unconditionally
         # regardless of caller state. KBFARMS=0xC2 = K_BIND(0x02) + K_ALIVE(0x40) + K_GASATTR(0x80).
         'e4-b2'               = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC2','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4A=1','-DKBFE4B=1')
+        # S191 E4 OPTION F: after K_GRANT + spawn+seed, call ULokiAbilitySystemComponent::
+        # TryActivateAbilityBySourceObject(hero, true, hero.Ability1_UClass) via S55. Impl @
+        # base+0x5297230 (S153 REAL). Third activation surface after ByClass (S147: lethal 0xDEAD on
+        # MiniDash) and ByInputID (E4A F1: clean-false, InputID map empty). BySourceObject BYPASSES
+        # the InputID map (R-S191-h escape hatch does NOT apply) and matches on spec.SourceObject =
+        # hero (S191 F3 measured) so resolution is guaranteed. WALL-P grade [I] LIKELY LETHAL —
+        # offline recon shows impl tail-calls 0x5544FB0 -> 0x44280E0 (a DIFFERENT downstream from
+        # ByClass's 0x4480B30 InternalTryActivateAbility, so shared-downstream lethality is weakened
+        # for this path). Pre-call marker preserves attribution if 0xDEAD fires. KBFARMS=0xC6
+        # (K_BIND+K_GRANT+K_ALIVE+K_GASATTR, NO K_ACTIVATE). Mutually exclusive with KBFE4A/KBFE4B/
+        # KE4DIRECTGE via #error guards so attribution is safe-by-construction against config
+        # mistakes. Log tag: [E4F].
+        'e4-f'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4F=1')
 
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
