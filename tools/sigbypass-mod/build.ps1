@@ -893,6 +893,28 @@ $Variants = @{
         # is a no-op for this arm.
         'e4-c'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4C=1')
 
+        # e4-e-readonly (S191 E4 OPTION E, 2026-09-10, tag [E4E]): direct-offset poke of the K_GRANT'd
+        # spec's NonReplicatedInstances TArray at spec+0x80/+0x88/+0x8C to unblock the 3-gate filter
+        # at RVA 0x44C28E0 that GetAbilityByInputID (vtable slot 245 [+0x7A8] = iterator 0x4476F10)
+        # calls after finding the matching spec on InputID==3. Design provenance: multi-agent
+        # workflow adjudicated spec (16 refutations all VALID + adopted). The gate model derived
+        # from workflow disasm + byte-verified from merged14 offline recon: (a) spec.Ability@+0x10
+        # != NULL (K_GRANT sets), (b) [spec.Ability+0xEE] == 1 InstancedPerActor, (c) NonRep.Num@+0x88
+        # > 0. Gate (c) is the block: K_GRANT populates Items but leaves NonRep empty. The poke:
+        # Data <- (spec+0x10) (the spec's OWN Ability-field address on the game heap, R14 safety-
+        # critical -- NEVER shim-static memory), Num <- 1, Max <- 1. Includes A->B->A restore so
+        # disarm leaves the ASC in pre-poke state. Readback via GetAbilityByInputID(3) settles the
+        # gate model: if post-poke returns spec.Ability, gate model is CONFIRMED [M] live.
+        # TryActivateAbilityByInputID impl 0x5544F70 uses the SAME vtable slot 245 = SAME iterator
+        # = SAME gate, so an unblocked gate for GetByInputID also unblocks TryByInputID's spec
+        # resolution -- but the ACTIVATION call is COMPILE-GUARDED out (KBFE4E_ACTIVATE=0 default)
+        # because 0x5544F70's tail-call target 0x5531920 is on a PAGE_NOACCESS in merged14 and
+        # cannot be offline-verified to diverge from S147 lethal InternalTryActivateAbility
+        # 0x4480B30. Write class = DATA on the K_GRANT'd spec (aligned qword + two aligned dwords),
+        # readback-verified before and after. Mutually exclusive with KE4DIRECTGE/KBFE4A/KBFE4B/
+        # KBFE4C/KBFE4F via #error guards. Log tag: [E4E].
+        'e4-e-readonly'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4E=1')
+
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
         #   specifically did nothing'.

@@ -18454,6 +18454,37 @@ static void DoBotSpawn(){
                 // of the E4 predicate is unlocked via a direct shim call — bypassing OS input
                 // entirely). Log the return SpecHandle + pre/post Items.Num. Log tag: [E4B].
 #endif
+#ifndef KBFE4E
+#define KBFE4E 0 // S191 E4 OPTION E (2026-09-10, tag [E4E] in markers): after K_GRANT + E4 spawn+seed,
+                // POKE the K_GRANT'd spec at Items[0] to populate spec.NonReplicatedInstances
+                // (spec+0x80/+0x88/+0x8C) with a game-heap self-reference to spec.Ability (spec+0x10).
+                // This unblocks the 3-gate filter at RVA 0x44C28E0 that GetAbilityByInputID (impl
+                // 0x5526210 → vtable slot 245 [+0x7A8] = 0x4476F10 iterator) calls after finding the
+                // match. Gate (a): spec.Ability != NULL ✓ (K_GRANT sets); Gate (b): [Ability+0xEE]==1
+                // InstancedPerActor (read to verify); Gate (c): NonRep.Num > 0 (our K_GRANT leaves
+                // this at 0 — this is the block). Setting Data=&spec.Ability, Num=1, Max=1 causes
+                // the gate's `mov rax,[rcx+0x80]; mov rax,[rax]; ret` to dereference the self-
+                // reference and return spec.Ability (the CDO) as the "instance". SAFETY: Data points
+                // at spec+0x10 (game-heap self-reference), so any subsequent Free by the game only
+                // affects the spec's own memory (localized), NOT shim-static memory (which would
+                // corrupt the allocator's freelist). This is the R14 fix from the workflow's
+                // adversarial safety verification. Byte-verified from merged14 offline recon:
+                // 0x44C28E0 disasm matches the 3-gate model exactly. TryActivateAbilityByInputID
+                // impl 0x5544F70 calls the SAME vtable slot 245 (shared gate), so if the poke fixes
+                // GetByInputID, TryByInputID also unblocks — but the ACTIVATION branch is compile-
+                // guarded by KBFE4E_ACTIVATE because 0x5544F70's tail-call target 0x5531920 is on a
+                // PAGE_NOACCESS in merged14 and cannot be offline-verified to diverge from S147's
+                // lethal 0x4480B30 InternalTryActivateAbility. Mutually exclusive with
+                // KE4DIRECTGE/KBFE4A/KBFE4B/KBFE4C/KBFE4F via #error guards. Log tag: [E4E].
+                // Includes A→B→A restore: pre-poke NonRep values captured, restored after readback.
+#endif
+#ifndef KBFE4E_ACTIVATE
+#define KBFE4E_ACTIVATE 0 // S191 E4E companion: if 1, calls TryActivateAbilityByInputID(3) AFTER the
+                // poke to validate that the gate-unblock reaches the activation stack. DO NOT SET
+                // WITHOUT ALSO SETTING KBFE4E_ACTIVATE_OFFLINE_VERIFIED per its #error guard —
+                // convergence with the S147 lethal InternalTryActivateAbility path is UNPROVEN
+                // offline because impl 0x5531920 is on a PAGE_NOACCESS in merged14.
+#endif
 #ifndef KBFE4C
 #define KBFE4C 0 // S191 E4 OPTION C (2026-09-10, tag [E4C] in markers): after K_GRANT + E4 spawn+seed,
                 // call Comp_PlayerController_Abilities.HandleAbilityActivation(byte AbilityID=3) via
@@ -18714,6 +18745,57 @@ static void DoBotSpawn(){
 #endif
 #if KBFE4C && KBFE4F
 #error S191 KBFE4C is incompatible with KBFE4F=1: E4F fires BEFORE E4C via the ASC-side surface and would leave 'invalid Handle' state before the BP dispatcher runs.
+#endif
+#if KBFE4E && !KBFE4
+#error S191 KBFE4E (Option E: direct-offset GAS-structure poke) requires KBFE4=1 (needs the spawned+seeded hostile minion in front to measure post-activation damage)
+#endif
+#if (KBFE4E != 0) && (KBFE4E != 1)
+#error S191 KBFE4E is a bool: 0 (dead-strip) or 1 (poke spec.NonReplicatedInstances at spec+0x80/+0x88/+0x8C to unblock 0x44C28E0 gate, then GetAbilityByInputID readback)
+#endif
+#if (KBFE4E_ACTIVATE != 0) && (KBFE4E_ACTIVATE != 1)
+#error S191 KBFE4E_ACTIVATE is a bool: 0 (poke+readback only, SAFE) or 1 (poke+readback then call TryActivateAbilityByInputID(3), DO-NOT-FLY without OFFLINE_VERIFIED)
+#endif
+#if KBFE4E_ACTIVATE && !KBFE4E
+#error S191 KBFE4E_ACTIVATE requires KBFE4E=1 (activate is a follow-on to poke+readback, not a standalone arm)
+#endif
+#if KBFE4E_ACTIVATE && !defined(KBFE4E_ACTIVATE_OFFLINE_VERIFIED)
+#error S191 KBFE4E_ACTIVATE is PARKED until offline recon proves TryActivateAbilityByInputID impl 0x5544F70 tail-call target 0x5531920 does NOT converge on S147 lethal InternalTryActivateAbility 0x4480B30. 0x5531920 is PAGE_NOACCESS in merged14 so this cannot be settled offline in this dump. Set -DKBFE4E_ACTIVATE_OFFLINE_VERIFIED=1 ONLY after that convergence proof is completed and recorded in the flight design doc.
+#endif
+#if KBFE4E && (KBFSELFCAL || KBFBINDONLY || KBFBINDAVATAR)
+#error S191 KBFE4E runs the #else K_* path: requires KBFSELFCAL=0, KBFBINDONLY=0, KBFBINDAVATAR=0
+#endif
+#if KBFE4E && KBFNATURALINPUT
+#error S191 KBFE4E must NOT compile the S147 natural-input observation machinery: KBFNATURALINPUT=0
+#endif
+#if KBFE4E && !(KBFARMS & 0x02)
+#error S191 KBFE4E requires K_BIND (KBFARMS&0x02): the player ASC must be wired
+#endif
+#if KBFE4E && !(KBFARMS & 0x04)
+#error S191 KBFE4E requires K_GRANT (KBFARMS&0x04): a spec must be registered in ASC.Items so the iterator has something to find on InputID==3
+#endif
+#if KBFE4E && !(KBFARMS & 0x40)
+#error S191 KBFE4E requires K_ALIVE (KBFARMS&0x40): hero LivingState must be poked to Alive (S144) so the ability system honors state
+#endif
+#if KBFE4E && !(KBFARMS & 0x80)
+#error S191 KBFE4E requires K_GASATTR (KBFARMS&0x80): complete AttributeSet wiring must be preflight-verified (S145)
+#endif
+#if KBFE4E && (KBFARMS & 0x08)
+#error S191 KBFE4E must NOT set K_ACTIVATE (KBFARMS&0x08): would duplicate the WALL-P attempt E4E is designed to characterize (and would fire before the E4E poke)
+#endif
+#if KBFE4E && KE4DIRECTGE
+#error S191 KBFE4E is incompatible with KE4DIRECTGE=1: DIRECTGE fires FIRST and drops minion HP before E4E, destroying attribution. Fly E4E with KE4DIRECTGE=0.
+#endif
+#if KBFE4E && KBFE4A
+#error S191 KBFE4E is incompatible with KBFE4A=1: E4A fires BEFORE E4E and its TryActivateAbilityByInputID may fault or damage before E4E reads the pre-poke NonRep state. Fly each surface in its own variant.
+#endif
+#if KBFE4E && KBFE4B
+#error S191 KBFE4E is incompatible with KBFE4B=1: E4B populates the InputID map via BP_AuthGiveAbilityWithInputID (orthogonal to E4E's Items-side poke). Co-firing conflates two independent mechanisms.
+#endif
+#if KBFE4E && KBFE4F
+#error S191 KBFE4E is incompatible with KBFE4F=1: E4F fires BEFORE E4E via the ASC-side BySourceObject surface and would leave 'invalid Handle' state before the E4E readback.
+#endif
+#if KBFE4E && KBFE4C
+#error S191 KBFE4E is incompatible with KBFE4C=1: E4C fires BEFORE E4E via the BP dispatcher surface and would leave the K_GRANT'd spec in whatever state HandleAbilityActivation touched.
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -24518,6 +24600,216 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                                         (double)minPreHP,(double)minPostHP,minPostBB,minPostBC,(double)dHP,
                                         (unsigned long long)res[0],verdict);
                             }
+                        }
+                    }
+                }
+            }
+        }
+#endif
+#if KBFE4E
+        // ---- OPTION E: direct-offset poke of spec.NonReplicatedInstances at spec+0x80/+0x88/+0x8C
+        //      to unblock the 3-gate filter at RVA 0x44C28E0 that `GetAbilityByInputID`
+        //      (impl 0x5526210 -> vtable slot 245 [+0x7A8] = 0x4476F10 iterator, byte-verified
+        //      from merged14 offline recon) calls after finding the matching spec on InputID==3.
+        //      The 3-gate filter is (a) spec.Ability != NULL (K_GRANT sets), (b) [Ability+0xEE]==1
+        //      InstancedPerActor, (c) NonRep.Num@+0x88 > 0. Gate (c) is the block: K_GRANT populates
+        //      Items but leaves NonReplicatedInstances empty. Setting Data=&spec.Ability (a
+        //      game-heap self-reference to spec+0x10, R14 safety fix from workflow adversarial
+        //      verification -- Data points at spec's OWN memory, so any Free by the game affects
+        //      only the spec's own memory NOT shim-static memory), Num=1, Max=1 makes the gate's
+        //      `mov rax,[rcx+0x80]; mov rax,[rax]; ret` dereference the self-reference and return
+        //      spec.Ability (the CDO) as the "instance". Test with GetAbilityByInputID(3) readback:
+        //      pre-poke reads NULL (R-S191-h confirmed live at E4A F1), post-poke reads spec.Ability
+        //      if the gate model is correct. Also unblocks TryActivateAbilityByInputID (impl
+        //      0x5544F70 calls the SAME vtable slot 245 = SAME iterator = SAME gate). Restore
+        //      original NonRep values after readback so the shim disarm leaves the ASC in its
+        //      pre-poke state (A->B->A). Log tag: [E4E].
+        //      KBFE4E_ACTIVATE branch (compile-guarded on KBFE4E_ACTIVATE_OFFLINE_VERIFIED):
+        //      after the readback confirms the gate is unblocked, ALSO call
+        //      TryActivateAbilityByInputID(3) to test whether reaching activation drops minion HP.
+        //      DO NOT SET without OFFLINE_VERIFIED because impl 0x5544F70's tail-call target
+        //      0x5531920 is PAGE_NOACCESS in merged14 and cannot be proven offline to diverge
+        //      from S147 lethal InternalTryActivateAbility 0x4480B30. ----
+        {
+            uintptr_t pASC=BfGetAsc(hero);
+            char aan[128]="-"; if(LooksLikePtr(pASC)&&ClassOf(pASC))GetFNameStr(NameId(ClassOf(pASC)),aan,sizeof(aan));
+            float minPreHP=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+            Markerf("[E4E] pre-poke: pASC=0x%llX(%s) minionPreHP=%.2f\r\n",
+                    (unsigned long long)pASC,LooksLikePtr(pASC)?aan:"NULL",(double)minPreHP);
+            if(!LooksLikePtr(pASC)){ Marker("[E4E] REFUSE: player ASC not present\r\n"); }
+            else if(!SafeReadable((void*)(pASC+0x538),16)){ Marker("[E4E] REFUSE: ASC+0x538 (Items TArray header) unreadable\r\n"); }
+            else {
+                // Iterate Items to find spec with InputID==3. Layout [M]: Items.Data@+0x538,
+                // Items.Num@+0x540, Items.Max@+0x544, stride 0xF8 per FGameplayAbilitySpec,
+                // spec.Ability@+0x10, spec.InputID@+0x24, spec.Handle@+0xC. NonRep TArray:
+                // Data@+0x80, Num@+0x88, Max@+0x8C.
+                uintptr_t itemsData=*(uintptr_t*)(pASC+0x538);
+                int32_t   itemsNum =*(int32_t*)(pASC+0x540);
+                int32_t   itemsMax =*(int32_t*)(pASC+0x544);
+                Markerf("[E4E] Items header: Data=0x%llX Num=%d Max=%d stride=0xF8 target InputID=3\r\n",
+                        (unsigned long long)itemsData,itemsNum,itemsMax);
+                if(!LooksLikePtr(itemsData)||itemsNum<=0){
+                    Marker("[E4E] REFUSE: Items empty or Data invalid -- K_GRANT gate failed\r\n");
+                }
+                else {
+                    uintptr_t spec=0; int specIdx=-1;
+                    for(int32_t i=0;i<itemsNum && i<32;i++){ // cap 32 for safety
+                        uintptr_t cand=itemsData+(uintptr_t)i*0xF8;
+                        if(!SafeReadable((void*)(cand+0x24),4)) continue;
+                        int32_t iid=*(int32_t*)(cand+0x24);
+                        int32_t h  =SafeReadable((void*)(cand+0xC),4)?*(int32_t*)(cand+0xC):0;
+                        uintptr_t ab=SafeReadable((void*)(cand+0x10),8)?*(uintptr_t*)(cand+0x10):0;
+                        char acn[128]="-"; if(LooksLikePtr(ab)&&ClassOf(ab))GetFNameStr(NameId(ClassOf(ab)),acn,sizeof(acn));
+                        Markerf("[E4E] Items[%d] @0x%llX Handle=%d InputID=%d Ability=0x%llX(%s)\r\n",
+                                i,(unsigned long long)cand,h,iid,(unsigned long long)ab,LooksLikePtr(ab)?acn:"NULL");
+                        if(iid==3){ spec=cand; specIdx=i; break; }
+                    }
+                    if(!spec){
+                        Marker("[E4E] REFUSE: no Items entry with InputID==3 -- K_GRANT did not set the InputID field\r\n");
+                    }
+                    else if(!SafeReadable((void*)(spec+0x10),8)){
+                        Marker("[E4E] REFUSE: spec+0x10 (Ability field) unreadable -- gate (a) precondition would fail\r\n");
+                    }
+                    else if(!SafeReadable((void*)(spec+0x80),16)){
+                        Marker("[E4E] REFUSE: spec+0x80..+0x8F (NonRep TArray header) unreadable\r\n");
+                    }
+                    else if(!SafeWritable((void*)(spec+0x80),16)){
+                        Marker("[E4E] REFUSE: spec+0x80 not writable (spec on read-only page? unexpected)\r\n");
+                    }
+                    else {
+                        uintptr_t abilPtr=*(uintptr_t*)(spec+0x10);
+                        // Read [Ability+0xEE] to verify gate (b) InstancingPolicy == InstancedPerActor(1)
+                        uint8_t instPolicy=(LooksLikePtr(abilPtr)&&SafeReadable((void*)(abilPtr+0xEE),1))?*(uint8_t*)(abilPtr+0xEE):0xFF;
+                        // Pre-poke snapshot (for A->B->A restore)
+                        uintptr_t preData=*(uintptr_t*)(spec+0x80);
+                        int32_t   preNum =*(int32_t*)(spec+0x88);
+                        int32_t   preMax =*(int32_t*)(spec+0x8C);
+                        Markerf("[E4E] target spec[%d] @0x%llX Handle=%d Ability=0x%llX InstancePolicy@+0xEE=0x%02X (%s) ; preNonRep Data=0x%llX Num=%d Max=%d\r\n",
+                                specIdx,(unsigned long long)spec,
+                                *(int32_t*)(spec+0xC),(unsigned long long)abilPtr,
+                                instPolicy,(instPolicy==1)?"InstancedPerActor OK":"NOT-1 -- gate (b) would FAIL",
+                                (unsigned long long)preData,preNum,preMax);
+
+                        // PRE-POKE READBACK: does GetAbilityByInputID(3) return NULL right now?
+                        // This is the pre-registered baseline for the poke effect measurement.
+                        uintptr_t retAbilPre=0; bool preRfault=false; bool preResolved=false;
+                        {
+                            void* gf=nullptr; uintptr_t gth=0,gch=0;
+                            ResolveFuncSuper(ClassOf(pASC),"GetAbilityByInputID",&gf,&gth,&gch);
+                            if(gth){ preResolved=true;
+                                memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                                uint32_t gao=ParamOffset(gch,"AbilityID"); if(gao==0xFFFFFFFF)gao=0;
+                                *(uint8_t*)((uint8_t*)g_pbuf+gao)=(uint8_t)3;
+                                preRfault=CallNativeGuarded(gf,gth,gch,(void*)pASC,g_pbuf,g_rbuf);
+                                uint32_t gro=ParamOffset(gch,"ReturnValue"); if(gro==0xFFFFFFFF)gro=8;
+                                retAbilPre=SafeReadable((uint8_t*)g_pbuf+gro,8)?*(uintptr_t*)((uint8_t*)g_pbuf+gro):0;
+                            }
+                        }
+                        Markerf("[E4E] E4E_READBACK_PRE resolved=%s faulted=%s return=0x%llX %s\r\n",
+                                preResolved?"yes":"NO",preRfault?"YES":"no",
+                                (unsigned long long)retAbilPre,
+                                !preResolved?"(GetAbilityByInputID not on ASC)":
+                                LooksLikePtr(retAbilPre)?"(UNEXPECTED: map already populated pre-poke -- state is not what R-S191-h predicts)":
+                                                          "(NULL -- R-S191-h baseline confirmed live; ready to poke)");
+
+                        // POKE: only write if gate (b) is favorable and pre-readback is NULL.
+                        // The R14 safety-critical spec: Data must point at game-heap memory (spec+0x10
+                        // = the spec's own Ability field), NEVER at shim-static memory. If the game
+                        // later Free()s this Data, it would attempt to free spec.Ability's address --
+                        // which the allocator won't recognize as a valid allocation and either
+                        // no-ops or aborts, but confined to spec's own memory.
+                        bool willPoke = LooksLikePtr(abilPtr) && instPolicy==1 && preResolved && !preRfault && !LooksLikePtr(retAbilPre);
+                        if(!willPoke){
+                            Markerf("[E4E] E4E_POKE_SKIPPED reason=%s%s%s%s%s -- SAFE, no write\r\n",
+                                    !LooksLikePtr(abilPtr)?"abilNULL ":"",
+                                    (instPolicy!=1)?"instPolicy!=1 ":"",
+                                    !preResolved?"preReadbackUnresolved ":"",
+                                    preRfault?"preReadbackFault ":"",
+                                    LooksLikePtr(retAbilPre)?"preReadbackNotNull ":"");
+                        }
+                        else {
+                            uintptr_t pokeData=spec+0x10; // R14 safety: game-heap self-reference
+                            Markerf("[E4E] E4E_POKE_ISSUE spec+0x80 <- 0x%llX (spec+0x10 game-heap self-ref) ; spec+0x88 <- 1 ; spec+0x8C <- 1 ; pre snapshot preserved for A->B->A restore\r\n",
+                                    (unsigned long long)pokeData);
+                            *(uintptr_t*)(spec+0x80)=pokeData;
+                            *(int32_t*)  (spec+0x88)=1;
+                            *(int32_t*)  (spec+0x8C)=1;
+                            // Verify the write landed
+                            uintptr_t vData=*(uintptr_t*)(spec+0x80);
+                            int32_t   vNum =*(int32_t*)(spec+0x88);
+                            int32_t   vMax =*(int32_t*)(spec+0x8C);
+                            Markerf("[E4E] E4E_POKE_VERIFY Data=0x%llX Num=%d Max=%d %s\r\n",
+                                    (unsigned long long)vData,vNum,vMax,
+                                    (vData==pokeData&&vNum==1&&vMax==1)?"OK":"MISMATCH");
+
+                            // POST-POKE READBACK: does GetAbilityByInputID(3) now return non-null?
+                            uintptr_t retAbilPost=0; bool postRfault=false;
+                            {
+                                void* gf=nullptr; uintptr_t gth=0,gch=0;
+                                ResolveFuncSuper(ClassOf(pASC),"GetAbilityByInputID",&gf,&gth,&gch);
+                                if(gth){
+                                    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                                    uint32_t gao=ParamOffset(gch,"AbilityID"); if(gao==0xFFFFFFFF)gao=0;
+                                    *(uint8_t*)((uint8_t*)g_pbuf+gao)=(uint8_t)3;
+                                    postRfault=CallNativeGuarded(gf,gth,gch,(void*)pASC,g_pbuf,g_rbuf);
+                                    uint32_t gro=ParamOffset(gch,"ReturnValue"); if(gro==0xFFFFFFFF)gro=8;
+                                    retAbilPost=SafeReadable((uint8_t*)g_pbuf+gro,8)?*(uintptr_t*)((uint8_t*)g_pbuf+gro):0;
+                                }
+                            }
+                            char rcn[128]="-"; if(LooksLikePtr(retAbilPost)&&ClassOf(retAbilPost))GetFNameStr(NameId(ClassOf(retAbilPost)),rcn,sizeof(rcn));
+                            Markerf("[E4E] E4E_READBACK_POST faulted=%s return=0x%llX(%s) %s\r\n",
+                                    postRfault?"YES":"no",
+                                    (unsigned long long)retAbilPost,LooksLikePtr(retAbilPost)?rcn:"NULL",
+                                    postRfault?"*** FAULT: gate model is wrong or the poke corrupted state ***":
+                                    (LooksLikePtr(retAbilPost)&&retAbilPost==abilPtr)?"*** OPTION E GATE-MODEL CONFIRMED: post-poke returns spec.Ability -- 0x44C28E0 3-gate model matches live behavior [M] ***":
+                                    (LooksLikePtr(retAbilPost))?"*** OPTION E GATE PARTIALLY UNBLOCKED: returns non-null but NOT spec.Ability -- different code path or iterator picked another spec ***":
+                                                                 "still NULL -- 3-gate model INCOMPLETE (a further gate exists beyond NonRep.Num>0 OR gate (b) instPolicy actually failed)");
+
+#if KBFE4E_ACTIVATE
+                            // ACTIVATE branch: gated by KBFE4E_ACTIVATE_OFFLINE_VERIFIED, which
+                            // requires proving 0x5544F70 -> 0x5531920 does NOT converge on the
+                            // S147 lethal InternalTryActivateAbility 0x4480B30. Currently that
+                            // proof cannot be completed offline (0x5531920 PAGE_NOACCESS in
+                            // merged14). If this compiles, someone has set the flag; log its
+                            // presence loudly and proceed.
+                            Marker("[E4E] E4E_ACTIVATE branch compiled with OFFLINE_VERIFIED=1; calling TryActivateAbilityByInputID(3) -- FK-32 lethal risk if convergence proof was wrong\r\n");
+                            {
+                                void* af=nullptr; uintptr_t ath=0,ach=0;
+                                ResolveFuncSuper(ClassOf(pASC),"TryActivateAbilityByInputID",&af,&ath,&ach);
+                                if(!ath){ Marker("[E4E] E4E_ACTIVATE REFUSE: TryActivateAbilityByInputID not resolved\r\n"); }
+                                else {
+                                    memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                                    uint32_t ao=ParamOffset(ach,"AbilityID"); if(ao==0xFFFFFFFF)ao=0;
+                                    *(uint8_t*)((uint8_t*)g_pbuf+ao)=(uint8_t)3;
+                                    uint64_t tStart=GetTickCount64();
+                                    Markerf("[E4E] E4E_ACTIVATE_CALL_ISSUE: ASC.TryActivateAbilityByInputID(3) ; target=base+0x52971A0 ; tStart=%llu\r\n",(unsigned long long)tStart);
+                                    bool aflt=CallNativeGuarded(af,ath,ach,(void*)pASC,g_pbuf,g_rbuf);
+                                    uint64_t elapsedMs=GetTickCount64()-tStart;
+                                    uint32_t rvo=ParamOffset(ach,"ReturnValue"); if(rvo==0xFFFFFFFF)rvo=1;
+                                    uint8_t retBool=SafeReadable((uint8_t*)g_pbuf+rvo,1)?*(uint8_t*)((uint8_t*)g_pbuf+rvo):0xFF;
+                                    float minPostHP2=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                                    float dHP=minPostHP2-minPreHP;
+                                    Markerf("[E4E] E4E_ACTIVATE_RESULT faulted=%s retBool=%u elapsedMs=%llu dHP=%+.2f %s\r\n",
+                                            aflt?"YES":"no",(unsigned)retBool,(unsigned long long)elapsedMs,(double)dHP,
+                                            aflt?"*** FAULT after unblocked gate ***":
+                                            (retBool==1&&dHP<0)?"*** OPTION E SUCCEEDS: gate unblocked + activation damaged minion -- E4 predicate met via direct callable ***":
+                                            (retBool==1)?"return=true but minion HP unchanged (activation fired but no damage this frame)":
+                                                          "return=false (activation refused -- gate unblocked but downstream still declines)");
+                                }
+                            }
+#endif // KBFE4E_ACTIVATE
+
+                            // A->B->A RESTORE: put NonRep back to its pre-poke state so the
+                            // shim disarm leaves the ASC in exactly the shape K_GRANT built.
+                            *(uintptr_t*)(spec+0x80)=preData;
+                            *(int32_t*)  (spec+0x88)=preNum;
+                            *(int32_t*)  (spec+0x8C)=preMax;
+                            uintptr_t rData=*(uintptr_t*)(spec+0x80);
+                            int32_t   rNum =*(int32_t*)(spec+0x88);
+                            int32_t   rMax =*(int32_t*)(spec+0x8C);
+                            Markerf("[E4E] E4E_RESTORE Data=0x%llX Num=%d Max=%d %s\r\n",
+                                    (unsigned long long)rData,rNum,rMax,
+                                    (rData==preData&&rNum==preNum&&rMax==preMax)?"OK (pre-poke state re-established)":"MISMATCH -- state NOT restored");
                         }
                     }
                 }
