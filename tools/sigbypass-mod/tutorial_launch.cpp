@@ -18441,6 +18441,19 @@ static void DoBotSpawn(){
 #define KBFE4_FRONT 200.0 // uu to place the minion in FRONT of the hero (hero faces -Y per S189-BOT),
                 // inside the 360uu/110deg LMB cone. Set via g_xform translation before SpawnActorCls.
 #endif
+#ifndef KBFE4B
+#define KBFE4B 0 // S191 E4 OPTION B (2026-09-10, tag [E4B] in markers): after K_GRANT + spawn+seed and
+                // BEFORE the E4A probe, ADDITIONALLY call ULokiAbilitySystemComponent::
+                // BP_AuthGiveAbilityWithInputID(hero.Ability1, Level=1, LokiAbilityInputID=Ability1(3),
+                // hero, InputIDPriority=0) via the S55 reflected direct-thunk primitive. Impl @ base+
+                // 0x5294B50, S153-graded REAL. This is the InputID-AWARE grant that populates GAS's
+                // separate InputID→spec map (per R-S191-h/h1, plain GiveAbility only populates the
+                // Items TArray). Requires KBFE4=1 AND KBFE4A=1 (the E4A activation probe re-runs
+                // afterwards and is the primary measurement of E4B's success: if the E4A_GETBYID
+                // returns non-null AND E4A_RESULT retBool=1 + minion HP drops, the natural-cast half
+                // of the E4 predicate is unlocked via a direct shim call — bypassing OS input
+                // entirely). Log the return SpecHandle + pre/post Items.Num. Log tag: [E4B].
+#endif
 #ifndef KBFE4A
 #define KBFE4A 0 // S191 E4 OPTION A (2026-09-10, tag [E4A] in markers): after K_GRANT + E4 spawn+seed,
                 // call ULokiAbilitySystemComponent::TryActivateAbilityByInputID(LokiAbilityInputID=3)
@@ -18561,8 +18574,11 @@ static void DoBotSpawn(){
 #if KBFE4 && KBFNATURALINPUT
 #error S191 E4 must NOT compile the S147 natural-input observation machinery: KBFNATURALINPUT=0. E4 gets out of the way via g_done+FsDisarm; the natural LMB is EXTERNAL (send-lmb.ps1), and the S147 observation apparatus is MiniDash-charge-specific (BfS147ClaimCdoOwnership requires chargesOff==0x628) and would SUPPRESS the body (S158)
 #endif
-#if KBFE4 && !((KBFARMS & 0x02) && (KBFARMS & 0x04))
-#error S191 E4 requires K_BIND (KBFARMS&0x02) + K_GRANT (KBFARMS&0x04): the player ASC must be wired and the ability granted for the natural cast to route
+#if KBFE4 && !(KBFARMS & 0x02)
+#error S191 E4 requires K_BIND (KBFARMS&0x02): the player ASC must be wired
+#endif
+#if KBFE4 && !KBFE4B && !(KBFARMS & 0x04)
+#error S191 E4 without KBFE4B requires K_GRANT (KBFARMS&0x04): a spec must be registered so the natural cast can route. With KBFE4B=1, E4B's BP_AuthGiveAbilityWithInputID is the sole grant and K_GRANT should be OFF to avoid the duplicate-detection refusal measured at E4B flight 1.
 #endif
 #if KBFE4 && (KBFARMS & 0x08)
 #error S191 E4 must NOT set K_ACTIVATE (KBFARMS&0x08): a shim-originated TryActivate enters, never returns, then 0xDEAD (WALL P, S145/S146). The natural LMB tap casts instead
@@ -18578,6 +18594,12 @@ static void DoBotSpawn(){
 #endif
 #if (KBFE4A != 0) && (KBFE4A != 1)
 #error S191 KBFE4A is a bool: 0 (dead-strip) or 1 (call ASC.TryActivateAbilityByInputID(3) via S55 after seed)
+#endif
+#if KBFE4B && (!KBFE4 || !KBFE4A)
+#error S191 KBFE4B (Option B: BP_AuthGiveAbilityWithInputID) requires KBFE4=1 AND KBFE4A=1 (the E4A probe is the primary measurement of E4B's success)
+#endif
+#if (KBFE4B != 0) && (KBFE4B != 1)
+#error S191 KBFE4B is a bool: 0 (dead-strip) or 1 (fire BP_AuthGiveAbilityWithInputID before the E4A probe)
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -24135,6 +24157,52 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
         //      of the activation call itself). ----
         {
             uintptr_t pASC=BfGetAsc(hero);
+#if KBFE4B
+            // ---- OPTION B: additionally fire ULokiAbilitySystemComponent::BP_AuthGiveAbilityWithInputID
+            //      (hero.Ability1, Level=1, LokiAbilityInputID=Ability1(3), hero, InputIDPriority=0) via
+            //      S55. Impl @ base+0x5294B50 (S153 REAL). Populates GAS's InputID→spec map that plain
+            //      GiveAbility does NOT (per R-S191-h1 confirmed live at E4A flight 1). The subsequent
+            //      E4A_GETBYID + E4A_CALL_ISSUE probes then re-measure the state. ----
+            if(LooksLikePtr(pASC)){
+                // Resolve hero.Ability1 by name (same shape DoBotFight's K_GRANT uses).
+                uint32_t abilOff=PropOffsetSuper(ClassOf(hero),"Ability1");
+                uintptr_t abilCls=(abilOff!=0xFFFFFFFF&&SafeReadable((void*)(hero+abilOff),8))?*(uintptr_t*)(hero+abilOff):0;
+                char abn[128]="-"; if(LooksLikePtr(abilCls))GetFNameStr(NameId(abilCls),abn,sizeof(abn));
+                Markerf("[E4B] pre-grant  hero.Ability1@0x%X = 0x%llX(%s) pASC=0x%llX\r\n",
+                        abilOff,(unsigned long long)abilCls,LooksLikePtr(abilCls)?abn:"NULL",(unsigned long long)pASC);
+                if(!LooksLikePtr(abilCls)){ Marker("[E4B] REFUSE: hero.Ability1 not resolvable\r\n"); }
+                else{
+                    void* gf=nullptr; uintptr_t gth=0,gch=0;
+                    // Try the BP_-prefixed registered name first (Loki convention), then fall back.
+                    ResolveFuncSuper(ClassOf(pASC),"BP_AuthGiveAbilityWithInputID",&gf,&gth,&gch);
+                    if(!gth) ResolveFuncSuper(ClassOf(pASC),"AuthGiveAbilityWithInputID",&gf,&gth,&gch);
+                    if(gth){
+                        memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                        uint32_t oAC=ParamOffset(gch,"AbilityClass");        if(oAC==0xFFFFFFFF)oAC=0;
+                        uint32_t oAL=ParamOffset(gch,"AbilityLevel");        if(oAL==0xFFFFFFFF)oAL=8;
+                        uint32_t oID=ParamOffset(gch,"LokiAbilityInputID"); if(oID==0xFFFFFFFF){ uint32_t alt=ParamOffset(gch,"AbilityInputID"); if(alt!=0xFFFFFFFF)oID=alt; else oID=12; }
+                        uint32_t oSO=ParamOffset(gch,"SourceObject");        if(oSO==0xFFFFFFFF)oSO=16;
+                        uint32_t oPR=ParamOffset(gch,"InputIDPriority");     if(oPR==0xFFFFFFFF)oPR=24;
+                        *(uint64_t*)((uint8_t*)g_pbuf+oAC)=(uint64_t)abilCls;
+                        *(int32_t*) ((uint8_t*)g_pbuf+oAL)=(int32_t)1;
+                        *(uint8_t*) ((uint8_t*)g_pbuf+oID)=(uint8_t)3; // LokiAbilityInputID::Ability1
+                        *(uint64_t*)((uint8_t*)g_pbuf+oSO)=(uint64_t)hero;
+                        *(int32_t*) ((uint8_t*)g_pbuf+oPR)=(int32_t)0;
+                        int itemsPre=BfCountActivatable(pASC);
+                        Markerf("[E4B] E4B_CALL_ISSUE: BP_AuthGiveAbilityWithInputID(Class=0x%llX,Level=1,InputID=3,Source=hero,Priority=0) ; target=base+0x5294B50 ; Items pre=%d ; param offsets AC=0x%X AL=0x%X ID=0x%X SO=0x%X PR=0x%X\r\n",
+                                (unsigned long long)abilCls,itemsPre,oAC,oAL,oID,oSO,oPR);
+                        bool gflt=CallNativeGuarded(gf,gth,gch,(void*)pASC,g_pbuf,g_rbuf);
+                        // Return is FGameplayAbilitySpecHandle -- typically {int32 Handle} at ReturnValue.
+                        uint32_t rvo=ParamOffset(gch,"ReturnValue"); if(rvo==0xFFFFFFFF)rvo=28;
+                        int32_t retHandle=SafeReadable((uint8_t*)g_pbuf+rvo,4)?*(int32_t*)((uint8_t*)g_pbuf+rvo):-2147483647;
+                        int itemsPost=BfCountActivatable(pASC);
+                        Markerf("[E4B] E4B_RESULT   faulted=%s retHandle=%d ItemsPre=%d ItemsPost=%d dItems=%+d %s\r\n",
+                                gflt?"YES":"no",retHandle,itemsPre,itemsPost,itemsPost-itemsPre,
+                                (!gflt&&retHandle>0)?"*** InputID-AWARE GRANT LANDED -- E4A probe follows ***":"(grant refused/faulted; E4A probe will observe map state either way)");
+                    } else Marker("[E4B] REFUSE: neither BP_AuthGiveAbilityWithInputID nor AuthGiveAbilityWithInputID resolved on the ASC\r\n");
+                }
+            } else Marker("[E4B] REFUSE: player ASC not present\r\n");
+#endif
             char aan[128]="-"; if(LooksLikePtr(pASC)&&ClassOf(pASC))GetFNameStr(NameId(ClassOf(pASC)),aan,sizeof(aan));
             float minPreHP=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
             Markerf("[E4A] pre-activate: pASC=0x%llX(%s) minionPreHP=%.2f\r\n",(unsigned long long)pASC,LooksLikePtr(pASC)?aan:"NULL",(double)minPreHP);

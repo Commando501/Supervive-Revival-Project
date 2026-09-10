@@ -837,6 +837,27 @@ $Variants = @{
         # WALL P proper on the InputID path. Also pre-reads GetAbilityByInputID(3) independently.
         # KE4DIRECTGE deliberately OFF so a minion HP drop is attributable to the real cast, not the fallback.
         'e4-a'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4A=1')
+        # S191 E4 OPTION B (flown 2026-09-10, SUPERSEDED by `docs/s191-e4b-RESULT.md`):
+        # after K_GRANT (plain GiveAbility populates Items but NOT the InputID→spec map, per R-S191-h1
+        # [M] from E4A flight 1), ADDITIONALLY call the InputID-aware BP_AuthGiveAbilityWithInputID
+        # via S55 (wrapper @ base+0x5294B50 — S153 graded REAL byte-verified prologue). Then re-fire
+        # E4A's probe: if GetAbilityByInputID(3) returns non-null AND TryActivateAbilityByInputID(3)
+        # returns true + drops minion HP, natural-cast half of E4 unlocked via a direct shim call.
+        # ⇒ REFUTED [M, S191, `docs/s191-e4b-RESULT.md`]: retHandle=0 (INDEX_NONE), Items pre==post.
+        # Wrapper at 0x5294B50 tail-calls impl at 0x13D4E60, which is a 9-BYTE STRIPPED STUB
+        # (`c702ffffffff 488bc2 c3` = write 0xFFFFFFFF to outHandle, return outHandle*). New FK-1
+        # register entry (R-S191-l); S153's sweep missed it because it grades WRAPPERS not IMPLS.
+        # DO NOT re-flight expecting duplicate-detection or an unmet precondition to be the block.
+        'e4-b'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4A=1','-DKBFE4B=1')
+        # S191 E4 OPTION B2 (flown 2026-09-10, SUPERSEDED by `docs/s191-e4b-RESULT.md`):
+        # same as e4-b but with K_GRANT (KBFARMS 0x04) DROPPED so BP_AuthGiveAbilityWithInputID is
+        # the sole grant. Original hypothesis: E4B flight 1's refusal (retHandle=0, dItems=+0) was
+        # UE detecting a duplicate-CDO grant against the K_GRANT-registered spec — with Items=0
+        # pre-E4B the InputID-aware grant should succeed.
+        # ⇒ REFUTED [M]: retHandle=0, dItems=+0 IDENTICAL to e4-b with Items pre=0. NOT duplicate
+        # detection. Impl at 0x13D4E60 is a stripped stub that returns INDEX_NONE unconditionally
+        # regardless of caller state. KBFARMS=0xC2 = K_BIND(0x02) + K_ALIVE(0x40) + K_GASATTR(0x80).
+        'e4-b2'               = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC2','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4A=1','-DKBFE4B=1')
 
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
