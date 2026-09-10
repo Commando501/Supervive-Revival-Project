@@ -871,6 +871,27 @@ $Variants = @{
         # KE4DIRECTGE via #error guards so attribution is safe-by-construction against config
         # mistakes. Log tag: [E4F].
         'e4-f'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4F=1')
+        # S191 E4 OPTION C: after K_GRANT + spawn+seed, call Comp_PlayerController_Abilities.
+        # HandleAbilityActivation(byte AbilityID=3) via CallBPGuarded — the game's OWN BP dispatcher
+        # that natural LMB flows through. Fourth activation surface after ByClass (S147: lethal
+        # 0xDEAD on MiniDash), ByInputID (E4A F1: clean-false, InputID map empty), BySourceObject
+        # (E4F F1: clean-false-FAST + 'invalid Handle' witness). HandleAbilityActivation is BP-
+        # authored (no reflected native thunk), so uses CallBPGuarded not S55. PRE-FLIGHT BPDUMP
+        # GATE PASSED [M, 2026-09-10]: HandleAbilityActivation dispatches to ubergraph entry 591;
+        # entry-591 flow's CodeOffset jump targets are {576,722,838,1154} — NEITHER covers the two
+        # TryActivateAbilityByClass sites (statements 2171/2472, S147 lethal). Those ByClass sites
+        # dispatch from unrelated custom events on the same component. WALL-P grade [I] LIKELY
+        # NON-LETHAL. Pre-call marker preserves attribution if 0xDEAD fires. Mutually exclusive
+        # with KE4DIRECTGE/KBFE4A/KBFE4B/KBFE4F via #error guards. Even in the likely CLEAN-REFUSE
+        # outcome, banks: BP-dispatcher shim-invocability [M receipt] + component resolution shape
+        # (SCS UPROPERTY with _GEN_VARIABLE fallback) + coverage decryption for merged14 progression.
+        # Log tag: [E4C].
+        # KOUTPARMRET=1 (as with e4/e4-a/e4-b/e4-b2/e4-f/e4-directge) so if HandleAbilityActivation
+        # has FUNC_HasOutParms(0x400000), CallBPGuarded's BuildOutParms includes CPF_ReturnParm-
+        # flagged params (addressing docs/drop-sequence-status-s150.md §6.9 defect). If the
+        # E4C_pre-flight marker shows HasOutParms=YES, this is the correct path; if =no, KOUTPARMRET
+        # is a no-op for this arm.
+        'e4-c'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4C=1')
 
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call

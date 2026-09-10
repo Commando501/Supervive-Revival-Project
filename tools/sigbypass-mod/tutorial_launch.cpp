@@ -18454,6 +18454,27 @@ static void DoBotSpawn(){
                 // of the E4 predicate is unlocked via a direct shim call — bypassing OS input
                 // entirely). Log the return SpecHandle + pre/post Items.Num. Log tag: [E4B].
 #endif
+#ifndef KBFE4C
+#define KBFE4C 0 // S191 E4 OPTION C (2026-09-10, tag [E4C] in markers): after K_GRANT + E4 spawn+seed,
+                // call Comp_PlayerController_Abilities.HandleAbilityActivation(byte AbilityID=3) via
+                // CallBPGuarded — the game's OWN BP dispatcher that natural LMB flows through.
+                // HandleAbilityActivation is BP-authored (FUNC_BlueprintCallable|FUNC_BlueprintEvent,
+                // NO reflected native, NO Func @+0xE0), so the S55 CallNativeGuarded route does not
+                // apply; must use CallBPGuarded (@tutorial_launch.cpp:1456, 3-arg form). Fourth
+                // activation surface after ByClass (S147 LETHAL), ByInputID (E4A F1 non-lethal),
+                // BySourceObject (E4F F1 non-lethal fast + 'invalid Handle' witness). PRE-FLIGHT
+                // BPDUMP GATE PASSED (2026-09-10): HandleAbilityActivation dispatches to ubergraph
+                // entry 591 whose CodeOffset jump targets are {576,722,838,1154} — NEITHER of the
+                // two TryActivateAbilityByClass call sites (statements 2171/2472, S147-lethal)
+                // is reachable from entry 591; both ByClass sites are dispatched from unrelated
+                // custom events. WALL-P grade [I] LIKELY NON-LETHAL: (a) natural LMB drives this
+                // dispatcher continuously without killing the game (S191 E4 F3 witness), (b) offline
+                // gate closed the ByClass path. Downgrade caveat: S147/S158 both measured shim-vs-
+                // natural asymmetry lethal on adjacent surfaces, so [I] not [I,strong]. Mutually
+                // exclusive with KE4DIRECTGE/KBFE4A/KBFE4B/KBFE4F via #error guards (each would
+                // drop minion HP or fire the BP wrapper on top of E4C, destroying attribution).
+                // Log tag: [E4C].
+#endif
 #ifndef KBFE4F
 #define KBFE4F 0 // S191 E4 OPTION F (2026-09-10, tag [E4F] in markers): after K_GRANT + E4 spawn+seed,
                 // call ULokiAbilitySystemComponent::TryActivateAbilityBySourceObject(hero, true,
@@ -18654,6 +18675,45 @@ static void DoBotSpawn(){
 #endif
 #if KBFE4F && KBFE4B
 #error S191 KBFE4F is incompatible with KBFE4B=1: E4B populates the InputID map (orthogonal to BySourceObject's spec-resolution). Co-firing conflates two independent mechanisms.
+#endif
+#if KBFE4C && !KBFE4
+#error S191 KBFE4C (Option C: HandleAbilityActivation BP dispatcher) requires KBFE4=1 (needs the spawned+seeded hostile minion in front)
+#endif
+#if (KBFE4C != 0) && (KBFE4C != 1)
+#error S191 KBFE4C is a bool: 0 (dead-strip) or 1 (call Comp_PlayerController_Abilities.HandleAbilityActivation(3) via CallBPGuarded after seed)
+#endif
+#if KBFE4C && (KBFSELFCAL || KBFBINDONLY || KBFBINDAVATAR)
+#error S191 KBFE4C runs the #else K_* path: requires KBFSELFCAL=0, KBFBINDONLY=0, KBFBINDAVATAR=0
+#endif
+#if KBFE4C && KBFNATURALINPUT
+#error S191 KBFE4C must NOT compile the S147 natural-input observation machinery: KBFNATURALINPUT=0 (S158 shim-observation apparatus suppresses body execution)
+#endif
+#if KBFE4C && !(KBFARMS & 0x02)
+#error S191 KBFE4C requires K_BIND (KBFARMS&0x02): the player ASC must be wired
+#endif
+#if KBFE4C && !(KBFARMS & 0x04)
+#error S191 KBFE4C requires K_GRANT (KBFARMS&0x04): a spec must be registered so HandleAbilityActivation's Self.TryActivateAbility path has something to resolve
+#endif
+#if KBFE4C && !(KBFARMS & 0x40)
+#error S191 KBFE4C requires K_ALIVE (KBFARMS&0x40): hero LivingState must be poked to Alive (S144)
+#endif
+#if KBFE4C && !(KBFARMS & 0x80)
+#error S191 KBFE4C requires K_GASATTR (KBFARMS&0x80): complete AttributeSet wiring must be preflight-verified (S145)
+#endif
+#if KBFE4C && (KBFARMS & 0x08)
+#error S191 KBFE4C must NOT set K_ACTIVATE (KBFARMS&0x08): would duplicate the WALL-P attempt E4C is designed to characterize
+#endif
+#if KBFE4C && KE4DIRECTGE
+#error S191 KBFE4C is incompatible with KE4DIRECTGE=1: DIRECTGE fires FIRST and drops minion HP before E4C reads minPreHP, destroying attribution.
+#endif
+#if KBFE4C && KBFE4A
+#error S191 KBFE4C is incompatible with KBFE4A=1: E4A fires BEFORE E4C and may drop HP or fault, destroying attribution.
+#endif
+#if KBFE4C && KBFE4B
+#error S191 KBFE4C is incompatible with KBFE4B=1: E4B calls the BP_AuthGiveAbilityWithInputID stub before E4C, muddying the pre-state.
+#endif
+#if KBFE4C && KBFE4F
+#error S191 KBFE4C is incompatible with KBFE4F=1: E4F fires BEFORE E4C via the ASC-side surface and would leave 'invalid Handle' state before the BP dispatcher runs.
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -24370,6 +24430,96 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                     Markerf("[E4F] E4F_RESULT   faulted=%s retBool=%u elapsedMs=%llu minPreHP=%.2f minPostHP=%.2f minPostBits=%08X/%08X dHP=%+.2f  %s\r\n",
                             sflt?"YES":"no",(unsigned)retBool,(unsigned long long)elapsedMs,
                             (double)minPreHP,(double)minPostHP,minPostBB,minPostBC,(double)dHP,verdict);
+                }
+            }
+        }
+#endif
+#if KBFE4C
+        // ---- OPTION C: call Comp_PlayerController_Abilities.HandleAbilityActivation(byte 3) via
+        //      CallBPGuarded — the game's OWN BP dispatcher that natural LMB flows through. Fourth
+        //      activation surface after ByClass (S147 LETHAL), ByInputID (E4A F1 non-lethal),
+        //      BySourceObject (E4F F1 non-lethal 'invalid Handle'). HandleAbilityActivation is BP-
+        //      authored (no reflected native thunk), so uses CallBPGuarded not S55.
+        //      PRE-FLIGHT GATE PASSED [M, 2026-09-10]: HandleAbilityActivation dispatches to
+        //      ubergraph ExecuteUbergraph_Comp_PlayerController_Abilities entry 591; that flow's
+        //      CodeOffset jump targets are {576,722,838,1154}, NEITHER covers the two
+        //      TryActivateAbilityByClass sites at statements 2171/2472 (S147 lethal). Those ByClass
+        //      sites dispatch from unrelated custom events on the same component. Grade [I] LIKELY
+        //      NON-LETHAL — but S147/S158 measured shim-vs-natural asymmetry lethal on adjacent
+        //      surfaces, so pre-call marker preserves attribution if 0xDEAD fires anyway.
+        //      OutParms hazard: FUNC_HasOutParms(0x400000) HARD REFUSE — if the flag is set, rebuild
+        //      with -DKOUTPARMRET=1 (e4-c-outparms variant) since default CallBPGuarded skips
+        //      CPF_ReturnParm and can fault at rva 0x13495DD (docs/drop-sequence-status-s150.md §6.9).
+        //      Even in the likely CLEAN-REFUSE case, this arm banks: (i) BP-dispatcher shim-
+        //      invocability [M receipt] for Option D's design, (ii) Comp_PlayerController_Abilities
+        //      component resolution shape (SCS UPROPERTY), (iii) dispatcher entry-point coverage
+        //      decryption for merged14. ----
+        {
+            uintptr_t pc=0; if(LooksLikePtr(hero)&&SafeReadable((void*)(hero+0x400),8)) pc=*(uintptr_t*)(hero+0x400);
+            char pcCls[128]="-"; if(LooksLikePtr(pc)&&ClassOf(pc))GetFNameStr(NameId(ClassOf(pc)),pcCls,sizeof(pcCls));
+            if(!LooksLikePtr(pc)){ Marker("[E4C] REFUSE: PlayerController not resolvable from hero+0x400\r\n"); }
+            else {
+                // Component is SCS-generated on BP_LokiPlayerController_C — resolve BY NAME with
+                // _GEN_VARIABLE suffix fallback per SCS pattern.
+                uintptr_t pcCl=(uintptr_t)ClassOf(pc);
+                uint32_t compOff=pcCl?PropOffsetSuper(pcCl,"Comp_PlayerController_Abilities"):0xFFFFFFFF;
+                const char* compOffSrc="primary";
+                if(compOff==0xFFFFFFFF&&pcCl){ compOff=PropOffsetSuper(pcCl,"Comp_PlayerController_Abilities_GEN_VARIABLE"); compOffSrc=(compOff==0xFFFFFFFF)?"NEITHER":"GEN_VARIABLE"; }
+                uintptr_t comp=(compOff!=0xFFFFFFFF&&SafeReadable((void*)(pc+compOff),8))?*(uintptr_t*)(pc+compOff):0;
+                char compCls[128]="-"; if(LooksLikePtr(comp)&&ClassOf(comp))GetFNameStr(NameId(ClassOf(comp)),compCls,sizeof(compCls));
+                float minPreHP=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                Markerf("[E4C] pre-activate: pc=0x%llX(%s) compOffSrc=%s compOff=0x%X comp=0x%llX(%s) minionPreHP=%.2f\r\n",
+                        (unsigned long long)pc,pcCls,compOffSrc,compOff,(unsigned long long)comp,LooksLikePtr(comp)?compCls:"NULL",(double)minPreHP);
+                if(compOff==0xFFFFFFFF){ Marker("[E4C] REFUSE: Comp_PlayerController_Abilities not resolvable (tried bare and _GEN_VARIABLE)\r\n"); }
+                else if(!LooksLikePtr(comp)){ Marker("[E4C] REFUSE: Comp_PlayerController_Abilities instance NULL on PC\r\n"); }
+                else {
+                    uintptr_t hch=0; uintptr_t hf=FindBPFunc(ClassOf(comp),"HandleAbilityActivation",&hch);
+                    if(!hf){ Marker("[E4C] REFUSE: HandleAbilityActivation not resolved on component class chain\r\n"); }
+                    else {
+                        uint32_t fnFlags=SafeReadable((void*)(hf+PDPE_FN_FLAGS),4)?*(uint32_t*)(hf+PDPE_FN_FLAGS):0;
+                        uintptr_t script=SafeReadable((void*)(hf+USTRUCT_SCRIPT),8)?*(uintptr_t*)(hf+USTRUCT_SCRIPT):0;
+                        uint32_t snum=SafeReadable((void*)(hf+USTRUCT_SCRIPTNUM),4)?*(uint32_t*)(hf+USTRUCT_SCRIPTNUM):0;
+                        uint32_t psz=SafeReadable((void*)(hf+USTRUCT_PROPSIZE),4)?*(uint32_t*)(hf+USTRUCT_PROPSIZE):0;
+                        uintptr_t thk=SafeReadable((void*)(hf+UFUNC_FUNC),8)?*(uintptr_t*)(hf+UFUNC_FUNC):0;
+                        Markerf("[E4C] resolved fn=0x%llX flags=0x%X HasOutParms=%s script=0x%llX scriptNum=%u propsSize=%u localsCap=%u thunk=0x%llX\r\n",
+                                (unsigned long long)hf,fnFlags,(fnFlags&0x400000u)?"YES":"no",
+                                (unsigned long long)script,snum,psz,(unsigned)sizeof(g_bplocals),(unsigned long long)thk);
+                        bool refuseKnown=!LooksLikePtr(script)||snum==0||!LooksLikePtr(thk)||psz>sizeof(g_bplocals);
+                        if(refuseKnown){ Markerf("[E4C] REFUSE: pre-flight predicate failed (script=%s snum=%u psz=%u localsCap=%u thunk=%s) -- SAFE, no dispatch\r\n",
+                                LooksLikePtr(script)?"ok":"NULL",snum,psz,(unsigned)sizeof(g_bplocals),LooksLikePtr(thk)?"ok":"NULL"); }
+                        else if((fnFlags&0x400000u)&&!KOUTPARMRET){
+                            Marker("[E4C] REFUSE: HandleAbilityActivation has FUNC_HasOutParms(0x400000) but KOUTPARMRET=0. Default CallBPGuarded skips CPF_ReturnParm and can fault at rva 0x13495DD (S150-drop §6.9). Rebuild with -DKOUTPARMRET=1 (variant e4-c-outparms) to proceed.\r\n");
+                        }
+                        else {
+                            uint32_t abo=ParamOffset(hch,"AbilityID");
+                            if(abo==0xFFFFFFFF){ Marker("[E4C] REFUSE: ParamOffset('AbilityID') failed -- offset-0 fallback would silently write to wrong byte on non-first-param layouts\r\n"); }
+                            else if((uintptr_t)abo+1>sizeof(g_bplocals)){ Marker("[E4C] REFUSE: AbilityID offset out of g_bplocals range\r\n"); }
+                            else {
+                                memset(g_bplocals,0,sizeof(g_bplocals));
+                                *(uint8_t*)(g_bplocals+abo)=(uint8_t)3; // LokiAbilityInputID::Ability1 = LMB
+                                uint64_t res[4]={0,0,0,0};
+                                uint64_t tStart=GetTickCount64();
+                                Markerf("[E4C] E4C_CALL_ISSUE: comp.HandleAbilityActivation(AbilityID=3) via CallBPGuarded ; ctx=0x%llX(%s) ; param 'AbilityID' @+0x%X = 3 (Ability1/LMB) ; tStart=%llu ; expected: CLEAN-REFUSE [I] per E4A F1 downstream ; FK-32 at t+40-70s is live risk if shim-vs-natural asymmetry (S147/S158)\r\n",
+                                        (unsigned long long)comp,compCls,abo,(unsigned long long)tStart);
+                                bool eflt=CallBPGuarded(hf,(void*)comp,res);
+                                uint64_t elapsedMs=GetTickCount64()-tStart;
+                                float minPostHP=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                                uint32_t minPostBB=SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+                                uint32_t minPostBC=SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+                                float dHP=minPostHP-minPreHP;
+                                const char* verdict =
+                                    eflt                              ? "*** FAULT: check [FLT]/[BPC]; if rva=0x13495DD then §6.9 OutParms defect (should not fire — HasOutParms gated at pre-flight) ***"
+                                  : (dHP<0)                           ? "*** OPTION C SUCCEEDS: BP dispatcher fired and minion HP dropped -- CAST half of E4 predicate MET via direct callable ***"
+                                  : (dHP==0&&elapsedMs<50)            ? "CLEAN-REFUSE FAST (<50ms): dispatcher ran, downstream declined OR pre-check diverted (Can Upgrade Ability / IsLevelAbilityModifierPressed / TryActivateAbility virtual)"
+                                  : (dHP==0)                          ? "CLEAN-REFUSE: dispatcher ran, activation refused (tail Loki.log LogLokiAbilitySystem within 2s of E4C_CALL_ISSUE to discriminate which internal branch)"
+                                  :                                     "UNEXPECTED (HP moved on wrong side)";
+                                Markerf("[E4C] E4C_RESULT   faulted=%s elapsedMs=%llu minPreHP=%.2f minPostHP=%.2f minPostBits=%08X/%08X dHP=%+.2f res[0]=0x%llX  %s\r\n",
+                                        eflt?"YES":"no",(unsigned long long)elapsedMs,
+                                        (double)minPreHP,(double)minPostHP,minPostBB,minPostBC,(double)dHP,
+                                        (unsigned long long)res[0],verdict);
+                            }
+                        }
+                    }
                 }
             }
         }
