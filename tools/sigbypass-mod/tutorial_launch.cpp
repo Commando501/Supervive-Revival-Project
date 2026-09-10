@@ -18454,6 +18454,11 @@ static void DoBotSpawn(){
                 // of the E4 predicate is unlocked via a direct shim call — bypassing OS input
                 // entirely). Log the return SpecHandle + pre/post Items.Num. Log tag: [E4B].
 #endif
+#ifndef KBFE4CALLID
+#define KBFE4CALLID 3 // S191 OPTION K/M/N default InputID argument to GetByInputID / TryActivateAbilityByInputID.
+                      // 3 = LokiAbilityInputID::Ability1 (LMB). 5 = Ability3 (LeftShift = MiniDash Charges).
+                      // Set to KBFINPUTID at variant build time when granting a non-Ability1 ability.
+#endif
 #ifndef KBFE4N
 #define KBFE4N 0 // S191 E4 OPTION N (2026-09-10, tag [E4N] in markers): raw-native ACTIVATION.
                 // Calls TryActivateAbilityByInputID's IMPL at ImageBase+0x5544F70 directly via a raw
@@ -25034,9 +25039,9 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                         else {
                             memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
                             uint32_t gao=ParamOffset(gch,"AbilityID"); if(gao==0xFFFFFFFF)gao=0;
-                            *(uint8_t*)((uint8_t*)g_pbuf+gao)=(uint8_t)3;
+                            *(uint8_t*)((uint8_t*)g_pbuf+gao)=(uint8_t)KBFE4CALLID;
                             uint64_t tStart=GetTickCount64();
-                            Markerf("[E4K] E4K_CALL_ISSUE: ASC.GetAbilityByInputID(3) tStart=%llu\r\n",(unsigned long long)tStart);
+                            Markerf("[E4K] E4K_CALL_ISSUE: ASC.GetAbilityByInputID(%u) tStart=%llu\r\n",(unsigned)KBFE4CALLID,(unsigned long long)tStart);
                             bool gflt=CallNativeGuarded(gf,gth,gch,(void*)pASC,g_pbuf,g_rbuf);
                             uint64_t elapsedMs=GetTickCount64()-tStart;
                             uint32_t gro=ParamOffset(gch,"ReturnValue"); if(gro==0xFFFFFFFF)gro=8;
@@ -25121,12 +25126,12 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                     // Direct raw-native call: GetAbilityByInputID impl at RVA 0x5526210
                     typedef uintptr_t (__fastcall *GetByInputIDFn)(void* ASC, uint8_t InputID);
                     GetByInputIDFn fn = (GetByInputIDFn)(g_modBase + 0x5526210);
-                    Markerf("[E4M] E4M_CALL_ISSUE: raw call fn=0x%llX(=ImageBase+0x5526210) ASC=0x%llX InputID=3\r\n",
-                            (unsigned long long)fn,(unsigned long long)pASC);
+                    Markerf("[E4M] E4M_CALL_ISSUE: raw call fn=0x%llX(=ImageBase+0x5526210) ASC=0x%llX InputID=%u\r\n",
+                            (unsigned long long)fn,(unsigned long long)pASC,(unsigned)KBFE4CALLID);
                     uintptr_t retAbil = 0;
                     bool faulted = false;
                     uint64_t tStart = GetTickCount64();
-                    __try { retAbil = fn((void*)pASC, (uint8_t)3); }
+                    __try { retAbil = fn((void*)pASC, (uint8_t)KBFE4CALLID); }
                     __except(EXCEPTION_EXECUTE_HANDLER){ faulted = true; }
                     uint64_t elapsedMs = GetTickCount64() - tStart;
                     char rcn[128]="-"; if(LooksLikePtr(retAbil)&&ClassOf(retAbil))GetFNameStr(NameId(ClassOf(retAbil)),rcn,sizeof(rcn));
@@ -25192,11 +25197,11 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                 typedef bool (__fastcall *TryActivateInputIDFn)(void* ASC, uint8_t InputID);
                 TryActivateInputIDFn fn = (TryActivateInputIDFn)(g_modBase + 0x5544F70);
                 uint64_t tStart = GetTickCount64();
-                Markerf("[E4N] E4N_CALL_ISSUE: raw call fn=0x%llX(=ImageBase+0x5544F70) ASC=0x%llX InputID=3 ; tStart=%llu ; WALL-P disasm-verified no reach to S147 lethal; instance virtuals [+0x2F0]/[+0x578] are the residual risk\r\n",
-                        (unsigned long long)fn,(unsigned long long)pASC,(unsigned long long)tStart);
+                Markerf("[E4N] E4N_CALL_ISSUE: raw call fn=0x%llX(=ImageBase+0x5544F70) ASC=0x%llX InputID=%u ; tStart=%llu ; WALL-P disasm-verified no reach to S147 lethal; instance virtuals [+0x2F0]/[+0x578] are the residual risk\r\n",
+                        (unsigned long long)fn,(unsigned long long)pASC,(unsigned)KBFE4CALLID,(unsigned long long)tStart);
                 bool retBool = false;
                 bool faulted = false;
-                __try { retBool = fn((void*)pASC, (uint8_t)3); }
+                __try { retBool = fn((void*)pASC, (uint8_t)KBFE4CALLID); }
                 __except(EXCEPTION_EXECUTE_HANDLER){ faulted = true; }
                 uint64_t elapsedMs = GetTickCount64() - tStart;
 

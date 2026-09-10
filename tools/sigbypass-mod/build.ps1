@@ -947,6 +947,15 @@ $Variants = @{
         # KE4DIRECTGE=0 to keep HP attribution clean. Class: CALL-ONLY + one activation call.
         'e4-n'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4N=1')
 
+        # e4-n-a3 (S191 E4 OPTION S variant, 2026-09-10): grant Ability3 (MiniDash Charges) instead of
+        # Ability1 (LMB Selector). MiniDash is NOT a Selector so it lacks the sub-ability population
+        # requirement that blocks Ability1's activation ([instance+0x618] max=0 vs [+0x608] count=4).
+        # KBFABIL="Ability3" selects hero.Ability3 = GS_Ronin_MiniDash_Charges_C. KBFINPUTID=5 = LeftShift.
+        # KBFE4CALLID=5 makes E4N/E4M/E4K call GetByInputID(5) and TryActivateAbilityByInputID(5) —
+        # activating Ability3 instead of Ability1. If MiniDash activates and damages, E4 predicate MET
+        # via non-Selector ability. If also refuses, the wall is deeper than Selector.
+        'e4-n-a3'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4N=1')
+
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
         #   specifically did nothing'.
