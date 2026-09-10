@@ -1,0 +1,39 @@
+﻿[2026.09.10-20.51.04:228][255]VivoxCore: <Request requestId="" action="Account.AnonymousLogin.1"><ConnectorHandle>https://mt2p.www.vivox.com/api2</ConnectorHandle><ParticipantPropertyFrequency>100</ParticipantPropertyFrequency><EnableBuddiesAndPresence>false</EnableBuddiesAndPresence><BuddyManagementMode>Accept</BuddyManagementMode><AccountHandle>sip:.theory0017-lo18.9b9d2c887e2524f918e383a895f2f1c2.@mt2p.vivox.com</AccountHandle><AcctName>.theory0017-lo18.9b9d2c887e2524f918e383a895f2f1c2.</AcctName><DisplayName /><AccessToken /><Languages /></Request>
+[2026.09.10-20.51.04:562][265]VivoxCore: <Response requestId="" action="Account.AnonymousLogin.1"><ReturnCode>1</ReturnCode><Results><StatusCode>20127</StatusCode><StatusString /><Uri /><EncodedUriWithTag /></Results><InputXml><Request requestId="" action="Account.AnonymousLogin.1"><ConnectorHandle>https://mt2p.www.vivox.com/api2</ConnectorHandle><ParticipantPropertyFrequency>100</ParticipantPropertyFrequency><EnableBuddiesAndPresence>false</EnableBuddiesAndPresence><BuddyManagementMode>Accept</BuddyManagementMode><AccountHandle>sip:.theory0017-lo18.9b9d2c887e2524f918e383a895f2f1c2.@mt2p.vivox.com</AccountHandle><AcctName>.theory0017-lo18.9b9d2c887e2524f918e383a895f2f1c2.</AcctName><DisplayName /><AccessToken /><Languages /></Request></InputXml></Response>
+[2026.09.10-20.51.35:130][182]VivoxCore: <Request requestId="" action="Account.AnonymousLogin.1"><ConnectorHandle>https://mt2p.www.vivox.com/api2</ConnectorHandle><ParticipantPropertyFrequency>100</ParticipantPropertyFrequency><EnableBuddiesAndPresence>false</EnableBuddiesAndPresence><BuddyManagementMode>Accept</BuddyManagementMode><AccountHandle>sip:.theory0017-lo18.9b9d2c887e2524f918e383a895f2f1c2.@mt2p.vivox.com</AccountHandle><AcctName>.theory0017-lo18.9b9d2c887e2524f918e383a895f2f1c2.</AcctName><DisplayName /><AccessToken /><Languages /></Request>
+[2026.09.10-20.51.35:430][191]VivoxCore: <Response requestId="" action="Account.AnonymousLogin.1"><ReturnCode>1</ReturnCode><Results><StatusCode>20127</StatusCode><StatusString /><Uri /><EncodedUriWithTag /></Results><InputXml><Request requestId="" action="Account.AnonymousLogin.1"><ConnectorHandle>https://mt2p.www.vivox.com/api2</ConnectorHandle><ParticipantPropertyFrequency>100</ParticipantPropertyFrequency><EnableBuddiesAndPresence>false</EnableBuddiesAndPresence><BuddyManagementMode>Accept</BuddyManagementMode><AccountHandle>sip:.theory0017-lo18.9b9d2c887e2524f918e383a895f2f1c2.@mt2p.vivox.com</AccountHandle><AcctName>.theory0017-lo18.9b9d2c887e2524f918e383a895f2f1c2.</AcctName><DisplayName /><AccessToken /><Languages /></Request></InputXml></Response>
+[2026.09.10-20.52.16:139][240]LogAbilitySystem: Initializing Set BaseSet
+[2026.09.10-20.52.16:139][240]LogAbilitySystem: Property BaseStaminaRegenStunTime new value is: 4.50
+[2026.09.10-20.52.16:140][240]LogAbilitySystem: Property AttackPowerRating new value is: 1.00
+[2026.09.10-20.52.16:140][240]LogAbilitySystem: Property AbilityPowerRating new value is: 1.00
+[2026.09.10-20.52.16:140][240]LogAbilitySystem: Property Toughness new value is: 1.00
+[2026.09.10-20.52.16:140][240]LogAbilitySystem: Property CantStopFactor new value is: 0.00
+[2026.09.10-20.52.16:140][240]LogAbilitySystem: Property DamageCoefficient new value is: 1.00
+[2026.09.10-20.52.16:140][240]LogAbilitySystem: Property DamageTakenCoefficient new value is: 1.00
+[2026.09.10-20.52.16:140][240]LogLokiCharacter: Verbose: [Client][BP_Minion_KaijuAxeLeader_Stagger_Tutorial_C_2147471103] Cleared ignored allies when moving
+[2026.09.10-20.52.16:154][240]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.20:650][241]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.22:367][315]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.22:500][339]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.23:000][435]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.23:665][578]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.23:834][614]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.25:028][865]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.27:881][ 60]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.29:655][442]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.29:823][463]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.30:123][503]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.30:459][562]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.30:589][588]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.30:810][633]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.31:596][796]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.31:985][880]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.32:977][ 88]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.35:653][543]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.36:883][775]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.37:861][983]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.38:503][126]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.38:731][174]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.39:254][291]LogAbilitySystem: Warning: TryActivateAbility called with invalid Handle
+[2026.09.10-20.52.49:275][456]VivoxCore: <Request requestId="" action="Account.AnonymousLogin.1"><ConnectorHandle>https://mt2p.www.vivox.com/api2</ConnectorHandle><ParticipantPropertyFrequency>100</ParticipantPropertyFrequency><EnableBuddiesAndPresence>false</EnableBuddiesAndPresence><BuddyManagementMode>Accept</BuddyManagementMode><AccountHandle>sip:.theory0017-lo18.9b9d2c887e2524f918e383a895f2f1c2.@mt2p.vivox.com</AccountHandle><AcctName>.theory0017-lo18.9b9d2c887e2524f918e383a895f2f1c2.</AcctName><DisplayName /><AccessToken /><Languages /></Request>
+[2026.09.10-20.52.49:584][522]VivoxCore: <Response requestId="" action="Account.AnonymousLogin.1"><ReturnCode>1</ReturnCode><Results><StatusCode>20127</StatusCode><StatusString /><Uri /><EncodedUriWithTag /></Results><InputXml><Request requestId="" action="Account.AnonymousLogin.1"><ConnectorHandle>https://mt2p.www.vivox.com/api2</ConnectorHandle><ParticipantPropertyFrequency>100</ParticipantPropertyFrequency><EnableBuddiesAndPresence>false</EnableBuddiesAndPresence><BuddyManagementMode>Accept</BuddyManagementMode><AccountHandle>sip:.theory0017-lo18.9b9d2c887e2524f918e383a895f2f1c2.@mt2p.vivox.com</AccountHandle><AcctName>.theory0017-lo18.9b9d2c887e2524f918e383a895f2f1c2.</AcctName><DisplayName /><AccessToken /><Languages /></Request></InputXml></Response>

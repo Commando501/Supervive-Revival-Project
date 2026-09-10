@@ -936,6 +936,17 @@ $Variants = @{
         # CALL-ONLY read-only.
         'e4-m'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4M=1')
 
+        # e4-n (S191 E4 OPTION N, 2026-09-10, tag [E4N]): raw-native ACTIVATION discriminator + potential
+        # E4 predicate resolver. E4M proved raw-native GetByInputID works when S55 lies. E4N tests the
+        # activation twin: raw-native TryActivateAbilityByInputID(3) via ImageBase+0x5544F70. WALL-P
+        # risk downgraded per pre-flight recon: (impl 0x5544F70 tail-JMPs 0x5531920) AND (0x5531920 is
+        # NOW LIT in merged16) AND (0x5531920's disasm has ZERO reach to S147 lethal 0x4480B30 in its
+        # first 240 bytes) AND (0x4480000 is STILL DARK in the live process). Signature: bool
+        # __fastcall(ULokiAbilitySystemComponent*, uint8_t). If returns true AND minion HP drops,
+        # E4 predicate MET. If FK-32, we've measured lethality via this new surface. Requires
+        # KE4DIRECTGE=0 to keep HP attribution clean. Class: CALL-ONLY + one activation call.
+        'e4-n'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4N=1')
+
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
         #   specifically did nothing'.

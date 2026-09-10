@@ -18454,6 +18454,30 @@ static void DoBotSpawn(){
                 // of the E4 predicate is unlocked via a direct shim call — bypassing OS input
                 // entirely). Log the return SpecHandle + pre/post Items.Num. Log tag: [E4B].
 #endif
+#ifndef KBFE4N
+#define KBFE4N 0 // S191 E4 OPTION N (2026-09-10, tag [E4N] in markers): raw-native ACTIVATION.
+                // Calls TryActivateAbilityByInputID's IMPL at ImageBase+0x5544F70 directly via a raw
+                // __fastcall function pointer, bypassing the S55 CallNativeGuarded/FFrame framework.
+                // Discriminator: E4A F1's S55-invoked TryActivateAbilityByInputID returned false —
+                // but that was via S55, and E4K/E4M proved S55 has a UObject*-return marshaling
+                // defect. E4N tests whether the RUNTIME actually activates the ability when called
+                // properly. WALL-P risk originally deferred KBFE4E_ACTIVATE:
+                //   - TryActivateAbilityByInputID impl 0x5544F70 tail-calls 0x5531920
+                //   - 0x5531920 WAS PAGE_NOACCESS in merged14
+                // NOW BYTE-VERIFIED in merged16 (current live process at 66+ min uptime):
+                //   - 0x5531920 IS LIT (3800/4096 non-zero)
+                //   - Its 240-byte disasm: calls 0x44C28E0 (GetPrimaryInstance) + helper 0x5512480
+                //     + virtual [instance vtable + 0x2F0] + virtual [+0x578]
+                //   - ZERO paths to S147 lethal InternalTryActivateAbility 0x4480B30
+                //   - 0x4480000 (S147 page) is STILL DARK in the live process, meaning S147 has
+                //     NEVER been called in this session — so 0x5531920 does not converge on S147
+                // Signature: `bool (__fastcall*)(ULokiAbilitySystemComponent*, uint8_t InputID)`
+                // Success = returns true AND minion HP drops. If returns true but HP unchanged,
+                // activation fired but did not damage this frame. If returns false, one of the
+                // virtual dispatch checks refused. If FK-32, WALL-P is real via this surface after
+                // all (extremely unlikely given the disasm evidence). Log tag: [E4N]. Requires
+                // KE4DIRECTGE=0 to keep HP-change attributable to activation, not to KE4DIRECTGE.
+#endif
 #ifndef KBFE4M
 #define KBFE4M 0 // S191 E4 OPTION M (2026-09-10, tag [E4M] in markers): direct-native-call probe.
                 // Same setup as E4K (no pokes, no state changes) but calls GetAbilityByInputID's
@@ -18882,6 +18906,30 @@ static void DoBotSpawn(){
 #endif
 #if KBFE4M && (KE4DIRECTGE || KBFE4A || KBFE4B || KBFE4C || KBFE4E || KBFE4F || KBFE4K)
 #error S191 KBFE4M must be flown in isolation to make the raw-native-call return value uniquely attributable
+#endif
+#if KBFE4N && !KBFE4
+#error S191 KBFE4N requires KBFE4=1
+#endif
+#if (KBFE4N != 0) && (KBFE4N != 1)
+#error S191 KBFE4N is a bool: 0 (dead-strip) or 1 (raw-native TryActivateAbilityByInputID(3))
+#endif
+#if KBFE4N && (KBFSELFCAL || KBFBINDONLY || KBFBINDAVATAR)
+#error S191 KBFE4N runs the #else K_* path
+#endif
+#if KBFE4N && KBFNATURALINPUT
+#error S191 KBFE4N must NOT compile the S147 natural-input observation machinery
+#endif
+#if KBFE4N && !(KBFARMS & 0xC6)
+#error S191 KBFE4N requires KBFARMS=0xC6 (K_BIND+K_GRANT+K_ALIVE+K_GASATTR)
+#endif
+#if KBFE4N && (KBFARMS & 0x08)
+#error S191 KBFE4N must NOT set K_ACTIVATE (KBFARMS&0x08)
+#endif
+#if KBFE4N && KE4DIRECTGE
+#error S191 KBFE4N must be flown with KE4DIRECTGE=0 so HP change is attributable to the raw-native activation
+#endif
+#if KBFE4N && (KBFE4A || KBFE4B || KBFE4C || KBFE4E || KBFE4F || KBFE4K || KBFE4M)
+#error S191 KBFE4N must be flown in isolation
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -25089,6 +25137,82 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                             LooksLikePtr(retAbil)?"*** RAW-NATIVE RETURNED NON-NULL. If E4K on same state returned NULL, S55 primitive has a defect specific to this UFunction shape (likely return-value marshaling of UObject*). ***":
                                                    "*** RAW-NATIVE ALSO NULL. S55 exonerated; runtime genuinely returns NULL despite byte model predicting non-null. WALL P block is INSIDE 0x44C28E0's decoded CFG or has an unmodeled dependency. ***");
                 }
+            }
+        }
+#endif
+#if KBFE4N
+        // ---- OPTION N: raw-native TryActivateAbilityByInputID(3). E4M's twin for the ACTIVATION
+        //      surface. If runtime activates + damages minion -> E4 predicate MET via raw call.
+        //      If activates cleanly with no damage this frame -> half-win, downstream fires
+        //      but our K_GRANT'd instance may need input-binding or timing to actually damage.
+        //      If returns false -> one of the state helpers or virtuals refused; readback the
+        //      minion HP anyway to confirm attribution.
+        //      Signature: bool __fastcall TryActivateAbilityByInputID(ULokiAbilitySystemComponent*, uint8_t)
+        //      WALL-P risk downgraded per pre-flight recon:
+        //        - 0x5544F70 (impl) tail-JMPs 0x5531920 after iterator + spec.Ability check
+        //        - 0x5531920 was PAGE_NOACCESS in merged14; NOW LIT (merged16) — game runs it
+        //        - 0x5531920 disasm: GetPrimaryInstance + helper + 2 virtuals; NO reach to
+        //          0x4480B30 S147 lethal; 0x4480000 still DARK in live process
+        //      Class: CALL-ONLY read-only + one activation call to game code. ----
+        {
+            uintptr_t pASC=BfGetAsc(hero);
+            char aan[128]="-"; if(LooksLikePtr(pASC)&&ClassOf(pASC))GetFNameStr(NameId(ClassOf(pASC)),aan,sizeof(aan));
+            float minPreHP  = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+            uint32_t minPreBB = SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+            uint32_t minPreBC = SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+            Markerf("[E4N] pre-activate: pASC=0x%llX(%s) minionPreHP=%.2f preBits=%08X/%08X g_modBase=0x%llX\r\n",
+                    (unsigned long long)pASC,LooksLikePtr(pASC)?aan:"NULL",(double)minPreHP,minPreBB,minPreBC,
+                    (unsigned long long)g_modBase);
+            if(!LooksLikePtr(pASC)){ Marker("[E4N] REFUSE: player ASC not present\r\n"); }
+            else if(!g_modBase){ Marker("[E4N] REFUSE: g_modBase not resolved\r\n"); }
+            else if(!SafeReadable((void*)(pASC+0x538),16)){ Marker("[E4N] REFUSE: ASC+0x538 unreadable\r\n"); }
+            else {
+                // Also enumerate Items[N] with InputID==3 diagnostically so we know which spec the iterator picks
+                uintptr_t itemsData=*(uintptr_t*)(pASC+0x538);
+                int32_t   itemsNum =*(int32_t*)(pASC+0x540);
+                Markerf("[E4N] Items header: Data=0x%llX Num=%d\r\n",(unsigned long long)itemsData,itemsNum);
+                for(int32_t i=0;i<itemsNum && i<8;i++){
+                    uintptr_t cand=itemsData+(uintptr_t)i*0xF8;
+                    if(!SafeReadable((void*)(cand+0x24),4)) continue;
+                    int32_t iid=*(int32_t*)(cand+0x24);
+                    if(iid!=3) continue;
+                    uintptr_t ab=SafeReadable((void*)(cand+0x10),8)?*(uintptr_t*)(cand+0x10):0;
+                    int32_t   nrN=SafeReadable((void*)(cand+0x88),4)?*(int32_t*)(cand+0x88):0;
+                    int32_t   rpN=SafeReadable((void*)(cand+0x98),4)?*(int32_t*)(cand+0x98):0;
+                    Markerf("[E4N] cand spec[%d]@0x%llX Handle=%d Ability=0x%llX NonRep{%d} Rep{%d}\r\n",
+                            i,(unsigned long long)cand,*(int32_t*)(cand+0xC),(unsigned long long)ab,nrN,rpN);
+                }
+
+                // Sanity: 0x4480000 (S147 lethal page) must still be dark in the live process.
+                // If it's lit already, some other code path has reached S147 without killing us,
+                // downgrading our confidence in "0x5531920 does not converge on S147".
+                // We can't cheaply check page-decryption from the shim; the offline recon does.
+
+                // The raw-native call
+                typedef bool (__fastcall *TryActivateInputIDFn)(void* ASC, uint8_t InputID);
+                TryActivateInputIDFn fn = (TryActivateInputIDFn)(g_modBase + 0x5544F70);
+                uint64_t tStart = GetTickCount64();
+                Markerf("[E4N] E4N_CALL_ISSUE: raw call fn=0x%llX(=ImageBase+0x5544F70) ASC=0x%llX InputID=3 ; tStart=%llu ; WALL-P disasm-verified no reach to S147 lethal; instance virtuals [+0x2F0]/[+0x578] are the residual risk\r\n",
+                        (unsigned long long)fn,(unsigned long long)pASC,(unsigned long long)tStart);
+                bool retBool = false;
+                bool faulted = false;
+                __try { retBool = fn((void*)pASC, (uint8_t)3); }
+                __except(EXCEPTION_EXECUTE_HANDLER){ faulted = true; }
+                uint64_t elapsedMs = GetTickCount64() - tStart;
+
+                float minPostHP  = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                uint32_t minPostBB = SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+                uint32_t minPostBC = SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+                float dHP = minPostHP - minPreHP;
+                const char* verdict =
+                    faulted                     ? "*** FAULT: WALL-P class via raw-native activation (0x5531920 virtual dispatch reached lethal code) ***"
+                  : (retBool && dHP<0)          ? "*** E4N SUCCEEDS: raw-native TryActivateAbilityByInputID returned true AND minion HP dropped -- E4 predicate MET via direct raw-native call ***"
+                  : (retBool && dHP==0)         ? "*** ACTIVATION FIRED but no damage this frame (return=true, HP unchanged) -- either damage is deferred to a later tick, or the LMB_Selector's activation path doesn't damage directly ***"
+                  : (!retBool && !faulted)      ? "return=false clean (one of 0x5531920's virtual dispatch checks refused) -- attribution: state helper 0x5512480 OR virtual [+0x2F0] OR [+0x578] OR helper 0x5512600 OR the fallback path"
+                  :                               "(unreadable)";
+                Markerf("[E4N] E4N_RESULT faulted=%s retBool=%u elapsedMs=%llu minPreHP=%.2f minPostHP=%.2f preBits=%08X/%08X postBits=%08X/%08X dHP=%+.2f  %s\r\n",
+                        faulted?"YES":"no",(unsigned)retBool,(unsigned long long)elapsedMs,
+                        (double)minPreHP,(double)minPostHP,minPreBB,minPreBC,minPostBB,minPostBC,(double)dHP,verdict);
             }
         }
 #endif
