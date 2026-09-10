@@ -816,6 +816,21 @@ $Variants = @{
         # SITTING 5 -- the whole minimum loop attempt in one injection (all six steps). 0x3F.
         'botfight-full'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0x3F','-DKBFDMGTGT=1')
 
+        # ---- S191 E4 PREDICATE (2026-09-10): a PLAYER ability kills a hostile target minion. ----
+        # KBFARMS=0xC6 = K_BIND(0x02)+K_GRANT(0x04)+K_ALIVE(0x40)+K_GASATTR(0x80); NO K_ACTIVATE(0x08)
+        # (a shim TryActivate dies+0xDEAD -- the NATURAL LMB casts), NO K_SPAWN/DAMAGE/WIREBOT (E4
+        # spawns+seeds its OWN target via BfE4SpawnSeedTarget). KBFABIL="Ability1" (GS_Ronin_LightAttack1,
+        # the LMB basic). KBFINPUTID=3 (LokiAbilityInputID::Ability1 -- [I,strong]: Ability3=5 [M] under
+        # the standard None/Confirm/Cancel prefix => Ability1=3; verify live or via the fallback).
+        # KBFNATURALINPUT=0: E4 gets out of the way via g_done+FsDisarm, not the S147 observation
+        # machinery. FLIGHT: stage gft->fo->sp->this DLL; wait for [E4] E4_COMPLETE + [FS] disarm; then
+        # scratchpad/s190/tools/send-lmb.ps1 (short <240ms tap = melee cone); watch minion Health -> 0.
+        'e4'                  = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1')
+        # E4 with the graded-consolation fallback armed: ALSO fires AdjustHealth(-250) on the seeded
+        # minion (proves a direct write reduces its HP; NOT the natural-cast predicate). A real treatment
+        # pair vs 'e4' -- KE4DIRECTGE moves the digest ('--dupes' clean).
+        'e4-directge'         = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKE4DIRECTGE=1')
+
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
         #   specifically did nothing'.

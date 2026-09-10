@@ -18401,6 +18401,58 @@ static void DoBotSpawn(){
                          // safe to enable in the default variant set once flown; the whole S189-MV
                          // chain unlocks canonical player-hero WASD drivability.
 #endif
+#ifndef KBFE4
+#define KBFE4 0 // S191 E4 PREDICATE (2026-09-10, tag [E4] in markers): the acceptance predicate --
+                // a PLAYER ability that DAMAGES and KILLS a hostile enemy. Runs in the #else K_*
+                // natural-input path (NOT KBFSELFCAL). With KBFARMS=0xC6 (K_BIND 0x02 + K_GRANT 0x04
+                // + K_ALIVE 0x40 + K_GASATTR 0x80, NO K_ACTIVATE 0x08) and KBFABIL="Ability1", the
+                // shim binds the player ASC and grants GS_Ronin_LightAttack1 at KBFINPUTID, then --
+                // in phase-0, before BfFinish/g_done -- BfE4SpawnSeedTarget spawns
+                // BP_Minion_TargetBot_TTK_C ~KBFE4_FRONT uu in FRONT of the hero (inside the LMB
+                // 360uu/110deg cone; hero faces -Y per S189-BOT), InitAAIs its constructor-built ASC,
+                // and SEEDS its Health+MaxHealth LOW (KBFE4_SEEDBITS). Phase-0 then sets g_done and
+                // FsDisarm restores every funcswap -- the shim is FULLY out of the way (S158's proven
+                // winning end-state, minus the fragile MiniDash CDO observation machinery). An
+                // EXTERNAL natural LMB tap (scratchpad/s190/tools/send-lmb.ps1, <240ms = melee cone)
+                // then casts LightAttack1 -> the cone hits the seeded minion -> a REAL damage GE
+                // (GE_Ronin_LightAttack_Damage, execution->PostGameplayEffectExecute -- NOT
+                // AdjustHealth, NOT a self-modifier) -> minion Health 100 -> 0. WALL E is [M]
+                // FAVORABLE: the minion self-inits team 100 (=enemy of the player by raw integer
+                // compare) in an UNGATED BeginPlay, so do NOT poke its team. The shim does NOT
+                // TryActivate (a shim-originated TryActivate dies+0xDEAD -- WALL P; natural input only).
+                // Risk class: SpawnActor (proven S135) + DATA writes (aligned, readback-verified,
+                // SEH-guarded) + one InitAAI + (KE4DIRECTGE only) one reflected CallNativeGuarded.
+                // NO module-image write, NO PI hook. Default 0 dead-strips (regression gates
+                // byte-identical). Read docs/s190-wallp-predicate-plan.md.
+#endif
+#ifndef KBFE4_TARGET
+#define KBFE4_TARGET "BP_Minion_TargetBot_TTK_C" // practice-range TTK dummy: team 100 (enemy),
+                // AggroRange=0 / bAddToEnemyListOnDamage=False (won't fight back or trip FK-32),
+                // ships a constructor-built LokiAbilitySystemComponent + BaseSet + HealthSet, and is
+                // instrumented to DIE (OnDeath/OnDeathTime = free receipts). Plain LokiMinionCharacter.
+#endif
+#ifndef KBFE4_SEEDBITS
+#define KBFE4_SEEDBITS 0x42C80000u // 100.0f: seed the minion Health+MaxHealth (Base+Current) LOW so
+                // ONE LMB tap kills. MaxHealth is GE-driven (AttributesKey=PracticeRangeTargetDummy),
+                // NOT baked, so the seed is REQUIRED (S156 [M] offsets: Health@+0x70, MaxHealth@+0x80,
+                // FGameplayAttributeData 0x10-spaced, Base@+0x8/Current@+0xC).
+#endif
+#ifndef KBFE4_FRONT
+#define KBFE4_FRONT 200.0 // uu to place the minion in FRONT of the hero (hero faces -Y per S189-BOT),
+                // inside the 360uu/110deg LMB cone. Set via g_xform translation before SpawnActorCls.
+#endif
+#ifndef KE4DIRECTGE
+#define KE4DIRECTGE 0 // S191 E4 FALLBACK: after spawn+seed, ALSO fire AdjustHealth(KBFE4_DELTABITS)
+                // directly on the seeded minion ASC via the S153-validated wrapperExact path (thunk
+                // base+0x5294270, tail->impl 0x5516610). Proves a DIRECT WRITE reduces the minion's HP
+                // (isolates a targeting gate from an attribute-layer gate). This is the graded
+                // CONSOLATION, NOT the predicate -- the predicate is the natural player cast. Requires
+                // KBFE4=1. Same mechanism S190 Track D used to kill a bot [M].
+#endif
+#ifndef KBFE4_DELTABITS
+#define KBFE4_DELTABITS 0xC37A0000u // -250.0f: KE4DIRECTGE fallback AdjustHealth delta (nonlethal on
+                // a 100-HP seed it would clamp to 0 = kill; use -250 as a visible drop). KE4DIRECTGE only.
+#endif
 // KBFBINDCENSUS's own defines live earlier (near KFRAMEINIT) so FsThunk / FsDisarm can reference
 // the forward-declared helpers. The compile-time policy check for KBFHANDLEACT/KBFHANDLEMISS
 // (which are declared in this KBF block) stays here.
@@ -18485,6 +18537,27 @@ static void DoBotSpawn(){
 #endif
 #if (KBFPOKEGRAVITY != 0) && (KBFPOKEGRAVITY != 1)
 #error S189-MV-WASD KBFPOKEGRAVITY is a bool: 0 (dead-strip) or 1 (poke CMC+GravityScale = 1.0f on the KWIREGAS PLAYER so it falls to the tutorial floor and enters Walking mode for WASD drivability)
+#endif
+#if (KBFE4 != 0) && (KBFE4 != 1)
+#error S191 E4 KBFE4 is a bool: 0 (dead-strip) or 1 (spawn+seed the hostile target minion for the natural player cast)
+#endif
+#if KBFE4 && (KBFSELFCAL || KBFBINDONLY || KBFBINDAVATAR)
+#error S191 E4 runs the #else K_* path: requires KBFSELFCAL=0, KBFBINDONLY=0, KBFBINDAVATAR=0 (S155 bind-avatar/S148 calibration are a DIFFERENT branch that cannot natural-cast)
+#endif
+#if KBFE4 && KBFNATURALINPUT
+#error S191 E4 must NOT compile the S147 natural-input observation machinery: KBFNATURALINPUT=0. E4 gets out of the way via g_done+FsDisarm; the natural LMB is EXTERNAL (send-lmb.ps1), and the S147 observation apparatus is MiniDash-charge-specific (BfS147ClaimCdoOwnership requires chargesOff==0x628) and would SUPPRESS the body (S158)
+#endif
+#if KBFE4 && !((KBFARMS & 0x02) && (KBFARMS & 0x04))
+#error S191 E4 requires K_BIND (KBFARMS&0x02) + K_GRANT (KBFARMS&0x04): the player ASC must be wired and the ability granted for the natural cast to route
+#endif
+#if KBFE4 && (KBFARMS & 0x08)
+#error S191 E4 must NOT set K_ACTIVATE (KBFARMS&0x08): a shim-originated TryActivate enters, never returns, then 0xDEAD (WALL P, S145/S146). The natural LMB tap casts instead
+#endif
+#if KE4DIRECTGE && !KBFE4
+#error S191 KE4DIRECTGE (direct-write fallback) requires KBFE4=1
+#endif
+#if (KE4DIRECTGE != 0) && (KE4DIRECTGE != 1)
+#error S191 KE4DIRECTGE is a bool: 0 (dead-strip) or 1 (also fire AdjustHealth on the seeded minion as the graded consolation)
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -23827,6 +23900,218 @@ static void BfS148DoCalibration(){
 }
 #endif
 
+#if KBFE4
+// ==============================================================================================
+// S191 E4 -- SPAWN + SEED THE HOSTILE TARGET MINION FOR THE NATURAL PLAYER CAST.
+// Called from DoBotFight()'s phase-0, AFTER K_BIND+K_GRANT (so the player ASC is wired and
+// GS_Ronin_LightAttack1 is granted) and BEFORE BfFinish/g_done (so the minion is standing in the
+// LMB cone when the shim disarms and the external natural LMB tap arrives). Spawns
+// BP_Minion_TargetBot_TTK_C ~KBFE4_FRONT uu in front of the -Y-facing hero, InitAAIs its
+// constructor-built ASC, resolves its LokiAttributeSetHealth, and seeds Health+MaxHealth to
+// KBFE4_SEEDBITS (low, e.g. 100). Under KE4DIRECTGE it ALSO fires AdjustHealth(KBFE4_DELTABITS) on
+// the seeded ASC (the graded consolation, NOT the predicate). Fail-closed with a distinct RESULT
+// token so any null is attributable. Risk class: SpawnActor + DATA writes + InitAAI + (fallback)
+// one reflected CallNativeGuarded. No module-image write, no PI hook.
+static void BfE4SpawnSeedTarget(uintptr_t hero){
+    Marker("[E4] ================ S191 E4: SPAWN + SEED THE HOSTILE TARGET MINION ================\r\n");
+    const char* result="UNSET";
+    do {
+        // ---- read the hero's world location + rotation (RootComponent -> RelativeLocation /
+        //      RelativeRotation), both BY NAME. Place the minion along the hero's ACTUAL forward
+        //      (computed from Yaw) so the LMB cone hits it regardless of facing; -Y is the fallback
+        //      (S189-BOT [M] measured the tutorial hero facing -Y == Yaw -90). ----
+        double hx=0,hy=0,hz=0; bool haveHeroLoc=false;
+        double pitch=0,yaw=-90.0,roll=0; bool haveHeroRot=false; // default Yaw -90 => -Y forward
+        uint32_t ro=PropOffsetSuper(ClassOf(hero),"RootComponent");
+        uintptr_t rc=(ro!=0xFFFFFFFF&&SafeReadable((void*)(hero+ro),8))?*(uintptr_t*)(hero+ro):0;
+        if(LooksLikePtr(rc)){
+            uint32_t lo=PropOffsetSuper(ClassOf(rc),"RelativeLocation"); if(lo==0xFFFFFFFF) lo=0x158;
+            if(SafeReadable((void*)(rc+lo),24)){ hx=*(double*)(rc+lo); hy=*(double*)(rc+lo+8); hz=*(double*)(rc+lo+16); haveHeroLoc=true; }
+            uint32_t rot=PropOffsetSuper(ClassOf(rc),"RelativeRotation"); // FRotator: Pitch,Yaw,Roll (3 doubles)
+            if(rot!=0xFFFFFFFF&&SafeReadable((void*)(rc+rot),24)){ pitch=*(double*)(rc+rot); yaw=*(double*)(rc+rot+8); roll=*(double*)(rc+rot+16); haveHeroRot=true; }
+        }
+        if(!haveHeroLoc){ Marker("[E4] hero RootComponent/RelativeLocation UNREADABLE -> REFUSE (would spawn at a stray TrainingVolume transform, far from the hero and out of the LMB cone)\r\n"); result="NO_HERO_LOC"; break; }
+        // forward from Yaw (UE: ForwardVector.xy = (cos yaw, sin yaw); yaw in degrees).
+        const double D2R=0.017453292519943295;
+        double fx=__builtin_cos(yaw*D2R), fy=__builtin_sin(yaw*D2R);
+        double tx=hx+(double)(KBFE4_FRONT)*fx, ty=hy+(double)(KBFE4_FRONT)*fy, tz=hz;
+        Markerf("[E4] hero loc=(%.1f,%.1f,%.1f) rot(P/Y/R)=(%.1f,%.1f,%.1f) haveRot=%s forward=(%.3f,%.3f) -> target loc=(%.1f,%.1f,%.1f) (%.0f uu forward)\r\n",
+                hx,hy,hz,pitch,yaw,roll,haveHeroRot?"yes":"NO(-Y default)",fx,fy,tx,ty,tz,(double)(KBFE4_FRONT));
+
+        // ---- set up the SpawnActorCls infra (g_gm2/g_gsCDO/g_begin*/g_finish*/g_xform), place the
+        //      spawn transform at the target loc, then spawn the minion. ----
+        ResolveSpawnSeq();
+        // Resolve the target class from a prioritized candidate list of hostile (team-100, constructor-ASC)
+        // minions. S191 FLIGHT 1 measured BP_Minion_TargetBot_TTK_C is NOT resident in LVL_Tutorial (it is
+        // a practice-range asset); a live census found these minions LOADED in the tutorial world. The list
+        // logs residency for EACH candidate (a free residency census) and spawns the first resident one.
+        // KBFE4_TARGET (build-time override) is tried first.
+        static const char* kE4Cands[]={
+            KBFE4_TARGET,
+            "BP_Minion_KaijuAxeLeader_Stagger_Tutorial_C", // tutorial-specific combat minion [M resident S191]
+            "BP_Minion_SquadLeader_C",
+            "BP_Minion_KaijuAxeLeader_C",
+            "BP_Minion_Ghost_C",
+            "BP_Minion_VaultGuardShooter_C",
+            "BP_Minion_C",                                  // plain base minion (may be abstract -> spawn refuses)
+        };
+        uintptr_t tcls=0; const char* tname="(none)";
+        for(int ci=0; ci<(int)(sizeof(kE4Cands)/sizeof(kE4Cands[0])); ci++){
+            uintptr_t c=FindClassExact(kE4Cands[ci]);
+            Markerf("[E4] target candidate %-46s -> %s\r\n",kE4Cands[ci],LooksLikePtr(c)?"RESIDENT":"not loaded");
+            if(!tcls&&LooksLikePtr(c)){ tcls=c; tname=kE4Cands[ci]; }
+        }
+        if(!LooksLikePtr(tcls)){ Marker("[E4] NO candidate target class is resident in this world -> REFUSE\r\n"); result="TARGET_CLASS_MISSING"; break; }
+        Markerf("[E4] selected target class = %s @0x%llX\r\n",tname,(unsigned long long)tcls);
+        if(haveHeroLoc&&SafeWritable((void*)(g_xform+0x20),24)){
+            *(double*)(g_xform+0x20)=tx; *(double*)(g_xform+0x20+8)=ty; *(double*)(g_xform+0x20+0x10)=tz; // Translation@0x20
+        }
+        int e4botA=-1,e4heroA=-1; BsScanWorld("E4-pre",&e4botA,&e4heroA,nullptr,nullptr);
+        uintptr_t minion=SpawnActorCls(tcls,"e4-target");
+        char mn[128]="-"; if(LooksLikePtr(minion)&&ClassOf(minion))GetFNameStr(NameId(ClassOf(minion)),mn,sizeof(mn));
+        double mx=0,my=0,mz=0;
+        uint32_t mro=LooksLikePtr(minion)?PropOffsetSuper(ClassOf(minion),"RootComponent"):0xFFFFFFFF;
+        uintptr_t mrc=(mro!=0xFFFFFFFF&&SafeReadable((void*)(minion+mro),8))?*(uintptr_t*)(minion+mro):0;
+        if(LooksLikePtr(mrc)){ uint32_t mlo=PropOffsetSuper(ClassOf(mrc),"RelativeLocation"); if(mlo==0xFFFFFFFF)mlo=0x158;
+            if(SafeReadable((void*)(mrc+mlo),24)){ mx=*(double*)(mrc+mlo); my=*(double*)(mrc+mlo+8); mz=*(double*)(mrc+mlo+16); } }
+        Markerf("[E4] TARGET_SPAWNED minion=0x%llX(%s) loc=(%.1f,%.1f,%.1f) dxyFromHero=(%.1f,%.1f)\r\n",
+                (unsigned long long)minion,LooksLikePtr(minion)?mn:"NULL",mx,my,mz,mx-hx,my-hy);
+        if(!LooksLikePtr(minion)){ result="SPAWN_FAILED"; break; }
+
+        // ---- the minion's team (WALL E read-only check: MUST be enemy of the player) ----
+        {
+            uint32_t mpo=PropOffsetSuper(ClassOf(minion),"PlayerState");
+            uintptr_t mps=(mpo!=0xFFFFFFFF&&SafeReadable((void*)(minion+mpo),8))?*(uintptr_t*)(minion+mpo):0;
+            int mteam=-999;
+            // Minion team can live on the minion itself (MinionTeamID/OriginalTeamIndex) or its team comp.
+            uint32_t mto=PropOffsetSuper(ClassOf(minion),"MinionTeamID");
+            if(mto!=0xFFFFFFFF&&SafeReadable((void*)(minion+mto),4)) mteam=*(int32_t*)(minion+mto);
+            Markerf("[E4] minion PlayerState=0x%llX MinionTeamID=%d (100 => enemy of the player; do NOT poke -- WALL E [M] favorable)\r\n",
+                    (unsigned long long)mps,mteam);
+        }
+
+        // ---- get the minion's constructor-built ASC ----
+        uintptr_t asc=BfGetAsc(minion);
+        char an[128]="-"; if(LooksLikePtr(asc)&&ClassOf(asc))GetFNameStr(NameId(ClassOf(asc)),an,sizeof(an));
+        Markerf("[E4] minion ASC(minion+AbilitySystemComponentStorage)=0x%llX(%s)\r\n",(unsigned long long)asc,LooksLikePtr(asc)?an:"NULL");
+        if(!LooksLikePtr(asc)){ result="NO_ASC"; break; }
+
+        // ---- InitAbilityActorInfo (owner=minion, avatar=minion) so a GE / AdjustHealth can bind + apply ----
+        bool iaaiFaulted=BfCallInitAAI(asc,minion,minion);
+        uint8_t ns0=SafeReadable((void*)(asc+0x800),1)?*(uint8_t*)(asc+0x800):0xFF;
+        if(ns0!=0&&ns0!=0xFF&&SafeWritable((void*)(asc+0x800),1)) *(uint8_t*)(asc+0x800)=0; // owner-authoritative
+        // Confirm the avatar actually bound (S155:AvatarActor@ASC+0x410). A null/non-minion avatar
+        // means AdjustHealth/GE would no-op (S190 F3/F4), so it is a distinct fail-closed outcome.
+        uintptr_t avatar=SafeReadable((void*)(asc+0x410),8)?*(uintptr_t*)(asc+0x410):0;
+        bool avatarOk=(avatar==minion);
+        Markerf("[E4] InitAbilityActorInfo %s ; netsim@+0x800 %u->%u ; AvatarActor@+0x410=0x%llX %s\r\n",
+                iaaiFaulted?"FAULTED":"ok",ns0,SafeReadable((void*)(asc+0x800),1)?*(uint8_t*)(asc+0x800):0xFF,
+                (unsigned long long)avatar,avatarOk?"== minion (BOUND)":"*** NOT the minion -- the AdjustHealth fallback would no-op (S190 F3/F4); the natural-cast GE targets the attribute set directly and may still apply ***");
+        if(iaaiFaulted){ result="INITAAI_FAULTED"; break; } // a fault is fatal; a merely-unbound avatar is not (natural GE may still land)
+
+        // ---- resolve the minion's LokiAttributeSetHealth + offsets (AttributeSetHealthStorage, then
+        //      the ASC's SpawnedAttributes walk). BY NAME; Base@+0x8 / Current@+0xC is the [M] layout. ----
+        uintptr_t set=0; uint32_t healthOff=0xFFFFFFFF,maxOff=0xFFFFFFFF; char setcn[128]="-";
+        uint32_t hso=PropOffsetSuper(ClassOf(minion),"AttributeSetHealthStorage");
+        uintptr_t hsSet=(hso!=0xFFFFFFFF&&SafeReadable((void*)(minion+hso),8))?*(uintptr_t*)(minion+hso):0;
+        if(LooksLikePtr(hsSet)){ uint32_t ho=PropOffsetSuper(ClassOf(hsSet),"Health"),mo=PropOffsetSuper(ClassOf(hsSet),"MaxHealth");
+            if(ho!=0xFFFFFFFF&&mo!=0xFFFFFFFF){ set=hsSet; healthOff=ho; maxOff=mo; if(ClassOf(hsSet))GetFNameStr(NameId(ClassOf(hsSet)),setcn,sizeof(setcn)); } }
+        if(!LooksLikePtr(set)){
+            uint32_t sa=PropOffsetSuper(ClassOf(asc),"SpawnedAttributes");
+            if(sa!=0xFFFFFFFF&&SafeReadable((void*)(asc+sa),16)){
+                uintptr_t data=*(uintptr_t*)(asc+sa); int32_t num=*(int32_t*)(asc+sa+8);
+                if(LooksLikePtr(data)&&num>0&&num<=64) for(int i=0;i<num;i++){
+                    if(!SafeReadable((void*)(data+i*8),8))continue; uintptr_t as=*(uintptr_t*)(data+i*8); if(!LooksLikePtr(as))continue;
+                    uint32_t ho=PropOffsetSuper(ClassOf(as),"Health"),mo=PropOffsetSuper(ClassOf(as),"MaxHealth");
+                    if(ho==0xFFFFFFFF||mo==0xFFFFFFFF)continue; set=as; healthOff=ho; maxOff=mo; if(ClassOf(as))GetFNameStr(NameId(ClassOf(as)),setcn,sizeof(setcn)); break; } }
+        }
+        Markerf("[E4] TARGET_SET_RESOLVE set=0x%llX(%s) healthOff=0x%X maxOff=0x%X\r\n",
+                (unsigned long long)set,setcn,healthOff,maxOff);
+        if(!LooksLikePtr(set)){ result="SET_UNRESOLVED"; break; }
+
+        // ---- verify the resolved Health set is REGISTERED in the ASC's SpawnedAttributes (that is
+        //      what AdjustHealth's GetSet<> and a GE both use to find the Health attribute). A
+        //      constructor-built minion ASC normally registers it; if not, append it via the game's
+        //      own ResizeGrow (S132 DxAppend, DATA-class) -- Track-D STATION 3.5. ----
+        {
+            int setInSpawned=0; int32_t spawnedNum=0;
+            uint32_t sa=PropOffsetSuper(ClassOf(asc),"SpawnedAttributes");
+            if(sa!=0xFFFFFFFF&&SafeReadable((void*)(asc+sa),16)){
+                uintptr_t d=*(uintptr_t*)(asc+sa); spawnedNum=*(int32_t*)(asc+sa+8);
+                if(LooksLikePtr(d)&&spawnedNum>0&&spawnedNum<=64) for(int i=0;i<spawnedNum;i++)
+                    if(SafeReadable((void*)(d+i*8),8)&&*(uintptr_t*)(d+i*8)==set){ setInSpawned=1; break; }
+            }
+            if(!setInSpawned&&sa!=0xFFFFFFFF){
+                int rHealth=DxAppend(asc,sa,set);
+                if(SafeReadable((void*)(asc+sa),16)){ uintptr_t d=*(uintptr_t*)(asc+sa); int32_t n=*(int32_t*)(asc+sa+8);
+                    if(LooksLikePtr(d)&&n>0&&n<=64) for(int i=0;i<n;i++)
+                        if(SafeReadable((void*)(d+i*8),8)&&*(uintptr_t*)(d+i*8)==set){ setInSpawned=1; break; } }
+                Markerf("[E4] TARGET_SET_REGISTER set was NOT in SpawnedAttributes; DxAppend rHealth=%d -> setInSpawned=%s\r\n",rHealth,setInSpawned?"yes":"NO");
+            } else Markerf("[E4] TARGET_SET_REGISTER setInSpawned=yes spawnedNum=%d (constructor-registered; no append needed)\r\n",spawnedNum);
+        }
+
+        // ---- pre-seed values (settles whether the game's native attr-apply ran on this minion) ----
+        uint32_t preHB=SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0;
+        uint32_t preHC=SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0;
+        uint32_t preMB=SafeReadable((void*)(set+maxOff+0x8),4)?*(uint32_t*)(set+maxOff+0x8):0;
+        uint32_t preMC=SafeReadable((void*)(set+maxOff+0xC),4)?*(uint32_t*)(set+maxOff+0xC):0;
+        Markerf("[E4] pre-seed Health(Base/Curr)=%08X/%08X Max(Base/Curr)=%08X/%08X\r\n",preHB,preHC,preMB,preMC);
+
+        // ---- seed Health+MaxHealth to KBFE4_SEEDBITS (MaxHealth first, then Health; both Base+Current) ----
+        uintptr_t healthPair=set+healthOff+0x8, maxPair=set+maxOff+0x8;
+        const uint64_t seedPair=((uint64_t)(KBFE4_SEEDBITS)<<32)|(uint64_t)(uint32_t)(KBFE4_SEEDBITS);
+        bool hW=(healthPair&7)==0&&SafeWritable((void*)healthPair,8), mW=(maxPair&7)==0&&SafeWritable((void*)maxPair,8);
+        bool seedFaulted=false;
+        if(hW&&mW){ __try{ *(volatile uint64_t*)maxPair=seedPair; MemoryBarrier(); *(volatile uint64_t*)healthPair=seedPair; MemoryBarrier(); }
+                    __except(SEH_FILTER(GetExceptionInformation())){ seedFaulted=true; } }
+        uint32_t poHB=SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0;
+        uint32_t poHC=SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0;
+        uint32_t poMB=SafeReadable((void*)(set+maxOff+0x8),4)?*(uint32_t*)(set+maxOff+0x8):0;
+        uint32_t poMC=SafeReadable((void*)(set+maxOff+0xC),4)?*(uint32_t*)(set+maxOff+0xC):0;
+        bool seedExact=!seedFaulted&&poHB==(uint32_t)(KBFE4_SEEDBITS)&&poHC==(uint32_t)(KBFE4_SEEDBITS)&&poMB==(uint32_t)(KBFE4_SEEDBITS)&&poMC==(uint32_t)(KBFE4_SEEDBITS);
+        Markerf("[E4] TARGET_SEEDED result=%s seedBits=%08X Health=%08X/%08X Max=%08X/%08X wr(h=%u,m=%u) exact=%s\r\n",
+                seedFaulted?"FAULTED":(seedExact?"ok":"MISMATCH"),(uint32_t)(KBFE4_SEEDBITS),poHB,poHC,poMB,poMC,(unsigned)hW,(unsigned)mW,seedExact?"yes":"NO");
+        if(!seedExact){ result="SEED_FAILED"; break; }
+
+#if KE4DIRECTGE
+        // ---- FALLBACK (graded consolation, NOT the predicate): fire AdjustHealth(KBFE4_DELTABITS) on
+        //      the seeded minion ASC via the S153-validated wrapperExact path. Proves a DIRECT WRITE
+        //      reduces the minion's HP (isolates a targeting gate from an attribute-layer gate). ----
+        {
+            void* adjustFn=nullptr; uintptr_t adjustThunk=0,adjustChild=0;
+            ResolveFuncNative(ClassOf(asc),"AdjustHealth",&adjustFn,&adjustThunk,&adjustChild);
+            bool wrapperExact=adjustThunk==g_modBase+0x5294270;
+            bool tailReachesImpl=false;
+            if(wrapperExact&&SafeReadable((void*)(adjustThunk+0x6F),5)){
+                const uint8_t* tp=(const uint8_t*)(adjustThunk+0x6F);
+                if(tp[0]==0xE8){ int32_t rel=*(const int32_t*)(tp+1); uintptr_t tgt=adjustThunk+0x6F+5+(intptr_t)rel;
+                    tailReachesImpl=tgt==(g_modBase+0x5516610); }
+            }
+            uint32_t deltaOff=(adjustChild)?ParamOffset(adjustChild,"HealthDelta"):0xFFFFFFFF; if(deltaOff==0xFFFFFFFF)deltaOff=0;
+            bool dmgOk=GcAlive((uintptr_t)adjustFn)&&wrapperExact&&tailReachesImpl&&LooksLikePtr(adjustChild)&&(deltaOff+4u)<=sizeof(g_pbuf);
+            Markerf("[E4] E4_DIRECTGE_RESOLVE adjustFn=0x%llX thunk=0x%llX wrapperExact=%s tailReachesImpl=%s deltaOff=%u ok=%s\r\n",
+                    (unsigned long long)(uintptr_t)adjustFn,(unsigned long long)adjustThunk,wrapperExact?"yes":"NO",tailReachesImpl?"yes":"NO",deltaOff,dmgOk?"yes":"NO");
+            if(dmgOk){
+                float preHP=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                const uint32_t deltaBits=(uint32_t)(KBFE4_DELTABITS); memcpy((uint8_t*)g_pbuf+deltaOff,&deltaBits,sizeof(deltaBits));
+                float reqDelta=*(const float*)&deltaBits;
+                bool callFaulted=CallNativeGuarded(adjustFn,adjustThunk,adjustChild,(void*)asc,g_pbuf,g_rbuf);
+                float postHP=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                uint32_t postB=SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+                uint32_t postC=SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+                Markerf("[E4] E4_DIRECTGE_FIRE reqDelta=%.2f preHP=%.2f postHP=%.2f postBits=%08X/%08X faulted=%s %s\r\n",
+                        (double)reqDelta,(double)preHP,(double)postHP,postB,postC,callFaulted?"YES":"no",
+                        (!callFaulted&&postHP<preHP)?"*** DIRECT-WRITE DAMAGE APPLIED (fallback, not the predicate) ***":"(no drop)");
+            }
+        }
+#endif
+        result="TARGET_READY";  // spawned + seeded; awaiting the EXTERNAL natural LMB tap (send-lmb.ps1)
+    } while(0);
+    Markerf("[E4] E4_COMPLETE RESULT=%s -- after the shim disarms, send a SHORT LMB tap (<240ms) and watch the minion Health -> 0\r\n",result);
+}
+#endif // KBFE4
+
 static void DoBotFight(){
 #if KBFSELFCAL
     BfS148DoCalibration();
@@ -24254,6 +24539,13 @@ static void DoBotFight(){
 #endif
         }
     }
+
+    // --- E4 (S191): spawn + seed the hostile target minion, then let the shim disarm so a natural
+    //     LMB tap (external) casts GS_Ronin_LightAttack1 and kills it. Runs LAST in phase-0, after the
+    //     bind+grant setup and before BfFinish/g_done -> FsDisarm (the "shim fully out of the way"). ---
+#if KBFE4
+    BfE4SpawnSeedTarget(hero);
+#endif
 
     // ---------- post census ----------
     BfFinish(botA,heroA);
