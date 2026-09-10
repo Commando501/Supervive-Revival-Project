@@ -830,6 +830,13 @@ $Variants = @{
         # minion (proves a direct write reduces its HP; NOT the natural-cast predicate). A real treatment
         # pair vs 'e4' -- KE4DIRECTGE moves the digest ('--dupes' clean).
         'e4-directge'         = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKE4DIRECTGE=1')
+        # S191 E4 OPTION A: after K_GRANT + spawn+seed, call ASC.TryActivateAbilityByInputID(Ability1=3)
+        # via the S55 primitive. Tests whether GAS's InputID→spec map is populated by our plain-GiveAbility
+        # K_GRANT. Impl @ base+0x52971A0, S153 REAL. Ret=false => R-S191-h confirmed (Option B needed); ret=
+        # true + HP drop => Option A wins (natural-cast half unlocked via direct callable). Fault/0xDEAD =>
+        # WALL P proper on the InputID path. Also pre-reads GetAbilityByInputID(3) independently.
+        # KE4DIRECTGE deliberately OFF so a minion HP drop is attributable to the real cast, not the fallback.
+        'e4-a'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4A=1')
 
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call

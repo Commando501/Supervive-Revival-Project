@@ -18441,6 +18441,20 @@ static void DoBotSpawn(){
 #define KBFE4_FRONT 200.0 // uu to place the minion in FRONT of the hero (hero faces -Y per S189-BOT),
                 // inside the 360uu/110deg LMB cone. Set via g_xform translation before SpawnActorCls.
 #endif
+#ifndef KBFE4A
+#define KBFE4A 0 // S191 E4 OPTION A (2026-09-10, tag [E4A] in markers): after K_GRANT + E4 spawn+seed,
+                // call ULokiAbilitySystemComponent::TryActivateAbilityByInputID(LokiAbilityInputID=3)
+                // via the S55 reflected direct-thunk primitive. Impl @ base+0x52971A0, S153-graded REAL.
+                // This tests whether the InputID→spec map is populated by our K_GRANT (which calls
+                // plain native GiveAbility, not BP_AuthGiveAbilityWithInputID). Per docs/s191-lmb-input-
+                // binding-mapped.md, GAS has TWO parallel spec registrations: Items TArray (populated
+                // by plain GiveAbility) and InputID→spec map (populated by BP_AuthGiveAbilityWithInputID).
+                // A ret=false from this call = R-S191-h confirmed (InputID map not populated). A ret=true
+                // + minion HP drop = the natural-cast half of E4 is unlocked via a direct callable. A
+                // fault/0xDEAD = WALL P proper hits the InputID pathway too (S147/S158 class). Reads
+                // minion Health pre and post, logs the bool return + delta. Bypasses OS input entirely
+                // (no send-lmb needed). Requires KBFE4=1. Log tag: [E4A].
+#endif
 #ifndef KE4DIRECTGE
 #define KE4DIRECTGE 0 // S191 E4 FALLBACK: after spawn+seed, ALSO fire AdjustHealth(KBFE4_DELTABITS)
                 // directly on the seeded minion ASC via the S153-validated wrapperExact path (thunk
@@ -18558,6 +18572,12 @@ static void DoBotSpawn(){
 #endif
 #if (KE4DIRECTGE != 0) && (KE4DIRECTGE != 1)
 #error S191 KE4DIRECTGE is a bool: 0 (dead-strip) or 1 (also fire AdjustHealth on the seeded minion as the graded consolation)
+#endif
+#if KBFE4A && !KBFE4
+#error S191 KBFE4A (Option A: TryActivateAbilityByInputID) requires KBFE4=1 (needs the spawned+seeded minion in front)
+#endif
+#if (KBFE4A != 0) && (KBFE4A != 1)
+#error S191 KBFE4A is a bool: 0 (dead-strip) or 1 (call ASC.TryActivateAbilityByInputID(3) via S55 after seed)
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -24103,6 +24123,65 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                 Markerf("[E4] E4_DIRECTGE_FIRE reqDelta=%.2f preHP=%.2f postHP=%.2f postBits=%08X/%08X faulted=%s %s\r\n",
                         (double)reqDelta,(double)preHP,(double)postHP,postB,postC,callFaulted?"YES":"no",
                         (!callFaulted&&postHP<preHP)?"*** DIRECT-WRITE DAMAGE APPLIED (fallback, not the predicate) ***":"(no drop)");
+            }
+        }
+#endif
+#if KBFE4A
+        // ---- OPTION A: call ULokiAbilitySystemComponent::TryActivateAbilityByInputID(3) via S55 direct-
+        //      thunk primitive. Bypasses OS input + Enhanced Input + K2Node_InputAction + BP dispatcher
+        //      entirely. Reads minion Health pre and post, logs the bool return + delta. Impl @ base+
+        //      0x52971A0 (S153 REAL). Also pre-reads GetAbilityByInputID(3) as an independent test of
+        //      whether the InputID→spec map is populated (a null there = R-S191-h confirmed independent
+        //      of the activation call itself). ----
+        {
+            uintptr_t pASC=BfGetAsc(hero);
+            char aan[128]="-"; if(LooksLikePtr(pASC)&&ClassOf(pASC))GetFNameStr(NameId(ClassOf(pASC)),aan,sizeof(aan));
+            float minPreHP=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+            Markerf("[E4A] pre-activate: pASC=0x%llX(%s) minionPreHP=%.2f\r\n",(unsigned long long)pASC,LooksLikePtr(pASC)?aan:"NULL",(double)minPreHP);
+            if(!LooksLikePtr(pASC)){ Marker("[E4A] REFUSE: player ASC not present\r\n"); }
+            else {
+                // First independent test: does GetAbilityByInputID(Ability1=3) see our K_GRANT'd spec?
+                {
+                    void* gf=nullptr; uintptr_t gth=0,gch=0;
+                    ResolveFuncSuper(ClassOf(pASC),"GetAbilityByInputID",&gf,&gth,&gch);
+                    if(gth){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                        uint32_t gao=ParamOffset(gch,"AbilityID"); if(gao==0xFFFFFFFF)gao=0;
+                        // LokiAbilityInputID is an enum byte in reflected params; 3 = Ability1.
+                        *(uint8_t*)((uint8_t*)g_pbuf+gao)=(uint8_t)3;
+                        bool gflt=CallNativeGuarded(gf,gth,gch,(void*)pASC,g_pbuf,g_rbuf);
+                        // Return is a UGameplayAbility* -- ObjectProperty at ReturnValue offset.
+                        uint32_t gro=ParamOffset(gch,"ReturnValue"); if(gro==0xFFFFFFFF)gro=8;
+                        uintptr_t retAbil=SafeReadable((uint8_t*)g_pbuf+gro,8)?*(uintptr_t*)((uint8_t*)g_pbuf+gro):0;
+                        char rcn[128]="-"; if(LooksLikePtr(retAbil)&&ClassOf(retAbil))GetFNameStr(NameId(ClassOf(retAbil)),rcn,sizeof(rcn));
+                        Markerf("[E4A] E4A_GETBYID  faulted=%s return=0x%llX(%s) %s\r\n",gflt?"YES":"no",
+                                (unsigned long long)retAbil,LooksLikePtr(retAbil)?rcn:"NULL",
+                                LooksLikePtr(retAbil)?"*** InputID MAP HAS THE SPEC ***":"(NULL -> R-S191-h confirmed: plain GiveAbility did NOT populate the InputID→spec map)");
+                    } else Marker("[E4A] E4A_GETBYID: GetAbilityByInputID not resolved on the ASC\r\n");
+                }
+                // Then the actual activation: TryActivateAbilityByInputID(3).
+                {
+                    void* af=nullptr; uintptr_t ath=0,ach=0;
+                    ResolveFuncSuper(ClassOf(pASC),"TryActivateAbilityByInputID",&af,&ath,&ach);
+                    if(ath){ memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                        uint32_t ao=ParamOffset(ach,"AbilityID"); if(ao==0xFFFFFFFF)ao=0;
+                        *(uint8_t*)((uint8_t*)g_pbuf+ao)=(uint8_t)3;
+                        Markerf("[E4A] E4A_CALL_ISSUE: calling ASC.TryActivateAbilityByInputID(Ability1=3) ; target=base+0x52971A0\r\n");
+                        bool aflt=CallNativeGuarded(af,ath,ach,(void*)pASC,g_pbuf,g_rbuf);
+                        uint32_t rvo=ParamOffset(ach,"ReturnValue"); if(rvo==0xFFFFFFFF)rvo=1;
+                        uint8_t retBool=SafeReadable((uint8_t*)g_pbuf+rvo,1)?*(uint8_t*)((uint8_t*)g_pbuf+rvo):0xFF;
+                        float minPostHP=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                        uint32_t minPostBB=SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+                        uint32_t minPostBC=SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+                        float dHP=minPostHP-minPreHP;
+                        const char* verdict = aflt ? "*** FAULT: WALL-P-CLASS ON THE INPUTID PATH ***"
+                                            : (retBool==1&&dHP<0) ? "*** OPTION A SUCCEEDS: return=true AND minion HP dropped -- natural-cast half unlocked via direct callable ***"
+                                            : (retBool==1&&dHP==0)? "return=true but minion HP unchanged (cast fired but did not damage the minion this frame)"
+                                            : (retBool==0)         ? "return=false (activation refused: either InputID map missing our spec, or a downstream gate)"
+                                            :                         "(unreadable return)";
+                        Markerf("[E4A] E4A_RESULT   faulted=%s retBool=%u minPreHP=%.2f minPostHP=%.2f minPostBits=%08X/%08X dHP=%+.2f  %s\r\n",
+                                aflt?"YES":"no",(unsigned)retBool,(double)minPreHP,(double)minPostHP,minPostBB,minPostBC,(double)dHP,verdict);
+                    } else Marker("[E4A] REFUSE: TryActivateAbilityByInputID not resolved on the ASC\r\n");
+                }
             }
         }
 #endif
