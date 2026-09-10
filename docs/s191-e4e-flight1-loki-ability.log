@@ -1,0 +1,10 @@
+﻿[2026.09.10-19.33.08:747][617]LogLokiCharacter: Verbose: [Client][BP_HERO_Ronin_C_2147471315] Cleared ignored allies when moving
+[2026.09.10-19.34.06:517][892]LogAbilitySystem: Initializing Set BaseSet
+[2026.09.10-19.34.06:517][892]LogAbilitySystem: Property BaseStaminaRegenStunTime new value is: 4.50
+[2026.09.10-19.34.06:518][892]LogAbilitySystem: Property AttackPowerRating new value is: 1.00
+[2026.09.10-19.34.06:518][892]LogAbilitySystem: Property AbilityPowerRating new value is: 1.00
+[2026.09.10-19.34.06:518][892]LogAbilitySystem: Property Toughness new value is: 1.00
+[2026.09.10-19.34.06:518][892]LogAbilitySystem: Property CantStopFactor new value is: 0.00
+[2026.09.10-19.34.06:518][892]LogAbilitySystem: Property DamageCoefficient new value is: 1.00
+[2026.09.10-19.34.06:518][892]LogAbilitySystem: Property DamageTakenCoefficient new value is: 1.00
+[2026.09.10-19.34.06:518][892]LogLokiCharacter: Verbose: [Client][BP_Minion_KaijuAxeLeader_Stagger_Tutorial_C_2147471215] Cleared ignored allies when moving
