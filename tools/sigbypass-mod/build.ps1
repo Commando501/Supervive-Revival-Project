@@ -980,6 +980,7 @@ $Variants = @{
         'e4-t'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4T=1')
         # e4-t-a3 variant: same as e4-t but grants Ability3 (MiniDash Charges) — non-Selector, no sub-abilities
         'e4-t-a3'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1')
+        'e4-t-a4'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_SEQUENCE=1')
 
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call

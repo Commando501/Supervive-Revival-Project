@@ -18454,6 +18454,9 @@ static void DoBotSpawn(){
                 // of the E4 predicate is unlocked via a direct shim call — bypassing OS input
                 // entirely). Log the return SpecHandle + pre/post Items.Num. Log tag: [E4B].
 #endif
+#ifndef KBFE4T_SEQUENCE
+#define KBFE4T_SEQUENCE 0 // S191 E4T-A4 (2026-09-10): when set, E4T calls BP_AuthBeginWarmup → Sleep → Invoke → Sleep → DashHit(optional) as a chained sequence instead of first-match. Requires KBFE4T=1.
+#endif
 #ifndef KBFE4T
 #define KBFE4T 0 // S191 E4 OPTION T (2026-09-10, tag [E4T] in markers): ProcessEvent K2_ActivateAbility
                 // bypass. Grants ability via plain GiveAbility (K_GRANT), then invokes K2_ActivateAbility
@@ -19028,6 +19031,9 @@ static void DoBotSpawn(){
 #endif
 #if KBFE4T && (KBFE4A || KBFE4B || KBFE4C || KBFE4E || KBFE4F || KBFE4K || KBFE4M || KBFE4N || KBFE4P || KBFE4Q)
 #error S191 KBFE4T must be flown in isolation
+#endif
+#if KBFE4T_SEQUENCE && !KBFE4T
+#error S191 KBFE4T_SEQUENCE requires KBFE4T=1
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -25551,6 +25557,65 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                         }
                         if(!fn){ Marker("[E4T] REFUSE: no candidate functions found on instance class chain\r\n"); }
                         else {
+#if KBFE4T_SEQUENCE
+                            // E4T-A4: chained-call sequence. Look up specific phase-state functions
+                            // by name and call in NATURAL CAST order: Warmup → Invoke → (optional) DashHit.
+                            // E4T-A3 measured: single Invoke call hits MiniDash's phase-state gate and
+                            // is refused with 'Attempted to dash outside of Invoke, Channeling and
+                            // Warmup phase'. Warmup entry MUST come first to open the state gate.
+                            typedef void (*PEFn)(void*, void*, void*);
+                            PEFn call = (PEFn)pe;
+                            uintptr_t fnWarmup=FindBPFunc(ClassOf(inst),"BP_AuthBeginWarmup",nullptr);
+                            uintptr_t fnInvoke=FindBPFunc(ClassOf(inst),"Invoke",nullptr);
+                            uintptr_t fnDashHit=FindBPFunc(ClassOf(inst),"DashHit",nullptr);
+                            Markerf("[E4T-A4] SEQUENCE mode: Warmup=0x%llX Invoke=0x%llX DashHit=0x%llX\r\n",
+                                    (unsigned long long)fnWarmup,(unsigned long long)fnInvoke,(unsigned long long)fnDashHit);
+                            float hp0 = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                            Markerf("[E4T-A4] hpStart=%.2f\r\n",(double)hp0);
+                            // STEP 1: Warmup
+                            if(fnWarmup){
+                                memset(g_bplocals,0,sizeof(g_bplocals));
+                                bool f1=false; uint64_t t1=GetTickCount64();
+                                Markerf("[E4T-A4] STEP1_CALL BP_AuthBeginWarmup fn=0x%llX\r\n",(unsigned long long)fnWarmup);
+                                __try { call((void*)inst,(void*)fnWarmup,(void*)g_bplocals); } __except(EXCEPTION_EXECUTE_HANDLER){ f1=true; }
+                                uint64_t d1=GetTickCount64()-t1;
+                                Sleep(150);
+                                float hp1=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                                Markerf("[E4T-A4] STEP1_RESULT fault=%s elapsedMs=%llu hpAfter=%.2f dHP=%+.2f\r\n",
+                                        f1?"YES":"no",(unsigned long long)d1,(double)hp1,(double)(hp1-hp0));
+                            } else { Marker("[E4T-A4] STEP1_SKIP BP_AuthBeginWarmup not found\r\n"); }
+                            // STEP 2: Invoke (should transition Warmup → Channel → Invoke phase)
+                            if(fnInvoke){
+                                memset(g_bplocals,0,sizeof(g_bplocals));
+                                bool f2=false; uint64_t t2=GetTickCount64();
+                                Markerf("[E4T-A4] STEP2_CALL Invoke fn=0x%llX\r\n",(unsigned long long)fnInvoke);
+                                __try { call((void*)inst,(void*)fnInvoke,(void*)g_bplocals); } __except(EXCEPTION_EXECUTE_HANDLER){ f2=true; }
+                                uint64_t d2=GetTickCount64()-t2;
+                                Sleep(200);
+                                float hp2=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                                Markerf("[E4T-A4] STEP2_RESULT fault=%s elapsedMs=%llu hpAfter=%.2f dHP=%+.2f\r\n",
+                                        f2?"YES":"no",(unsigned long long)d2,(double)hp2,(double)(hp2-hp0));
+                            } else { Marker("[E4T-A4] STEP2_SKIP Invoke not found\r\n"); }
+                            // STEP 3: DashHit (optional — usually needs a target parameter; we call zero-parm to observe)
+                            if(fnDashHit){
+                                memset(g_bplocals,0,sizeof(g_bplocals));
+                                bool f3=false; uint64_t t3=GetTickCount64();
+                                Markerf("[E4T-A4] STEP3_CALL DashHit fn=0x%llX (zero-parm, may fault)\r\n",(unsigned long long)fnDashHit);
+                                __try { call((void*)inst,(void*)fnDashHit,(void*)g_bplocals); } __except(EXCEPTION_EXECUTE_HANDLER){ f3=true; }
+                                uint64_t d3=GetTickCount64()-t3;
+                                Sleep(150);
+                                float hp3=SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                                Markerf("[E4T-A4] STEP3_RESULT fault=%s elapsedMs=%llu hpAfter=%.2f dHP=%+.2f\r\n",
+                                        f3?"YES":"no",(unsigned long long)d3,(double)hp3,(double)(hp3-hp0));
+                            } else { Marker("[E4T-A4] STEP3_SKIP DashHit not found\r\n"); }
+                            float hpF = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                            float dHPtot=hpF-hp0;
+                            const char* verdict =
+                                (dHPtot<0)  ? "*** E4T-A4 SUCCEEDS: PHASE-CHAIN via ProcessEvent DAMAGED MINION -- WALL P DEFEATED ***"
+                              : "clean-return sequence, no HP change: check Loki.log for phase transitions or new refusal messages";
+                            Markerf("[E4T-A4] E4T_A4_COMPLETE hpStart=%.2f hpEnd=%.2f dHPtot=%+.2f %s\r\n",
+                                    (double)hp0,(double)hpF,(double)dHPtot,verdict);
+#else
                             Markerf("[E4T] SELECTED: %s (first match) — calling this one\r\n", foundName);
                             uint32_t fnFlags=SafeReadable((void*)(fn+PDPE_FN_FLAGS),4)?*(uint32_t*)(fn+PDPE_FN_FLAGS):0;
                             uint32_t psz=SafeReadable((void*)(fn+USTRUCT_PROPSIZE),4)?*(uint32_t*)(fn+USTRUCT_PROPSIZE):0;
@@ -25581,6 +25646,7 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                             Markerf("[E4T] E4T_RESULT faulted=%s elapsedMs=%llu minPreHP=%.2f minPostHP=%.2f dHP=%+.2f preBits=%08X/%08X postBits=%08X/%08X  %s\r\n",
                                     faulted?"YES":"no",(unsigned long long)elapsedMs,
                                     (double)minPreHP,(double)minPostHP,(double)dHP,minPreBB,minPreBC,minPostBB,minPostBC,verdict);
+#endif
                         }
                     }
                 }
