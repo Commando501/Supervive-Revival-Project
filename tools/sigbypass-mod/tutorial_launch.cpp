@@ -18460,6 +18460,12 @@ static void DoBotSpawn(){
 #ifndef KBFE4T_CHANNEL
 #define KBFE4T_CHANNEL 0 // S191 E4T-A5 (2026-09-10): when set, insert BP_AuthBeginChanneling between Warmup and Invoke. Requires KBFE4T_SEQUENCE=1.
 #endif
+#ifndef KBFE4T_POKEPHASE
+#define KBFE4T_POKEPHASE 0 // S191 E4T-A6 (2026-09-10): when set, poke [inst+0xF58] = 2 (Warmup) BEFORE calling Invoke. Workflow wf_82319383-e54 identified CurrentStateSpecPhaseType at +0xF58 via UHT FPropertyParams. Requires KBFE4T=1.
+#endif
+#ifndef KBFE4T_POKEVALUE
+#define KBFE4T_POKEVALUE 2 // ELokiSpellPhaseType: 0=Inactive 1=Targeting 2=Warmup 3=Channeling 4=Invoke 5=Winddown 6=Count. Default 2=Warmup; Dash gate accepts phase ∈ {2,3,4}.
+#endif
 #ifndef KBFE4T
 #define KBFE4T 0 // S191 E4 OPTION T (2026-09-10, tag [E4T] in markers): ProcessEvent K2_ActivateAbility
                 // bypass. Grants ability via plain GiveAbility (K_GRANT), then invokes K2_ActivateAbility
@@ -19040,6 +19046,12 @@ static void DoBotSpawn(){
 #endif
 #if KBFE4T_CHANNEL && !KBFE4T_SEQUENCE
 #error S191 KBFE4T_CHANNEL requires KBFE4T_SEQUENCE=1
+#endif
+#if KBFE4T_POKEPHASE && !KBFE4T
+#error S191 KBFE4T_POKEPHASE requires KBFE4T=1
+#endif
+#if KBFE4T_POKEVALUE > 6
+#error S191 KBFE4T_POKEVALUE must be a valid ELokiSpellPhaseType (0..6)
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -25563,6 +25575,58 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                         }
                         if(!fn){ Marker("[E4T] REFUSE: no candidate functions found on instance class chain\r\n"); }
                         else {
+#if KBFE4T_POKEPHASE
+                            // E4T-A6: poke ULokiGameplaySpell::CurrentStateSpecPhaseType at +0xF58 to Warmup(2)
+                            // BEFORE calling Invoke. Workflow wf_82319383-e54 identified this offset via UHT
+                            // FPropertyParams on merged14. Dash gate accepts phase ∈ {2,3,4}. Single aligned
+                            // byte write, readback-verified, restored on exit. Also reads controls:
+                            //   +0x3B0 CurrentSpecHandle (must stay == our handle) — IDENTITY control
+                            //   +0x3A8 CurrentActorInfo   (must stay stable) — STABILITY control
+                            //   +0x408 bIsActive          (must stay 0 per S147) — INSTRUMENT control
+                            //   +0xC18..+0xC23 ReplicatedPhaseData (12 B server-authoritative)
+                            //   +0xF48 CurrentPhase ptr   (should stay NULL until state machine flips)
+                            //   +0xF50 CurrentPhaseEffectHandle (Warmup GE handle when Warmup ran)
+                            //   +0xF58 CurrentStateSpecPhaseType u8  ← THE POKE TARGET
+                            //   +0xF59 LastStateSpecPhaseType u8
+                            const uintptr_t kPhaseByteOff = 0xF58;
+                            uint8_t prePhase = 0, preLast = 0;
+                            uint8_t preRepPhase[12] = {0};
+                            uintptr_t preCurPhase = 0;
+                            uint64_t preEffHandle = 0;
+                            int32_t preSpecHandle = 0;
+                            uintptr_t preActorInfo = 0;
+                            uint8_t preIsActive = 0;
+                            if(SafeReadable((void*)(inst+kPhaseByteOff),2)){
+                                prePhase = *(uint8_t*)(inst+kPhaseByteOff);
+                                preLast  = *(uint8_t*)(inst+kPhaseByteOff+1);
+                            }
+                            if(SafeReadable((void*)(inst+0xC18),12)) memcpy(preRepPhase,(void*)(inst+0xC18),12);
+                            if(SafeReadable((void*)(inst+0xF48),8)) preCurPhase = *(uintptr_t*)(inst+0xF48);
+                            if(SafeReadable((void*)(inst+0xF50),8)) preEffHandle = *(uint64_t*)(inst+0xF50);
+                            if(SafeReadable((void*)(inst+0x3B0),4)) preSpecHandle = *(int32_t*)(inst+0x3B0);
+                            if(SafeReadable((void*)(inst+0x3A8),8)) preActorInfo = *(uintptr_t*)(inst+0x3A8);
+                            if(SafeReadable((void*)(inst+0x408),1)) preIsActive = *(uint8_t*)(inst+0x408);
+                            Markerf("[E4T-A6] PRE  phaseByte@0xF58=%u lastPhase@0xF59=%u curPhase@0xF48=0x%llX effHandle@0xF50=0x%llX specHandle@0x3B0=%d actorInfo@0x3A8=0x%llX bIsActive@0x408=%u\r\n",
+                                    (unsigned)prePhase,(unsigned)preLast,(unsigned long long)preCurPhase,(unsigned long long)preEffHandle,
+                                    (int)preSpecHandle,(unsigned long long)preActorInfo,(unsigned)preIsActive);
+                            Markerf("[E4T-A6] PRE  ReplicatedPhaseData@0xC18[12]= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\r\n",
+                                    preRepPhase[0],preRepPhase[1],preRepPhase[2],preRepPhase[3],
+                                    preRepPhase[4],preRepPhase[5],preRepPhase[6],preRepPhase[7],
+                                    preRepPhase[8],preRepPhase[9],preRepPhase[10],preRepPhase[11]);
+                            // POKE — single aligned byte write. SEH-guarded.
+                            bool pokeOK = false; uint8_t postPokeRead = 0xFF;
+                            if(SafeWritable((void*)(inst+kPhaseByteOff),1)){
+                                __try {
+                                    *(volatile uint8_t*)(inst+kPhaseByteOff) = (uint8_t)KBFE4T_POKEVALUE;
+                                    _mm_mfence();
+                                    postPokeRead = *(uint8_t*)(inst+kPhaseByteOff);
+                                    pokeOK = (postPokeRead == (uint8_t)KBFE4T_POKEVALUE);
+                                } __except(EXCEPTION_EXECUTE_HANDLER){ pokeOK=false; }
+                            }
+                            Markerf("[E4T-A6] POKE  wrote=%u@0xF58 readback=%u pokeOK=%s\r\n",
+                                    (unsigned)KBFE4T_POKEVALUE,(unsigned)postPokeRead, pokeOK?"YES":"NO");
+                            if(!pokeOK){ Marker("[E4T-A6] REFUSE: poke did not land — aborting Invoke call\r\n"); goto e4t_a6_done; }
+#endif // KBFE4T_POKEPHASE
 #if KBFE4T_SEQUENCE
                             // E4T-A4: chained-call sequence. Look up specific phase-state functions
                             // by name and call in NATURAL CAST order: Warmup → Invoke → (optional) DashHit.
@@ -25670,6 +25734,56 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                                     faulted?"YES":"no",(unsigned long long)elapsedMs,
                                     (double)minPreHP,(double)minPostHP,(double)dHP,minPreBB,minPreBC,minPostBB,minPostBC,verdict);
 #endif
+#if KBFE4T_POKEPHASE
+                        e4t_a6_done:;
+                            // POST readback: what did the game do to the phase-state region after our calls?
+                            uint8_t postPhase = 0, postLastPhase = 0;
+                            uint8_t postRepPhase[12] = {0};
+                            uintptr_t postCurPhase = 0;
+                            uint64_t postEffHandle = 0;
+                            int32_t postSpecHandle = 0;
+                            uintptr_t postActorInfo = 0;
+                            uint8_t postIsActive = 0;
+                            if(SafeReadable((void*)(inst+0xF58),2)){
+                                postPhase = *(uint8_t*)(inst+0xF58);
+                                postLastPhase = *(uint8_t*)(inst+0xF59);
+                            }
+                            if(SafeReadable((void*)(inst+0xC18),12)) memcpy(postRepPhase,(void*)(inst+0xC18),12);
+                            if(SafeReadable((void*)(inst+0xF48),8)) postCurPhase = *(uintptr_t*)(inst+0xF48);
+                            if(SafeReadable((void*)(inst+0xF50),8)) postEffHandle = *(uint64_t*)(inst+0xF50);
+                            if(SafeReadable((void*)(inst+0x3B0),4)) postSpecHandle = *(int32_t*)(inst+0x3B0);
+                            if(SafeReadable((void*)(inst+0x3A8),8)) postActorInfo = *(uintptr_t*)(inst+0x3A8);
+                            if(SafeReadable((void*)(inst+0x408),1)) postIsActive = *(uint8_t*)(inst+0x408);
+                            float minPostHPPoke = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                            Markerf("[E4T-A6] POST phaseByte@0xF58=%u lastPhase@0xF59=%u curPhase@0xF48=0x%llX effHandle@0xF50=0x%llX specHandle@0x3B0=%d actorInfo@0x3A8=0x%llX bIsActive@0x408=%u minionHP=%.2f\r\n",
+                                    (unsigned)postPhase,(unsigned)postLastPhase,(unsigned long long)postCurPhase,(unsigned long long)postEffHandle,
+                                    (int)postSpecHandle,(unsigned long long)postActorInfo,(unsigned)postIsActive,(double)minPostHPPoke);
+                            Markerf("[E4T-A6] POST ReplicatedPhaseData@0xC18[12]= %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\r\n",
+                                    postRepPhase[0],postRepPhase[1],postRepPhase[2],postRepPhase[3],
+                                    postRepPhase[4],postRepPhase[5],postRepPhase[6],postRepPhase[7],
+                                    postRepPhase[8],postRepPhase[9],postRepPhase[10],postRepPhase[11]);
+                            // Identity/stability control checks — refuse verdict interpretation if violated
+                            bool identityOK = (postSpecHandle == preSpecHandle) && (postActorInfo == preActorInfo);
+                            const char* pokeVerdict =
+                                !identityOK                    ? "*** VOID: identity control violated (SpecHandle or CurrentActorInfo changed) ***"
+                              : (minPostHPPoke < 100.0f)       ? "*** E4T-A6 SUCCEEDS: minion HP DROPPED after phase poke -- WALL P DEFEATED via 1-byte poke ***"
+                              : (postIsActive != 0)            ? "*** partial: bIsActive flipped 0→1 (S147 model refuted) — activation state advanced but no damage yet ***"
+                              : (postPhase == KBFE4T_POKEVALUE) ? "poke held: phase byte still reads our value, but no damage (Dash body may need additional state or target arg)"
+                              :                                   "poke did not persist: something cleared +0xF58 after our write (game code overwrote it)";
+                            Markerf("[E4T-A6] VERDICT identityOK=%s minionHP %.2f→%.2f phase %u→%u  %s\r\n",
+                                    identityOK?"yes":"NO",(double)minPreHP,(double)minPostHPPoke,
+                                    (unsigned)prePhase,(unsigned)postPhase,pokeVerdict);
+                            // RESTORE original phase byte (safety: don't leave the ability in a modified state)
+                            if(SafeWritable((void*)(inst+0xF58),1)){
+                                __try {
+                                    *(volatile uint8_t*)(inst+0xF58) = prePhase;
+                                    _mm_mfence();
+                                } __except(EXCEPTION_EXECUTE_HANDLER){ }
+                            }
+                            Markerf("[E4T-A6] RESTORE phaseByte@0xF58=%u (from prePhase=%u)\r\n",
+                                    (unsigned)(SafeReadable((void*)(inst+0xF58),1)?*(uint8_t*)(inst+0xF58):0xFF),
+                                    (unsigned)prePhase);
+#endif // KBFE4T_POKEPHASE
                         }
                     }
                 }

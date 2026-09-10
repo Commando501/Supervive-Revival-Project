@@ -1,0 +1,521 @@
+{
+  "summary": "Identify the phase-check byte on MiniDash ability instances",
+  "agentCount": 5,
+  "logs": [],
+  "result": {
+    "synthesis": {
+      "top_candidates": [
+        {
+          "offset_hex": "0xF58",
+          "field_name": "CurrentStateSpecPhaseType",
+          "scalar_type": "uint8 (ELokiSpellPhaseType enum: 0=Inactive 1=Targeting 2=Warmup 3=Channeling 4=Invoke 5=Winddown 6=Count)",
+          "confidence": "high",
+          "rationale": "Lane 2 UHT FPropertyParams for ULokiGameplaySpell, decoded via tools/re/fk13uht.py against merged14. Semantic gate match is exact — Dash log fires when phase ∉ {2,3,4}, and this is the byte encoding those values. SMOKING GUN: if this flips 0→2 after BP_AuthBeginWarmup, WALL P is refuted at this offset."
+        },
+        {
+          "offset_hex": "0xF48",
+          "field_name": "CurrentPhase (ptr to one of the 5 phase subobjects at +0xF18/+0xF20/+0xF28/+0xF30/+0xF38, or NULL)",
+          "scalar_type": "ptr (UObject* ULokiSpellPhase-derived)",
+          "confidence": "high",
+          "rationale": "Lane 2 UHT. Independent gate form — a null-check on this could be the alternative to the enum byte. Reads NULL at baseline; should flip to &spell[+0xF20] (WarmupPhase) when Warmup enters. Also decodes WHICH phase without needing the enum byte."
+        },
+        {
+          "offset_hex": "0xC18",
+          "field_name": "ReplicatedPhaseData (12-byte struct with RepNotify)",
+          "scalar_type": "3x uint8 at intra-struct offsets 0/1/2 (per UHT registrar disasm at 0x552BBF0)",
+          "confidence": "high",
+          "rationale": "Lane 2 UHT + Struct-registrar bytecode disasm. Server-authoritative with OnRep_ReplicatedPhaseData. If the write path is server RPC → replication → OnRep (not client-local direct write), this changes FIRST. Read ALL 12 bytes [+0xC18..+0xC23]. Likely: [+0xC18]=CurrentPhaseType u8, [+0xC19]=PredictionKey u8, [+0xC1A..+0xC23]=timing bytes."
+        },
+        {
+          "offset_hex": "0xF50",
+          "field_name": "CurrentPhaseEffectHandle",
+          "scalar_type": "8-byte struct (FActiveGameplayEffectHandle: i32 Handle + i32 pad/PredictionKey)",
+          "confidence": "medium",
+          "rationale": "Lane 2 UHT. BP_AuthBeginWarmup applied GE_GlideSuppressd_CallerScale_C per E4T-A4 measurement. If the GE handle is stored here (rather than lost/never-tracked), field flips 0 → non-zero. Discriminates 'GE applied but phase byte not written' from 'GE handle discarded'."
+        },
+        {
+          "offset_hex": "0xF59",
+          "field_name": "LastStateSpecPhaseType",
+          "scalar_type": "uint8 (same enum encoding as +0xF58)",
+          "confidence": "medium",
+          "rationale": "Lane 2 UHT. Corroborator for +0xF58: after Warmup entry expect cur=2/last=0. In the failure mode (nothing changes), both stay 0. Free additional byte to sample."
+        },
+        {
+          "offset_hex": "0x3B0",
+          "field_name": "CurrentSpecHandle (IDENTITY CONTROL)",
+          "scalar_type": "int32",
+          "confidence": "high",
+          "rationale": "Lane 4 + measured live across 20+ s145-s147 flights. Must stay == 1 through all four snapshots — if it changes, probe is aimed at the wrong instance and the whole run is void."
+        },
+        {
+          "offset_hex": "0x3A8",
+          "field_name": "CurrentActorInfo (STABILITY CONTROL)",
+          "scalar_type": "ptr (u64)",
+          "confidence": "high",
+          "rationale": "Lane 4 + measured live. Must not change through the probe window. If ptr changes, ASC was rebound and probe is void."
+        },
+        {
+          "offset_hex": "0x408",
+          "field_name": "bIsActive (BASELINE CONTROL)",
+          "scalar_type": "uint8",
+          "confidence": "high",
+          "rationale": "Lane 4 + measured live in s146/s147 as 0 throughout (docs/s146-wallp3-native-handle-fk32.md:38). Include as instrument control: per S147 evidence BP_AuthBeginWarmup did NOT toggle this. If it flips 0→1 during the probe window it CHANGES the current model."
+        },
+        {
+          "offset_hex": "0x628",
+          "field_name": "CurrentCharges (COST-PATH CONTROL)",
+          "scalar_type": "int32",
+          "confidence": "high",
+          "rationale": "Lane 4 + measured live across s145*/s146*/s147*. BP_AuthBeginWarmup should NOT decrement Charges (cost path fires later in Channeling/Invoke). If it does, ApplyCost ran too early — real WALL P diagnostic. CORRECTS task info's claim '+0x628=OwningASC' — that is LMB Selector's layout, not MiniDash-Charges."
+        }
+      ],
+      "probe_range": {
+        "start_offset_hex": "0xC00",
+        "end_offset_hex": "0xF80",
+        "rationale": "896 bytes covering the entire phase-state span identified by Lane 2's UHT decode. Includes ReplicatedPhaseData at +0xC18 (server-authoritative, 12 bytes), the 5 phase subobject pointers at +0xF18..+0xF38 (config — NEGATIVE CONTROLS: must not change), CurrentPhase ptr +0xF48, CurrentPhaseEffectHandle +0xF50, and the phase-type byte cluster +0xF58..+0xF5C. The middle span (+0xC24..+0xF17, ~756 bytes) is stable config (MontageCosmeticsTag, DefaultMontageDetails, WarmupMontagePlayRate, spell config flags, ChargeRefreshDuration, InputHeldTime, OwningSelector ptr) that serves as SCOPE-VALIDATION control — if ANY of it flips between snapshots, the probe has a scope defect and the run is uninterpretable. Reading 896 bytes on one instance is one RPM call. Also read a SECOND small band [+0x3A0..+0x420] (128 bytes) to cover the identity/stability/instrument controls at +0x3A8/+0x3B0/+0x408/+0x409/+0x40A, and [+0x620..+0x630] (16 bytes) for bSpellUsesCharges/CurrentCharges controls. Total per snapshot: ~1040 bytes. Four snapshots per arm × two arms (control + treatment) = ~8.3 KB per flight — trivial."
+      },
+      "call_target_alternatives": [
+        {
+          "name": "Direct poke of +0xF58 = 2 (Warmup) without any BP_AuthBeginWarmup call",
+          "why": "Cleanest single-variable test of whether the Dash log gate reads THIS byte. Write 0x02, immediately attempt Dash. If the log fires, gate is elsewhere. If Dash succeeds without the log, we've proven +0xF58 is the whole gate (and now WALL P reduces to 'what normally writes this byte'). Cost: 1-byte write, readback-verifiable, no module image write."
+        },
+        {
+          "name": "Compound poke: +0xF58=2 AND +0xC18=2 AND +0xF48=<addr of spell+0xF20 (WarmupPhase subobj)>",
+          "why": "Covers all three high-confidence candidates simultaneously. If Dash log still fires, gate uses a field we haven't found. If Dash succeeds, we've bracketed the gate to those three fields — a follow-up bisect (poke each alone) names it."
+        },
+        {
+          "name": "ULokiGameplaySpell::BP_AuthBeginChanneling / BP_AuthBeginInvoke via ProcessEvent(zero-parm)",
+          "why": "If BP_AuthBeginWarmup doesn't set +0xF58 because the transition Warmup→Channeling is what actually writes the runtime byte, calling BeginChanneling directly may reveal that. Discriminates 'ProcessEvent path is broken' from 'Warmup specifically is inert but Channeling/Invoke work'."
+        },
+        {
+          "name": "Reflected ULokiGameplaySpell::GetCurrentPhaseType() call before AND after BP_AuthBeginWarmup",
+          "why": "Free read via the S55 native-call primitive. Returns the enum value the game itself uses. If this getter returns 2 (Warmup) but our raw read at +0xF58 stays 0, the getter reads a different offset — critical instrument correction, would refute Lane 2's whole attribution."
+        },
+        {
+          "name": "ALokiPlayerController+0xBFC read (via [pawn+0x400]->Controller chain)",
+          "why": "Lane 1's fallback hypothesis. Even though S158 refuted S154's handler-tail localization, S154 measured SOMETHING there. If Lane 2's +0xF58 stays 0 across the probe window but the game observably enters Warmup (Loki.log spell state), the state is on the controller and Lane 1's hypothesis becomes primary. Read as byte, no risk."
+        },
+        {
+          "name": "Call ULokiGameplaySpell native method 20 'Dash' directly via S55 primitive with valid Handle=1",
+          "why": "S146 already flew this — the direct native handle-1 call went unrecoverable with 0xDEAD. But now that we can pre-poke +0xF58=2 first, this becomes discriminating: if pre-poked Dash returns cleanly, the WALL P gate IS the phase byte and everything else was cover. If pre-poked Dash still 0xDEADs, there's a second gate beyond the phase check. WARN: known FK-32 risk from S146."
+        }
+      ],
+      "e4t_a5_action_summary": "Build the E4T-A5 probe arm to read from MiniDash instance at 0x1EC0263AAB0 across 4 timepoints (T0 baseline, T0+100ms, T0+500ms, T0+2000ms) around a call to BP_AuthBeginWarmup(). Sample two disjoint bands per snapshot: (1) [+0xC00, +0xF80) = 896 bytes covering the entire phase-state region (contains all 9 top candidates from Lane 2's UHT decode), (2) [+0x3A0, +0x420) + [+0x620, +0x630) = ~144 bytes covering identity/stability/cost controls (+0x3A8/+0x3B0 must stay stable, +0x408 should stay 0 per S147, +0x628 must not decrement). Emit one marker line per snapshot listing the typed scalars at each named offset PLUS a hex dump of the two bands with a hash of the config-only sub-span [+0xC24..+0xF17]. The DECISIVE OUTCOME is the value at +0xF58 after T0: if it reads 2 (Warmup), the phase byte is named and the Dash log gate is bracketed — E4T-A6 poke arm proceeds. If +0xF58 stays 0 but +0xC18 changes, replication path is live but OnRep never wrote the local — hypothesis becomes 'the client-side Dash gate reads +0xF58 which is set only by the OnRep callback, not by BP_AuthBeginWarmup directly'. If ALL phase-state bytes stay 0, BP_AuthBeginWarmup's zero-parm ProcessEvent is inert on this instance and we fall back to alternatives: (a) call GetCurrentPhaseType() reflected first — if it returns non-zero while +0xF58 reads 0, Lane 2's attribution is refuted; (b) probe ALokiPlayerController+0xBFC via [pawn+0x400] chain to check if state lives there instead. IF the config-hash sub-span changes between any two snapshots, the run is VOID (scope defect — either wrong instance or heap adjacency shifted). MANDATORY: read +0x3B0 first and abort if != 1 (wrong instance).",
+      "e4t_a6_action_summary": "If E4T-A5 confirms +0xF58 as the phase byte (flips 0→2 during Warmup window), build E4T-A6 as a 1-byte WRITE arm: poke MiniDash instance +0xF58 = 0x02 (Warmup) as a single-variable test, readback-verify, THEN attempt Dash. Two decisive branches: (i) Dash log line 'Attempted to dash outside...' does NOT fire and MiniDash executes → WALL P is exactly this byte, and the residual question becomes 'what upstream sets +0xF58 during a natural cast'. (ii) Dash log still fires → gate reads a compound predicate (+0xF58 AND +0xC18 AND/OR +0xF48). Follow up with compound poke: +0xF58=2 AND +0xC18[0..2]=2/PredictionKey/0 AND +0xF48=<addr of spell+0xF20 (WarmupPhase subobj)>. If E4T-A5 shows +0xF58 stays 0 but the game DOES enter Warmup per Loki.log, phase state lives on the controller (Lane 1's fallback) and E4T-A6 becomes 'poke controller+0xBFC = 1 via [pawn+0x400] chain', matching S154's original disassembly claim (which S158 refuted the location for but not necessarily the byte offset). Risk class: 1-3 aligned byte writes to heap instance state, readback-verifiable, NO module image write, NO PI hook, NO CDO poke. Instrument-class same as S131/S132 (0/22 lethal). Restore original bytes after Dash attempt (single-flight A-B-A). CAUTION per CLAUDE.md S147: after any Dash attempt, watch for FK-32 kill window (~40-70s from activation per S160/S161) — arm must capture the marker chain BEFORE that window closes, and the DisArm+restore must run BEFORE the kill. If Dash returns 0xDEAD as in S146, the poke path is discriminating in the opposite direction: it means +0xF58 is a necessary-but-not-sufficient condition and there's a second gate downstream — most likely CanActivate or InternalTryActivateAbility per S156's page-census candidates.",
+      "caveats": [
+        "Lane 2's UHT-derived offsets are [M] on layout (UE's UClass::Link literally uses these values) but the field NAMES are UHT-registrar strings — a rename between build and source is impossible because the same registrar populates both. Confidence is high on both offset AND name.",
+        "The Dash impl page 0x551E000 is DARK in merged14 (universally, across every captured process on disk). Byte-level 'which offset does Dash read to gate the log' is unanswerable OFFLINE. This lane synthesis relies on UHT reflection + semantic match to the log-gate condition (phase ∉ {Warmup, Channeling, Invoke}). If a live disasm ever becomes available (page decrypts on EXECUTE per S118), the offset the Dash body reads should be verified directly.",
+        "The E4T-A4 flight measured BP_AuthBeginWarmup adding the Warmup GE but NOT flipping whatever the phase-check reads. If that GE-add was actually the ONLY effect (and no phase-state write happens on the zero-parm ProcessEvent path), the alternate call targets become primary — and the entire single-inject probe strategy may need a two-arm design (test different callers).",
+        "S154's phase-tracker byte cluster at controller +0xBFC/+0xBF4/+0xC04 is CORRECTED by Lane 2 to be inside the WinddownStates UPROPERTY (FSpellCastingStateSpecification config struct at +0xB98 size 0x80). But S154 measured SOMETHING at those offsets — either they're config bytes with distinctive values, OR (less likely) the offsets happen to overlap with genuine runtime state that shares the object. Include controller +0xBFC as a fallback probe if the spell-instance probe returns flat.",
+        "The task info's claim '+0x628 = OwningASC pointer' is REFUTED for MiniDash-Charges (measured across 20+ flights, +0x628 = CurrentCharges int32). This was likely mixed up with LMB Selector's layout. OwningASC on MiniDash-Charges lives at a different offset (probably +0x630 or +0x638) which the probe will incidentally locate as an aligned pointer to the known ASC address.",
+        "FK-32 protector kill window (~40-70s post-activation per S160/S161) constrains E4T-A6 timing. Arm must complete its marker chain AND disarm within that window.",
+        "S189-heal500 measured AdjustHealth silently clamps at MaxHealth — corroborates that WALL P kill-path bytes may exhibit similar 'silently ignored on invalid state' semantics. If E4T-A6's poke to +0xF58 fails to trigger Dash without also poking related state, that's the same class of failure.",
+        "The probe reads 896 + ~144 = ~1040 bytes per snapshot on one instance; 4 snapshots = ~4.2 KB per arm. Trivial cost, but keep the read call to ONE RPM per snapshot to minimize timing skew."
+      ]
+    },
+    "findings": [
+      {
+        "candidates": [
+          {
+            "offset_hex": "0xBFC",
+            "field_name": "bIsWarmupActive (state on ALokiPlayerController, NOT on the ability instance)",
+            "type": "byte/uint8",
+            "confidence": "medium",
+            "evidence": "docs/s156-lokigameplayspell-trace.md:80-82 cites S154 disassembly mapping the Warmup phase byte to ALokiPlayerController+0xBFC. Not visible in binds_members.csv (non-UPROPERTY). Ranked medium because the CONTEXT asks for the ability-instance offset, and this offset is on the CONTROLLER (accessed via [pawn+0x400] chain)."
+          },
+          {
+            "offset_hex": "0xBF4",
+            "field_name": "bIsChannelingActive (state on ALokiPlayerController)",
+            "type": "byte/uint8",
+            "confidence": "medium",
+            "evidence": "docs/s156-lokigameplayspell-trace.md:80-82 corroborates S154's disassembly mapping."
+          },
+          {
+            "offset_hex": "0xC04",
+            "field_name": "bIsInvokeActive (state on ALokiPlayerController)",
+            "type": "byte/uint8",
+            "confidence": "medium",
+            "evidence": "docs/s156-lokigameplayspell-trace.md:80-82 corroborates S154's disassembly mapping. Note the E4T-A4 flight measured BP_AuthBeginWarmup adding a Warmup GE on the ASC but NOT flipping whatever the phase-check reads, which is consistent with the state living on the controller not the ASC."
+          },
+          {
+            "offset_hex": "0xC0C",
+            "field_name": "phase-cooldown/latch byte on ALokiPlayerController",
+            "type": "byte/uint8",
+            "confidence": "medium",
+            "evidence": "S154 disassembly per docs/s156-lokigameplayspell-trace.md; adjacent to the three phase bytes."
+          },
+          {
+            "offset_hex": "0x630-0xA00",
+            "field_name": "CurrentPhaseType (non-UPROPERTY member of ULokiGameplaySpell C++ layer, read by GetCurrentPhaseType() method 30)",
+            "type": "byte (ELokiSpellPhaseType enum)",
+            "confidence": "low",
+            "evidence": "REFLECTION-SCAN NEGATIVE: 143 members of ULokiGameplaySpell (76 methods + 66 properties + 1 delegate) exhaustively enumerated, zero phase-flag or CurrentPhase UPROPERTYs. The getter GetCurrentPhaseType() must read a NON-reflected C++ member. Known UPROPERTY offsets top out near +0x628 (OwningASC per your context), so +0x630 onward is unreflected territory where a CurrentPhase byte would sit. LOW confidence because S154+S156 already located the state on the controller, not the spell instance."
+          },
+          {
+            "offset_hex": "0x498f18",
+            "field_name": "WarmupPhase config-object pointer (ULokiGameplaySpell property 62)",
+            "type": "UObject* (UWarmupPhase)",
+            "confidence": "low",
+            "evidence": "binds_members.csv line 41836. NOTE: this is a file_offset (into the asdump artifact), NOT a runtime offset on the spell instance. Resolve to the runtime offset via a live UPROPERTY walk on the class. The sub-object itself carries ULokiSpellPhase.LokiSpellPhaseType (property 0) which is a TYPE tag not a bIsActive flag; if a bIsActive:1 bitfield exists on the sub-object instance, it lives in the first cacheline post-vtable (subobj+0x28..+0x60) as non-UPROPERTY state."
+          },
+          {
+            "offset_hex": "0x498f65",
+            "field_name": "ChannelingPhase config-object pointer (property 63)",
+            "type": "UObject* (UChannelingPhase)",
+            "confidence": "low",
+            "evidence": "binds_members.csv line 41837. Same caveat: file_offset, not runtime offset. Same rationale as WarmupPhase pointer."
+          },
+          {
+            "offset_hex": "0x498fbe",
+            "field_name": "InvokePhase config-object pointer (property 64)",
+            "type": "UObject* (UInvokePhase)",
+            "confidence": "low",
+            "evidence": "binds_members.csv line 41838. Same caveat: file_offset, not runtime offset. UInvokePhase (class 4217) carries property 0 bManuallyEndInvoke (matches MiniDash's config which sets bManuallyEndInvoke=true per tools/extractor/out/GS_Ronin_MiniDash_Charges_uasset.json line 2669) - this is CONFIG, not runtime state."
+          }
+        ],
+        "lane_name": "Lane 1: UHT reflection scan of binds_members.csv",
+        "notes": "DECISIVE NEGATIVE from reflection alone: the phase-check flag(s) MiniDash's Dash() refusal reads are NOT UPROPERTYs on any class in the ability's chain. Verified over 143 ULokiGameplaySpell members + 32 stock UGameplayAbility properties + full trees of ULokiSpellPhase/UInvokePhase/etc.\\n\\nWhat reflection DID find: ULokiGameplaySpell::GetCurrentPhaseType()const returns ELokiSpellPhaseType (method 30, file_offset 0x496226). This getter is byte-sized-enum-shaped and matches the refusal text 'Attempted to dash outside of Invoke, Channeling and Warmup phase' (LokiGameplaySpell.cpp:1521 per docs/s156). Its backing storage is NOT a UPROPERTY.\\n\\nMiniDash's ubergraph body itself (bpdump_ExecuteUbergraph_GS_Ronin_MiniDash_Charges.txt, 301 entries) contains ZERO GetCurrentPhaseType/CurrentPhase references. Its BP-level guards use Spell_IsActive() + Not_PreBool (5 pairs, locals 75/79/92/96/135/150) against sub-ability lookups via GetAbilityByBaseClass (locals 9/78/91/95). ⇒ the 'Attempted to dash...' refusal fires INSIDE the native Dash() function (method 20, called at bytecode StackNode: Dash line 738), not from BP.\\n\\nBEST BET based on evidence CROSS-DOMAIN (S154 disassembly + S156 source corroboration + this reflection scan): the phase state lives on ALokiPlayerController at +0xBFC/+0xBF4/+0xC04, reachable via [pawn+0x400]->Controller chain. Reflection-scan is BLIND to it (non-UPROPERTY on both the spell AND the controller). A single-target memory-diff probe on the ABILITY INSTANCE +0x400..+0x800 will likely read FLAT — this is a discriminating null: it refutes the E4T-A5-c 'phase state on ability instance' conjecture and redirects to the controller.\\n\\nFOLLOWUP LANES SHOULD: (Lane 2) walk ALokiPlayerController C++ layout beyond its UPROPERTY frontier via merged14 disasm of GetCurrentPhaseType impl at Loki+? to name the exact chain (spell->OwnerASC->Controller-> +0xBFC vs spell->AvatarActor-cast<Controller>->+0xBFC vs stored-controller-ref on spell instance). (Lane 3) grep merged14 for 'Attempted to dash outside' string literal and disassemble backwards to find the exact byte read.",
+        "range_to_diff": {
+          "start_offset_hex": "0x0BE0",
+          "end_offset_hex": "0x0C10",
+          "rationale": "PRIMARY: the S154+S156 phase-byte cluster on ALokiPlayerController (0xBEC latch, 0xBF0/0xBF8 timing floats, 0xBF4 Channeling, 0xBFC Warmup, 0xC04 Invoke, 0xC0C Cooldown, 0xC0D auth). NOTE: this range is on the CONTROLLER (read via [pawn+0x400]), not on the ability instance itself. Probe BOTH: (a) ability_instance+0xBE0..0xC10 (expected FLAT - discriminating null refuting E4T-A5-c), and (b) controller+0xBE0..0xC10 (expected to show at least one byte transitioning 0->1 across the BP_AuthBeginWarmup call). SECONDARY range to sample if primary is flat on the controller too: ability_instance+0x630..0xA00 (non-UPROPERTY C++ tail; GetCurrentPhaseType() must read a byte-enum from somewhere post-UPROPERTY frontier)."
+        }
+      },
+      {
+        "candidates": [
+          {
+            "class": "ULokiGameplaySpell",
+            "field_name": "CurrentStateSpecPhaseType",
+            "offset_hex": "0xF58",
+            "type": "ELokiSpellPhaseType (u8 enum) — 0=Inactive 1=Targeting 2=Warmup 3=Channeling 4=Invoke 5=Winddown 6=Count",
+            "confidence": "high",
+            "evidence": "UHT FPropertyParams for ULokiGameplaySpell (fk13uht.py against dumps/merged14.dump.exe) lists 'CurrentStateSpecPhaseType' Enum at +0x0F58 (StructureSize control passes; adjacent LastStateSpecPhaseType at +0x0F59). Semantic gate match: the log fires when phase NOT in {Warmup=2, Channeling=3, Invoke=4}, so a single-byte check `spell+0xF58 in {2,3,4}` fits exactly. String 'CurrentStateSpecPhaseType' present in .rdata at 0x0896A828 (the FName). Enum value table 'ELokiSpellPhaseType::{Inactive,Targeting,Warmup,Channeling,Invoke,Winddown,Count}' in .rdata at 0x0895E7A0..0x0895E860."
+          },
+          {
+            "class": "ULokiGameplaySpell",
+            "field_name": "CurrentPhase",
+            "offset_hex": "0xF48",
+            "type": "UObject* (points to one of the 5 phase sub-objects at +0xF18/+0xF20/+0xF28/+0xF30/+0xF38, or NULL)",
+            "confidence": "high",
+            "evidence": "UHT: property 'CurrentPhase' Object at +0x0F48. The 5 phase sub-objects at +0x0F18 TargetingPhase / +0x0F20 WarmupPhase / +0x0F28 ChannelingPhase / +0x0F30 InvokePhase / +0x0F38 WinddownPhase (Objects). A null-check on CurrentPhase (which stays NULL until the state machine flips) is a plausible alternate gate form (`if(!CurrentPhase || CurrentPhase == WinddownPhase || CurrentPhase == TargetingPhase) log`). CLAUDE.md S158 corroborates BP body reaches `Pre Dash Start` when phase transitions run correctly."
+          },
+          {
+            "class": "ULokiGameplaySpell",
+            "field_name": "ReplicatedPhaseData",
+            "offset_hex": "0xC18",
+            "type": "FLokiReplicatedPhaseData (Struct, 12 bytes; 3 fields at intra-struct offsets 0, 1, 2 per decoded UHT registrar at fn 0x552BBF0)",
+            "confidence": "high",
+            "evidence": "UHT: property 'ReplicatedPhaseData' Struct at +0x0C18 with OnRep_ReplicatedPhaseData (RepNotify). Struct size = next-prop-offset (MontageCosmeticsTag @+0xC24) − 0xC18 = 12 bytes. Disasm of registrar 0x552BBF0 (200 B, decrypted, disassembled) shows 3 x AddCppProperty calls with member offsets 0/1/2. Server-authoritative phase state — CLIENT-side Dash bail may check THIS (not the client-local CurrentStateSpecPhaseType) if MiniDash predicts nothing. Sample all 12 bytes: [+0xC18..+0xC23]. Likely layout: [+0xC18]=CurrentPhaseType u8, [+0xC19]=PredictionKey u8, [+0xC1A..+0xC23]=timing/count word(s)."
+          },
+          {
+            "class": "ULokiGameplaySpell",
+            "field_name": "LastStateSpecPhaseType",
+            "offset_hex": "0xF59",
+            "type": "ELokiSpellPhaseType (u8 enum) — 0..6 same encoding as CurrentStateSpecPhaseType",
+            "confidence": "medium",
+            "evidence": "UHT: property 'LastStateSpecPhaseType' Enum at +0x0F59 (immediately after CurrentStateSpecPhaseType at +0xF58). Not itself a gate, but reading both bytes at once identifies phase transitions in memory-diff: BEFORE-cast should show both = 0 (Inactive); AFTER a real Warmup entry should show cur=2, last=0. In S147/E4T-A4's failure mode both stay 0."
+          },
+          {
+            "class": "ULokiGameplaySpell",
+            "field_name": "CurrentPhaseEffectHandle",
+            "offset_hex": "0xF50",
+            "type": "FActiveGameplayEffectHandle (Struct, 8 bytes = i32 Handle + i32 Padding/PredictionKey/AbilitySpecHandle)",
+            "confidence": "medium",
+            "evidence": "UHT: 'CurrentPhaseEffectHandle' Struct at +0x0F50 (immediately between CurrentPhase ptr at +0xF48 and CurrentStateSpecPhaseType at +0xF58). BP_AuthBeginWarmup applied GE_GlideSuppressd_CallerScale_C for 4.8 s per LANE 1 context — if that handle got stored HERE (rather than lost), the field flips 0 → non-zero. Discriminates 'GE never applied' from 'GE applied but phase byte not written'."
+          },
+          {
+            "class": "ULokiGameplaySpell",
+            "field_name": "bCurrentPhaseServerYawLock",
+            "offset_hex": "0xF5A",
+            "type": "bool (u8, 0/1)",
+            "confidence": "low",
+            "evidence": "UHT: 'bCurrentPhaseServerYawLock' Bool at +0x0F5A. Set when the current phase config has bYawLock=true. Weak signal but free to sample — non-zero implies phase entered and its config was consulted."
+          },
+          {
+            "class": "ULokiGameplaySpell",
+            "field_name": "PressOrHoldParadigm",
+            "offset_hex": "0xF5B",
+            "type": "u8 enum (EPressOrHoldParadigm)",
+            "confidence": "low",
+            "evidence": "UHT: 'PressOrHoldParadigm' Enum at +0x0F5B. Free byte in the phase-state block; useful as a NON-changing control in a memory-diff (should be config-only, not touched by cast attempts)."
+          },
+          {
+            "class": "ULokiGameplaySpell",
+            "field_name": "WarmupPhase / ChannelingPhase / InvokePhase (sub-object pointers)",
+            "offset_hex": "0xF20",
+            "type": "UObject* (ULokiSpellPhase-derived; +0xF20 Warmup, +0xF28 Channeling, +0xF30 Invoke, +0xF18 Targeting, +0xF38 Winddown)",
+            "confidence": "medium",
+            "evidence": "UHT: 5 phase sub-object UPROPERTIES at +0x0F18..+0x0F38. Non-null on any valid spell instance (set at construction). Read these ONCE for identity, then compare CurrentPhase@+0xF48 against each pointer to decode WHICH phase without needing the enum byte. Direct byte-diff of these 5 slots between BEFORE and AFTER is a hard NEGATIVE CONTROL — they MUST NOT change (config, not runtime)."
+          }
+        ],
+        "lane_name": "LANE 2: binary string + disasm — merged14 xref of the Dash log format string to its owning UFunction (native ULokiGameplaySpell::Dash impl); byte-level disassembly blocked (page DARK) so pivoted to UHT reflection for the phase-state schema on ULokiGameplaySpell that the DARK Dash body reads.",
+        "notes": "FORMAT STRING RVA: 0x08B084E0 (UTF-16, len=73): `[%s][%s] Attempted to dash outside of Invoke, Channeling and Warmup phase`. Located via `python tools/strxref/strxref.py find \"Attempted to dash outside\"` — exactly 1 match, 1 xref.\n\nCALLER FUNCTION RVA: 0x551E8C0 (from `strxref xref 0x08B084E0`). This is the impl of `ULokiGameplaySpell::Dash` (native, method 20 in binds_members.csv @0x495cd7). The exec-thunk sits at 0x535F3A0 (verified via tools/strxref/index/uesymbols.json: `{'names':['Dash'], 'kind':'exec_thunk', 'secondary':'0x551E8C0'}`).\n\n⚠⚠ **NO [reg+offset] DISASM AVAILABLE — THE DASH FUNCTION IS DARK.** All 1600 bytes of Dash's impl at 0x551E8C0..0x551EF00 read as 0x00 in dumps/merged14.dump.exe (verified byte-by-byte via file-offset lookup). Page 0x551E000 has never been demand-decrypted in ANY captured process on disk. This corroborates CLAUDE.md's S156 finding that \"MiniDash's ubergraph directly calls the `Dash` UFunction at RVA `0x535F3A0` on universally-DARK page `0x535F000`\" and extends it: the impl page 0x551E000 is ALSO universally dark. So byte-level \"which offset does Dash READ to gate the log\" is unanswerable OFFLINE against merged14; it requires a live disasm during/after a Dash call, or a live process where Dash has executed (page decrypts on EXECUTE per S118 method).\n\nPIVOT — UHT reflection is decisive without needing the body's bytes:\nThe Dash impl reads phase state from `this` (spell instance), and the phase state on `ULokiGameplaySpell` is fully declared as UPROPERTIES with fixed offsets in the UHT `FPropertyParams` registrar. Decoded via `tools/re/fk13uht.py` (module `UHT.class_params_for('ULokiGameplaySpell')`) — sizeof=? (2 FClassParams records agree on every property offset), all offsets read from the UHT struct at build time and thus define the actual instance layout.\n\nRuntime phase-state block spans +0x0C18..+0x0F60. Two dense zones:\n  * `ReplicatedPhaseData` @+0xC18 (12 bytes, 3 fields inside) — server-authoritative\n  * `CurrentPhase*` block @+0xF48..+0xF5C (20 bytes) — client-local runtime\nEvery field in this range that is NOT a phase-state field is called out in the candidate list as a NEGATIVE CONTROL (must not change), which lets the memory-diff probe validate itself.\n\nELokiSpellPhaseType enum values (from wide-string dump at 0x0895E7A0):\n  0 Inactive · 1 Targeting · 2 Warmup · 3 Channeling · 4 Invoke · 5 Winddown · 6 Count\nDash log fires when phase ∉ {2, 3, 4}.\n\nCROSS-INDEX TO S154 MISLOCALIZATION: CLAUDE.md's S154 handler-tail hypothesis put phase-tracker bytes at PC offsets +0xBFC/+0xBEC/+0xBF4/+0xC04/+0xC0C/+0xC0D. S158 refuted S154's handler-tail location and S156 relocated to +0x1608 on ULokiAbilitySystemComponent. Neither S154 nor S156 named the SPELL-instance phase byte. This lane names it: `ULokiGameplaySpell+0xF58 CurrentStateSpecPhaseType`. S154's putative bytes at +0xBFC..+0xC0D fall INSIDE the `WinddownStates` UPROPERTY (FSpellCastingStateSpecification @+0xB98, size 0x80, runs +0xB98..+0xC17) — that struct is CONFIG (state machine specification), not runtime state. So S154's \"state-tracker\" reading was config bytes on the spell config sub-struct, not the runtime phase byte.\n\nWHAT A MEMORY-DIFF PROBE SHOULD DO (concrete on MiniDash instance 0x1EC0263AAB0):\n  1. Sample [0x1EC0263AAB0 + 0xC18 .. +0xC24] (ReplicatedPhaseData, 12 B) BEFORE the BP_AuthBeginWarmup call, AFTER it (+0.1s, +1s, +5s), and AFTER an attempted Dash. Any byte that flips 0→non-zero in the AFTER-Warmup snapshots is a strong candidate for the replicated CurrentPhaseType.\n  2. Sample [0x1EC0263AAB0 + 0xF48 .. +0xF60] (CurrentPhase ptr + Handle + phase bytes, 24 B) at same 4 timepoints. Watch for:\n     - +0xF48 CurrentPhase ptr flipping 0 → &spell[+0xF20] (WarmupPhase)\n     - +0xF50 CurrentPhaseEffectHandle i32 flipping 0 → non-zero (the GE_GlideSuppressd handle)\n     - +0xF58 CurrentStateSpecPhaseType byte flipping 0 → 2 (Warmup)\n     - +0xF59 LastStateSpecPhaseType byte staying 0 (nothing was previously active)\n  3. NEGATIVE CONTROLS (bytes that must NOT change): +0xF18/+0xF20/+0xF28/+0xF30/+0xF38 (phase sub-object pointers — config), +0xF5B PressOrHoldParadigm (config).\n  4. If ALL runtime bytes stay 0 after BP_AuthBeginWarmup: the BP method never actually mutated spell-instance state (the state write happens elsewhere, likely on the ASC or via a networked path). This matches LANE 1's context that the Warmup GE was applied but the phase byte was not set.\n  5. If +0xC18 zone changes but +0xF58 does not: replication path lives but the OnRep never wrote to CurrentStateSpecPhaseType. Client-side transition is what's missing.\n  6. If +0xF58 flips to 2 (Warmup) but Dash still bails: gate is NOT +0xF58; check +0xF48 (CurrentPhase ptr) and +0xC18 (ReplicatedPhaseData).\n\nRELATED USEFUL FIELDS (not phase-gate but same investigation family):\n  * +0x628 CurrentCharges (Int) — decremented on cast; 1→0 confirms cost path ran\n  * +0x660 NextChargeGrantServerTime (Float) — charge cooldown\n  * +0xE20 InputHeldTime / +0xE24 InputHeldStartTime (Floats) — press state\n  * +0xEB8 SpawnedTargetIndicator (Object*) — non-null during targeting phase\n\nINSTRUMENT NOTE (per CLAUDE.md method-rules S140T2-*): fk13uht decodes offsets from the UHT `FPropertyParams` registrar (`+0x32 Offset u16` for WithOffset variants). It is decisive because the offsets in these registrar structs LITERALLY DEFINE the instance layout — UE's `UClass::Link` reads them and writes the class's `PropertyChainForCompiledIn` from these very values. So a UHT-derived offset is [M] on layout, not [I].\n\nFILES / TOOL PROVENANCE:\n  * strxref: `python tools/strxref/strxref.py {find,xref} …` against `dumps/merged14.dump.exe` (55.53 % `.text` decrypted, current canonical image per S141 audit)\n  * UHT: `tools/re/fk13uht.py` — `UHT().class_params_for('ULokiGameplaySpell')`, then `decode_prop_array(cp['proparray'], cp['nprop'])`; the 93-property Class params match adjacent-offset sanity check (WinddownStates 0xB98 + 0x80 = 0xC18 = ReplicatedPhaseData, etc.)\n  * Binds: `tools/asdump/out/binds_members.csv` line 0x498ec2..0x49900b for TargetingPhase..WinddownPhase names (property indices 61-65).\n  * String search: 23 `PhaseType` matches; 11 `LokiSpellPhaseType` matches (7 enum values, 3 name variants, 1 header).\n\nCONFIDENCE SPLIT: HIGH on 3 primary candidates (+0xF58, +0xF48, +0xC18) — one of these three is the Dash-log gate; MEDIUM on 2 corroborators (+0xF59, +0xF50); LOW on 2 negative controls (+0xF5A, +0xF5B). MiniDash instance-specific: no known subclass overrides of these fields (GS_Ronin_MiniDash_Charges_C is a BP class; BP-generated classes don't add native UPROPERTIES).",
+        "range_to_diff": {
+          "start_offset_hex": "0xC18",
+          "end_offset_hex": "0xF60",
+          "rationale": "Covers the full phase-state span on ULokiGameplaySpell instances (all UHT-declared runtime phase fields fit inside). Two hot zones inside this range: [+0xC18..+0xC23] ReplicatedPhaseData (12 B, server-authoritative) and [+0xF48..+0xF5C] CurrentPhase+Handle+PhaseTypeBytes (20 B, client-local runtime). The middle span (+0xC24..+0xF47, ~808 B) is stable config (MontageCosmeticsTag, DefaultMontageDetails, WarmupMontagePlayRate, spell config flags, ChargeRefreshDuration curve, InputHeldTime, OwningSelector ptr, TargetingPhase..WinddownPhase sub-object ptrs) — those bytes serve as NEGATIVE CONTROLS: if any of them flip between BEFORE and AFTER the BP_AuthBeginWarmup call, the probe has a scope defect (wrong object read, or the memory-diff shifted). Reading 840 bytes on one instance is cheap (single RPM call, one page-and-a-half); the negative controls make the positive signal on the two hot zones interpretable rather than uninterpretable."
+        }
+      },
+      {
+        "lane_name": "Shipped asset inspection (LANE 3)",
+        "candidates": [
+          {
+            "offset_hex": "0xC76",
+            "field_name": "bManuallyCallSpellCompleteEvent (ULokiGameplaySpell property 49)",
+            "type": "byte(bool)",
+            "confidence": "high",
+            "evidence": "S153 UHT SetBitFunc disassembly established byte offset 0xC76 for bManuallyCallSpellCompleteEvent on ULokiGameplaySpell (see CLAUDE.md S153 deep-dive). This is not a phase flag, but it is an ANCHOR: it fixes the end-of-UPROPERTY-tail region and lets a memory-diff probe center its search band. The 16 later UPROPERTIES (props 50-65) push the reflected tail to approximately 0xD00-0xE00.",
+            "class": "ULokiGameplaySpell"
+          },
+          {
+            "offset_hex": "0xD00-0xE80",
+            "field_name": "CANDIDATE BAND for CurrentSpellPhaseType (ELokiSpellPhaseType enum byte, returned by GetCurrentPhaseType() method)",
+            "type": "enum byte / uint8",
+            "confidence": "medium",
+            "evidence": "binds_members.csv:41727 shows ULokiGameplaySpell exposes 'ELokiSpellPhaseType GetCurrentPhaseType() const' as a C++ METHOD (property 30 on ULokiGameplaySpell method table), with NO matching UPROPERTY in the full 66-property list (binds_members.csv:41774-41839). The state read by this method must live in a non-reflected NATIVE field. The reflected UPROPERTY tail extends to ~0xE00 (16 props after bManuallyCallSpellCompleteEvent@0xC76). Native phase-tracker fields typically follow the reflected tail. Look for a byte that transitions 0->N when BP_AuthBeginWarmup runs (Warmup enum value), transitions again when Invoke/Channeling begins, and reads 0/Invalid at baseline. ELokiSpellPhaseType enum values likely: 0=Invalid, 1=Targeting, 2=Warmup, 3=Channeling, 4=Invoke, 5=Winddown (order from LokiGameplaySpell.h per binds_headers.csv:12475).",
+            "class": "ULokiGameplaySpell"
+          },
+          {
+            "offset_hex": "0xD00-0xE80",
+            "field_name": "CANDIDATE BAND for CurrentPhaseObjectPtr (ULokiSpellPhase* pointing to one of the 5 phase subobjects)",
+            "type": "pointer (ULokiSpellPhase*)",
+            "confidence": "medium",
+            "evidence": "GetCurrentPhaseType() likely reads a runtime ptr to the currently-active phase subobject and returns its LokiSpellPhaseType UPROPERTY (binds_members.csv:41687 - ULokiSpellPhase declares 'ELokiSpellPhaseType LokiSpellPhaseType' as property 0). MiniDash's CDO defines 5 phase subobjects: TargetingPhase, WarmupPhase, ChannelingPhase, InvokePhase, WinddownPhase (bpdump_GS_Ronin_MiniDash_Charges_PROPS.txt lines 53-57 + binds_members.csv:41835-41839 confirming they are UPROPERTIES 61-65 on ULokiGameplaySpell). The RUNTIME 'which of these five is currently active' pointer is a separate native field. Look for a pointer-aligned qword that reads NULL at baseline, transitions to point at WarmupPhase subobject after BP_AuthBeginWarmup, and matches values in the corresponding UPROPERTY at ~0xD30/D38/D40/D48/D50 range (properties 61-65).",
+            "class": "ULokiGameplaySpell"
+          },
+          {
+            "offset_hex": "0xC76-0xE80",
+            "field_name": "CANDIDATE BAND for phase timer / phase-start-timestamp float (WorldTime when current phase began)",
+            "type": "float32",
+            "confidence": "low",
+            "evidence": "ULokiGameplaySpell exposes properties like InputHeldTime (0x498D55, prop 57), InputHeldStartTime (prop 58), HoldMinimumDuration (prop 60), and ULokiSpellPhase has GetTotalDurationAtEnd() as a method (binds_members.csv:41686). The runtime tracking of 'when did the current phase start' is likely a native float32 near the phase-tracker fields. This is speculative but a diff probe would catch it as a value that steps forward at phase transitions.",
+            "class": "ULokiGameplaySpell"
+          },
+          {
+            "offset_hex": "0x0-0x1500",
+            "field_name": "REFUTED CANDIDATES to explicitly rule out",
+            "type": "N/A",
+            "confidence": "high",
+            "evidence": "The 66-property UPROPERTY list on ULokiGameplaySpell (binds_members.csv:41774-41839) contains NO bIsWarmupActive / bIsChannelingActive / bIsInvokeActive / CurrentPhase / bInWarmup / bInChanneling / bInInvoke / SpellPhaseIndex / ActivePhase / CurrentSpellPhase properties. Property 61-65 are the phase CONFIG subobject pointers (TargetingPhase, WarmupPhase, ChannelingPhase, InvokePhase, WinddownPhase) which store DESIGN-TIME CONFIG (durations, effects, tags), NOT runtime 'am I in this phase' state. Do NOT expect a bool triple here. The state is a single native field (either enum byte or subobject ptr) accessed via the GetCurrentPhaseType() method.",
+            "class": "ULokiGameplaySpell (subclass GS_Ronin_MiniDash_Charges_C inherits all 66 properties unchanged)"
+          },
+          {
+            "offset_hex": "N/A",
+            "field_name": "MiniDash-specific check locations (NOT in BP bytecode)",
+            "type": "N/A",
+            "confidence": "high",
+            "evidence": "Full grep of bpdump_ExecuteUbergraph_GS_Ronin_MiniDash_Charges.txt (4451 lines) for 'phase', 'warmup', 'channel', 'invoke', 'winddown', 'IsWarmup', 'IsInvoke', 'IsChanneling', 'CurrentPhase', 'GetPhase', 'ActivePhase', 'Attempted to dash outside' returns ZERO matches for phase-check bytecode. All 6 CallFunc_Spell_IsActive_ReturnValue_* callsites in this ubergraph gate on OTHER abilities (GS_TetherHook_Recall_C, GS_Ronin_Special_HeavySlam_C, GS_Ronin_Retaliation_C — the 'don't dash if these are running' gates), NOT on MiniDash's own phase state. The MiniDash phase check therefore lives in a NATIVE C++ function called from the ubergraph. Most likely candidates: (a) the native 'Dash' UFunction body at RVA 0x535F3A0 on ULokiCharacterMovementComponent — MiniDash calls it via EX_FinalFunction StackNode: Dash at bytecode index [39]; (b) 'BP_AuthBeginWarmup' native UFunction on ULokiGameplaySpell called by ubergraph index [244] StackNode: BP_AuthBeginWarmup. The phase-flag WRITE happens in one of these native calls (or their C++ callees), and the CHECK is inside 'Dash'. ⇒ The offset a memory-diff probe wants is on the ABILITY INSTANCE (this = MiniDash instance) and gets WRITTEN by BP_AuthBeginWarmup's C++ side-effect chain but was DEMONSTRATED not to be set by the user's zero-parm ProcessEvent call (which only added the Warmup GE, not the phase-state field). ⇒ The write likely happens further down the AuthBeginWarmup native chain than the GE application step.",
+            "class": "GS_Ronin_MiniDash_Charges_C -> LokiGameplaySpell -> LokiDisplayableAbility -> UGameplayAbility"
+          }
+        ],
+        "range_to_diff": {
+          "start_offset_hex": "0xC00",
+          "end_offset_hex": "0xF00",
+          "rationale": "Priority sample band: this window straddles the reflected UPROPERTY TAIL (bManuallyCallSpellCompleteEvent is at anchor 0xC76 per S153; properties 50-65 push the tail to ~0xD00-0xE00) and the FIRST native-field region beyond it. The native GetCurrentPhaseType() method reads its state from an unreflected field, and native fields on Loki classes conventionally sit immediately after the last UPROPERTY. Sample 3 states: (1) BASELINE before any activation, (2) POST BP_AuthBeginWarmup (should see Warmup enum value or WarmupPhase ptr appear), (3) POST-Dash (may show Invoke or Channeling). Also worth a WIDER PASS from 0xE80 to 0x1500 as a fallback since the class may have additional native TArrays / delegates / timer handles between the UPROPERTY tail and the phase tracker. Do NOT bother sampling below 0xC00 — the S153 anchor and known offset density (bManuallyCallSpellCompleteEvent@0xC76, +0x628 OwningASC, +0x3B0 CurrentSpecHandle) confirm that region is UPROPERTY territory that would appear in binds_members.csv if it held phase state, and it does not."
+        }
+      },
+      {
+        "candidates": [
+          {
+            "class": "UGameplayAbility",
+            "offset_hex": "0x408",
+            "field_name": "bIsActive",
+            "type": "byte",
+            "confidence": "high",
+            "evidence": "MEASURED live in S146/S147 (docs/s146-wallp3-native-handle-fk32.md:38, tutorial-launch-marker.s146*.txt:157) — 'primary.IsActive[vtbl+0x2F0]=... result=0 raw@+0x408=0'. Include as INSTRUMENT CONTROL: BP_AuthBeginWarmup, per the S147 mission facts, adds the Warmup GE but does NOT toggle this byte (which is the whole reason WALL P is unsolved). If this flips 0->1 during the probe window, it changes the current model."
+          },
+          {
+            "class": "UGameplayAbility",
+            "offset_hex": "0x409",
+            "field_name": "cancel-byte (likely bIsCancelable / bCanBeCanceled or a Cancel latch)",
+            "type": "byte",
+            "confidence": "high",
+            "evidence": "next-session-prompt-s147.md:247 tabulates '+0x408/+0x409/+0x40A' as the primary active/cancel/block triple. Adjacent bytes to +0x408 are almost always the same-family flags in UE ability layout. Include as byte read; do NOT interpret as a bool until it moves in one direction across the four snapshots."
+          },
+          {
+            "class": "UGameplayAbility",
+            "offset_hex": "0x40A",
+            "field_name": "block-byte (likely bIsBlockingOtherAbilities or a Block latch)",
+            "type": "byte",
+            "confidence": "high",
+            "evidence": "Same source as +0x409 (next-session-prompt-s147.md:247). Read as byte."
+          },
+          {
+            "class": "ULokiGameplaySpell",
+            "offset_hex": "0x410",
+            "field_name": "UNKNOWN: probable ULokiGameplaySpell phase-state region starts here",
+            "type": "byte-block",
+            "confidence": "medium",
+            "evidence": "UGameplayAbility base carries known bytes at +0x408..+0x40A. The phase-check flags (bIsWarmupActive/bIsChannelingActive/bIsInvokeActive OR ELokiSpellPhaseType CurrentPhaseType byte) are ULokiGameplaySpell members that are NOT UHT-reflected (binds_members.csv lists only phase-subobject POINTERS at property 61-65, and only method GetCurrentPhaseType — no CurrentPhase UPROPERTY). Native members typically pack tightly after the base class. Sample bytes +0x410..+0x610 densely; the phase flags almost certainly live in this window."
+          },
+          {
+            "class": "ULokiGameplaySpell",
+            "offset_hex": "0x3A8",
+            "field_name": "CurrentActorInfo",
+            "type": "ptr64",
+            "confidence": "high",
+            "evidence": "MEASURED live across 20+ flights (docs/fk24-stage-s145*.txt:108 'primary.CurrentActorInfo@+0x3A8=...'). Include as STABILITY CONTROL: must NOT change during BP_AuthBeginWarmup — if it does, the probe is aimed at the wrong instance or the ASC was rebound."
+          },
+          {
+            "class": "ULokiGameplaySpell",
+            "offset_hex": "0x3B0",
+            "field_name": "CurrentSpecHandle",
+            "type": "int32",
+            "confidence": "high",
+            "evidence": "MEASURED live, same source ('primary.Handle@+0x3B0=1'). Read as int32. Include as IDENTITY CONTROL: must stay == 1 across the whole probe window."
+          },
+          {
+            "class": "GS_Ronin_MiniDash_Charges_C",
+            "offset_hex": "0x622",
+            "field_name": "bSpellUsesCharges",
+            "type": "byte",
+            "confidence": "high",
+            "evidence": "MEASURED live in every s145*/s146*/s147* flight ('bSpellUsesCharges@0x622 CurrentCharges@0x628 exact=yes'). Include as CONFIG CONTROL: must stay == 1 (config-loaded, should NOT be moved by BP_AuthBeginWarmup)."
+          },
+          {
+            "class": "GS_Ronin_MiniDash_Charges_C",
+            "offset_hex": "0x628",
+            "field_name": "CurrentCharges",
+            "type": "int32",
+            "confidence": "high",
+            "evidence": "MEASURED live, same source. Read as int32. Include as CHARGE-CONSUMPTION CONTROL: BP_AuthBeginWarmup should NOT decrement Charges (the Ronin cost path fires later in Channeling/Invoke). If it does, ApplyCost ran too early — a real WALL P diagnostic. NOTE: task info claims +0x628=OwningASC (LMB Selector layout) — that is REFUTED for MiniDash by these measurements. LMB Selector +0x628 is OwningASC ONLY because Selector has no CurrentCharges (it is not a charge subclass). For MiniDash-Charges, OwningASC lives at a different offset (likely +0x630 or +0x638) which this probe will incidentally locate."
+          },
+          {
+            "class": "ULokiGameplaySpell",
+            "offset_hex": "0x498",
+            "field_name": "UNKNOWN: candidate zone for CurrentMontageInstanceID / WarmupStartTime / phase timers",
+            "type": "float or int32",
+            "confidence": "low",
+            "evidence": "ULokiGameplaySpell's ~66 reflected properties + native phase-state fields must span ~0x220 bytes above UGameplayAbility's base. Phase timing fields (WarmupStartTime, ChannelingStartTime, InvokePhaseStartTime float32s) are typical GAS-derived state and are the second most likely phase-check inputs after boolean flags. Sample +0x460..+0x5F0 as densely-populated float region."
+          }
+        ],
+        "lane_name": "Probe design + fallback range",
+        "notes": "RECOMMENDED PROBE SHAPE:\n\n1. BYTE RANGE: sample [+0x300, +0x700) = 0x400 bytes = 1024 bytes per snapshot.\n   - LOWER BOUND +0x300: safely above UObject header (+0x00 vtable, +0x08 InternalIndex, +0x0C ObjectFlags, +0x18 ClassPrivate, +0x20 NamePrivate, +0x28 OuterPrivate/OwnerActor). Also above the ~+0x100..+0x2FF region shared with UGameplayAbility private ptrs (AbilityTags, ActivationOwnedTags, CancelAbilitiesWithTag TArrays whose header bytes could look like state churn even when nothing meaningful changes). +0x300 leaves the known CurrentActorInfo (+0x3A8) and Handle (+0x3B0) in the window as identity controls.\n   - UPPER BOUND +0x700: comfortably past MiniDash-Charges' known last UPROPERTY at +0x628 (CurrentCharges int32) + ~0xD8 bytes of slack for any native tail fields (OwningASC, spell-instance-ID map header, TargetData ptrs). LMB Selector's known layout goes to +0x628. Reading past +0x700 risks straying into freshly-allocated adjacent heap.\n   - SIZE: 1 KiB per snapshot × 4 snapshots × two runs (control + treatment) = 8 KiB per flight, trivial.\n\n2. CADENCE (four snapshots, per task):\n   - T0: BEFORE call to BP_AuthBeginWarmup — the baseline.\n   - T0 + 100 ms: catches synchronous writes done inside the native ProcessEvent path.\n   - T0 + 500 ms: catches sync-then-timer writes (e.g. an initial state flip followed by a WarmupPhase-duration re-evaluation).\n   - T0 + 2000 ms: catches slower async transitions (the mission facts say Warmup GE was ADDED but REMOVED 4.8s later, so the 4s window between add and remove is exactly where a phase flag should be non-zero if the flag is ever set at all).\n   NOTE: the task suggests 100/500/1000 ms; I widened the third slot to 2000 ms because the OBSERVED evidence is that the Warmup GE lives 4.8 s. A snapshot within [T0+2s, T0+4.5s] falls squarely inside the Warmup lifetime.\n\n3. WHAT NOT TO SAMPLE (dangerous ranges to EXCLUDE):\n   - +0x00 vtable pointer: writing to it would be catastrophic, but READING is safe. Excluded from probe only because a diff there would be uninterpretable noise (heap adjacency could shift its bytes only if the object was reconstructed, in which case Handle at +0x3B0 changes too — Handle is the better identity control).\n   - +0x08 InternalIndex, +0x0C ObjectFlags: these DO shift naturally during a GC pass (RootSet flip, per S110). A diff there is not a phase-check signal.\n   - +0x28 OuterPrivate: shouldn't change; a diff here would indicate object relocation, in which case whole probe is void.\n   The probe is READ-ONLY, so no write hazards apply.\n\n4. UPROPERTY OFFSETS TO READ AS TYPED SCALARS (not raw bytes):\n   - +0x3A8: ULokiGameplaySpell CurrentActorInfo — read as u64 pointer; equality check across snapshots. Must be stable.\n   - +0x3B0: ULokiGameplaySpell CurrentSpecHandle — read as int32; identity check, must == 1.\n   - +0x408: UGameplayAbility bIsActive — read as u8. THE HEADLINE INSTRUMENT-CONTROL.\n   - +0x409: cancel-byte — read as u8.\n   - +0x40A: block-byte — read as u8.\n   - +0x622: bSpellUsesCharges — read as u8; must stay == 1.\n   - +0x628: CurrentCharges — read as int32; must NOT be decremented by BP_AuthBeginWarmup alone.\n\n5. INTERPRETATION HEURISTIC (per snapshot pair):\n   - Any byte in [+0x410, +0x600) that transitions 0 -> non-zero AND STAYS non-zero across at least two snapshots is a strong phase-flag candidate (bIsWarmupActive-shaped).\n   - Any byte that flips 0 -> N -> 0 within the window is a \"moment-latched\" candidate (BeginWarmup event flag, or InstantCue fire latch).\n   - Any float in the same range that transitions from 0.0 to a monotonically increasing value is a phase-start-timestamp candidate.\n   - A u8 that jumps to a value in [1..5] (matching ELokiSpellPhaseType's likely enum range: 0=None, 1=Targeting, 2=Warmup, 3=Channeling, 4=Invoke, 5=Winddown) is the CurrentPhaseType candidate. This is the JACKPOT — one byte would satisfy the phase check.\n\n6. FALLBACK IF NOTHING IN [+0x300, +0x700) MOVES:\n   - Extend the search UP to +0x800 (still safe given LMB Selector's known layout tops at +0x628; MiniDash-charges likely tops around +0x630-+0x680; 0x800 is a generous +0x1A0 pad).\n   - If STILL nothing moves, the phase state is stored elsewhere entirely — on one of the phase-subobject pointers (WarmupPhase at ~+0x498-+0x510, ChannelingPhase, InvokePhase — read those pointers themselves and diff THEIR bytes in a follow-up).\n   - Alternatively, the phase state may live on the OwningASC's replicated PredictionKey / ActivationInfo (FGameplayAbilityActivationInfo lives on the FGameplayAbilitySpec, spec-side). Sample the SPEC bytes +0x30..+0x60 too.\n\n7. REFERENCE TO TASK CLAIM CORRECTION: the task info states \"+0x628 = OwningASC pointer\" — MEASURED FALSE for MiniDash. On GS_Ronin_MiniDash_Charges_C, +0x622 is bSpellUsesCharges and +0x628 is CurrentCharges (int32), confirmed across 20+ flights in docs/fk24-stage-s145*.txt. The task info was likely mixing up LMB Selector's layout (which lacks the charge subclass) with MiniDash. Read as: OwningASC lives at some offset >= +0x630 on this specific class, which the probe will discover by locating an aligned pointer value that matches the known ASC address.",
+        "range_to_diff": {
+          "start_offset_hex": "0x300",
+          "end_offset_hex": "0x700",
+          "rationale": "1024 bytes starting well above UObject header (+0x00-+0x2F) and TArray-header noise (~+0x30-+0x2FF), extending past MiniDash's known last UPROPERTY at +0x628 (CurrentCharges) with ~+0xD8 bytes of slack. Includes all known identity controls (+0x3A8 CurrentActorInfo, +0x3B0 CurrentSpecHandle), known instrument-control bytes (+0x408/+0x409/+0x40A active/cancel/block), and known config controls (+0x622/+0x628 UsesCharges/CurrentCharges). The gap between +0x40B and +0x621 (~0x216 bytes / 534 bytes) is precisely where ULokiGameplaySpell's ~66 config UPROPERTIES + native phase-state fields must sit, and is where the phase-check flags (bIsWarmupActive / bIsChannelingActive / bIsInvokeActive or CurrentPhaseType enum byte) are almost certainly stored. Compare with LMB Selector's known layout topping at +0x628 to estimate MiniDash-Charges' likely ceiling around +0x630-+0x680; +0x700 provides a safe margin without risking reads into freshly-allocated adjacent heap. 4 snapshots × 1 KiB = 4 KiB per arm, trivial cost."
+        }
+      }
+    ]
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Analyze"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Synthesize"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "analyze:uht",
+      "phaseIndex": 1,
+      "phaseTitle": "Analyze",
+      "agentId": "afbfffdc33baa9919",
+      "model": "claude-opus-4-7",
+      "state": "done",
+      "startedAt": 1789080950782,
+      "queuedAt": 1789080950739,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Lane 1: UHT reflection scan of binds_members.csv",
+      "promptPreview": "CONTEXT: S191 E4T-A4 flight measured on live PID 54416.\n\n- Ability instance: GS_Ronin_MiniDash_Charges_C at 0x1EC0263AAB0\n- Class chain (via prior probes): does NOT include UGASGameplayAbility.\n  Likely: GS_Ronin_MiniDash_Charges_C -> LokiGameplaySpell -> ULokiDisplayableAbility -> UGameplayAbility -> UObject\n- Known Loki-specific offsets on UGameplayAbility instances:\n    +0x3B0 = CurrentSpecHand…",
+      "lastProgressAt": 1789081730283,
+      "tokens": 414366,
+      "toolCalls": 55,
+      "durationMs": 779487,
+      "resultPreview": "{\"candidates\":[{\"offset_hex\":\"0xBFC\",\"field_name\":\"bIsWarmupActive (state on ALokiPlayerController, NOT on the ability instance)\",\"type\":\"byte/uint8\",\"confidence\":\"medium\",\"evidence\":\"docs/s156-lokigameplayspell-trace.md:80-82 cites S154 disassembly mapping the Warmup phase byte to ALokiPlayerController+0xBFC. Not visible in binds_members.csv (non-UPROPERTY). Ranked medium because the CONTEXT asks…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "analyze:binary",
+      "phaseIndex": 1,
+      "phaseTitle": "Analyze",
+      "agentId": "a4aa1b68f4115a6d6",
+      "model": "claude-opus-4-7",
+      "state": "done",
+      "startedAt": 1789080950787,
+      "queuedAt": 1789080950739,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "LANE 2: binary string + disasm — merged14 xref of the Dash …",
+      "promptPreview": "CONTEXT: S191 E4T-A4 flight measured on live PID 54416.\n\n- Ability instance: GS_Ronin_MiniDash_Charges_C at 0x1EC0263AAB0\n- Class chain (via prior probes): does NOT include UGASGameplayAbility.\n  Likely: GS_Ronin_MiniDash_Charges_C -> LokiGameplaySpell -> ULokiDisplayableAbility -> UGameplayAbility -> UObject\n- Known Loki-specific offsets on UGameplayAbility instances:\n    +0x3B0 = CurrentSpecHand…",
+      "lastProgressAt": 1789081617228,
+      "tokens": 419353,
+      "toolCalls": 60,
+      "durationMs": 661439,
+      "resultPreview": "{\"candidates\":[{\"class\":\"ULokiGameplaySpell\",\"field_name\":\"CurrentStateSpecPhaseType\",\"offset_hex\":\"0xF58\",\"type\":\"ELokiSpellPhaseType (u8 enum) — 0=Inactive 1=Targeting 2=Warmup 3=Channeling 4=Invoke 5=Winddown 6=Count\",\"confidence\":\"high\",\"evidence\":\"UHT FPropertyParams for ULokiGameplaySpell (fk13uht.py against dumps/merged14.dump.exe) lists 'CurrentStateSpecPhaseType' Enum at +0x0F58 (Structur…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "analyze:asset",
+      "phaseIndex": 1,
+      "phaseTitle": "Analyze",
+      "agentId": "a9ddf8ae73496297a",
+      "model": "claude-opus-4-7",
+      "state": "done",
+      "startedAt": 1789080950791,
+      "queuedAt": 1789080950739,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Shipped asset inspection (LANE 3)",
+      "promptPreview": "CONTEXT: S191 E4T-A4 flight measured on live PID 54416.\n\n- Ability instance: GS_Ronin_MiniDash_Charges_C at 0x1EC0263AAB0\n- Class chain (via prior probes): does NOT include UGASGameplayAbility.\n  Likely: GS_Ronin_MiniDash_Charges_C -> LokiGameplaySpell -> ULokiDisplayableAbility -> UGameplayAbility -> UObject\n- Known Loki-specific offsets on UGameplayAbility instances:\n    +0x3B0 = CurrentSpecHand…",
+      "lastProgressAt": 1789081384005,
+      "tokens": 395052,
+      "toolCalls": 37,
+      "durationMs": 428175,
+      "resultPreview": "{\"lane_name\":\"Shipped asset inspection (LANE 3)\",\"candidates\":[{\"offset_hex\":\"0xC76\",\"field_name\":\"bManuallyCallSpellCompleteEvent (ULokiGameplaySpell property 49)\",\"type\":\"byte(bool)\",\"confidence\":\"high\",\"evidence\":\"S153 UHT SetBitFunc disassembly established byte offset 0xC76 for bManuallyCallSpellCompleteEvent on ULokiGameplaySpell (see CLAUDE.md S153 deep-dive). This is not a phase flag, but i…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "analyze:delta",
+      "phaseIndex": 1,
+      "phaseTitle": "Analyze",
+      "agentId": "a121d6c7986db1854",
+      "model": "claude-opus-4-7",
+      "state": "done",
+      "startedAt": 1789080950795,
+      "queuedAt": 1789080950739,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Probe design + fallback range",
+      "promptPreview": "CONTEXT: S191 E4T-A4 flight measured on live PID 54416.\n\n- Ability instance: GS_Ronin_MiniDash_Charges_C at 0x1EC0263AAB0\n- Class chain (via prior probes): does NOT include UGASGameplayAbility.\n  Likely: GS_Ronin_MiniDash_Charges_C -> LokiGameplaySpell -> ULokiDisplayableAbility -> UGameplayAbility -> UObject\n- Known Loki-specific offsets on UGameplayAbility instances:\n    +0x3B0 = CurrentSpecHand…",
+      "lastProgressAt": 1789081443895,
+      "tokens": 418442,
+      "toolCalls": 25,
+      "durationMs": 488044,
+      "resultPreview": "{\"candidates\":[{\"class\":\"UGameplayAbility\",\"offset_hex\":\"0x408\",\"field_name\":\"bIsActive\",\"type\":\"byte\",\"confidence\":\"high\",\"evidence\":\"MEASURED live in S146/S147 (docs/s146-wallp3-native-handle-fk32.md:38, tutorial-launch-marker.s146*.txt:157) — 'primary.IsActive[vtbl+0x2F0]=... result=0 raw@+0x408=0'. Include as INSTRUMENT CONTROL: BP_AuthBeginWarmup, per the S147 mission facts, adds the Warmup G…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "synth:phase-byte",
+      "phaseIndex": 2,
+      "phaseTitle": "Synthesize",
+      "agentId": "a3b16b337f31274e8",
+      "model": "claude-opus-4-7",
+      "state": "done",
+      "startedAt": 1789081730364,
+      "queuedAt": 1789081730303,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Build the E4T-A5 probe arm to read from MiniDash instance a…",
+      "promptPreview": "CONTEXT: S191 E4T-A4 flight measured on live PID 54416.\n\n- Ability instance: GS_Ronin_MiniDash_Charges_C at 0x1EC0263AAB0\n- Class chain (via prior probes): does NOT include UGASGameplayAbility.\n  Likely: GS_Ronin_MiniDash_Charges_C -> LokiGameplaySpell -> ULokiDisplayableAbility -> UGameplayAbility -> UObject\n- Known Loki-specific offsets on UGameplayAbility instances:\n    +0x3B0 = CurrentSpecHand…",
+      "lastProgressAt": 1789081871786,
+      "tokens": 352045,
+      "toolCalls": 1,
+      "durationMs": 141420,
+      "resultPreview": "{\"top_candidates\":[{\"offset_hex\":\"0xF58\",\"field_name\":\"CurrentStateSpecPhaseType\",\"scalar_type\":\"uint8 (ELokiSpellPhaseType enum: 0=Inactive 1=Targeting 2=Warmup 3=Channeling 4=Invoke 5=Winddown 6=Count)\",\"confidence\":\"high\",\"rationale\":\"Lane 2 UHT FPropertyParams for ULokiGameplaySpell, decoded via tools/re/fk13uht.py against merged14. Semantic gate match is exact — Dash log fires when phase ∉ {2…"
+    }
+  ],
+  "totalTokens": 1999258,
+  "totalToolCalls": 178
+}

@@ -982,6 +982,11 @@ $Variants = @{
         'e4-t-a3'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1')
         'e4-t-a4'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_SEQUENCE=1')
         'e4-t-a5'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_SEQUENCE=1','-DKBFE4T_CHANNEL=1')
+        # E4T-A6: KBFE4T_POKEPHASE=1 pokes ULokiGameplaySpell CurrentStateSpecPhaseType @+0xF58 to Warmup(2)
+        # BEFORE calling Invoke. Workflow wf_82319383-e54 identified this offset via UHT FPropertyParams.
+        # -a6 = poke + first-match call (Invoke). -a6-chain = poke + full Warmup+Channel+Invoke+DashHit chain.
+        'e4-t-a6'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_POKEPHASE=1')
+        'e4-t-a6-chain'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_SEQUENCE=1','-DKBFE4T_CHANNEL=1','-DKBFE4T_POKEPHASE=1')
 
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
