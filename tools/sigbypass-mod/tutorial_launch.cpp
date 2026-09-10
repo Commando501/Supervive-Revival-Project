@@ -15376,6 +15376,31 @@ static void DlpFinalReport(){
                           // bit6 ARM E: SpawnBot(PremadeBotController = ARM D's controller)
 #endif
 
+// ===== S190 TRACK D (2026-09-09): spawn -> seed the BOT's Health -> AdjustHealth it to 0 = KILL. =====
+// Proves "a spawned enemy bot is a valid damage target that dies", isolating WALL P. Reuses ARM D
+// (KBSPSARMS & 0x20), which leaves a floor-spawned, LokiBotController-possessed, PlayerState-provisioned
+// bot in g_psLbPawn[1]/g_psLbCtl[1]. The KBFTRACKD block (defined after BfReadHealth) wires the bot's
+// ASC, seeds Health+MaxHealth to KBFTRACKD_SEEDBITS, and calls AdjustHealth(KBFTRACKD_DELTABITS) on the
+// bot's OWN ASC. This BYPASSES WALL E (hostility/team): a direct reflected attribute mutation, not a
+// player-ability routed through a hostility check. Death witness = Health bits -> 0 (both Base and
+// Current); a semantic OnDeath/despawn witness is a separate WALL-P-adjacent follow-up, not this pass.
+#ifndef KBFTRACKD
+#define KBFTRACKD 0
+#endif
+#ifndef KBFTRACKD_SEEDBITS
+#define KBFTRACKD_SEEDBITS 0x447A0000u  // 1000.0f: seed both Health and MaxHealth (Base + Current)
+#endif
+#ifndef KBFTRACKD_DELTABITS
+#define KBFTRACKD_DELTABITS 0xC59C4000u // -5000.0f: overkill -> clamps to 0 = KILL (nonlethal build uses 0xC37A0000u = -250)
+#endif
+#if KBFTRACKD && (!KBSPS || !(KBSPSARMS & 0x20))
+#error KBFTRACKD (Track D bot-kill) requires KBSPS=1 and ARM D (KBSPSARMS & 0x20); ARM D provisions the bot in g_psLbPawn[1].
+#endif
+#if KBFTRACKD
+static uintptr_t g_trackdBot=0, g_trackdCtl=0;   // ARM D's LokiBot pawn + controller, handed to BsTrackDKill
+static void BsTrackDKill();                       // defined after BfReadHealth (all helpers it needs are unconditional)
+#endif
+
 #if KBSPS
 // S137 state. Declared HERE, above BsClassify/BsScanWorld, because the census writes two of them.
 static uintptr_t g_psPawn[2]={0,0}, g_psCtl[2]={0,0}, g_psCtlPS[2]={0,0}, g_psPawnPS[2]={0,0};
@@ -17837,6 +17862,10 @@ static void BsPsExperiment(){
 #if (KBSPSARMS & 0x200)
     BsPsSentinel();
 #endif
+#if KBFTRACKD
+    // S190 TRACK D: hand ARM D's LokiBot (treatment spawn, slot 1) to BsTrackDKill for seed + kill.
+    g_trackdBot=g_psLbPawn[1]; g_trackdCtl=g_psLbCtl[1];
+#endif
 }
 #endif  // KBSPS
 
@@ -18051,6 +18080,9 @@ static void BsLadderStep(){
 #if KBSAI
 #if KBSPS
         BsPsExperiment();      // S137 -- two spawns with one CDO bit between them
+#if KBFTRACKD
+        BsTrackDKill();        // S190 TRACK D: seed the bot's Health and AdjustHealth it to 0 (the KILL)
+#endif
 #else
         Marker("[BS] ---- THE CALL: UAIBlueprintHelperLibrary::SpawnAIFromClass ----\r\n");
         BsCallAI();
@@ -18505,6 +18537,247 @@ static float BfReadHealth(uintptr_t asc,int* found,char* clsOut,int cap){
     }
     return 0.0f;
 }
+
+#if KBFTRACKD
+// ==============================================================================================
+// S190 TRACK D -- SEED THE ENEMY BOT'S HEALTH AND KILL IT.
+// Runs from BsLadderStep right after BsPsExperiment(), which has left ARM D's floor-spawned,
+// LokiBotController-possessed, PlayerState-provisioned bot in g_trackdBot / g_trackdCtl.
+// Fail-closed at every station with a distinct RESULT token so any null is attributable.
+// Death witness = Health bits -> 0 (both Base and Current) via the game's OWN AdjustHealth, resolved
+// through the S156-B VALIDATED wrapperExact path (NOT K_DAMAGE's raw resolve).
+// Risk class: DATA writes (aligned, readback-verified, SEH-guarded) + ONE reflected CallNativeGuarded.
+// No module-image write, no PI hook. This BYPASSES WALL E (team/hostility): AdjustHealth is called on
+// the bot's OWN ASC, a direct attribute mutation.
+static void BsTrackDKill(){
+    Marker("[TRACKD] ================ S190 TRACK D: SEED THE BOT AND KILL IT ================\r\n");
+    uintptr_t bot=g_trackdBot, bctl=g_trackdCtl;
+    const char* result="UNSET";
+    float preHP=0.0f, postHP=0.0f; int killed=0;
+    do {
+        // ---- STATION 1: provision (ARM D must have produced a LokiBot + PlayerState). ----
+        char bcn[128]="-",ccn[128]="-",pcn[128]="-";
+        if(LooksLikePtr(bot)&&ClassOf(bot))GetFNameStr(NameId(ClassOf(bot)),bcn,sizeof(bcn));
+        if(LooksLikePtr(bctl)&&ClassOf(bctl))GetFNameStr(NameId(ClassOf(bctl)),ccn,sizeof(ccn));
+        uint32_t po=LooksLikePtr(bot)?PropOffsetSuper(ClassOf(bot),"PlayerState"):0xFFFFFFFF;
+        uintptr_t bps=(po!=0xFFFFFFFF&&SafeReadable((void*)(bot+po),8))?*(uintptr_t*)(bot+po):0;
+        if(LooksLikePtr(bps)&&ClassOf(bps))GetFNameStr(NameId(ClassOf(bps)),pcn,sizeof(pcn));
+        Markerf("[TRACKD] TRACKD_BOT_PROVISION bot=0x%llX(%s) ctl=0x%llX(%s) ps=0x%llX(%s)\r\n",
+                (unsigned long long)bot,bcn,(unsigned long long)bctl,ccn,(unsigned long long)bps,pcn);
+        if(!LooksLikePtr(bot)){ result="NO_BOT"; break; }
+        if(!LooksLikePtr(bctl)){ result="NO_CONTROLLER"; break; }
+        if(!LooksLikePtr(bps)){ result="NO_PLAYERSTATE"; break; }
+
+        // ---- STATION 2: get the bot's ASC. ARM G (KBSPSARMS & 0x100) borrows the CDO's
+        //      AbilitySystemComponent/AttributeSet/AttributeSetHealth into bot+0xF00/+0xF08/+0xF10.
+        //      WireAbilitySystem is NOT usable on the bot: its PlayerState has no HeroAffiliated
+        //      carrier (@0x4F8 == NULL) and spawning one FAILS (S190 flight 1) / crashes (S80).
+        //      Prefer the ARM G borrow at +0xF00; fall back to WireAbilitySystem only if it is unset.
+        // ---- STATION 2: build a REAL ASC on the bot and bind it. The ARM-G-borrowed CDO ASC is NOT
+        //      AdjustHealth-applicable (S190 F3/F4: InitAbilityActorInfo FAULTS on it -- its
+        //      AbilityActorInfo TSharedPtr is null -- so no AvatarActor binds and AdjustHealth cleanly
+        //      no-ops, 1000->1000). Replicate EnsureHeroAffiliatedCarrier's PROVEN real-ASC creation
+        //      DIRECTLY on the bot, skipping the carrier spawn (which fails/crashes on the bot, S80):
+        //      AddComponentByClass(LokiAbilitySystemComponent) [ctor allocates AbilityActorInfo] ->
+        //      K2_InitStats(sets) [creates + registers real attribute subobjects in SpawnedAttributes] ->
+        //      cache bot+0xF00 -> InitAbilityActorInfo [now non-faulting] -> force owner-authority.
+        uintptr_t botAsc=0;
+        {
+            uintptr_t ascCls=FindClassExact("LokiAbilitySystemComponent");
+            if(!LooksLikePtr(ascCls)){ Marker("[TRACKD] LokiAbilitySystemComponent class not loaded.\r\n"); result="ASC_CLASS_MISSING"; break; }
+            botAsc=AddCompByClass(bot,ascCls,"TRACKD-ASC");
+            if(!LooksLikePtr(botAsc)){ result="ASC_CREATE_FAILED"; break; }
+            uint32_t f00=PropOffsetSuper(ClassOf(bot),"AbilitySystemComponentStorage");
+            int cached=(f00!=0xFFFFFFFF&&SafeWritable((void*)(bot+f00),8))?1:0;
+            if(cached) *(uintptr_t*)(bot+f00)=botAsc;
+            // K2_InitStats(<AttributeSet class>, DataTable=null): creates + REGISTERS the real subobject.
+            void* f=nullptr; uintptr_t th=0,ch=0; ResolveFuncSuper(ClassOf(botAsc),"K2_InitStats",&f,&th,&ch);
+            int statsOk=0;
+            if(th){ static const char* kSets[2]={"LokiAttributeSet","LokiAttributeSetHealth"};
+                for(int i=0;i<2;i++){
+                    uintptr_t sc=FindClassExact(kSets[i]); if(!LooksLikePtr(sc)) continue;
+                    memset(g_gsbuf,0,sizeof(g_gsbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                    uint32_t oa=ParamOffset(ch,"Attributes"); if(oa==0xFFFFFFFF)oa=0;
+                    uint32_t od=ParamOffset(ch,"DataTable");  if(od==0xFFFFFFFF)od=8;
+                    *(uint64_t*)(g_gsbuf+oa)=(uint64_t)sc; *(uint64_t*)(g_gsbuf+od)=0;
+                    bool flt=CallNativeGuarded(f,th,ch,(void*)botAsc,g_gsbuf,g_rbuf);
+                    Markerf("[TRACKD] K2_InitStats(%s) %s\r\n",kSets[i],flt?"FAULTED":"ok");
+                    if(!flt) statsOk++;
+                }
+            } else Marker("[TRACKD] K2_InitStats NOT FOUND on the ASC\r\n");
+            uintptr_t carrier=BfCarrier(bps); uintptr_t owner=LooksLikePtr(carrier)?carrier:bps;
+            typedef void(__fastcall*PFN_IAAI)(void*,void*,void*);
+            PFN_IAAI iaai=(PFN_IAAI)(g_modBase+0x447F410);
+            bool iaaiFaulted=false;
+            __try{ iaai((void*)botAsc,(void*)owner,(void*)bot); }
+            __except(SEH_FILTER(GetExceptionInformation())){ iaaiFaulted=true; }
+            uint8_t ns0=SafeReadable((void*)(botAsc+0x800),1)?*(uint8_t*)(botAsc+0x800):0xFF;
+            if(ns0!=0&&ns0!=0xFF&&SafeWritable((void*)(botAsc+0x800),1)) *(uint8_t*)(botAsc+0x800)=0;
+            uint8_t ns1=SafeReadable((void*)(botAsc+0x800),1)?*(uint8_t*)(botAsc+0x800):0xFF;
+            Markerf("[TRACKD] TRACKD_BUILD asc=0x%llX cachedF00=%s statsOk=%d/2 initAAI=%s owner=%s netsim %u->%u\r\n",
+                    (unsigned long long)botAsc,cached?"yes":"no",statsOk,iaaiFaulted?"FAULTED":"ok",
+                    LooksLikePtr(carrier)?"carrier":"ps",ns0,ns1);
+        }
+        char ascn[128]="-"; if(ClassOf(botAsc))GetFNameStr(NameId(ClassOf(botAsc)),ascn,sizeof(ascn));
+
+        // ---- STATION 3: resolve the bot's LokiAttributeSetHealth. PRIMARY source = bot+0xF10
+        //      (AttributeSetHealthStorage, ARM G's borrow). Fallback = the ASC's SpawnedAttributes
+        //      walk. Also LOG whether that set is registered in the ASC's SpawnedAttributes -- that is
+        //      what AdjustHealth uses to find the Health attribute, so it predicts whether the shot lands.
+        uintptr_t set=0; uint32_t healthOff=0xFFFFFFFF, maxOff=0xFFFFFFFF; char setcn[128]="-";
+        int32_t spawnedNum=0; int setInSpawned=0;
+        uint32_t hso=PropOffsetSuper(ClassOf(bot),"AttributeSetHealthStorage");
+        uintptr_t hsSet=(hso!=0xFFFFFFFF&&SafeReadable((void*)(bot+hso),8))?*(uintptr_t*)(bot+hso):0;
+        {
+            uint32_t sa=PropOffsetSuper(ClassOf(botAsc),"SpawnedAttributes");
+            uintptr_t data=0;
+            if(sa!=0xFFFFFFFF&&SafeReadable((void*)(botAsc+sa),16)){
+                data=*(uintptr_t*)(botAsc+sa); spawnedNum=*(int32_t*)(botAsc+sa+8);
+            }
+            // Primary: the +0xF10 borrowed AttributeSetHealth.
+            if(LooksLikePtr(hsSet)){
+                uint32_t ho=PropOffsetSuper(ClassOf(hsSet),"Health"), mo=PropOffsetSuper(ClassOf(hsSet),"MaxHealth");
+                if(ho!=0xFFFFFFFF&&mo!=0xFFFFFFFF){ set=hsSet; healthOff=ho; maxOff=mo;
+                    if(ClassOf(hsSet))GetFNameStr(NameId(ClassOf(hsSet)),setcn,sizeof(setcn)); }
+            }
+            // Fallback + registration check: walk the ASC's SpawnedAttributes.
+            if(LooksLikePtr(data)&&spawnedNum>0&&spawnedNum<=64){
+                for(int i=0;i<spawnedNum;i++){
+                    if(!SafeReadable((void*)(data+i*8),8))continue;
+                    uintptr_t as=*(uintptr_t*)(data+i*8); if(!LooksLikePtr(as))continue;
+                    if(as==set) setInSpawned=1;
+                    uint32_t ho=PropOffsetSuper(ClassOf(as),"Health"), mo=PropOffsetSuper(ClassOf(as),"MaxHealth");
+                    if(ho==0xFFFFFFFF||mo==0xFFFFFFFF)continue;
+                    if(!LooksLikePtr(set)){ set=as; healthOff=ho; maxOff=mo;
+                        if(ClassOf(as))GetFNameStr(NameId(ClassOf(as)),setcn,sizeof(setcn)); }
+                    if(as==hsSet) setInSpawned=1;
+                }
+            }
+        }
+        Markerf("[TRACKD] TRACKD_SET_RESOLVE botAsc=0x%llX(%s) set=0x%llX(%s) via=%s +0xF10=0x%llX spawnedNum=%d setInSpawned=%s healthOff=0x%X maxOff=0x%X\r\n",
+                (unsigned long long)botAsc,ascn,(unsigned long long)set,setcn,
+                (set&&set==hsSet)?"F10":"SpawnedAttributes",(unsigned long long)hsSet,spawnedNum,
+                setInSpawned?"yes":"NO(AdjustHealth may no-op)",healthOff,maxOff);
+        if(!LooksLikePtr(set)){ result="SET_UNRESOLVED"; break; }
+        // NOTE: healthOff/maxOff are resolved BY NAME (authoritative); the FGameplayAttributeData
+        // Base@+0x8 / Current@+0xC layout is [M] and is what makes the seed correct. S156 measured
+        // Health@+0x70 / MaxHealth@+0x80 on this build -- logged for drift awareness, not gated on.
+        if(healthOff!=0x70||maxOff!=0x80)
+            Markerf("[TRACKD] note: offsets differ from the S156 [M] 0x70/0x80 (health=0x%X max=0x%X); proceeding on by-name resolve.\r\n",healthOff,maxOff);
+
+        // ---- STATION 3.5: register the borrowed sets in the ASC's SpawnedAttributes. The borrowed CDO
+        //      ASC ships an EMPTY SpawnedAttributes (S190 F2 measured spawnedNum=0), so AdjustHealth's
+        //      internal GetSet<ULokiAttributeSetHealth>() finds nothing and null-derefs (FAULT). Append
+        //      the base AttributeSet (+0xF08) then the AttributeSetHealth (+0xF10) via the game's own
+        //      ResizeGrow (S132 DxAppend, DATA-class). Modifies the shared CDO ASC process-wide (same
+        //      scope as ARM G's CDO attribute writes). Skip if the Health set is already registered.
+        if(!setInSpawned){
+            uint32_t sa=PropOffsetSuper(ClassOf(botAsc),"SpawnedAttributes");
+            uint32_t aso=PropOffsetSuper(ClassOf(bot),"AttributeSetStorage");
+            uintptr_t baseSet=(aso!=0xFFFFFFFF&&SafeReadable((void*)(bot+aso),8))?*(uintptr_t*)(bot+aso):0;
+            int rBase=-1,rHealth=0;
+            if(sa!=0xFFFFFFFF){
+                if(LooksLikePtr(baseSet)&&baseSet!=set) rBase=DxAppend(botAsc,sa,baseSet);
+                rHealth=DxAppend(botAsc,sa,set);
+            }
+            int32_t n=0; setInSpawned=0;
+            if(sa!=0xFFFFFFFF&&SafeReadable((void*)(botAsc+sa),16)){
+                uintptr_t d=*(uintptr_t*)(botAsc+sa); n=*(int32_t*)(botAsc+sa+8);
+                if(LooksLikePtr(d)&&n>0&&n<=64) for(int i=0;i<n;i++)
+                    if(SafeReadable((void*)(d+i*8),8)&&*(uintptr_t*)(d+i*8)==set){ setInSpawned=1; break; }
+            }
+            Markerf("[TRACKD] TRACKD_REGISTER sa@0x%X baseSet=0x%llX rBase=%d rHealth=%d spawnedNum=%d setInSpawned=%s\r\n",
+                    sa,(unsigned long long)baseSet,rBase,rHealth,n,setInSpawned?"yes":"NO");
+            if(!setInSpawned){ result="REGISTER_FAILED"; break; }
+        }
+
+        // ---- STATION 4: seed BOTH pairs (MaxHealth first, then Health) to KBFTRACKD_SEEDBITS. ----
+        {
+            uintptr_t healthPair=set+healthOff+0x8;   // Base@+0x8, Current@+0xC
+            uintptr_t maxPair=set+maxOff+0x8;
+            const uint64_t seedPair=((uint64_t)(KBFTRACKD_SEEDBITS)<<32)|(uint64_t)(uint32_t)(KBFTRACKD_SEEDBITS);
+            uint32_t hpPreB=SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0;
+            uint32_t hpPreC=SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0;
+            uint32_t mpPreB=SafeReadable((void*)(set+maxOff+0x8),4)?*(uint32_t*)(set+maxOff+0x8):0;
+            uint32_t mpPreC=SafeReadable((void*)(set+maxOff+0xC),4)?*(uint32_t*)(set+maxOff+0xC):0;
+            bool hWritable=(healthPair&7)==0&&SafeWritable((void*)healthPair,8);
+            bool mWritable=(maxPair&7)==0&&SafeWritable((void*)maxPair,8);
+            bool seedFaulted=false;
+            if(hWritable&&mWritable){
+                __try{ *(volatile uint64_t*)maxPair=seedPair; MemoryBarrier();
+                       *(volatile uint64_t*)healthPair=seedPair; MemoryBarrier(); }
+                __except(SEH_FILTER(GetExceptionInformation())){ seedFaulted=true; }
+            }
+            uint32_t hpPostB=SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0;
+            uint32_t hpPostC=SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0;
+            uint32_t mpPostB=SafeReadable((void*)(set+maxOff+0x8),4)?*(uint32_t*)(set+maxOff+0x8):0;
+            uint32_t mpPostC=SafeReadable((void*)(set+maxOff+0xC),4)?*(uint32_t*)(set+maxOff+0xC):0;
+            bool seedExact=!seedFaulted&&hpPostB==(uint32_t)(KBFTRACKD_SEEDBITS)&&hpPostC==(uint32_t)(KBFTRACKD_SEEDBITS)
+                           &&mpPostB==(uint32_t)(KBFTRACKD_SEEDBITS)&&mpPostC==(uint32_t)(KBFTRACKD_SEEDBITS);
+            Markerf("[TRACKD] TRACKD_SEED result=%s hpPre=%08X/%08X hpPost=%08X/%08X maxPre=%08X/%08X maxPost=%08X/%08X wr(h=%u,m=%u) exact=%s\r\n",
+                    seedFaulted?"FAULTED":(seedExact?"ok":"MISMATCH"),
+                    hpPreB,hpPreC,hpPostB,hpPostC,mpPreB,mpPreC,mpPostB,mpPostC,
+                    (unsigned)hWritable,(unsigned)mWritable,seedExact?"yes":"NO");
+            if(!seedExact){ result="SEED_FAILED"; break; }
+        }
+
+        // ---- STATION 5: resolve AdjustHealth via the S156-B VALIDATED wrapperExact path. ----
+        void* adjustFn=nullptr; uintptr_t adjustThunk=0,adjustChild=0;
+        ResolveFuncNative(ClassOf(botAsc),"AdjustHealth",&adjustFn,&adjustThunk,&adjustChild);
+        bool wrapperExact=adjustThunk==g_modBase+0x5294270;
+        bool tailReachesImpl=false;
+        if(wrapperExact&&SafeReadable((void*)(adjustThunk+0x6F),5)){
+            const uint8_t* tp=(const uint8_t*)(adjustThunk+0x6F);
+            if(tp[0]==0xE8){ int32_t rel=*(const int32_t*)(tp+1);
+                uintptr_t tgt=adjustThunk+0x6F+5+(intptr_t)rel;
+                tailReachesImpl=tgt==(g_modBase+0x5516610); }
+        }
+        uint32_t deltaOff=(adjustChild)?ParamOffset(adjustChild,"HealthDelta"):0xFFFFFFFF;
+        if(deltaOff==0xFFFFFFFF)deltaOff=0;
+        bool dmgOk=GcAlive((uintptr_t)adjustFn)&&wrapperExact&&tailReachesImpl&&LooksLikePtr(adjustChild)&&
+                   (deltaOff+4u)<=sizeof(g_pbuf);
+        Markerf("[TRACKD] TRACKD_DMG_RESOLVE adjustFn=0x%llX thunk=0x%llX expectTh=0x%llX wrapperExact=%s tailReachesImpl=%s deltaOff=%u ok=%s\r\n",
+                (unsigned long long)(uintptr_t)adjustFn,(unsigned long long)adjustThunk,
+                (unsigned long long)(g_modBase+0x5294270),wrapperExact?"yes":"NO",
+                tailReachesImpl?"yes":"NO",deltaOff,dmgOk?"yes":"NO");
+        if(!dmgOk){ result="DMG_RESOLVE_FAILED"; break; }
+
+        // ---- STATION 6: fire ONE AdjustHealth shot on the bot ASC. ----
+        {
+            // Read Health.Current DIRECTLY from the seeded set (BfReadHealth walks SpawnedAttributes;
+            // reading the set instance is authoritative and independent of registration order).
+            int hb=(SafeReadable((void*)(set+healthOff+0xC),4))?1:0;
+            preHP=hb?*(float*)(set+healthOff+0xC):0.0f;
+            memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+            const uint32_t deltaBits=(uint32_t)(KBFTRACKD_DELTABITS);
+            memcpy((uint8_t*)g_pbuf+deltaOff,&deltaBits,sizeof(deltaBits));
+            float reqDelta=*(const float*)&deltaBits;
+            Markerf("[TRACKD] firing AdjustHealth(%.2f) on bot ASC=0x%llX preHP=%.2f (%s)\r\n",
+                    (double)reqDelta,(unsigned long long)botAsc,(double)preHP,hb?setcn:"unread");
+            bool callFaulted=CallNativeGuarded(adjustFn,adjustThunk,adjustChild,(void*)botAsc,g_pbuf,g_rbuf);
+            int ha=(SafeReadable((void*)(set+healthOff+0xC),4))?1:0; postHP=ha?*(float*)(set+healthOff+0xC):0.0f;
+            uint32_t postB=SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+            uint32_t postC=SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+            float expClamp=preHP+reqDelta; if(expClamp<0.0f)expClamp=0.0f;
+            float observed=postHP-preHP;
+            bool arithmeticOK=(ha!=0)&&(postHP==expClamp);
+            bool cleanZero=(postB==0&&postC==0);
+            killed=(ha!=0&&postHP<=0.0f)?1:0;
+            Markerf("[TRACKD] TRACKD_KILL preHP=%.2f requestedDelta=%.2f postHP=%.2f postBits=%08X/%08X observedDeltaHP=%.2f expectedClampHP=%.2f arithmeticOK=%s cleanZero=%s faulted=%s killed=%s\r\n",
+                    (double)preHP,(double)reqDelta,(double)postHP,postB,postC,(double)observed,(double)expClamp,
+                    arithmeticOK?"yes":"NO",cleanZero?"yes":"NO",callFaulted?"YES":"no",killed?"yes":"NO");
+            if(callFaulted){ result="CALL_FAULTED"; break; }
+            if(!ha){ result="POST_UNREAD"; break; }
+            if(killed){ result="BOT_KILLED"; }
+            else if(postHP<preHP){ result="DMG_APPLIED_NONLETHAL"; }
+            else if(!arithmeticOK){ result="CLAMP_MISMATCH"; }
+            else { result="NO_OP_UNSEEDED"; }
+        }
+    } while(0);
+    Markerf("[TRACKD] TRACKD_COMPLETE RESULT=%s preHP=%.2f postHP=%.2f killed=%s\r\n",
+            result,(double)preHP,(double)postHP,killed?"yes":"no");
+}
+#endif // KBFTRACKD
 
 #if KBFSELFCAL || KBFBINDONLY
 struct BfS148HealthTarget {

@@ -985,6 +985,20 @@ $Variants = @{
         # ZERO-NEW-LOGIC contingency (design A: the S140 sentinel-big shape minus the player kick, with the
         #   487 seed). Air spawn, three ARM-D spawns, 600 uu/s bot kick at arm time.
         'botwalk'             = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x3A0','-DKSHSENTX=600.0','-DKSHSENTZ=0.0','-DKBSGASMOVESPEED=487.0f')
+        # ===== S190 TRACK D: spawn a floor bot -> seed its Health -> AdjustHealth it to 0 = KILL. =====
+        # KBSPSARMS=0x120 = ARM D (0x20: floor-spawned, LokiBotController-possessed, PlayerState-
+        # provisioned bot in g_psLbPawn[1]) + ARM G (0x100: borrow the CDO's ASC/AttributeSet/
+        # AttributeSetHealth into bot+0xF00/+0xF08/+0xF10 -- the [M] S139 bot-GAS wiring; WireAbilitySystem
+        # canNOT be used, S190 F1 measured it fail at carrier-spawn). KBSLBSKIPCTRL=1 spawns ONLY the
+        # treatment. No ARM H, no KSHSAMPLEN sampling, so KBFTRACKD's seed+kill fires promptly (minimal
+        # FK-32 surface). KBFTRACKD reads bot+0xF00 (ASC) + bot+0xF10 (Health set), seeds Health+MaxHealth
+        # =1000/1000, and calls the S156-B VALIDATED AdjustHealth on the BOT's own ASC (bypasses WALL E).
+        # FLY -nonlethal FIRST (delta -250 -> 750, no zero-cross), then -kill (delta -5000 -> 0) under crashwatch.
+        'trackd-kill'         = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x20','-DKBSLBSKIPCTRL=1','-DKBSAIFLOOR=1','-DKBSAILOC_X=1356.0','-DKBSAILOC_Y=-409.0','-DKBSAILOC_Z=90.15','-DKBFTRACKD=1','-DKBFTRACKD_DELTABITS=0xC59C4000u')
+        # WITHIN-FAMILY controlled comparison: identical to trackd-kill except delta -250 (0xC37A0000u)
+        # lands the bot at 750/750 with NO zero-cross -- validates provision+borrow+seed+validated-resolve+
+        # arithmetic before the lethal build risks the OnDeath chain.
+        'trackd-kill-nonlethal' = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x20','-DKBSLBSKIPCTRL=1','-DKBSAIFLOOR=1','-DKBSAILOC_X=1356.0','-DKBSAILOC_Y=-409.0','-DKBSAILOC_Z=90.15','-DKBFTRACKD=1','-DKBFTRACKD_DELTABITS=0xC37A0000u')
         # READ-ONLY control: runs ARM D + every ARM E pre-flight gate and then makes NO SpawnBot
         # call (bit6 clear). Any world change under THIS build would mean the gates are not read-only.
         'spawnbot-readonly'   = @('-DKRUNMODE=RM_BOTSPAWN','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBSAI=1','-DKBSPS=1','-DKBSPSARMS=0x60','-DKBSSBCALL=0')
