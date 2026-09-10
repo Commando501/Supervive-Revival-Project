@@ -956,6 +956,21 @@ $Variants = @{
         # via non-Selector ability. If also refuses, the wall is deeper than Selector.
         'e4-n-a3'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4N=1')
 
+        # e4-p (S191 E4 OPTION P, 2026-09-10, tag [E4P]): S158 flag-byte hypothesis test.
+        # Pokes spec+0x39 = 0x50 (bits 0x10+0x40, S158's observed natural-input value) on the
+        # K_GRANT'd Items[N] matching InputID=3, then raw-native TryActivateAbilityByInputID(3).
+        # A->B->A: pre-value saved, restored after activation regardless of outcome.
+        # If activation now proceeds + damages minion, WALL P defeated via natural-input parity.
+        'e4-p'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4P=1')
+
+        # e4-q (S191 E4 OPTION Q, 2026-09-10, tag [E4Q]): direct TryActivateAbility(Handle) raw-native.
+        # Bypasses InputID->spec resolution entirely. Calls the EXACT function that emits 'invalid
+        # Handle' warning (UAbilitySystemComponent::TryActivateAbility @ ImageBase+0x4493420) with
+        # our K_GRANT'd Handle. Discriminates E4N's failure: if E4Q succeeds, the InputID path is
+        # the block; if E4Q emits invalid Handle, our Handle is genuinely rejected by the inline
+        # FindAbilitySpecFromHandle even though [Items[0]+0xC]==1 is measured live.
+        'e4-q'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4Q=1')
+
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
         #   specifically did nothing'.

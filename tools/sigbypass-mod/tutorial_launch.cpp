@@ -18454,6 +18454,31 @@ static void DoBotSpawn(){
                 // of the E4 predicate is unlocked via a direct shim call — bypassing OS input
                 // entirely). Log the return SpecHandle + pre/post Items.Num. Log tag: [E4B].
 #endif
+#ifndef KBFE4Q
+#define KBFE4Q 0 // S191 E4 OPTION Q (2026-09-10, tag [E4Q] in markers): direct TryActivateAbility(Handle)
+                // via raw-native call, bypassing the InputID->spec resolution entirely. Calls
+                // UAbilitySystemComponent::TryActivateAbility at ImageBase+0x4493420 — THE EXACT
+                // FUNCTION THAT EMITS 'invalid Handle' WARNING — with our K_GRANT'd Handle=1
+                // directly. Signature: bool __fastcall(ASC*, int32 Handle, bool bAllowRemote, FGameplayEventData*).
+                // If it succeeds: the wall is UPSTREAM in the input dispatch chain (E4N's fallback
+                // path is what refuses, not the Handle itself). If it emits invalid Handle: our
+                // Handle really is being rejected by 0x4493420's inline FindAbilitySpecFromHandle
+                // even though [Items[0]+0xC]==1 is measured live.
+                // Class: CALL-ONLY (no writes anywhere).
+#endif
+#ifndef KBFE4P
+#define KBFE4P 0 // S191 E4 OPTION P (2026-09-10, tag [E4P] in markers): S158 hypothesis test.
+                // S158 observed natural-input activation-ready specs have spec+0x39 = 0x50
+                // (bits 0x10 + 0x40 SET, both UNDECLARED per S159's UHT SetBitFunc census).
+                // Our K_GRANT'd specs measured live at +0x39 = 0x00 (all bits clear).
+                // Poke +0x39 = 0x50 on the K_GRANT'd Items[N] spec matching InputID==KBFE4CALLID,
+                // then raw-native TryActivateAbilityByInputID via ImageBase+0x5544F70 (E4N-style).
+                // If activation now proceeds + damages minion, WALL P defeated (natural-input
+                // parity achieved via targeted flag poke). If still refuses, S158's observation
+                // was about a DIFFERENT flag or the block is deeper. Includes A->B->A restore
+                // (spec+0x39 pre-value saved before poke, restored after activation attempt).
+                // Class: DATA poke (single byte) + CALL-ONLY.
+#endif
 #ifndef KBFE4CALLID
 #define KBFE4CALLID 3 // S191 OPTION K/M/N default InputID argument to GetByInputID / TryActivateAbilityByInputID.
                       // 3 = LokiAbilityInputID::Ability1 (LMB). 5 = Ability3 (LeftShift = MiniDash Charges).
@@ -18935,6 +18960,42 @@ static void DoBotSpawn(){
 #endif
 #if KBFE4N && (KBFE4A || KBFE4B || KBFE4C || KBFE4E || KBFE4F || KBFE4K || KBFE4M)
 #error S191 KBFE4N must be flown in isolation
+#endif
+#if KBFE4P && !KBFE4
+#error S191 KBFE4P requires KBFE4=1
+#endif
+#if KBFE4P && (KBFSELFCAL || KBFBINDONLY || KBFBINDAVATAR || KBFNATURALINPUT)
+#error S191 KBFE4P runs the #else K_* path
+#endif
+#if KBFE4P && !(KBFARMS & 0xC6)
+#error S191 KBFE4P requires KBFARMS=0xC6
+#endif
+#if KBFE4P && (KBFARMS & 0x08)
+#error S191 KBFE4P must NOT set K_ACTIVATE
+#endif
+#if KBFE4P && KE4DIRECTGE
+#error S191 KBFE4P must be flown with KE4DIRECTGE=0
+#endif
+#if KBFE4P && (KBFE4A || KBFE4B || KBFE4C || KBFE4E || KBFE4F || KBFE4K || KBFE4M || KBFE4N)
+#error S191 KBFE4P must be flown in isolation
+#endif
+#if KBFE4Q && !KBFE4
+#error S191 KBFE4Q requires KBFE4=1
+#endif
+#if KBFE4Q && (KBFSELFCAL || KBFBINDONLY || KBFBINDAVATAR || KBFNATURALINPUT)
+#error S191 KBFE4Q runs the #else K_* path
+#endif
+#if KBFE4Q && !(KBFARMS & 0xC6)
+#error S191 KBFE4Q requires KBFARMS=0xC6
+#endif
+#if KBFE4Q && (KBFARMS & 0x08)
+#error S191 KBFE4Q must NOT set K_ACTIVATE
+#endif
+#if KBFE4Q && KE4DIRECTGE
+#error S191 KBFE4Q must be flown with KE4DIRECTGE=0
+#endif
+#if KBFE4Q && (KBFE4A || KBFE4B || KBFE4C || KBFE4E || KBFE4F || KBFE4K || KBFE4M || KBFE4N || KBFE4P)
+#error S191 KBFE4Q must be flown in isolation
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -25218,6 +25279,158 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                 Markerf("[E4N] E4N_RESULT faulted=%s retBool=%u elapsedMs=%llu minPreHP=%.2f minPostHP=%.2f preBits=%08X/%08X postBits=%08X/%08X dHP=%+.2f  %s\r\n",
                         faulted?"YES":"no",(unsigned)retBool,(unsigned long long)elapsedMs,
                         (double)minPreHP,(double)minPostHP,minPreBB,minPreBC,minPostBB,minPostBC,(double)dHP,verdict);
+            }
+        }
+#endif
+#if KBFE4P
+        // ---- OPTION P: S158 flag-byte hypothesis test. Poke spec+0x39 to 0x50 (bits 0x10+0x40)
+        //      to mimic natural-input activation-ready state, then raw-native TryActivateAbilityByInputID.
+        //      A->B->A: saves pre-poke +0x39 value, restores after activation attempt regardless of outcome.
+        {
+            uintptr_t pASC=BfGetAsc(hero);
+            float minPreHP  = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+            uint32_t minPreBB = SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+            uint32_t minPreBC = SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+            Markerf("[E4P] pre-activate: pASC=0x%llX minionPreHP=%.2f g_modBase=0x%llX\r\n",
+                    (unsigned long long)pASC,(double)minPreHP,(unsigned long long)g_modBase);
+            if(!LooksLikePtr(pASC)||!g_modBase){ Marker("[E4P] REFUSE: ASC or modBase not resolved\r\n"); }
+            else if(!SafeReadable((void*)(pASC+0x538),16)){ Marker("[E4P] REFUSE: ASC+0x538 unreadable\r\n"); }
+            else {
+                uintptr_t itemsData=*(uintptr_t*)(pASC+0x538);
+                int32_t   itemsNum =*(int32_t*)(pASC+0x540);
+                Markerf("[E4P] Items header: Data=0x%llX Num=%d target InputID=%u\r\n",
+                        (unsigned long long)itemsData,itemsNum,(unsigned)KBFE4CALLID);
+                if(!LooksLikePtr(itemsData)||itemsNum<=0){ Marker("[E4P] REFUSE: Items empty\r\n"); }
+                else {
+                    // Locate spec with InputID==KBFE4CALLID (iterator will pick lowest-Handle tie-break)
+                    uintptr_t spec=0; int specIdx=-1;
+                    for(int32_t i=0;i<itemsNum && i<32;i++){
+                        uintptr_t cand=itemsData+(uintptr_t)i*0xF8;
+                        if(!SafeReadable((void*)(cand+0x24),4)) continue;
+                        int32_t iid=*(int32_t*)(cand+0x24);
+                        if(iid==(int32_t)KBFE4CALLID){ spec=cand; specIdx=i; break; }
+                    }
+                    if(!spec){ Marker("[E4P] REFUSE: no Items entry with target InputID\r\n"); }
+                    else if(!SafeReadable((void*)(spec+0x39),1)||!SafeWritable((void*)(spec+0x39),1)){
+                        Marker("[E4P] REFUSE: spec+0x39 not readable/writable\r\n");
+                    }
+                    else {
+                        uint8_t preFlag = *(uint8_t*)(spec+0x39);
+                        Markerf("[E4P] target spec[%d]@0x%llX Handle=%d pre-poke +0x39=0x%02X\r\n",
+                                specIdx,(unsigned long long)spec,*(int32_t*)(spec+0xC),preFlag);
+                        // Poke +0x39 = 0x50 (bits 0x10 + 0x40 — S158's observed natural-input value)
+                        *(uint8_t*)(spec+0x39) = 0x50;
+                        uint8_t verifyFlag = *(uint8_t*)(spec+0x39);
+                        Markerf("[E4P] E4P_POKE_ISSUE spec+0x39 <- 0x50 (S158 natural-input pattern) ; verify=0x%02X %s\r\n",
+                                verifyFlag, verifyFlag==0x50?"OK":"MISMATCH");
+
+                        // The raw-native call (same signature as E4N)
+                        typedef bool (__fastcall *TryActivateInputIDFn)(void* ASC, uint8_t InputID);
+                        TryActivateInputIDFn fn = (TryActivateInputIDFn)(g_modBase + 0x5544F70);
+                        uint64_t tStart = GetTickCount64();
+                        Markerf("[E4P] E4P_CALL_ISSUE: raw call fn=0x%llX(=ImageBase+0x5544F70) ASC=0x%llX InputID=%u ; tStart=%llu ; spec+0x39 now=0x%02X\r\n",
+                                (unsigned long long)fn,(unsigned long long)pASC,(unsigned)KBFE4CALLID,(unsigned long long)tStart,verifyFlag);
+                        bool retBool = false;
+                        bool faulted = false;
+                        __try { retBool = fn((void*)pASC, (uint8_t)KBFE4CALLID); }
+                        __except(EXCEPTION_EXECUTE_HANDLER){ faulted = true; }
+                        uint64_t elapsedMs = GetTickCount64() - tStart;
+
+                        float minPostHP  = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                        uint32_t minPostBB = SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+                        uint32_t minPostBC = SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+                        float dHP = minPostHP - minPreHP;
+                        uint8_t postCallFlag = SafeReadable((void*)(spec+0x39),1)?*(uint8_t*)(spec+0x39):0xFF;
+                        const char* verdict =
+                            faulted                     ? "*** FAULT: WALL-P class via flag-poke activation ***"
+                          : (retBool && dHP<0)          ? "*** E4P SUCCEEDS: flag-poke unblocks activation AND minion HP dropped -- WALL P DEFEATED via S158 flag hypothesis ***"
+                          : (retBool && dHP==0)         ? "*** ACTIVATION returned TRUE with flag poke (unblocked!) but no damage this frame -- half-success, downstream fires without damaging ***"
+                          : (!retBool && !faulted)      ? "return=false clean -- S158 flag hypothesis REFUTED (flag alone doesn't unblock activation)"
+                          :                               "(unreadable)";
+                        Markerf("[E4P] E4P_RESULT faulted=%s retBool=%u elapsedMs=%llu minPreHP=%.2f minPostHP=%.2f dHP=%+.2f preBits=%08X/%08X postBits=%08X/%08X spec+0x39 post-call=0x%02X  %s\r\n",
+                                faulted?"YES":"no",(unsigned)retBool,(unsigned long long)elapsedMs,
+                                (double)minPreHP,(double)minPostHP,(double)dHP,
+                                minPreBB,minPreBC,minPostBB,minPostBC,postCallFlag,verdict);
+
+                        // A->B->A restore
+                        *(uint8_t*)(spec+0x39) = preFlag;
+                        uint8_t restoreFlag = *(uint8_t*)(spec+0x39);
+                        Markerf("[E4P] E4P_RESTORE spec+0x39 <- 0x%02X (pre-poke value) ; verify=0x%02X %s\r\n",
+                                preFlag, restoreFlag, restoreFlag==preFlag?"OK":"MISMATCH");
+                    }
+                }
+            }
+        }
+#endif
+#if KBFE4Q
+        // ---- OPTION Q: direct raw-native TryActivateAbility(ASC, Handle=1, bAllowRemote=1, EventData=null).
+        //      Calls the EXACT function that emits 'invalid Handle' warning, with our K_GRANT'd Handle
+        //      as arg. If it succeeds AND minion HP drops, the InputID resolution path (E4N)
+        //      was the block; if it emits invalid Handle, our Handle really is being rejected.
+        {
+            uintptr_t pASC=BfGetAsc(hero);
+            float minPreHP  = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+            uint32_t minPreBB = SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+            uint32_t minPreBC = SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+            Markerf("[E4Q] pre-activate: pASC=0x%llX minionPreHP=%.2f g_modBase=0x%llX\r\n",
+                    (unsigned long long)pASC,(double)minPreHP,(unsigned long long)g_modBase);
+            if(!LooksLikePtr(pASC)||!g_modBase){ Marker("[E4Q] REFUSE: ASC or modBase not resolved\r\n"); }
+            else if(!SafeReadable((void*)(pASC+0x538),16)){ Marker("[E4Q] REFUSE: ASC+0x538 unreadable\r\n"); }
+            else {
+                uintptr_t itemsData=*(uintptr_t*)(pASC+0x538);
+                int32_t   itemsNum =*(int32_t*)(pASC+0x540);
+                Markerf("[E4Q] Items header: Data=0x%llX Num=%d\r\n",(unsigned long long)itemsData,itemsNum);
+                if(!LooksLikePtr(itemsData)||itemsNum<=0){ Marker("[E4Q] REFUSE: Items empty\r\n"); }
+                else {
+                    // Find spec with InputID==KBFE4CALLID and read its Handle
+                    int32_t targetHandle = -1;
+                    uintptr_t spec = 0;
+                    for(int32_t i=0;i<itemsNum && i<32;i++){
+                        uintptr_t cand=itemsData+(uintptr_t)i*0xF8;
+                        if(!SafeReadable((void*)(cand+0x24),4)) continue;
+                        int32_t iid=*(int32_t*)(cand+0x24);
+                        if(iid==(int32_t)KBFE4CALLID){
+                            spec = cand;
+                            targetHandle = *(int32_t*)(cand+0xC);
+                            Markerf("[E4Q] target spec[%d]@0x%llX Handle=%d InputID=%d\r\n",
+                                    i,(unsigned long long)cand,targetHandle,iid);
+                            break;
+                        }
+                    }
+                    if(targetHandle < 0){ Marker("[E4Q] REFUSE: no Items entry with target InputID\r\n"); }
+                    else {
+                        // The raw-native call. Signature at ImageBase+0x4493420:
+                        //   bool __fastcall TryActivateAbility(ASC*, int32 Handle, bool bAllowRemote, FGameplayEventData* EventData)
+                        // A stack buffer for the EventData (may be null-accepted or may require valid pointer)
+                        typedef bool (__fastcall *TryActivateFn)(void* ASC, int32_t Handle, uint8_t bAllowRemote, void* EventData);
+                        TryActivateFn fn = (TryActivateFn)(g_modBase + 0x4493420);
+                        // Pre-allocate 64-byte stack buffer to serve as EventData (many UE builds
+                        // require it non-null even if unused)
+                        uint8_t eventDataBuf[64] = {0};
+                        uint64_t tStart = GetTickCount64();
+                        Markerf("[E4Q] E4Q_CALL_ISSUE: raw call fn=0x%llX(=ImageBase+0x4493420) ASC=0x%llX Handle=%d bAllowRemote=1 EventData=stackBuf ; tStart=%llu\r\n",
+                                (unsigned long long)fn,(unsigned long long)pASC,targetHandle,(unsigned long long)tStart);
+                        bool retBool = false;
+                        bool faulted = false;
+                        __try { retBool = fn((void*)pASC, targetHandle, 1, (void*)eventDataBuf); }
+                        __except(EXCEPTION_EXECUTE_HANDLER){ faulted = true; }
+                        uint64_t elapsedMs = GetTickCount64() - tStart;
+
+                        float minPostHP  = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                        uint32_t minPostBB = SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+                        uint32_t minPostBC = SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+                        float dHP = minPostHP - minPreHP;
+                        const char* verdict =
+                            faulted                     ? "*** FAULT: null EventData or arg mismatch ***"
+                          : (retBool && dHP<0)          ? "*** E4Q SUCCEEDS: direct TryActivateAbility(Handle) activated + damaged minion -- WALL P was in the InputID->spec resolution/E4N path ***"
+                          : (retBool && dHP==0)         ? "*** ACTIVATION returned TRUE but no damage this frame (retBool=true, HP unchanged) -- half-success ***"
+                          : (!retBool && !faulted)      ? "return=false clean -- Handle rejected by inline FindAbilitySpecFromHandle (invalid Handle warning likely emitted), OR downstream check failed"
+                          :                               "(unreadable)";
+                        Markerf("[E4Q] E4Q_RESULT faulted=%s retBool=%u elapsedMs=%llu minPreHP=%.2f minPostHP=%.2f dHP=%+.2f preBits=%08X/%08X postBits=%08X/%08X  %s\r\n",
+                                faulted?"YES":"no",(unsigned)retBool,(unsigned long long)elapsedMs,
+                                (double)minPreHP,(double)minPostHP,(double)dHP,minPreBB,minPreBC,minPostBB,minPostBC,verdict);
+                    }
+                }
             }
         }
 #endif
