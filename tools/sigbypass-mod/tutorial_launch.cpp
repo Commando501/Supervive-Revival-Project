@@ -18454,6 +18454,41 @@ static void DoBotSpawn(){
                 // of the E4 predicate is unlocked via a direct shim call — bypassing OS input
                 // entirely). Log the return SpecHandle + pre/post Items.Num. Log tag: [E4B].
 #endif
+#ifndef KBFE4M
+#define KBFE4M 0 // S191 E4 OPTION M (2026-09-10, tag [E4M] in markers): direct-native-call probe.
+                // Same setup as E4K (no pokes, no state changes) but calls GetAbilityByInputID's
+                // IMPL directly via a raw function pointer (ImageBase+0x5526210) instead of via
+                // the S55 CallNativeGuarded/FFrame framework. Discriminates the KBFE4K result:
+                // three prior flights (E4A F1, E4E F1, E4K F1) all returned NULL from S55-invoked
+                // GetAbilityByInputID. If the raw-native call returns non-null while S55 returns
+                // NULL, the S55 primitive has a defect specific to this UFunction shape
+                // (likely the return-value marshaling of a UObject*). If both return NULL, the
+                // runtime genuinely returns NULL and the byte model / spec state analysis needs
+                // deeper live instrumentation. Signature: `UObject* (__fastcall*)(ASC*, uint8_t)`.
+                // Class: CALL-ONLY read-only (no writes anywhere). Mutually exclusive with all
+                // other E4 activation surfaces.
+#endif
+#ifndef KBFE4K
+#define KBFE4K 0 // S191 E4 OPTION K (2026-09-10, tag [E4K] in markers): the MINIMAL live probe.
+                // NO POKES, NO STATE CHANGES. After K_GRANT completes, simply calls
+                // ASC.GetAbilityByInputID(3) via S55 and logs the return. Also reads
+                // [spec+0x10] and [Ability+0xEE] BEFORE the call, and RE-reads BOTH AFTER
+                // to detect any mid-call mutation. Discriminates the S191 E4E follow-up
+                // question: does the workflow's byte-verified 3-gate model produce the
+                // expected return (Rep.Data[0] via Rep-fallback arm) given LIVE state at
+                // the moment of the call? If YES, the E4E flight's NULL was a state-timing
+                // artifact (Rep.Num was 0 at that instant); if NO, the adjudicator's
+                // Gate-2-fails-mid-call mechanism is the leading hypothesis and KBFE4H
+                // (three-timestamp instrumented variant) is the next arm. Mutually exclusive
+                // with KE4DIRECTGE/KBFE4A/KBFE4B/KBFE4C/KBFE4E/KBFE4F.
+                //   Safety: 100% read-only w.r.t. spec state; the only writes are:
+                //     - g_pbuf zero-fill (shim-local)
+                //     - the AbilityID param (shim-local)
+                //   The `GetAbilityByInputID` native itself walks Items and reads spec
+                //   fields but does NOT mutate spec state (byte-verified via Lane I + H
+                //   full disasm). Safer than E4E (which pokes 3 words on the K_GRANT'd
+                //   spec) and CALL-ONLY class (no CDO poke, no .text write, no PI hook).
+#endif
 #ifndef KBFE4E
 #define KBFE4E 0 // S191 E4 OPTION E (2026-09-10, tag [E4E] in markers): after K_GRANT + E4 spawn+seed,
                 // POKE the K_GRANT'd spec at Items[0] to populate spec.NonReplicatedInstances
@@ -18796,6 +18831,57 @@ static void DoBotSpawn(){
 #endif
 #if KBFE4E && KBFE4C
 #error S191 KBFE4E is incompatible with KBFE4C=1: E4C fires BEFORE E4E via the BP dispatcher surface and would leave the K_GRANT'd spec in whatever state HandleAbilityActivation touched.
+#endif
+#if KBFE4K && !KBFE4
+#error S191 KBFE4K (Option K: minimal no-poke GetByInputID probe) requires KBFE4=1 (needs the spawned+seeded target present so damage-vs-null is discriminable)
+#endif
+#if (KBFE4K != 0) && (KBFE4K != 1)
+#error S191 KBFE4K is a bool: 0 (dead-strip) or 1 (call ASC.GetAbilityByInputID(3), no pokes, no state changes)
+#endif
+#if KBFE4K && (KBFSELFCAL || KBFBINDONLY || KBFBINDAVATAR)
+#error S191 KBFE4K runs the #else K_* path: requires KBFSELFCAL=0, KBFBINDONLY=0, KBFBINDAVATAR=0
+#endif
+#if KBFE4K && KBFNATURALINPUT
+#error S191 KBFE4K must NOT compile the S147 natural-input observation machinery: KBFNATURALINPUT=0
+#endif
+#if KBFE4K && !(KBFARMS & 0x02)
+#error S191 KBFE4K requires K_BIND (KBFARMS&0x02): the player ASC must be wired for the readback to reach a real ASC vtable
+#endif
+#if KBFE4K && !(KBFARMS & 0x04)
+#error S191 KBFE4K requires K_GRANT (KBFARMS&0x04): a spec must be registered so GetByInputID has something to iterate
+#endif
+#if KBFE4K && !(KBFARMS & 0x40)
+#error S191 KBFE4K requires K_ALIVE (KBFARMS&0x40): hero LivingState must be poked to Alive (S144)
+#endif
+#if KBFE4K && !(KBFARMS & 0x80)
+#error S191 KBFE4K requires K_GASATTR (KBFARMS&0x80): complete AttributeSet wiring must be preflight-verified (S145)
+#endif
+#if KBFE4K && (KBFARMS & 0x08)
+#error S191 KBFE4K must NOT set K_ACTIVATE (KBFARMS&0x08): would fire the shim-originated activation before the readback and destroy attribution
+#endif
+#if KBFE4K && (KE4DIRECTGE || KBFE4A || KBFE4B || KBFE4C || KBFE4E || KBFE4F)
+#error S191 KBFE4K must be flown in isolation: exclusive with KE4DIRECTGE/KBFE4A/KBFE4B/KBFE4C/KBFE4E/KBFE4F to make the readback's return value uniquely attributable to the ASC's current state
+#endif
+#if KBFE4M && !KBFE4
+#error S191 KBFE4M requires KBFE4=1
+#endif
+#if (KBFE4M != 0) && (KBFE4M != 1)
+#error S191 KBFE4M is a bool: 0 (dead-strip) or 1 (call GetAbilityByInputID impl DIRECTLY via raw function pointer)
+#endif
+#if KBFE4M && (KBFSELFCAL || KBFBINDONLY || KBFBINDAVATAR)
+#error S191 KBFE4M runs the #else K_* path: requires KBFSELFCAL=0, KBFBINDONLY=0, KBFBINDAVATAR=0
+#endif
+#if KBFE4M && KBFNATURALINPUT
+#error S191 KBFE4M must NOT compile the S147 natural-input observation machinery
+#endif
+#if KBFE4M && !(KBFARMS & 0xC6)
+#error S191 KBFE4M requires KBFARMS=0xC6 (K_BIND+K_GRANT+K_ALIVE+K_GASATTR)
+#endif
+#if KBFE4M && (KBFARMS & 0x08)
+#error S191 KBFE4M must NOT set K_ACTIVATE (KBFARMS&0x08)
+#endif
+#if KBFE4M && (KE4DIRECTGE || KBFE4A || KBFE4B || KBFE4C || KBFE4E || KBFE4F || KBFE4K)
+#error S191 KBFE4M must be flown in isolation to make the raw-native-call return value uniquely attributable
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -24812,6 +24898,196 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                                     (rData==preData&&rNum==preNum&&rMax==preMax)?"OK (pre-poke state re-established)":"MISMATCH -- state NOT restored");
                         }
                     }
+                }
+            }
+        }
+#endif
+#if KBFE4K
+        // ---- OPTION K: NO-POKE LIVE PROBE of ASC.GetAbilityByInputID(3).
+        //      Directly answers: given the current live state of the K_GRANT'd spec at
+        //      Items[0] (Handle=1, InputID=3, Ability=CDO, NonRep+Rep TArray headers
+        //      whatever they are RIGHT NOW), what does the game's own GetAbilityByInputID
+        //      return? If it returns non-null, the byte-verified 3-gate model (Lane G+H+I
+        //      of workflow wf_7e83ab1b) is producing its expected output and the E4E null
+        //      was purely a state-timing artifact (Rep.Num was 0 at that instant, our
+        //      NonRep poke's game-heap self-ref then dereferenced to the CDO — but if
+        //      GetByInputID returns non-null now, that means live state has advanced to
+        //      Rep.Num>0). If it returns NULL, then Gate 2 is failing mid-call (adjudicator's
+        //      leading hypothesis) OR the CFG has a data-dependent branch not visible to
+        //      static disassembly. Also reads [spec+0x10] and [spec.Ability+0xEE] BEFORE
+        //      AND AFTER the call to detect any mid-call mutation of the gate inputs.
+        //      Refuses cleanly if any precondition is unmet. NO POKES, NO STATE CHANGES.
+        //      Log tag: [E4K].
+        {
+            uintptr_t pASC=BfGetAsc(hero);
+            char aan[128]="-"; if(LooksLikePtr(pASC)&&ClassOf(pASC))GetFNameStr(NameId(ClassOf(pASC)),aan,sizeof(aan));
+            Markerf("[E4K] pre-call: pASC=0x%llX(%s)\r\n",(unsigned long long)pASC,LooksLikePtr(pASC)?aan:"NULL");
+            if(!LooksLikePtr(pASC)){ Marker("[E4K] REFUSE: player ASC not present\r\n"); }
+            else if(!SafeReadable((void*)(pASC+0x538),16)){ Marker("[E4K] REFUSE: ASC+0x538 (Items header) unreadable\r\n"); }
+            else {
+                uintptr_t itemsData=*(uintptr_t*)(pASC+0x538);
+                int32_t   itemsNum =*(int32_t*)(pASC+0x540);
+                int32_t   itemsMax =*(int32_t*)(pASC+0x544);
+                Markerf("[E4K] Items header: Data=0x%llX Num=%d Max=%d\r\n",(unsigned long long)itemsData,itemsNum,itemsMax);
+                if(!LooksLikePtr(itemsData)||itemsNum<=0){ Marker("[E4K] REFUSE: Items empty or Data invalid\r\n"); }
+                else {
+                    // Locate spec with InputID==3 (same logic as iterator 0x4476F10)
+                    uintptr_t spec=0; int specIdx=-1;
+                    for(int32_t i=0;i<itemsNum && i<32;i++){
+                        uintptr_t cand=itemsData+(uintptr_t)i*0xF8;
+                        if(!SafeReadable((void*)(cand+0x24),4)) continue;
+                        int32_t iid=*(int32_t*)(cand+0x24);
+                        if(iid==3){ spec=cand; specIdx=i; break; }
+                    }
+                    if(!spec){ Marker("[E4K] REFUSE: no Items entry with InputID==3\r\n"); }
+                    else {
+                        // Read pre-call state of gate inputs
+                        uintptr_t abilPre = SafeReadable((void*)(spec+0x10),8)?*(uintptr_t*)(spec+0x10):0;
+                        uint8_t   eeBytePre = (LooksLikePtr(abilPre)&&SafeReadable((void*)(abilPre+0xEE),1))?*(uint8_t*)(abilPre+0xEE):0xFF;
+                        uintptr_t nonRepDataPre = SafeReadable((void*)(spec+0x80),8)?*(uintptr_t*)(spec+0x80):0;
+                        int32_t   nonRepNumPre  = SafeReadable((void*)(spec+0x88),4)?*(int32_t*)(spec+0x88):0;
+                        uintptr_t repDataPre    = SafeReadable((void*)(spec+0x90),8)?*(uintptr_t*)(spec+0x90):0;
+                        int32_t   repNumPre     = SafeReadable((void*)(spec+0x98),4)?*(int32_t*)(spec+0x98):0;
+                        char acnPre[128]="-"; if(LooksLikePtr(abilPre)&&ClassOf(abilPre))GetFNameStr(NameId(ClassOf(abilPre)),acnPre,sizeof(acnPre));
+                        Markerf("[E4K] PRE-CALL state: spec[%d]@0x%llX Ability@+0x10=0x%llX(%s) [+0xEE]=0x%02X NonRep{Data=0x%llX Num=%d} Rep{Data=0x%llX Num=%d}\r\n",
+                                specIdx,(unsigned long long)spec,
+                                (unsigned long long)abilPre,LooksLikePtr(abilPre)?acnPre:"NULL",eeBytePre,
+                                (unsigned long long)nonRepDataPre,nonRepNumPre,
+                                (unsigned long long)repDataPre,repNumPre);
+
+                        // Predict per byte-model + pre-call state (workflow wf_7e83ab1b [M]):
+                        // - iterator returns our spec (Items.Num>=1 with InputID==3 match)
+                        // - GetByInputID tail-jmps 0x44C28E0 with rcx=spec
+                        // - Gate 1: [rcx+0x10]!=NULL ? abilPre != 0
+                        // - Gate 2: [rax+0xEE]==1 ? eeBytePre == 1
+                        // - Gate 3: [rcx+0x88]>0 ? nonRepNumPre > 0 -> NonRep-arm returns *NonRep.Data[0]
+                        // - Gate 4: [rcx+0x98]>0 ? repNumPre > 0    -> Rep-arm returns *Rep.Data[0]
+                        // - else NULL
+                        const char* predict = "UNKNOWN";
+                        uintptr_t predictedReturn = 0;
+                        if(!LooksLikePtr(abilPre)) predict = "NULL (Gate 1 fails)";
+                        else if(eeBytePre != 1) predict = "NULL (Gate 2 fails)";
+                        else if(nonRepNumPre > 0 && LooksLikePtr(nonRepDataPre)){
+                            predict = "NonRep.Data[0]";
+                            if(SafeReadable((void*)nonRepDataPre,8)) predictedReturn = *(uintptr_t*)nonRepDataPre;
+                        }
+                        else if(repNumPre > 0 && LooksLikePtr(repDataPre)){
+                            predict = "Rep.Data[0]";
+                            if(SafeReadable((void*)repDataPre,8)) predictedReturn = *(uintptr_t*)repDataPre;
+                        }
+                        else predict = "NULL (both NonRep.Num=0 and Rep.Num=0)";
+                        Markerf("[E4K] PRE-CALL PREDICTION per byte model: return=0x%llX (%s)\r\n",
+                                (unsigned long long)predictedReturn, predict);
+
+                        // Now the actual call
+                        void* gf=nullptr; uintptr_t gth=0,gch=0;
+                        ResolveFuncSuper(ClassOf(pASC),"GetAbilityByInputID",&gf,&gth,&gch);
+                        if(!gth){ Marker("[E4K] REFUSE: GetAbilityByInputID not resolved on ASC\r\n"); }
+                        else {
+                            memset(g_pbuf,0,sizeof(g_pbuf)); memset(g_rbuf,0,sizeof(g_rbuf));
+                            uint32_t gao=ParamOffset(gch,"AbilityID"); if(gao==0xFFFFFFFF)gao=0;
+                            *(uint8_t*)((uint8_t*)g_pbuf+gao)=(uint8_t)3;
+                            uint64_t tStart=GetTickCount64();
+                            Markerf("[E4K] E4K_CALL_ISSUE: ASC.GetAbilityByInputID(3) tStart=%llu\r\n",(unsigned long long)tStart);
+                            bool gflt=CallNativeGuarded(gf,gth,gch,(void*)pASC,g_pbuf,g_rbuf);
+                            uint64_t elapsedMs=GetTickCount64()-tStart;
+                            uint32_t gro=ParamOffset(gch,"ReturnValue"); if(gro==0xFFFFFFFF)gro=8;
+                            uintptr_t retAbil = SafeReadable((uint8_t*)g_pbuf+gro,8)?*(uintptr_t*)((uint8_t*)g_pbuf+gro):0;
+                            char rcn[128]="-"; if(LooksLikePtr(retAbil)&&ClassOf(retAbil))GetFNameStr(NameId(ClassOf(retAbil)),rcn,sizeof(rcn));
+
+                            // Post-call re-read of gate inputs
+                            uintptr_t abilPost = SafeReadable((void*)(spec+0x10),8)?*(uintptr_t*)(spec+0x10):0;
+                            uint8_t   eeBytePost = (LooksLikePtr(abilPost)&&SafeReadable((void*)(abilPost+0xEE),1))?*(uint8_t*)(abilPost+0xEE):0xFF;
+                            int32_t   nonRepNumPost = SafeReadable((void*)(spec+0x88),4)?*(int32_t*)(spec+0x88):0;
+                            int32_t   repNumPost    = SafeReadable((void*)(spec+0x98),4)?*(int32_t*)(spec+0x98):0;
+
+                            const char* verdict =
+                                gflt ? "*** FAULT ***" :
+                                (retAbil==predictedReturn && retAbil!=0) ? "*** BYTE MODEL CONFIRMED: return matches prediction. E4E null was a state-timing artifact ***" :
+                                (retAbil==predictedReturn && retAbil==0) ? "return=NULL matches prediction (state doesn't satisfy any arm). If [+0xEE] read 1 pre AND post, either mid-call mutation OR data-dep CFG branch." :
+                                (retAbil==0) ? "*** MODEL/RUNTIME DISAGREEMENT: prediction non-null but return=NULL. Gate 2 mid-call fail OR unmodeled data-dep branch ***" :
+                                                "*** MODEL/RUNTIME DISAGREEMENT: prediction NULL but return non-null. Byte model incomplete. ***";
+                            Markerf("[E4K] E4K_RESULT faulted=%s elapsedMs=%llu return=0x%llX(%s) predicted=0x%llX(%s) ; POST-CALL state: Ability@+0x10=0x%llX [+0xEE]=0x%02X NonRep.Num=%d Rep.Num=%d ; mutation:{ability=%s ee=%s nonRepNum=%s repNum=%s} ; %s\r\n",
+                                    gflt?"YES":"no",(unsigned long long)elapsedMs,
+                                    (unsigned long long)retAbil,LooksLikePtr(retAbil)?rcn:"NULL",
+                                    (unsigned long long)predictedReturn,predict,
+                                    (unsigned long long)abilPost,eeBytePost,nonRepNumPost,repNumPost,
+                                    (abilPost==abilPre)?"stable":"CHANGED",
+                                    (eeBytePost==eeBytePre)?"stable":"CHANGED",
+                                    (nonRepNumPost==nonRepNumPre)?"stable":"CHANGED",
+                                    (repNumPost==repNumPre)?"stable":"CHANGED",
+                                    verdict);
+                        }
+                    }
+                }
+            }
+        }
+#endif
+#if KBFE4M
+        // ---- OPTION M: RAW-NATIVE-CALL probe. Discriminates E4K's null result.
+        //      Calls GetAbilityByInputID's IMPL at ImageBase+0x5526210 directly via a raw
+        //      __fastcall function pointer, bypassing the entire S55 CallNativeGuarded/FFrame
+        //      framework. Signature: `UGameplayAbility* (__fastcall)(ULokiAbilitySystemComponent*, uint8_t InputID)`.
+        //      Rcx = ASC, edx (dl) = InputID. Reads gate inputs before + after the call to
+        //      detect any mid-call mutation. Same read/predict/verdict format as E4K.
+        //      If E4M returns non-null while E4K returned NULL, the S55 primitive has a defect
+        //      specific to this UFunction shape. If E4M ALSO returns NULL, the runtime really
+        //      is returning NULL and the byte model's prediction is wrong (or the spec state
+        //      has an unmodeled dependency). Log tag: [E4M].
+        {
+            uintptr_t pASC=BfGetAsc(hero);
+            char aan[128]="-"; if(LooksLikePtr(pASC)&&ClassOf(pASC))GetFNameStr(NameId(ClassOf(pASC)),aan,sizeof(aan));
+            Markerf("[E4M] pre-call: pASC=0x%llX(%s) g_modBase=0x%llX\r\n",(unsigned long long)pASC,LooksLikePtr(pASC)?aan:"NULL",(unsigned long long)g_modBase);
+            if(!LooksLikePtr(pASC)){ Marker("[E4M] REFUSE: player ASC not present\r\n"); }
+            else if(!g_modBase){ Marker("[E4M] REFUSE: g_modBase not resolved\r\n"); }
+            else if(!SafeReadable((void*)(pASC+0x538),16)){ Marker("[E4M] REFUSE: ASC+0x538 unreadable\r\n"); }
+            else {
+                uintptr_t itemsData=*(uintptr_t*)(pASC+0x538);
+                int32_t   itemsNum =*(int32_t*)(pASC+0x540);
+                Markerf("[E4M] Items header: Data=0x%llX Num=%d\r\n",(unsigned long long)itemsData,itemsNum);
+                if(!LooksLikePtr(itemsData)||itemsNum<=0){ Marker("[E4M] REFUSE: Items empty\r\n"); }
+                else {
+                    // Enumerate ALL specs with InputID==3 for diagnostic (iterator will pick one via priority)
+                    for(int32_t i=0;i<itemsNum && i<8;i++){
+                        uintptr_t cand=itemsData+(uintptr_t)i*0xF8;
+                        if(!SafeReadable((void*)(cand+0x24),4)) continue;
+                        int32_t iid=*(int32_t*)(cand+0x24);
+                        if(iid!=3) continue;
+                        uintptr_t ab=SafeReadable((void*)(cand+0x10),8)?*(uintptr_t*)(cand+0x10):0;
+                        uint8_t   ee=(LooksLikePtr(ab)&&SafeReadable((void*)(ab+0xEE),1))?*(uint8_t*)(ab+0xEE):0xFF;
+                        uintptr_t nrD=SafeReadable((void*)(cand+0x80),8)?*(uintptr_t*)(cand+0x80):0;
+                        int32_t   nrN=SafeReadable((void*)(cand+0x88),4)?*(int32_t*)(cand+0x88):0;
+                        uintptr_t rpD=SafeReadable((void*)(cand+0x90),8)?*(uintptr_t*)(cand+0x90):0;
+                        int32_t   rpN=SafeReadable((void*)(cand+0x98),4)?*(int32_t*)(cand+0x98):0;
+                        uintptr_t predicted = 0;
+                        if(LooksLikePtr(ab)&&ee==1){
+                            if(nrN>0&&LooksLikePtr(nrD)&&SafeReadable((void*)nrD,8)) predicted=*(uintptr_t*)nrD;
+                            else if(rpN>0&&LooksLikePtr(rpD)&&SafeReadable((void*)rpD,8)) predicted=*(uintptr_t*)rpD;
+                        }
+                        Markerf("[E4M] cand spec[%d]@0x%llX Handle=%d Ability=0x%llX [+0xEE]=0x%02X NonRep{%d} Rep{%d} => predicted return via this spec = 0x%llX\r\n",
+                                i,(unsigned long long)cand,
+                                *(int32_t*)(cand+0xC),(unsigned long long)ab,ee,nrN,rpN,
+                                (unsigned long long)predicted);
+                    }
+
+                    // Direct raw-native call: GetAbilityByInputID impl at RVA 0x5526210
+                    typedef uintptr_t (__fastcall *GetByInputIDFn)(void* ASC, uint8_t InputID);
+                    GetByInputIDFn fn = (GetByInputIDFn)(g_modBase + 0x5526210);
+                    Markerf("[E4M] E4M_CALL_ISSUE: raw call fn=0x%llX(=ImageBase+0x5526210) ASC=0x%llX InputID=3\r\n",
+                            (unsigned long long)fn,(unsigned long long)pASC);
+                    uintptr_t retAbil = 0;
+                    bool faulted = false;
+                    uint64_t tStart = GetTickCount64();
+                    __try { retAbil = fn((void*)pASC, (uint8_t)3); }
+                    __except(EXCEPTION_EXECUTE_HANDLER){ faulted = true; }
+                    uint64_t elapsedMs = GetTickCount64() - tStart;
+                    char rcn[128]="-"; if(LooksLikePtr(retAbil)&&ClassOf(retAbil))GetFNameStr(NameId(ClassOf(retAbil)),rcn,sizeof(rcn));
+                    Markerf("[E4M] E4M_RESULT faulted=%s elapsedMs=%llu return=0x%llX(%s) %s\r\n",
+                            faulted?"YES":"no",(unsigned long long)elapsedMs,
+                            (unsigned long long)retAbil,LooksLikePtr(retAbil)?rcn:"NULL",
+                            faulted?"*** FAULT ***":
+                            LooksLikePtr(retAbil)?"*** RAW-NATIVE RETURNED NON-NULL. If E4K on same state returned NULL, S55 primitive has a defect specific to this UFunction shape (likely return-value marshaling of UObject*). ***":
+                                                   "*** RAW-NATIVE ALSO NULL. S55 exonerated; runtime genuinely returns NULL despite byte model predicting non-null. WALL P block is INSIDE 0x44C28E0's decoded CFG or has an unmodeled dependency. ***");
                 }
             }
         }

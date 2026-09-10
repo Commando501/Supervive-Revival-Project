@@ -915,6 +915,27 @@ $Variants = @{
         # KBFE4C/KBFE4F via #error guards. Log tag: [E4E].
         'e4-e-readonly'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4E=1')
 
+        # e4-k (S191 E4 OPTION K, 2026-09-10, tag [E4K]): the MINIMAL live probe. Just calls
+        # ASC.GetAbilityByInputID(3) via S55 with ZERO pokes and reads gate inputs before + after
+        # the call to detect any mid-call mutation. Decisive test of the workflow adjudicator's
+        # (wf_7e83ab1b) mechanism model: byte-verified 3-gate model predicts return = NonRep.Data[0]
+        # or Rep.Data[0] given the current spec state; if runtime matches prediction, E4E's null
+        # was a state-timing artifact (state at readback time differed from live-observed state);
+        # if runtime returns NULL despite [+0xEE]==1 stable pre AND post, Gate 2 mid-call fail is
+        # the leading hypothesis and KBFE4H (extended three-timestamp instrumented variant) is
+        # the next arm. Class: CALL-ONLY read-only (only writes are shim-local g_pbuf + param).
+        # Mutually exclusive with every other E4 activation surface via #error guards.
+        'e4-k'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4K=1')
+
+        # e4-m (S191 E4 OPTION M, 2026-09-10, tag [E4M]): raw-native-call discriminator for E4K's null.
+        # Calls GetAbilityByInputID impl DIRECTLY (ImageBase+0x5526210) via a __fastcall function
+        # pointer, bypassing the entire S55 CallNativeGuarded/FFrame framework. If E4M returns
+        # non-null while E4K returned NULL on the same state, S55 has a defect specific to this
+        # UFunction shape (UObject* return marshaling). If E4M ALSO returns NULL, S55 is exonerated
+        # and the runtime genuinely returns NULL despite byte model predicting non-null. Class:
+        # CALL-ONLY read-only.
+        'e4-m'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4M=1')
+
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
         #   specifically did nothing'.
