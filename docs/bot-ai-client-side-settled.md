@@ -107,3 +107,27 @@ present": the tree needs a populated `TargetEnemy` to leave the wander/idle bran
 - ★ **Never dumped: `BT_HeroBots.uasset` itself.** A `bpdump`/`rawfile` extract of `BT_HeroBots` and its
   `BTService_*`/`BTT_*` nodes would show exactly which node classes are Blueprint vs native and which
   native leaves they call — the one offline step that would upgrade the [I,strong] to a mapped tree.
+
+## UPDATE 2026-09-09 (S190 Track D follow-up) — [I,strong] → [M]: the bot's cast IS a player cast
+
+The §"never dumped `BT_HeroBots`" offline step was taken for the cast path. `bpdump BTT_CastSpell`
+(`tools/extractor/out/bpdump_ExecuteUbergraph_BTT_CastSpell.txt`) resolves the whole cast chain:
+
+- **`BTT_CastSpell_C`** extends `BTTask_BlueprintBase`; functions `ReceiveExecuteAI`,
+  `ExecuteUbergraph_BTT_CastSpell`, `FinishSpell`, `WaitForSpellCompletion` — a full cast-and-wait cycle.
+- **[M] the cast fires via `ULokiAbilitySystemComponent::TryActivateAbilityByClass`.** Bytecode:
+  `GetLokiAbilitySystemComponentFromActor` → `EX_Context{ ObjectExpression: <that ASC>,
+  ContextExpression: EX_FinalFunction StackNode: TryActivateAbilityByClass(SpellClass, ...) }`, guarded
+  by `Spell_IsActive` + `IsValidClass`, with `ForcedFollowupSpell`/`HasCastFollowupSpell` combo logic.
+- **`BTService_PickSpell_C`** extends `BTService_BlueprintBase`; `ReceiveSearchStartAI` + `FilterByType`
+  / `GetDistanceToEnemyCapsule` / `HasType` — chooses the spell (needs a `TargetEnemy` = WALL E) and
+  writes the `CurrentSpell` blackboard key that `BTT_CastSpell` reads.
+
+⇒ **[M] `TryActivateAbilityByClass` is the SINGLE ability-activation entry point for BOTH a player
+cast (DoBotFight K_ACTIVATE: `TryActivateAbilityByClass(Ability, bAllowRemoteActivation=true)`) AND the
+bot's own `BTT_CastSpell`.** So **WALL P (durable `TryActivateAbilityByClass` execution) is the one wall
+that gates both the player casting and the bot fighting back** — fixing it unlocks both halves of the
+predicate. The full bot combat loop is now mapped: perceive enemy (WALL E, stripped) → PickSpell (BP +
+real native helpers, S153) → CastSpell via `TryActivateAbilityByClass` (WALL P). No AI is missing; the
+two walls E+P are the whole job, and P is shared with the player. Reproduce: `bpdump BTT_CastSpell
+ExecuteUbergraph_BTT_CastSpell` / `bpdump BTService_PickSpell @imports` (PowerShell: quote `'@imports'`).
