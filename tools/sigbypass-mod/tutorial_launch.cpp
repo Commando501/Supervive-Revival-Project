@@ -18454,6 +18454,20 @@ static void DoBotSpawn(){
                 // of the E4 predicate is unlocked via a direct shim call — bypassing OS input
                 // entirely). Log the return SpecHandle + pre/post Items.Num. Log tag: [E4B].
 #endif
+#ifndef KBFE4T
+#define KBFE4T 0 // S191 E4 OPTION T (2026-09-10, tag [E4T] in markers): ProcessEvent K2_ActivateAbility
+                // bypass. Grants ability via plain GiveAbility (K_GRANT), then invokes K2_ActivateAbility
+                // reflected UFunction on the instance via ProcessEvent (vtable disp 0x270 = slot 78).
+                // Bypasses the entire TryActivateAbility state machine + IsNetAuthority + sub-ability
+                // resolution + ASC+0x418 validation. Named bail from workflow wf_dcfb0dd6-20a Lane E's
+                // fallback (KBFE4R via BP_AuthGiveAbilityWithInputID is DEAD — same stripped stub as
+                // AuthGiveAbilityWithSourceObject, verified in-session).
+                // Resolves K2_ActivateAbility by walking Instance->Class->Children for its FName.
+                // If body execution succeeds and damages minion: WALL P DEFEATED via reflected bypass.
+                // If ProcessEvent faults or refuses: PreActivate skipping was the cause (framework state
+                // like CurrentActorInfo/CurrentSpecHandle needs to be populated first).
+                // Class: CALL-ONLY (ProcessEvent may write to framework fields internally).
+#endif
 #ifndef KBFE4Q
 #define KBFE4Q 0 // S191 E4 OPTION Q (2026-09-10, tag [E4Q] in markers): direct TryActivateAbility(Handle)
                 // via raw-native call, bypassing the InputID->spec resolution entirely. Calls
@@ -18996,6 +19010,24 @@ static void DoBotSpawn(){
 #endif
 #if KBFE4Q && (KBFE4A || KBFE4B || KBFE4C || KBFE4E || KBFE4F || KBFE4K || KBFE4M || KBFE4N || KBFE4P)
 #error S191 KBFE4Q must be flown in isolation
+#endif
+#if KBFE4T && !KBFE4
+#error S191 KBFE4T requires KBFE4=1
+#endif
+#if KBFE4T && (KBFSELFCAL || KBFBINDONLY || KBFBINDAVATAR || KBFNATURALINPUT)
+#error S191 KBFE4T runs the #else K_* path
+#endif
+#if KBFE4T && !(KBFARMS & 0xC6)
+#error S191 KBFE4T requires KBFARMS=0xC6
+#endif
+#if KBFE4T && (KBFARMS & 0x08)
+#error S191 KBFE4T must NOT set K_ACTIVATE
+#endif
+#if KBFE4T && KE4DIRECTGE
+#error S191 KBFE4T must be flown with KE4DIRECTGE=0
+#endif
+#if KBFE4T && (KBFE4A || KBFE4B || KBFE4C || KBFE4E || KBFE4F || KBFE4K || KBFE4M || KBFE4N || KBFE4P || KBFE4Q)
+#error S191 KBFE4T must be flown in isolation
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -25429,6 +25461,127 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                         Markerf("[E4Q] E4Q_RESULT faulted=%s retBool=%u elapsedMs=%llu minPreHP=%.2f minPostHP=%.2f dHP=%+.2f preBits=%08X/%08X postBits=%08X/%08X  %s\r\n",
                                 faulted?"YES":"no",(unsigned)retBool,(unsigned long long)elapsedMs,
                                 (double)minPreHP,(double)minPostHP,(double)dHP,minPreBB,minPreBC,minPostBB,minPostBC,verdict);
+                    }
+                }
+            }
+        }
+#endif
+#if KBFE4T
+        // ---- OPTION T: ProcessEvent K2_ActivateAbility bypass. Grants ability via K_GRANT then invokes
+        //      K2_ActivateAbility reflected UFunction on the instance via ProcessEvent (vtable slot 78).
+        //      Bypasses ALL of TryActivateAbility / IsNetAuthority / sub-ability resolution / ASC+0x418
+        //      validation. If body executes and damages minion, WALL P DEFEATED via reflected bypass.
+        //      Uses instance's Rep.Data[0] as the target (game-populated real UGameplayAbility instance).
+        {
+            uintptr_t pASC=BfGetAsc(hero);
+            float minPreHP  = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+            uint32_t minPreBB = SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+            uint32_t minPreBC = SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+            Markerf("[E4T] pre-activate: pASC=0x%llX minionPreHP=%.2f\r\n",
+                    (unsigned long long)pASC,(double)minPreHP);
+            if(!LooksLikePtr(pASC)){ Marker("[E4T] REFUSE: ASC not present\r\n"); }
+            else if(!SafeReadable((void*)(pASC+0x538),16)){ Marker("[E4T] REFUSE: ASC+0x538 unreadable\r\n"); }
+            else {
+                uintptr_t itemsData=*(uintptr_t*)(pASC+0x538);
+                int32_t   itemsNum =*(int32_t*)(pASC+0x540);
+                Markerf("[E4T] Items header: Data=0x%llX Num=%d\r\n",(unsigned long long)itemsData,itemsNum);
+                // Find spec with InputID==KBFE4CALLID, get its Rep.Data[0] instance
+                uintptr_t spec=0, inst=0;
+                int32_t handle=-1;
+                for(int32_t i=0;i<itemsNum && i<32;i++){
+                    uintptr_t cand=itemsData+(uintptr_t)i*0xF8;
+                    if(!SafeReadable((void*)(cand+0x24),4)) continue;
+                    int32_t iid=*(int32_t*)(cand+0x24);
+                    if(iid!=(int32_t)KBFE4CALLID) continue;
+                    spec=cand;
+                    handle=*(int32_t*)(cand+0xC);
+                    uintptr_t rp=SafeReadable((void*)(cand+0x90),8)?*(uintptr_t*)(cand+0x90):0;
+                    int32_t rpN=SafeReadable((void*)(cand+0x98),4)?*(int32_t*)(cand+0x98):0;
+                    if(rp&&rpN>0&&SafeReadable((void*)rp,8)) inst=*(uintptr_t*)rp;
+                    break;
+                }
+                if(!spec||!LooksLikePtr(inst)){
+                    Markerf("[E4T] REFUSE: no matching spec (spec=0x%llX inst=0x%llX)\r\n",
+                            (unsigned long long)spec,(unsigned long long)inst);
+                }
+                else {
+                    char icn[128]="-"; if(ClassOf(inst))GetFNameStr(NameId(ClassOf(inst)),icn,sizeof(icn));
+                    Markerf("[E4T] target instance @0x%llX class=%s Handle=%d (via Items[?].Rep.Data[0])\r\n",
+                            (unsigned long long)inst,icn,handle);
+                    // Resolve ProcessEvent from instance's vtable at +0x270 (slot 78)
+                    uintptr_t vt=SafeReadable((void*)inst,8)?*(uintptr_t*)inst:0;
+                    uintptr_t pe=(vt&&SafeReadable((void*)(vt+0x270),8))?*(uintptr_t*)(vt+0x270):0;
+                    Markerf("[E4T] instance vtable=0x%llX ProcessEvent@+0x270=0x%llX\r\n",
+                            (unsigned long long)vt,(unsigned long long)pe);
+                    if(!pe||!LooksLikePtr(pe)){ Marker("[E4T] REFUSE: ProcessEvent unresolved\r\n"); }
+                    else {
+                        // Try many candidate names across LMB Selector + MiniDash + generic UGameplayAbility surfaces
+                        static const char* kCandidates[] = {
+                            // Selector methods first (LMB path) — may have side effects that populate SubSpells
+                            "DetermineCurrentSpellIndex",   // LokiSpellSelector: picks which sub-spell (may populate)
+                            "GetCurrentSpell",              // LokiSpellSelector: returns current spell class
+                            "GetCurrentSpellIndex",         // LokiSpellSelector: returns current index (int)
+                            "GetCurrentSpellInstance",      // LokiSpellSelector: returns current instance (may create)
+                            "GetSpellInstance",             // LokiSpellSelector: instance at index (may create)
+                            "GetSpellAtIndex",              // LokiSpellSelector: class at index
+                            "OnRep_SubSpellHandles",        // LokiSpellSelector: rep-notify (may re-populate sub-abilities)
+                            // MiniDash-specific BP names (only found if instance is MiniDash)
+                            "Invoke",                        // MiniDash BP: main worker
+                            "BP_AuthBeginWarmup",           // MiniDash BP: warmup starter
+                            "DashHit",                       // MiniDash BP: direct damage
+                            "ChannelingPhase",              // MiniDash BP
+                            "Character Hit",                // MiniDash BP damage helper
+                            "DashEndHitBox",                // MiniDash BP
+                            // Generic UGameplayAbility K2 methods (present in all abilities)
+                            "K2_ActivateAbility",           // UGASGameplayAbility (may not be in chain)
+                            "ActivateAbility",              // native virtual name
+                            "K2_CommitExecute",             // UGameplayAbility K2 method (may be empty)
+                            "K2_CanActivateAbility",        // UGameplayAbility check (returns bool)
+                        };
+                        const int kNumCandidates = (int)(sizeof(kCandidates)/sizeof(kCandidates[0]));
+                        uintptr_t fn=0, ch=0;
+                        const char* foundName = nullptr;
+                        Markerf("[E4T] scanning class chain for %d candidate functions...\r\n", kNumCandidates);
+                        for(int ci=0; ci<kNumCandidates; ci++){
+                            uintptr_t tryCh=0;
+                            uintptr_t tryFn=FindBPFunc(ClassOf(inst),kCandidates[ci],&tryCh);
+                            Markerf("[E4T]   candidate '%s': %s (fn=0x%llX)\r\n",
+                                    kCandidates[ci], tryFn?"FOUND":"not found", (unsigned long long)tryFn);
+                            if(tryFn && !fn){ fn=tryFn; ch=tryCh; foundName=kCandidates[ci]; }
+                        }
+                        if(!fn){ Marker("[E4T] REFUSE: no candidate functions found on instance class chain\r\n"); }
+                        else {
+                            Markerf("[E4T] SELECTED: %s (first match) — calling this one\r\n", foundName);
+                            uint32_t fnFlags=SafeReadable((void*)(fn+PDPE_FN_FLAGS),4)?*(uint32_t*)(fn+PDPE_FN_FLAGS):0;
+                            uint32_t psz=SafeReadable((void*)(fn+USTRUCT_PROPSIZE),4)?*(uint32_t*)(fn+USTRUCT_PROPSIZE):0;
+                            uint32_t snum=SafeReadable((void*)(fn+USTRUCT_SCRIPTNUM),4)?*(uint32_t*)(fn+USTRUCT_SCRIPTNUM):0;
+                            uintptr_t ffunc=SafeReadable((void*)(fn+UFUNC_FUNC),8)?*(uintptr_t*)(fn+UFUNC_FUNC):0;
+                            Markerf("[E4T] resolved K2AA fn=0x%llX flags=0x%X PropsSize=%u ScriptNum=%u Func(+0xE0)=0x%llX\r\n",
+                                    (unsigned long long)fn,fnFlags,psz,snum,(unsigned long long)ffunc);
+                            // Zero-argument invocation; use g_bplocals (0x800) as parms buffer just in case
+                            memset(g_bplocals,0,sizeof(g_bplocals));
+                            typedef void (*PEFn)(void*, void*, void*);
+                            PEFn call = (PEFn)pe;
+                            uint64_t tStart=GetTickCount64();
+                            Markerf("[E4T] E4T_CALL_ISSUE: ProcessEvent(instance=0x%llX, K2AA_fn=0x%llX, parms=g_bplocals[zeroed]) ; tStart=%llu\r\n",
+                                    (unsigned long long)inst,(unsigned long long)fn,(unsigned long long)tStart);
+                            bool faulted=false;
+                            __try { call((void*)inst, (void*)fn, (void*)g_bplocals); }
+                            __except(EXCEPTION_EXECUTE_HANDLER){ faulted=true; }
+                            uint64_t elapsedMs=GetTickCount64()-tStart;
+                            float minPostHP  = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                            uint32_t minPostBB = SafeReadable((void*)(set+healthOff+0x8),4)?*(uint32_t*)(set+healthOff+0x8):0xFFFFFFFF;
+                            uint32_t minPostBC = SafeReadable((void*)(set+healthOff+0xC),4)?*(uint32_t*)(set+healthOff+0xC):0xFFFFFFFF;
+                            float dHP=minPostHP-minPreHP;
+                            const char* verdict =
+                                faulted             ? "*** FAULT: framework state missing (CurrentActorInfo/CurrentSpecHandle?) or BP body faulted ***"
+                              : (dHP<0)             ? "*** E4T SUCCEEDS: ProcessEvent bypass activated ability + damaged minion -- WALL P DEFEATED ***"
+                              : (elapsedMs<10)      ? "clean-fast return (<10ms): BP body ran quickly OR ProcessEvent silently short-circuited; check Loki.log for Warmup/Channeling/Fireblast/Dash"
+                              :                       "clean return, no damage this frame: body ran but didn't damage (BP might async-defer or need target)";
+                            Markerf("[E4T] E4T_RESULT faulted=%s elapsedMs=%llu minPreHP=%.2f minPostHP=%.2f dHP=%+.2f preBits=%08X/%08X postBits=%08X/%08X  %s\r\n",
+                                    faulted?"YES":"no",(unsigned long long)elapsedMs,
+                                    (double)minPreHP,(double)minPostHP,(double)dHP,minPreBB,minPreBC,minPostBB,minPostBC,verdict);
+                        }
                     }
                 }
             }

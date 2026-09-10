@@ -971,6 +971,16 @@ $Variants = @{
         # FindAbilitySpecFromHandle even though [Items[0]+0xC]==1 is measured live.
         'e4-q'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4Q=1')
 
+        # e4-t (S191 E4 OPTION T, 2026-09-10, tag [E4T]): ProcessEvent K2_ActivateAbility bypass.
+        # Per workflow wf_dcfb0dd6-20a Lane E's fallback + verified-dead KBFE4R above (BP_AuthGiveAbility
+        # WithInputID = stripped stub 0x13D4E60 same as AuthGiveAbilityWithSourceObject). Grants ability
+        # via plain GiveAbility (K_GRANT), then invokes K2_ActivateAbility reflected UFunction via
+        # ProcessEvent at vtable slot 78 (+0x270). Bypasses the entire TryActivateAbility state machine
+        # + IsNetAuthority + sub-ability resolution + ASC+0x418 validation.
+        'e4-t'                = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4=1','-DKBFE4T=1')
+        # e4-t-a3 variant: same as e4-t but grants Ability3 (MiniDash Charges) — non-Selector, no sub-abilities
+        'e4-t-a3'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1')
+
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
         #   specifically did nothing'.
