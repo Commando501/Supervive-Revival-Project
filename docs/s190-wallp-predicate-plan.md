@@ -99,3 +99,36 @@ suspension as an FK-32 defeat (defeats FK-31 only) · ARM-G borrowed CDO ASC for
 SpawnedAttributes + null AbilityActorInfo) · RM_BOTFIGHT `botfight-kill 0x31` · hand-injected teams
 (SetPlayerTeam/GetOrCreateTeamState are stripped folds). E6 (FK-32 attack) is DEPRIORITIZED off the
 predicate critical path.
+
+## UPDATE 2026-09-09 — WALL E offline gate: [M] FAVORABLE, GO to build+fly E4
+
+The offline gate (workflow, zero-launch) settled WALL E:
+- **[M] team-100 minion classifies ENEMY of the player.** All team primitives (IsEnemyTeamIndex
+  0x56EEEC0, IsEnemyTeam 0x56EEEB0, GetTeamFromActor 0x56EC360, GetLocalTeamRelationship 0x5630710,
+  ALokiCharacter::GetTeamIndex 0x55AE000) do a RAW per-actor integer compare via
+  ITeamAgentInterface::GetTeamId / TeamComponent[+0xE0] — NONE reads ALokiGameState::TeamStates, so the
+  stripped/empty TeamState registry is IRRELEVANT. Minion self-inits 100; player defaults 0/-1
+  (SetPlayerTeam stripped); 100 != player ⇒ Enemy. EnemiesOnly passes; a class-axis filter sidesteps it.
+- **[M] no attribute-layer hostility gate on the decrypted real-damage path.** Health PreGE (slot 89,
+  0x553DBFC, decrypted) gates only on target IsA<Character>, attribute identity, magnitude sign; parent
+  PostGE 0x553BE20 does attribution + IsA; ZERO ULokiTeamStatics/IsEnemy calls across all four decrypted
+  execute-virtuals. Residual [I]: Health's own slot-90 PostGE 0x553C200 is dark in all 79 dumps (never
+  executed; firing one real GE demand-decrypts it for offline re-read) — it is the damage-APPLY, not the
+  friendly-fire location (which is Pre, decrypted, clean).
+- **[M] the minion self-inits team 100 in an UNGATED BeginPlay** (AuthSetTeamIndex(100) via its own
+  TeamComponent 0x5477590, no LokiIsServer gate) ⇒ do NOT poke team (unlike the S137 LokiBot). SpawnActor
+  viable [M-strong] (ASC+TeamComponent are CDO subobjects, no round-mode/drop-pod dependency).
+- **[M] MaxHealth must be SEEDED** (GE/DataTable-driven, AuthGrantLevel stripped): S156 compound write on
+  the minion HealthSet (Health Base/Current @ +0x70, MaxHealth @ +0x80, FGameplayAttributeData 0x10-spaced,
+  CurrentValue @ +0xC), LOW value (e.g. 100), then InitAbilityActorInfo (0x447F410) the minion ASC.
+
+### GO — build the E4 arm with KE4DIRECTGE armed
+BUILD-critical params all [M]: target `BP_Minion_TargetBot_TTK_C` (SpawnActorCls, non-deferred), NO team
+poke, seed HP via S156 compound + InitAAI, fallback = S156-B/Track-D AdjustHealth direct write (proven).
+**Spawn-time LIVE reads** (not build blockers; the filter/inputid gate-reader was a stub): player
+PlayerState GetTeamId (confirm != 100), LightAttack1 InputID (from the granted spec on the player ASC),
+LightAttack1's FGameplayTargetDataFilter axis, LightAttack1's own damage GE spec, and the minion's
+pre-seed MaxHealth (settles whether native attr-apply ran). Residual risk is WALL P (natural body
+suppression, HIGH — S158) + the unpinned filter (MEDIUM); both covered by KE4DIRECTGE. Fly inside the
+~40–60s FK-32 window. The natural cast is the predicate; the fallback is the graded consolation
+(proves a real damage GE / direct write reduces the minion's HP), NOT the predicate itself.
