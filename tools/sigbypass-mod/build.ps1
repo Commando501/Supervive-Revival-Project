@@ -999,6 +999,15 @@ $Variants = @{
         # E4T-A9: naive multi-DashHit loop. Calls DashHit 8x with 250ms between (~2s total).
         # If PreventMultiHits doesn't block same-window subsequent hits, minion dies in one dash cycle.
         'e4-t-a9'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_POKEPHASE=1','-DKBFE4T_POKECURPHASE=1','-DKBFE4T_CALLDASHHIT=1','-DKBFE4T_DASHHIT_REPS=8','-DKBFE4T_DASHHIT_INTERVAL_MS=250')
+        # E4T-LMB probe: Ability1 (LMB Selector) + compound poke + Invoke — no DashHit (Selector may not have it).
+        # Discovers via 17-candidate scan which methods exist on Selector's class chain. Marker output guides next arm.
+        'e4-t-a9-lmb-probe'   = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability1\"','-DKBFINPUTID=3','-DKBFE4CALLID=3','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_POKEPHASE=1','-DKBFE4T_POKECURPHASE=1')
+        # E4T-LMB-A9: grant GS_Ronin_LightAttack1_C directly (bypass Selector) at InputID=1.
+        # Uses KBFABIL FindObjExact fallback (patched this session). Compound poke + Invoke + MeleeHit loop.
+        # Per workflow wf_23186e2b-083 Lane 1: LightAttack1 has full damage machinery inline
+        # (MeleeHit + MeleeInvoke + GE_Ronin_LightAttack_Damage_C) and inherits ULokiGameplaySpell
+        # (same phase-state layout as MiniDash — compound poke offsets +0xF58/+0xF48 unchanged).
+        'e4-t-lmb-a9'         = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"GS_Ronin_LightAttack1_C\"','-DKBFINPUTID=1','-DKBFE4CALLID=1','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_POKEPHASE=1','-DKBFE4T_POKECURPHASE=1','-DKBFE4T_CALLDASHHIT=1','-DKBFE4T_DASHHIT_REPS=8','-DKBFE4T_DASHHIT_INTERVAL_MS=250','-DKBFE4T_HITVERB=\"MeleeHit\"')
 
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call

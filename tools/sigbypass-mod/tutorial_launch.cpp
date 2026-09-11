@@ -18478,6 +18478,9 @@ static void DoBotSpawn(){
 #ifndef KBFE4T_DASHHIT_INTERVAL_MS
 #define KBFE4T_DASHHIT_INTERVAL_MS 250 // Sleep between DashHit reps. Too short may miss game-thread ticks; too long may exceed Dash window (~9.6s from Post Dash Start to Dash Ended).
 #endif
+#ifndef KBFE4T_HITVERB
+#define KBFE4T_HITVERB "DashHit" // S191 E4T-LMB (2026-09-10): configurable damage-verb name. "DashHit" for MiniDash; "MeleeHit" for Ronin LightAttack1 per S191 LMB workflow wf_23186e2b-083.
+#endif
 #ifndef KBFE4T
 #define KBFE4T 0 // S191 E4 OPTION T (2026-09-10, tag [E4T] in markers): ProcessEvent K2_ActivateAbility
                 // bypass. Grants ability via plain GiveAbility (K_GRANT), then invokes K2_ActivateAbility
@@ -25837,9 +25840,9 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                             // obj, OverlapResult struct). FUNC_HasOutParms — OverlapResult may be OUT.
                             // Wait 300ms for Dash body to progress (Invoke's DashCue is async-loading).
                             Sleep(300);
-                            uintptr_t fnDashHit_A8 = FindBPFunc(ClassOf(inst),"DashHit",nullptr);
+                            uintptr_t fnDashHit_A8 = FindBPFunc(ClassOf(inst),KBFE4T_HITVERB,nullptr);
                             if(!fnDashHit_A8){
-                                Marker("[E4T-A8] REFUSE: DashHit not found on class chain\r\n");
+                                Markerf("[E4T-A8] REFUSE: hit-verb '%s' not found on class chain\r\n", KBFE4T_HITVERB);
                             } else if(!LooksLikePtr(minion)){
                                 Marker("[E4T-A8] REFUSE: minion ptr not valid\r\n");
                             } else {
@@ -26143,6 +26146,24 @@ static void DoBotFight(){
         char an[128]="-"; if(LooksLikePtr(av)) GetFNameStr(NameId(av),an,sizeof(an));
         Markerf("[BF] hero.%-16s @0x%X = 0x%llX (%s)\r\n",kAbil[i],ao,(unsigned long long)av,LooksLikePtr(av)?an:"NULL");
         if(!strcmp(kAbil[i],KBFABIL)&&LooksLikePtr(av)) abilCls=av;
+    }
+    // LMB E4T follow-up: KBFABIL may be a raw class name (e.g. "GS_Ronin_LightAttack1_C").
+    // If no hero-slot matched, try FindObjExact by name — lets us grant sub-abilities that
+    // aren't in Ability1/2/3/AbilityDodgeRoll slots (S191 LMB workflow wf_23186e2b-083 identified
+    // GS_Ronin_LightAttack1_C as the LMB damage sub-ability behind the Selector).
+    if(!LooksLikePtr(abilCls)){
+        uintptr_t byName = FindObjExact(KBFABIL);
+        if(LooksLikePtr(byName)){
+            // FindObjExact may return a CDO or the class itself. If it's a CDO (name starts
+            // "Default__"), climb to its ClassOf(). Otherwise assume it's the class.
+            char nm[128]="-"; GetFNameStr(NameId(byName),nm,sizeof(nm));
+            uintptr_t asCls = (strncmp(nm, "Default__", 9) == 0) ? ClassOf(byName) : byName;
+            if(LooksLikePtr(asCls)){
+                abilCls = asCls;
+                Markerf("[BF] KBFABIL by-name fallback: '%s' -> class=0x%llX name=%s\r\n",
+                        KBFABIL, (unsigned long long)abilCls, nm);
+            }
+        }
     }
     if(!LooksLikePtr(abilCls)){ // fallback: CharacterAbilities[0]
         uint32_t co=PropOffsetSuper(ClassOf(hero),"CharacterAbilities");
