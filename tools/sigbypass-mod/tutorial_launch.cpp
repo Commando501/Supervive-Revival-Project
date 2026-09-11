@@ -18469,6 +18469,9 @@ static void DoBotSpawn(){
 #ifndef KBFE4T_POKECURPHASE
 #define KBFE4T_POKECURPHASE 0 // S191 E4T-A7 (2026-09-10): when set, ALSO poke [inst+0xF48] CurrentPhase pointer to point at the sub-object at [inst+0xF20] (WarmupPhase). Requires KBFE4T_POKEPHASE=1. E4T-A6 measured that the Dash gate is COMPOUND (phase byte alone not sufficient).
 #endif
+#ifndef KBFE4T_CALLDASHHIT
+#define KBFE4T_CALLDASHHIT 0 // S191 E4T-A8 (2026-09-10): after compound poke + Invoke (which crosses WALL P per E4T-A7), also call DashHit(NULL, minion, zeroed OverlapResult) via ProcessEvent to actually damage the minion. DashHit signature per bpdump: (FObjectProperty LokiMeleeHitBox, FObjectProperty OverlappingActor, FStructProperty OverlapResult). FUNC_HasOutParms.
+#endif
 #ifndef KBFE4T
 #define KBFE4T 0 // S191 E4 OPTION T (2026-09-10, tag [E4T] in markers): ProcessEvent K2_ActivateAbility
                 // bypass. Grants ability via plain GiveAbility (K_GRANT), then invokes K2_ActivateAbility
@@ -19058,6 +19061,9 @@ static void DoBotSpawn(){
 #endif
 #if KBFE4T_POKECURPHASE && !KBFE4T_POKEPHASE
 #error S191 KBFE4T_POKECURPHASE requires KBFE4T_POKEPHASE=1
+#endif
+#if KBFE4T_CALLDASHHIT && !KBFE4T_POKECURPHASE
+#error S191 KBFE4T_CALLDASHHIT requires KBFE4T_POKECURPHASE=1 (which requires KBFE4T_POKEPHASE=1) — DashHit only makes sense after WALL P is crossed via compound poke
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -25818,6 +25824,51 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                             Markerf("[E4T-A6] VERDICT identityOK=%s minionHP %.2f→%.2f phase %u→%u  %s\r\n",
                                     identityOK?"yes":"NO",(double)minPreHP,(double)minPostHPPoke,
                                     (unsigned)prePhase,(unsigned)postPhase,pokeVerdict);
+#if KBFE4T_CALLDASHHIT
+                            // E4T-A8: after compound poke crossed WALL P (per E4T-A7), call DashHit
+                            // with (NULL, minion, zeroed OverlapResult) to apply per-target damage.
+                            // DashHit signature (from bpdump): (LokiMeleeHitBox obj, OverlappingActor
+                            // obj, OverlapResult struct). FUNC_HasOutParms — OverlapResult may be OUT.
+                            // Wait 300ms for Dash body to progress (Invoke's DashCue is async-loading).
+                            Sleep(300);
+                            uintptr_t fnDashHit_A8 = FindBPFunc(ClassOf(inst),"DashHit",nullptr);
+                            if(!fnDashHit_A8){
+                                Marker("[E4T-A8] REFUSE: DashHit not found on class chain\r\n");
+                            } else if(!LooksLikePtr(minion)){
+                                Marker("[E4T-A8] REFUSE: minion ptr not valid\r\n");
+                            } else {
+                                uint32_t dhFlags=SafeReadable((void*)(fnDashHit_A8+PDPE_FN_FLAGS),4)?*(uint32_t*)(fnDashHit_A8+PDPE_FN_FLAGS):0;
+                                uint32_t dhPsz=SafeReadable((void*)(fnDashHit_A8+USTRUCT_PROPSIZE),4)?*(uint32_t*)(fnDashHit_A8+USTRUCT_PROPSIZE):0;
+                                uintptr_t dhFunc=SafeReadable((void*)(fnDashHit_A8+UFUNC_FUNC),8)?*(uintptr_t*)(fnDashHit_A8+UFUNC_FUNC):0;
+                                Markerf("[E4T-A8] DashHit resolved fn=0x%llX flags=0x%X PropsSize=%u Func(+0xE0)=0x%llX\r\n",
+                                        (unsigned long long)fnDashHit_A8, dhFlags, dhPsz, (unsigned long long)dhFunc);
+                                // Build parms buffer: 256 bytes zeroed, [0]=NULL (LokiMeleeHitBox),
+                                // [+8]=minion (OverlappingActor), [+16..] = zeroed OverlapResult
+                                memset(g_bplocals,0,sizeof(g_bplocals));
+                                *(uintptr_t*)(g_bplocals + 0) = 0;         // LokiMeleeHitBox = NULL
+                                *(uintptr_t*)(g_bplocals + 8) = minion;    // OverlappingActor = &minion
+                                // OverlapResult (bytes +16..) stays zeroed
+                                float minPreHP_A8 = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                                typedef void (*PEFn)(void*, void*, void*);
+                                PEFn callDH = (PEFn)pe;
+                                bool dhFaulted = false; uint64_t dhStart = GetTickCount64();
+                                Markerf("[E4T-A8] DashHit CALL_ISSUE parms=[LokiMeleeHitBox=0x0, OverlappingActor=0x%llX(minion), OverlapResult=zeroed 240B]\r\n",
+                                        (unsigned long long)minion);
+                                __try { callDH((void*)inst, (void*)fnDashHit_A8, (void*)g_bplocals); }
+                                __except(EXCEPTION_EXECUTE_HANDLER){ dhFaulted = true; }
+                                uint64_t dhElapsed = GetTickCount64() - dhStart;
+                                Sleep(200);
+                                float minPostHP_A8 = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                                float dhDeltaHP = minPostHP_A8 - minPreHP_A8;
+                                const char* dhVerdict =
+                                    dhFaulted         ? "*** DashHit FAULTED (likely FUNC_HasOutParms + OverlapResult too small / OutParms linked-list not set up) ***"
+                                  : (dhDeltaHP < 0)   ? "*** E4T-A8 SUCCEEDS: DashHit applied damage -- E4 PREDICATE MET ***"
+                                  :                     "clean return, no HP change (Dash body's overlap check may reject NULL LokiMeleeHitBox, or damage requires GameplayEffect setup we bypassed)";
+                                Markerf("[E4T-A8] DashHit_RESULT fault=%s elapsedMs=%llu minHP %.2f->%.2f dHP=%+.2f  %s\r\n",
+                                        dhFaulted?"YES":"no",(unsigned long long)dhElapsed,
+                                        (double)minPreHP_A8,(double)minPostHP_A8,(double)dhDeltaHP,dhVerdict);
+                            }
+#endif // KBFE4T_CALLDASHHIT
                             // RESTORE original phase byte (safety: don't leave the ability in a modified state)
                             if(SafeWritable((void*)(inst+0xF58),1)){
                                 __try {

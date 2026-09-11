@@ -991,6 +991,11 @@ $Variants = @{
         # E4T-A6 measured +0xF58 alone doesn't satisfy the Dash gate (poke persisted but refusal still fired).
         # Testing hypothesis: Dash gate is `phase ∈ {2,3,4} && CurrentPhase != NULL`.
         'e4-t-a7'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_POKEPHASE=1','-DKBFE4T_POKECURPHASE=1')
+        # E4T-A8: A7 (compound poke + Invoke -> Dash body runs) + explicit DashHit(minion) call to apply damage.
+        # E4T-A7 measured Dash body executes end-to-end but no damage — zero-parm Invoke has no target.
+        # DashHit signature: (LokiMeleeHitBox obj, OverlappingActor obj, OverlapResult struct); pass NULL,
+        # &minion, zeroed OverlapResult. If HP drops, E4 predicate MET via full shim path.
+        'e4-t-a8'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_POKEPHASE=1','-DKBFE4T_POKECURPHASE=1','-DKBFE4T_CALLDASHHIT=1')
 
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
