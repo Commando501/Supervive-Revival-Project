@@ -18472,6 +18472,12 @@ static void DoBotSpawn(){
 #ifndef KBFE4T_CALLDASHHIT
 #define KBFE4T_CALLDASHHIT 0 // S191 E4T-A8 (2026-09-10): after compound poke + Invoke (which crosses WALL P per E4T-A7), also call DashHit(NULL, minion, zeroed OverlapResult) via ProcessEvent to actually damage the minion. DashHit signature per bpdump: (FObjectProperty LokiMeleeHitBox, FObjectProperty OverlappingActor, FStructProperty OverlapResult). FUNC_HasOutParms.
 #endif
+#ifndef KBFE4T_DASHHIT_REPS
+#define KBFE4T_DASHHIT_REPS 1 // S191 E4T-A9 (2026-09-10): number of DashHit calls in the same Dash window. E4T-A8 measured 1 call -> -18.22 HP. If PreventMultiHits doesn't block same-window subsequent hits, N=6 should kill. Requires KBFE4T_CALLDASHHIT=1.
+#endif
+#ifndef KBFE4T_DASHHIT_INTERVAL_MS
+#define KBFE4T_DASHHIT_INTERVAL_MS 250 // Sleep between DashHit reps. Too short may miss game-thread ticks; too long may exceed Dash window (~9.6s from Post Dash Start to Dash Ended).
+#endif
 #ifndef KBFE4T
 #define KBFE4T 0 // S191 E4 OPTION T (2026-09-10, tag [E4T] in markers): ProcessEvent K2_ActivateAbility
                 // bypass. Grants ability via plain GiveAbility (K_GRANT), then invokes K2_ActivateAbility
@@ -25851,22 +25857,43 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                                 float minPreHP_A8 = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
                                 typedef void (*PEFn)(void*, void*, void*);
                                 PEFn callDH = (PEFn)pe;
-                                bool dhFaulted = false; uint64_t dhStart = GetTickCount64();
-                                Markerf("[E4T-A8] DashHit CALL_ISSUE parms=[LokiMeleeHitBox=0x0, OverlappingActor=0x%llX(minion), OverlapResult=zeroed 240B]\r\n",
-                                        (unsigned long long)minion);
-                                __try { callDH((void*)inst, (void*)fnDashHit_A8, (void*)g_bplocals); }
-                                __except(EXCEPTION_EXECUTE_HANDLER){ dhFaulted = true; }
-                                uint64_t dhElapsed = GetTickCount64() - dhStart;
-                                Sleep(200);
-                                float minPostHP_A8 = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                                // E4T-A9: loop DashHit KBFE4T_DASHHIT_REPS times with KBFE4T_DASHHIT_INTERVAL_MS between calls.
+                                // Each call reads HP before/after to trace per-hit damage. Stop early if HP <= 0.
+                                float minPostHP_A8 = minPreHP_A8;
+                                int hitsFired = 0, hitsFaulted = 0, hitsApplied = 0;
+                                float lastHpBefore = minPreHP_A8, lastHpAfter = minPreHP_A8;
+                                for(int rep = 1; rep <= (int)KBFE4T_DASHHIT_REPS; rep++){
+                                    if(minPostHP_A8 <= 0.0f) { Markerf("[E4T-A9] rep %d: SKIP — minion already dead (HP=%.2f)\r\n", rep, (double)minPostHP_A8); break; }
+                                    memset(g_bplocals,0,sizeof(g_bplocals));
+                                    *(uintptr_t*)(g_bplocals + 0) = 0;
+                                    *(uintptr_t*)(g_bplocals + 8) = minion;
+                                    lastHpBefore = minPostHP_A8;
+                                    bool dhFaulted = false; uint64_t dhStart = GetTickCount64();
+                                    Markerf("[E4T-A9] rep %d/%d CALL DashHit(minion=0x%llX) hpBefore=%.2f\r\n",
+                                            rep, (int)KBFE4T_DASHHIT_REPS, (unsigned long long)minion, (double)lastHpBefore);
+                                    __try { callDH((void*)inst, (void*)fnDashHit_A8, (void*)g_bplocals); }
+                                    __except(EXCEPTION_EXECUTE_HANDLER){ dhFaulted = true; }
+                                    uint64_t dhElapsed = GetTickCount64() - dhStart;
+                                    Sleep((int)KBFE4T_DASHHIT_INTERVAL_MS);
+                                    lastHpAfter = SafeReadable((void*)(set+healthOff+0xC),4)?*(float*)(set+healthOff+0xC):0.0f;
+                                    float thisDelta = lastHpAfter - lastHpBefore;
+                                    minPostHP_A8 = lastHpAfter;
+                                    hitsFired++;
+                                    if(dhFaulted) hitsFaulted++;
+                                    if(thisDelta < -0.001f) hitsApplied++;
+                                    Markerf("[E4T-A9] rep %d RESULT fault=%s elapsedMs=%llu hpBefore=%.2f hpAfter=%.2f dHP=%+.2f\r\n",
+                                            rep, dhFaulted?"YES":"no", (unsigned long long)dhElapsed,
+                                            (double)lastHpBefore, (double)lastHpAfter, (double)thisDelta);
+                                }
                                 float dhDeltaHP = minPostHP_A8 - minPreHP_A8;
                                 const char* dhVerdict =
-                                    dhFaulted         ? "*** DashHit FAULTED (likely FUNC_HasOutParms + OverlapResult too small / OutParms linked-list not set up) ***"
-                                  : (dhDeltaHP < 0)   ? "*** E4T-A8 SUCCEEDS: DashHit applied damage -- E4 PREDICATE MET ***"
-                                  :                     "clean return, no HP change (Dash body's overlap check may reject NULL LokiMeleeHitBox, or damage requires GameplayEffect setup we bypassed)";
-                                Markerf("[E4T-A8] DashHit_RESULT fault=%s elapsedMs=%llu minHP %.2f->%.2f dHP=%+.2f  %s\r\n",
-                                        dhFaulted?"YES":"no",(unsigned long long)dhElapsed,
-                                        (double)minPreHP_A8,(double)minPostHP_A8,(double)dhDeltaHP,dhVerdict);
+                                    hitsFaulted > 0                        ? "*** SOME hits FAULTED (likely FUNC_HasOutParms) ***"
+                                  : (minPostHP_A8 <= 0.0f && hitsApplied > 0) ? "*** E4T-A9 KILL SUCCEEDS: minion HP=0 -- E4 KILL PREDICATE MET ***"
+                                  : (dhDeltaHP < 0 && hitsApplied >= 1)     ? "*** E4T-A9 damage applied — WALL P damage works — but insufficient reps to kill ***"
+                                  :                                            "clean returns, no HP change (Dash body's overlap check may reject NULL LokiMeleeHitBox, or PreventMultiHits blocks after rep 1)";
+                                Markerf("[E4T-A9] SUMMARY hitsFired=%d hitsFaulted=%d hitsApplied=%d minHP %.2f->%.2f dHPtot=%+.2f  %s\r\n",
+                                        hitsFired, hitsFaulted, hitsApplied,
+                                        (double)minPreHP_A8, (double)minPostHP_A8, (double)dhDeltaHP, dhVerdict);
                             }
 #endif // KBFE4T_CALLDASHHIT
                             // RESTORE original phase byte (safety: don't leave the ability in a modified state)

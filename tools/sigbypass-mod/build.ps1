@@ -996,6 +996,9 @@ $Variants = @{
         # DashHit signature: (LokiMeleeHitBox obj, OverlappingActor obj, OverlapResult struct); pass NULL,
         # &minion, zeroed OverlapResult. If HP drops, E4 predicate MET via full shim path.
         'e4-t-a8'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_POKEPHASE=1','-DKBFE4T_POKECURPHASE=1','-DKBFE4T_CALLDASHHIT=1')
+        # E4T-A9: naive multi-DashHit loop. Calls DashHit 8x with 250ms between (~2s total).
+        # If PreventMultiHits doesn't block same-window subsequent hits, minion dies in one dash cycle.
+        'e4-t-a9'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_POKEPHASE=1','-DKBFE4T_POKECURPHASE=1','-DKBFE4T_CALLDASHHIT=1','-DKBFE4T_DASHHIT_REPS=8','-DKBFE4T_DASHHIT_INTERVAL_MS=250')
 
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call
