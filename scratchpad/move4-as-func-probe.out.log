@@ -1,0 +1,10 @@
+﻿base = 0x7FF632800000
+
+=== AS UFunction Func @+0xE0 probe ===
+
+  Respawn                        on outer=LokiRespawnComponent  class=ASFunction_NotThreadSafe_JIT
+    obj=0x15E48AB89E0  Func=0x0  page=NULL *** NULL — matches CLAUDE.md 'S55 primitive does not apply to AS' ***
+
+  SpawnDropPodForTeam            on outer=LokiDropShip  class=ASFunction_NotThreadSafe_JIT
+    obj=0x15E48ABDFD0  Func=0x0  page=NULL *** NULL — matches CLAUDE.md 'S55 primitive does not apply to AS' ***
+

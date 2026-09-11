@@ -1,0 +1,158 @@
+>>> CORRECTED BY SESSION 44 — READ docs/session-44-grid-datapath-SOLVED-crash-is-the-wall.txt FIRST. <<<
+    Two claims below are WRONG:
+    (1) "the game is stable / FIX COMPLETE" — the grid was NEVER populated; the un-hooked
+        build was "stable" only in the sense of not crashing, WITH AN EMPTY GRID. The
+        "populate -> crash" correlation was real but the mechanism was misread.
+    (2) "crash-time scales with assets populated / the crash is the persistent Browse patch"
+        — the un-hook did stop the patch-integrity crash, but scan_on_browse alone does NOT
+        populate the grid. The grid enumerates via GetPrimaryAssetIdList(Hero); the working
+        fix is scan_on_enum.dll (demand-driven) + the content-manifest nonEnabledOnly flag.
+        With those, heroes RESOLVE + LOAD and the real crash is the hero-content-load wall.
+    scan_on_browse.cpp is kept as prior art (the Browse-hook + GEngine-find + un-hook
+    machinery is reused), but is NOT the fix. Session 44 is the accurate account.
+==============================================================================
+SESSION 43 — the hero grid TIMING problem is SOLVED: a Browse-hook scan populates the
+AssetManager BEFORE the menu-load catalog build. But POPULATING the grid crashes the
+game (crash-time scales with how many assets are populated) — the empty grid was
+masking the project's D3D12/RHI rendering wall.
+==============================================================================
+Date: 2026-07-02  (branch dedicated-server-stub)
+Payload: tools/sigbypass-mod/scan_on_browse.cpp (+ .dll, _nopop.dll, _heroonly.dll)
+Marker: docs/scan-on-browse-marker.txt
+
+WHAT SESSION 42 LEFT: the scan (ScanPathsForPrimaryAssets) populates the AssetManager
+per-type AssetMaps (Hero 0->25), but a POST-menu scan is too late — the menu builds its
+hero catalog ONCE at menu-load (ChangeBundleStateForPrimaryAssets) and caches it, so the
+grid stays empty. Early-injecting scan_shim to scan pre-menu CRASHED (its worker
+brute-force-scanned ALL private memory repeatedly during volatile early-init -> AV).
+
+THE S43 FIX (design): hook UEngine::Browse (RVA +0x3EC57D0) with browse_hook's proven
+early-injection machinery, and when the LobbyV2 map is browsed, run the asset scan on the
+game thread BEFORE continuing the original Browse. This runs the scan at the exact right
+moment WITHOUT scan_shim's fatal flaw: the hook is installed PASSIVELY early (only reads a
+fixed RVA), and the manager-find + asset-scan run LATER, at LobbyV2-Browse time, when the
+process is fully stable (same stability as the proven post-menu scan). Deterministic
+timing — no APC gamble.
+
+TIMING WINDOW (verified from a normal-client Loki.log, all on the game thread [frame]):
+   :Login  Browse LVL_Login
+   ...     (login screen up ~8-18s)
+   :LB     Browse LVL_LobbyV2_Persistent   <-- HOOK FIRES; scan runs here
+   :LB+~1  LoadMap LobbyV2 complete
+   :LB+~1.5 ChangeBundleStateForPrimaryAssets failed to find NameData  <-- catalog build
+So the scan at the LobbyV2 Browse runs ~1.5s BEFORE the catalog build. CONFIRMED by a
+~10s game-thread FREEZE gap in the log immediately before the "Started Browse LobbyV2"
+line (the manager-find blocking the game thread) — i.e. the scan provably completes
+before the catalog build.
+
+RESULTS (live, non-elevated gated `inject watch` on the Browse prologue):
+1. EARLY INJECTION IS STABLE. scan_on_browse injects, installs the Browse hook, and the
+   game reaches the login screen and menu with NO early-init crash. scan_shim's
+   early-injection crash is ELIMINATED (no worker memory-scan during unpack).
+2. HOOK FIRES AT THE RIGHT TIME. "[pre] LobbyV2 Browse detected" -> scan runs on the game
+   thread -> "scan complete; continuing original Browse", before the catalog build.
+3. MANAGER-FIND BUG FOUND + FIXED. First live run picked a BOGUS instance (typemap num=1,
+   data=0x7FF600000000 non-heap) because the old heuristic took the FIRST vtable hit with
+   num>0. Fix: pick the MAX-num instance (only the real singleton has ~30 types), validate
+   the typemap data is a readable heap pointer, early-out at num>=25. After the fix it
+   reliably finds the real singleton (num=30) and populates: Hero added=25, all 30 types,
+   counts matching the S42 post-menu run (Item=510, Emote=331, cues 961/2296, ...).
+4. THE FIX WORKS at the enumeration layer: the scan runs before the catalog build and
+   populates Hero's AssetMap to 25 — exactly what S42 said the empty grid needed.
+
+*** BUT POPULATING THE GRID CRASHES THE GAME ***
+The game reaches the full main menu (BP_MainMenuGameMode_C, TryUIReady SUCCESS) and then
+crashes via Sentry (no UECC dump; Sentry intercepts). Single-variable tests
+(same inject/hook/manager-find, only the populate toggled), monitored for liveness:
+
+   VARIANT (POPULATE)          assets registered            crash time after menu
+   ---------------------------  ---------------------------  --------------------------
+   full (all 30 types)          Hero=25 + ~7000 others       ~9-50s  (2 runs)
+   hero-only (Hero type)        Hero=25 only                 ~2.5 min (1 run)
+   control (no populate)        none (find only)             ~4.75 min (1 run)  <-- CRASHED
+   unmodded normal client (S42) none                         stable for HOURS
+
+*** THE CONFOUND: EVEN THE NO-POPULATE CONTROL CRASHES (~4.75 min). ***
+This overturns the initial "populate hits the rendering wall" read. All three variants
+share a ~10s GAME-THREAD FREEZE (the brute-force full-address-space manager-find inside
+the Browse hook, blocking the game thread during LoadMap). The no-populate control does
+NOTHING but inject + hook + that freeze, yet it still crashes at ~4.75 min — while the
+unmodded client runs for hours. So the FREEZE (or the injection/hook) is a BASE
+DESTABILIZER, and the populate merely ACCELERATES the crash (more assets -> faster). The
+crash CANNOT be cleanly attributed to the populate/rendering while this freeze exists.
+
+FREEZE ELIMINATED (session 43): the manager is now found via GEngine->AssetManager —
+rcx in UEngine::Browse IS GEngine (UEngine*), and UEngine holds the UAssetManager* at
+**offset 0x340** (this build). Scanning only UEngine's own memory (a few KB) finds it
+INSTANTLY — no full-address-space walk, no game-thread freeze. VERIFIED live:
+"[find] via GEngine+0x340 -> manager=... typemap num=30", Hero added=25, and NO 10s
+timestamp gap before the LobbyV2 Browse in Loki.log. (Full-address-space ScanForManager
+kept as a fallback.)
+
+*** VERDICT: FIX COMPLETE — grids populated AND the game is stable. ***
+The base destabilizer was the PERSISTENT UEngine::Browse PATCH (a periodic code-integrity
+check crashes the game ~3-5 min after detecting the modified prologue). Two changes fixed it:
+
+  (1) FREEZE-FREE FIND via GEngine->AssetManager (offset 0x340) — removed the ~10s
+      game-thread freeze. Alone this only DELAYED the crash (full-populate 50s -> 204s).
+  (2) UN-HOOK after the scan — restore the original Browse prologue ~1.5s after the
+      one-shot scan (worker thread; safe, no Browse in flight at idle menu). The hook is
+      only needed to trigger the scan; reverting it leaves Browse pristine for the
+      integrity check.
+
+Crash-time evidence (menu = full main menu, BP_MainMenuGameMode_C):
+   BUILD                                         result
+   -------------------------------------------   ---------------------------
+   full-populate, freeze, patch-left-installed   crash ~9-50s
+   hero-only,     freeze, patch-left-installed    crash ~2.5 min
+   control(none), freeze, patch-left-installed    crash ~4.75 min
+   full-populate, NO-freeze, patch-left-installed crash ~3.4 min (204s)
+   full-populate, NO-freeze, UN-HOOKED            *** STABLE >=6 min, 0 crashes ***
+   unmodded normal client (S42)                   stable for hours
+
+So: the freeze and the populate ACCELERATE the integrity-check crash, but the ROOT of the
+base crash is the left-in-place Browse patch. Un-hooking (+ the freeze-free find) yields a
+STABLE, fully-populated menu. Hero AssetMap = 25 before the catalog build; all 30 types
+populated; game survives well past the ~5 min window where every patch-installed build died.
+
+RECOMMENDED CONFIG: scan_on_browse.dll (POPULATE=1, HERO_ONLY=0) — full populate + GEngine
+find + un-hook. Inject early via gated `inject watch` on the Browse prologue.
+
+STILL PENDING: VISUAL confirmation of the 25 grid tiles (computer-use request_access timed
+out — user away). The game is now STABLE with the grid populated, so the tiles can be
+screenshotted at leisure when the user is present. The 2 "failed to find NameData" warnings
+are unrelated to the hero grid (persist identically even in the no-populate control).
+
+OFFSETS / TOOLING (this build; stable across launches, ASLR moves base only):
+   UEngine::Browse            = RVA +0x3EC57D0  (8-push prologue, expected hex
+                                40555356574154415541564157)
+   ScanPathsForPrimaryAssets  = RVA +0x34CF9F0
+   LokiAssetManager vtable    = RVA +0x888CB78
+   GGameThreadId slot         = RVA +0x9D49158
+   manager+0x478              = AssetTypeMap {Data,Num,Max} stride 0x20 (key FName@+0,
+                                value FPrimaryAssetTypeData*@+8)
+   FPrimaryAssetTypeData      = Type FName@+0, BaseClass UClass*@+0x30, scan-paths@+0x70
+   FURL.Map (Browse r8)       = FString @ r8+0x28
+   Hero FName id              = 0x1A568
+
+LIVE TEST RECIPE (Steam + ags must be up; hosts entries intact):
+   # kill just the game, leave Steam+ags
+   Get-Process 'SUPERVIVE-Win64-Shipping',inject,crashpad_handler -EA SilentlyContinue | Stop-Process -Force
+   # start the gated early injector (blocks polling), THEN launch the client:
+   tools/inject/inject.exe watch SUPERVIVE-Win64-Shipping.exe \
+     tools/sigbypass-mod/scan_on_browse.dll 0x3EC57D0 40555356574154415541564157
+   # launch normal client via launch-recon.bat (redirect -ini: args, NO stub)
+   # variants: scan_on_browse.dll (all types), _heroonly.dll (Hero only), _nopop.dll (control)
+   # build: clang++ -shared -O2 [-DPOPULATE=0 | -DHERO_ONLY=1] scan_on_browse.cpp -o <name>.dll -lkernel32
+
+BUILD VARIANTS:
+   scan_on_browse.dll          POPULATE=1 HERO_ONLY=0   (all 30 types)
+   scan_on_browse_heroonly.dll POPULATE=1 HERO_ONLY=1   (Hero type only)
+   scan_on_browse_nopop.dll    POPULATE=0               (find manager, do not populate)
+
+NOT YET DONE:
+- VISUAL grid confirmation. computer-use request_access timed out (user away). The crash
+  window is short; a screenshot in the pre-crash window would confirm the 25 tiles.
+- The 2 "failed to find NameData" warnings persist identically across all variants (incl.
+  control) — they are NOT the hero grid (they're the 2 configured-but-unregistered types /
+  a missing featured id). They did NOT change when Hero was populated.

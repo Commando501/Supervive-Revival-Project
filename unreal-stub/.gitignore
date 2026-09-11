@@ -1,0 +1,21 @@
+# UE5 generated artifacts — large, machine-specific, no value in git.
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+Build/
+
+# Visual Studio / Rider project files (regenerable from .uproject)
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.opendb
+*.VC.db
+.vs/
+.idea/
+*.user
+*.pdb
+
+# Cooked content (we won't ship cooked content from this repo)
+Content/Movies/

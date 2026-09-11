@@ -1,0 +1,7 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[PL] play mode (S94): ground-teleport + build Ronin body from scratch + top-down cam + WASD puppet, in one shim (inject gft_ready_fix first)
+[PL] gameHwnd=0x0 (0 => focus check disabled)
+[WM] PC=0x21E959AD8A0 hero=0x21F7317D560(BP_HERO_Ronin_C) CMC=0x21F366E38F0 grav@0x1A0 vel@0xE8 mode@0x231
+[WM] thunks SetActive=0x7FF7A8FE8900(act@0x0 rst@0x1) SetTickEn=0x7FF7A8FE90E0(en@0x0) SetMoveMode=0x7FF7A9029180(mode@0x0 cust@0x1) SetActorTick=0x7FF7A8DCCA70(en@0x0)
+[WM] root=0x21F123911E0 SetActorLocation=0x7FF7A8DCB0C0(loc@0x0 sweep@0x18 tele@0x118) wakeZ=500

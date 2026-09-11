@@ -1,0 +1,783 @@
+// ============================================================================
+//  MODULE   Barracuda.Shop.BarracudaShop
+//  SOURCE   Barracuda/Shop/BarracudaShop.as
+//  CONTENT  3 class(es), 34 function(s), 0 enum(s), 2 global(s), 6788 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Barracuda_Shop_BarracudaShopStatics
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaShopItemGraphNode;
+const TSubclassOf<UObject@> __StaticType_ABarracudaShop;
+
+UBarracudaShopItemGraphNode@ UBarracudaShopItemGraphNode()   // traits=0x20
+{
+    UBarracudaShopItemGraphNode v2;
+
+    v2 = UBarracudaShopItemGraphNode();
+    return v2;
+}
+
+ABarracudaShop@ ABarracudaShop()   // traits=0x20
+{
+    ABarracudaShop v2;
+
+    v2 = ABarracudaShop();
+    return v2;
+}
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+ABarracudaShop@ GetBarracudaShop()   // traits=0x20
+{
+    UBarracudaGameStateComponent v4;
+    ABarracudaShop v8;
+
+    v4 = GetBarracudaGameStateComponent();
+    if (v4 == nullptr) {
+        return v8;
+    } else {
+        v8 = v4.Shop;
+    }
+    return v8;
+}
+
+UClass@ UBarracudaShopItemGraphNode::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaShopItemGraphNode);
+    return v2;
+}
+
+UClass@ ABarracudaShop::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ABarracudaShop);
+    return v2;
+}
+
+ABarracudaShop@ ABarracudaShop::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ABarracudaShop v8;
+
+    v2 = __StaticType_ABarracudaShop.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ABarracudaShop@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaShopItemGraphNode : UObject
+// unreal base : /Script/CoreUObject.Object
+// C++ header  : ../../../Engine/Source/Runtime/CoreUObject/Public/UObject/NoExportTypes.h
+// static class global: __StaticType_UBarracudaShopItemGraphNode
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSubclassOf<ALokiBaseItem@> Item;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int RecipeCost;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int TotalCost;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<UBarracudaShopItemGraphNode@> Inputs;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSet<UBarracudaShopItemGraphNode@> Outputs;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bHasTotalCost;
+
+    UBarracudaShopItemGraphNode()   // traits=0x21
+    {
+        auto v1;
+        auto v2;
+
+        this.Item = TSubclassOf<ALokiBaseItem@>();
+        this.Inputs = TArray<UBarracudaShopItemGraphNode@>();
+        this.Outputs = TSet<UBarracudaShopItemGraphNode@>();
+        v1 = 0;
+        this.RecipeCost = v1;
+        v1 = 0;
+        this.TotalCost = v1;
+        v2 = false;
+        this.bHasTotalCost = v2;
+        return;
+    }
+
+    void ~UBarracudaShopItemGraphNode()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FBarracudaShopPurchasePlan
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int Gold;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSet<ALokiBaseItem@> ItemsToConsume;
+
+    FBarracudaShopPurchasePlan()   // traits=0x21
+    {
+        auto v1;
+
+        this.ItemsToConsume = TSet<ALokiBaseItem@>();
+        v1 = 0;
+        this.Gold = v1;
+        return;
+    }
+
+    void ~FBarracudaShopPurchasePlan()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ABarracudaShop : AActor
+// unreal base : /Script/Engine.Actor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+// static class global: __StaticType_ABarracudaShop
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    float64 SellValueCoefficient;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    TArray<TSubclassOf<ULokiLootTableFull@>> ItemLootTables;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@> ItemGraphNodes;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    FString ClientNameFilterString;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    TArray<FGameplayTag> ClientTagFilters;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    TSubclassOf<ALokiBaseItem@> ClientCurrentFocus;
+    TArray<TSubclassOf<AActor@>> AllItems;
+    bool bDebugLogGraph;
+
+    ABarracudaShop()   // traits=0x21
+    {
+        auto v2;
+
+        this.ItemLootTables = TArray<TSubclassOf<ULokiLootTableFull@>>();
+        this.ItemGraphNodes = TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>();
+        this.ClientNameFilterString = FString();
+        this.ClientTagFilters = TArray<FGameplayTag>();
+        this.ClientCurrentFocus = TSubclassOf<ALokiBaseItem@>();
+        this.AllItems = TArray<TSubclassOf<AActor@>>();
+        v2 = 0.9;
+        this.SellValueCoefficient = v2;
+        return;
+    }
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        auto v1;
+        UGameEventRouterComponent v6;
+        FUIEvent_Barracuda_Shop_FilterByName v14;
+        auto v15;
+        FGameEventListenerHandle v28;
+        FUIEvent_Barracuda_Shop_ResetFilters v30;
+        FUIEvent_Barracuda_Shop_FilterToggleTag v34;
+        FUIEvent_Barracuda_Shop_FocusItem v38;
+
+        this.BuildGraph();
+        this.CalculateTotalCostsForAllItems();
+        v1 = this.bDebugLogGraph;
+        if (v1) {
+            this.DebugLogGraph();
+        }
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v6 = UGameEventRouterSubsystem::GetUIGameEventRouter(__WorldContext);
+            if (v6 != nullptr) {
+                v15 = false;
+                v14 = FUIEvent_Barracuda_Shop_FilterByName();
+                v28 = v6.RegisterForEvent(this, v14, typeid(FUIEvent_Barracuda_Shop_FilterByName), nullptr, n"OnFilterByName", v15);
+                v15 = false;
+                v30 = FUIEvent_Barracuda_Shop_ResetFilters();
+                v28 = v6.RegisterForEvent(this, v30, typeid(FUIEvent_Barracuda_Shop_ResetFilters), nullptr, n"OnResetFilters", v15);
+                v15 = false;
+                v34 = FUIEvent_Barracuda_Shop_FilterToggleTag();
+                v28 = v6.RegisterForEvent(this, v34, typeid(FUIEvent_Barracuda_Shop_FilterToggleTag), nullptr, n"OnFilterToggleTag", v15);
+                v15 = false;
+                v38 = FUIEvent_Barracuda_Shop_FocusItem();
+                v28 = v6.RegisterForEvent(this, v38, typeid(FUIEvent_Barracuda_Shop_FocusItem), nullptr, n"OnFocusItem", v15);
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    int GetItemTotalCost(const TSubclassOf<ALokiBaseItem@>& Item)   // traits=0x20
+    {
+        auto v2;
+
+        v2 = ALokiBaseItem::GetTotalCostForItem(Item);
+        return v2;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    int GetItemSellValue(const TSubclassOf<ALokiBaseItem@>& Item)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        auto v6;
+        float64 v8;
+
+        v2 = this.GetItemTotalCost(Item);
+        v8 = float64(v2);
+        v6 = this.SellValueCoefficient;
+        v8 = v8 * v6;
+        v1 = Math::FloorToInt(v8);
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    int GetIncrementalCost(const TSubclassOf<ALokiBaseItem@>& Item)   // traits=0x20
+    {
+        int v1;
+        TArray<ALokiBaseItem@> v6;
+
+        v1 = 0;
+        v6 = TArray<ALokiBaseItem@>();
+        ALokiBaseItem::GetRecipeCostForLocalPlayerBP(__WorldContext, Item, v1, v6);
+        return v1;
+    }
+
+    UFUNCTION(BlueprintAuthorityOnly, CanOverrideEvent)
+    void AuthBuyItem(ALokiPlayerState@ PlayerState, const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        ULokiInventoryComponentComboItems v4;
+        FBarracudaShopPurchasePlan v48;
+        auto v49;
+        auto v50;
+
+        v4 = PlayerState.GetInventory();
+        v48.FBarracudaShopPurchasePlan();
+        this.TryGeneratePurchasePlan(v48, v4, ItemClass);
+        v50 = PlayerState.GetWalletGold();
+        v49 = v48.Gold;
+        if (v50 >= v49) {
+            this.ExecutePurchasePlan(v48, PlayerState, ItemClass);
+        }
+        v48.~FBarracudaShopPurchasePlan();
+        return;
+    }
+
+    UFUNCTION(BlueprintAuthorityOnly, CanOverrideEvent)
+    void AuthSellItem(ALokiPlayerState@ PlayerState, ALokiBaseItem@ Item)   // traits=0x20
+    {
+        ALokiBaseItem v2;
+        auto v3;
+        ULokiInventoryComponentBase v6;
+        ULokiInventoryComponentComboItems v12;
+        auto v13;
+        ELokiRemoveFromInventoryReason v14;
+        UClass v18;
+        TSubclassOf<ALokiBaseItem@> v20;
+        int v21;
+        ECurrencyGrantReason v22;
+
+        v2 = Item;
+        if (v2 == nullptr) {
+            return;
+        } else {
+            v6 = Item.GetCurrentInventoryComponent();
+            v12 = PlayerState.GetInventory();
+            if (v6 != v12) {
+                return;
+            } else {
+                v14 = ELokiRemoveFromInventoryReason::Destroyed;
+                v3 = v12.TryRemoveFromInventory(Item, v14);
+                v13 = v3;
+                v13 = !v13;
+                if (v13) {
+                    return;
+                } else {
+                    Item.DestroyActor()  /* UFunction K2_DestroyActor */;
+                    v18 = Item.GetClass();
+                    v20 = TSubclassOf<ALokiBaseItem@>(v18);
+                    v21 = this.GetItemSellValue(v20);
+                    v22 = ECurrencyGrantReason::Refund;
+                    PlayerState.GrantWalletCurrency("Gold", v21, v22);
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    TArray<TSubclassOf<ALokiBaseItem@>> GetOutputItems(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        TArray<TSubclassOf<ALokiBaseItem@>> v4;
+        UBarracudaShopItemGraphNode v6;
+        auto v7;
+        TSetIterator<UBarracudaShopItemGraphNode@> v16;
+        UBarracudaShopItemGraphNode v26;
+
+        v4 = TArray<TSubclassOf<ALokiBaseItem@>>();
+        if (this.ItemGraphNodes.Find(ItemClass, v6)) {
+            v16 = v6.Outputs.Iterator();
+            while (true) {
+                v7 = v16.CanProceed;
+                if (!v7) break;
+                v26 = v16.Proceed();
+                v16.Proceed();
+                v4.Add(v26.Item);
+            }
+        }
+        __ret = TArray<TSubclassOf<ALokiBaseItem@>>();
+        __ret = v4;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    TArray<TSubclassOf<AActor@>> GetAllShopItems()   // traits=0x20
+    {
+        auto v1;
+        TArrayIterator<TSubclassOf<ULokiLootTableFull@>> v8;
+        TSubclassOf<ULokiLootTable@> v16;
+        TArray<TSubclassOf<AActor@>> v20;
+        TArrayIterator<TSubclassOf<AActor@>> v30;
+        TSubclassOf<AActor@> v38;
+
+        if (this.AllItems.IsEmpty()) {
+            v8 = this.ItemLootTables.Iterator();
+            while (true) {
+                v1 = v8.CanProceed;
+                if (!v1) break;
+                v16 = v8.Proceed();
+                v20 = ULokiLootTable::GetAllPossibleActorsFromLootTable(__WorldContext, v16);
+                v30 = v20.Iterator();
+                while (true) {
+                    v1 = v30.CanProceed;
+                    if (!v1) break;
+                    v38 = v30.Proceed();
+                    this.AllItems.AddUnique(v38);
+                }
+            }
+        }
+        __ret = TArray<TSubclassOf<AActor@>>();
+        __ret = this.AllItems;
+        return;
+    }
+
+    void BuildGraph()   // traits=0x20
+    {
+        TArrayIterator<TSubclassOf<ULokiLootTableFull@>> v6;
+        auto v13;
+        auto v16;
+        ULokiLootTableFull v20;
+        TSet<UBarracudaShopItemGraphNode@> v40;
+        TArrayIterator<FLokiLootTableItemEntry> v46;
+        auto v54;
+        TSoftClassPtr<AActor@> v64;
+        UClass v66;
+        UObject v70;
+        ALokiBaseItem v72;
+        ALokiBaseItem v74;
+        TSubclassOf<ALokiBaseItem@> v76;
+        UBarracudaShopItemGraphNode v78;
+        UBarracudaShopItemGraphNode v80;
+        auto v82;
+        TArrayIterator<TSubclassOf<ALokiBaseItem@>> v88;
+        TSubclassOf<ALokiBaseItem@> v96;
+        UBarracudaShopItemGraphNode v98;
+
+        v6 = this.ItemLootTables.Iterator();
+        while (true) {
+            v13 = v6.CanProceed;
+            if (!v13) break;
+            v16 = v6.Proceed();
+            v20 = v16.GetDefaultObject();
+            if (v20 != nullptr) {
+                v40 = TSet<UBarracudaShopItemGraphNode@>();
+                v46 = v20.GuaranteedItems.Iterator();
+                while (true) {
+                    v13 = v46.CanProceed;
+                    if (!v13) break;
+                    v54 = v46.Proceed();
+                    v64 = TSoftClassPtr<AActor@>(v54.ItemClassToSpawn);
+                    if (!v64.IsNull()) {
+                        v66 = System::LoadClassAsset_Blocking(v64);
+                        if (v66 != nullptr) {
+                            v70 = v66.GetDefaultObject();
+                            if (v70 != nullptr) {
+                                v72 = cast<ALokiBaseItem@>(v70);
+                            } else {
+                                v72 = nullptr;
+                            }
+                            v74 = v72;
+                            if (v74 != nullptr) {
+                                v76 = TSubclassOf<ALokiBaseItem@>(v66);
+                                v78 = this.GetOrCreateItemGraphNode(v76);
+                                v80 = v78;
+                                if (!v40.Contains(v80)) {
+                                    v40.Add(v80);
+                                    v82 = v74.ShopRecipe;
+                                    v88 = v82.ComponentItems.Iterator();
+                                    while (true) {
+                                        v13 = v88.CanProceed;
+                                        if (!v13) break;
+                                        v96 = v88.Proceed();
+                                        if (!v96 == nullptr) {
+                                            v98 = this.GetOrCreateItemGraphNode(v96);
+                                            v80.Inputs.Add(v98);
+                                            v98.Outputs.Add(v80);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    void CalculateTotalCostsForAllItems()   // traits=0x20
+    {
+        TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@> v8;
+        auto v17;
+        auto v20;
+        UBarracudaShopItemGraphNode v22;
+
+        v8 = this.ItemGraphNodes.Iterator();
+        while (true) {
+            v17 = v8.CanProceed;
+            if (!v17) break;
+            v20 = v8.Proceed();
+            v22 = v20.GetValue();
+            v20.GetValue();
+            this.CalculateItemTotalCost(v22);
+        }
+        return;
+    }
+
+    void CalculateItemTotalCost(UBarracudaShopItemGraphNode@ Node)   // traits=0x20
+    {
+        UBarracudaShopItemGraphNode v2;
+        auto v3;
+        auto v4;
+        auto v5;
+        auto v6;
+        TArrayIterator<UBarracudaShopItemGraphNode@> v12;
+        UBarracudaShopItemGraphNode v20;
+
+        v2 = Node;
+        if (v2 == nullptr) {
+            v3 = true;
+        } else {
+            v4 = Node.bHasTotalCost;
+            v3 = v4;
+        }
+        if (v3) {
+            return;
+        } else {
+            v6 = Node.RecipeCost;
+            v5 = Node.TotalCost;
+            v5 = v5 + v6;
+            Node.TotalCost = v5;
+            v12 = Node.Inputs.Iterator();
+            while (true) {
+                v4 = v12.CanProceed;
+                if (!v4) break;
+                v20 = v12.Proceed();
+                v12.Proceed();
+                this.CalculateItemTotalCost(v20);
+                v5 = v20.TotalCost;
+                v6 = Node.TotalCost;
+                v6 = v6 + v5;
+                Node.TotalCost = v6;
+            }
+            v3 = true;
+            Node.bHasTotalCost = v3;
+        }
+        return;
+    }
+
+    UBarracudaShopItemGraphNode@ GetOrCreateItemGraphNode(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        UBarracudaShopItemGraphNode v2;
+        bool v3;
+        UClass v6;
+        TSubclassOf<UObject@> v8;
+        UObject v10;
+        UBarracudaShopItemGraphNode v12;
+        ALokiBaseItem v16;
+        auto v17;
+
+        if (this.ItemGraphNodes.Find(ItemClass, v2)) {
+            return v2;
+        } else {
+            v3 = false;
+            v6 = UBarracudaShopItemGraphNode::StaticClass();
+            v8 = TSubclassOf<UObject@>(v6);
+            v10 = NewObject(this, v8, NAME_None, v3);
+            if (v10 != nullptr) {
+                v12 = cast<UBarracudaShopItemGraphNode@>(v10);
+            } else {
+                v12 = nullptr;
+            }
+            v2 = v12;
+            v2.Item = ItemClass;
+            v16 = ItemClass.GetDefaultObject();
+            if (v16 != nullptr) {
+                v17 = v16.GetGoldValue();
+                v2.RecipeCost = v17;
+            }
+            this.ItemGraphNodes.Add(ItemClass, v2);
+        }
+        return v2;
+    }
+
+    void DebugLogGraph()   // traits=0x20
+    {
+        FString v4;
+        bool v5;
+        int v7;
+        TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@> v16;
+        auto v26;
+        UBarracudaShopItemGraphNode@ v28;
+
+        v5 = true;
+        v4 = FString();
+        v4.Append("BarracudaShop - DebugLogGraph");
+        System::LogString(v4.Append("BarracudaShop - DebugLogGraph"), v5);
+        v7 = this.ItemGraphNodes.Num();
+        v5 = true;
+        v4 = FString();
+        v4.Append("Found ");
+        v4.Append("Found ").Append(v7);
+        v4.Append("Found ").Append(v7).Append(" unique items");
+        System::LogString(v4.Append("Found ").Append(v7).Append(" unique items"), v5);
+        v16 = this.ItemGraphNodes.Iterator();
+        while (true) {
+            v5 = v16.CanProceed;
+            if (!v5) break;
+            v26 = v16.Proceed();
+            v28 = v26.GetValue();
+            this.DebugPrintNode(v28, "");
+        }
+        return;
+    }
+
+    void DebugPrintNode(UBarracudaShopItemGraphNode@ Node, const FString& Indentation)   // traits=0x20
+    {
+        TSubclassOf<ALokiBaseItem@> v2;
+        bool v3;
+        ALokiBaseItem v8;
+        FString v12;
+        FText v16;
+        FString v20;
+        TArrayIterator<UBarracudaShopItemGraphNode@> v26;
+        UBarracudaShopItemGraphNode v34;
+
+        v2 = TSubclassOf<ALokiBaseItem@>();
+        v2 = Node.Item;
+        v3 = v2 == nullptr;
+        if (v3) {
+            return;
+        } else {
+            v8 = Node.Item.GetDefaultObject();
+            if (v8 == nullptr) {
+                return;
+            } else {
+                v3 = true;
+                v16 = v8.GetPlayerFacingName();
+                v12 = FString();
+                v12.Append(Indentation);
+                v12.Append(Indentation).Append(v16);
+                v12.Append(Indentation).Append(v16).Append(" - [Recipe: ");
+                v12.Append(Indentation).Append(v16).Append(" - [Recipe: ").Append(Node.RecipeCost);
+                v12.Append(Indentation).Append(v16).Append(" - [Recipe: ").Append(Node.RecipeCost).Append("][Total Cost: ");
+                v12.Append(Indentation).Append(v16).Append(" - [Recipe: ").Append(Node.RecipeCost).Append("][Total Cost: ").Append(Node.TotalCost);
+                v12.Append(Indentation).Append(v16).Append(" - [Recipe: ").Append(Node.RecipeCost).Append("][Total Cost: ").Append(Node.TotalCost).Append("]");
+                System::LogString(v12.Append(Indentation).Append(v16).Append(" - [Recipe: ").Append(Node.RecipeCost).Append("][Total Cost: ").Append(Node.TotalCost).Append("]"), v3);
+                v12 = FString();
+                v12.Append(Indentation);
+                v12.Append(Indentation).Append("    ");
+                v20 = FString(v12.Append(Indentation).Append("    "));
+                v26 = Node.Inputs.Iterator();
+                while (true) {
+                    v3 = v26.CanProceed;
+                    if (!v3) break;
+                    v34 = v26.Proceed();
+                    v26.Proceed();
+                    this.DebugPrintNode(v34, v20);
+                }
+            }
+        }
+        return;
+    }
+
+    void BroadcastFilterUpdated()   // traits=0x20
+    {
+        UGameEventRouterComponent v4;
+        FUIEvent_Barracuda_Shop_FilterUpdated v10;
+
+        v4 = UGameEventRouterSubsystem::GetUIGameEventRouter(__WorldContext);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v10 = FUIEvent_Barracuda_Shop_FilterUpdated();
+            v4.BroadcastEvent(v10, typeid(FUIEvent_Barracuda_Shop_FilterUpdated), nullptr);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnFilterByName(const FUIEvent_Barracuda_Shop_FilterByName& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.ClientNameFilterString = Event.Query;
+        this.BroadcastFilterUpdated();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnResetFilters(const FUIEvent_Barracuda_Shop_ResetFilters& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.ClientNameFilterString = "";
+        this.ClientTagFilters.Empty(0);
+        this.BroadcastFilterUpdated();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnFilterToggleTag(const FUIEvent_Barracuda_Shop_FilterToggleTag& Event, const AActor@ Context)   // traits=0x20
+    {
+        FGameplayTag v2;
+
+        v2 = FGameplayTag(Event.Tag);
+        this.ClientTagFilters.Empty(0);
+        this.ClientTagFilters.Add(v2);
+        this.BroadcastFilterUpdated();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnFocusItem(const FUIEvent_Barracuda_Shop_FocusItem& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.ClientCurrentFocus = Event.Item;
+        return;
+    }
+
+    void TryGeneratePurchasePlan(FBarracudaShopPurchasePlan&inout PurchasePlan, ULokiInventoryComponentComboItems@ PlayerInventory, const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        auto v1;
+
+        v1 = ALokiBaseItem::GetRecipeCostForInventory(PlayerInventory, ItemClass, PurchasePlan.ItemsToConsume);
+        PurchasePlan.Gold = v1;
+        return;
+    }
+
+    void ExecutePurchasePlan(const FBarracudaShopPurchasePlan&in PurchasePlan, ALokiPlayerState@ PlayerState, const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        ULokiInventoryComponentComboItems v4;
+        ALokiBaseItem v6;
+        bool v9;
+        FName v11;
+        FName v13;
+        int v14;
+        auto v15;
+        auto v16;
+        TSetConstIterator<ALokiBaseItem@> v24;
+        TSetConstIterator<ALokiBaseItem@> v32;
+        ALokiBaseItem v34;
+        bool v35;
+        ELokiRemoveFromInventoryReason v36;
+        ELokiAddToInventoryReason v37;
+
+        v4 = PlayerState.GetInventory();
+        v6 = ItemClass.GetDefaultObject();
+        if (v6 == nullptr) {
+            return;
+        } else {
+            v13 = v6.GetSlotName();
+            v15 = v4.GetEmptySlotsByName(v13);
+            if (v15 == 0) {
+                v16 = 0;
+                v24 = PurchasePlan.ItemsToConsume.Iterator();
+                while (true) {
+                    v9 = v24.CanProceed;
+                    if (!v9) break;
+                    v34 = v24.Proceed();
+                    v24.Proceed();
+                    v11 = v34.GetSlotName();
+                    v9 = v11 == v13;
+                    if (v9) {
+                        v16 = v16 + 1;
+                    }
+                }
+                if (v16 == 0) {
+                    return;
+                }
+            } else {
+                v9 = false;
+                v14 = PurchasePlan.Gold;
+                PlayerState.ConsumeWalletCurrency("Gold", v14, v9);
+                v32 = PurchasePlan.ItemsToConsume.Iterator();
+                while (true) {
+                    v35 = v32.CanProceed;
+                    if (!v35) break;
+                    v34 = v32.Proceed();
+                    v36 = ELokiRemoveFromInventoryReason::Destroyed;
+                    v32.Proceed();
+                    v4.TryRemoveFromInventory(v34, v36);
+                }
+                v9 = false;
+                v34 = SpawnActor(ItemClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v9, nullptr);
+                v9 = false;
+                v35 = true;
+                v37 = ELokiAddToInventoryReason::Created;
+                v4.TryAddToInventory(v34, v37, NAME_None, -1, v35, v9);
+            }
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+
+        v1 = true;
+        this.SetbAlwaysRelevant(v1);
+        v1 = true;
+        this.SetbReplicates(v1);
+        v1 = false;
+        this.LokiReplicationStrategy.bDistanceBased = v1;
+        v2 = true;
+        this.LokiReplicationStrategy.CustomReplicationStrategy = v2;
+        v1 = true;
+        this.bDebugLogGraph = v1;
+        return;
+    }
+
+    void ~ABarracudaShop()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

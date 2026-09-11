@@ -1,0 +1,79 @@
+S138 FLIGHT 4 -- PRE-REGISTRATION
+Written 2026-08-23 BEFORE launching. Not editable afterwards; corrections go in the write-up.
+
+================================================================================================
+0. WHAT IS BEING FLOWN
+================================================================================================
+The v3 arms (docs/s138-latch-fix-rebuild.md §7): the latch fix PLUS the duplicate-candidate fix
+that flight 3's own output exposed. v3 is unflown.
+
+  tutorial_launch_botspawn.dll          RAW b2203efd62161182   (page-decrypt step, UNCHANGED from v2)
+  tutorial_launch_spawnbot_premade.dll  RAW 6cb296bbf3c8c696   (ARM E, v3)
+  regression gate botai                 RAW 5e47c13cf7f0a158   UNCHANGED across every S138 patch
+
+================================================================================================
+1. THE PRIMARY PREDICTION -- narrow, falsifiable, and it is the whole point of v3
+================================================================================================
+Flight 3 (v2) printed, with BOTH entries the SAME pointer 0x2C9C76610F0:
+
+    [PS] G3/G4 GameState candidates: 2
+    [PS]   gsCand[0] ... 'BP_LokiGameState_Tutorial_C' ...
+    [PS]   gsCand[1] ... 'BP_LokiGameState_Tutorial_C' ...      <- duplicate
+    [PS]   ... treat G3/G4 as AMBIGUOUS rather than measured.   <- FALSE POSITIVE
+
+v3 adds a per-pass reset AND dedupe-on-insert. Therefore:
+
+  D1  "G3/G4 GameState candidates: 1"                     (exactly 1, not 2)
+  D2  exactly ONE gsCand line, class BP_LokiGameState_Tutorial_C, chain containing an element
+      exactly "LokiGameState"
+  D3  NO "more than one GameState candidate ... AMBIGUOUS" line
+  D4  LokiGameStateUAVComponent STILL absent (the v2 latch fix must not regress)
+  D5  TeamStates Data=0x0 Num=0 on that candidate (matches v2 and the offline result)
+
+  ⚠ D1 is the discriminating one. If it still reads 2 with two DISTINCT pointers, that is a REAL
+    ambiguity and a new finding, not a defect. If it reads 2 with the SAME pointer, the dedupe
+    failed and v3 is broken -- the standalone logic test (10/10) would then be contradicted by the
+    live build, which would itself be worth knowing.
+
+================================================================================================
+2. THE SECONDARY OBJECTIVE -- the cheapest open item, twice attempted, twice lost to a dead client
+================================================================================================
+Q2 established [M], n=3 across 3 clients: the LokiBotController does NOT move, and it is inert BY
+GATE -- bCharacterControllable (+0x6A0) = 0 with ForceCharacterNotControllable (+0x602) = 0, so
+nothing is forcing it and the underlying (LivingState==Alive) && !IsStunned is itself false.
+
+WHAT IS NOT MEASURED: why. The gate's first term is LivingState.
+
+  L1  Read LivingState on a BOT pawn (the one ARM E/ARM D produced).
+  L2  Read LivingState on the PLAYER hero in the SAME pass -- the POSITIVE CONTROL. The player hero
+      is possessed and alive, so if the probe cannot show a sane value THERE, any bot reading is
+      UNINTERPRETABLE rather than a null.
+  L3  Predicted: the bot pawn's LivingState is NOT the "Alive" value the player hero shows.
+      If they are EQUAL, then LivingState is not the failing term and the gate fails on IsStunned
+      or on something else -- which would be an equally useful result and must be reported as such.
+
+  ⚠ This is OPPORTUNISTIC. It rides along on a client staged for the primary prediction. If the
+    client dies first, L1-L3 are simply not obtained -- that is not a negative result about
+    LivingState, and it must not be written up as one.
+  ⚠ The offset is NOT recorded anywhere. It must be resolved BY NAME off the live class, and if it
+    does not resolve by name the probe must say NOT RESOLVED rather than read a guessed offset.
+
+================================================================================================
+3. WHAT WOULD MAKE THIS FLIGHT UNINTERPRETABLE
+================================================================================================
+  U1  ARM E REFUSES at a gate -> a staging statement, not a result.
+  U2  [BS] done absent, or called=0 -> the arm was a no-op. Read called= only AFTER [BS] done.
+  U3  The client dies before the G3/G4 readout -> D1-D5 not obtained. Say so; do not infer.
+  U4  ⚠ The auto-stage driver's OWN defect (fixed 2026-08-23): it once declared "did not stage"
+      12 s too early and KILLED three staged clients. If it reports failure, CHECK THE STAGER'S
+      OWN LOG for 'stage complete' before believing it.
+
+================================================================================================
+4. WHAT THIS FLIGHT CANNOT CHANGE
+================================================================================================
+The divert is SETTLED at 0x556DE6A (flight 3: [PS+0x8C8] 0 -> 5, string 'bot0'). TeamStates is
+permanently unpopulatable. Nothing past 0x556DE6A is reachable on this client. This flight is a
+FIX-VALIDATION plus an opportunistic read -- it is not expected to move any wall, and if it appears
+to, that should be treated as suspicious and re-checked rather than announced.
+
+⛔ Still not a working bot. ServerSetHeroClass / SetPlayerTeam remain stripped folds.

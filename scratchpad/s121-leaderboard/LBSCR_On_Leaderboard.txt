@@ -1,0 +1,31 @@
+# Asset:         Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardScreen.uasset
+# UFunction:     On Leaderboard
+# FunctionFlags: FUNC_HasOutParms, FUNC_BlueprintCallable, FUNC_BlueprintEvent
+# Outer class:   WBP_UI_LeaderboardScreen_C
+# ScriptBytecode entries: 4
+# ChildProperties: 1
+# --- Parameters / locals (FField chain) ---
+#   [0] FStructProperty  ?
+
+# --- ScriptBytecode tree ---
+[  0] EX_LetValueOnPersistentFrame
+  DestinationProperty: K2Node_CustomEvent_Leaderboard
+  AssignmentExpression:
+    EX_LocalOutVariable
+      Variable: Leaderboard
+      StatementIndex: 9
+  StatementIndex: 0
+[  1] EX_LocalFinalFunction
+  StackNode: ExecuteUbergraph_WBP_UI_LeaderboardScreen
+  Parameters: [1]
+    [  0] EX_IntConst
+      Value: 1180
+      StatementIndex: 27
+  StatementIndex: 18
+[  2] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 34
+  StatementIndex: 33
+[  3] EX_EndOfScript
+  StatementIndex: 35

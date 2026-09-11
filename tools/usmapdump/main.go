@@ -316,45 +316,187 @@ func main() {
 		cmdObjects(os.Args[2])
 		return
 	}
-	if len(os.Args) == 3 && os.Args[1] == "extract" {
-		cmdExtract(os.Args[2])
+	// extract: <proc> [outDir] — outDir defaults to the CWD. ⚠ FK-14: this command used to
+	// ALSO write its usmap to the absolute path tools\extractor\mappings.usmap on every
+	// run, from any CWD. That write is gone; deploy a usmap by copying it deliberately.
+	if (len(os.Args) == 3 || len(os.Args) == 4) && os.Args[1] == "extract" {
+		outDir := "."
+		if len(os.Args) == 4 {
+			outDir = os.Args[3]
+		}
+		cmdExtract(os.Args[2], outDir)
 		return
 	}
-	if len(os.Args) == 3 && os.Args[1] == "assetmgr" {
-		cmdAssetMgr(os.Args[2])
+	// dumpimage: <proc> [outDir] — snapshot the unpacked module image + private exec
+	// regions to disk (as-complete-as-possible cold dump for offline RE).
+	if (len(os.Args) == 3 || len(os.Args) == 4) && os.Args[1] == "dumpimage" {
+		outDir := "."
+		if len(os.Args) == 4 {
+			outDir = os.Args[3]
+		}
+		cmdDumpImage(os.Args[2], outDir)
 		return
 	}
-	if len(os.Args) == 4 && os.Args[1] == "strings" {
-		cmdStrings(os.Args[2], os.Args[3])
+	// crashwatch: <proc> <outDir> [flags] — wait for the process to CRASH, suspend it the
+	// instant a crash marker appears, and dump it before it dies. See crashwatch.go's header:
+	// the window from first log line to crashpad handoff is ~34 ms, so suspending is what makes
+	// the capture possible at all.
+	if len(os.Args) >= 4 && os.Args[1] == "crashwatch" {
+		cmdCrashWatch(os.Args[2:])
 		return
 	}
-	if len(os.Args) == 4 && os.Args[1] == "xref" {
-		cmdXref(os.Args[2], os.Args[3])
+	// mergedumps: <outFile> <in...|dir> — union several dumpimage snapshots into one
+	// maximally-covered image (fill each dump's .text gaps from the others).
+	if len(os.Args) >= 4 && os.Args[1] == "mergedumps" {
+		cmdMergeDumps(os.Args[2], os.Args[3:])
 		return
 	}
-	if len(os.Args) == 4 && os.Args[1] == "disasm" {
-		cmdDisasm(os.Args[2], os.Args[3])
+	// reconstructiat: <dumpFile> [outFile] — resolve the dump's IAT slots to module!export
+	// using the .exports.txt sidecar dumpimage captured, and rebuild a usable import table.
+	if (len(os.Args) == 3 || len(os.Args) == 4) && os.Args[1] == "reconstructiat" {
+		out := ""
+		if len(os.Args) == 4 {
+			out = os.Args[3]
+		}
+		cmdReconstructIAT(os.Args[2], out)
 		return
 	}
-	if len(os.Args) == 5 && os.Args[1] == "wstrings" {
-		cmdWStrings(os.Args[2], os.Args[3], os.Args[4])
+	// deobfimports: <proc> <dumpFile> [outFile] — for import-PROTECTED dumps (⚠ NOT VMProtect/
+	// Themida — refuted, docs/fk10-protector-identified.md): emulate each stub to recover the real
+	// API, then rebuild the import table. Needs the source process alive + the sidecar.
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "deobfimports" {
+		out := ""
+		if len(os.Args) == 5 {
+			out = os.Args[4]
+		}
+		cmdDeobfImports(os.Args[2], os.Args[3], out)
 		return
 	}
-	if len(os.Args) == 4 && os.Args[1] == "peek" {
-		cmdPeek(os.Args[2], os.Args[3])
+	// strings/wstrings: <proc> <needle> [maxhits]
+	if (len(os.Args) == 4 || len(os.Args) == 5) && (os.Args[1] == "strings" || os.Args[1] == "wstrings") {
+		mh := parseMaxHits(os.Args, 4, 20)
+		cmdStrings(os.Args[2], os.Args[3], mh, os.Args[1] == "wstrings")
 		return
 	}
-	if len(os.Args) == 3 && os.Args[1] == "threads" {
-		cmdThreads(os.Args[2])
+	// xrefstr: <proc> <hexAddr> [maxhits]
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "xrefstr" {
+		addr, err := parseHex(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		mh := parseMaxHits(os.Args, 4, 20)
+		cmdXrefStr(os.Args[2], addr, mh)
 		return
 	}
-	if len(os.Args) == 3 && os.Args[1] == "findgametid" {
-		cmdFindGameTid(os.Args[2])
+	// callxref: <proc> <hexAddr> [maxhits] — find direct CALL/JMP targeting addr
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "callxref" {
+		addr, err := parseHex(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		mh := parseMaxHits(os.Args, 4, 20)
+		cmdCallXref(os.Args[2], addr, mh)
 		return
 	}
-	fmt.Println("usage: usmapdump info    <process-name-or-pid>   (R2.1: PE/section recon)")
-	fmt.Println("       usmapdump names   <process-name-or-pid>   (R2.2: locate GNames, decode FNames)")
-	fmt.Println("       usmapdump objects <process-name-or-pid>   (R2.3: locate GUObjectArray, iterate)")
-	fmt.Println("       usmapdump extract <process-name-or-pid>   (R2.4: extract full schema)")
+	// findptr: <proc> <hexAddr> [maxhits] — find qwords in memory equal to addr
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "findptr" {
+		addr, err := parseHex(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		mh := parseMaxHits(os.Args, 4, 20)
+		cmdFindPtr(os.Args[2], addr, mh)
+		return
+	}
+	// peek: <proc> <addrOrRva> [bytes] — hex+ascii dump (RVA form: "+0xNNNN")
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "peek" {
+		n := parseMaxHits(os.Args, 4, 128)
+		cmdPeek(os.Args[2], os.Args[3], n)
+		return
+	}
+	// disasm: <proc> <addrOrRva> [bytes] — x86-64 disassembly
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "disasm" {
+		n := parseMaxHits(os.Args, 4, 128)
+		cmdDisasm(os.Args[2], os.Args[3], n)
+		return
+	}
+	// vtslot: <proc> <slot> <hexFnAddr> [maxhits] — find vtables where [base+slot*8] == fn
+	if (len(os.Args) == 5 || len(os.Args) == 6) && os.Args[1] == "vtslot" {
+		slot, err := parseDecimal(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad slot (must be decimal int like 11):", err)
+			os.Exit(1)
+		}
+		addr, err := parseHex(os.Args[4])
+		if err != nil {
+			fmt.Println("ERROR: bad fn address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		mh := parseMaxHits(os.Args, 5, 30)
+		cmdVtSlot(os.Args[2], slot, addr, mh)
+		return
+	}
+	// nameid: <proc> <substring> [maxhits] — find pooled FNames by ANSI substring,
+	// print the 32-bit ComparisonIndex you'd use to construct an FName in a shim
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "nameid" {
+		mh := parseMaxHits(os.Args, 4, 64)
+		cmdNameID(os.Args[2], os.Args[3], mh)
+		return
+	}
+	// poke: <proc> <addr> <hex-bytes> — WriteProcessMemory at addr with given bytes
+	if len(os.Args) == 5 && os.Args[1] == "poke" {
+		cmdPoke(os.Args[2], os.Args[3], os.Args[4])
+		return
+	}
+	// pattern: <proc> [topN] — scan for inlined FMemory::Malloc pattern,
+	// report rip-rel global-pointer targets sorted by hit count. The
+	// most-common target is GMalloc.
+	if (len(os.Args) == 3 || len(os.Args) == 4) && os.Args[1] == "pattern" {
+		top := parseMaxHits(os.Args, 3, 20)
+		cmdPattern(os.Args[2], top)
+		return
+	}
+	// vtdump: <proc> <hexVtableAddr> [numSlots] — dump vtable contents slot-by-slot
+	if (len(os.Args) == 4 || len(os.Args) == 5) && os.Args[1] == "vtdump" {
+		addr, err := parseHex(os.Args[3])
+		if err != nil {
+			fmt.Println("ERROR: bad vtable address (must be hex like 0x12345678):", err)
+			os.Exit(1)
+		}
+		ns := parseMaxHits(os.Args, 4, 128)
+		cmdVtDump(os.Args[2], addr, ns)
+		return
+	}
+	fmt.Println("usage: usmapdump info     <proc-name-or-pid>                  (PE/section recon)")
+	fmt.Println("       usmapdump names    <proc-name-or-pid>                  (locate GNames)")
+	fmt.Println("       usmapdump objects  <proc-name-or-pid>                  (locate GUObjectArray)")
+	fmt.Println("       usmapdump extract  <proc-name-or-pid>                  (extract full schema)")
+	fmt.Println("       usmapdump dumpimage <proc-name-or-pid> [outDir]        (snapshot unpacked image + exec regions to disk)")
+	fmt.Println("       usmapdump crashwatch <proc> <outDir> [-poll ms] [-timeout s] [-nosuspend] [-dumpnow]")
+	fmt.Println("                                                             (wait for a CRASH, suspend, dump before it dies)")
+	fmt.Println("       usmapdump mergedumps <outFile> <in.dump.exe...|dir> [-wholeimage|-samebaseonly|-force]")
+	fmt.Println("                                                             (union .text across snapshots -> max coverage;")
+	fmt.Println("                                                              ImageBase-agnostic since 2026-08-14, FK-19)")
+	fmt.Println("       usmapdump reconstructiat <dumpFile> [outFile]         (rebuild import table from .exports.txt -> named API calls)")
+	fmt.Println("       usmapdump deobfimports <proc> <dumpFile> [outFile]    (import-protected: emulate IAT stubs -> named API calls)")
+	fmt.Println("       usmapdump strings  <proc-name-or-pid> <needle> [N]     (ANSI byte search)")
+	fmt.Println("       usmapdump wstrings <proc-name-or-pid> <needle> [N]     (UTF-16 LE search)")
+	fmt.Println("       usmapdump xrefstr  <proc-name-or-pid> 0xADDR    [N]    (rip-rel LEA xref)")
+	fmt.Println("       usmapdump callxref <proc-name-or-pid> 0xADDR    [N]    (E8/E9 disp32 xref)")
+	fmt.Println("       usmapdump findptr  <proc-name-or-pid> 0xADDR    [N]    (find qword == ADDR)")
+	fmt.Println("       usmapdump peek     <proc-name-or-pid> ADDR_OR_+RVA [N] (hex+ascii dump)")
+	fmt.Println("       usmapdump disasm   <proc-name-or-pid> ADDR_OR_+RVA [N] (x86-64 disasm)")
+	fmt.Println("       usmapdump vtslot   <proc-name-or-pid> SLOT 0xFN_ADDR [N]")
+	fmt.Println("                                                                (find vtables where [base+slot*8]==fn)")
+	fmt.Println("       usmapdump vtdump   <proc-name-or-pid> 0xVTABLE_ADDR [SLOTS]")
+	fmt.Println("                                                                (dump vtable slot-by-slot, mark shared/unique)")
+	fmt.Println("       usmapdump nameid   <proc-name-or-pid> <ansi-substr>  [N] (substring search across all FNamePool blocks)")
+	fmt.Println("       usmapdump poke     <proc-name-or-pid> ADDR_OR_+RVA <hex-bytes>")
+	fmt.Println("                                                                (WriteProcessMemory — \"AA BB CC\" or \"AABBCC\")")
+	fmt.Println("       usmapdump pattern  <proc-name-or-pid> [topN]")
+	fmt.Println("                                                                (find inlined FMemory::Malloc; report GMalloc by frequency)")
 	os.Exit(2)
 }

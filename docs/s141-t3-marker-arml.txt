@@ -1,0 +1,407 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[BS] BUILDSTAMP=S136-guardfix-1
+[BS] RM_BOTSPAWN (S135): SpawnClassBotAtLoc on the tutorial GameMode's own bot spawner.
+[BS] CO-OP VS. AI is already ACCESSIBLE (tile + FIND MATCH work, S133); what has never
+[BS] happened is a BOT. The bots queue's own gamemode IS Breach, so this arm does NOT
+[BS] use it: Comp_BP_BotSpawner_C rides on BP_LokiGameMode_Tutorial, and [M] it has ZERO
+[BS] ServerOnly/HasAuthority/SpawnPlayer occurrences (control: 8 in the gamemode's own
+[BS] ubergraph) -- so it is free of BOTH the FK-42 exec-pin gates and FK-1's stripped
+[BS] SpawnPlayer. Inject into a STAGED TUTORIAL WORLD (gft -> fo -> sp -> this).
+[BS] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7062454A0 stub=0x257A0A11160 funcCls=0x25645A7B000 gameTid=65892
+[BS] ---- A0: BASELINE WORLD SCAN (read-only; NO CALL) ----
+[FS] arm: swapped=17563 BP UFunctions  (scan 3860 ms over 154803 objects, 34253 UFunctions total) -- NO .text WRITE
+[BS]   heroCand[0] 0x2579328E930 'LokiHeroCharacterGrid' cls='LokiHeroCharacterGrid' root=0x0 locOff=0x158 -> no readable location
+[BS]   heroCand[1] 0x25798BB0040 'BP_HERO_Ronin_C' cls='BP_HERO_Ronin_C' root=0x2568D1AA0C0 locOff=0x158 -> USABLE
+[FS] hot: 0 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   (none -- the swapped functions are not being dispatched on the game thread)
+[BS] census A0       BotOrAIController-chain=0  LokiHeroCharacter-chain=2  (136396 objects, 1024 classes memoised, 5078 ms)
+[BS] hero candidates: 2; chosen=0x25798BB0040
+[BS] ---- RESOLVE ----
+[BS] playerHero/WorldContext=0x25798BB0040 'BP_HERO_Ronin_C'
+[BS]   heroLoc = (0.0, 0.0, 13240.0)
+[BS] pawnClass 'BP_HERO_Ronin_C' = 0x257CFEF6670 chain=BP_HERO_Ronin_C<-BP_LokiHeroCharacter_C<-BP_LokiHeroCharacter_Code_C<-LokiHeroCharacter_AS<-LokiHeroCharacter<-LokiCharacter<-Character<-Pawn<-LokiActor<-Actor<-Object -> DERIVES FROM Pawn
+[FS] *** ARMED AND LIVE: hitsGT=1 allThreadCalls=1 after 8000 ms (~0 game-thread dispatches/s) ***
+[BS] SpawnAIFromClass fn=0x25655566590 thunk=0x7FF709537EC0 cdo=0x256558E1520
+[BS]   params: WCO@0x0 PawnClass@0x8 BT@0x10 Loc@0x18 Rot@0x30 NoColl@0x48 Owner@0x50 Ret@0x58
+[BS] ARGS: pawnClass='BP_HERO_Ronin_C' spawnLoc=(600.0, 0.0, 13240.0) BT=null noCollisionFail=1 owner=null
+[BS] ---- A1: STABILITY RE-SCAN after 750 ms settle (still NO CALL) ----
+[BS] census A1       BotOrAIController-chain=0  LokiHeroCharacter-chain=2  (136396 objects, 1024 classes memoised, 4344 ms)
+[PS] ================ S137: THE bWantsPlayerState EXPERIMENT ================
+[PS] WITHIN-RUN, SINGLE-VARIABLE. Spawn #1 runs with the CDO bit CLEAR and spawn #2 with
+[PS] it SET, same world, same instrument, milliseconds apart -- the ONLY difference is one
+[PS] bit on one CDO. ARM B then runs on controller #1, already printed as PlayerState NULL.
+[PS] KBSPSARMS=0x3BA0 (bit0 control spawn, bit1 poke+treatment, bit2 restore, bit3 ARM B)
+[PS] PRE-REGISTERED: ARM A success => ctl.PlayerState AND pawn.PlayerState both non-null.
+[PS] PRE-REGISTERED: ARM B success => ctl.PlayerState non-null, pawn.PlayerState STILL NULL
+[PS]   (possession already happened; nothing re-runs APawn::SetPlayerState).
+[PS] ---- PRECONDITION: does the world have a GameMode with a PlayerStateClass? ----
+[PS] World candidates: 4
+[PS]   [0] 0x2579E658080 'LVL_Tutorial'  AuthorityGameMode=0x0 ''
+[PS]   [1] 0x2579E65AB00 'LVL_Tutorial'  AuthorityGameMode=0x0 ''
+[PS]   [2] 0x2579E65B5A0 'LVL_Tutorial'  AuthorityGameMode=0x0 ''
+[PS]   [3] 0x2579E65C040 'LVL_Tutorial'  AuthorityGameMode=0x0 ''
+[PS] world=0x2579E658080 'LVL_Tutorial'  AuthorityGameMode@0x250(rec 0x250)=0x0 ''  GameState@0x258(rec 0x258)=0x0 ''
+[PS] AuthorityGameMode is NULL. InitPlayerState has a FALLBACK for exactly this
+[PS] (GameState->GetDefaultGameMode(), 0x36DEE83 -> 0x3841550), so this is not
+[PS] necessarily fatal -- but a null PlayerState afterwards is then UNINTERPRETABLE.
+[PS] ---- SPAWN #1 SKIPPED by KBSPSARMS bit0. Without it there is no within-run
+[PS]   control and nothing below is single-variable. ----
+[PS] AIControllerClass from the SPAWNED INSTANCE = 0x0 ''
+[PS] AIControllerClass from the HERO CLASS's CDO  = 0x2565A171280 'AIController'   -> instance unavailable, falling back to the CDO value
+[PS] target class 0x2565A171280 chain=AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] target CDO @+0x178 = 0x256558DD0B0 'Default__AIController'  [name starts Default__ -- looks like a CDO]
+[PS] bWantsPlayerState RESOLVED BY NAME on 'AIController': FProperty=0x25698376A00 off=0x488 type=BoolProperty fs=1 bo=0 bm=0x20 fm=0x20
+[PS]   -> byte at +0x488, mask 0x20.  cross-check vs the RECORDED +0x488 bit 0x20: AGREE
+[PS] CDO bWantsPlayerState (L1 baseline) = clear   <- stock UE clears this in the
+[PS]   AAIController ctor (0x45D19AD `and ecx,~0x20`), so `clear` is the EXPECTED baseline
+[PS]   and a `SET` here would mean something already changed it.
+[PS] ---- POKE + SPAWN #2 SKIPPED by KBSPSARMS bit1 ----
+[PS] ---- ARM B SKIPPED by KBSPSARMS bit3 ----
+[PS] ---- ARM C SKIPPED by KBSPSARMS bit4 ----
+[PS] ================== ARM D: A **LOKI** BOT CONTROLLER ==================
+[PS] PRE-REGISTERED: spawn A -> AIController; POKE; spawn B -> LokiBotController;
+[PS]   RESTORE; spawn C -> AIController again. The third spawn is what turns the
+[PS]   restore into a measurement instead of an assumption.
+[PS] Default__Pawn=0x2565580BE20  AIControllerClass@0x3D0 (rec 0x3D0) = 0x2565A171280 'AIController'
+[PS] target class = 0x2565AA95100 'LokiBotController'
+[PS]   chain=LokiBotController<-LokiAIController<-AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] ---- ARM D / SPAWN A (baseline, CDO untouched) ----
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[BS] SpawnAIFromClass -> ReturnValue=0x2568D5CAAC0 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C'
+[BS] ! ReturnValue is a corroborator, NOT the verdict. The CONTROLLER census delta is.
+[FS] t=+15s hitsGT=1 called=0 allThreadCalls=65 swapped=17563
+[PS] ARM D A-baseline   pawn=0x2568D5CAAC0  pawn.AIControllerClass=0x2565A171280 'AIController'
+[PS] ARM D A-baseline     controller=0x25601AF2320 class='AIController'  BotController-chain=no
+[PS] ARM D A-baseline     chain=AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] POKE AIControllerClass: 0x2565A171280 -> 0x2565AA95100 (wanted 0x2565AA95100)  READBACK OK
+[PS] ---- ARM D / SPAWN B (TREATMENT: CDO names LokiBotController) ----
+[PS]   ! ALokiBotController::OnPossess 0x5565470 is DARK in every image on disk. If this
+[PS]   ! faults, that is still a result and the page is now decrypted -- dumpimage it.
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[BS] SpawnAIFromClass -> ReturnValue=0x25790ECAAC0 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C'
+[BS] ! ReturnValue is a corroborator, NOT the verdict. The CONTROLLER census delta is.
+[PS] ARM D B-treatment  pawn=0x25790ECAAC0  pawn.AIControllerClass=0x2565AA95100 'LokiBotController'
+[PS] ARM D B-treatment    controller=0x25796E6C080 class='LokiBotController'  BotController-chain=*** YES ***
+[PS] ARM D B-treatment    chain=LokiBotController<-LokiAIController<-AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] RESTORE AIControllerClass -> 0x2565A171280  READBACK OK
+[PS] ---- ARM D / SPAWN C (reversal: must be AIController again) ----
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[BS] SpawnAIFromClass -> ReturnValue=0x25801FD5580 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C'
+[BS] ! ReturnValue is a corroborator, NOT the verdict. The CONTROLLER census delta is.
+[PS] ARM D C-reversal   pawn=0x25801FD5580  pawn.AIControllerClass=0x2565A171280 'AIController'
+[PS] ARM D C-reversal     controller=0x257B7CD2320 class='AIController'  BotController-chain=no
+[PS] ARM D C-reversal     chain=AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] ---- ARM D: now ARM B + ARM C on the LOKI BOT CONTROLLER ----
+[PS] ---- ARM B: direct AController::InitPlayerState on controller #2 ----
+[PS] ARM B: vtable=0x7FF70D7CDE18  slot[+0x888]=0x7FF7085DEE20  rva=0x36DEE20  (expected 0x36DEE20)
+[PS] ARM B: calling. NOT call-only -- this does a SpawnActor(RF_Transient) and writes
+[PS]   controller+0x3C0. SEH-guarded.
+[PS] ARM B returned (dispatched=1 faulted=0). Re-reading controller #2:
+[PS] ARM-B     pawn=0x25790ECAAC0 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C' FName.Number=2147470914
+[PS] ARM-B       pawn.Controller        @0x400 (rec 0x400) = 0x25796E6C080   [offset AGREES]
+[PS] ARM-B       pawn.PlayerState  (L4) @0x3D8 (rec 0x3D8) = 0x0   [offset AGREES]   NULL
+[PS] ARM-B       pawn.AIControllerClass @0x3D0 (rec 0x3D0) = 0x2565AA95100 'LokiBotController'  [offset AGREES]
+[PS] ARM-B       controller=0x25796E6C080 class='LokiBotController' FName.Number=2147470846
+[PS] ARM-B         chain=LokiBotController<-LokiAIController<-AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] ARM-B       ctl.bWantsPlayerState (L2) = clear   [byte@+0x488 mask 0x20, dword@+0x488=0x0000004A]
+[PS] ARM-B       GATE2 ObjectFlags@+0x0C=0x00000048 bit30(RF_Garbage)=0 -> passes
+[PS] ARM-B       ctl.PlayerState       (L3) @0x3C0 (rec 0x3C0) = 0x2565A95CCD0   [offset AGREES]   *** NON-NULL ***
+[PS] ARM-B         >> PlayerState 0x2565A95CCD0 'BP_LokiPlayerState_C' class='BP_LokiPlayerState_C'
+[PS] ARM-B            chain=BP_LokiPlayerState_C<-LokiPlayerState<-PlayerState<-Info<-LokiActor<-Actor<-Object  alive=1
+[PS] ---- ARM C: APawn::SetPlayerState on pawn #2 ----
+[PS] ARM C: target=0x7FF708ABD9F0 rva=0x3BBD9F0 prologue=48 89 5C 24 08 48 89 6C 24 10 48 89 74 24 18 57  -> SIGNATURE MATCHES APawn::SetPlayerState
+[PS] ARM C: calling SetPlayerState(pawn=0x25790ECAAC0, ps=0x2565A95CCD0). NOT call-only -- writes
+[PS]   pawn+0x3D8, syncs PlayerState.PawnPrivate, broadcasts OnPawnSet. SEH-guarded.
+[PS] ARM C returned (done=1 faulted=0). Re-reading pair #2:
+[PS] ARM-C     pawn=0x25790ECAAC0 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C' FName.Number=2147470914
+[PS] ARM-C       pawn.Controller        @0x400 (rec 0x400) = 0x25796E6C080   [offset AGREES]
+[PS] ARM-C       pawn.PlayerState  (L4) @0x3D8 (rec 0x3D8) = 0x2565A95CCD0   [offset AGREES]   *** NON-NULL ***
+[PS] ARM-C       pawn.AIControllerClass @0x3D0 (rec 0x3D0) = 0x2565AA95100 'LokiBotController'  [offset AGREES]
+[PS] ARM-C       controller=0x25796E6C080 class='LokiBotController' FName.Number=2147470846
+[PS] ARM-C         chain=LokiBotController<-LokiAIController<-AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] ARM-C       ctl.bWantsPlayerState (L2) = clear   [byte@+0x488 mask 0x20, dword@+0x488=0x0000004A]
+[PS] ARM-C       GATE2 ObjectFlags@+0x0C=0x00000048 bit30(RF_Garbage)=0 -> passes
+[PS] ARM-C       ctl.PlayerState       (L3) @0x3C0 (rec 0x3C0) = 0x2565A95CCD0   [offset AGREES]   *** NON-NULL ***
+[PS] ARM-C         >> PlayerState 0x2565A95CCD0 'BP_LokiPlayerState_C' class='BP_LokiPlayerState_C'
+[PS] ARM-C            chain=BP_LokiPlayerState_C<-LokiPlayerState<-PlayerState<-Info<-LokiActor<-Actor<-Object  alive=1
+[PS] ---- ARM E SKIPPED by KBSPSARMS bit6 ----
+[PS] ================ ARM F: drive UpdateCharacterControllable ================
+[PS] ARM F BEFORE: ctl=0x25796E6C080 pawn=0x25790ECAAC0  LivingState=0  GATE+0x6A0=0  force+0x602=0
+[PS] ARM F: poked pawn+0x1090 = 1 (Alive)  READBACK=1
+[PS] ARM F: target=0x7FF70A470B80 rva=0x5570B80 prologue=40 57 48 83 EC 20 80 B9 02 06 00 00 00 48 8B F9  -> SIGNATURE MATCHES UpdateCharacterControllable
+[PS] ARM F: calling UpdateCharacterControllable(ctl). NOT call-only -- it writes
+[PS]   +0x6A0 and touches the Blackboard. SEH-guarded.
+[PS] ARM F AFTER (faulted=0): LivingState=1  GATE+0x6A0=1  (was 0)
+[PS] ***** ARM F: THE GATE OPENED. bCharacterControllable 0 -> 1. The wander
+[PS]   driver in Tick is now ungated as far as THIS term goes -- read
+[PS]   RandomMoveDirection (+0x658) and the pawn location EXTERNALLY to see
+[PS]   whether it actually MOVES. *****
+[GASX] ================ ARM G: port the DS GAS recipe onto the BOT ================
+[GASX] CDO = 0x256559DFB00 (using its DEFAULT SUBOBJECTS -- deliberately NOT spawning)
+[GASX]   src AbilitySystemComponent     @0x3E8 = 0x256559DFF10 (LokiAbilitySystemComponent)
+[GASX]   src AttributeSet               @0x3F0 = 0x256559E1710 (LokiAttributeSet)
+[GASX]   src AttributeSetHealth         @0x3F8 = 0x256559E1F20 (LokiAttributeSetHealth)
+[GASX]   dst AbilitySystemComponentStorage  @0xF00  0 -> 256559DFF10  OK
+[GASX]   dst AttributeSetStorage            @0xF08  0 -> 256559E1710  OK
+[GASX]   dst AttributeSetHealthStorage      @0xF10  0 -> 256559E1F20  OK
+[GASX] --- writing the WHOLE movement attribute block (partial ports are measured insufficient) ---
+[GASX]   attr MoveSpeed                    @+0xF0   = 500  readback 500 OK
+[GASX]   attr MaxMoveSpeed                 @+0x100  = 500  readback 500 OK
+[GASX]   attr MaxAcceleration              @+0x120  = 50000  readback 50000 OK
+[GASX]   attr GroundFriction               @+0x130  = 8  readback 8 OK
+[GASX]   attr BrakingDecelerationWalking   @+0x140  = 2048  readback 2048 OK
+[GASX]   attr Mass                         @+0x170  = 100  readback 100 OK
+[GASX] --- ARM K1: same three storages onto the PLAYER hero 0x25798BB0040 ---
+[GASX]   PLR AbilitySystemComponentStorage  @0xF00  25799C20100 -> 256559DFF10  OK
+[GASX]   PLR AttributeSetStorage            @0xF08  0 -> 256559E1710  OK
+[GASX]   PLR AttributeSetHealthStorage      @0xF10  0 -> 256559E1F20  OK
+[GASX] ARM K1 done: PLAYER storages written 3/3
+[GASX] ARM G done: storages written 3/3, attributes written 6/6
+[GASX] ⚠ SCOPE: the attribute values live in a CDO DEFAULT SUBOBJECT -- process-wide, not undone.
+[GASX] ⚠ The PLAYER hero is deliberately UNTREATED: it is the within-run specificity control.
+[SNP] ================ ARM H: THE PAYLOAD-POISON / SENTINEL TEST ================
+[SNP] QUESTION: does ULokiCMC::StartNewPhysics 0x055C2430 execute on these components?
+[SNP] The flag at +0x16C8 CANNOT answer it (S140 Tier 1: cleared every frame by vtable
+[SNP] disp 0xA50 = 0x0530ABF0 on a path the call DOMINATES -- it reads 0 in every world).
+[SNP] The PAYLOAD at +0x16B0 is durable: its only CMC-side writer is 0x055C244F, inside
+[SNP] StartNewPhysics on the Iterations==0 path.
+[SNP] ---- PRE-REGISTERED OUTCOME TABLE (written BEFORE any write; do not reinterpret) ----
+[SNP]   BOT   (payload poisoned AND Velocity = sentinel 2^-10):
+[SNP]     payload == SENTINEL  -> StartNewPhysics RAN, and the payload is a copy of
+[SNP]                             Velocity. Mechanism validated end to end.        [M]
+[SNP]     payload == (0,0,0)   -> StartNewPhysics RAN, and something ZEROED Velocity
+[SNP]                             before the snapshot. Also a major finding.       [M]
+[SNP]     payload == POISON    -> StartNewPhysics did NOT run in the window.        [M]
+[SNP]     anything else        -> UNMODELLED. Report raw; do not interpret.
+[SNP]   PLAYER (payload poisoned, Velocity NOT touched -- the write-free arm):
+[SNP]     payload == (0,0,0)   -> StartNewPhysics RAN.                             [M]
+[SNP]     payload == POISON    -> StartNewPhysics did NOT run in the window.       [M]
+[SNP]     payload == BOT poison or BOT sentinel -> the CMC resolution is WRONG and
+[SNP]                             the run is VOID. (This is why the poisons differ.)
+[SNP]   The two arms must AGREE unless there is a real bot/player asymmetry -- and S139
+[SNP]   flight 1 measured them identical on every structural field, so a disagreement
+[SNP]   would itself be the result.
+[SNP] BOT            pawn=0x25790ECAAC0 CharacterMovement@0x458 = 0x2578982AAB0 class='LokiCharacterMovementComponent'  (+0x458 reads 0x2578982AAB0, AGREES)
+[SNP] BOT            CONTROL1 CharacterOwner@0x198=0x25790ECAAC0 vs pawn 0x25790ECAAC0 -> PASS
+[SNP] BOT            CONTROL2 TickFn.Target@0x68=0x2578982AAB0 vs cmc 0x2578982AAB0 -> PASS
+[SNP] BOT            WorldPrivate@0xC0=0x2578228AB00 'LVL_Tutorial'  NON-NULL -> engine PerformMovement exit 2 input is satisfied
+[SNP] BOT            NumJumpApexAttempts@0x3DC=0  MaxSimulationTimeStep@0x3E0=0.2  MaxSimulationIterations@0x3E4=1 (>0 -> engine StartNewPhysics 4th early-out 0x036009B5 does NOT bail)
+[SNP] BOT            vptr=0x7FF70D7F8570  ULokiCMC vt=0x7FF70D7F8570  engine vt=0x7FF70CEBED58 -> ULokiCMC (disp 0x720 = 0x055C2430, the function under test)
+[SNP] PLAYER         pawn=0x25798BB0040 CharacterMovement@0x458 = 0x25710961C80 class='LokiCharacterMovementComponent'  (+0x458 reads 0x25710961C80, AGREES)
+[SNP] PLAYER         CONTROL1 CharacterOwner@0x198=0x25798BB0040 vs pawn 0x25798BB0040 -> PASS
+[SNP] PLAYER         CONTROL2 TickFn.Target@0x68=0x25710961C80 vs cmc 0x25710961C80 -> PASS
+[SNP] PLAYER         WorldPrivate@0xC0=0x2578228AB00 'LVL_Tutorial'  NON-NULL -> engine PerformMovement exit 2 input is satisfied
+[SNP] PLAYER         NumJumpApexAttempts@0x3DC=0  MaxSimulationTimeStep@0x3E0=0.2  MaxSimulationIterations@0x3E4=1 (>0 -> engine StartNewPhysics 4th early-out 0x036009B5 does NOT bail)
+[SNP] PLAYER         vptr=0x7FF70D7F8570  ULokiCMC vt=0x7FF70D7F8570  engine vt=0x7FF70CEBED58 -> ULokiCMC (disp 0x720 = 0x055C2430, the function under test)
+[SNP] ---- BEFORE (raw) ----
+[SNP] BOT-before     payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] BOT-before     Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] BOT-before     payload dec (0, 0, 0)
+[SNP] BOT-before     Velocity dec (0, 0, 0)
+[SNP] BOT-before     flag@0x16C8=0  TimeSinceFallingStart@0x12B0=0.0000
+[SNP] BOT-before     GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT-before     AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT-before     ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] BOT-before     GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT-before     Accel@0x328 (0, 0, 0)
+[SNP] PLR-before     payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR-before     Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR-before     payload dec (0, 0, 0)
+[SNP] PLR-before     Velocity dec (0, 0, 0)
+[SNP] PLR-before     flag@0x16C8=0  TimeSinceFallingStart@0x12B0=14.1782
+[SNP] PLR-before     GravityScale@0x1A0=0.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR-before     ⚠ GravityScale is ZERO -> engine GetGravityZ returns 0 -> NewFallVelocity adds nothing -> THIS PAWN CANNOT FALL, and that is OUR OWN doing, not a game defect.
+[SNP] PLR-before     AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR-before     ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR-before     GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR-before     Accel@0x328 (0, 0, 0)
+[SNP] BOT poison written -> readback OK
+[SNP] PLAYER poison written -> readback OK
+[SNP] BOT sentinel Velocity = (600, 0, 0) -> readback OK
+[SNP] ARM J: PLAYER Velocity = (0, 600, 0) -> readback OK
+[SNP] ARM K2: PLAYER GravityScale@0x1A0  0.0000 -> 1.0000  readback OK
+[SNP] ---- AFTER THE WRITES (raw) ----
+[SNP] BOT-armed      payload@0x16B0 RAW 00000000404AC3C0|00000000A01EC1C0|0000000020E6BDC0
+[SNP] BOT-armed      Velocity@0xE8  RAW 0000000000C08240|0000000000000000|0000000000000000
+[SNP] BOT-armed      payload dec (-9876.5, -8765.25, -7654.125)
+[SNP] BOT-armed      Velocity dec (600, 0, 0)
+[SNP] BOT-armed      flag@0x16C8=0  TimeSinceFallingStart@0x12B0=0.0000
+[SNP] BOT-armed      GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT-armed      AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT-armed      ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] BOT-armed      GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT-armed      Accel@0x328 (0, 0, 0)
+[SNP] PLR-armed      payload@0x16B0 RAW 00000000004A93C0|000000008052A2C0|000000004000ABC0
+[SNP] PLR-armed      Velocity@0xE8  RAW 0000000000000000|0000000000C08240|0000000000000000
+[SNP] PLR-armed      payload dec (-1234.5, -2345.25, -3456.125)
+[SNP] PLR-armed      Velocity dec (0, 600, 0)
+[SNP] PLR-armed      flag@0x16C8=0  TimeSinceFallingStart@0x12B0=14.1782
+[SNP] PLR-armed      GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR-armed      AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR-armed      ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR-armed      GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR-armed      Accel@0x328 (0, 0, 0)
+[SNP] ARM H armed. THE READ HAPPENS ON THE WORKER THREAD AFTER FsDisarm -- this function
+[SNP] runs on the GAME THREAD, so sleeping here would stop the frames the test needs.
+[BS] ---- A2: POST-CALL SCAN ----
+[BS] census A2       BotOrAIController-chain=3  LokiHeroCharacter-chain=5  (137930 objects, 1024 classes memoised, 4266 ms)
+[FS] disarm: restored=17563 of 17563 swapped (scan 3734 ms, 34253 UFunctions live)
+[SNP] ================ ARM H SAMPLER (worker thread, game thread free) ================
+[SNP] ---- sample 0 at t=+250 ms (elapsed 250 ms) ----
+[SNP] BOT            payload@0x16B0 RAW 070B522355BC3640|0000000000000000|010000000040AFC0
+[SNP] BOT            Velocity@0xE8  RAW A7F0036BBB2B3640|0000000000000000|010000000040AFC0
+[SNP] BOT            payload dec (22.7356741, 0, -4000)
+[SNP] BOT            Velocity dec (22.17082852, 0, -4000)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=4.3681
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (41972.1, -27172.5, 0)
+[SNP] PLR            payload@0x16B0 RAW 0000000000000000|85A9994EBB2B3640|010000000040AFC0
+[SNP] PLR            Velocity@0xE8  RAW 0000000000000000|B5424642B99E3540|010000000040AFC0
+[SNP] PLR            payload dec (0, 22.17082683, -4000)
+[SNP] PLR            Velocity dec (0, 21.62001433, -4000)
+[SNP] PLR            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=18.5796
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (0, 0, 0)
+[SNP] BOT            loc (1575.569, 0.000, 1076.753)  moved 12202.308 uu
+[SNP] PLR            loc (0.000, 767.664, 943.417)  moved 12320.521 uu
+[SNP] ---- sample 1 at t=+750 ms (elapsed 766 ms) ----
+[SNP] BOT            payload@0x16B0 RAW 7C025524FC4031C0|C362EC463C3B7F40|0000000000000000
+[SNP] BOT            Velocity@0xE8  RAW ECCDDF6A194131C0|D3F4BF363C3B7F40|0000000000000000
+[SNP] BOT            payload dec (-17.25384738, 499.7022161, 0)
+[SNP] BOT            Velocity dec (-17.25429409, 499.7022007, 0)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=4.9014
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=1 (MOVE_Walking)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (-1725.44, 49970.2, 0)
+[SNP] PLR            payload@0x16B0 RAW 0000000000000000|14302EC8E7A52D40|00000040C39592C0
+[SNP] PLR            Velocity@0xE8  RAW 0000000000000000|F2C076E257E92C40|00000080808B92C0
+[SNP] PLR            payload dec (0, 14.82403398, -1189.440674)
+[SNP] PLR            Velocity dec (0, 14.45574863, -1186.875488)
+[SNP] PLR            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=19.1129
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (0, 0, 0)
+[SNP] BOT            loc (1576.567, 116.605, 90.150)  moved 13186.578 uu
+[SNP] PLR            loc (0.000, 776.445, -407.796)  moved 13669.865 uu
+[SNP] ---- sample 2 at t=+2000 ms (elapsed 2031 ms) ----
+[SNP] BOT            payload@0x16B0 RAW C268AFE996EC5640|CE79C1CA40E93040|0000000000000000
+[SNP] BOT            Velocity@0xE8  RAW EC1596819AEC5640|34AF5D7143E93040|0000000000000000
+[SNP] BOT            payload dec (91.69671099, 16.9111449, 0)
+[SNP] BOT            Velocity dec (91.69693031, 16.91118535, 0)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=6.1681
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=1 (MOVE_Walking)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (-1725.44, 49970.2, 0)
+[SNP] PLR            payload@0x16B0 RAW 0000000000000000|F507985682CB1640|0000000000408FC0
+[SNP] PLR            Velocity@0xE8  RAW 0000000000000000|268C1F51883A1640|0000000000408FC0
+[SNP] PLR            payload dec (0, 5.698739388, -1000)
+[SNP] PLR            Velocity dec (0, 5.557160633, -1000)
+[SNP] PLR            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=20.3796
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (0, 0, 0)
+[SNP] BOT            loc (1644.540, 347.760, 90.150)  moved 13195.854 uu
+[SNP] PLR            loc (0.000, 788.236, -1817.991)  moved 15078.608 uu
+[SNP] ======== ARM L: BOT kick B written -> (0, 0, -600)  readback OK ========
+[SNP]   kick A was (600, 0, 0) and was observed by samples 0..2.
+[SNP]   Samples 3..4 observe kick B. START LOCATION RE-LATCHED, so 'moved'
+[SNP]   from here is measured from the B kick, not from the A kick.
+[SNP]   PRE-REGISTERED: A sustains and B zeroes => the axis mechanism is
+[SNP]   CONFIRMED. Both sustain, or both zero => REFUTED, and so is the
+[SNP]   CalcVelocity-clamp candidate that rests on it.
+[SNP] ---- sample 3 at t=+5000 ms (elapsed 5047 ms) ----
+[SNP] BOT            payload@0x16B0 RAW 8C7B72AFDC746F40|289CE73AE0007BC0|0000000000000000
+[SNP] BOT            Velocity@0xE8  RAW 367B72AFDC746F40|279CE73AE0007BC0|0000000000000000
+[SNP] BOT            payload dec (251.6519391, -432.0547437, 0)
+[SNP] BOT            Velocity dec (251.6519391, -432.0547437, 0)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=9.1681
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=1 (MOVE_Walking)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (25165.2, -43205.5, 0)
+[SNP] PLR            payload@0x16B0 RAW 0000000000000000|A46338680AF3E23F|0000000000408FC0
+[SNP] PLR            Velocity@0xE8  RAW 0000000000000000|CB4BACB9857AE23F|0000000000408FC0
+[SNP] PLR            payload dec (0, 0.5921680484, -1000)
+[SNP] PLR            Velocity dec (0, 0.5774563433, -1000)
+[SNP] PLR            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=23.3795
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (0, 0, 0)
+[SNP] BOT            loc (1366.834, -69.948, 90.150)  moved 501.598 uu
+[SNP] PLR            loc (0.000, 794.853, -4925.681)  moved 18183.063 uu
+[SNP] ---- sample 4 at t=+10000 ms (elapsed 10062 ms) ----
+[SNP] BOT            payload@0x16B0 RAW A5886CE70B3E7FC0|A2D9AB490D1926C0|0000000000000000
+[SNP] BOT            Velocity@0xE8  RAW 96886CE70B3E7FC0|F0DBAB490D1926C0|0000000000000000
+[SNP] BOT            payload dec (-499.8779062, -11.0489295, 0)
+[SNP] BOT            Velocity dec (-499.8779062, -11.0489295, 0)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=4.1377
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=1 (MOVE_Walking)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (-49987.8, -1104.89, 0)
+[SNP] PLR            payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000408FC0
+[SNP] PLR            Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000408FC0
+[SNP] PLR            payload dec (0, 0, -1000)
+[SNP] PLR            Velocity dec (0, 0, -1000)
+[SNP] PLR            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=28.4173
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (0, 0, 0)
+[SNP] BOT            loc (960.488, -962.636, 90.150)  moved 1478.196 uu
+[SNP] PLR            loc (0.000, 795.558, -10052.914)  moved 23306.496 uu
+[SNP] ---------------- ARM H VERDICT ----------------
+[SNP] BOT: payload isPoison=0 isZero=0 isSentinel=0 isOTHERobjectsPoison=0 | Velocity isSentinel=0
+[SNP] BOT: UNMODELLED payload value -- report the raw hex, do not interpret.
+[SNP] PLAYER: payload isPoison=0 isZero=0 isSentinel=0 isOTHERobjectsPoison=0 | Velocity isSentinel=0
+[SNP] PLAYER: UNMODELLED payload value -- report the raw hex, do not interpret.
+[SNP] restore: BOT Velocity -> (0,0,0)  readback OK
+[SNP] ARM H done (botCmc=0x2578982AAB0 plrCmc=0x25710961C80 botPoison=1 plrPoison=1 sentinel=1 botFlag0=0 plrFlag0=0)
+[BS] ---------------- RM_BOTSPAWN SUMMARY ----------------
+[BS] resolved=1 roster=-1 team=-1(player=-999) called=1 faulted=0 refused=0
+[BS] botOrAIControllers A0=0 A1=0 A2=3 | heroCharacters A0=2 A1=2 A2=5
+[PS] ---------------- S137 PLAYERSTATE SUMMARY ----------------
+[PS] PlayerState-chain census A0=11 A1=11 A2=17   (corroborator; the pointer reads below
+[PS]   are the primary readout)
+[PS] bit resolved BY NAME: off=0x488 byteOff=0 mask=0x20
+[PS] spawns=0 pokeOK=-1 restoreOK=-1 | ARM B tried=1 dispatched=1 faulted=0
+[PS] ARM C (pawn link) tried=1 done=1 faulted=0
+[PS] ARM D: spawns=3 pokeOK=1 restoreOK=1
+[PS] ARM D  [0] A-baseline  pawn=0x2568D5CAAC0 ctl=0x25601AF2320 aic=0x2565A171280
+[PS] ARM D      chain=AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] ARM D  [1] B-treatment pawn=0x25790ECAAC0 ctl=0x25796E6C080 aic=0x2565AA95100
+[PS] ARM D      chain=LokiBotController<-LokiAIController<-AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] ARM D  [2] C-reversal  pawn=0x25801FD5580 ctl=0x257B7CD2320 aic=0x2565A171280
+[PS] ARM D      chain=AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] ***** ARM D VERDICT: A **LOKI BOT CONTROLLER** EXISTS AND POSSESSES A HERO PAWN.
+[PS]   Its class chain contains BotController -- the census that has read ZERO for this
+[PS]   project's entire history. Confirm with tools/re/obj_by_chain.py '=BotController'
+[PS]   and TIMESTAMP the census. Compare arms A and C: both must be plain AIController,
+[PS]   which is what makes B attributable to the one pointer we moved. *****
+[PS] #1 CONTROL   pawn=0x0 ctl=0x0  L2 bit=?  L3 ctl.PS=0x0  L4 pawn.PS=0x0
+[PS] #2 TREATMENT pawn=0x25790ECAAC0 ctl=0x25796E6C080  L2 bit=clear  L3 ctl.PS=0x2565A95CCD0  L4 pawn.PS=0x2565A95CCD0
+[PS] VERDICT: nothing was spawned. A STAGING/RESOLVE statement; it says nothing about
+[PS]   bWantsPlayerState.
+[PS] ARM C: dispatched but pawn+0x3D8 reads 0x0 (expected 0x0). The call ran
+[PS]   and the store did not land as expected -- read the ARM-C dump above.
+[PS] ARM B: dispatched. controller #1 PlayerState is now 0x0 (was NULL when read
+[PS]   before the call) and pawn #1 PlayerState is 0x0 -- pre-registered to stay
+[PS]   NULL, because possession already happened.
+[BS] ***** VERDICT: AN AI-CONTROLLED PAWN EXISTS. controller +3 and LokiHeroCharacter +3 across the call, against A0=0/2 re-read as A1 with NO call in between. NOTE THE SCOPE: this is the ENGINE default AAIController, NOT a Loki BotController -- expect PlayerState/Brain/Blackboard/Perception all NULL, so no team and no hero-class assignment. Verify with tools/re/obj_by_chain.py and TIMESTAMP the census. *****
+[BS] done (step=4 resolved=1 called=1 faulted=0 dCtl=3 dHero=3 hits=1 hitsGT=1)

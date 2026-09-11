@@ -1,0 +1,34 @@
+S138 FLIGHT 6b -- PRE-REGISTRATION, written BEFORE running, same live client (PID 52496).
+
+CONTEXT: flight 6 poked botPawn+0x1090 = 1 (Alive). P1 (readback) and P2 (3 unpoked control heroes
+stay 0) HELD; P3 FAILED -- the gate at controller+0x6A0 stayed 0 for 10 s. That is the OUTCOME THE
+PRE-REGISTRATION EXPECTED (P3-ALT): +0x6A0 is a CACHED value recomputed by
+ALokiBotController::UpdateCharacterControllable (0x5570B80) on the OnLivingStateChanged delegate,
+not re-derived per Tick.
+
+6b TESTS THE DOWNSTREAM HALF DIRECTLY, without needing that recompute: poke the GATE ITSELF.
+  write controller+0x6A0 = 1   (one aligned byte, same DATA risk class)
+
+PREDICTIONS:
+  Q1  readback of controller+0x6A0 returns 1.
+  Q2  IF ALokiBotController::Tick's wander driver is gated ONLY on this byte (plus a blackboard
+      bool), then within ~2 s RandomMoveDirection (+0x658) becomes a NON-ZERO horizontal unit
+      vector -- Tick re-randomises it every 2.0 s.
+  Q3  IF Q2: pawn ControlInputVector (+0x418) becomes non-zero.
+  Q4  IF Q3: the pawn's world location CHANGES between samples. THIS WOULD BE THE FIRST TIME A BOT
+      HAS MOVED IN THIS PROJECT.
+  Q5  RESTORE to 0 and the motion stops / the vector clears. The restore is what makes it a
+      measurement rather than a one-way change.
+
+HONEST ALTERNATIVES, stated now so a null is not reinterpreted later:
+  * If Q2 fails, the wander driver has a further precondition -- S137 recorded it also gates on a
+    BLACKBOARD BOOL key (.data 0xA0348F0) besides this byte. A null then locates THAT, and is not
+    evidence against anything already established.
+  * The byte may be overwritten by the game between samples (it is a cached value with a real
+    writer). If it reads back 1 and later reads 0 without me restoring it, THAT IS ITSELF A RESULT:
+    it proves UpdateCharacterControllable is actively running and recomputing to 0, which would
+    mean the LivingState route must be fixed rather than bypassed.
+
+SCOPE: this bypasses the game's own logic by forcing a cached flag. Even full success shows only
+that the wander driver runs when the flag is set -- NOT that the bot is functional, and NOT that
+anything upstream works. It is a DIAGNOSIS. ServerSetHeroClass / SetPlayerTeam remain stripped.

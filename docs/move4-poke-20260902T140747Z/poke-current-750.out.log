@@ -1,0 +1,10 @@
+﻿PID=41816 SET_PTR=0x15F109D5500
+target: Health.CurrentValue @ 0x15F109D557C
+BEFORE: bits=0x447A0000 f=1000.0
+AFTER : bits=0x443B8000 f=750.0
+
+Full set state after write:
+  Health   @0x70: Base=1000.0 (bits=447A0000) Current=750.0 (bits=443B8000)
+  MaxHealth@0x80: Base=1000.0 (bits=447A0000) Current=1000.0 (bits=447A0000)
+
+VERIFIED: Health.CurrentValue = 750.0 (S148 expectedCurrent). All sibling fields undisturbed.

@@ -1,0 +1,353 @@
+// ============================================================================
+//  MODULE   UAV.UAVStructs
+//  SOURCE   UAV/UAVStructs.as
+//  CONTENT  3 class(es), 9 function(s), 0 enum(s), 0 global(s), 980 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class FLokiUAVConfig
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 Duration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 InitialDelay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 Period;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 BlinkDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bShowIndividuals;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bShowTeam;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 InaccuracyDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bRevealVaults;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 Radius;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bShowCharacters;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bLocalRadar;
+
+    FLokiUAVConfig()   // traits=0x21
+    {
+        v2 = 4622382067542392832;
+        this.Duration = v2;
+        v2 = 4607182418800017408;
+        this.InitialDelay = v2;
+        v2 = 4617315517961601024;
+        this.Period = v2;
+        v2 = 4596373779694328218;
+        this.BlinkDuration = v2;
+        v3 = false;
+        this.bShowIndividuals = v3;
+        v3 = false;
+        this.bShowTeam = v3;
+        v2 = 4654311885213007872;
+        this.InaccuracyDistance = v2;
+        v3 = true;
+        this.bRevealVaults = v3;
+        v2 = 0;
+        this.Radius = v2;
+        v3 = false;
+        this.bShowCharacters = v3;
+        v3 = false;
+        this.bLocalRadar = v3;
+        return;
+    }
+    /* ---- FLokiUAVConfig: 62 dwords / 34 instructions (cache offset 0xc051d) ----
+        0000  SetV8         v2 0x4026000000000000                       
+        000C  LoadThisR     0 134230906                                   ; this.Duration
+        0014  WRTV8         v2                                          
+        0018  SetV8         v2 0x3ff0000000000000                       
+        0024  LoadThisR     8 134230906                                   ; this.InitialDelay
+        002C  WRTV8         v2                                          
+        0030  SetV8         v2 0x4014000000000000                       
+        003C  LoadThisR     16 134230906                                  ; this.Period
+        0044  WRTV8         v2                                          
+        0048  SetV8         v2 0x3fc999999999999a                       
+        0054  LoadThisR     24 134230906                                  ; this.BlinkDuration
+        005C  WRTV8         v2                                          
+        0060  SetV1         v3 0                                        
+        0068  LoadThisR     32 134230906                                  ; this.bShowIndividuals
+        0070  WRTV1         v3                                          
+        0074  SetV1         v3 0                                        
+        007C  LoadThisR     33 134230906                                  ; this.bShowTeam
+        0084  WRTV1         v3                                          
+        0088  SetV8         v2 0x4097700000000000                       
+        0094  LoadThisR     40 134230906                                  ; this.InaccuracyDistance
+        009C  WRTV8         v2                                          
+        00A0  SetV1         v3 1                                        
+        00A8  LoadThisR     48 134230906                                  ; this.bRevealVaults
+        00B0  WRTV1         v3                                          
+        00B4  SetV8         v2 0x0                                      
+        00C0  LoadThisR     56 134230906                                  ; this.Radius
+        00C8  WRTV8         v2                                          
+        00CC  SetV1         v3 0                                        
+        00D4  LoadThisR     64 134230906                                  ; this.bShowCharacters
+        00DC  WRTV1         v3                                          
+        00E0  SetV1         v3 0                                        
+        00E8  LoadThisR     65 134230906                                  ; this.bLocalRadar
+        00F0  WRTV1         v3                                          
+        00F4  RET           2                                           
+    */
+
+    bool IsInfiniteDuration()   // traits=0x20
+    {
+        v2 = this.Duration;
+        v4 = 0;
+        v5 = v2 <= v4;
+        return v5;
+    }
+    /* ---- IsInfiniteDuration: 12 dwords / 8 instructions (cache offset 0xc044e) ----
+        0000  LoadThisR     0 134230906                                   ; this.Duration
+        0008  RDR8          v2                                          
+        000C  SetV8         v4 0x0                                      
+        0018  CMPd          v2 v4                                       
+        0020  TNP                                                       
+        0024  CpyRtoV4      v5                                          
+        0028  CpyVtoR4      v5                                          
+        002C  RET           2                                           
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class FActiveUAV
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    bool bValid;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    int ID;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    FLokiUAVConfig Config;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    float64 StartTime;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    int TeamIndex;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    AUAVAudioPlayer@ AudioActor;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    FVector SourceLocation;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    int PulseCount;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance)
+    int PlayersDetected;
+
+    FActiveUAV()   // traits=0x21
+    {
+        v1 = 0;
+        this.ID = v1;
+        this.Config.FLokiUAVConfig();
+        v2 = false;
+        this.bValid = v2;
+        v4 = 0;
+        this.StartTime = v4;
+        v1 = 1;
+        this.TeamIndex = v1;
+        nullptr = this.AudioActor;
+        this.SourceLocation = FVector(FVector::ZeroVector);
+        v1 = 0;
+        this.PulseCount = v1;
+        v1 = 0;
+        this.PlayersDetected = v1;
+        return;
+    }
+    /* ---- FActiveUAV: 52 dwords / 31 instructions (cache offset 0xc1123) ----
+        0000  LoadThisR     4 134230905                                   ; this.ID
+        0008  SetV4         v1 0                                        
+        0010  WRTV4         v1                                          
+        0014  PshVPtr       this                                        
+        0018  ADDSi         8 134230905                                   ; .Config
+        0020  CALL          85409                                         ; FLokiUAVConfig::FLokiUAVConfig
+        0028  SetV1         v2 0                                        
+        0030  LoadThisR     0 134230905                                   ; this.bValid
+        0038  WRTV1         v2                                          
+        003C  SetV8         v4 0x0                                      
+        0048  LoadThisR     80 134230905                                  ; this.StartTime
+        0050  WRTV8         v4                                          
+        0054  SetV4         v1 1                                        
+        005C  LoadThisR     88 134230905                                  ; this.TeamIndex
+        0064  WRTV4         v1                                          
+        0068  PshNull                                                   
+        006C  PshVPtr       this                                        
+        0070  ADDSi         96 134230905                                  ; .AudioActor
+        0078  REFCPY                                                    
+        007C  PopPtr                                                    
+        0080  PshGPtr       FVector::ZeroVector                         
+        008C  PshVPtr       this                                        
+        0090  ADDSi         104 134230905                                 ; .SourceLocation
+        0098  CALLSYS       FVector::$beh0                              
+        00A4  SetV4         v1 0                                        
+        00AC  LoadThisR     128 134230905                                 ; this.PulseCount
+        00B4  WRTV4         v1                                          
+        00B8  SetV4         v1 0                                        
+        00C0  LoadThisR     132 134230905                                 ; this.PlayersDetected
+        00C8  WRTV4         v1                                          
+        00CC  RET           2                                           
+    */
+
+    bool ShouldPulse(const float64 CurrentServerTime) const   // traits=0x24
+    {
+        v4 = this.StartTime;
+        v6 = this.Config.InitialDelay;
+        v4 = v4 + v6;
+        v7 = this.PulseCount;
+        v10 = float64(v7);
+        v6 = this.Config.Period;
+        v10 = v10 * v6;
+        v6 = v4 + v10;
+        v11 = CurrentServerTime > v6;
+        return v11;
+    }
+    /* ---- ShouldPulse: 34 dwords / 23 instructions (cache offset 0xc0c70) ----
+        0000  LoadThisR     80 134230905                                  ; this.StartTime
+        0008  RDR8          v4                                          
+        000C  PshVPtr       this                                        
+        0010  ADDSi         8 134230905                                   ; .Config
+        0018  ADDSi         8 134230906                                   ; .InitialDelay
+        0020  PopRPtr                                                   
+        0024  RDR8          v6                                          
+        0028  ADDd          v4 v4 v6                                    
+        0030  LoadThisR     128 134230905                                 ; this.PulseCount
+        0038  RDR4          v7                                          
+        003C  iTOd          v10 v7                                      
+        0044  PshVPtr       this                                        
+        0048  ADDSi         8 134230905                                   ; .Config
+        0050  ADDSi         16 134230906                                  ; .Period
+        0058  PopRPtr                                                   
+        005C  RDR8          v6                                          
+        0060  MULd          v10 v10 v6                                  
+        0068  ADDd          v6 v4 v10                                   
+        0070  CMPd          CurrentServerTime v6                        
+        0078  TP                                                        
+        007C  CpyRtoV4      v11                                         
+        0080  CpyVtoR4      v11                                         
+        0084  RET           4                                           
+    */
+
+    float64 GetPulseLifespan() const   // traits=0x24
+    {
+        v2 = this.Config.Period;
+        v4 = this.Config.BlinkDuration;
+        v2 = v2 - v4;
+        return v2;
+    }
+    /* ---- GetPulseLifespan: 18 dwords / 13 instructions (cache offset 0xc0d81) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         8 134230905                                   ; .Config
+        000C  ADDSi         16 134230906                                  ; .Period
+        0014  PopRPtr                                                   
+        0018  RDR8          v2                                          
+        001C  PshVPtr       this                                        
+        0020  ADDSi         8 134230905                                   ; .Config
+        0028  ADDSi         24 134230906                                  ; .BlinkDuration
+        0030  PopRPtr                                                   
+        0034  RDR8          v4                                          
+        0038  SUBd          v2 v2 v4                                    
+        0040  CpyVtoR8      v2                                          
+        0044  RET           2                                           
+    */
+
+    FVector ObfuscateLocation(const FVector& Location) const   // traits=0x24
+    {
+        v12 = Math::VRand();
+        v16 = this.Config.InaccuracyDistance;
+        v20 = Math::RandRange(0, v16);
+        v6 = v12 * v20;
+        v26 = arg_m4 + v6;
+        Location = FVector(v26);
+        return;
+    }
+    /* ---- ObfuscateLocation: 37 dwords / 23 instructions (cache offset 0xc0e8c) ----
+        0000  PSF           v12                                         
+        0004  CALLSYS       VRand                                       
+        0010  PshVPtr       this                                        
+        0014  ADDSi         8 134230905                                   ; .Config
+        001C  ADDSi         40 134230906                                  ; .InaccuracyDistance
+        0024  PopRPtr                                                   
+        0028  RDR8          v16                                         
+        002C  PshV8         v16                                         
+        0030  PshC8         0x0                                         
+        003C  CALLSYS       RandRange                                   
+        0048  CpyRtoV8      v20                                         
+        004C  PshV8         v20                                         
+        0050  PSF           v6                                          
+        0054  PSF           v12                                         
+        0058  CALLSYS       FVector::opMul                              
+        0064  PSF           v6                                          
+        0068  PSF           v26                                         
+        006C  PshVPtr       arg_m4                                      
+        0070  CALLSYS       FVector::opAdd                              
+        007C  PSF           v26                                         
+        0080  PshVPtr       Location                                    
+        0084  CALLSYS       FVector::$beh0                              
+        0090  RET           6                                           
+    */
+
+    void Cleanup()   // traits=0x20
+    {
+        v2 = this.AudioActor;
+        if (v2 != nullptr) {
+            this.AudioActor.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+    /* ---- Cleanup: 16 dwords / 11 instructions (cache offset 0xc1024) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         96 134230905                                  ; .AudioActor
+        000C  RDSPtr                                                    
+        0010  RefCpyV       v2                                          
+        0014  CmpPtrNull    v2                                          
+        0018  JZ            7                                             -> L003C
+        0020  PshVPtr       this                                        
+        0024  ADDSi         96 134230905                                  ; .AudioActor
+        002C  RDSPtr                                                    
+        0030  CALLSYS       AActor::DestroyActor                        
+      L003C:
+        003C  RET           2                                           
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FUAVCharacterGrouping
+{
+    UPROPERTY()
+    TArray<ALokiCharacter@> Characters;
+
+    FUAVCharacterGrouping()   // traits=0x21
+    {
+        this.Characters = TArray();
+        return;
+    }
+    /* ---- FUAVCharacterGrouping: 7 dwords / 4 instructions (cache offset 0xc140a) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230914                                   ; .Characters
+        000C  CALLSYS       TArray::$beh0                               
+        0018  RET           2                                           
+    */
+
+    void ~FUAVCharacterGrouping()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~FUAVCharacterGrouping: 7 dwords / 4 instructions (cache offset 0xc14f9) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230914                                   ; .Characters
+        000C  CALLSYS       TArray::$beh2                               
+        0018  RET           2                                           
+    */
+
+}
+

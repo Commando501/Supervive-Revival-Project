@@ -1,0 +1,133 @@
+// ============================================================================
+//  MODULE   Barracuda.Components.BarracudaJungleCreepTargetingComponent
+//  SOURCE   Barracuda/Components/BarracudaJungleCreepTargetingComponent.as
+//  CONTENT  1 class(es), 7 function(s), 0 enum(s), 1 global(s), 936 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaJungleCreepTargetingComponent;
+
+UBarracudaJungleCreepTargetingComponent@ UBarracudaJungleCreepTargetingComponent()   // traits=0x20
+{
+    UBarracudaJungleCreepTargetingComponent v2;
+
+    v2 = UBarracudaJungleCreepTargetingComponent();
+    return v2;
+}
+
+UClass@ UBarracudaJungleCreepTargetingComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaJungleCreepTargetingComponent);
+    return v2;
+}
+
+UBarracudaJungleCreepTargetingComponent@ UBarracudaJungleCreepTargetingComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaJungleCreepTargetingComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaJungleCreepTargetingComponent, v2, typeid(UBarracudaJungleCreepTargetingComponent@), WithName);
+    return v2;
+}
+
+UBarracudaJungleCreepTargetingComponent@ UBarracudaJungleCreepTargetingComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaJungleCreepTargetingComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaJungleCreepTargetingComponent, v2, typeid(UBarracudaJungleCreepTargetingComponent@), WithName);
+    return v2;
+}
+
+UBarracudaJungleCreepTargetingComponent@ UBarracudaJungleCreepTargetingComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaJungleCreepTargetingComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaJungleCreepTargetingComponent, v2, typeid(UBarracudaJungleCreepTargetingComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class UBarracudaJungleCreepTargetingComponent : UBarracudaMinionTargetingComponent
+// static class global: __StaticType_UBarracudaJungleCreepTargetingComponent
+{
+    UBarracudaJungleCreepTargetingComponent()   // traits=0x21
+    {
+        this.UBarracudaMinionTargetingComponent();
+        return;
+    }
+
+    UFUNCTION(UnrealName=UpdateCurrentTargetEnemy, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void UpdateCurrentTargetEnemy_Implementation()   // traits=0x20
+    {
+        ALokiMinionCharacter v2;
+        AActor v4;
+        ALokiMinionCharacter v6;
+        bool v7;
+        auto v8;
+        auto v10;
+        float64 v12;
+        bool v13;
+        FVector v26;
+        ELokiMinionEnemyFilter v27;
+
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiMinionCharacter@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 == nullptr) {
+            this.CurrentTargetEnemy = nullptr;
+            return;
+        } else {
+            if (!LokiGameplay::IsAlive(this.HighPriorityEnemyCharacter)) {
+                v7 = 0;
+            } else {
+                v8 = Gameplay::GetServerTime(__WorldContext);
+                v12 = float64(v8);
+                v10 = this.ReleaseHighPriorityEnemyTime;
+                v13 = v12 < v10;
+                v7 = v13;
+            }
+            if (v7) {
+                this.CurrentTargetEnemy = this.HighPriorityEnemyCharacter;
+                return;
+            } else {
+                this.HighPriorityEnemyCharacter = nullptr;
+                this.CurrentTargetEnemy = nullptr;
+                v26 = v2.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v13 = true;
+                v7 = true;
+                v27 = ELokiMinionEnemyFilter::Minion;
+                v4 = v2.GetClosestEnemyOnList(v26, v27, v7, v13);
+                this.CurrentTargetEnemy = v4;
+                v4 = this.CurrentTargetEnemy;
+                if (v4 != nullptr) {
+                    return;
+                } else {
+                    v7 = true;
+                    v13 = true;
+                    v27 = ELokiMinionEnemyFilter::Destructible;
+                    v4 = v2.GetClosestEnemyOnList(v26, v27, v13, v7);
+                    this.CurrentTargetEnemy = v4;
+                    v7 = false;
+                    v13 = true;
+                    v27 = ELokiMinionEnemyFilter::Hero;
+                    v4 = v2.GetClosestEnemyOnList(v26, v27, v13, v7);
+                    this.CurrentTargetEnemy = v4;
+                }
+            }
+        }
+        return;
+    }
+
+}
+

@@ -1,0 +1,893 @@
+==============================================================================
+MODULE   UAV.LokiPlayerControllerUAVComponent
+SOURCE   UAV/LokiPlayerControllerUAVComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiPlayerControllerUAVComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiPlayerControllerUAVComponent@ ULokiPlayerControllerUAVComponent()
+// 4 instr, 28 B bytecode, id=0x22646DE7, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiPlayerControllerUAVComponent v2;
+
+    v2 = ULokiPlayerControllerUAVComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85393 q:0x26e6ed77600; new ULokiPlayerControllerUAVComponent   ctor=ULokiPlayerControllerUAVComponent::ULokiPlayerControllerUAVComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x58A59FFB, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiPlayerControllerUAVComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e7b043ed8         ; __StaticType_ULokiPlayerControllerUAVComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ULokiPlayerControllerUAVComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x65658473, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiPlayerControllerUAVComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiPlayerControllerUAVComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972736            ; ULokiPlayerControllerUAVComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e7b043ed8         ; __StaticType_ULokiPlayerControllerUAVComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiPlayerControllerUAVComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x02C42848, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiPlayerControllerUAVComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerUAVComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972736            ; ULokiPlayerControllerUAVComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e7b043ed8         ; __StaticType_ULokiPlayerControllerUAVComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiPlayerControllerUAVComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x2988789E, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiPlayerControllerUAVComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerUAVComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972736            ; ULokiPlayerControllerUAVComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e7b043ed8         ; __StaticType_ULokiPlayerControllerUAVComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS(meta=(IsBlueprintBase=true, Blueprintable=true))
+class ULokiPlayerControllerUAVComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=UAV)) TSubclassOf<AUAVMapActor@> UAVMapActorClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=UAV)) TSubclassOf<AUAVVaultContentActor@> UAVVaultContentActorClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=UAV)) float64 UAVActivatedEventNotifyCooldown;
+    private float64 LastEventNotifyTime;
+    private int LastRadarID;
+    private TArray<FLokiFuzzyPlayerLocationItem> LocalRadarPlayers;
+    private ALokiPlayerState@ LastRadarPlayer;
+
+}
+
+------------------------------------------------------------------------------
+ULokiPlayerControllerUAVComponent() const
+// 21 instr, 160 B bytecode, id=0xD44B56B3, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    this.UAVMapActorClass = TSubclassOf<AUAVMapActor@>();
+    this.UAVVaultContentActorClass = TSubclassOf<AUAVVaultContentActor@>();
+    this.LocalRadarPlayers = TArray<FLokiFuzzyPlayerLocationItem>();
+    v2 = 25;
+    this.UAVActivatedEventNotifyCooldown = 25;
+    v2 = 0;
+    this.LastEventNotifyTime = 0;
+    this.LastRadarID = -1;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:208 d:134230912      ; ULokiPlayerControllerUAVComponent::UAVMapActorClass  (+208)
+    //     3  CALLSYS        q:0x26e6ef91e40         ; void TSubclassOf<AUAVMapActor@>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:216 d:134230912      ; ULokiPlayerControllerUAVComponent::UAVVaultContentActorClass  (+216)
+    //     9  CALLSYS        q:0x26e6ef91740         ; void TSubclassOf<AUAVVaultContentActor@>::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:248 d:134230912      ; ULokiPlayerControllerUAVComponent::LocalRadarPlayers  (+248)
+    //    15  CALLSYS        q:0x26e6ef97080         ; void TArray<FLokiFuzzyPlayerLocationItem>::$beh0()
+    //    18  SetV8          wW0:2 q:0x4039000000000000
+    //    21  LoadThisR      W0:224 d:134230912      ; ULokiPlayerControllerUAVComponent::UAVActivatedEventNotifyCooldown  (+224)
+    //    23  WRTV8          rW0:2
+    //    24  SetV8          wW0:2 q:0x0
+    //    27  LoadThisR      W0:232 d:134230912      ; ULokiPlayerControllerUAVComponent::LastEventNotifyTime  (+232)
+    //    29  WRTV8          rW0:2
+    //    30  SetV4          wW0:3 d:-1
+    //    32  LoadThisR      W0:240 d:134230912      ; ULokiPlayerControllerUAVComponent::LastRadarID  (+240)
+    //    34  WRTV4          rW0:3
+    //    35  PshVPtr        rW0:0
+    //    36  FinConstruct   q:0x26e6ed77600         ; ULokiPlayerControllerUAVComponent
+    //    39  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 112 instr, 820 B bytecode, id=0x213023CF, varspace=80
+------------------------------------------------------------------------------
+{
+    auto v1;
+    UGameEventRouterComponent v4;
+    FGameEvent_FuzzyPlayerLocation_Add v34;
+    auto v35;
+    FGameEventListenerHandle v48;
+    FGameEvent_TeamVaultData_Add v68;
+    TSubclassOf<AUAVMapActor@> v70;
+    FString v74;
+    AActor v76;
+    FName v78;
+    TSubclassOf<AUAVVaultContentActor@> v80;
+
+    if (!Loki::LokiIsServer(__WorldContext)) {
+        v4 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v4 != null) {
+            v35 = false;
+            v34 = FGameEvent_FuzzyPlayerLocation_Add();
+            v48 = v4.RegisterForEvent(this, v34, null, __STATIC_NAME(88), false);
+            v35 = false;
+            v68 = FGameEvent_TeamVaultData_Add();
+            v48 = v4.RegisterForEvent(this, v68, null, __STATIC_NAME(89), false);
+        }
+        v70 = TSubclassOf<AUAVMapActor@>();
+        v70 = this.UAVMapActorClass;
+        v1 = v70 == null;
+        if (v1) {
+            v76 = this.GetOwner();
+            v78 = v76.GetName();
+            v74 = FString();
+            Log::Error(v74.Append("[").Append(v78).Append("] ULokiPlayerControllerUAVComponent doesn't have UAVMapActorClass set on instance. This is required to show UAV Map Icons"));
+        }
+        v80 = TSubclassOf<AUAVVaultContentActor@>();
+        v80 = this.UAVVaultContentActorClass;
+        v1 = v80 == null;
+        if (v1) {
+            v76 = this.GetOwner();
+            v78 = v76.GetName();
+            v74 = FString();
+            Log::Error(v74.Append("[").Append(v78).Append("] ULokiPlayerControllerUAVComponent doesn't have UAVVaultContentActorClass set on instance. This is required to show UAV Map Icons"));
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->10
+    //     8  JMP            ->204
+    //    10  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    13  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //    16  STOREOBJ       wW0:4
+    //    17  CmpPtrNull     rW0:4
+    //    18  JZ             ->82
+    //    20  SetV1          wW0:35 d:0
+    //    22  PshV4          rW0:35
+    //    23  PshC4          d:88
+    //    25  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    28  PshRPtr
+    //    29  PshNull
+    //    30  TYPEID         d:67120892              ; FGameEvent_FuzzyPlayerLocation_Add
+    //    32  PSF            rW0:34
+    //    33  CALLSYS        q:0x26e79398900         ; void FGameEvent_FuzzyPlayerLocation_Add::$beh0()
+    //    36  PSF            rW0:34
+    //    37  PshVPtr        rW0:0
+    //    38  PSF            rW0:48
+    //    39  PshVPtr        rW0:4
+    //    40  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    43  PSF            rW0:34
+    //    44  CALLSYS        q:0x26e79398740         ; void FGameEvent_FuzzyPlayerLocation_Add::$beh2()
+    //    47  PSF            rW0:48
+    //    48  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    51  SetV1          wW0:35 d:0
+    //    53  PshV4          rW0:35
+    //    54  PshC4          d:89
+    //    56  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    59  PshRPtr
+    //    60  PshNull
+    //    61  TYPEID         d:67120960              ; FGameEvent_TeamVaultData_Add
+    //    63  PSF            rW0:68
+    //    64  CALLSYS        q:0x26e793c9700         ; void FGameEvent_TeamVaultData_Add::$beh0()
+    //    67  PSF            rW0:68
+    //    68  PshVPtr        rW0:0
+    //    69  PSF            rW0:48
+    //    70  PshVPtr        rW0:4
+    //    71  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    74  PSF            rW0:68
+    //    75  CALLSYS        q:0x26e793c9540         ; void FGameEvent_TeamVaultData_Add::$beh2()
+    //    78  PSF            rW0:48
+    //    79  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    82  PSF            rW0:70
+    //    83  CALLSYS        q:0x26e6ef91e40         ; void TSubclassOf<AUAVMapActor@>::$beh0()
+    //    86  PshVPtr        rW0:0
+    //    87  ADDSi          W0:208 d:134230912      ; ULokiPlayerControllerUAVComponent::UAVMapActorClass  (+208)
+    //    89  PSF            rW0:70
+    //    90  CALLSYS        q:0x26e6ee37940         ; TSubclassOf<AUAVMapActor@>& TSubclassOf<AUAVMapActor@>::opAssign(const TSubclassOf<AUAVMapActor@>&)
+    //    93  PshNull
+    //    94  PSF            rW0:70
+    //    95  CALLSYS        q:0x26e6ef92380         ; bool TSubclassOf<AUAVMapActor@>::opEquals(UClass@) const
+    //    98  CpyRtoV4       wW0:1
+    //    99  CpyVtoR1       rW0:1
+    //   100  JLowZ          ->143
+    //   102  PGA            q:0x26e6f113580         ; "] ULokiPlayerControllerUAVComponent doesn't have UAVMapActorClass set on instance. This is required to show UAV Map Icons"
+    //   105  PSF            rW0:78
+    //   106  PshVPtr        rW0:0
+    //   107  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //   110  STOREOBJ       wW0:76
+    //   111  PshVPtr        rW0:76
+    //   112  CALLSYS        q:0x26e70393dc0         ; FName UObject::GetName() const
+    //   115  PSF            rW0:78
+    //   116  PGA            q:0x26e6f113000         ; "["
+    //   119  PSF            rW0:74
+    //   120  CALLSYS        q:0x26e628a8c80         ; void FString::$beh0()
+    //   123  PSF            rW0:74
+    //   124  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //   127  PshRPtr
+    //   128  CALLSYS        q:0x26e796b3dc0         ; FString& FString::Append(const FName&)
+    //   131  PshRPtr
+    //   132  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //   135  PshRPtr
+    //   136  CALLSYS        q:0x26e7a048580         ; void Log::Error(FString)
+    //   139  PSF            rW0:74
+    //   140  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //   143  PSF            rW0:80
+    //   144  CALLSYS        q:0x26e6ef91740         ; void TSubclassOf<AUAVVaultContentActor@>::$beh0()
+    //   147  PshVPtr        rW0:0
+    //   148  ADDSi          W0:216 d:134230912      ; ULokiPlayerControllerUAVComponent::UAVVaultContentActorClass  (+216)
+    //   150  PSF            rW0:80
+    //   151  CALLSYS        q:0x26e6ee37780         ; TSubclassOf<AUAVVaultContentActor@>& TSubclassOf<AUAVVaultContentActor@>::opAssign(const TSubclassOf<AUAVVaultContentActor@>&)
+    //   154  PshNull
+    //   155  PSF            rW0:80
+    //   156  CALLSYS        q:0x26e6ef91c80         ; bool TSubclassOf<AUAVVaultContentActor@>::opEquals(UClass@) const
+    //   159  CpyRtoV4       wW0:1
+    //   160  CpyVtoR1       rW0:1
+    //   161  JLowZ          ->204
+    //   163  PGA            q:0x26e6f114ab0         ; "] ULokiPlayerControllerUAVComponent doesn't have UAVVaultContentActorClass set on instance. This is required to show UAV Map Icons"
+    //   166  PSF            rW0:78
+    //   167  PshVPtr        rW0:0
+    //   168  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //   171  STOREOBJ       wW0:76
+    //   172  PshVPtr        rW0:76
+    //   173  CALLSYS        q:0x26e70393dc0         ; FName UObject::GetName() const
+    //   176  PSF            rW0:78
+    //   177  PGA            q:0x26e6f114b00         ; "["
+    //   180  PSF            rW0:74
+    //   181  CALLSYS        q:0x26e628a8c80         ; void FString::$beh0()
+    //   184  PSF            rW0:74
+    //   185  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //   188  PshRPtr
+    //   189  CALLSYS        q:0x26e796b3dc0         ; FString& FString::Append(const FName&)
+    //   192  PshRPtr
+    //   193  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //   196  PshRPtr
+    //   197  CALLSYS        q:0x26e7a048580         ; void Log::Error(FString)
+    //   200  PSF            rW0:74
+    //   201  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //   204  RET            W0:2
+
+------------------------------------------------------------------------------
+void ClientNotifyLocalRadarEmpty()
+// 6 instr, 44 B bytecode, id=0x7606C34B, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(201));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:201
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetClient, Unreliable)
+// UFunction name: ClientNotifyLocalRadarEmpty
+void ClientNotifyLocalRadarEmpty_Implementation()
+// 22 instr, 144 B bytecode, id=0x9374141B, varspace=14
+------------------------------------------------------------------------------
+{
+    UGameEventRouterComponent v2;
+    FGameEvent_FuzzyPlayerLocation_LocalRadar v14;
+
+    v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+    if (v2 != null) {
+        v14 = FGameEvent_FuzzyPlayerLocation_LocalRadar();
+        v14.PlayerState = this.LastRadarPlayer;
+        v2.BroadcastEvent(v14, null);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //     6  STOREOBJ       wW0:2
+    //     7  CmpPtrNull     rW0:2
+    //     8  JZ             ->35
+    //    10  PSF            rW0:14
+    //    11  CALLSYS        q:0x26e79397400         ; void FGameEvent_FuzzyPlayerLocation_LocalRadar::$beh0()
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:264 d:134230912      ; ULokiPlayerControllerUAVComponent::LastRadarPlayer  (+264)
+    //    17  RDSPtr
+    //    18  PSF            rW0:14
+    //    19  ADDSi          W0:24 d:67120895        ; FGameEvent_FuzzyPlayerLocation_LocalRadar::PlayerState  (+24)
+    //    21  REFCPY
+    //    22  PopPtr
+    //    23  PshNull
+    //    24  TYPEID         d:67120895              ; FGameEvent_FuzzyPlayerLocation_LocalRadar
+    //    26  PSF            rW0:14
+    //    27  PshVPtr        rW0:2
+    //    28  CALLSYS        q:0x26e7968b4c0         ; void UGameEventRouterComponent::BroadcastEvent(const ?&, UObject@)
+    //    31  PSF            rW0:14
+    //    32  CALLSYS        q:0x26e7939e5c0         ; void FGameEvent_FuzzyPlayerLocation_LocalRadar::$beh2()
+    //    35  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+void AuthNotifyLocalRadarTeammates(ALokiPlayerState@ Instigator)
+// 58 instr, 356 B bytecode, id=0x31B9D572, varspace=42
+------------------------------------------------------------------------------
+{
+    ALokiTeamState v4;
+    auto v5;
+    TArray<ALokiPlayerState@> v10;
+    TArrayIterator<ALokiPlayerState@> v20;
+    APlayerController v32;
+    TSubclassOf<UActorComponent@> v36;
+    UActorComponent v38;
+    ULokiPlayerControllerUAVComponent v40;
+    ULokiPlayerControllerUAVComponent v42;
+
+    v4 = Instigator.GetTeamState();
+    if (v4 != null) {
+        v10 = v4.GetLivingPlayers();
+        v20 = v10.Iterator();
+        while (true) {
+            v5 = v20.CanProceed;
+            if (!v5) break;
+            v32 = v20.Proceed().GetPlayerController();
+            if (v32 != null) {
+                v36 = TSubclassOf<UActorComponent@>(ULokiPlayerControllerUAVComponent::StaticClass());
+                v38 = v32.GetComponentByClass(v36);
+                if (v38 == null) {
+                    v40 = null;
+                } else {
+                    v40 = cast<ULokiPlayerControllerUAVComponent>(v38);
+                }
+                v42 = v40;
+                if (v40 != null) {
+                    v42.ClientNotifyLocalRadarInstigator(Instigator);
+                }
+            }
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e7a396d00         ; ALokiTeamState@ ALokiPlayerState::GetTeamState() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JNZ            ->10
+    //     8  JMP            ->88
+    //    10  PSF            rW0:10
+    //    11  PshVPtr        rW0:4
+    //    12  CALLSYS        q:0x26e7a3df040         ; TArray<ALokiPlayerState@> ALokiTeamState::GetLivingPlayers() const
+    //    15  PSF            rW0:20
+    //    16  PSF            rW0:10
+    //    17  CALLSYS        q:0x26e6ee8c9c0         ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+    //    20  JMP            ->77
+    //    22  SUSPEND
+    //    23  PSF            rW0:20
+    //    24  CALLSYS        q:0x26e6ee8c640         ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+    //    27  PshRPtr
+    //    28  RDSPtr
+    //    29  RefCpyV        wW0:28
+    //    30  PshVPtr        rW0:28
+    //    31  CALLSYS        q:0x26e79b505c0         ; APlayerController@ APlayerState::GetPlayerController() const
+    //    34  STOREOBJ       wW0:32
+    //    35  CmpPtrNull     rW0:32
+    //    36  JZ             ->75
+    //    38  CALL           d:85395                 ; UClass@ ULokiPlayerControllerUAVComponent::StaticClass()
+    //    40  STOREOBJ       wW0:34
+    //    41  PshVPtr        rW0:34
+    //    42  PSF            rW0:36
+    //    43  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //    46  PSF            rW0:36
+    //    47  PshVPtr        rW0:32
+    //    48  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //    51  STOREOBJ       wW0:38
+    //    52  CmpPtrNull     rW0:38
+    //    53  JZ             ->64
+    //    55  TYPEID         d:1207972736            ; ULokiPlayerControllerUAVComponent@
+    //    57  PSF            rW0:40
+    //    58  PshVPtr        rW0:38
+    //    59  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    62  JMP            ->65
+    //    64  ClrVPtr        wW0:40
+    //    65  PshVPtr        rW0:40
+    //    66  RefCpyV        wW0:42
+    //    67  CmpPtrNull     rW0:42
+    //    68  JZ             ->74
+    //    70  PshVPtr        rW0:-2
+    //    71  PshVPtr        rW0:42
+    //    72  CALLINTF       d:85389                 ; void ULokiPlayerControllerUAVComponent::ClientNotifyLocalRadarInstigator(ALokiPlayerState@)
+    //    74  FreeNullV8     wW0:42
+    //    75  FreeNullV8     wW0:32
+    //    76  FreeNullV8     wW0:28
+    //    77  LoadVObjR      rW0:20 W1:16 DW2:268448510; TArrayIterator::CanProceed  (+16)
+    //    80  RDR1           wW0:5
+    //    81  CpyVtoR1       rW0:5
+    //    82  JLowNZ         ->22
+    //    84  PSF            rW0:10
+    //    85  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //    88  RET            W0:4
+
+------------------------------------------------------------------------------
+void ClientNotifyLocalRadarInstigator(ALokiPlayerState@ Instigator)
+// 8 instr, 60 B bytecode, id=0x0060FEE5, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__ALokiPlayerState(Instigator);
+    __Evt_Execute(this, __STATIC_NAME(202));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77c04bc0         ; void __Evt_PushArgument__ALokiPlayerState(const ALokiPlayerState@&)
+    //     4  PshC4          d:202
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetClient, Unreliable)
+// UFunction name: ClientNotifyLocalRadarInstigator
+void ClientNotifyLocalRadarInstigator_Implementation(ALokiPlayerState@ Instigator)
+// 6 instr, 28 B bytecode, id=0xA7E50EA0, varspace=0
+------------------------------------------------------------------------------
+{
+    this.LastRadarPlayer = Instigator;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:264 d:134230912      ; ULokiPlayerControllerUAVComponent::LastRadarPlayer  (+264)
+    //     4  REFCPY
+    //     5  PopPtr
+    //     6  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnLocationAdded(const FGameEvent_FuzzyPlayerLocation_Add&inout Event, const AActor@&inout Context)
+// 174 instr, 1252 B bytecode, id=0xEB6774A9, varspace=86
+------------------------------------------------------------------------------
+{
+    FLokiFuzzyPlayerLocationItem v24;
+    auto v26;
+    auto v27;
+    auto v28;
+    TSubclassOf<AUAVMapActor@> v30;
+    UGameEventRouterComponent v34;
+    FGameEvent_FuzzyPlayerLocation_LocalRadar v44;
+    TArray<FLokiLocalRadarEntry> v48;
+    TArrayIterator<FLokiFuzzyPlayerLocationItem> v54;
+    auto v62;
+    FLokiLocalRadarEntry v74;
+    auto v75;
+    auto v82;
+    auto v84;
+
+    v24 = FLokiFuzzyPlayerLocationItem(Event.PlayerLocationItem);
+    v26 = int(v24.Source);
+    if (v26 == 1) {
+        v30 = TSubclassOf<AUAVMapActor@>();
+        v30 = this.UAVMapActorClass;
+        v28 = v30 == null;
+        if (!v28) {
+            v26 = v24.UAVID;
+            if (v26 == -1) {
+                v28 = false;
+                SpawnActor(this.UAVMapActorClass, v24.Location, FRotator::ZeroRotator, NAME_None, false, null).Init(v24);
+                v75 = Gameplay::GetServerTime(__WorldContext);
+                v84 = float64(v75);
+                v82 = v84;
+                v84 = this.LastEventNotifyTime;
+                v84 = v84 + this.UAVActivatedEventNotifyCooldown;
+                if (v84 > v84) {
+                    ULokiFuzzyPlayerLocationComponent::BroadcastUAVActivatedEvent(this);
+                    this.LastEventNotifyTime = v82;
+                }
+            } else {
+                v27 = v24.UAVID;
+                v26 = this.LastRadarID;
+                if (v27 != v26) {
+                    this.LocalRadarPlayers.Reset(0);
+                }
+                v27 = v24.UAVID;
+                this.LastRadarID = v27;
+                this.LocalRadarPlayers.Add(v24);
+                v26 = v24.TotalPlayerCount;
+                if (v26 != -1) {
+                    v27 = this.LocalRadarPlayers.Num();
+                    v26 = v24.TotalPlayerCount;
+                    v28 = v27 == v26;
+                } else {
+                    v28 = 0;
+                }
+                if (v28) {
+                    v34 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+                    if (v34 != null) {
+                        v44 = FGameEvent_FuzzyPlayerLocation_LocalRadar();
+                        v48 = TArray<FLokiLocalRadarEntry>();
+                        v54 = this.LocalRadarPlayers.Iterator();
+                        while (true) {
+                            v28 = v54.CanProceed;
+                            if (!v28) break;
+                            v62 = v54.Proceed();
+                            v74 = FLokiLocalRadarEntry();
+                            v27 = v62.TeamIndex;
+                            v74.TeamIndex = v27;
+                            v74.Location = v62.Location;
+                            v74.CharacterClass = v62.CharacterClasses[0];
+                            v75 = v62.AverageLevel;
+                            v74.PlayerLevel = v75;
+                            v48.Add(v74);
+                        }
+                        v44.PlayerState = this.LastRadarPlayer;
+                        v44.PlayerLocationItems = v48;
+                        v34.BroadcastEvent(v44, null);
+                    }
+                }
+            }
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:8 d:67120892         ; FGameEvent_FuzzyPlayerLocation_Add::PlayerLocationItem  (+8)
+    //     3  PSF            rW0:24
+    //     4  CALLSYS        q:0x26e79399000         ; void FLokiFuzzyPlayerLocationItem::$beh0(const FLokiFuzzyPlayerLocationItem&)
+    //     7  LoadVObjR      rW0:24 W1:16 DW2:67120891; FLokiFuzzyPlayerLocationItem::Source  (+16)
+    //    10  RDR1           wW0:25
+    //    11  sbTOi          wW0:26 rW1:25
+    //    13  CMPIi          rW0:26 d:1
+    //    15  JZ             ->23
+    //    17  PSF            rW0:24
+    //    18  CALLSYS        q:0x26e793991c0         ; void FLokiFuzzyPlayerLocationItem::$beh2()
+    //    21  JMP            ->312
+    //    23  PSF            rW0:30
+    //    24  CALLSYS        q:0x26e6ef91e40         ; void TSubclassOf<AUAVMapActor@>::$beh0()
+    //    27  PshVPtr        rW0:0
+    //    28  ADDSi          W0:208 d:134230912      ; ULokiPlayerControllerUAVComponent::UAVMapActorClass  (+208)
+    //    30  PSF            rW0:30
+    //    31  CALLSYS        q:0x26e6ee37940         ; TSubclassOf<AUAVMapActor@>& TSubclassOf<AUAVMapActor@>::opAssign(const TSubclassOf<AUAVMapActor@>&)
+    //    34  PshNull
+    //    35  PSF            rW0:30
+    //    36  CALLSYS        q:0x26e6ef92380         ; bool TSubclassOf<AUAVMapActor@>::opEquals(UClass@) const
+    //    39  CpyRtoV4       wW0:28
+    //    40  CpyVtoR1       rW0:28
+    //    41  JLowZ          ->49
+    //    43  PSF            rW0:24
+    //    44  CALLSYS        q:0x26e793991c0         ; void FLokiFuzzyPlayerLocationItem::$beh2()
+    //    47  JMP            ->312
+    //    49  LoadVObjR      rW0:24 W1:80 DW2:67120891; FLokiFuzzyPlayerLocationItem::UAVID  (+80)
+    //    52  RDR4           wW0:26
+    //    53  CMPIi          rW0:26 d:-1
+    //    55  JZ             ->254
+    //    57  LoadVObjR      rW0:24 W1:80 DW2:67120891; FLokiFuzzyPlayerLocationItem::UAVID  (+80)
+    //    60  RDR4           wW0:27
+    //    61  LoadThisR      W0:240 d:134230912      ; ULokiPlayerControllerUAVComponent::LastRadarID  (+240)
+    //    63  RDR4           wW0:26
+    //    64  CMPi           rW0:27 rW1:26
+    //    66  JZ             ->76
+    //    68  PshC4          d:0
+    //    70  PshVPtr        rW0:0
+    //    71  ADDSi          W0:248 d:134230912      ; ULokiPlayerControllerUAVComponent::LocalRadarPlayers  (+248)
+    //    73  CALLSYS        q:0x26e6ef91580         ; void TArray<FLokiFuzzyPlayerLocationItem>::Reset(int)
+    //    76  LoadVObjR      rW0:24 W1:80 DW2:67120891; FLokiFuzzyPlayerLocationItem::UAVID  (+80)
+    //    79  RDR4           wW0:27
+    //    80  LoadThisR      W0:240 d:134230912      ; ULokiPlayerControllerUAVComponent::LastRadarID  (+240)
+    //    82  WRTV4          rW0:27
+    //    83  PSF            rW0:24
+    //    84  PshVPtr        rW0:0
+    //    85  ADDSi          W0:248 d:134230912      ; ULokiPlayerControllerUAVComponent::LocalRadarPlayers  (+248)
+    //    87  CALLSYS        q:0x26e6ef913c0         ; void TArray<FLokiFuzzyPlayerLocationItem>::Add(const FLokiFuzzyPlayerLocationItem&)
+    //    90  LoadVObjR      rW0:24 W1:84 DW2:67120891; FLokiFuzzyPlayerLocationItem::TotalPlayerCount  (+84)
+    //    93  RDR4           wW0:26
+    //    94  CMPIi          rW0:26 d:-1
+    //    96  JNZ            ->102
+    //    98  SetV4          wW0:28 d:0
+    //   100  JMP            ->119
+    //   102  PshVPtr        rW0:0
+    //   103  ADDSi          W0:248 d:134230912      ; ULokiPlayerControllerUAVComponent::LocalRadarPlayers  (+248)
+    //   105  CALLSYS        q:0x26e6ef91200         ; int TArray<FLokiFuzzyPlayerLocationItem>::Num() const
+    //   108  CpyRtoV4       wW0:27
+    //   109  LoadVObjR      rW0:24 W1:84 DW2:67120891; FLokiFuzzyPlayerLocationItem::TotalPlayerCount  (+84)
+    //   112  RDR4           wW0:26
+    //   113  CMPi           rW0:27 rW1:26
+    //   115  TZ
+    //   116  CpyRtoV4       wW0:31
+    //   117  CpyVtoV4       wW0:28 rW1:31
+    //   119  CpyVtoR1       rW0:28
+    //   120  JLowZ          ->248
+    //   122  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   125  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //   128  STOREOBJ       wW0:34
+    //   129  CmpPtrNull     rW0:34
+    //   130  JZ             ->247
+    //   132  PSF            rW0:44
+    //   133  CALLSYS        q:0x26e79397400         ; void FGameEvent_FuzzyPlayerLocation_LocalRadar::$beh0()
+    //   136  PSF            rW0:48
+    //   137  CALLSYS        q:0x26e6ef91040         ; void TArray<FLokiLocalRadarEntry>::$beh0()
+    //   140  PSF            rW0:54
+    //   141  PshVPtr        rW0:0
+    //   142  ADDSi          W0:248 d:134230912      ; ULokiPlayerControllerUAVComponent::LocalRadarPlayers  (+248)
+    //   144  CALLSYS        q:0x26e6ef90b00         ; TArrayIterator<FLokiFuzzyPlayerLocationItem> TArray<FLokiFuzzyPlayerLocationItem>::Iterator()
+    //   147  JMP            ->208
+    //   149  SUSPEND
+    //   150  PSF            rW0:54
+    //   151  CALLSYS        q:0x26e6ef90780         ; FLokiFuzzyPlayerLocationItem& TArrayIterator<FLokiFuzzyPlayerLocationItem>::Proceed()
+    //   154  CpyRtoV8       wW0:62
+    //   155  PSF            rW0:74
+    //   156  CALLSYS        q:0x26e7939dd00         ; void FLokiLocalRadarEntry::$beh0()
+    //   159  LoadRObjR      rW0:62 W1:56 DW2:67120891; FLokiFuzzyPlayerLocationItem::TeamIndex  (+56)
+    //   162  RDR4           wW0:27
+    //   163  LoadVObjR      rW0:74 W1:0 DW2:67120896; FLokiLocalRadarEntry::TeamIndex  (+0)
+    //   166  WRTV4          rW0:27
+    //   167  PshVPtr        rW0:62
+    //   168  ADDSi          W0:24 d:67120891        ; FLokiFuzzyPlayerLocationItem::Location  (+24)
+    //   170  PSF            rW0:74
+    //   171  ADDSi          W0:8 d:67120896         ; FLokiLocalRadarEntry::Location  (+8)
+    //   173  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //   176  PshC4          d:0
+    //   178  PshVPtr        rW0:62
+    //   179  ADDSi          W0:64 d:67120891        ; FLokiFuzzyPlayerLocationItem::CharacterClasses  (+64)
+    //   181  Thiscall1      q:0x26e6ef905c0         ; const TSubclassOf<ALokiCharacter@>& TArray<TSubclassOf<ALokiCharacter@>>::opIndex(int) const
+    //   184  PshRPtr
+    //   185  PSF            rW0:74
+    //   186  ADDSi          W0:32 d:67120896        ; FLokiLocalRadarEntry::CharacterClass  (+32)
+    //   188  CALLSYS        q:0x26e7715a340         ; TSubclassOf<ALokiCharacter@>& TSubclassOf<ALokiCharacter@>::opAssign(const TSubclassOf<ALokiCharacter@>&)
+    //   191  LoadRObjR      rW0:62 W1:60 DW2:67120891; FLokiFuzzyPlayerLocationItem::AverageLevel  (+60)
+    //   194  RDR4           wW0:75
+    //   195  LoadVObjR      rW0:74 W1:40 DW2:67120896; FLokiLocalRadarEntry::PlayerLevel  (+40)
+    //   198  WRTV4          rW0:75
+    //   199  PSF            rW0:74
+    //   200  PSF            rW0:48
+    //   201  CALLSYS        q:0x26e6ef97240         ; void TArray<FLokiLocalRadarEntry>::Add(const FLokiLocalRadarEntry&)
+    //   204  PSF            rW0:74
+    //   205  CALLSYS        q:0x26e7939db40         ; void FLokiLocalRadarEntry::$beh2()
+    //   208  LoadVObjR      rW0:54 W1:16 DW2:268448648; TArrayIterator::CanProceed  (+16)
+    //   211  RDR1           wW0:28
+    //   212  CpyVtoR1       rW0:28
+    //   213  JLowNZ         ->149
+    //   215  PshVPtr        rW0:0
+    //   216  ADDSi          W0:264 d:134230912      ; ULokiPlayerControllerUAVComponent::LastRadarPlayer  (+264)
+    //   218  RDSPtr
+    //   219  PSF            rW0:44
+    //   220  ADDSi          W0:24 d:67120895        ; FGameEvent_FuzzyPlayerLocation_LocalRadar::PlayerState  (+24)
+    //   222  REFCPY
+    //   223  PopPtr
+    //   224  PSF            rW0:48
+    //   225  PSF            rW0:44
+    //   226  ADDSi          W0:8 d:67120895         ; FGameEvent_FuzzyPlayerLocation_LocalRadar::PlayerLocationItems  (+8)
+    //   228  CALLSYS        q:0x26e7939dec0         ; TArray<FLokiLocalRadarEntry>& TArray<FLokiLocalRadarEntry>::opAssign(const TArray<FLokiLocalRadarEntry>&)
+    //   231  PshNull
+    //   232  TYPEID         d:67120895              ; FGameEvent_FuzzyPlayerLocation_LocalRadar
+    //   234  PSF            rW0:44
+    //   235  PshVPtr        rW0:34
+    //   236  CALLSYS        q:0x26e7968b4c0         ; void UGameEventRouterComponent::BroadcastEvent(const ?&, UObject@)
+    //   239  PSF            rW0:48
+    //   240  CALLSYS        q:0x26e7939e080         ; void TArray<FLokiLocalRadarEntry>::$beh2()
+    //   243  PSF            rW0:44
+    //   244  CALLSYS        q:0x26e7939e5c0         ; void FGameEvent_FuzzyPlayerLocation_LocalRadar::$beh2()
+    //   247  FreeNullV8     wW0:34
+    //   248  PSF            rW0:24
+    //   249  CALLSYS        q:0x26e793991c0         ; void FLokiFuzzyPlayerLocationItem::$beh2()
+    //   252  JMP            ->312
+    //   254  PshNull
+    //   255  SetV1          wW0:28 d:0
+    //   257  PshV4          rW0:28
+    //   258  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   261  PshGPtr        q:0x26e76817c48         ; FRotator::ZeroRotator
+    //   264  PSF            rW0:24
+    //   265  ADDSi          W0:24 d:67120891        ; FLokiFuzzyPlayerLocationItem::Location  (+24)
+    //   267  PshVPtr        rW0:0
+    //   268  ADDSi          W0:208 d:134230912      ; ULokiPlayerControllerUAVComponent::UAVMapActorClass  (+208)
+    //   270  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //   273  STOREOBJ       wW0:78
+    //   274  PSF            rW0:24
+    //   275  PshVPtr        rW0:78
+    //   276  CALLINTF       d:85418                 ; void AUAVMapActor::Init(const FLokiFuzzyPlayerLocationItem&)
+    //   278  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   281  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //   284  CpyRtoV4       wW0:75
+    //   285  fTOd           wW0:84 rW1:75
+    //   287  CpyVtoV8       wW0:82 rW1:84
+    //   289  LoadThisR      W0:232 d:134230912      ; ULokiPlayerControllerUAVComponent::LastEventNotifyTime  (+232)
+    //   291  RDR8           wW0:84
+    //   292  LoadThisR      W0:224 d:134230912      ; ULokiPlayerControllerUAVComponent::UAVActivatedEventNotifyCooldown  (+224)
+    //   294  RDR8           wW0:86
+    //   295  ADDd           wW0:84 rW1:84 rW2:86
+    //   297  CMPd           rW0:82 rW1:84
+    //   299  JNP            ->308
+    //   301  PshVPtr        rW0:0
+    //   302  CALLSYS        q:0x26e7a20ee80         ; void ULokiFuzzyPlayerLocationComponent::BroadcastUAVActivatedEvent(const UObject@)
+    //   305  LoadThisR      W0:232 d:134230912      ; ULokiPlayerControllerUAVComponent::LastEventNotifyTime  (+232)
+    //   307  WRTV8          rW0:82
+    //   308  PSF            rW0:24
+    //   309  CALLSYS        q:0x26e793991c0         ; void FLokiFuzzyPlayerLocationItem::$beh2()
+    //   312  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnVaultDataAdded(const FGameEvent_TeamVaultData_Add&inout Event, const AActor@&inout Context)
+// 40 instr, 292 B bytecode, id=0x59BB01B2, varspace=32
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AUAVVaultContentActor@> v2;
+    auto v3;
+    AUAVVaultContentActor v6;
+    FTransform v32;
+
+    v2 = TSubclassOf<AUAVVaultContentActor@>();
+    v2 = this.UAVVaultContentActorClass;
+    v3 = v2 == null;
+    if (!v3) {
+        v3 = true;
+        v6 = SpawnActor(this.UAVVaultContentActorClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, true, null);
+        v6.VaultDataItem = Event.VaultDataItem;
+        v32 = FTransform(FTransform::Identity);
+        v32.SetLocation(Event.VaultDataItem.Location);
+        FinishSpawningActor(v6, v32);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  CALLSYS        q:0x26e6ef91740         ; void TSubclassOf<AUAVVaultContentActor@>::$beh0()
+    //     4  PshVPtr        rW0:0
+    //     5  ADDSi          W0:216 d:134230912      ; ULokiPlayerControllerUAVComponent::UAVVaultContentActorClass  (+216)
+    //     7  PSF            rW0:2
+    //     8  CALLSYS        q:0x26e6ee37780         ; TSubclassOf<AUAVVaultContentActor@>& TSubclassOf<AUAVVaultContentActor@>::opAssign(const TSubclassOf<AUAVVaultContentActor@>&)
+    //    11  PshNull
+    //    12  PSF            rW0:2
+    //    13  CALLSYS        q:0x26e6ef91c80         ; bool TSubclassOf<AUAVVaultContentActor@>::opEquals(UClass@) const
+    //    16  CpyRtoV4       wW0:3
+    //    17  CpyVtoR1       rW0:3
+    //    18  JLowZ          ->22
+    //    20  JMP            ->72
+    //    22  PshNull
+    //    23  SetV1          wW0:3 d:1
+    //    25  PshV4          rW0:3
+    //    26  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    29  PshGPtr        q:0x26e76817c48         ; FRotator::ZeroRotator
+    //    32  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    35  PshVPtr        rW0:0
+    //    36  ADDSi          W0:216 d:134230912      ; ULokiPlayerControllerUAVComponent::UAVVaultContentActorClass  (+216)
+    //    38  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    41  STOREOBJ       wW0:6
+    //    42  PshVPtr        rW0:-2
+    //    43  ADDSi          W0:8 d:67120960         ; FGameEvent_TeamVaultData_Add::VaultDataItem  (+8)
+    //    45  PshVPtr        rW0:6
+    //    46  ADDSi          W0:912 d:134230921      ; AUAVVaultContentActor::VaultDataItem  (+912)
+    //    48  CALLSYS        q:0x26e793c9c40         ; FLokiTeamVaultDataItem& FLokiTeamVaultDataItem::opAssign(const FLokiTeamVaultDataItem&)
+    //    51  PshGPtr        q:0x26e7681ccc8         ; FTransform::Identity
+    //    54  PSF            rW0:32
+    //    55  CALLSYS        q:0x26e69d0d440         ; void FTransform::$beh0(const FTransform&)
+    //    58  PshVPtr        rW0:-2
+    //    59  ADDSi          W0:8 d:67120960         ; FGameEvent_TeamVaultData_Add::VaultDataItem  (+8)
+    //    61  ADDSi          W0:32 d:67120959        ; FLokiTeamVaultDataItem::Location  (+32)
+    //    63  PSF            rW0:32
+    //    64  CALLSYS        q:0x26e70617780         ; void FTransform::SetLocation(const FVector&)
+    //    67  PSF            rW0:32
+    //    68  PshVPtr        rW0:6
+    //    69  CALLSYS        q:0x26e7b1a2000         ; void FinishSpawningActor(AActor@, const FTransform&)
+    //    72  RET            W0:6
+
+------------------------------------------------------------------------------
+~ULokiPlayerControllerUAVComponent()
+// 4 instr, 28 B bytecode, id=0x42D55AED, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:248 d:134230912      ; ULokiPlayerControllerUAVComponent::LocalRadarPlayers  (+248)
+    //     3  CALLSYS        q:0x26e7a20e940         ; void TArray<FLokiFuzzyPlayerLocationItem>::$beh2()
+    //     6  RET            W0:2
+

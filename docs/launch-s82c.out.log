@@ -1,0 +1,16 @@
+﻿Auto-hook: store/roster (catalog_store_fix) + pick/refresh + pick-commit + customization + missions. Use -NoHook 
+(clean RE), -NoMissions / -NoLoadout to trim.
+Building community backend...
+Starting community backend (:8080 HTTP + :443 HTTPS)...
+Server up; cert chain generated.
+Backend serving HTTP (probe http://127.0.0.1:8080/revival/missions/progress -> 200).
+Appending Root CA to game cacert.pem...
+Hosts entries added:
+  127.0.0.1  accounts.projectloki.theorycraftgames.com
+  127.0.0.1  client-config-jx-prod.prodcluster.awsinfra.theorycraftgames.com
+bVerifyPeer override already present.
+  (Engine.ini set read-only)
+Spawning inject watch-now to catch the game on launch...
+  DLL: G:\git\Supervive Revival Project\tools\sigbypass-mod\catalog_store_fix.dll
+  Secondary shims (pi8 + catalog_pick_fix + loadout_fix + missions_fix) will inject once the store/roster hook settles.
+Launching SUPERVIVE (PostAuth -> http://localhost:8080)...

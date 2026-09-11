@@ -1,0 +1,154 @@
+S189-BOT flight 1 -- PRE-REGISTRATION (written and committed BEFORE the launch; not edited after)
+================================================================================================
+Date: 2026-09-09.  Session mission: extend the S189-MV playability chain to a SpawnAIFromClass bot so
+that a PLAYER (WASD-driven) and a BOT (AI-wander-driven) both WALK on the tutorial floor in the SAME
+world at the same time. Design provenance: workflow wf_9b8a8446-b39 (6 Understand + 1 Design +
+3 adversarial Verify + 1 Adjudicate; 5.76M subagent tokens; the full result is preserved at
+scratchpad/s189-bot/evidence/01-workflow-wf_9b8a8446-b39.json and rendered at 02-final-design.md).
+
+ARTIFACT UNDER TEST (primary): tools/sigbypass-mod/build/tutorial_launch_botplay_floor_tinykick.dll
+  RAW ec5317d71bc7bf90  VSIZE 0cbac5b523c2eb62  rawsize 156672   verify_dll VERDICT PASS (KERNEL32-only)
+  build.ps1 -Name tutorial_launch -Variant botplay-floor-tinykick
+  -DKRUNMODE=RM_BOTSPAWN -DKFSNAME="" -DKBSAI=1 -DKBSPS=1 -DKBSPSARMS=0x5BA0
+     (0x20 ARM D LokiBotController | 0x80 ARM F gate | 0x100 ARM G GAS borrow | 0x200 ARM H poison+sampler
+      | 0x800 ARM J player seed | 0x1000 ARM K2 player GravityScale 0->1 | 0x4000 ARM M fallback kick)
+  -DKSHSENTX=0.0 -DKSHSENTZ=0.0 (bot sentinel is a (0,0,0) no-op) -DKSHPLRY=-1.0 (player seed 1 uu/s -Y)
+  -DKSHPLRGRAV=1.0 -DKBSGASPLAYER=1 -DKBSGASPLAYERMASK=0x2 (player gets +0xF08 ONLY; +0xF00 KWIREGAS ASC untouched)
+  -DKBSGASMOVESPEED=487.0f (0x43F38000, NON-STOCK, R-S189-MV-a) -DKBSLBSKIPCTRL=1 (ONE bot: spawn B only)
+  -DKBSAIFLOOR=1 -DKBSAILOC_X=1356.0 -DKBSAILOC_Y=-409.0 -DKBSAILOC_Z=90.15 (S140 T2 F3 measured rest/walk point)
+  -DKSHSAMPLEN=40 -DKSHSAMPLEMS=1000 -DKSHFALLBACKAT=8 -DKSHFALLBACKMAXV=5.0 -DKSHFALLBACKX=600.0 -DKBSGETTERRCPT=1
+
+  Sibling artifacts (built from the same source, all DISTINCT, no new --dupes group):
+    botplay-floor          RAW a37b5a982e522e61  (same minus ARM J: no player seed)         KBSPSARMS=0x53A0
+    botplay-floor-noai     RAW d476b0ab1c0c29af  (ARM F compiled out: AI-attribution control) KBSPSARMS=0x5320
+    botplay-floor-5th      RAW 1dec9197251762fc  (bot-only, for PLAN B as a 5th map after -mv-play) 0x43A0
+    botwalk                RAW 2440b831eaf531af  (S140 shape: air spawn, 3 spawns, 600 kick, 487 seed) 0x3A0
+
+P0 -- REGRESSION GATES (measured BEFORE the flight): all nine re-baselined gates rebuilt BYTE-IDENTICAL
+  after the edit (scratchpad/s189-bot/evidence/00-before-state-digests.txt): botai b620e0ff3279e673,
+  gasattr 29f0fa4efffd01da, gasattr_ctrl 4c0ede610baa4629, play 31af7667355f39d1, armk 3ff3ba9f77ae1438,
+  axisab 01593c0f8f73f1ae, sentinel_big 8347a0df17354239, -seedmax b47d1bfd04e44921, -mv-play
+  87c764b6d235b7a3. (The design predicted armk/axisab/sentinel_big would MOVE; they did NOT, because every
+  new line is a preprocessor #if on a knob whose default reproduces the old bytes.) Literal control:
+  'FLOOR OVERRIDE' / 'MASKED OUT' / 'FALLBACK KICK' / '[RCPT]' / 'KBSLBSKIPCTRL=1' each present in the new
+  arm and ABSENT from gasattr and botai. --dupes: only the two pre-existing hazard groups.
+  NOTE: the CLAUDE.md-recorded values (botai 5e47c13cf7f0a158, gasattr 2fcc2536e21f18e3, gasattr-ctrl
+  4465ebc4d7168c03, play 9bc10a4552c596e1) do NOT reproduce from HEAD 4e2f609 and were stale before this
+  session touched anything; the values above are today's HEAD before-state.
+
+DEVIATION FROM THE ADJUDICATED DESIGN (recorded, deliberate): the adjudicator flew 'botplay-floor' (no
+player Velocity write) as primary and parked the 1 uu/s player seed as PLAN C. The flight-hazard verifier
+measured from the ship-f1 CSV that the player's post-GravityScale hover lasted ~115 s (fall onset
+13:42:20.8 vs POKEGRAVITY ~13:40:25), that the armed window is only ~150 s, and that the fall preceded the
+focus grab by 26 s (so 'the foreground transition breaks the hover' is REFUTED, trigger [S]). A horizontal
+velocity breaks the rest fixed point immediately (S141 T3 armk/axisab [M] at 600 uu/s). I therefore fly the
+seed variant as PRIMARY: 1 uu/s is 487x below the cap and cannot masquerade as walking. Control C1 is
+restated as 'no player Velocity write >= 2 uu/s'.
+
+THE CHAIN (what the shim does, in order, on ONE game-thread hit, then on the worker thread):
+  A0 census -> BsResolveAI (FLOOR OVERRIDE -> spawnLoc (1356,-409,90.15)) -> A1 stability census ->
+  ARM D: CDO(Default__Pawn).AIControllerClass poke -> ONE SpawnAIFromClass -> LokiBotController -> restore
+  -> ARM B/C (PlayerState) -> ARM F (LivingState=1 + UpdateCharacterControllable: gate opens) ->
+  ARM G (CDO subobject borrow into bot +0xF00/+0xF08/+0xF10 + six attrs, MoveSpeed=487) -> K1 mask 0x2
+  (player +0xF08 -> the same CDO set) -> [RCPT] getter receipts on both pawns -> ARM H (poison +0x16B0,
+  bot Velocity=(0,0,0) no-op) -> ARM J (player Velocity=(0,-1,0)) -> K2 (player GravityScale 0->1) ->
+  A2 census -> g_done. Worker: FsDisarm (~3.7 s) -> 40 samples at 1 s (compact line per pawn per sample,
+  ShDump every 5th, liveness re-validation freezing the peak) -> at sample 8 the fallback decision ->
+  PEAK line -> ARM H verdict (cosmetic here) -> [BS] done.
+
+PRE-REGISTERED PREDICTIONS (each with what a falsification means):
+  P1-SPAWN   [BS] FLOOR OVERRIDE ... -> (1356.0,-409.0,90.15); [BS] ARGS spawnLoc=(1356.0, -409.0, 90.2)
+             (the ARGS line prints %.1f); [PS] KBSLBSKIPCTRL=1 line; NO 'SPAWN A'/'SPAWN C' sections;
+             [BS] done dCtl=1 dHero=1 (exactly one new pawn + one LokiBotController).
+             IF FALSE: dHero=3 -> KBSLBSKIPCTRL not compiled; spawnLoc (600,0,13240) -> KBSAIFLOOR not
+             compiled; dHero=0 -> a [BS] REFUSE(...) names it, or the (1356,-409) cell is not streamed.
+  P2-WALKING-AT-SPAWN  [I ~0.8]  [SNP] BOT-before MovementMode@0x231=1 (MOVE_Walking), TSF=0.0000,
+             loc Z ~ 90.150. The FALLING branch (mode=3, Z~90 held, Vz=0) is a FIRST-CLASS pre-registered
+             outcome: SetDefaultMovementMode's FindFloor did not set a base at possess time; the bot then
+             hovers until the velocity-gated fallback fires at sample 8 and the flight continues as the
+             already-[M] S140 shape (kick+AI); 'pure AI from rest' is then UNANSWERED, not refuted.
+  P3-AI-FROM-REST  [I ~0.5]  With NO kick, the bot's max |Vxy| over samples 0..7 >= 5 uu/s ->
+             '[SNP] FALLBACK NOT NEEDED at sample 8'; |Axy| ~ 50000 with the heading rotating between
+             samples (>=3 distinct headings over the 40 s); MovementMode stays 1.
+             IF FALSE: Acc~50000 rotating but |Vxy| stays 0 -> a NEW Walking-mode zeroing site (read the
+             [RCPT] MaxSpeed bits and AIM); Acc==0 -> gate/attr problem (ARM F GATE line, BOT_AFTER_G
+             MaxSpeed bits, f08 non-null). Either way the fallback fires at sample 8 and the bot walks
+             S140-style; only 'pure AI from rest' is unproven.
+  P4-BOT-CAP-IN-BAND  BOT |Vxy| lands in the band |vxy-487| <= 0.02 ('atCap=BAND') on >=2 non-adjacent
+             samples with DIFFERENT headings, and NEVER exceeds 487.05. The bit-exact WIRE proof is
+             [RCPT] GETTER_BOT_AFTER_G MaxSpeed=43F38000 (487.0f), NOT the 2-D magnitude (a diagonal cap
+             is hypot = 487 +- ULPs and is never bit-equal). MaxAccel=47435000 (50000) is NON-discriminating
+             (== engine Super) and is not cited as wire evidence.
+             IF FALSE: peak == 500 -> the value did NOT flow from the knob (R-S189-MV-a trap); peak < 487
+             and never in band -> wall-pinned wander (S141 s2 shape ~93) or a different clamp; peak >
+             487.05 -> not reading the CDO set (f08 mismatch) or a kick fired (fallbackFired=1).
+  P5-PLAYER-WIRING  [GASX] PLR AbilitySystemComponentStorage MASKED OUT; PLR AttributeSetStorage @0xF08
+             0 -> <cdoSet> OK; PLR AttributeSetHealthStorage MASKED OUT; 'ARM K1 done: PLAYER storages
+             written 1/3'; [RCPT] GETTER_PLR_AFTER_K1 f00 == the KWIREGAS carrier ASC (unchanged), f08 ==
+             the SAME cdoSet pointer as GETTER_BOT_AFTER_G, MaxSpeed=43F38000.
+             IF FALSE: written 3/3 -> the mask did not compile (grade the player half harder, prefer PLAN
+             B); MaxSpeed=00000000 with f08 set -> the getter early-out is not the f08 test alone.
+  P6-PLAYER-SEED-AND-FALL  [S->I]  '[SNP] ARM J: PLAYER Velocity = (0, -1, 0) -> readback OK' and
+             '[SNP] ARM K2: PLAYER GravityScale@0x1A0 0.0000 -> 1.0000 readback OK'. Because the seed puts
+             |Vxy|=1 >> the 0.0316 2-D gate, the player FALLS from the first released frames: Vz < -100
+             by sample 1, Z falling from 13240, landing on the ledge Z~386 (ship-f1/F3) within ~4 s, or on
+             the floor. Horizontal drift from the seed is <~10 uu total.
+             IF FALSE (Z stays 13240 for >20 s with the seed readback OK): the rest-fixed-point reading of
+             the hover is REFUTED for the player (the seed is above the gate); the trigger is elsewhere;
+             the player half is lost for this flight; PLAN B next launch.
+  P7-PLAYER-WALKS-UNDER-WASD  [S]  UNFLOWN wiring (+0xF08-only K1 to the CDO set under input). During a
+             logged W-hold: player |AccY| >= 40000 (input reaches ScaleInputAcceleration), then Mode=1 and
+             |Vxy| in the 487 band (CSV to 3 decimals), Z ~ 90.15, displacement > 1000 uu across holds.
+             IF FALSE with focusOk=True AND repeats>=60 AND Accel==0 through a full W-hold: the
+             K1-BROKE-INPUT signature -> roll to PLAN B (mv-play 4th + botplay-floor-5th 5th) next launch.
+             focusOk=False -> uninterpretable, resend. Player Accel non-zero OUTSIDE key windows ->
+             cross-contamination via the shared CDO set -> the player half is void.
+  P8-BOTH-WALKING  WEAKEST (scheduling-bound): >=1 pair of rows (player CSV, bot CSV) within 0.2 s of each
+             other where both have Mode=1 and |Vxy| > 300; corroborated by a movementmode_readout snapshot
+             listing both pawns Walking. IF FALSE with both halves walking at different times ->
+             scheduling failure (record both intervals + the bot's island-exit sample), re-fly.
+  P9-HEALTH  No 0x0000DEAD before probe+120 s; the ~16 s game-thread freeze at the ladder does not kill;
+             canaries 0 Fatal / 0 'handing control over to crashpad'; A1 census == A0 (else SITTING VOID).
+
+CONTROLS
+  C1  No player Velocity write >= 2 uu/s (the -1 uu/s seed is the ONLY write; it cannot masquerade as walking).
+      Player Accel OUTSIDE logged W-windows must be (0,0,0) -- the cross-contamination detector.
+  C2  The bot kick is WITHHELD until sample 8 and fires ONLY if max |Vxy| over samples 0..7 < 5 uu/s; the
+      sampler prints which branch it took. Rest->cap takes ~2 frames at |A|=50000, so 8 s below 5 uu/s is
+      conclusively stationary.
+  C3  Rest baseline: the game-thread BEFORE ShDump block prints V, Accel, MovementMode, GravityScale, AIM,
+      TSF for BOTH pawns before the thread is released (same frame).
+  C4  Identity controls on both CMCs (CONTROL1 CharacterOwner==pawn, CONTROL2 TickFn.Target==cmc) + the
+      ULokiCMC vtable check in the getter receipt + per-sample re-validation that FREEZES the peak.
+  C5  Non-stock seed 487 (0x43F38000). MaxAcceleration 50000 == engine Super is deliberately NOT a discriminator.
+  C6  [RCPT] receipts on both pawns BEFORE any motion separate 'wiring failed' from 'mover wall'.
+  C7  Player +0xF00 untouched (MASKED OUT lines; PLR receipt f00 == the pre-existing KWIREGAS ASC).
+  C8  Per-pawn SPEED discrimination is UNAVAILABLE (shared CDO set -> both cap at 487). Attribution is
+      KINEMATIC: bot = rotating |Accel|~50000 through >=3 headings + 'FALLBACK NOT NEEDED'; player =
+      (0,-50000,0)-shaped Accel only inside logged W-windows.
+  C9  botplay-floor-noai (ARM F out) is the AI-attribution control, to be flown only if P3 is ambiguous.
+  C10 BOT-before MovementMode + Z + TSF measures SetDefaultMovementMode's FindFloor outcome directly.
+  C11 A0==A1 census with no call (SITTING VOID otherwise); the SpawnAIFromClass call is single (dHero=+1).
+
+ATTRIBUTION RULES (written before flying)
+  bot motion = AI  iff 'FALLBACK NOT NEEDED' printed AND Accel heading rotates at |Axy|~50000 over >=3 samples;
+  if 'FALLBACK KICK fired' -> downgrade to the S140 shape (kick + AI steering, [M] separately);
+  player motion = WASD iff every non-zero PLR Accel sample lies inside a logged key window with the
+  (0,-50000,0) sign for W; speed = seed iff the [RCPT] MaxSpeed bits are 43F38000 and the cap sits in the
+  487 band (not 500).
+
+VOID CRITERIA (say which): stager exit before the probe (FK-31 / gate timeout); [BS] REFUSE(...) /
+  'NO CALL: resolve failed'; '*** SITTING VOID: the census MOVED'; ARM G REFUSED / storages < 3/3 /
+  attrs < 6/6; 'REFUSED: an identity control FAILED'; 'ARM K2 SKIPPED' (GravityScale not 0 -- sp LIFT
+  premise failed); '[FS] *** NO GAME-THREAD HITS'; FOCUS_FAILED in the sync file (player half uninterpretable);
+  a watcher's '# process died' before the criterion window; the bot CSV never starting.
+
+RUNBOOK (T0 = launch; timings from ship-f1): backups of docs/capture.log + docs/crashwatch.out.log first;
+  launch-redirect.ps1 -NoHook (crashwatch armed automatically); marker shadow loop from T0+20 s
+  (scratchpad/s189-bot/tools/marker-shadow.ps1); motion_watch_bot.py PID BASE 400 started BEFORE the probe
+  (it waits for the LokiBotController); fk24-stage.ps1 -Probe build\tutorial_launch_botplay_floor_tinykick.dll
+  -Label s189bot-f1; at [SP] done parse spawnedPawn + [LIFT] CMC -> motion_watch_player.py 300 s; at
+  '[FS] disarm' send WASD in-process (pre-warmed type): w,w,w,d hold 3000 gap 5000 rep 33 with a sync file;
+  at [BS] done copy the live marker; dumpimage EARLY (probe+60 s) + movementmode_readout snapshot; at
+  death/end copy crashwatch, stage files, Loki.log; write docs/s189-bot-botplay-floor-f1-RESULT.md from
+  the evidence, not from memory.

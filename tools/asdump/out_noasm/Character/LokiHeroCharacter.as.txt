@@ -1,0 +1,193 @@
+// ============================================================================
+//  MODULE   Character.LokiHeroCharacter
+//  SOURCE   Character/LokiHeroCharacter.as
+//  CONTENT  2 class(es), 20 function(s), 0 enum(s), 1 global(s), 920 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+event FBiomeTouchUnlockedDelegate;
+
+const TSubclassOf<UObject@> __StaticType_ALokiHeroCharacter_AS;
+
+ALokiHeroCharacter_AS@ ALokiHeroCharacter_AS()   // traits=0x20
+{
+    ALokiHeroCharacter_AS v4;
+
+    v4 = ALokiHeroCharacter_AS();
+    return v4;
+}
+
+UClass@ ALokiHeroCharacter_AS::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiHeroCharacter_AS);
+    return v2;
+}
+
+ALokiHeroCharacter_AS@ ALokiHeroCharacter_AS::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiHeroCharacter_AS v8;
+
+    v2 = __StaticType_ALokiHeroCharacter_AS.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiHeroCharacter_AS@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable)
+class ALokiHeroCharacter_AS : ALokiHeroCharacter
+// unreal base : /Script/Loki.LokiHeroCharacter
+// C++ header  : ../../../Loki/Source/Loki/Character/Hero/LokiHeroCharacter.h
+// static class global: __StaticType_ALokiHeroCharacter_AS
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FBiomeTouchUnlockedDelegate OnBiomeTouchUnlocked;
+
+    ALokiHeroCharacter_AS()   // traits=0x21
+    {
+        this.OnBiomeTouchUnlocked.FBiomeTouchUnlockedDelegate();
+        return;
+    }
+
+    void ClientBiomeSoulAcquired(AActor@ AcquiredBy)   // traits=0x20
+    {
+        __Evt_PushArgument__AActor(AcquiredBy);
+        __Evt_Execute(this, n"ClientBiomeSoulAcquired");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientBiomeSoulAcquired, BlueprintCallable, BlueprintEvent, NetClient, Unreliable)
+    void ClientBiomeSoulAcquired_Implementation(AActor@ AcquiredBy)   // traits=0x20
+    {
+        this.BP_OnClientBiomeSoulAcquired(AcquiredBy);
+        return;
+    }
+
+    protected void BP_OnClientBiomeSoulAcquired(AActor@ AcquiredBy)   // traits=0x30
+    {
+        __Evt_PushArgument__AActor(AcquiredBy);
+        __Evt_Execute(this, n"BP_OnClientBiomeSoulAcquired");
+        return;
+    }
+
+    UFUNCTION(UnrealName=BP_OnClientBiomeSoulAcquired, BlueprintEvent, CanOverrideEvent, NoOp, meta.BlueprintProtected, meta.DisplayName=BP OnClientBiomeSoulAcquired)
+    protected void BP_OnClientBiomeSoulAcquired_Implementation(AActor@ AcquiredBy)   // traits=0x30
+    {
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = true;
+        this.SetbReplicates(v1);
+        return;
+    }
+
+    void ~ALokiHeroCharacter_AS()   // traits=0x22
+    {
+        this.OnBiomeTouchUnlocked.~FBiomeTouchUnlockedDelegate();
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FBiomeTouchUnlockedDelegate
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FBiomeTouchUnlockedDelegate()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FBiomeTouchUnlockedDelegate(const FBiomeTouchUnlockedDelegate& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FBiomeTouchUnlockedDelegate& opAssign(const FBiomeTouchUnlockedDelegate& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast(ALokiBaseItem@ Item, const FText& UnlockName) const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_PushArgument__ALokiBaseItem(Item);
+            __Evt_PushArgument__FText(UnlockName);
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FBiomeTouchUnlockedDelegate));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FBiomeTouchUnlockedDelegate()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

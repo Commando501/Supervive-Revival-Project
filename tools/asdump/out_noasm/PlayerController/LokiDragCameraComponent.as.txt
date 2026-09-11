@@ -1,0 +1,381 @@
+// ============================================================================
+//  MODULE   PlayerController.LokiDragCameraComponent
+//  SOURCE   PlayerController/LokiDragCameraComponent.as
+//  CONTENT  1 class(es), 13 function(s), 0 enum(s), 1 global(s), 3112 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiDragCameraComponent;
+
+ULokiDragCameraComponent@ ULokiDragCameraComponent()   // traits=0x20
+{
+    ULokiDragCameraComponent v2;
+
+    v2 = ULokiDragCameraComponent();
+    return v2;
+}
+
+UClass@ ULokiDragCameraComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiDragCameraComponent);
+    return v2;
+}
+
+ULokiDragCameraComponent@ ULokiDragCameraComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiDragCameraComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiDragCameraComponent, v2, typeid(ULokiDragCameraComponent@), WithName);
+    return v2;
+}
+
+ULokiDragCameraComponent@ ULokiDragCameraComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiDragCameraComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiDragCameraComponent, v2, typeid(ULokiDragCameraComponent@), WithName);
+    return v2;
+}
+
+ULokiDragCameraComponent@ ULokiDragCameraComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiDragCameraComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiDragCameraComponent, v2, typeid(ULokiDragCameraComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiDragCameraComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiDragCameraComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 MinimumDragDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 CameraPickupRadius;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bPanning;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bResetting;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    float64 TimePressed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    FVector CursorScreenLocationWhenPressed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    FVector OffsetThisPress;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    FVector CumulativeOffset;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    FVector LastPawnLocation;
+
+    ULokiDragCameraComponent()   // traits=0x21
+    {
+        this.CursorScreenLocationWhenPressed = FVector();
+        this.OffsetThisPress = FVector();
+        this.CumulativeOffset = FVector();
+        this.LastPawnLocation = FVector();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void NotifyInputPressed()   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        float64 v4;
+        FVector v10;
+
+        v1 = true;
+        this.bPanning = v1;
+        v1 = false;
+        this.bResetting = v1;
+        v2 = Gameplay::GetServerTime(__WorldContext);
+        v4 = float64(v2);
+        this.TimePressed = v4;
+        v10 = this.GetCursorScreenLocation();
+        this.CursorScreenLocationWhenPressed = v10;
+        this.OffsetThisPress = FVector::ZeroVector;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void NotifyInputReleased()   // traits=0x20
+    {
+        auto v1;
+        auto v4;
+        auto v5;
+        float64 v8;
+        auto v10;
+        auto v12;
+        ULokiGameUserSettings v16;
+        FVector v24;
+        auto v25;
+        auto v26;
+        APawn v30;
+
+        v1 = false;
+        this.bPanning = v1;
+        v5 = Gameplay::GetServerTime(__WorldContext);
+        v8 = float64(v5);
+        v4 = v8;
+        v8 = this.TimePressed;
+        v8 = v4 - v8;
+        v12 = Math::Abs(v8);
+        v16 = ULokiGameUserSettings::GetLokiGameUserSettings();
+        v24 = this.GetCursorScreenLocation();
+        v8 = this.CursorScreenLocationWhenPressed.Dist2D(v24);
+        v10 = this.MinimumDragDuration;
+        v1 = v12 < v10;
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v10 = 200.0;
+            v26 = v8 < v10;
+            v1 = v26;
+        }
+        if (v16.IsDragToPanCameraResetOnRelease()) {
+            v25 = true;
+        } else {
+            v25 = v1;
+        }
+        this.bResetting = v25;
+        this.CumulativeOffset += this.OffsetThisPress;
+        this.OffsetThisPress = FVector::ZeroVector;
+        v25 = this.bResetting;
+        v25 = !v25;
+        if (v25) {
+            v30 = this.GetLocalPawn();
+            if (v30 != nullptr) {
+                v24 = v30.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                this.LastPawnLocation = v24;
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        ALokiPlayerController v4;
+        auto v5;
+        APawn v10;
+        UClass v12;
+        TSubclassOf<UActorComponent@> v14;
+        UActorComponent v16;
+        ULokiCharacterSpringArmComponent v18;
+        ULokiCharacterSpringArmComponent v20;
+        FVector v26;
+        FVector v32;
+        auto v33;
+        ULokiGameUserSettings v38;
+        auto v39;
+        float64 v42;
+        auto v43;
+        float64 v46;
+        FVector v52;
+        float64 v54;
+        auto v56;
+        FVector v62;
+        FVector v68;
+        FVector v74;
+
+        v4 = this.GetPlayerController();
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v10 = this.GetLocalPawn();
+            if (v10 == nullptr) {
+                return;
+            } else {
+                v12 = ULokiCharacterSpringArmComponent::StaticClass();
+                v14 = TSubclassOf<UActorComponent@>(v12);
+                v16 = v10.GetComponentByClass(v14);
+                if (v16 != nullptr) {
+                    v18 = cast<ULokiCharacterSpringArmComponent@>(v16);
+                } else {
+                    v18 = nullptr;
+                }
+                v20 = v18;
+                if (v20 == nullptr) {
+                    return;
+                } else {
+                    v32 = this.GetCursorScreenLocation();
+                    v33 = this.bPanning;
+                    if (!v33) {
+                        v33 = 0;
+                    } else {
+                        v5 = v32 == FVector::ZeroVector;
+                        v33 = v5;
+                    }
+                    if (v33) {
+                        this.NotifyInputReleased();
+                    }
+                    v5 = true;
+                    v20.bDynamicCameraPanEnabled = v5;
+                    v33 = this.bPanning;
+                    if (v33) {
+                        v38 = ULokiGameUserSettings::GetLokiGameUserSettings();
+                        v5 = v38.IsDragToPanCameraInverted();
+                        v43 = v38.GetDragToPanCameraSpeed();
+                        v46 = float64(v43);
+                        v42 = v46;
+                        v68 = FVector();
+                        if (v5) {
+                            v46 = v42;
+                            v46 = -v46;
+                            v54 = v42;
+                            v54 = -v54;
+                            v26 = FVector(v54, v46, 0);
+                            v68 = v26;
+                        } else {
+                            v62 = FVector(v42, v42, 0);
+                            v68 = v62;
+                        }
+                        v26 = v32 - this.CursorScreenLocationWhenPressed;
+                        v52 = v26 * v68;
+                        this.OffsetThisPress = v52;
+                    } else {
+                        v33 = this.bResetting;
+                        if (v33) {
+                            v62 = FVector(0.8, 0.8, 0);
+                            this.CumulativeOffset *= v62;
+                            v56 = this.CumulativeOffset.Size2D();
+                            v54 = 100.0;
+                            if (v56 < v54) {
+                                this.CumulativeOffset = FVector::ZeroVector;
+                                v33 = false;
+                                this.bResetting = v33;
+                            }
+                        } else {
+                            v33 = this.CumulativeOffset.IsNearlyZero(9.999999747378752e-05);
+                            v33 = !v33;
+                            if (v33) {
+                                v39 = false;
+                                v20.bDynamicCameraPanEnabled = v39;
+                                v26 = v10.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                                v52 = v26 - this.LastPawnLocation;
+                                v68 = FVector(1.0, 1.0, 0);
+                                v62 = v52 * v68;
+                                this.LastPawnLocation = v26;
+                                this.CumulativeOffset -= v62;
+                                v46 = this.CameraPickupRadius;
+                                v56 = 0;
+                                if (v46 <= v56) {
+                                    v39 = 0;
+                                } else {
+                                    v56 = this.CumulativeOffset.Size2D();
+                                    v46 = this.CameraPickupRadius;
+                                    v33 = v56 < v46;
+                                    v39 = v33;
+                                }
+                                if (v39) {
+                                    v33 = true;
+                                    this.bResetting = v33;
+                                }
+                            }
+                        }
+                    }
+                    v52 = FVector(this.CumulativeOffset);
+                    v74 = v52 + this.OffsetThisPress;
+                    v20.CameraManualPanOffset = v74;
+                }
+            }
+        }
+        return;
+    }
+
+    private FVector GetCursorScreenLocation()   // traits=0x28
+    {
+        ALokiPlayerController v4;
+        float32 v6;
+        float32 v8;
+        FVector v14;
+        float64 v18;
+        float64 v20;
+
+        v4 = this.GetPlayerController();
+        if (v4 == nullptr) {
+            __ret = FVector(FVector::ZeroVector);
+            return;
+        } else {
+            v6 = 0;
+            v8 = 0;
+            if (v4.GetMousePosition(v6, v8)) {
+                v18 = float64(v8);
+                v20 = float64(v6);
+                v14 = FVector(v20, v18, 0);
+                __ret = FVector(v14);
+                return;
+            } else {
+                __ret = FVector(FVector::ZeroVector);
+            }
+        }
+        return;
+    }
+
+    private ALokiPlayerController@ GetPlayerController()   // traits=0x28
+    {
+        AActor v2;
+        ALokiPlayerController v4;
+
+        v2 = this.GetOwner();
+        if (v2 != nullptr) {
+            v4 = cast<ALokiPlayerController@>(v2);
+            return v4;
+        } else {
+            v4 = nullptr;
+        }
+        return v4;
+    }
+
+    private APawn@ GetLocalPawn()   // traits=0x28
+    {
+        ALokiPlayerController v4;
+        APawn v8;
+
+        v4 = this.GetPlayerController();
+        if (v4 == nullptr) {
+            return v8;
+        } else {
+            v8 = v4.GetPawnOrSpectator();
+        }
+        return v8;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v4;
+
+        v1 = true;
+        this.SetbExcludeFromServer(v1);
+        v1 = false;
+        this.PrimaryComponentTick.SetbAllowTickOnDedicatedServer(v1);
+        v1 = true;
+        this.SetComponentTickEnabled(v1);
+        v1 = false;
+        this.bPanning = v1;
+        v1 = false;
+        this.bResetting = v1;
+        this.CumulativeOffset = FVector::ZeroVector;
+        v4 = 0;
+        this.TimePressed = v4;
+        v4 = 0.15;
+        this.MinimumDragDuration = v4;
+        v4 = -1.0;
+        this.CameraPickupRadius = v4;
+        return;
+    }
+
+}
+

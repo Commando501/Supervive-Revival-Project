@@ -1,0 +1,688 @@
+// ============================================================================
+//  MODULE   FFA.FFAGameMode
+//  SOURCE   FFA/FFAGameMode.as
+//  CONTENT  1 class(es), 17 function(s), 0 enum(s), 1 global(s), 2252 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_AFFAGameMode;
+
+AFFAGameMode@ AFFAGameMode()   // traits=0x20
+{
+    AFFAGameMode v2;
+
+    v2 = AFFAGameMode();
+    return v2;
+}
+/* ---- AFFAGameMode: 7 dwords / 4 instructions (cache offset 0x730a6) ----
+    0000  PSF           v2
+    0004  ALLOC         84855 AFFAGameMode                            ; new AFFAGameMode  ctor=void AFFAGameMode::AFFAGameMode()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ AFFAGameMode::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_AFFAGameMode);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x7315f) ----
+    0000  PshGPtr       __StaticType_AFFAGameMode
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+AFFAGameMode@ AFFAGameMode::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    AFFAGameMode v8;
+
+    v2 = __StaticType_AFFAGameMode.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<AFFAGameMode@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x73380) ----
+    0000  PshVPtr       Level
+    0004  PshV4         bDeferredSpawn
+    0008  PshVPtr       Name
+    000C  PshVPtr       Rotation
+    0010  PshVPtr       Location
+    0014  PshGPtr       __StaticType_AFFAGameMode
+    0020  CHKREF
+    0024  CALLSYS       TSubclassOf::Get                              ; UClass@ TSubclassOf<UObject@>::Get() const
+    0030  STOREOBJ      v2
+    0034  PshVPtr       v2
+    0038  PSF           v4
+    003C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    0048  PSF           v4
+    004C  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    0058  STOREOBJ      v6
+    005C  CmpPtrNull    v6
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972685                                    ; AFFAGameMode@
+    0070  PSF           v8
+    0074  PshVPtr       v6
+    0078  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8
+  L0090:
+    0090  LOADOBJ       v8
+    0094  RET           9
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class AFFAGameMode : ALokiDropInGameMode
+// unreal base : /Script/Loki.LokiDropInGameMode
+// C++ header  : ../../../Loki/Source/Loki/GameModes/LokiDropInGameMode.h
+// static class global: __StaticType_AFFAGameMode
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    int LevelToGrant;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSubclassOf<ALokiBaseItem@> BandageItem;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSubclassOf<ALokiBaseItem@> ArmorItem;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    TSet<ALokiPlayerState@> InitializedPlayerStates;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSet<ALokiPlayerController@> ConnectedPlayerControllers;
+
+    AFFAGameMode()   // traits=0x21
+    {
+        this.BandageItem = TSubclassOf<ALokiBaseItem@>();
+        this.ArmorItem = TSubclassOf<ALokiBaseItem@>();
+        this.InitializedPlayerStates = TSet<ALokiPlayerState@>();
+        this.ConnectedPlayerControllers = TSet<ALokiPlayerController@>();
+        return;
+    }
+    /* ---- AFFAGameMode: 29 dwords / 15 instructions (cache offset 0x74e7c) ----
+        0000  PshVPtr       this
+        0004  ADDSi         1784 134230861                                ; .BandageItem
+        000C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ALokiBaseItem@>::$beh0()
+        0018  PshVPtr       this
+        001C  ADDSi         1792 134230861                                ; .ArmorItem
+        0024  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ALokiBaseItem@>::$beh0()
+        0030  PshVPtr       this
+        0034  ADDSi         1800 134230861                                ; .InitializedPlayerStates
+        003C  CALLSYS       TSet::$beh0                                   ; void TSet<ALokiPlayerState@>::$beh0()
+        0048  PshVPtr       this
+        004C  ADDSi         1880 134230861                                ; .ConnectedPlayerControllers
+        0054  CALLSYS       TSet::$beh0                                   ; void TSet<ALokiPlayerController@>::$beh0()
+        0060  PshVPtr       this
+        0064  FinConstruct  AFFAGameMode
+        0070  RET           2
+    */
+
+    UFUNCTION(UnrealName=ShouldTeamBeEliminated, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    bool ShouldTeamBeEliminated_Implementation(const int TeamIndex)   // traits=0x20
+    {
+        auto v1;
+
+        v1 = false;
+        return v1;
+    }
+    /* ---- ShouldTeamBeEliminated_Implementation: 4 dwords / 3 instructions (cache offset 0x7381f) ----
+        0000  SetV1         v1 0
+        0008  CpyVtoR4      v1
+        000C  RET           3
+    */
+
+    UFUNCTION(UnrealName=OnPlayerSpawned_BP, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnPlayerSpawned_BP_Implementation(ALokiCharacter@ Character, ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        int v2;
+
+        this.OnCharacterRespawned(Character);
+        if (this.InitializedPlayerStates.Contains(PlayerState)) {
+            return;
+        } else {
+            v2 = this.LevelToGrant;
+            Character.AuthGrantLevel(v2);
+            this.InitializedPlayerStates.Add(PlayerState);
+            this.InitPlayer(PlayerState);
+        }
+        return;
+    }
+    /* ---- OnPlayerSpawned_BP_Implementation: 35 dwords / 22 instructions (cache offset 0x739aa) ----
+        0000  PshVPtr       Character
+        0004  PshVPtr       this
+        0008  CALLINTF      84850                                         ; void AFFAGameMode::OnCharacterRespawned(ALokiCharacter@)
+        0010  PSF           PlayerState
+        0014  PshVPtr       this
+        0018  ADDSi         1800 134230861                                ; .InitializedPlayerStates
+        0020  CALLSYS       TSet::Contains                                ; bool TSet<ALokiPlayerState@>::Contains(const ALokiPlayerState@ const&) const
+        002C  JLowZ         2                                             -> L003C
+        0034  JMP           19                                            -> L0088
+      L003C:
+        003C  LoadThisR     1776 134230861                                ; this.LevelToGrant
+        0044  RDR4          v2
+        0048  PshV4         v2
+        004C  PshVPtr       Character
+        0050  CALLSYS       ALokiCharacter::AuthGrantLevel                ; void ALokiCharacter::AuthGrantLevel(int)
+        005C  PSF           PlayerState
+        0060  PshVPtr       this
+        0064  ADDSi         1800 134230861                                ; .InitializedPlayerStates
+        006C  CALLSYS       TSet::Add                                     ; void TSet<ALokiPlayerState@>::Add(const ALokiPlayerState@ const&)
+        0078  PshVPtr       PlayerState
+        007C  PshVPtr       this
+        0080  CALLINTF      84846                                         ; void AFFAGameMode::InitPlayer(ALokiPlayerState@)
+      L0088:
+        0088  RET           6
+    */
+
+    void InitPlayer(ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiPlayerState(PlayerState);
+        __Evt_Execute(this, n"InitPlayer");
+        return;
+    }
+    /* ---- InitPlayer: 15 dwords / 8 instructions (cache offset 0x73b74) ----
+        0000  PSF           PlayerState
+        0004  CALLSYS       __Evt_PushArgument__ALokiPlayerState          ; void __Evt_PushArgument__ALokiPlayerState(const ALokiPlayerState@&)
+        0010  PshC4         172
+        0018  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0024  PshRPtr
+        0028  PshVPtr       this
+        002C  CALLSYS       __Evt_Execute                                 ; void __Evt_Execute(const UObject@, const FName&)
+        0038  RET           4
+    */
+
+    UFUNCTION(UnrealName=InitPlayer, BlueprintEvent, CanOverrideEvent, NoOp)
+    void InitPlayer_Implementation(ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        return;
+    }
+    /* ---- InitPlayer_Implementation: 1 dwords / 1 instructions (cache offset 0x73c7e) ----
+        0000  RET           4
+    */
+
+    UFUNCTION(UnrealName=OnPostLogin, BlueprintOverride, BlueprintEvent, CanOverrideEvent, NoOp)
+    void OnPostLogin_Implementation(APlayerController@ NewPlayer)   // traits=0x20
+    {
+        return;
+    }
+    /* ---- OnPostLogin_Implementation: 1 dwords / 1 instructions (cache offset 0x73dae) ----
+        0000  RET           4
+    */
+
+    UFUNCTION(UnrealName=OnLogout, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnLogout_Implementation(AController@ ExistingController)   // traits=0x20
+    {
+        ALokiGameState v4;
+        auto v5;
+        TArray<ALokiPlayerState@> v10;
+        TArrayConstIterator<ALokiPlayerState@> v16;
+        auto v23;
+        ALokiPlayerState v26;
+        auto v27;
+        uint8 v28;
+        APlayerState v30;
+        ALokiPlayerState v32;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        v5 = 0;
+        v10 = v4.GetLokiPlayerStates();
+        v16 = v10.Iterator();
+        while (true) {
+            v23 = v16.CanProceed;
+            if (!v23) break;
+            v26 = v16.Proceed();
+            v16.Proceed();
+            v23 = v26.IsABot();
+            v23 = !v23;
+            if (!v23) {
+                v23 = 0;
+            } else {
+                v27 = this.DisconnectedPlayerStates.Contains(v26.PlatformPlayerID);
+                v27 = !v27;
+                v23 = v27;
+            }
+            if (v23) {
+                v5++;
+            }
+        }
+        if (v5 == 0) {
+            v28 = false;
+            this.GracefullyShutdown("AllPlayersDisconnected", v28);
+        }
+        v30 = ExistingController.PlayerState;
+        if (v30 != nullptr) {
+            v32 = cast<ALokiPlayerState@>(v30);
+        } else {
+            v32 = nullptr;
+        }
+        v26 = v32;
+        if (v26 == nullptr) {
+            v27 = 0;
+        } else {
+            v23 = v26.IsABot();
+            v23 = !v23;
+            v27 = v23;
+        }
+        if (v27) {
+            this.DisconnectedPlayerStates.Remove(v26.PlatformPlayerID);
+            v26.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+    /* ---- OnLogout_Implementation: 137 dwords / 83 instructions (cache offset 0x73ee5) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       GetLokiGameState                              ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+        0018  STOREOBJ      v4
+        001C  SetV4         v5 0
+        0024  PSF           v16
+        0028  PSF           v10
+        002C  PshVPtr       v4
+        0030  CALLSYS       ALokiGameState::GetLokiPlayerStates           ; TArray<ALokiPlayerState@> ALokiGameState::GetLokiPlayerStates() const
+        003C  PSF           v10
+        0040  CALLSYS       TArray::Iterator                              ; TArrayConstIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator() const
+        004C  JMP           39                                            -> L00F0
+      L0054:
+        0054  SUSPEND
+        0058  PSF           v16
+        005C  CALLSYS       TArrayConstIterator::Proceed                  ; ALokiPlayerState@ const& TArrayConstIterator<ALokiPlayerState@>::Proceed()
+        0068  PshRPtr
+        006C  RDSPtr
+        0070  RefCpyV       v26
+        0074  PshVPtr       v26
+        0078  CALLSYS       APlayerState::IsABot                          ; bool APlayerState::IsABot() const
+        0084  CpyRtoV4      v23
+        0088  NOT           v23
+        008C  CpyVtoR1      v23
+        0090  JLowNZ        4                                             -> L00A8
+        0098  SetV4         v23 0
+        00A0  JMP           13                                            -> L00DC
+      L00A8:
+        00A8  PshVPtr       v26
+        00AC  ADDSi         2240 67115322                                 ; .PlatformPlayerID
+        00B4  PshVPtr       this
+        00B8  ADDSi         1424 67114962                                 ; .DisconnectedPlayerStates
+        00C0  CALLSYS       TMap::Contains                                ; bool TMap<FString, ALokiPlayerState@>::Contains(const FString&) const
+        00CC  CpyRtoV4      v27
+        00D0  NOT           v27
+        00D4  CpyVtoV4      v23 v27
+      L00DC:
+        00DC  CpyVtoR1      v23
+        00E0  JLowZ         1                                             -> L00EC
+        00E8  IncVi         v5
+      L00EC:
+        00EC  FreeNullV8    v26
+      L00F0:
+        00F0  LoadVObjR     v16 16 268448511                              ; .CanProceed
+        00FC  RDR1          v23
+        0100  CpyVtoR1      v23
+        0104  JLowNZ        -46                                           -> L0054
+        010C  PSF           v10
+        0110  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+        011C  CMPIi         v5 0
+        0124  JNZ           10                                            -> L0154
+        012C  SetV1         v28 0
+        0134  PshV4         v28
+        0138  PGA           "AllPlayersDisconnected"
+        0144  PshVPtr       this
+        0148  CALLSYS       ALokiGameMode::GracefullyShutdown             ; void ALokiGameMode::GracefullyShutdown(FString, uint8)
+      L0154:
+        0154  PshVPtr       ExistingController
+        0158  ADDSi         960 67111411                                  ; .PlayerState
+        0160  RDSPtr
+        0164  RefCpyV       v30
+        0168  CmpPtrNull    v30
+        016C  JZ            9                                             -> L0198
+        0174  TYPEID        1140857146                                    ; ALokiPlayerState@
+        017C  PSF           v32
+        0180  PshVPtr       v30
+        0184  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0190  JMP           1                                             -> L019C
+      L0198:
+        0198  ClrVPtr       v32
+      L019C:
+        019C  PshVPtr       v32
+        01A0  RefCpyV       v26
+        01A4  CmpPtrNull    v26
+        01A8  JNZ           4                                             -> L01C0
+        01B0  SetV4         v27 0
+        01B8  JMP           8                                             -> L01E0
+      L01C0:
+        01C0  PshVPtr       v26
+        01C4  CALLSYS       APlayerState::IsABot                          ; bool APlayerState::IsABot() const
+        01D0  CpyRtoV4      v23
+        01D4  NOT           v23
+        01D8  CpyVtoV4      v27 v23
+      L01E0:
+        01E0  CpyVtoR1      v27
+        01E4  JLowZ         13                                            -> L0220
+        01EC  PshVPtr       v26
+        01F0  ADDSi         2240 67115322                                 ; .PlatformPlayerID
+        01F8  PshVPtr       this
+        01FC  ADDSi         1424 67114962                                 ; .DisconnectedPlayerStates
+        0204  CALLSYS       TMap::Remove                                  ; bool TMap<FString, ALokiPlayerState@>::Remove(const FString&)
+        0210  PshVPtr       v26
+        0214  CALLSYS       AActor::DestroyActor                          ; void AActor::DestroyActor()
+      L0220:
+        0220  RET           4
+    */
+
+    void OnCharacterRespawned(ALokiCharacter@ Character)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiCharacter(Character);
+        __Evt_Execute(this, n"OnCharacterRespawned");
+        return;
+    }
+    /* ---- OnCharacterRespawned: 15 dwords / 8 instructions (cache offset 0x7431d) ----
+        0000  PSF           Character
+        0004  CALLSYS       __Evt_PushArgument__ALokiCharacter            ; void __Evt_PushArgument__ALokiCharacter(const ALokiCharacter@&)
+        0010  PshC4         173
+        0018  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0024  PshRPtr
+        0028  PshVPtr       this
+        002C  CALLSYS       __Evt_Execute                                 ; void __Evt_Execute(const UObject@, const FName&)
+        0038  RET           4
+    */
+
+    UFUNCTION(UnrealName=OnCharacterRespawned, BlueprintEvent, CanOverrideEvent)
+    void OnCharacterRespawned_Implementation(ALokiCharacter@ Character)   // traits=0x20
+    {
+        Character.ResetAllCooldowns();
+        this.AddBandages(Character);
+        this.ResetArmor(Character);
+        return;
+    }
+    /* ---- OnCharacterRespawned_Implementation: 13 dwords / 9 instructions (cache offset 0x7442f) ----
+        0000  PshVPtr       Character
+        0004  CALLSYS       ALokiCharacter::ResetAllCooldowns             ; void ALokiCharacter::ResetAllCooldowns()
+        0010  PshVPtr       Character
+        0014  PshVPtr       this
+        0018  CALLINTF      84853                                         ; void AFFAGameMode::AddBandages(ALokiCharacter@)
+        0020  PshVPtr       Character
+        0024  PshVPtr       this
+        0028  CALLINTF      84852                                         ; void AFFAGameMode::ResetArmor(ALokiCharacter@)
+        0030  RET           4
+    */
+
+    void ResetArmor(ALokiCharacter@ Character)   // traits=0x20
+    {
+        ULokiInventoryComponentBase v4;
+        TArray<FLokiInventoryItemAndSlot> v8;
+        TArrayIterator<FLokiInventoryItemAndSlot> v18;
+        bool v25;
+        auto v28;
+        FName v31;
+        ELokiRemoveFromInventoryReason v32;
+        ALokiBaseItem v34;
+        bool v35;
+        bool v36;
+        ELokiAddToInventoryReason v37;
+
+        v4 = ULokiInventoryComponentBase::GetInventoryComponent(Character);
+        v8 = v4.GetAllItemsAndSlots();
+        v18 = v8.Iterator();
+        while (true) {
+            v25 = v18.CanProceed;
+            if (!v25) break;
+            v28 = v18.Proceed();
+            v31 = FName(v28.SlotCategory);
+            v25 = v31 == n"Shield";
+            if (v25) {
+                v32 = ELokiRemoveFromInventoryReason::Destroyed;
+                v4.TryRemoveFromInventory(v28.ItemActor, v32);
+            }
+        }
+        v35 = false;
+        v36 = true;
+        v37 = ELokiAddToInventoryReason::Initial;
+        v25 = false;
+        v34 = SpawnActor(this.ArmorItem, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v25, nullptr);
+        v4.TryAddToInventory(v34, v37, NAME_None, -1, v36, v35);
+        return;
+    }
+    /* ---- ResetArmor: 106 dwords / 61 instructions (cache offset 0x74589) ----
+        0000  PshVPtr       Character
+        0004  CALLSYS       GetInventoryComponent                         ; ULokiInventoryComponentBase@ ULokiInventoryComponentBase::GetInventoryComponent(const AActor@)
+        0010  STOREOBJ      v4
+        0014  PSF           v8
+        0018  PshVPtr       v4
+        001C  CALLSYS       ULokiInventoryComponentBase::GetAllItemsAndSlots  ; TArray<FLokiInventoryItemAndSlot> ULokiInventoryComponentBase::GetAllItemsAndSlots() const
+        0028  PSF           v18
+        002C  PSF           v8
+        0030  CALLSYS       TArray::Iterator                              ; TArrayIterator<FLokiInventoryItemAndSlot> TArray<FLokiInventoryItemAndSlot>::Iterator()
+        003C  JMP           38                                            -> L00DC
+      L0044:
+        0044  SUSPEND
+        0048  PSF           v18
+        004C  CALLSYS       TArrayIterator::Proceed                       ; FLokiInventoryItemAndSlot& TArrayIterator<FLokiInventoryItemAndSlot>::Proceed()
+        0058  CpyRtoV8      v28
+        005C  PshVPtr       v28
+        0060  ADDSi         8 67121133                                    ; .SlotCategory
+        0068  PSF           v31
+        006C  CALLSYS       FName::$beh0                                  ; void FName::$beh0(const FName&)
+        0078  PshC4         50
+        0080  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        008C  PshRPtr
+        0090  PSF           v31
+        0094  CALLSYS       FName::opEquals                               ; bool FName::opEquals(const FName&) const
+        00A0  CpyRtoV4      v25
+        00A4  CpyVtoR1      v25
+        00A8  JLowZ         11                                            -> L00DC
+        00B0  SetV1         v32 0
+        00B8  PshV4         v32
+        00BC  PshVPtr       v28
+        00C0  ADDSi         0 67121133                                    ; .ItemActor
+        00C8  RDSPtr
+        00CC  PshVPtr       v4
+        00D0  CALLSYS       ULokiInventoryComponentBase::TryRemoveFromInventory  ; bool ULokiInventoryComponentBase::TryRemoveFromInventory(ALokiBaseItem@, ELokiRemoveFromInventoryReason)
+      L00DC:
+        00DC  LoadVObjR     v18 16 268448590                              ; .CanProceed
+        00E8  RDR1          v25
+        00EC  CpyVtoR1      v25
+        00F0  JLowNZ        -45                                           -> L0044
+        00F8  SetV1         v35 0
+        0100  PshV4         v35
+        0104  SetV1         v36 1
+        010C  PshV4         v36
+        0110  PshC4         -1
+        0118  PshGPtr       NAME_None
+        0124  SetV1         v37 0
+        012C  PshV4         v37
+        0130  PshNull
+        0134  SetV1         v25 0
+        013C  PshV4         v25
+        0140  PshGPtr       NAME_None
+        014C  PshGPtr       FRotator::ZeroRotator
+        0158  PshGPtr       FVector::ZeroVector
+        0164  PshVPtr       this
+        0168  ADDSi         1792 134230861                                ; .ArmorItem
+        0170  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+        017C  STOREOBJ      v34
+        0180  PshVPtr       v34
+        0184  PshVPtr       v4
+        0188  CALLSYS       ULokiInventoryComponentBase::TryAddToInventory  ; bool ULokiInventoryComponentBase::TryAddToInventory(ALokiBaseItem@, ELokiAddToInventoryReason, FName, int, bool, bool)
+        0194  PSF           v8
+        0198  CALLSYS       TArray::$beh2                                 ; void TArray<FLokiInventoryItemAndSlot>::$beh2()
+        01A4  RET           4
+    */
+
+    void AddBandages(ALokiCharacter@ Character)   // traits=0x20
+    {
+        ULokiInventoryComponentBase v4;
+        TArray<FLokiInventoryItemAndSlot> v8;
+        TSet<FName> v32;
+        TArrayIterator<FLokiInventoryItemAndSlot> v40;
+        bool v47;
+        auto v50;
+        ELokiRemoveFromInventoryReason v51;
+        auto v52;
+        ALokiBaseItem v56;
+        bool v57;
+        bool v58;
+        ELokiAddToInventoryReason v59;
+
+        v4 = ULokiInventoryComponentBase::GetInventoryComponent(Character);
+        v8 = v4.GetAllItemsAndSlots();
+        v32 = TSet<FName>();
+        v32.Add(n"Health");
+        v32.Add(n"Consumable");
+        v40 = v8.Iterator();
+        while (true) {
+            v47 = v40.CanProceed;
+            if (!v47) break;
+            v50 = v40.Proceed();
+            if (v32.Contains(v50.SlotCategory)) {
+                v51 = ELokiRemoveFromInventoryReason::Destroyed;
+                v4.TryRemoveFromInventory(v50.ItemActor, v51);
+            }
+        }
+        v52 = 0;
+        while (true) {
+            if (v52 >= 3) break;
+            v57 = false;
+            v58 = true;
+            v59 = ELokiAddToInventoryReason::Initial;
+            v47 = false;
+            v56 = SpawnActor(this.BandageItem, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v47, nullptr);
+            v52++;
+            v4.TryAddToInventory(v56, v59, NAME_None, -1, v58, v57);
+        }
+        return;
+    }
+    /* ---- AddBandages: 132 dwords / 74 instructions (cache offset 0x748c7) ----
+        0000  PshVPtr       Character
+        0004  CALLSYS       GetInventoryComponent                         ; ULokiInventoryComponentBase@ ULokiInventoryComponentBase::GetInventoryComponent(const AActor@)
+        0010  STOREOBJ      v4
+        0014  PSF           v8
+        0018  PshVPtr       v4
+        001C  CALLSYS       ULokiInventoryComponentBase::GetAllItemsAndSlots  ; TArray<FLokiInventoryItemAndSlot> ULokiInventoryComponentBase::GetAllItemsAndSlots() const
+        0028  PSF           v32
+        002C  CALLSYS       TSet::$beh0                                   ; void TSet<FName>::$beh0()
+        0038  PshC4         51
+        0040  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        004C  PshRPtr
+        0050  PSF           v32
+        0054  CALLSYS       TSet::Add                                     ; void TSet<FName>::Add(const FName&)
+        0060  PshC4         52
+        0068  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0074  PshRPtr
+        0078  PSF           v32
+        007C  CALLSYS       TSet::Add                                     ; void TSet<FName>::Add(const FName&)
+        0088  PSF           v40
+        008C  PSF           v8
+        0090  CALLSYS       TArray::Iterator                              ; TArrayIterator<FLokiInventoryItemAndSlot> TArray<FLokiInventoryItemAndSlot>::Iterator()
+        009C  JMP           26                                            -> L010C
+      L00A4:
+        00A4  SUSPEND
+        00A8  PSF           v40
+        00AC  CALLSYS       TArrayIterator::Proceed                       ; FLokiInventoryItemAndSlot& TArrayIterator<FLokiInventoryItemAndSlot>::Proceed()
+        00B8  CpyRtoV8      v50
+        00BC  PshVPtr       v50
+        00C0  ADDSi         8 67121133                                    ; .SlotCategory
+        00C8  PSF           v32
+        00CC  CALLSYS       TSet::Contains                                ; bool TSet<FName>::Contains(const FName&) const
+        00D8  JLowZ         11                                            -> L010C
+        00E0  SetV1         v51 0
+        00E8  PshV4         v51
+        00EC  PshVPtr       v50
+        00F0  ADDSi         0 67121133                                    ; .ItemActor
+        00F8  RDSPtr
+        00FC  PshVPtr       v4
+        0100  CALLSYS       ULokiInventoryComponentBase::TryRemoveFromInventory  ; bool ULokiInventoryComponentBase::TryRemoveFromInventory(ALokiBaseItem@, ELokiRemoveFromInventoryReason)
+      L010C:
+        010C  LoadVObjR     v40 16 268448590                              ; .CanProceed
+        0118  RDR1          v47
+        011C  CpyVtoR1      v47
+        0120  JLowNZ        -33                                           -> L00A4
+        0128  SetV4         v52 0
+        0130  JMP           41                                            -> L01DC
+      L0138:
+        0138  SUSPEND
+        013C  SetV1         v57 0
+        0144  PshV4         v57
+        0148  SetV1         v58 1
+        0150  PshV4         v58
+        0154  PshC4         -1
+        015C  PshGPtr       NAME_None
+        0168  SetV1         v59 0
+        0170  PshV4         v59
+        0174  PshNull
+        0178  SetV1         v47 0
+        0180  PshV4         v47
+        0184  PshGPtr       NAME_None
+        0190  PshGPtr       FRotator::ZeroRotator
+        019C  PshGPtr       FVector::ZeroVector
+        01A8  PshVPtr       this
+        01AC  ADDSi         1784 134230861                                ; .BandageItem
+        01B4  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+        01C0  STOREOBJ      v56
+        01C4  PshVPtr       v56
+        01C8  PshVPtr       v4
+        01CC  CALLSYS       ULokiInventoryComponentBase::TryAddToInventory  ; bool ULokiInventoryComponentBase::TryAddToInventory(ALokiBaseItem@, ELokiAddToInventoryReason, FName, int, bool, bool)
+        01D8  IncVi         v52
+      L01DC:
+        01DC  CMPIi         v52 3
+        01E4  JS            -45                                           -> L0138
+        01EC  PSF           v32
+        01F0  CALLSYS       TSet::$beh2                                   ; void TSet<FName>::$beh2()
+        01FC  PSF           v8
+        0200  CALLSYS       TArray::$beh2                                 ; void TArray<FLokiInventoryItemAndSlot>::$beh2()
+        020C  RET           4
+    */
+
+    UFUNCTION(UnrealName=HandleStartingNewPlayer, BlueprintOverride, BlueprintEvent, CanOverrideEvent, NoOp)
+    void HandleStartingNewPlayer_Implementation(APlayerController@ NewPlayer)   // traits=0x20
+    {
+        return;
+    }
+    /* ---- HandleStartingNewPlayer_Implementation: 1 dwords / 1 instructions (cache offset 0x74ca0) ----
+        0000  RET           4
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = 15;
+        this.LevelToGrant = v1;
+        return;
+    }
+    /* ---- __InitDefaults: 6 dwords / 4 instructions (cache offset 0x74d97) ----
+        0000  SetV4         v1 15
+        0008  LoadThisR     1776 134230861                                ; this.LevelToGrant
+        0010  WRTV4         v1
+        0014  RET           2
+    */
+
+    void ~AFFAGameMode()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~AFFAGameMode: 13 dwords / 7 instructions (cache offset 0x74fc2) ----
+        0000  PshVPtr       this
+        0004  ADDSi         1800 134230861                                ; .InitializedPlayerStates
+        000C  CALLSYS       TSet::$beh2                                   ; void TSet<ALokiPlayerState@>::$beh2()
+        0018  PshVPtr       this
+        001C  ADDSi         1880 134230861                                ; .ConnectedPlayerControllers
+        0024  CALLSYS       TSet::$beh2                                   ; void TSet<ALokiPlayerController@>::$beh2()
+        0030  RET           2
+    */
+
+}
+

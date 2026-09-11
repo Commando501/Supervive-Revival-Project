@@ -1,0 +1,55 @@
+movementmode_readout  PID=46044 BASE=0x7FF6CFF90000   *** 2026-08-23 14:28:52 ***
+(read-only RPM. no injection, no write of any kind.)
+
+bot controller     : 0x27A6DA2A0C0
+bot pawn           : 0x27B3EAE8020
+player controller  : 0x27AA063EC50 BP_LokiPlayerController_Dev_C
+player pawn        : 0x27AFE1D0040
+other hero pawns   : 4
+
+========================================================================================================
+--- BOT   (from SpawnAIFromClass)  pawn=0x27B3EAE8020  class=BP_HERO_Ronin_C
+      CharacterMovement @+0x458 = 0x27B3598AAB0  class=LokiCharacterMovementComponent
+      *** MovementMode = 3 (MOVE_Falling)   [by name @+0x231, type=?, enum=unresolved] ***
+      bCheatFlying     = 0   [by name @+0x54D]
+      MaxWalkSpeed     = 180.000   [by name @+0x278]
+      GravityScale     = 1.000   [by name @+0x1A0]
+      MaxFlySpeed      = 600.000   [by name @+0x284]
+      UpdatedComponent = 0x27B0A39A8B0   [by name @+0xD0]
+      Velocity         = (0.000,0.000,0.000)
+      ControlInputVector = (-0.6377,-0.7703,0.0000)     location = (600.0,0.0,13240.0)
+      (controller gate +0x6A0 = 1)
+
+--- PLAYER (POSITIVE CONTROL)      pawn=0x27AFE1D0040  class=BP_HERO_Ronin_C
+      CharacterMovement @+0x458 = 0x27B4F430010  class=LokiCharacterMovementComponent
+      *** MovementMode = 3 (MOVE_Falling)   [by name @+0x231, type=?, enum=unresolved] ***
+      bCheatFlying     = 8   [by name @+0x54D]
+      MaxWalkSpeed     = 180.000   [by name @+0x278]
+      GravityScale     = 0.000   [by name @+0x1A0]
+      MaxFlySpeed      = 600.000   [by name @+0x284]
+      UpdatedComponent = 0x279ED80C870   [by name @+0xD0]
+      Velocity         = (0.000,0.000,0.000)
+      ControlInputVector = (0.0000,0.0000,0.0000)     location = (0.0,0.0,13240.0)
+      (controller gate +0x6A0 = 1)
+
+--- other hero #1                 pawn=0x27AFB495580  class=BP_HERO_Ronin_C
+      CharacterMovement @+0x458 = 0x27B15621C80  class=LokiCharacterMovementComponent
+      *** MovementMode = 3 (MOVE_Falling)   [by name @+0x231, type=?, enum=unresolved] ***
+      bCheatFlying     = 0   [by name @+0x54D]
+      MaxWalkSpeed     = 180.000   [by name @+0x278]
+      GravityScale     = 1.000   [by name @+0x1A0]
+      MaxFlySpeed      = 600.000   [by name @+0x284]
+      UpdatedComponent = 0x27A6DA27910   [by name @+0xD0]
+      Velocity         = (0.000,0.000,0.000)
+      ControlInputVector = (0.0000,0.0000,0.0000)     location = (600.0,0.0,13240.0)
+
+========================================================================================================
+ENUM resolved live: NONE
+
+HOW TO READ THIS
+  The PLAYER row is the POSITIVE CONTROL: it demonstrably moves on this route. If the probe
+  cannot show a sane value THERE, the bot's value is UNINTERPRETABLE rather than a null.
+  If the two rows DIFFER, that difference is the answer to 'why does the bot not move'.
+  If they are the SAME, movement mode is NOT the discriminator and the next candidate is
+  the pawn's altitude (Z=13240 is the sp LIFT position, ~13 km above the island) or whether
+  the component ticks at all.

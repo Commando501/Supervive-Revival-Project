@@ -1,0 +1,88 @@
+ALL 27 occurrences of the dword 0x537AC9E1 in runtime.dll (unit: byte offsets)
+controls in q9: 6 random same-width constants -> 0 hits each; preloader.dll 0; SUPERVIVE exe 0
+
+#1  file 0x00832C46  rva 0x00834046 packer1    mov edi, K    
+      pre : b80100668781800000006685c0742dbf
+      post: 660f1f4400008b05d667110031f8c1c0
+#2  file 0x0083697B  rva 0x00837D7B packer1    mov edi, K    
+      pre : b80100668781c00000006685c07428bf
+      post: 908b05a62a110031f8c1c00705e68545
+#3  file 0x00853B27  rva 0x00854F27 packer1    mov ebx, K    
+      pre : b80100668781c00000006685c0742cbb
+      post: 0f1f4400008b05f6580f0031d8c1c007
+#4  file 0x0086FC44  rva 0x00871044 packer1    mov ebx, K    
+      pre : 83ec2089d74889ce66837934007426bb
+      post: 0f1f8400000000008b05d6970d0031d8
+#5  file 0x008879B7  rva 0x00888DB7 packer1    mov edi, K    
+      pre : b80100668781c00000006685c0742cbf
+      post: 0f1f4400008b05661a0c0031f8c1c007
+#6  file 0x008B8165  rva 0x008B9565 packer1    mov r15d, K   
+      pre : 0100000031c0f0410fb15d00742341bf
+      post: 8b05bd1209004431f8c1c00705e68545
+#7  file 0x008B81EA  rva 0x008B95EA packer1    mov r15d, K   
+      pre : 0fafc2488d1c084881c38813000041bf
+      post: 418b450083e00383f8010f8409010000
+#8  file 0x008B936F  rva 0x008BA76F packer1    mov r12d, K   
+      pre : 0031c0488b4c2478f00fb129742641bc
+      post: 8b05b30009004431e0c1c00705e68545
+#9  file 0x008B9447  rva 0x008BA847 packer1    mov ebx, K    
+      pre : 480fafc2488d3c084881c788130000bb
+      post: 488b4424788b0083e00383f801744d8b
+#10 file 0x008BA7E9  rva 0x008BBBE9 packer1    mov r12d, K   
+      pre : 0031c0488b4c2478f00fb129742641bc
+      post: 8b0539ec08004431e0c1c00705e68545
+#11 file 0x008BA8A9  rva 0x008BBCA9 packer1    mov ebx, K    
+      pre : 480fafc2488d3c084881c788130000bb
+      post: 488b4424788b0083e00383f801744d8b
+#12 file 0x008BAF8C  rva 0x008BC38C packer1    mov ebp, K    
+      pre : ff48053000108048898424a8020000bd
+      post: 48c78424b000000000000000488dbc24
+#13 file 0x008DFF1C  rva 0x008E131C packer1    mov esi, K    
+      pre : b801006687056a0306006685c07427be
+      post: 8b050695060031f0c1c00705e6854542
+#14 file 0x008E65FD  rva 0x008E79FD packer1    mov ebp, K    
+      pre : 79cabb0a5449bf987d77146098ab61bd
+      post: eb3f666666662e0f1f84000000000048
+#15 file 0x008E676F  rva 0x008E7B6F packer1    mov ebp, K    
+      pre : fa48c1c2394c31f2f0480fb116744dbd
+      post: 666666662e0f1f8400000000008b05a6
+#16 file 0x008EBB17  rva 0x008ECF17 packer1    mov ebp, K    
+      pre : 4a0500017542488b3dac4a050031dbbd
+      post: eb150f1f008b0506d9050031e8c1c007
+#17 file 0x008EBBA0  rva 0x008ECFA0 packer1    mov r12d, K   
+      pre : 01c5747b49bd987d77146098ab6141bc
+      post: eb3e662e0f1f8400000000004821f94c
+#18 file 0x008EBC87  rva 0x008ED087 packer1    mov r13d, K   
+      pre : e248c1c2394c31faf0490fb1167445bd
+      post: 0f1f4400008b0596d7050031e8c1c007
+#19 file 0x008EDFFF  rva 0x008EF3FF packer1    mov r15d, K   
+      pre : 0100000031c0f0410fb15d00742341bf
+      post: 8b0523b405004431f8c1c00705e68545
+#20 file 0x008EE07A  rva 0x008EF47A packer1    mov r15d, K   
+      pre : 0fafc2488d1c084881c38813000041bf
+      post: 418b450083e00383f8010f8419010000
+#21 file 0x008EF22D  rva 0x008F062D packer1    mov r13d, K   
+      pre : 8b8c24b0000000f0440fb121742a41bd
+      post: 8b05f5a105004431e8c1c00705e68545
+#22 file 0x008EF311  rva 0x008F0711 packer1    mov r14d, K   
+      pre : 0fafc2488d3c084881c78813000041be
+      post: 488b8424b00000008b0083e00383f801
+#23 file 0x008F080E  rva 0x008F1C0E packer1    mov r13d, K   
+      pre : 8b8c24b0000000f0440fb121742a41bd
+      post: 8b05148c05004431e8c1c00705e68545
+#24 file 0x008F08DA  rva 0x008F1CDA packer1    mov r14d, K   
+      pre : 0fafc2488d3c084881c78813000041be
+      post: 488b8424b00000008b0083e00383f801
+#25 file 0x008F113A  rva 0x008F253A packer1    mov ecx, K    
+      pre : 000000f00fb11174198b05f3820500b9
+      post: 31c8c1c00705e68545420f05ebd24c8b
+#26 file 0x008F1203  rva 0x008F2603 packer1    mov ecx, K    
+      pre : 0083e00383f80174528b052a820500b9
+      post: 31c8c1c00705e68545420f05488b0425
+#27 file 0x008FB953  rva 0x008FCD53 packer1    mov edi, K    
+      pre : 89ce66b80100668741406685c0742dbf
+      post: 660f1f8400000000008b05c6da040031
+
+total=27
+
+C2b  occurrences of 0x537AC9E1 in dumps/merged6.dump.exe (55.13% of .text decrypted, whole 170 MB image): 0

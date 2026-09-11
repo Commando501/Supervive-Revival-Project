@@ -1,0 +1,14 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[2] worldCtx=0x27933077A20 kslCDO=0x279372AD050 eccThunk=0x7FF684F6D790(rva 0x395D790) child=0x279B9628400 offWCO=0x0 offCmd=0x8 offSP=0x18 gameTid=49628 cmd='open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[3] hook built; issuing ExecuteConsoleCommand('open LVL_Tutorial') on the game thread...
+[VT] custom-login INSTALL: 5 vtables slot285, stockLogin=0x7FF684DF0C50 tramp=0x27A1B0B2750
+[PIM] PI hook mutex acquired (clean)
+[PIM] PI hook mutex released
+[4] CALLED (called=1 hitsGT=1) — de-override held; sampling tutorial state across travel...
+[PREP] lokiCDO=0x27A89D089E0(vt rva 0x8A1AEE0) stockCDO=0x2793729CD00(vt rva 0x81A82F8) stockPCClass=0x2793BA24E80
+[DIFF] PS-cand slot 260 stockRva=0x36E1D40 lokiRva=0x569B110
+[DIFF] PS-cand slot 273 stockRva=0x36DEE20 lokiRva=0xF7EC20
+[DIFF] overrideCount=18 psCandidates=2 fixMode=2
+[FIX] targeted: de-overrode 2 PC vtable slot(s) -> stock InitPlayerState
+[LOGIN1] gm=BP_LokiGameMode_Tutorial_C PCClass=BP_LokiPlayerController_Dev_C pc=0x27A83CFC4F0(BP_LokiPlayerController_Dev_C) PSClass=BP_LokiPlayerState_C PS(off=0x3C0)=0x2793C216670(BP_LokiPlayerState_C) err='(empty=approved)'

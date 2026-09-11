@@ -1,0 +1,103 @@
+SESSION 42 — STEP 4 (route A executed, live process): the IoStore mod-pak pivot
+is dead on TWO independent counts — deployment (pak signing) AND logic (the
+manager never consults the AR). But route A also produced a real redirect: the
+normal client reaches the menu WITHOUT the D3D12 crash, and usmapdump reads+writes
+the live process non-elevated — a viable substrate for runtime AssetManager work.
+==============================================================================
+Date: 2026-07-02
+Branch: dedicated-server-stub
+Method: launched the normal client (—ini: redirects, NO stub, NO inject; Steam+ags
+already up, hosts redirect active), reached the main menu, and ran usmapdump
+read-only RPM + read the live Loki.log. Route A = static RE of the IoStore
+mount/verify path.
+
+BIG CONTEXT CORRECTION (from this live run)
+------------------------------------------
+The normal client path reaches the menu FINE — no D3D12 crash:
+  LogLoad: Game class is 'BP_MainMenuGameMode_C'
+  LogLoad: LoadMap complete /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent
+  LogLokiPlayerState: [UIREADY] ALokiBaseController::TryUIReady SUCCESS
+So the session-40/41/42 D3D12 crash is SPECIFIC TO THE DEDICATED-SERVER-STUB PATH
+(client-as-netclient rendering). The plain client already sits at a rendered menu
+(this is Milestone 2). The empty grid is the enumeration blocker, live below.
+
+ROUTE A FINDING 1 — deployment is blocked by the legacy .pak signature gate,
+upstream of IoStore signing (so IoStore-unsigned is moot).
+------------------------------------------------------------------------------
+Live mount log (ground truth, unaffected by packing):
+- global.utoc mounts STANDALONE by name (FIoDispatcher init): "Reading toc:
+  global.utoc" -> "Toc signature hash: ..." -> "Mounted the global container".
+- EVERY content container mounts THROUGH its paired .pak:
+  "Found Pak file pakchunk0_sN.pak attempting to mount" -> "Mounting pak file" ->
+  "Reading toc: ...utoc" -> "Toc signature hash" -> "Mounted IoStore container".
+- So a mod content container is discovered via a paired .pak; that .pak hits the
+  PROVEN-enforced signature gate (trackb route 2: unsigned pakchunk999_P.pak ->
+  "Couldn't find pak signature file -> Failed to mount"). We can't sign (no key).
+- The IoStore layer DOES read a "Toc signature hash" per container, but that's
+  moot: the .pak gate blocks the mod before IoStore reads the mod .utoc.
+- The only .pak-less mount is the special global container. Searched the live
+  process for a standalone/alt mount path (MountPaksInDirectory, MountPakFile,
+  AdditionalPak = 0 hits; IoStoreOnDemand/OnDemand/DLC = heap-only copies, can't
+  confirm as active). This build's packer decrypts .rdata strings to HEAP on use
+  and leaves the module copy encrypted, so string->function xref (the RE needed to
+  find/confirm an alt mount path) is defeated — the same packing wall prior
+  sessions hit. No usable standalone-.utoc mount path found.
+
+ROUTE A FINDING 2 (the decisive one) — the mod-pak/AR route is LOGICALLY dead:
+LokiAssetManager never consults the AssetRegistry for primary-asset enumeration.
+------------------------------------------------------------------------------
+Live log at the menu:
+  LogAssetRegistry: Premade AssetRegistry loaded from '../../../Loki/AssetRegistry.bin'
+  LogAssetRegistry: FAssetRegistry took 0.0008 seconds to start up
+  LogAssetManager: Warning: Invalid Primary Asset Type :
+      ChangeBundleStateForPrimaryAssets failed to find NameData
+  LogAssetManager: Warning: Invalid Primary Asset Id :
+      ChangeBundleStateForPrimaryAssets failed to find NameData
+UAssetManager::ChangeBundleStateForPrimaryAssets looks up the MANAGER'S OWN type
+registry (its NameData / PrimaryAssetTypeInfo map, populated by ScanPathsForPrimary
+Assets / ScanPrimaryAssetTypesFromConfig), NOT the AssetRegistry. "failed to find
+NameData" => that type map is empty for the requested types. LokiAssetManager
+registers only from the content-service manifest (by ID) and SKIPS the config
+directory scan, so the manager never enumerates the baked primary assets — and it
+reads the AR only during a scan, which never runs.
+=> Patching AssetRegistry.bin (the ENTIRE payload of the mod-pak route) cannot
+   populate the grid, because the manager doesn't read the AR for enumeration.
+   This is the trackb "kill criterion" — previously UNTESTABLE (deployment
+   blocked) — now CONFIRMED from the live manager behavior.
+
+VERDICT ON THE IoStore MOD-PAK PIVOT
+------------------------------------
+Dead on two independent counts:
+  (1) Deployment: content .utoc needs a paired signed .pak; we can't sign, and no
+      standalone .utoc mount path is reachable via the packed binary.
+  (2) Logic: even a perfectly-deployed AR patch is inert — LokiAssetManager
+      enumerates from its own (unscanned, empty) type map, not the AR.
+Do not invest further in mod-pak/AR-patch deployment.
+
+THE REAL LEVER (redirect, not a dead end)
+-----------------------------------------
+The blocker is that LokiAssetManager's primary-asset TYPE MAP is never populated
+(the config scan is skipped). The fix must make that scan RUN or populate the
+manager's NameData/AssetMap at runtime. New, favorable facts from this run:
+- The normal client sits at a live, rendered menu with the blocker active — a
+  stable target (no stub, no D3D12 crash, no injection).
+- usmapdump reads AND writes (poke = WriteProcessMemory) the live process
+  NON-ELEVATED, no injection, no anti-cheat interaction (OpenProcess VM_READ/WRITE).
+So a RUNTIME approach is viable and distinct from the crashed native-shim attempt
+(which tried to CALL ScanPrimaryAssetTypesFromConfig and hit __report_gsfailure —
+CLAUDE.md do-not). Candidate next routes (for a fresh, focused effort):
+  A. Find the LokiAssetManager singleton (GUObjectArray walk via usmapdump objects
+     / extract) and inspect its PrimaryAssetTypeInfo/NameData map to see exactly
+     what IS vs ISN'T registered (confirms the empty-map diagnosis precisely).
+  B. Find WHY the config scan is skipped: RE LokiAssetManager's scan entry and the
+     condition that bypasses ScanPrimaryAssetTypesFromConfig. If it's a data/flag
+     gate, flipping it (poke) may enable the scan without calling the crashing fn.
+  C. Populate the manager's type map directly via WPM (construct the type infos +
+     asset lists in memory). Hardest; needs the manager's exact struct layout.
+
+STATE
+-----
+- Game left RUNNING at the menu (PID this run 70960; user may want to poke it).
+  Not killing it per CLAUDE.md (user may be mid-inspection).
+- usmapdump confirmed working non-elevated: `usmapdump info SUPERVIVE-Win64-Shipping.exe`.
+- No files deployed, no process modified. Read-only recon only.

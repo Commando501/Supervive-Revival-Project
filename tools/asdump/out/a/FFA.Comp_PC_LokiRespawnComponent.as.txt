@@ -1,0 +1,249 @@
+==============================================================================
+MODULE   FFA.Comp_PC_LokiRespawnComponent
+SOURCE   FFA/Comp_PC_LokiRespawnComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_UComp_PC_LokiRespawnComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UComp_PC_LokiRespawnComponent@ UComp_PC_LokiRespawnComponent()
+// 4 instr, 28 B bytecode, id=0x0269A229, varspace=2
+------------------------------------------------------------------------------
+{
+    UComp_PC_LokiRespawnComponent v2;
+
+    v2 = UComp_PC_LokiRespawnComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84829 q:0x26e6ed71c00; new UComp_PC_LokiRespawnComponent   ctor=UComp_PC_LokiRespawnComponent::UComp_PC_LokiRespawnComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x4C333675, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UComp_PC_LokiRespawnComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057da58         ; __StaticType_UComp_PC_LokiRespawnComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UComp_PC_LokiRespawnComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xC84CC2EE, varspace=2
+------------------------------------------------------------------------------
+{
+    UComp_PC_LokiRespawnComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UComp_PC_LokiRespawnComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972682            ; UComp_PC_LokiRespawnComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057da58         ; __StaticType_UComp_PC_LokiRespawnComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UComp_PC_LokiRespawnComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x7AEC5649, varspace=2
+------------------------------------------------------------------------------
+{
+    UComp_PC_LokiRespawnComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UComp_PC_LokiRespawnComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972682            ; UComp_PC_LokiRespawnComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057da58         ; __StaticType_UComp_PC_LokiRespawnComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UComp_PC_LokiRespawnComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x4FA0EAE4, varspace=2
+------------------------------------------------------------------------------
+{
+    UComp_PC_LokiRespawnComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UComp_PC_LokiRespawnComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972682            ; UComp_PC_LokiRespawnComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057da58         ; __StaticType_UComp_PC_LokiRespawnComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class UComp_PC_LokiRespawnComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TSubclassOf<UUserWidget@> RespawnTimerWidget;
+
+}
+
+------------------------------------------------------------------------------
+UComp_PC_LokiRespawnComponent() const
+// 6 instr, 44 B bytecode, id=0x6E0E2131, varspace=0
+------------------------------------------------------------------------------
+{
+    this.RespawnTimerWidget = TSubclassOf<UUserWidget@>();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:208 d:134230858      ; UComp_PC_LokiRespawnComponent::RespawnTimerWidget  (+208)
+    //     3  CALLSYS        q:0x26e6ef275c0         ; void TSubclassOf<UUserWidget@>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  FinConstruct   q:0x26e6ed71c00         ; UComp_PC_LokiRespawnComponent
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 46 instr, 312 B bytecode, id=0x4437288D, varspace=17
+------------------------------------------------------------------------------
+{
+    auto v1;
+    AActor v4;
+    ALokiPlayerController v6;
+    ALokiPlayerController v8;
+    TSubclassOf<UUserWidget@> v10;
+    auto v11;
+
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v4 = this.GetOwner();
+        if (v4 == null) {
+            v6 = null;
+        } else {
+            v6 = cast<ALokiPlayerController>(v4);
+        }
+        v8 = v6;
+        if (v6 != null) {
+            v10 = TSubclassOf<UUserWidget@>();
+            v10 = this.RespawnTimerWidget;
+            v11 = v10 == null;
+            v11 = !v11;
+            v1 = v11;
+        } else {
+            v1 = 0;
+        }
+        if (v1) {
+            WidgetBlueprint::CreateWidget(__WorldContext, this.RespawnTimerWidget, v8).AddToViewport(0);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowZ          ->77
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    12  STOREOBJ       wW0:4
+    //    13  CmpPtrNull     rW0:4
+    //    14  JZ             ->25
+    //    16  TYPEID         d:1140857134            ; ALokiPlayerController@
+    //    18  PSF            rW0:6
+    //    19  PshVPtr        rW0:4
+    //    20  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    23  JMP            ->26
+    //    25  ClrVPtr        wW0:6
+    //    26  PshVPtr        rW0:6
+    //    27  RefCpyV        wW0:8
+    //    28  CmpPtrNull     rW0:8
+    //    29  JNZ            ->35
+    //    31  SetV4          wW0:1 d:0
+    //    33  JMP            ->55
+    //    35  PSF            rW0:10
+    //    36  CALLSYS        q:0x26e6ef275c0         ; void TSubclassOf<UUserWidget@>::$beh0()
+    //    39  PshVPtr        rW0:0
+    //    40  ADDSi          W0:208 d:134230858      ; UComp_PC_LokiRespawnComponent::RespawnTimerWidget  (+208)
+    //    42  PSF            rW0:10
+    //    43  CALLSYS        q:0x26e78b93dc0         ; TSubclassOf<UUserWidget@>& TSubclassOf<UUserWidget@>::opAssign(const TSubclassOf<UUserWidget@>&)
+    //    46  PshNull
+    //    47  PSF            rW0:10
+    //    48  CALLSYS        q:0x26e6ef27b00         ; bool TSubclassOf<UUserWidget@>::opEquals(UClass@) const
+    //    51  CpyRtoV4       wW0:11
+    //    52  NOT            rW0:11
+    //    53  CpyVtoV4       wW0:1 rW1:11
+    //    55  CpyVtoR1       rW0:1
+    //    56  JLowZ          ->76
+    //    58  PshVPtr        rW0:8
+    //    59  PshVPtr        rW0:0
+    //    60  ADDSi          W0:208 d:134230858      ; UComp_PC_LokiRespawnComponent::RespawnTimerWidget  (+208)
+    //    62  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    65  CALLSYS        q:0x26e79fa2700         ; UUserWidget@ WidgetBlueprint::CreateWidget(UObject@, TSubclassOf<UUserWidget@>, APlayerController@)
+    //    68  STOREOBJ       wW0:16
+    //    69  PshC4          d:0
+    //    71  PshVPtr        rW0:16
+    //    72  CALLSYS        q:0x26e7971adc0         ; void UUserWidget::AddToViewport(int)
+    //    75  FreeNullV8     wW0:16
+    //    76  FreeNullV8     wW0:8
+    //    77  RET            W0:2
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 5 instr, 32 B bytecode, id=0xE278C25E, varspace=1
+------------------------------------------------------------------------------
+{
+    this.SetbReplicates(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a62c640         ; void UActorComponent::SetbReplicates(bool)
+    //     7  RET            W0:2
+

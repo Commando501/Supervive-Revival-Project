@@ -1,0 +1,124 @@
+// ============================================================================
+//  MODULE   Character.LokiHeroGroundIndicator
+//  SOURCE   Character/LokiHeroGroundIndicator.as
+//  CONTENT  1 class(es), 8 function(s), 0 enum(s), 1 global(s), 1120 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiHeroGroundIndicator;
+
+ULokiHeroGroundIndicator@ ULokiHeroGroundIndicator()   // traits=0x20
+{
+    ULokiHeroGroundIndicator v2;
+
+    v2 = ULokiHeroGroundIndicator();
+    return v2;
+}
+
+UClass@ ULokiHeroGroundIndicator::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiHeroGroundIndicator);
+    return v2;
+}
+
+ULokiHeroGroundIndicator@ ULokiHeroGroundIndicator::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiHeroGroundIndicator v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiHeroGroundIndicator, v2, typeid(ULokiHeroGroundIndicator@), WithName);
+    return v2;
+}
+
+ULokiHeroGroundIndicator@ ULokiHeroGroundIndicator::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiHeroGroundIndicator v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiHeroGroundIndicator, v2, typeid(ULokiHeroGroundIndicator@), WithName);
+    return v2;
+}
+
+ULokiHeroGroundIndicator@ ULokiHeroGroundIndicator::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiHeroGroundIndicator v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiHeroGroundIndicator, v2, typeid(ULokiHeroGroundIndicator@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiHeroGroundIndicator : ULokiHeroGroundIndicatorBase
+// unreal base : /Script/Loki.LokiHeroGroundIndicatorBase
+// C++ header  : ../../../Loki/Source/Loki/Character/Hero/LokiHeroGroundIndicatorBase.h
+// static class global: __StaticType_ULokiHeroGroundIndicator
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=GroundIndicator|Shadow)
+    protected FVector ShadowDecalSize;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=GroundIndicator|Shadow)
+    protected FRotator ShadowDecalRotation;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=GroundIndicator|Ring)
+    protected FVector RingDecalSize;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=GroundIndicator|Ring)
+    protected FRotator RingDecalRotation;
+
+    ULokiHeroGroundIndicator()   // traits=0x21
+    {
+        FVector v6;
+        FRotator v18;
+
+        v6 = FVector(50.0, 100.0, 100.0);
+        this.ShadowDecalSize = FVector(v6);
+        v18 = FRotator(-90.0, 0, 0);
+        this.ShadowDecalRotation = FRotator(v18);
+        v6 = FVector(200.0, 300.0, 300.0);
+        this.RingDecalSize = FVector(v6);
+        v18 = FRotator(-90.0, 0, 0);
+        this.RingDecalRotation = FRotator(v18);
+        return;
+    }
+
+    UFUNCTION(UnrealName=CreateShadowDecal, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void CreateShadowDecal_Implementation()   // traits=0x20
+    {
+        UDecalComponent v4;
+        EMIDCreationFlags v5;
+        UMaterialInterface v8;
+        UMaterialInstanceDynamic v10;
+
+        v4 = Gameplay::SpawnDecalAtLocation(__WorldContext, this.ShadowDecalMaterial, this.ShadowDecalSize, FVector::ZeroVector, this.ShadowDecalRotation, 0);
+        this.ShadowDecalComponent = v4;
+        v5 = EMIDCreationFlags::None;
+        v8 = this.ShadowDecalComponent.GetDecalMaterial();
+        v10 = Material::CreateDynamicMaterialInstance(__WorldContext, v8, NAME_None, v5);
+        this.ShadowDecalMID = v10;
+        this.ShadowDecalComponent.SetDecalMaterial(this.ShadowDecalMID);
+        return;
+    }
+
+    UFUNCTION(UnrealName=CreateRingDecal, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void CreateRingDecal_Implementation()   // traits=0x20
+    {
+        UDecalComponent v4;
+        EMIDCreationFlags v5;
+        UMaterialInterface v8;
+        UMaterialInstanceDynamic v10;
+
+        v4 = Gameplay::SpawnDecalAtLocation(__WorldContext, this.RingDecalMaterial, this.RingDecalSize, FVector::ZeroVector, this.RingDecalRotation, 0);
+        this.RingDecalComponent = v4;
+        v5 = EMIDCreationFlags::None;
+        v8 = this.RingDecalComponent.GetDecalMaterial();
+        v10 = Material::CreateDynamicMaterialInstance(__WorldContext, v8, NAME_None, v5);
+        this.RingDecalMID = v10;
+        this.RingDecalComponent.SetDecalMaterial(this.RingDecalMID);
+        return;
+    }
+
+}
+

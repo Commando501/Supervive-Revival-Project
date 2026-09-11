@@ -18,16 +18,19 @@ import (
 	"crypto/tls"
 	"flag"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 
+	"supervive-revival/server/internal/admin"
 	"supervive-revival/server/internal/capture"
 	"supervive-revival/server/internal/iam"
 	"supervive-revival/server/internal/interactive"
 	"supervive-revival/server/internal/lobby"
 	"supervive-revival/server/internal/loki"
 	"supervive-revival/server/internal/menu"
+	"supervive-revival/server/internal/pingecho"
 	"supervive-revival/server/internal/ws"
 	"supervive-revival/server/internal/tlscert"
 	"supervive-revival/server/internal/token"
@@ -36,9 +39,23 @@ import (
 func main() {
 	httpAddr := flag.String("http", ":8080", "plain HTTP listen address (AccelByte)")
 	httpsAddr := flag.String("https", ":443", "HTTPS listen address (Theorycraft hosts)")
-	logPath := flag.String("log", filepath.Join("docs", "capture.log"), "capture log path")
+	logPath := flag.String("log", filepath.Join("docs", "capture.log"), "capture log path (starts fresh each launch; previous run kept as .prev)")
+	logMaxMB := flag.Int64("log-max-mb", 256, "capture log size cap in MB; at the cap it rotates to .prev and continues fresh (0 = unlimited)")
 	certDir := flag.String("certs", "certs", "directory for the generated TLS cert/key")
+	menuConfig := flag.String("config", "", "optional JSON config for menu/store content (see configs/store.example.json); empty defaults to state/menu-config.json (the admin panel's save target)")
+	adminAddr := flag.String("admin", "127.0.0.1:9210", "admin panel listen address (loopback-only guard applies); empty disables")
 	flag.Parse()
+
+	// Load the operator config (heroes/store SKUs/prices) over the built-in defaults.
+	// A missing/invalid file leaves the defaults in place (logged). With no -config
+	// we default to state/menu-config.json — the file the admin panel persists to —
+	// so panel edits survive the launch script's rebuild+restart (the script passes
+	// no -config and runs ags with cwd=server/, same place state/interactive.json
+	// already lives). 2026-07-08.
+	if *menuConfig == "" {
+		*menuConfig = filepath.Join("state", "menu-config.json")
+	}
+	menu.Load(*menuConfig)
 
 	if err := os.MkdirAll(filepath.Dir(*logPath), 0o755); err != nil {
 		log.Fatalf("log dir: %v", err)
@@ -49,16 +66,26 @@ func main() {
 		log.Fatalf("signer: %v", err)
 	}
 
-	logger, err := capture.NewLogger(*logPath)
+	logger, err := capture.NewLogger(*logPath, *logMaxMB<<20)
 	if err != nil {
 		log.Fatalf("capture log: %v", err)
+	}
+
+	// UDP echo responder for region latency (S121). UE's ICMP module pings the PingHost:PingPort
+	// we advertise in GET /core-game/regions; with nothing listening the client logs
+	// "Could not ping target host … Result: 4" five times a cycle and the menu shows "— ms".
+	// Non-fatal by design: a bind failure degrades the ping display, it does not break the backend.
+	// Knobs: AGS_PING_ADDR / AGS_PING_PORT, and AGS_PING_ECHO=0 to disable (the control arm).
+	if pe := pingecho.StartFromEnv(); pe != nil {
+		defer pe.Close()
 	}
 
 	mux := http.NewServeMux()
 	iam.New(signer).Register(mux)
 	loki.New().Register(mux)
 	menu.New().Register(mux)
-	interactive.New().Register(mux)
+	interSvc := interactive.New()
+	interSvc.Register(mux)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })
 
 	// Catch-all: WebSocket upgrades (lobby/messaging) get a real handshake +
@@ -66,6 +93,18 @@ func main() {
 	// (rather than a fixed /lobby path) also captures the messenger's ws path,
 	// whatever it turns out to be.
 	lobbySvc := lobby.New(logger)
+	// On a loadout change, drop the player's messenger socket so the client reconnects
+	// and re-applies its party promptly (the S85 avatar-switch latency fix — the client
+	// applies the party only on a messenger-reconnect resync, not on HTTP polls).
+	interSvc.SetPartyDirtyNotifier(lobbySvc.MarkDirty)
+	// S135 (armqueue.go): /core-game/players/{id} is fetched exactly ONCE per messenger
+	// connection and never polled, so a MatchID written after login is invisible until
+	// the client reconnects. NotifyResource bumps that one resource's version down the
+	// messenger and the client refetches with no reconnect.
+	interSvc.SetResourceNotifier(lobbySvc.NotifyResource)
+	// Version source for the targeted per-resource resync (FK-15 probe #3). Wired
+	// unconditionally; lobby.enableTargetedResync decides whether it is used.
+	lobbySvc.SetPartyVersionFunc(interSvc.PartyVersion)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if ws.IsUpgrade(r) {
 			lobbySvc.Handle(w, r)
@@ -78,6 +117,33 @@ func main() {
 
 	log.Printf("SUPERVIVE Revival AGS backend")
 	log.Printf("  capture log: %s", *logPath)
+
+	// Admin control panel (2026-07-08): its OWN mux + listener so nothing can
+	// collide with an impersonated client route, loopback-bound by default and
+	// double-guarded (admin.Guard rejects non-loopback peers even if -admin is
+	// rebound wide). Runs outside the capture middleware so panel traffic never
+	// pollutes docs/capture.log.
+	if *adminAddr != "" {
+		adminMux := http.NewServeMux()
+		admin.New(interSvc, lobbySvc).Register(adminMux)
+		handler := admin.Guard(adminMux)
+		// Bind BOTH loopback stacks when the host is loopback/localhost. Browsers
+		// resolve `localhost` to IPv6 ::1 first on Windows, but a single
+		// 127.0.0.1 listener only answers IPv4 — so `http://localhost:9210`
+		// connection-refuses every fetch and the panel shows "Can't reach the ags
+		// backend" while curl (which falls back to IPv4) works. Listening on 127.0.0.1
+		// AND [::1] makes localhost/127.0.0.1/::1 all work (2026-07-10 fix). A
+		// non-loopback -admin (operator opted into wider binding) uses the single
+		// addr as given; the Guard still rejects non-loopback peers.
+		for _, addr := range adminListenAddrs(*adminAddr) {
+			go func(addr string) {
+				log.Printf("  ADMIN  panel on http://%s/", addr)
+				if err := http.ListenAndServe(addr, handler); err != nil {
+					log.Printf("admin %s: %v (this listener disabled)", addr, err)
+				}
+			}(addr)
+		}
+	}
 
 	// HTTPS listener for the hijacked Theorycraft hostnames.
 	cert, crtPath, err := tlscert.EnsureCert(*certDir)
@@ -101,5 +167,29 @@ func main() {
 	log.Printf("  HTTP   listening on %s", *httpAddr)
 	if err := http.ListenAndServe(*httpAddr, handler); err != nil {
 		log.Fatal(err)
+	}
+}
+
+// adminListenAddrs expands a loopback/localhost admin address into one bind per
+// loopback stack (127.0.0.1 + [::1]) so the panel answers on IPv4 and IPv6 —
+// `localhost` prefers ::1 on Windows, so a lone 127.0.0.1 listener leaves the
+// browser's fetches connection-refused. A non-loopback host (operator chose a
+// wider bind) is returned unchanged as a single addr. An unparseable addr also
+// passes through untouched so the caller surfaces the bind error.
+func adminListenAddrs(addr string) []string {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return []string{addr}
+	}
+	isLoopback := host == "localhost"
+	if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() {
+		isLoopback = true
+	}
+	if !isLoopback {
+		return []string{addr}
+	}
+	return []string{
+		net.JoinHostPort("127.0.0.1", port),
+		net.JoinHostPort("::1", port),
 	}
 }

@@ -1,0 +1,631 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[BS] BUILDSTAMP=S136-guardfix-1
+[BS] RM_BOTSPAWN (S135): SpawnClassBotAtLoc on the tutorial GameMode's own bot spawner.
+[BS] CO-OP VS. AI is already ACCESSIBLE (tile + FIND MATCH work, S133); what has never
+[BS] happened is a BOT. The bots queue's own gamemode IS Breach, so this arm does NOT
+[BS] use it: Comp_BP_BotSpawner_C rides on BP_LokiGameMode_Tutorial, and [M] it has ZERO
+[BS] ServerOnly/HasAuthority/SpawnPlayer occurrences (control: 8 in the gamemode's own
+[BS] ubergraph) -- so it is free of BOTH the FK-42 exec-pin gates and FK-1's stripped
+[BS] SpawnPlayer. Inject into a STAGED TUTORIAL WORLD (gft -> fo -> sp -> this).
+[BS] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7B3E254A0 stub=0x21314D51160 funcCls=0x211F952B000 gameTid=26316
+[BS] ---- A0: BASELINE WORLD SCAN (read-only; NO CALL) ----
+[FS] arm: swapped=17563 BP UFunctions  (scan 3516 ms over 154946 objects, 34253 UFunctions total) -- NO .text WRITE
+[BS]   heroCand[0] 0x21313EFB270 'LokiHeroCharacterGrid' cls='LokiHeroCharacterGrid' root=0x0 locOff=0x158 -> no readable location
+[BS]   heroCand[1] 0x2125C0B0040 'BP_HERO_Ronin_C' cls='BP_HERO_Ronin_C' root=0x21316DED850 locOff=0x158 -> USABLE
+[BS] census A0       BotOrAIController-chain=0  LokiHeroCharacter-chain=2  (136539 objects, 1024 classes memoised, 4000 ms)
+[BS] hero candidates: 2; chosen=0x2125C0B0040
+[BS] ---- RESOLVE ----
+[BS] playerHero/WorldContext=0x2125C0B0040 'BP_HERO_Ronin_C'
+[BS]   heroLoc = (0.0, 0.0, 13240.0)
+[BS] FLOOR OVERRIDE (KBSAIFLOOR): spawnLoc (600.0,0.0,13240.0) -> (1356.0,-409.0,90.15) = measured rest point
+[FS] hot: 0 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   (none -- the swapped functions are not being dispatched on the game thread)
+[BS] pawnClass 'BP_HERO_Ronin_C' = 0x21381A7F040 chain=BP_HERO_Ronin_C<-BP_LokiHeroCharacter_C<-BP_LokiHeroCharacter_Code_C<-LokiHeroCharacter_AS<-LokiHeroCharacter<-LokiCharacter<-Character<-Pawn<-LokiActor<-Actor<-Object -> DERIVES FROM Pawn
+[BS] SpawnAIFromClass fn=0x21196136590 thunk=0x7FF7B7117EC0 cdo=0x211964B1520
+[BS]   params: WCO@0x0 PawnClass@0x8 BT@0x10 Loc@0x18 Rot@0x30 NoColl@0x48 Owner@0x50 Ret@0x58
+[BS] ARGS: pawnClass='BP_HERO_Ronin_C' spawnLoc=(1356.0, -409.0, 90.2) BT=null noCollisionFail=1 owner=null
+[BS] ---- A1: STABILITY RE-SCAN after 750 ms settle (still NO CALL) ----
+[FS] *** ARMED AND LIVE: hitsGT=1 allThreadCalls=1 after 8000 ms (~0 game-thread dispatches/s) ***
+[BS] census A1       BotOrAIController-chain=0  LokiHeroCharacter-chain=2  (136539 objects, 1024 classes memoised, 3984 ms)
+[PS] ================ S137: THE bWantsPlayerState EXPERIMENT ================
+[PS] WITHIN-RUN, SINGLE-VARIABLE. Spawn #1 runs with the CDO bit CLEAR and spawn #2 with
+[PS] it SET, same world, same instrument, milliseconds apart -- the ONLY difference is one
+[PS] bit on one CDO. ARM B then runs on controller #1, already printed as PlayerState NULL.
+[PS] KBSPSARMS=0x5BA0 (bit0 control spawn, bit1 poke+treatment, bit2 restore, bit3 ARM B)
+[PS] PRE-REGISTERED: ARM A success => ctl.PlayerState AND pawn.PlayerState both non-null.
+[PS] PRE-REGISTERED: ARM B success => ctl.PlayerState non-null, pawn.PlayerState STILL NULL
+[PS]   (possession already happened; nothing re-runs APawn::SetPlayerState).
+[PS] ---- PRECONDITION: does the world have a GameMode with a PlayerStateClass? ----
+[PS] World candidates: 4
+[PS]   [0] 0x213402B8080 'LVL_Tutorial'  AuthorityGameMode=0x0 ''
+[PS]   [1] 0x213402B8B20 'LVL_Tutorial'  AuthorityGameMode=0x0 ''
+[PS]   [2] 0x213402B95C0 'LVL_Tutorial'  AuthorityGameMode=0x0 ''
+[PS]   [3] 0x213402BA060 'LVL_Tutorial'  AuthorityGameMode=0x0 ''
+[PS] world=0x213402B8080 'LVL_Tutorial'  AuthorityGameMode@0x250(rec 0x250)=0x0 ''  GameState@0x258(rec 0x258)=0x0 ''
+[PS] AuthorityGameMode is NULL. InitPlayerState has a FALLBACK for exactly this
+[PS] (GameState->GetDefaultGameMode(), 0x36DEE83 -> 0x3841550), so this is not
+[PS] necessarily fatal -- but a null PlayerState afterwards is then UNINTERPRETABLE.
+[PS] ---- SPAWN #1 SKIPPED by KBSPSARMS bit0. Without it there is no within-run
+[PS]   control and nothing below is single-variable. ----
+[PS] AIControllerClass from the SPAWNED INSTANCE = 0x0 ''
+[PS] AIControllerClass from the HERO CLASS's CDO  = 0x211983D1280 'AIController'   -> instance unavailable, falling back to the CDO value
+[PS] target class 0x211983D1280 chain=AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] target CDO @+0x178 = 0x211964AD0B0 'Default__AIController'  [name starts Default__ -- looks like a CDO]
+[PS] bWantsPlayerState RESOLVED BY NAME on 'AIController': FProperty=0x211C9AA8180 off=0x488 type=BoolProperty fs=1 bo=0 bm=0x20 fm=0x20
+[PS]   -> byte at +0x488, mask 0x20.  cross-check vs the RECORDED +0x488 bit 0x20: AGREE
+[PS] CDO bWantsPlayerState (L1 baseline) = clear   <- stock UE clears this in the
+[PS]   AAIController ctor (0x45D19AD `and ecx,~0x20`), so `clear` is the EXPECTED baseline
+[PS]   and a `SET` here would mean something already changed it.
+[PS] ---- POKE + SPAWN #2 SKIPPED by KBSPSARMS bit1 ----
+[PS] ---- ARM B SKIPPED by KBSPSARMS bit3 ----
+[PS] ---- ARM C SKIPPED by KBSPSARMS bit4 ----
+[PS] ================== ARM D: A **LOKI** BOT CONTROLLER ==================
+[PS] PRE-REGISTERED: spawn A -> AIController; POKE; spawn B -> LokiBotController;
+[PS]   RESTORE; spawn C -> AIController again. The third spawn is what turns the
+[PS]   restore into a measurement instead of an assumption.
+[PS] Default__Pawn=0x211963DBE20  AIControllerClass@0x3D0 (rec 0x3D0) = 0x211983D1280 'AIController'
+[PS] target class = 0x211990E5100 'LokiBotController'
+[PS]   chain=LokiBotController<-LokiAIController<-AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] KBSLBSKIPCTRL=1: spawns A and C are compiled out; only spawn B runs (A-B-A already [M] S137 F3/F4). Rows 0/2 print as zeros.
+[PS] POKE AIControllerClass: 0x211983D1280 -> 0x211990E5100 (wanted 0x211990E5100)  READBACK OK
+[PS] ---- ARM D / SPAWN B (TREATMENT: CDO names LokiBotController) ----
+[PS]   ! ALokiBotController::OnPossess 0x5565470 is DARK in every image on disk. If this
+[PS]   ! faults, that is still a result and the page is now decrypted -- dumpimage it.
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[BS] SpawnAIFromClass -> ReturnValue=0x212A6B65580 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C'
+[BS] ! ReturnValue is a corroborator, NOT the verdict. The CONTROLLER census delta is.
+[PS] ARM D B-treatment  pawn=0x212A6B65580  pawn.AIControllerClass=0x211990E5100 'LokiBotController'
+[PS] ARM D B-treatment    controller=0x213146DB0A0 class='LokiBotController'  BotController-chain=*** YES ***
+[PS] ARM D B-treatment    chain=LokiBotController<-LokiAIController<-AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] RESTORE AIControllerClass -> 0x211983D1280  READBACK OK
+[PS] ---- ARM D: now ARM B + ARM C on the LOKI BOT CONTROLLER ----
+[PS] ---- ARM B: direct AController::InitPlayerState on controller #2 ----
+[PS] ARM B: vtable=0x7FF7BB3ADE18  slot[+0x888]=0x7FF7B61BEE20  rva=0x36DEE20  (expected 0x36DEE20)
+[PS] ARM B: calling. NOT call-only -- this does a SpawnActor(RF_Transient) and writes
+[PS]   controller+0x3C0. SEH-guarded.
+[PS] ARM B returned (dispatched=1 faulted=0). Re-reading controller #2:
+[PS] ARM-B     pawn=0x212A6B65580 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C' FName.Number=2147471082
+[PS] ARM-B       pawn.Controller        @0x400 (rec 0x400) = 0x213146DB0A0   [offset AGREES]
+[PS] ARM-B       pawn.PlayerState  (L4) @0x3D8 (rec 0x3D8) = 0x0   [offset AGREES]   NULL
+[PS] ARM-B       pawn.AIControllerClass @0x3D0 (rec 0x3D0) = 0x211990E5100 'LokiBotController'  [offset AGREES]
+[PS] ARM-B       controller=0x213146DB0A0 class='LokiBotController' FName.Number=2147471014
+[PS] ARM-B         chain=LokiBotController<-LokiAIController<-AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] ARM-B       ctl.bWantsPlayerState (L2) = clear   [byte@+0x488 mask 0x20, dword@+0x488=0x0000004A]
+[PS] ARM-B       GATE2 ObjectFlags@+0x0C=0x00000048 bit30(RF_Garbage)=0 -> passes
+[PS] ARM-B       ctl.PlayerState       (L3) @0x3C0 (rec 0x3C0) = 0x2119864CCD0   [offset AGREES]   *** NON-NULL ***
+[PS] ARM-B         >> PlayerState 0x2119864CCD0 'BP_LokiPlayerState_C' class='BP_LokiPlayerState_C'
+[PS] ARM-B            chain=BP_LokiPlayerState_C<-LokiPlayerState<-PlayerState<-Info<-LokiActor<-Actor<-Object  alive=1
+[PS] ---- ARM C: APawn::SetPlayerState on pawn #2 ----
+[PS] ARM C: target=0x7FF7B669D9F0 rva=0x3BBD9F0 prologue=48 89 5C 24 08 48 89 6C 24 10 48 89 74 24 18 57  -> SIGNATURE MATCHES APawn::SetPlayerState
+[PS] ARM C: calling SetPlayerState(pawn=0x212A6B65580, ps=0x2119864CCD0). NOT call-only -- writes
+[PS]   pawn+0x3D8, syncs PlayerState.PawnPrivate, broadcasts OnPawnSet. SEH-guarded.
+[PS] ARM C returned (done=1 faulted=0). Re-reading pair #2:
+[PS] ARM-C     pawn=0x212A6B65580 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C' FName.Number=2147471082
+[PS] ARM-C       pawn.Controller        @0x400 (rec 0x400) = 0x213146DB0A0   [offset AGREES]
+[PS] ARM-C       pawn.PlayerState  (L4) @0x3D8 (rec 0x3D8) = 0x2119864CCD0   [offset AGREES]   *** NON-NULL ***
+[PS] ARM-C       pawn.AIControllerClass @0x3D0 (rec 0x3D0) = 0x211990E5100 'LokiBotController'  [offset AGREES]
+[PS] ARM-C       controller=0x213146DB0A0 class='LokiBotController' FName.Number=2147471014
+[PS] ARM-C         chain=LokiBotController<-LokiAIController<-AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] ARM-C       ctl.bWantsPlayerState (L2) = clear   [byte@+0x488 mask 0x20, dword@+0x488=0x0000004A]
+[PS] ARM-C       GATE2 ObjectFlags@+0x0C=0x00000048 bit30(RF_Garbage)=0 -> passes
+[PS] ARM-C       ctl.PlayerState       (L3) @0x3C0 (rec 0x3C0) = 0x2119864CCD0   [offset AGREES]   *** NON-NULL ***
+[PS] ARM-C         >> PlayerState 0x2119864CCD0 'BP_LokiPlayerState_C' class='BP_LokiPlayerState_C'
+[PS] ARM-C            chain=BP_LokiPlayerState_C<-LokiPlayerState<-PlayerState<-Info<-LokiActor<-Actor<-Object  alive=1
+[PS] ---- ARM E SKIPPED by KBSPSARMS bit6 ----
+[PS] ================ ARM F: drive UpdateCharacterControllable ================
+[PS] ARM F BEFORE: ctl=0x213146DB0A0 pawn=0x212A6B65580  LivingState=0  GATE+0x6A0=0  force+0x602=0
+[PS] ARM F: poked pawn+0x1090 = 1 (Alive)  READBACK=1
+[PS] ARM F: target=0x7FF7B8050B80 rva=0x5570B80 prologue=40 57 48 83 EC 20 80 B9 02 06 00 00 00 48 8B F9  -> SIGNATURE MATCHES UpdateCharacterControllable
+[PS] ARM F: calling UpdateCharacterControllable(ctl). NOT call-only -- it writes
+[PS]   +0x6A0 and touches the Blackboard. SEH-guarded.
+[PS] ARM F AFTER (faulted=0): LivingState=1  GATE+0x6A0=1  (was 0)
+[PS] ***** ARM F: THE GATE OPENED. bCharacterControllable 0 -> 1. The wander
+[PS]   driver in Tick is now ungated as far as THIS term goes -- read
+[PS]   RandomMoveDirection (+0x658) and the pawn location EXTERNALLY to see
+[PS]   whether it actually MOVES. *****
+[GASX] ================ ARM G: port the DS GAS recipe onto the BOT ================
+[FS] t=+15s hitsGT=1 called=0 allThreadCalls=74 swapped=17563
+[GASX] CDO = 0x211965AFB00 (using its DEFAULT SUBOBJECTS -- deliberately NOT spawning)
+[GASX]   src AbilitySystemComponent     @0x3E8 = 0x211965AFF10 (LokiAbilitySystemComponent)
+[GASX]   src AttributeSet               @0x3F0 = 0x211965B1710 (LokiAttributeSet)
+[GASX]   src AttributeSetHealth         @0x3F8 = 0x211965B1F20 (LokiAttributeSetHealth)
+[GASX]   dst AbilitySystemComponentStorage  @0xF00  0 -> 211965AFF10  OK
+[GASX]   dst AttributeSetStorage            @0xF08  0 -> 211965B1710  OK
+[GASX]   dst AttributeSetHealthStorage      @0xF10  0 -> 211965B1F20  OK
+[GASX] --- writing the WHOLE movement attribute block (partial ports are measured insufficient) ---
+[GASX]   attr MoveSpeed                    @+0xF0   = 487  readback 487 OK
+[GASX]   attr MaxMoveSpeed                 @+0x100  = 487  readback 487 OK
+[GASX]   attr MaxAcceleration              @+0x120  = 50000  readback 50000 OK
+[GASX]   attr GroundFriction               @+0x130  = 8  readback 8 OK
+[GASX]   attr BrakingDecelerationWalking   @+0x140  = 2048  readback 2048 OK
+[GASX]   attr Mass                         @+0x170  = 100  readback 100 OK
+[GASX] --- ARM K1: same three storages onto the PLAYER hero 0x2125C0B0040 ---
+[GASX]   PLR AbilitySystemComponentStorage  MASKED OUT (KBSGASPLAYERMASK=0x2)
+[GASX]   PLR AttributeSetStorage            @0xF08  0 -> 211965B1710  OK
+[GASX]   PLR AttributeSetHealthStorage      MASKED OUT (KBSGASPLAYERMASK=0x2)
+[GASX] ARM K1 done: PLAYER storages written 1/3
+[RCPT] GETTER_PLR_AFTER_K1 vtblExact=yes mode=3 f00=0x21314BCCD00 f08=0x211965B1710 MaxSpeed=43F38000(ok=1,487.00) MaxAccel=47435000(ok=1,50000.00 NONDISCRIM) seed=487
+[RCPT] GETTER_BOT_AFTER_G vtblExact=yes mode=1 f00=0x211965AFF10 f08=0x211965B1710 MaxSpeed=43F38000(ok=1,487.00) MaxAccel=47435000(ok=1,50000.00 NONDISCRIM) seed=487
+[GASX] ARM G done: storages written 3/3, attributes written 6/6
+[GASX] ⚠ SCOPE: the attribute values live in a CDO DEFAULT SUBOBJECT -- process-wide, not undone.
+[GASX] ⚠ The PLAYER hero is deliberately UNTREATED: it is the within-run specificity control.
+[SNP] ================ ARM H: THE PAYLOAD-POISON / SENTINEL TEST ================
+[SNP] QUESTION: does ULokiCMC::StartNewPhysics 0x055C2430 execute on these components?
+[SNP] The flag at +0x16C8 CANNOT answer it (S140 Tier 1: cleared every frame by vtable
+[SNP] disp 0xA50 = 0x0530ABF0 on a path the call DOMINATES -- it reads 0 in every world).
+[SNP] The PAYLOAD at +0x16B0 is durable: its only CMC-side writer is 0x055C244F, inside
+[SNP] StartNewPhysics on the Iterations==0 path.
+[SNP] ---- PRE-REGISTERED OUTCOME TABLE (written BEFORE any write; do not reinterpret) ----
+[SNP]   BOT   (payload poisoned AND Velocity = sentinel 2^-10):
+[SNP]     payload == SENTINEL  -> StartNewPhysics RAN, and the payload is a copy of
+[SNP]                             Velocity. Mechanism validated end to end.        [M]
+[SNP]     payload == (0,0,0)   -> StartNewPhysics RAN, and something ZEROED Velocity
+[SNP]                             before the snapshot. Also a major finding.       [M]
+[SNP]     payload == POISON    -> StartNewPhysics did NOT run in the window.        [M]
+[SNP]     anything else        -> UNMODELLED. Report raw; do not interpret.
+[SNP]   PLAYER (payload poisoned, Velocity NOT touched -- the write-free arm):
+[SNP]     payload == (0,0,0)   -> StartNewPhysics RAN.                             [M]
+[SNP]     payload == POISON    -> StartNewPhysics did NOT run in the window.       [M]
+[SNP]     payload == BOT poison or BOT sentinel -> the CMC resolution is WRONG and
+[SNP]                             the run is VOID. (This is why the poisons differ.)
+[SNP]   The two arms must AGREE unless there is a real bot/player asymmetry -- and S139
+[SNP]   flight 1 measured them identical on every structural field, so a disagreement
+[SNP]   would itself be the result.
+[SNP] BOT            pawn=0x212A6B65580 CharacterMovement@0x458 = 0x211C9D05560 class='LokiCharacterMovementComponent'  (+0x458 reads 0x211C9D05560, AGREES)
+[SNP] BOT            CONTROL1 CharacterOwner@0x198=0x212A6B65580 vs pawn 0x212A6B65580 -> PASS
+[SNP] BOT            CONTROL2 TickFn.Target@0x68=0x211C9D05560 vs cmc 0x211C9D05560 -> PASS
+[SNP] BOT            WorldPrivate@0xC0=0x2130E6E8B20 'LVL_Tutorial'  NON-NULL -> engine PerformMovement exit 2 input is satisfied
+[SNP] BOT            NumJumpApexAttempts@0x3DC=0  MaxSimulationTimeStep@0x3E0=0.2  MaxSimulationIterations@0x3E4=1 (>0 -> engine StartNewPhysics 4th early-out 0x036009B5 does NOT bail)
+[SNP] BOT            vptr=0x7FF7BB3D8570  ULokiCMC vt=0x7FF7BB3D8570  engine vt=0x7FF7BAA9ED58 -> ULokiCMC (disp 0x720 = 0x055C2430, the function under test)
+[SNP] PLAYER         pawn=0x2125C0B0040 CharacterMovement@0x458 = 0x21316BCAAB0 class='LokiCharacterMovementComponent'  (+0x458 reads 0x21316BCAAB0, AGREES)
+[SNP] PLAYER         CONTROL1 CharacterOwner@0x198=0x2125C0B0040 vs pawn 0x2125C0B0040 -> PASS
+[SNP] PLAYER         CONTROL2 TickFn.Target@0x68=0x21316BCAAB0 vs cmc 0x21316BCAAB0 -> PASS
+[SNP] PLAYER         WorldPrivate@0xC0=0x2130E6E8B20 'LVL_Tutorial'  NON-NULL -> engine PerformMovement exit 2 input is satisfied
+[SNP] PLAYER         NumJumpApexAttempts@0x3DC=0  MaxSimulationTimeStep@0x3E0=0.2  MaxSimulationIterations@0x3E4=1 (>0 -> engine StartNewPhysics 4th early-out 0x036009B5 does NOT bail)
+[SNP] PLAYER         vptr=0x7FF7BB3D8570  ULokiCMC vt=0x7FF7BB3D8570  engine vt=0x7FF7BAA9ED58 -> ULokiCMC (disp 0x720 = 0x055C2430, the function under test)
+[SNP] ---- BEFORE (raw) ----
+[SNP] BOT-before     payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] BOT-before     Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] BOT-before     payload dec (0, 0, 0)
+[SNP] BOT-before     Velocity dec (0, 0, 0)
+[SNP] BOT-before     flag@0x16C8=0  TimeSinceFallingStart@0x12B0=0.0000
+[SNP] BOT-before     GravityScale@0x1A0=1.0000  MovementMode@0x231=1 (MOVE_Walking)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT-before     AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT-before     ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] BOT-before     GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT-before     Accel@0x328 (0, 0, 0)
+[SNP] PLR-before     payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR-before     Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR-before     payload dec (0, 0, 0)
+[SNP] PLR-before     Velocity dec (0, 0, 0)
+[SNP] PLR-before     flag@0x16C8=0  TimeSinceFallingStart@0x12B0=12.1006
+[SNP] PLR-before     GravityScale@0x1A0=0.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR-before     ⚠ GravityScale is ZERO -> engine GetGravityZ returns 0 -> NewFallVelocity adds nothing -> THIS PAWN CANNOT FALL, and that is OUR OWN doing, not a game defect.
+[SNP] PLR-before     AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR-before     ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR-before     GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR-before     Accel@0x328 (0, 0, 0)
+[SNP] BOT poison written -> readback OK
+[SNP] PLAYER poison written -> readback OK
+[SNP] BOT sentinel Velocity = (0, 0, 0) -> readback OK
+[SNP] ARM J: PLAYER Velocity = (0, -1, 0) -> readback OK
+[SNP] ARM K2: PLAYER GravityScale@0x1A0  0.0000 -> 1.0000  readback OK
+[SNP] ---- AFTER THE WRITES (raw) ----
+[SNP] BOT-armed      payload@0x16B0 RAW 00000000404AC3C0|00000000A01EC1C0|0000000020E6BDC0
+[SNP] BOT-armed      Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] BOT-armed      payload dec (-9876.5, -8765.25, -7654.125)
+[SNP] BOT-armed      Velocity dec (0, 0, 0)
+[SNP] BOT-armed      flag@0x16C8=0  TimeSinceFallingStart@0x12B0=0.0000
+[SNP] BOT-armed      GravityScale@0x1A0=1.0000  MovementMode@0x231=1 (MOVE_Walking)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT-armed      AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT-armed      ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] BOT-armed      GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT-armed      Accel@0x328 (0, 0, 0)
+[SNP] PLR-armed      payload@0x16B0 RAW 00000000004A93C0|000000008052A2C0|000000004000ABC0
+[SNP] PLR-armed      Velocity@0xE8  RAW 0000000000000000|000000000000F0BF|0000000000000000
+[SNP] PLR-armed      payload dec (-1234.5, -2345.25, -3456.125)
+[SNP] PLR-armed      Velocity dec (0, -1, 0)
+[SNP] PLR-armed      flag@0x16C8=0  TimeSinceFallingStart@0x12B0=12.1006
+[SNP] PLR-armed      GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR-armed      AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR-armed      ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR-armed      GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR-armed      Accel@0x328 (0, 0, 0)
+[SNP] ARM H armed. THE READ HAPPENS ON THE WORKER THREAD AFTER FsDisarm -- this function
+[SNP] runs on the GAME THREAD, so sleeping here would stop the frames the test needs.
+[BS] ---- A2: POST-CALL SCAN ----
+[BS] census A2       BotOrAIController-chain=1  LokiHeroCharacter-chain=3  (137119 objects, 1024 classes memoised, 4563 ms)
+[FS] disarm: restored=17563 of 17563 swapped (scan 3860 ms, 34253 UFunctions live)
+[SNP] ================ ARM H SAMPLER (worker thread, game thread free) ================
+[SNP] S189-BOT dense sampler: 40 samples every 1000 ms; ShDump every 5th sample; compact line every sample
+[SNP] ---- sample 0 at t=+1000 ms (sinceArm 10188 ms) ----
+[SNP] BOT            payload@0x16B0 RAW 1D23736A1B1762C0|702566E640F86940|000000406B7C92C0
+[SNP] BOT            Velocity@0xE8  RAW 2FD273130DA461C0|492FAC4A15536940|00000080A46F92C0
+[SNP] BOT            payload dec (-144.7220967, 207.7579224, -1183.104736)
+[SNP] BOT            Velocity dec (-141.1265962, 202.5963491, -1179.910645)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=0.9000
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (-14059.9, -47982.5, 0)
+[SNP] PLR            payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR            Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR            payload dec (0, 0, 0)
+[SNP] PLR            Velocity dec (0, 0, 0)
+[SNP] PLR            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=17.3673
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (0, 0, 0)
+[SNP] BOT i=0 |Vxy|=246.9048335 peak=246.9048335 mode=3 Vz=-1179.911 Z=-500.882 TSF=0.9000 Acc=(-14059.9,-47982.5) |Axy|=50000.0 AIM=1 delta=-2.401e+02 atCap=no
+[SNP] PLR i=0 |Vxy|=0 peak=0 mode=3 Vz=0.000 Z=386.085 TSF=17.3673 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-288.537, 954.705, -541.030)  moved 2227.685 uu
+[SNP] PLR            loc (0.000, -1.285, 386.085)  moved 12853.915 uu
+[SNP] ---- sample 1 at t=+2015 ms (sinceArm 11203 ms) ----
+[SNP] BOT i=1 |Vxy|=112.8390469 peak=246.9048335 mode=3 Vz=-1000.000 Z=-1668.937 TSF=1.9377 Acc=(-14059.9,-47982.5) |Axy|=50000.0 AIM=1 delta=-3.742e+02 atCap=no
+[SNP] PLR i=1 |Vxy|=0 peak=0 mode=3 Vz=0.000 Z=386.006 TSF=18.4139 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-386.364, 1095.141, -1674.467)  moved 2900.370 uu
+[SNP] PLR            loc (0.000, -1.285, 386.006)  moved 12853.994 uu
+[SNP] ---- sample 2 at t=+3031 ms (sinceArm 12219 ms) ----
+[SNP] BOT i=2 |Vxy|=52.41454733 peak=246.9048335 mode=3 Vz=-1000.000 Z=-2684.236 TSF=2.9582 Acc=(-15402.1,47568.7) |Axy|=50000.0 AIM=1 delta=-4.346e+02 atCap=no
+[SNP] PLR i=2 |Vxy|=0 peak=0 mode=3 Vz=0.000 Z=385.985 TSF=19.4255 Acc=(0.0,-50000.0) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-431.680, 1160.195, -2693.422)  moved 3661.482 uu
+[SNP] PLR            loc (0.000, -1.285, 385.985)  moved 12854.015 uu
+[SNP] ---- sample 3 at t=+4047 ms (sinceArm 13235 ms) ----
+[SNP] BOT i=3 |Vxy|=24.5858441 peak=246.9048335 mode=3 Vz=-1000.000 Z=-3700.295 TSF=3.9643 Acc=(-15402.1,47568.7) |Axy|=50000.0 AIM=1 delta=-4.624e+02 atCap=no
+[SNP] PLR i=3 |Vxy|=0 peak=0 mode=3 Vz=0.000 Z=385.985 TSF=20.4317 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-452.554, 1190.162, -3700.295)  moved 4493.958 uu
+[SNP] PLR            loc (0.000, -1.285, 385.985)  moved 12854.015 uu
+[SNP] ---- sample 4 at t=+5062 ms (sinceArm 14250 ms) ----
+[SNP] BOT i=4 |Vxy|=11.55853359 peak=246.9048335 mode=3 Vz=-1000.000 Z=-4724.823 TSF=4.9644 Acc=(-22095.0,44853.2) |Axy|=50000.0 AIM=1 delta=-4.754e+02 atCap=no
+[SNP] PLR i=4 |Vxy|=0 peak=0 mode=3 Vz=0.000 Z=385.985 TSF=21.4318 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-462.638, 1204.638, -4758.973)  moved 5424.506 uu
+[SNP] PLR            loc (0.000, -1.285, 385.985)  moved 12854.015 uu
+[SNP] ---- sample 5 at t=+6093 ms (sinceArm 15281 ms) ----
+[SNP] BOT            payload@0x16B0 RAW 6181935227D908C0|81EC4A6DECD51140|0000000000408FC0
+[SNP] BOT            Velocity@0xE8  RAW FCD477F11D3B08C0|6481ECD57C641140|0000000000408FC0
+[SNP] BOT            payload dec (-3.106032033, 4.45890971, -1000)
+[SNP] BOT            Velocity dec (-3.028865706, 4.34813246, -1000)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=5.9977
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (-22095, 44853.2, 0)
+[SNP] PLR            payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR            Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR            payload dec (0, 0, 0)
+[SNP] PLR            Velocity dec (0, 0, 0)
+[SNP] PLR            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=22.4651
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (0, 0, 0)
+[SNP] BOT i=5 |Vxy|=5.299083256 peak=246.9048335 mode=3 Vz=-1000.000 Z=-5783.480 TSF=5.9977 Acc=(-22095.0,44853.2) |Axy|=50000.0 AIM=1 delta=-4.817e+02 atCap=no
+[SNP] PLR i=5 |Vxy|=0 peak=0 mode=3 Vz=0.000 Z=385.985 TSF=22.4651 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-467.162, 1211.132, -5783.480)  moved 6359.896 uu
+[SNP] PLR            loc (0.000, -1.285, 385.985)  moved 12854.015 uu
+[SNP] ---- sample 6 at t=+7109 ms (sinceArm 16297 ms) ----
+[SNP] BOT i=6 |Vxy|=2.429399536 peak=246.9048335 mode=3 Vz=-1000.000 Z=-6842.138 TSF=7.0311 Acc=(49775.2,4736.4) |Axy|=50000.0 AIM=1 delta=-4.846e+02 atCap=no
+[SNP] PLR i=6 |Vxy|=0 peak=0 mode=3 Vz=0.000 Z=385.985 TSF=23.4984 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-469.335, 1214.252, -6842.138)  moved 7350.062 uu
+[SNP] PLR            loc (0.000, -1.285, 385.985)  moved 12854.015 uu
+[SNP] ---- sample 7 at t=+8125 ms (sinceArm 17313 ms) ----
+[SNP] BOT i=7 |Vxy|=1.132664669 peak=246.9048335 mode=3 Vz=-1000.000 Z=-7871.613 TSF=8.0452 Acc=(49775.2,4736.4) |Axy|=50000.0 AIM=1 delta=-4.859e+02 atCap=no
+[SNP] PLR i=7 |Vxy|=0 peak=0 mode=3 Vz=0.000 Z=385.985 TSF=24.5179 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-470.330, 1215.680, -7881.906)  moved 8338.390 uu
+[SNP] PLR            loc (0.000, -1.285, 385.985)  moved 12854.015 uu
+[SNP] ---- sample 8 at t=+9140 ms (sinceArm 18328 ms) ----
+[SNP] BOT i=8 |Vxy|=0.5260480251 peak=246.9048335 mode=3 Vz=-1000.000 Z=-8894.809 TSF=9.0661 Acc=(47560.5,15427.1) |Axy|=50000.0 AIM=1 delta=-4.865e+02 atCap=no
+[SNP] PLR i=8 |Vxy|=0 peak=0 mode=3 Vz=0.000 Z=385.985 TSF=25.5380 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-470.784, 1216.332, -8898.989)  moved 9315.764 uu
+[SNP] PLR            loc (0.000, -1.285, 385.985)  moved 12854.015 uu
+[SNP] FALLBACK NOT NEEDED at sample 8: bot max |Vxy| over samples 0..7 = 246.9048 >= 5.0 with NO kick written -> AI-driven (confirm Acc rotates through >=3 headings at |Axy|~50000).
+[SNP] ---- sample 9 at t=+10156 ms (sinceArm 19344 ms) ----
+[SNP] BOT i=9 |Vxy|=0.2454767342 peak=246.9048335 mode=3 Vz=-1000.000 Z=-9912.598 TSF=10.0806 Acc=(47560.5,15427.1) |Axy|=50000.0 AIM=1 delta=-4.868e+02 atCap=no
+[SNP] PLR i=9 |Vxy|=0 peak=0 mode=3 Vz=0.000 Z=385.985 TSF=26.5524 Acc=(0.0,-50000.0) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-470.997, 1216.637, -9920.987)  moved 10305.507 uu
+[SNP] PLR            loc (0.000, -1.285, 385.985)  moved 12854.015 uu
+[SNP] ---- sample 10 at t=+11172 ms (sinceArm 20360 ms) ----
+[SNP] BOT            payload@0x16B0 RAW 4408D5EAB4C4B0BF|A0AF8E387512B83F|0000000000408FC0
+[SNP] BOT            Velocity@0xE8  RAW E1FE79B94AB7B0BF|FDB5193733FFB73F|0000000000408FC0
+[SNP] BOT            payload dec (-0.06550150617, 0.09403164511, -1000)
+[SNP] BOT            Velocity dec (-0.06529681233, 0.09373779388, -1000)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=11.0986
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (44155.5, 23458.4, 0)
+[SNP] PLR            payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR            Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR            payload dec (0, 0, 0)
+[SNP] PLR            Velocity dec (0, 0, -6.125048921)
+[SNP] PLR            flag@0x16C8=1  TimeSinceFallingStart@0x12B0=27.5705
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (2.83277e-11, -50000, 0)
+[SNP] BOT i=10 |Vxy|=0.1138815578 peak=246.9048335 mode=3 Vz=-1000.000 Z=-10938.498 TSF=11.1028 Acc=(44155.5,23458.4) |Axy|=50000.0 AIM=1 delta=-4.869e+02 atCap=no
+[SNP] PLR i=10 |Vxy|=0 peak=0 mode=3 Vz=0.000 Z=385.985 TSF=27.5748 Acc=(0.0,-50000.0) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.096, 1216.779, -10942.678)  moved 11300.652 uu
+[SNP] PLR            loc (0.000, -1.285, 385.985)  moved 12854.015 uu
+[SNP] ---- sample 11 at t=+12203 ms (sinceArm 21391 ms) ----
+[SNP] BOT i=11 |Vxy|=0.05321389163 peak=246.9048335 mode=3 Vz=-1000.000 Z=-11958.075 TSF=12.1154 Acc=(-38410.0,-32010.5) |Axy|=50000.0 AIM=1 delta=-4.869e+02 atCap=no
+[SNP] PLR i=11 |Vxy|=115.84503 peak=115.84503 mode=3 Vz=-873.642 Z=122.975 TSF=0.8751 Acc=(0.0,-50000.0) |Axy|=50000.0 AIM=1 delta=-3.712e+02 atCap=no
+[SNP] BOT            loc (-471.142, 1216.845, -11962.255)  moved 12298.060 uu
+[SNP] PLR            loc (-141.943, -31.029, 119.322)  moved 13121.483 uu
+[SNP] ---- sample 12 at t=+13218 ms (sinceArm 22406 ms) ----
+[SNP] BOT i=12 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-12978.938 TSF=13.1360 Acc=(-38410.0,-32010.5) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=12 |Vxy|=487 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=1.8923 Acc=(0.0,-50000.0) |Axy|=50000.0 AIM=1 delta=0.000e+00 atCap=BAND
+[SNP] BOT            loc (-471.158, 1216.868, -12987.302)  moved 13304.199 uu
+[SNP] PLR            loc (-147.515, -511.300, 90.150)  moved 13160.613 uu
+[SNP] ---- sample 13 at t=+14234 ms (sinceArm 23422 ms) ----
+[SNP] BOT i=13 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-14000.398 TSF=14.1540 Acc=(45678.1,-20334.9) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=13 |Vxy|=487 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=2.9104 Acc=(50000.0,0.0) |Axy|=50000.0 AIM=1 delta=5.684e-14 atCap=BAND
+[SNP] BOT            loc (-471.158, 1216.868, -14010.354)  moved 14311.050 uu
+[SNP] PLR            loc (-96.274, -609.732, 90.150)  moved 13164.330 uu
+[SNP] ---- sample 14 at t=+15250 ms (sinceArm 24438 ms) ----
+[SNP] BOT i=14 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-15020.922 TSF=15.1709 Acc=(45678.1,-20334.9) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=14 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=3.9273 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -15029.296)  moved 15315.992 uu
+[SNP] PLR            loc (39.315, -609.732, 90.150)  moved 13164.037 uu
+[SNP] ---- sample 15 at t=+16265 ms (sinceArm 25453 ms) ----
+[SNP] BOT            payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000408FC0
+[SNP] BOT            Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000408FC0
+[SNP] BOT            payload dec (0, 0, -1000)
+[SNP] BOT            Velocity dec (0, 0, -1000)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=16.1898
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (38073.4, 32410.1, 0)
+[SNP] PLR            payload@0x16B0 RAW 47CF8119F76F7EC0|6E18C2EADA46F7BF|0000000000000000
+[SNP] PLR            Velocity@0xE8  RAW 9205A446FC6F7EC0|B60C39D0FD1CEEBF|0000000000000000
+[SNP] PLR            payload dec (-486.9978271, -1.454798619, 0)
+[SNP] PLR            Velocity dec (-486.9990908, -0.9410389964, 0)
+[SNP] PLR            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=4.9420
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=1 (MOVE_Walking)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (-50000, -0.000608398, 0)
+[SNP] BOT i=15 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-16045.470 TSF=16.1898 Acc=(38073.4,32410.1) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=15 |Vxy|=487 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=4.9483 Acc=(-50000.0,-0.0) |Axy|=50000.0 AIM=1 delta=-9.663e-13 atCap=BAND
+[SNP] BOT            loc (-471.158, 1216.868, -16051.127)  moved 16325.526 uu
+[SNP] PLR            loc (-126.665, -488.001, 90.150)  moved 13159.512 uu
+[SNP] ---- sample 16 at t=+17281 ms (sinceArm 26469 ms) ----
+[SNP] BOT i=16 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-17065.903 TSF=17.2085 Acc=(38073.4,32410.1) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=16 |Vxy|=487 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=5.9651 Acc=(-35355.3,35355.3) |Axy|=50000.0 AIM=1 delta=-1.364e-12 atCap=BAND
+[SNP] BOT            loc (-471.158, 1216.868, -17075.772)  moved 17339.286 uu
+[SNP] PLR            loc (-436.484, -311.723, 90.150)  moved 13160.784 uu
+[SNP] ---- sample 17 at t=+18312 ms (sinceArm 27500 ms) ----
+[SNP] BOT i=17 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-18088.689 TSF=18.2279 Acc=(-42683.8,26040.2) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=17 |Vxy|=487 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=6.9843 Acc=(-35355.3,-35355.3) |Axy|=50000.0 AIM=1 delta=4.775e-12 atCap=BAND
+[SNP] BOT            loc (-471.158, 1216.868, -18100.030)  moved 18353.872 uu
+[SNP] PLR            loc (-565.581, -265.112, 90.150)  moved 13164.677 uu
+[SNP] ---- sample 18 at t=+19328 ms (sinceArm 28516 ms) ----
+[SNP] BOT i=18 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-19111.748 TSF=19.2478 Acc=(-42683.8,26040.2) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=18 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=8.0040 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -19122.112)  moved 19367.317 uu
+[SNP] PLR            loc (-897.232, -548.149, 90.150)  moved 13191.817 uu
+[SNP] ---- sample 19 at t=+20343 ms (sinceArm 29531 ms) ----
+[SNP] BOT i=19 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-20133.032 TSF=20.2654 Acc=(-49599.8,-6313.4) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=19 |Vxy|=487 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=9.0215 Acc=(0.0,-50000.0) |Axy|=50000.0 AIM=1 delta=0.000e+00 atCap=BAND
+[SNP] BOT            loc (-471.158, 1216.868, -20141.391)  moved 20378.843 uu
+[SNP] PLR            loc (-776.067, -924.239, 90.150)  moved 13205.115 uu
+[SNP] ---- sample 20 at t=+21359 ms (sinceArm 30547 ms) ----
+[SNP] BOT            payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000408FC0
+[SNP] BOT            Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000408FC0
+[SNP] BOT            payload dec (0, 0, -1000)
+[SNP] BOT            Velocity dec (0, 0, -1000)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=21.2831
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (-49599.8, -6313.36, 0)
+[SNP] PLR            payload@0x16B0 RAW 0000000000000000|0000000000707EC0|0000000000000000
+[SNP] PLR            Velocity@0xE8  RAW 0000000000000000|0000000000707EC0|0000000000000000
+[SNP] PLR            payload dec (0, -487, 0)
+[SNP] PLR            Velocity dec (0, -487, 0)
+[SNP] PLR            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=10.0390
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=1 (MOVE_Walking)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (2.83277e-11, -50000, 0)
+[SNP] BOT i=20 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-21158.093 TSF=21.2872 Acc=(-49599.8,-6313.4) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=20 |Vxy|=487 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=10.0432 Acc=(0.0,-50000.0) |Axy|=50000.0 AIM=1 delta=0.000e+00 atCap=BAND
+[SNP] BOT            loc (-471.158, 1216.868, -21166.452)  moved 21396.848 uu
+[SNP] PLR            loc (-776.067, -1421.805, 90.150)  moved 13249.240 uu
+[SNP] ---- sample 21 at t=+22375 ms (sinceArm 31563 ms) ----
+[SNP] BOT i=21 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-22175.701 TSF=22.3016 Acc=(-49469.6,-7263.2) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=21 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=11.0574 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -22184.708)  moved 22408.731 uu
+[SNP] PLR            loc (-776.067, -1472.570, 90.150)  moved 13254.784 uu
+[SNP] ---- sample 22 at t=+23406 ms (sinceArm 32594 ms) ----
+[SNP] BOT i=22 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-23199.706 TSF=23.3217 Acc=(-49469.6,-7263.2) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=22 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=12.0777 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -23206.183)  moved 23424.369 uu
+[SNP] PLR            loc (-776.067, -1472.570, 90.150)  moved 13254.784 uu
+[SNP] ---- sample 23 at t=+24422 ms (sinceArm 33610 ms) ----
+[SNP] BOT i=23 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-24222.866 TSF=24.3410 Acc=(10833.7,48812.2) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=23 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=13.0967 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -24231.418)  moved 24444.235 uu
+[SNP] PLR            loc (-776.067, -1472.570, 90.150)  moved 13254.784 uu
+[SNP] ---- sample 24 at t=+25437 ms (sinceArm 34625 ms) ----
+[SNP] BOT i=24 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-25246.777 TSF=25.3615 Acc=(10833.7,48812.2) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=24 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=14.1171 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -25255.136)  moved 25463.021 uu
+[SNP] PLR            loc (-776.067, -1472.570, 90.150)  moved 13254.784 uu
+[SNP] ---- sample 25 at t=+26453 ms (sinceArm 35641 ms) ----
+[SNP] BOT            payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000408FC0
+[SNP] BOT            Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000408FC0
+[SNP] BOT            payload dec (0, 0, -1000)
+[SNP] BOT            Velocity dec (0, 0, -1000)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=26.3773
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (-8619.19, -49251.5, 0)
+[SNP] PLR            payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR            Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR            payload dec (0, 0, 0)
+[SNP] PLR            Velocity dec (0, 0, 0)
+[SNP] PLR            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=15.1327
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=1 (MOVE_Walking)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (0, 0, 0)
+[SNP] BOT i=25 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-26269.773 TSF=26.3814 Acc=(-8619.2,-49251.5) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=25 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=15.1368 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -26279.107)  moved 26482.441 uu
+[SNP] PLR            loc (-776.067, -1472.570, 90.150)  moved 13254.784 uu
+[SNP] ---- sample 26 at t=+27484 ms (sinceArm 36672 ms) ----
+[SNP] BOT i=26 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-27289.340 TSF=27.3980 Acc=(-8619.2,-49251.5) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=26 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=16.1532 Acc=(50000.0,0.0) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -27297.699)  moved 27496.840 uu
+[SNP] PLR            loc (-673.260, -1509.857, 90.150)  moved 13253.358 uu
+[SNP] ---- sample 27 at t=+28500 ms (sinceArm 37688 ms) ----
+[SNP] BOT i=27 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-28311.951 TSF=28.4175 Acc=(47992.6,14025.4) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=27 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=17.1727 Acc=(50000.0,0.0) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -28320.327)  moved 28515.560 uu
+[SNP] PLR            loc (-673.260, -1509.857, 90.150)  moved 13253.358 uu
+[SNP] ---- sample 28 at t=+29515 ms (sinceArm 38703 ms) ----
+[SNP] BOT i=28 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-29330.183 TSF=29.4323 Acc=(47992.6,14025.4) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=28 |Vxy|=487 peak=487 mode=1 Vz=0.000 Z=90.150 TSF=18.1878 Acc=(-50000.0,-0.0) |Axy|=50000.0 AIM=1 delta=5.684e-14 atCap=BAND
+[SNP] BOT            loc (-471.158, 1216.868, -29339.112)  moved 29530.720 uu
+[SNP] PLR            loc (-698.694, -1509.857, 90.150)  moved 13254.675 uu
+[SNP] ---- sample 29 at t=+30531 ms (sinceArm 39719 ms) ----
+[SNP] BOT i=29 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-30353.547 TSF=30.4521 Acc=(48803.3,-10873.5) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=29 |Vxy|=356.0083477 peak=487 mode=3 Vz=128.768 Z=275.837 TSF=0.4170 Acc=(0.0,-50000.0) |Axy|=50000.0 AIM=1 delta=-1.310e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -30359.137)  moved 30547.357 uu
+[SNP] PLR            loc (-985.734, -1695.335, 276.608)  moved 13110.887 uu
+[SNP] ---- sample 30 at t=+31547 ms (sinceArm 40735 ms) ----
+[SNP] BOT            payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000408FC0
+[SNP] BOT            Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000408FC0
+[SNP] BOT            payload dec (0, 0, -1000)
+[SNP] BOT            Velocity dec (0, 0, -1000)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=31.4683
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (48803.3, -10873.5, 0)
+[SNP] PLR            payload@0x16B0 RAW 4FB0E01DAE3E533F|829EFFFFFF6F7EC0|0000000000000000
+[SNP] PLR            Velocity@0xE8  RAW 0E810ABEDC0E4A3F|01D3FFFFFF6F7EC0|0000000000000000
+[SNP] PLR            payload dec (0.001174612079, -487, 0)
+[SNP] PLR            Velocity dec (0.0007952287525, -487, 0)
+[SNP] PLR            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=0.3565
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=1 (MOVE_Walking)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (2.83277e-11, -50000, 0)
+[SNP] BOT i=30 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-31377.205 TSF=31.4725 Acc=(48803.3,-10873.5) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=30 |Vxy|=487 peak=487 mode=1 Vz=0.000 Z=240.178 TSF=0.3606 Acc=(0.0,-50000.0) |Axy|=50000.0 AIM=1 delta=2.478e-11 atCap=BAND
+[SNP] BOT            loc (-471.158, 1216.868, -31385.565)  moved 31570.597 uu
+[SNP] PLR            loc (-973.453, -1885.689, 240.178)  moved 13171.894 uu
+[SNP] ---- sample 31 at t=+32562 ms (sinceArm 41750 ms) ----
+[SNP] BOT i=31 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-32399.497 TSF=32.4915 Acc=(9161.7,49153.5) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=31 |Vxy|=487 peak=487 mode=1 Vz=0.000 Z=240.178 TSF=1.3797 Acc=(-35355.3,-35355.3) |Axy|=50000.0 AIM=1 delta=2.586e-11 atCap=BAND
+[SNP] BOT            loc (-471.158, 1216.868, -32407.856)  moved 32589.912 uu
+[SNP] PLR            loc (-1223.142, -2279.413, 240.178)  moved 13254.703 uu
+[SNP] ---- sample 32 at t=+33593 ms (sinceArm 42781 ms) ----
+[SNP] BOT i=32 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-33422.100 TSF=33.5065 Acc=(9161.7,49153.5) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=32 |Vxy|=400.2867354 peak=487 mode=3 Vz=360.171 Z=387.381 TSF=0.2610 Acc=(0.0,-50000.0) |Axy|=50000.0 AIM=1 delta=-8.671e+01 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -33430.459)  moved 33609.719 uu
+[SNP] PLR            loc (-1565.172, -2621.443, 390.378)  moved 13207.366 uu
+[SNP] ---- sample 33 at t=+34609 ms (sinceArm 43797 ms) ----
+[SNP] BOT i=33 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-34442.493 TSF=34.5276 Acc=(-9562.0,-49077.2) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=33 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=240.178 TSF=1.2782 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -34450.852)  moved 34627.486 uu
+[SNP] PLR            loc (-1729.538, -2785.808, 240.178)  moved 13406.990 uu
+[SNP] ---- sample 34 at t=+35625 ms (sinceArm 44813 ms) ----
+[SNP] BOT i=34 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-35460.512 TSF=35.5464 Acc=(-9562.0,-49077.2) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=34 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=240.178 TSF=2.2930 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -35470.001)  moved 35644.162 uu
+[SNP] PLR            loc (-1581.520, -2810.805, 240.178)  moved 13393.924 uu
+[SNP] ---- sample 35 at t=+36640 ms (sinceArm 45828 ms) ----
+[SNP] BOT            payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000408FC0
+[SNP] BOT            Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000408FC0
+[SNP] BOT            payload dec (0, 0, -1000)
+[SNP] BOT            Velocity dec (0, 0, -1000)
+[SNP] BOT            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=36.5630
+[SNP] BOT            GravityScale@0x1A0=1.0000  MovementMode@0x231=3 (MOVE_Falling)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] BOT            AnalogInputModifier@0x3D0 = 1   ([+0x3D0] reads 1, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] BOT            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] BOT            Accel@0x328 (-49970.1, -1727.84, 0)
+[SNP] PLR            payload@0x16B0 RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR            Velocity@0xE8  RAW 0000000000000000|0000000000000000|0000000000000000
+[SNP] PLR            payload dec (0, 0, 0)
+[SNP] PLR            Velocity dec (0, 0, 0)
+[SNP] PLR            flag@0x16C8=0  TimeSinceFallingStart@0x12B0=3.3099
+[SNP] PLR            GravityScale@0x1A0=1.0000  MovementMode@0x231=1 (MOVE_Walking)  Custom@0x232=0  latLimit@0x1678=-1.0000
+[SNP] PLR            AnalogInputModifier@0x3D0 = 0   ([+0x3D0] reads 0, AGREES)   MinAnalogWalkSpeed@0x290 = 0
+[SNP] PLR            ⚠ AnalogInputModifier is ZERO -> MaxInputSpeed = GetMaxSpeed()*0 = 0 < 1e-4 -> engine CalcVelocity's clamp at 0x035D6520/27 writes ZeroVector to ALL THREE Velocity components on the ACCELERATE branch.
+[SNP] PLR            GravityDirection@0x1D8 (0, 0, -1)   byte@0x1001=0
+[SNP] PLR            Accel@0x328 (0, 0, 0)
+[SNP] BOT i=35 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-36484.782 TSF=36.5672 Acc=(-49970.1,-1727.8) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=35 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=240.178 TSF=3.3182 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -36493.141)  moved 36664.958 uu
+[SNP] PLR            loc (-1581.520, -2810.805, 240.178)  moved 13393.924 uu
+[SNP] ---- sample 36 at t=+37656 ms (sinceArm 46844 ms) ----
+[SNP] BOT i=36 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-37503.523 TSF=37.5825 Acc=(-49970.1,-1727.8) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=36 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=240.178 TSF=4.3338 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -37516.062)  moved 37685.662 uu
+[SNP] PLR            loc (-1581.520, -2810.805, 240.178)  moved 13393.924 uu
+[SNP] ---- sample 37 at t=+38672 ms (sinceArm 47860 ms) ----
+[SNP] BOT i=37 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-38525.819 TSF=38.5972 Acc=(-48677.2,-11425.0) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=37 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=240.178 TSF=5.3488 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -38534.179)  moved 38701.689 uu
+[SNP] PLR            loc (-1581.520, -2810.805, 240.178)  moved 13393.924 uu
+[SNP] ---- sample 38 at t=+39687 ms (sinceArm 48875 ms) ----
+[SNP] BOT i=38 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-39545.268 TSF=39.6133 Acc=(-48677.2,-11425.0) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=38 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=240.178 TSF=6.3652 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -39557.807)  moved 39723.324 uu
+[SNP] PLR            loc (-1581.520, -2810.805, 240.178)  moved 13393.924 uu
+[SNP] ---- sample 39 at t=+40718 ms (sinceArm 49906 ms) ----
+[SNP] BOT i=39 |Vxy|=0 peak=246.9048335 mode=3 Vz=-1000.000 Z=-40565.732 TSF=40.6345 Acc=(49751.9,4974.9) |Axy|=50000.0 AIM=1 delta=-4.870e+02 atCap=no
+[SNP] PLR i=39 |Vxy|=0 peak=487 mode=1 Vz=0.000 Z=240.178 TSF=7.3825 Acc=(0.0,0.0) |Axy|=0.0 AIM=0 delta=-4.870e+02 atCap=no
+[SNP] BOT            loc (-471.158, 1216.868, -40574.091)  moved 40737.727 uu
+[SNP] PLR            loc (-1581.520, -2810.805, 240.178)  moved 13393.924 uu
+[SNP] PEAK |Vxy| BOT=246.9048335 PLR=487 seed=487 frozenBot=0 frozenPlr=0
+[SNP] fallbackFired=0 botMaxVpreKick=246.9048
+[SNP] ---------------- ARM H VERDICT ----------------
+[SNP] BOT: payload isPoison=0 isZero=0 isSentinel=0 isOTHERobjectsPoison=0 | Velocity isSentinel=0
+[SNP] BOT: UNMODELLED payload value -- report the raw hex, do not interpret.
+[SNP] PLAYER: payload isPoison=0 isZero=1 isSentinel=1 isOTHERobjectsPoison=0 | Velocity isSentinel=1
+[SNP] PLAYER: ***** StartNewPhysics RAN. The payload holds the sentinel we put in Velocity, so 0x055C244F executed and the payload IS a copy of Velocity. *****
+[SNP] ARM H done (botCmc=0x211C9D05560 plrCmc=0x21316BCAAB0 botPoison=1 plrPoison=1 sentinel=1 botFlag0=0 plrFlag0=0)
+[BS] ---------------- RM_BOTSPAWN SUMMARY ----------------
+[BS] resolved=1 roster=-1 team=-1(player=-999) called=1 faulted=0 refused=0
+[BS] botOrAIControllers A0=0 A1=0 A2=1 | heroCharacters A0=2 A1=2 A2=3
+[PS] ---------------- S137 PLAYERSTATE SUMMARY ----------------
+[PS] PlayerState-chain census A0=11 A1=11 A2=17   (corroborator; the pointer reads below
+[PS]   are the primary readout)
+[PS] bit resolved BY NAME: off=0x488 byteOff=0 mask=0x20
+[PS] spawns=0 pokeOK=-1 restoreOK=-1 | ARM B tried=1 dispatched=1 faulted=0
+[PS] ARM C (pawn link) tried=1 done=1 faulted=0
+[PS] ARM D: spawns=1 pokeOK=1 restoreOK=1
+[PS] ARM D  [0] A-baseline  pawn=0x0 ctl=0x0 aic=0x0
+[PS] ARM D      chain=
+[PS] ARM D  [1] B-treatment pawn=0x212A6B65580 ctl=0x213146DB0A0 aic=0x211990E5100
+[PS] ARM D      chain=LokiBotController<-LokiAIController<-AIController<-Controller<-LokiActor<-Actor<-Object
+[PS] ARM D  [2] C-reversal  pawn=0x0 ctl=0x0 aic=0x0
+[PS] ARM D      chain=
+[PS] ***** ARM D VERDICT: A **LOKI BOT CONTROLLER** EXISTS AND POSSESSES A HERO PAWN.
+[PS]   Its class chain contains BotController -- the census that has read ZERO for this
+[PS]   project's entire history. Confirm with tools/re/obj_by_chain.py '=BotController'
+[PS]   and TIMESTAMP the census. Compare arms A and C: both must be plain AIController,
+[PS]   which is what makes B attributable to the one pointer we moved. *****
+[PS] #1 CONTROL   pawn=0x0 ctl=0x0  L2 bit=?  L3 ctl.PS=0x0  L4 pawn.PS=0x0
+[PS] #2 TREATMENT pawn=0x212A6B65580 ctl=0x213146DB0A0  L2 bit=clear  L3 ctl.PS=0x2119864CCD0  L4 pawn.PS=0x2119864CCD0
+[PS] VERDICT: nothing was spawned. A STAGING/RESOLVE statement; it says nothing about
+[PS]   bWantsPlayerState.
+[PS] ARM C: dispatched but pawn+0x3D8 reads 0x0 (expected 0x0). The call ran
+[PS]   and the store did not land as expected -- read the ARM-C dump above.
+[PS] ARM B: dispatched. controller #1 PlayerState is now 0x0 (was NULL when read
+[PS]   before the call) and pawn #1 PlayerState is 0x0 -- pre-registered to stay
+[PS]   NULL, because possession already happened.
+[BS] ***** VERDICT: AN AI-CONTROLLED PAWN EXISTS. controller +1 and LokiHeroCharacter +1 across the call, against A0=0/2 re-read as A1 with NO call in between. NOTE THE SCOPE: this is the ENGINE default AAIController, NOT a Loki BotController -- expect PlayerState/Brain/Blackboard/Perception all NULL, so no team and no hero-class assignment. Verify with tools/re/obj_by_chain.py and TIMESTAMP the census. *****
+[BS] done (step=4 resolved=1 called=1 faulted=0 dCtl=1 dHero=1 hits=1 hitsGT=1)

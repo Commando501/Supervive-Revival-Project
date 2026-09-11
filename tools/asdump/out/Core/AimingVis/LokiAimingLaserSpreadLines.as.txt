@@ -1,0 +1,862 @@
+// ============================================================================
+//  MODULE   Core.AimingVis.LokiAimingLaserSpreadLines
+//  SOURCE   Core/AimingVis/LokiAimingLaserSpreadLines.as
+//  CONTENT  1 class(es), 10 function(s), 0 enum(s), 1 global(s), 3448 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiAimingLaserSpreadLines;
+
+ALokiAimingLaserSpreadLines@ ALokiAimingLaserSpreadLines()   // traits=0x20
+{
+    ALokiAimingLaserSpreadLines v2;
+
+    v2 = ALokiAimingLaserSpreadLines();
+    return v2;
+}
+/* ---- ALokiAimingLaserSpreadLines: 7 dwords / 4 instructions (cache offset 0x59aaf) ----
+    0000  PSF           v2
+    0004  ALLOC         84637 ALokiAimingLaserSpreadLines             ; new ALokiAimingLaserSpreadLines  ctor=void ALokiAimingLaserSpreadLines::ALokiAimingLaserSpreadLines()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ ALokiAimingLaserSpreadLines::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiAimingLaserSpreadLines);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x59b77) ----
+    0000  PshGPtr       __StaticType_ALokiAimingLaserSpreadLines
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+ALokiAimingLaserSpreadLines@ ALokiAimingLaserSpreadLines::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiAimingLaserSpreadLines v8;
+
+    v2 = __StaticType_ALokiAimingLaserSpreadLines.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiAimingLaserSpreadLines@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x59da7) ----
+    0000  PshVPtr       Level
+    0004  PshV4         bDeferredSpawn
+    0008  PshVPtr       Name
+    000C  PshVPtr       Rotation
+    0010  PshVPtr       Location
+    0014  PshGPtr       __StaticType_ALokiAimingLaserSpreadLines
+    0020  CHKREF
+    0024  CALLSYS       TSubclassOf::Get                              ; UClass@ TSubclassOf<UObject@>::Get() const
+    0030  STOREOBJ      v2
+    0034  PshVPtr       v2
+    0038  PSF           v4
+    003C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    0048  PSF           v4
+    004C  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    0058  STOREOBJ      v6
+    005C  CmpPtrNull    v6
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972668                                    ; ALokiAimingLaserSpreadLines@
+    0070  PSF           v8
+    0074  PshVPtr       v6
+    0078  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8
+  L0090:
+    0090  LOADOBJ       v8
+    0094  RET           9
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class ALokiAimingLaserSpreadLines : ALokiAimingLaser
+// static class global: __StaticType_ALokiAimingLaserSpreadLines
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    USceneComponent@ LaserSpreadRoot1;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    USceneComponent@ LaserSpreadRoot2;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.Attach=LaserSpreadRoot1)
+    UStaticMeshComponent@ LaserSpread1;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.Attach=LaserSpreadRoot2)
+    UStaticMeshComponent@ LaserSpread2;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    bool bSetSpreadAngleViaBloom;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    bool bInterpolateBloomValue;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 InterpolationRampHalfLife;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 NonBloomSpreadAngle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 HideSpreadLasersAngle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 DimSpreadLasersAngleWindow;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 LaserOpacityMultWhenSpread;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    float64 LastBloomAngle;
+
+    ALokiAimingLaserSpreadLines()   // traits=0x21
+    {
+        auto v1;
+        auto v4;
+
+        this.ALokiAimingLaser();
+        v1 = true;
+        this.bSetSpreadAngleViaBloom = v1;
+        v1 = true;
+        this.bInterpolateBloomValue = v1;
+        v4 = 0.04;
+        this.InterpolationRampHalfLife = v4;
+        v4 = -1.0;
+        this.NonBloomSpreadAngle = v4;
+        v4 = 0.05;
+        this.HideSpreadLasersAngle = v4;
+        v4 = 2.0;
+        this.DimSpreadLasersAngleWindow = v4;
+        v4 = 0.35;
+        this.LaserOpacityMultWhenSpread = v4;
+        return;
+    }
+    /* ---- ALokiAimingLaserSpreadLines: 48 dwords / 26 instructions (cache offset 0x5bc1b) ----
+        0000  PshVPtr       this
+        0004  CALL          84617                                         ; void ALokiAimingLaser::ALokiAimingLaser()
+        000C  SetV1         v1 1
+        0014  LoadThisR     1168 134230844                                ; this.bSetSpreadAngleViaBloom
+        001C  WRTV1         v1
+        0020  SetV1         v1 1
+        0028  LoadThisR     1169 134230844                                ; this.bInterpolateBloomValue
+        0030  WRTV1         v1
+        0034  SetV8         v4 0x3fa47ae147ae147b
+        0040  LoadThisR     1176 134230844                                ; this.InterpolationRampHalfLife
+        0048  WRTV8         v4
+        004C  SetV8         v4 0xbff0000000000000
+        0058  LoadThisR     1184 134230844                                ; this.NonBloomSpreadAngle
+        0060  WRTV8         v4
+        0064  SetV8         v4 0x3fa999999999999a
+        0070  LoadThisR     1192 134230844                                ; this.HideSpreadLasersAngle
+        0078  WRTV8         v4
+        007C  SetV8         v4 0x4000000000000000
+        0088  LoadThisR     1200 134230844                                ; this.DimSpreadLasersAngleWindow
+        0090  WRTV8         v4
+        0094  SetV8         v4 0x3fd6666666666666
+        00A0  LoadThisR     1208 134230844                                ; this.LaserOpacityMultWhenSpread
+        00A8  WRTV8         v4
+        00AC  PshVPtr       this
+        00B0  FinConstruct  ALokiAimingLaserSpreadLines
+        00BC  RET           2
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)
+    {
+        bool v1;
+        float64 v4;
+        float64 v6;
+        float64 v8;
+        float32 v9;
+        auto v10;
+        float64 v12;
+        float64 v14;
+        FRotator v20;
+        bool v21;
+        ULokiCharacterMovementComponent v24;
+        auto v26;
+        FVector v32;
+        float32 v33;
+        ALokiHeightMap v36;
+        FVector v44;
+        float32 v45;
+        float64 v48;
+        auto v50;
+        float64 v52;
+        auto v54;
+        FVector2D v58;
+        FVector2D v62;
+        UMaterialInstanceDynamic v68;
+
+        this.Tick_Implementation(DeltaSeconds);
+        v1 = this.ValidateOwner();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = 0;
+            v1 = this.bSetSpreadAngleViaBloom;
+            if (v1) {
+                v9 = this.OwnerHero.GetCurrentBloomAngle();
+                v6 = float64(v9);
+                v8 = v6;
+                v4 = v8;
+                v10 = this.bInterpolateBloomValue;
+                if (!v10) {
+                    v10 = 0;
+                } else {
+                    v6 = this.LastBloomAngle;
+                    v1 = v8 > v6;
+                    v10 = v1;
+                }
+                if (v10) {
+                    v14 = 1.0;
+                    v6 = DeltaSeconds;
+                    v6 = -v6;
+                    v12 = this.InterpolationRampHalfLife;
+                    v6 = v6 / v12;
+                    v12 = Math::Exp2(v6);
+                    v6 = v14 - v12;
+                    v12 = Math::Lerp(this.LastBloomAngle, v8, v6);
+                    v4 = v12;
+                    v14 = v8 - v4;
+                    v12 = 0.005;
+                    if (v14 < v12) {
+                        v4 = v8;
+                    }
+                }
+                this.LastBloomAngle = v4;
+            } else {
+                v12 = this.NonBloomSpreadAngle;
+                v4 = v12;
+            }
+            v12 = 0.5;
+            v6 = v4 * v12;
+            v12 = this.HideSpreadLasersAngle;
+            if (v4 > v12) {
+                v12 = v6;
+                v12 = -v12;
+                v20 = FRotator(0, v12, 0);
+                this.LaserSpreadRoot1.SetRelativeRotation(v20)  /* UFunction K2_SetRelativeRotation */;
+                v20 = FRotator(0, v6, 0);
+                this.LaserSpreadRoot2.SetRelativeRotation(v20)  /* UFunction K2_SetRelativeRotation */;
+                v24 = this.OwnerHero.GetLokiCharacterMovement();
+                v10 = v24.IsMidAir();
+                if (v10) {
+                    v32 = this.OwnerHero.GetFeetLocation();
+                    v8 = v32.Z;
+                    v12 = this.OwnerHero.GetCharacterProjectileTerrainHeightOffset();
+                    v26 = v8 + v12;
+                } else {
+                    v33 = 0;
+                    v36 = ALokiHeightMap::GetInstance(__WorldContext);
+                    if (v36 != nullptr) {
+                        v32 = this.OwnerHero.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                        v14 = v32.Y;
+                        v9 = float32(v14);
+                        v44 = this.OwnerHero.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                        v14 = v44.X;
+                        v45 = float32(v14);
+                        v36.GetHeight(v33, v45, v9);
+                    }
+                    v14 = float64(v33);
+                    v12 = this.OwnerHero.GetCharacterProjectileTerrainHeightOffset();
+                    v26 = v14 + v12;
+                }
+                v12 = Math::DegreesToRadians(v6);
+                v14 = Math::Cos(v12);
+                v8 = this.MaxDistance;
+                v12 = v14 * v8;
+                v8 = Math::DegreesToRadians(v6);
+                v48 = Math::Sin(v8);
+                v14 = this.MaxDistance;
+                v8 = v48 * v14;
+                v44 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v50 = v44.Z;
+                v48 = v26 - v50;
+                v14 = v8;
+                v14 = -v14;
+                v44 = FVector(v12, v14, v48);
+                this.LaserSpreadRoot1.SetRelativeLocation(v44)  /* UFunction K2_SetRelativeLocation */;
+                v32 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v50 = v32.Z;
+                v14 = v26 - v50;
+                v32 = FVector(v12, v8, v14);
+                this.LaserSpreadRoot2.SetRelativeLocation(v32)  /* UFunction K2_SetRelativeLocation */;
+                if (this.LaserSpread1.GetbHiddenInGame()) {
+                    v1 = true;
+                    v21 = false;
+                    this.LaserSpread1.SetHiddenInGame(v21, v1);
+                    v1 = true;
+                    v21 = false;
+                    this.LaserSpread2.SetHiddenInGame(v21, v1);
+                }
+                v52 = 1.0;
+                v14 = this.HideSpreadLasersAngle;
+                v50 = this.DimSpreadLasersAngleWindow;
+                v48 = v14 + v50;
+                if (v4 < v48) {
+                    v58 = FVector2D(0, 1.0);
+                    v14 = this.HideSpreadLasersAngle;
+                    v62 = FVector2D(v14, v48);
+                    v50 = Math::GetMappedRangeValueClamped(v62, v58, v4);
+                    v52 = v50;
+                }
+                v9 = float32(v52);
+                this.LaserSpread1.SetScalarParameterValueOnMaterials(n"Final Opacity", v9);
+                v9 = float32(v52);
+                this.LaserSpread2.SetScalarParameterValueOnMaterials(n"Final Opacity", v9);
+                v14 = 1.0;
+                v54 = Math::Lerp(v14, this.LaserOpacityMultWhenSpread, v52);
+                v45 = float32(v54);
+                v68 = this.LaserProjectilePath.GetMaterial(0);
+                v68.SetScalarParameterValue(n"Final Opacity", v45);
+                v45 = float32(v54);
+                this.LaserEndpoint.SetScalarParameterValueOnMaterials(n"Final Opacity", v45);
+                return;
+            } else {
+                v21 = this.LaserSpread1.GetbHiddenInGame();
+                v21 = !v21;
+                if (v21) {
+                    v1 = true;
+                    v21 = true;
+                    this.LaserSpread1.SetHiddenInGame(v21, v1);
+                    v1 = true;
+                    v21 = true;
+                    this.LaserSpread2.SetHiddenInGame(v21, v1);
+                }
+            }
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 549 dwords / 322 instructions (cache offset 0x5a780) ----
+        0000  PshV8         DeltaSeconds
+        0004  PshVPtr       this
+        0008  CALL          84572                                         ; void ALokiAimingLaser::Tick_Implementation(const float64)
+        0010  PshVPtr       this
+        0014  CALLINTF      84575                                         ; bool ALokiAimingLaser::ValidateOwner()
+        001C  CpyRtoV4      v1
+        0020  NOT           v1
+        0024  CpyVtoR1      v1
+        0028  JLowZ         2                                             -> L0038
+        0030  JMP           534                                           -> L0890
+      L0038:
+        0038  SetV8         v4 0x0
+        0044  LoadThisR     1168 134230844                                ; this.bSetSpreadAngleViaBloom
+        004C  RDR1          v1
+        0050  CpyVtoR1      v1
+        0054  JLowZ         81                                            -> L01A0
+        005C  PshVPtr       this
+        0060  ADDSi         944 134230838                                 ; .OwnerHero
+        0068  RDSPtr
+        006C  CALLSYS       ALokiHeroCharacter::GetCurrentBloomAngle      ; float32 ALokiHeroCharacter::GetCurrentBloomAngle() const
+        0078  CpyRtoV4      v9
+        007C  fTOd          v6 v9
+        0084  CpyVtoV8      v8 v6
+        008C  CpyVtoV8      v4 v8
+        0094  LoadThisR     1169 134230844                                ; this.bInterpolateBloomValue
+        009C  RDR1          v10
+        00A0  CpyVtoR1      v10
+        00A4  JLowNZ        4                                             -> L00BC
+        00AC  SetV4         v10 0
+        00B4  JMP           9                                             -> L00E0
+      L00BC:
+        00BC  LoadThisR     1216 134230844                                ; this.LastBloomAngle
+        00C4  RDR8          v6
+        00C8  CMPd          v8 v6
+        00D0  TP
+        00D4  CpyRtoV4      v1
+        00D8  CpyVtoV4      v10 v1
+      L00E0:
+        00E0  CpyVtoR1      v10
+        00E4  JLowZ         40                                            -> L018C
+        00EC  SetV8         v14 0x3ff0000000000000
+        00F8  CpyVtoV8      v6 DeltaSeconds
+        0100  NEGd          v6
+        0104  LoadThisR     1176 134230844                                ; this.InterpolationRampHalfLife
+        010C  RDR8          v12
+        0110  DIVd          v6 v6 v12
+        0118  PshV8         v6
+        011C  CALLSYS       Exp2                                          ; float64 Math::Exp2(float64)
+        0128  CpyRtoV8      v12
+        012C  SUBd          v6 v14 v12
+        0134  PSF           v6
+        0138  PSF           v8
+        013C  LoadThisR     1216 134230844                                ; this.LastBloomAngle
+        0144  PshRPtr
+        0148  CALLSYS       Lerp                                          ; float64 Math::Lerp(const float64&, const float64&, const float64&)
+        0154  CpyRtoV8      v12
+        0158  CpyVtoV8      v4 v12
+        0160  SUBd          v14 v8 v4
+        0168  SetV8         v12 0x3f747ae147ae147b
+        0174  CMPd          v14 v12
+        017C  JNS           2                                             -> L018C
+        0184  CpyVtoV8      v4 v8
+      L018C:
+        018C  LoadThisR     1216 134230844                                ; this.LastBloomAngle
+        0194  WRTV8         v4
+        0198  JMP           5                                             -> L01B4
+      L01A0:
+        01A0  LoadThisR     1184 134230844                                ; this.NonBloomSpreadAngle
+        01A8  RDR8          v12
+        01AC  CpyVtoV8      v4 v12
+      L01B4:
+        01B4  SetV8         v12 0x3fe0000000000000
+        01C0  MULd          v6 v4 v12
+        01C8  LoadThisR     1192 134230844                                ; this.HideSpreadLasersAngle
+        01D0  RDR8          v12
+        01D4  CMPd          v4 v12
+        01DC  JNP           389                                           -> L07F8
+        01E4  PshC8         0x0
+        01F0  CpyVtoV8      v12 v6
+        01F8  NEGd          v12
+        01FC  PshV8         v12
+        0200  PshC8         0x0
+        020C  PSF           v20
+        0210  CALLSYS       FRotator::$beh0                               ; void FRotator::$beh0(float64, float64, float64)
+        021C  PSF           v20
+        0220  PshVPtr       this
+        0224  ADDSi         1136 134230844                                ; .LaserSpreadRoot1
+        022C  RDSPtr
+        0230  CALLSYS       USceneComponent::SetRelativeRotation          ; void USceneComponent::SetRelativeRotation(const FRotator&)
+        023C  PshC8         0x0
+        0248  PshV8         v6
+        024C  PshC8         0x0
+        0258  PSF           v20
+        025C  CALLSYS       FRotator::$beh0                               ; void FRotator::$beh0(float64, float64, float64)
+        0268  PSF           v20
+        026C  PshVPtr       this
+        0270  ADDSi         1144 134230844                                ; .LaserSpreadRoot2
+        0278  RDSPtr
+        027C  CALLSYS       USceneComponent::SetRelativeRotation          ; void USceneComponent::SetRelativeRotation(const FRotator&)
+        0288  PshVPtr       this
+        028C  ADDSi         944 134230838                                 ; .OwnerHero
+        0294  RDSPtr
+        0298  CALLSYS       ALokiCharacter::GetLokiCharacterMovement      ; ULokiCharacterMovementComponent@ ALokiCharacter::GetLokiCharacterMovement() const
+        02A4  STOREOBJ      v24
+        02A8  PshVPtr       v24
+        02AC  CALLSYS       ULokiCharacterMovementComponent::IsMidAir     ; bool ULokiCharacterMovementComponent::IsMidAir() const
+        02B8  CpyRtoV4      v10
+        02BC  CpyVtoR1      v10
+        02C0  JLowZ         24                                            -> L0328
+        02C8  PSF           v32
+        02CC  PshVPtr       this
+        02D0  ADDSi         944 134230838                                 ; .OwnerHero
+        02D8  RDSPtr
+        02DC  CALLSYS       ALokiCharacter::GetFeetLocation               ; FVector ALokiCharacter::GetFeetLocation() const
+        02E8  LoadVObjR     v32 16 67117444                               ; .Z
+        02F4  RDR8          v8
+        02F8  PshVPtr       this
+        02FC  ADDSi         944 134230838                                 ; .OwnerHero
+        0304  RDSPtr
+        0308  CALLSYS       ALokiCharacter::GetCharacterProjectileTerrainHeightOffset  ; float64 ALokiCharacter::GetCharacterProjectileTerrainHeightOffset() const
+        0314  CpyRtoV8      v12
+        0318  ADDd          v26 v8 v12
+        0320  JMP           60                                            -> L0418
+      L0328:
+        0328  SetV4         v33 0
+        0330  PshGPtr       __WorldContext
+        033C  CALLSYS       GetInstance                                   ; ALokiHeightMap@ ALokiHeightMap::GetInstance(const UObject@)
+        0348  STOREOBJ      v36
+        034C  CmpPtrNull    v36
+        0350  JZ            35                                            -> L03E4
+        0358  PSF           v32
+        035C  PshVPtr       this
+        0360  ADDSi         944 134230838                                 ; .OwnerHero
+        0368  RDSPtr
+        036C  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0378  LoadVObjR     v32 8 67117444                                ; .Y
+        0384  RDR8          v14
+        0388  dTOf          v9 v14
+        0390  PshV4         v9
+        0394  PSF           v44
+        0398  PshVPtr       this
+        039C  ADDSi         944 134230838                                 ; .OwnerHero
+        03A4  RDSPtr
+        03A8  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        03B4  LoadVObjR     v44 0 67117444                                ; .X
+        03C0  RDR8          v14
+        03C4  dTOf          v45 v14
+        03CC  PshV4         v45
+        03D0  PSF           v33
+        03D4  PshVPtr       v36
+        03D8  CALLSYS       ALokiHeightMap::GetHeight                     ; bool ALokiHeightMap::GetHeight(float32&, float32, float32)
+      L03E4:
+        03E4  fTOd          v14 v33
+        03EC  PshVPtr       this
+        03F0  ADDSi         944 134230838                                 ; .OwnerHero
+        03F8  RDSPtr
+        03FC  CALLSYS       ALokiCharacter::GetCharacterProjectileTerrainHeightOffset  ; float64 ALokiCharacter::GetCharacterProjectileTerrainHeightOffset() const
+        0408  CpyRtoV8      v12
+        040C  ADDd          v26 v14 v12
+        0414  FreeNullV8    v36
+      L0418:
+        0418  PSF           v6
+        041C  CALLSYS       DegreesToRadians                              ; float64 Math::DegreesToRadians(const float64&)
+        0428  CpyRtoV8      v12
+        042C  PshV8         v12
+        0430  CALLSYS       Cos                                           ; float64 Math::Cos(float64)
+        043C  CpyRtoV8      v14
+        0440  LoadThisR     984 134230838                                 ; this.MaxDistance
+        0448  RDR8          v8
+        044C  MULd          v12 v14 v8
+        0454  PSF           v6
+        0458  CALLSYS       DegreesToRadians                              ; float64 Math::DegreesToRadians(const float64&)
+        0464  CpyRtoV8      v8
+        0468  PshV8         v8
+        046C  CALLSYS       Sin                                           ; float64 Math::Sin(float64)
+        0478  CpyRtoV8      v48
+        047C  LoadThisR     984 134230838                                 ; this.MaxDistance
+        0484  RDR8          v14
+        0488  MULd          v8 v48 v14
+        0490  PSF           v44
+        0494  PshVPtr       this
+        0498  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        04A4  LoadVObjR     v44 16 67117444                               ; .Z
+        04B0  RDR8          v50
+        04B4  SUBd          v48 v26 v50
+        04BC  PshV8         v48
+        04C0  CpyVtoV8      v14 v8
+        04C8  NEGd          v14
+        04CC  PshV8         v14
+        04D0  PshV8         v12
+        04D4  PSF           v44
+        04D8  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        04E4  PSF           v44
+        04E8  PshVPtr       this
+        04EC  ADDSi         1136 134230844                                ; .LaserSpreadRoot1
+        04F4  RDSPtr
+        04F8  CALLSYS       USceneComponent::SetRelativeLocation          ; void USceneComponent::SetRelativeLocation(const FVector&)
+        0504  PSF           v32
+        0508  PshVPtr       this
+        050C  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0518  LoadVObjR     v32 16 67117444                               ; .Z
+        0524  RDR8          v50
+        0528  SUBd          v14 v26 v50
+        0530  PshV8         v14
+        0534  PshV8         v8
+        0538  PshV8         v12
+        053C  PSF           v32
+        0540  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        054C  PSF           v32
+        0550  PshVPtr       this
+        0554  ADDSi         1144 134230844                                ; .LaserSpreadRoot2
+        055C  RDSPtr
+        0560  CALLSYS       USceneComponent::SetRelativeLocation          ; void USceneComponent::SetRelativeLocation(const FVector&)
+        056C  PshVPtr       this
+        0570  ADDSi         1152 134230844                                ; .LaserSpread1
+        0578  RDSPtr
+        057C  CALLSYS       USceneComponent::GetbHiddenInGame             ; bool USceneComponent::GetbHiddenInGame() const
+        0588  JLowZ         26                                            -> L05F8
+        0590  SetV1         v1 1
+        0598  PshV4         v1
+        059C  SetV1         v21 0
+        05A4  PshV4         v21
+        05A8  PshVPtr       this
+        05AC  ADDSi         1152 134230844                                ; .LaserSpread1
+        05B4  RDSPtr
+        05B8  CALLSYS       USceneComponent::SetHiddenInGame              ; void USceneComponent::SetHiddenInGame(bool, bool)
+        05C4  SetV1         v1 1
+        05CC  PshV4         v1
+        05D0  SetV1         v21 0
+        05D8  PshV4         v21
+        05DC  PshVPtr       this
+        05E0  ADDSi         1160 134230844                                ; .LaserSpread2
+        05E8  RDSPtr
+        05EC  CALLSYS       USceneComponent::SetHiddenInGame              ; void USceneComponent::SetHiddenInGame(bool, bool)
+      L05F8:
+        05F8  SetV8         v52 0x3ff0000000000000
+        0604  LoadThisR     1192 134230844                                ; this.HideSpreadLasersAngle
+        060C  RDR8          v14
+        0610  LoadThisR     1200 134230844                                ; this.DimSpreadLasersAngleWindow
+        0618  RDR8          v50
+        061C  ADDd          v48 v14 v50
+        0624  CMPd          v4 v48
+        062C  JNS           28                                            -> L06A4
+        0634  PshV8         v4
+        0638  PshC8         0x3ff0000000000000
+        0644  PshC8         0x0
+        0650  PSF           v58
+        0654  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        0660  PSF           v58
+        0664  PshV8         v48
+        0668  LoadThisR     1192 134230844                                ; this.HideSpreadLasersAngle
+        0670  RDR8          v14
+        0674  PshV8         v14
+        0678  PSF           v62
+        067C  CALLSYS       FVector2D::$beh0                              ; void FVector2D::$beh0(float64, float64)
+        0688  PSF           v62
+        068C  CALLSYS       GetMappedRangeValueClamped                    ; float64 Math::GetMappedRangeValueClamped(const FVector2D&, const FVector2D&, const float64)
+        0698  CpyRtoV8      v50
+        069C  CpyVtoV8      v52 v50
+      L06A4:
+        06A4  dTOf          v9 v52
+        06AC  PshV4         v9
+        06B0  PshC4         35
+        06B8  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        06C4  PshRPtr
+        06C8  PshVPtr       this
+        06CC  ADDSi         1152 134230844                                ; .LaserSpread1
+        06D4  RDSPtr
+        06D8  CALLSYS       UMeshComponent::SetScalarParameterValueOnMaterials  ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float32)
+        06E4  dTOf          v9 v52
+        06EC  PshV4         v9
+        06F0  PshC4         35
+        06F8  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0704  PshRPtr
+        0708  PshVPtr       this
+        070C  ADDSi         1160 134230844                                ; .LaserSpread2
+        0714  RDSPtr
+        0718  CALLSYS       UMeshComponent::SetScalarParameterValueOnMaterials  ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float32)
+        0724  PSF           v52
+        0728  LoadThisR     1208 134230844                                ; this.LaserOpacityMultWhenSpread
+        0730  PshRPtr
+        0734  SetV8         v14 0x3ff0000000000000
+        0740  PSF           v14
+        0744  CALLSYS       Lerp                                          ; float64 Math::Lerp(const float64&, const float64&, const float64&)
+        0750  CpyRtoV8      v54
+        0754  dTOf          v45 v54
+        075C  PshV4         v45
+        0760  PshC4         35
+        0768  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0774  PshRPtr
+        0778  PshC4         0
+        0780  PshVPtr       this
+        0784  ADDSi         936 134230838                                 ; .LaserProjectilePath
+        078C  RDSPtr
+        0790  CALLSYS       ULokiProjectilePathComponent::GetMaterial     ; UMaterialInstanceDynamic@ ULokiProjectilePathComponent::GetMaterial(int) const
+        079C  STOREOBJ      v68
+        07A0  PshVPtr       v68
+        07A4  CALLSYS       UMaterialInstanceDynamic::SetScalarParameterValue  ; void UMaterialInstanceDynamic::SetScalarParameterValue(FName, float32)
+        07B0  dTOf          v45 v54
+        07B8  PshV4         v45
+        07BC  PshC4         35
+        07C4  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        07D0  PshRPtr
+        07D4  PshVPtr       this
+        07D8  ADDSi         920 134230838                                 ; .LaserEndpoint
+        07E0  RDSPtr
+        07E4  CALLSYS       UMeshComponent::SetScalarParameterValueOnMaterials  ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float32)
+        07F0  JMP           38                                            -> L0890
+      L07F8:
+        07F8  PshVPtr       this
+        07FC  ADDSi         1152 134230844                                ; .LaserSpread1
+        0804  RDSPtr
+        0808  CALLSYS       USceneComponent::GetbHiddenInGame             ; bool USceneComponent::GetbHiddenInGame() const
+        0814  CpyRtoV4      v21
+        0818  NOT           v21
+        081C  CpyVtoR1      v21
+        0820  JLowZ         26                                            -> L0890
+        0828  SetV1         v1 1
+        0830  PshV4         v1
+        0834  SetV1         v21 1
+        083C  PshV4         v21
+        0840  PshVPtr       this
+        0844  ADDSi         1152 134230844                                ; .LaserSpread1
+        084C  RDSPtr
+        0850  CALLSYS       USceneComponent::SetHiddenInGame              ; void USceneComponent::SetHiddenInGame(bool, bool)
+        085C  SetV1         v1 1
+        0864  PshV4         v1
+        0868  SetV1         v21 1
+        0870  PshV4         v21
+        0874  PshVPtr       this
+        0878  ADDSi         1160 134230844                                ; .LaserSpread2
+        0880  RDSPtr
+        0884  CALLSYS       USceneComponent::SetHiddenInGame              ; void USceneComponent::SetHiddenInGame(bool, bool)
+      L0890:
+        0890  RET           4
+    */
+
+    UFUNCTION(UnrealName=CustomEvent0, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void CustomEvent0_Implementation(const float64 Value)
+    {
+        this.PauseBloomVisualOnShot(Value);
+        return;
+    }
+    /* ---- CustomEvent0_Implementation: 5 dwords / 4 instructions (cache offset 0x5b3cb) ----
+        0000  PshV8         Value
+        0004  PshVPtr       this
+        0008  CALLINTF      84636                                         ; void ALokiAimingLaserSpreadLines::PauseBloomVisualOnShot(const float64)
+        0010  RET           4
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        FVector v8;
+        FRotator v20;
+
+        v1 = false;
+        this.LaserSpread1.SetCastShadow(v1);
+        v1 = false;
+        this.LaserSpread1.SetGenerateOverlapEvents(v1);
+        v1 = true;
+        this.LaserSpread1.SetCollisionProfileName(n"NoCollision", v1);
+        v8 = FVector(-200.0, 41.5, 0);
+        this.LaserSpread1.SetRelativeLocation(v8)  /* UFunction K2_SetRelativeLocation */;
+        v20 = FRotator(0, 90.0, 0);
+        this.LaserSpread1.SetRelativeRotation(v20)  /* UFunction K2_SetRelativeRotation */;
+        v8 = FVector(1.0, 3.0, 1.0);
+        this.LaserSpread1.SetRelativeScale3D(v8);
+        v1 = false;
+        this.LaserSpread2.SetCastShadow(v1);
+        v1 = false;
+        this.LaserSpread2.SetGenerateOverlapEvents(v1);
+        v1 = true;
+        this.LaserSpread2.SetCollisionProfileName(n"NoCollision", v1);
+        v8 = FVector(-200.0, -41.5, 0);
+        this.LaserSpread2.SetRelativeLocation(v8)  /* UFunction K2_SetRelativeLocation */;
+        v20 = FRotator(0, 90.0, 0);
+        this.LaserSpread2.SetRelativeRotation(v20)  /* UFunction K2_SetRelativeRotation */;
+        v8 = FVector(1.0, 3.0, 1.0);
+        this.LaserSpread2.SetRelativeScale3D(v8);
+        return;
+    }
+    /* ---- __InitDefaults: 199 dwords / 103 instructions (cache offset 0x5b4c7) ----
+        0000  SetV1         v1 0
+        0008  PshV4         v1
+        000C  PshVPtr       this
+        0010  ADDSi         1152 134230844                                ; .LaserSpread1
+        0018  RDSPtr
+        001C  CALLSYS       UPrimitiveComponent::SetCastShadow            ; void UPrimitiveComponent::SetCastShadow(bool)
+        0028  SetV1         v1 0
+        0030  PshV4         v1
+        0034  PshVPtr       this
+        0038  ADDSi         1152 134230844                                ; .LaserSpread1
+        0040  RDSPtr
+        0044  CALLSYS       UPrimitiveComponent::SetGenerateOverlapEvents  ; void UPrimitiveComponent::SetGenerateOverlapEvents(bool)
+        0050  SetV1         v1 1
+        0058  PshV4         v1
+        005C  PshC4         31
+        0064  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0070  PshRPtr
+        0074  PshVPtr       this
+        0078  ADDSi         1152 134230844                                ; .LaserSpread1
+        0080  RDSPtr
+        0084  CALLSYS       UPrimitiveComponent::SetCollisionProfileName  ; void UPrimitiveComponent::SetCollisionProfileName(FName, bool)
+        0090  PshC8         0x0
+        009C  PshC8         0x4044c00000000000
+        00A8  PshC8         0xc069000000000000
+        00B4  PSF           v8
+        00B8  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        00C4  PSF           v8
+        00C8  PshVPtr       this
+        00CC  ADDSi         1152 134230844                                ; .LaserSpread1
+        00D4  RDSPtr
+        00D8  CALLSYS       USceneComponent::SetRelativeLocation          ; void USceneComponent::SetRelativeLocation(const FVector&)
+        00E4  PshC8         0x0
+        00F0  PshC8         0x4056800000000000
+        00FC  PshC8         0x0
+        0108  PSF           v20
+        010C  CALLSYS       FRotator::$beh0                               ; void FRotator::$beh0(float64, float64, float64)
+        0118  PSF           v20
+        011C  PshVPtr       this
+        0120  ADDSi         1152 134230844                                ; .LaserSpread1
+        0128  RDSPtr
+        012C  CALLSYS       USceneComponent::SetRelativeRotation          ; void USceneComponent::SetRelativeRotation(const FRotator&)
+        0138  PshC8         0x3ff0000000000000
+        0144  PshC8         0x4008000000000000
+        0150  PshC8         0x3ff0000000000000
+        015C  PSF           v8
+        0160  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        016C  PSF           v8
+        0170  PshVPtr       this
+        0174  ADDSi         1152 134230844                                ; .LaserSpread1
+        017C  RDSPtr
+        0180  CALLSYS       USceneComponent::SetRelativeScale3D           ; void USceneComponent::SetRelativeScale3D(FVector)
+        018C  SetV1         v1 0
+        0194  PshV4         v1
+        0198  PshVPtr       this
+        019C  ADDSi         1160 134230844                                ; .LaserSpread2
+        01A4  RDSPtr
+        01A8  CALLSYS       UPrimitiveComponent::SetCastShadow            ; void UPrimitiveComponent::SetCastShadow(bool)
+        01B4  SetV1         v1 0
+        01BC  PshV4         v1
+        01C0  PshVPtr       this
+        01C4  ADDSi         1160 134230844                                ; .LaserSpread2
+        01CC  RDSPtr
+        01D0  CALLSYS       UPrimitiveComponent::SetGenerateOverlapEvents  ; void UPrimitiveComponent::SetGenerateOverlapEvents(bool)
+        01DC  SetV1         v1 1
+        01E4  PshV4         v1
+        01E8  PshC4         31
+        01F0  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        01FC  PshRPtr
+        0200  PshVPtr       this
+        0204  ADDSi         1160 134230844                                ; .LaserSpread2
+        020C  RDSPtr
+        0210  CALLSYS       UPrimitiveComponent::SetCollisionProfileName  ; void UPrimitiveComponent::SetCollisionProfileName(FName, bool)
+        021C  PshC8         0x0
+        0228  PshC8         0xc044c00000000000
+        0234  PshC8         0xc069000000000000
+        0240  PSF           v8
+        0244  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        0250  PSF           v8
+        0254  PshVPtr       this
+        0258  ADDSi         1160 134230844                                ; .LaserSpread2
+        0260  RDSPtr
+        0264  CALLSYS       USceneComponent::SetRelativeLocation          ; void USceneComponent::SetRelativeLocation(const FVector&)
+        0270  PshC8         0x0
+        027C  PshC8         0x4056800000000000
+        0288  PshC8         0x0
+        0294  PSF           v20
+        0298  CALLSYS       FRotator::$beh0                               ; void FRotator::$beh0(float64, float64, float64)
+        02A4  PSF           v20
+        02A8  PshVPtr       this
+        02AC  ADDSi         1160 134230844                                ; .LaserSpread2
+        02B4  RDSPtr
+        02B8  CALLSYS       USceneComponent::SetRelativeRotation          ; void USceneComponent::SetRelativeRotation(const FRotator&)
+        02C4  PshC8         0x3ff0000000000000
+        02D0  PshC8         0x4008000000000000
+        02DC  PshC8         0x3ff0000000000000
+        02E8  PSF           v8
+        02EC  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        02F8  PSF           v8
+        02FC  PshVPtr       this
+        0300  ADDSi         1160 134230844                                ; .LaserSpread2
+        0308  RDSPtr
+        030C  CALLSYS       USceneComponent::SetRelativeScale3D           ; void USceneComponent::SetRelativeScale3D(FVector)
+        0318  RET           2
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent, NoOp)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 1 dwords / 1 instructions (cache offset 0x5b91c) ----
+        0000  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void PauseBloomVisualOnShot(const float64 PauseAngle)   // traits=0x20
+    {
+        return;
+    }
+    /* ---- PauseBloomVisualOnShot: 1 dwords / 1 instructions (cache offset 0x5ba48) ----
+        0000  RET           4
+    */
+
+    void ~ALokiAimingLaserSpreadLines()   // traits=0x22
+    {
+        this.~ALokiAimingLaser();
+        return;
+    }
+    /* ---- ~ALokiAimingLaserSpreadLines: 4 dwords / 3 instructions (cache offset 0x5bdbc) ----
+        0000  PshVPtr       this
+        0004  CALL          85480                                         ; void ALokiAimingLaser::~ALokiAimingLaser()
+        000C  RET           2
+    */
+
+}
+

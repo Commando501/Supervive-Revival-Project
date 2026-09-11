@@ -1,0 +1,12 @@
+﻿=== LokiMinionCharacter (0x296087DB780) live capture 2026-07-19 00:44 ===
+=== CLIENT class @0x296087DB780 CPF_Net props, expanded via REAL path ===
+--- net prop AggroRange (flags=0x18001140010235) ---
+[0] LEAF AggroRange (FloatProperty)
+--- net prop bIsCowering (flags=0x18001140000234) ---
+[1] LEAF bIsCowering (BoolProperty)
+--- net prop LootMajorReward (flags=0x1C001100000235) ---
+[2] LEAF LootMajorReward (ClassProperty)
+=== total leaf cmds across net props = 3 ===
+=== class LokiMinionCharacter @0x296087DB780 � OWN net functions (FUNC_Net, non-override) ===
+  own net functions (in NetFields, name-sorted): 1
+   [  0] LostLastAggroTarget                          flags=0x00024CC0  [Multicast,Reliable,Native]

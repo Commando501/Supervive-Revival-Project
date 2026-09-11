@@ -1,0 +1,13 @@
+# Files allowed to exceed the pre-commit size ceiling.
+# Each line is a repo-relative path. Blank lines and lines starting with `#` are ignored.
+#
+# Add a path here ONLY if:
+#   * The file must be tracked (not in .gitignore)
+#   * It's below GitHub's own 100 MB hard limit (otherwise the push fails
+#     regardless of what this hook does)
+#   * You have a reason to bypass the local ceiling (typically 90 MB) that will
+#     make sense to a reader six months from now -- explain it inline.
+#
+# Prefer git-lfs for anything that fits neither .gitignore nor this list.
+
+# ── (no entries yet) ──

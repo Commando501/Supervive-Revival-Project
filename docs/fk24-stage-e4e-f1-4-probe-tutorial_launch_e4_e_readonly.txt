@@ -1,0 +1,8 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[BF] RM_BOTFIGHT (S147): minimum bot-fight loop. Read-only recon always; WALL P (bind/
+[BF] grant/eligibility/natural input) and WALL E (spawn/team/damage) each gated by a KBFARMS bit. Grade the
+[BF] decision-critical bot-team read + the InitAbilityActorInfo bind (never called in 31
+[BF] sessions). Stage into a TUTORIAL WORLD (gft -> fo -> sp -> this).
+[BF] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7B3E254A0 stub=0x1C299339300 funcCls=0x1C14163B000 gameTid=2360

@@ -1,0 +1,89 @@
+SESSION 71 — DS ROUTE: pawn REPLICATES to the client, but possession/control hits the "client needs a Loki PC" wall
+====================================================================================================================
+Date: 2026-07-11 (autonomous, log-driven). Continues S70 (loading screen cleared; client spectating live LVL_Tutorial).
+Goal: give the local player a CONTROLLABLE pawn (the drop-in gate). RESULT: concrete progress + a well-characterized
+wall. The server spawns + possesses a pawn and it REPLICATES to the client (verified in client memory), but the client
+does NOT complete possession / control it — because the client's networked PlayerController is a STOCK APlayerController
+(the stub can't provide the real Loki PC), and SUPERVIVE's gameplay control layer is tied to the Loki PC.
+
+WHAT WAS DONE (unreal-stub/Source/Loki/)
+----------------------------------------
+- LokiNetDriver::IsClassNetCacheDivergent: UN-SUPPRESSED ADefaultPawn. Live RE (tools/re/rep_expand_full.py on the
+  running client) proved the client's APawn = 3 STOCK net props (RemoteViewPitch, PlayerState, Controller) and
+  ADefaultPawn = 0 — NO schema divergence (the S38 DefaultPawn suppression was a blanket precaution). So a stock
+  ADefaultPawn replicates cleanly.
+- LokiStubGameMode::PostLogin: spawn ADefaultPawn at (0,0,500) + bAlwaysRelevant=true + NewPlayer->Possess(pawn) +
+  a deferred (3s) ClientRestart re-send. Server-side possession is solid: PC->GetPawn()=DefaultPawn_1, PC
+  hasConnection=1, pawn Role=Authority, bReplicates=1.
+- LokiStubGameMode::InitGameState: GS->GameModeClass = nullptr. (See finding #1.)
+
+FINDINGS (in order)
+-------------------
+1. GameModeClass NetGUID blocking-load (FIXED). AGameModeBase::InitGameState set GS->GameModeClass = LokiStubGameMode,
+   a class the CLIENT doesn't have. Replicating it made the client spam "LogNetPackageMap: Error: GetObjectFromNetGUID:
+   Forced blocking load ... /Script/Loki.LokiStubGameMode" — a SYNCHRONOUS blocking load in the netdriver receive path.
+   Nulling GameModeClass removed it (0 errors after). (It was NOT what blocked the pawn — see #2.)
+2. The pawn REPLICATES to the client (verified). The client Loki.log never LOGS replicated pawns, so "no DefaultPawn in
+   the log" was misleading. Live RPM (tools/re/obj_by_class.py — new, takes the ASLR base as an arg) found TWO real
+   DefaultPawn instances + the LokiPlayerState_Missions actor + the LokiGameState on the client. So DS actor
+   replication delivers the pawn actor fine.
+3. ★ THE WALL: the client does NOT possess/control the pawn. No ServerAcknowledgePossession, no ServerMove, no
+   ServerCheckClientPossession come back from the client (checked the stub log) — i.e. the client is not sending any
+   possession/movement RPCs. ClientRestart was sent TWICE (at Possess + a 3s deferred re-send) with a valid connection;
+   the client still doesn't take the pawn. ROOT: the client's networked PlayerController is a STOCK APlayerController
+   (the stub uses PlayerControllerClass=APlayerController — S26 revert; it CANNOT use the real Loki PC because its
+   SUPERVIVE-modified RPC signatures break the connection, S41). SUPERVIVE's gameplay possession/input/camera is tied to
+   the client's Loki PlayerController (BP_LokiPlayerController_C / its native base, with DropPlaneComponent etc. — seen
+   in the client's class list), which the stock networked PC is not. So the pawn arrives but the client's gameplay layer
+   never controls it. This is the SAME class of wall the missions-DS route hit (needs Loki PC / PC_MainMenu_C) and the
+   force-open route hit (S63: client wants the REAL Loki PC).
+
+SCOPE REALITY — the actual hero pawn
+------------------------------------
+The tutorial hero is BP_HERO_<X>_C : LokiHeroCharacter/LokiCharacter (native, 182 replicated-eligible props) : Character
+(44) : Pawn : Actor, with a LokiCharacterMovementComponent (218 props, CUSTOM movement-prediction NetSerialize).
+Mirroring that cmd-for-cmd for the DS route is an ENORMOUS effort (character movement replication is the hardest UE
+netcode to reproduce byte-identically). A DefaultPawn was the tractable stand-in to prove the pipeline — which got as
+far as actor replication but not control.
+
+ASSESSMENT / OPTIONS (both routes converge here)
+------------------------------------------------
+"Controllable hero" needs the client to have (a) a Loki PlayerController for gameplay control and (b) a real hero
+character pawn. Neither route can currently give the client a Loki PC without breaking the connection (S41), and the
+hero character is a huge replicated schema. Options for next session:
+  A. HYBRID (most promising): the DS route now gets the client into the LIVE world with a valid GameState + a
+     replicated pawn. Combine with a CLIENT-SIDE shim (the S55 game-thread native-call primitive) to make the client's
+     LOCAL Loki PlayerController possess a locally-relevant pawn / trigger the drop-in — the DS session provides what
+     the force-open route lacked (a valid server session), so the client-side possess may now stick.
+  B. Provide a Loki PlayerController on the stub via schema-injection of its modified RPC signatures (the S41 wall) —
+     large, and the RPC sig work (ServerVerifyViewTarget-style) is per-RPC.
+  C. Full LokiCharacter + movement-component mirror (enormous; movement NetSerialize is the crux).
+  D. Accept "client in the live tutorial world (spectator, valid GameState, pawn replicated)" as the practical ceiling
+     of the reasonable-effort DS route and document it as the milestone.
+
+HYBRID INVESTIGATION (S71 cont. — the "client-side shim in the DS session" idea, probed via live RPM)
+----------------------------------------------------------------------------------------------------
+Investigated the DS client's live object graph (tools/re/obj_by_class.py, non-CDO filter) to see if a client-side shim
+could drive the local player into a hero now that the DS session provides a live world + valid GameState:
+  * ~473 LIVE LokiCharacterMovementComponent instances — but these are the POOLED (inactive) minions the actor pool
+    primed (counts match the "Priming pool with N <minion>" log), NOT active characters.
+  * 0 live BP_HERO_*_C pawns (the "BP_HERO" hits are UI widgets / shadow indicators).
+  * 0 live LokiPlayerController_Dev (no Loki PC for the local player); the Comp_PlayerController_*_C entries are BP
+    ARCHETYPE templates (GEN_VARIABLE — the class is loaded), not components on a live PC.
+So the DS client has the tutorial world PRIMED but the local player has NO Loki PC, NO selected hero, and NO drop-in.
+ROOT (again): the tutorial drop-in lives in Comp_GameMode_DropPlane_Tutorial (a GAMEMODE component); the stub runs
+LokiStubGameMode (stock), not the real BP_LokiGameMode_Tutorial (BP content the stub can't run). And no hero-select
+context exists (MatchStartDetails seeded with no participant hero). => A client-side shim would have to RECREATE the
+whole client match-entry flow (assign a hero, spawn a BP_LokiPlayerController + a BP_HERO pawn via the S55 native-call
+primitive, possess, set up input/camera, trigger drop-in) — essentially reimplementing SUPERVIVE's gameplay entry, with
+real uncertainty (client-spawned heroes need server-authoritative ability/stat/PlayerState init). This is the SAME
+"needs the real Loki PC + gamemode" wall, now confirmed from the client side too. The hybrid is viable only as a large,
+uncertain shim effort; it is NOT a quick unlock. HONEST CEILING of the reasonable-effort DS route = "client is in the
+LIVE tutorial world with a valid GameState + primed world (spectator)".
+
+STATE AT HANDOFF
+----------------
+All S71 changes kept (they're real progress: pawn replicates + GameModeClass fix). Game + stub LEFT RUNNING (client
+spectating LVL_Tutorial, pawn replicated but not controlled). New tool tools/re/obj_by_class.py (list instances by class
+substring, takes ASLR base arg — obj_iter.py's base is hardcoded/stale). ags address 127.0.0.1:7777. Kill game+stub
+before the next rebuild.

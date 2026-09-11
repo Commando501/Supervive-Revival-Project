@@ -1,0 +1,7 @@
+﻿=== LokiCharacter (UClass 0x29608761A00) — live capture 2026-07-19 00:30 PID 72108 ===
+=== CLIENT class @0x29608761A00 CPF_Net props, expanded via REAL path ===
+--- net prop OutOfBoundsBufferTimeRemaining (flags=0x18001140002234) ---
+[0] LEAF OutOfBoundsBufferTimeRemaining (FloatProperty)
+--- net prop CustomAnimationState (flags=0x48001040000220) ---
+[1] LEAF CustomAnimationState (EnumProperty)
+=== total leaf cmds across net props = 2 ===

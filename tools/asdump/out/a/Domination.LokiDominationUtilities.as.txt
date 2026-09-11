@@ -1,0 +1,249 @@
+==============================================================================
+MODULE   Domination.LokiDominationUtilities
+SOURCE   Domination/LokiDominationUtilities.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+// statics class: Module_Domination_LokiDominationUtilitiesStatics
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent, Static)
+ALokiPlayerStart@ GetDominationSpawnForPlayer(ALokiPlayerState@ PlayerState)
+// 143 instr, 956 B bytecode, id=0xC4A98BDA, varspace=84
+------------------------------------------------------------------------------
+{
+    auto v3;
+    ALokiGameState v10;
+    auto v11;
+    auto v12;
+    TArray<ALokiPlayerStart@> v16;
+    TArray<ALokiPlayerState@> v22;
+    auto v28;
+    auto v30;
+    ALokiPlayerStart v32;
+    TArrayIterator<ALokiPlayerStart@> v38;
+    ALokiPlayerStart v46;
+    FName v48;
+    FVector v54;
+    FVector v60;
+    auto v62;
+    TArrayIterator<ALokiPlayerState@> v68;
+    ALokiPlayerState v76;
+    ALokiCharacter v80;
+    int v83;
+
+    if (PlayerState != null) {
+        v10 = Loki::GetLokiGameState(__WorldContext);
+        if (v10 != null) {
+            v12 = PlayerState.GetTeamIndex_BP();
+            v16 = TArray<ALokiPlayerStart@>();
+            GetAllActorsOfClass(cast<UClass@>(__StaticType_ALokiPlayerStart), v16);
+            v22 = v10.GetLokiPlayerStates();
+            v28 = 0;
+            v38 = v16.Iterator();
+            while (true) {
+                v3 = v38.CanProceed;
+                if (!v3) break;
+                v46 = v38.Proceed();
+                v48 = FName(v46.PlayerStartTag);
+                v3 = v48 == __STATIC_NAME(49);
+                v3 = !v3;
+                if (v3) {
+                    continue;
+                }
+                v54 = v46.GetActorLocation();
+                v62 = 999999;
+                v68 = v22.Iterator();
+                while (true) {
+                    v3 = v68.CanProceed;
+                    if (!v3) break;
+                    v76 = v68.Proceed();
+                    v11 = v76.GetTeamIndex_BP();
+                    if (v12 == v11) {
+                        continue;
+                    }
+                    v80 = v76.GetLokiCharacter();
+                    if (IsValid(v80)) {
+                        v60 = v80.GetActorLocation();
+                        v30 = v54.Dist2D(v60);
+                        if (v30 < v62) {
+                            v62 = v30;
+                        }
+                    }
+                }
+                if (v62 > v28) {
+                    v28 = v62;
+                    v32 = v46;
+                }
+            }
+            if (v32 == null) {
+                v11 = v16.Num();
+                if (v11 == 0) {
+                    goto L238;
+                }
+                v83 = v16.Num();
+                v83 = v83 - 1;
+                v32 = v16[Math::RandRange(0, v83)];
+            }
+        } else {
+        }
+    } else {
+    }
+    L238:
+    return v32;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  RefCpyV        wW0:2
+    //     2  CmpPtrNull     rW0:2
+    //     3  JNZ            ->9
+    //     5  FreeNullV8     wW0:6
+    //     6  LOADOBJ        rW0:6
+    //     7  JMP            ->238
+    //     9  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    12  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    15  STOREOBJ       wW0:10
+    //    16  CmpPtrNull     rW0:10
+    //    17  JNZ            ->23
+    //    19  FreeNullV8     wW0:6
+    //    20  LOADOBJ        rW0:6
+    //    21  JMP            ->238
+    //    23  PshVPtr        rW0:0
+    //    24  CALLSYS        q:0x26e7a396ec0         ; int ALokiPlayerState::GetTeamIndex_BP() const
+    //    27  CpyRtoV4       wW0:12
+    //    28  PSF            rW0:16
+    //    29  CALLSYS        q:0x26e6ef29000         ; void TArray<ALokiPlayerStart@>::$beh0()
+    //    32  TYPEID         d:268448584             ; TArray<ALokiPlayerStart@>
+    //    34  PSF            rW0:16
+    //    35  PshGPtr        q:0x26e7ad8dbc8         ; __StaticType_ALokiPlayerStart
+    //    38  CALLSYS        q:0x26e6ef28ac0         ; UClass@ TSubclassOf<ALokiPlayerStart@>::opImplConv() const
+    //    41  STOREOBJ       wW0:18
+    //    42  PshVPtr        rW0:18
+    //    43  CALLSYS        q:0x26e7b1a28c0         ; void GetAllActorsOfClass(UClass@, ?&)
+    //    46  PSF            rW0:22
+    //    47  PshVPtr        rW0:10
+    //    48  CALLSYS        q:0x26e7a273340         ; TArray<ALokiPlayerState@> ALokiGameState::GetLokiPlayerStates() const
+    //    51  SetV8          wW0:28 q:0x0
+    //    54  PSF            rW0:38
+    //    55  PSF            rW0:16
+    //    56  CALLSYS        q:0x26e6ef28580         ; TArrayIterator<ALokiPlayerStart@> TArray<ALokiPlayerStart@>::Iterator()
+    //    59  JMP            ->175
+    //    61  SUSPEND
+    //    62  PSF            rW0:38
+    //    63  CALLSYS        q:0x26e6ef28200         ; ALokiPlayerStart@& TArrayIterator<ALokiPlayerStart@>::Proceed()
+    //    66  PshRPtr
+    //    67  RDSPtr
+    //    68  RefCpyV        wW0:46
+    //    69  PshVPtr        rW0:46
+    //    70  ADDSi          W0:952 d:67113404       ; APlayerStart::PlayerStartTag  (+952)
+    //    72  PSF            rW0:48
+    //    73  CALLSYS        q:0x26e69d22540         ; void FName::$beh0(const FName&)
+    //    76  PshC4          d:49
+    //    78  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    81  PshRPtr
+    //    82  PSF            rW0:48
+    //    83  CALLSYS        q:0x26e69d22000         ; bool FName::opEquals(const FName&) const
+    //    86  CpyRtoV4       wW0:3
+    //    87  NOT            rW0:3
+    //    88  CpyVtoR1       rW0:3
+    //    89  JLowZ          ->94
+    //    91  FreeNullV8     wW0:46
+    //    92  JMP            ->175
+    //    94  PSF            rW0:54
+    //    95  PshVPtr        rW0:46
+    //    96  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    99  SetV8          wW0:62 q:0x412e847e00000000
+    //   102  PSF            rW0:68
+    //   103  PSF            rW0:22
+    //   104  CALLSYS        q:0x26e6ee8c9c0         ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+    //   107  JMP            ->159
+    //   109  SUSPEND
+    //   110  PSF            rW0:68
+    //   111  CALLSYS        q:0x26e6ee8c640         ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+    //   114  PshRPtr
+    //   115  RDSPtr
+    //   116  RefCpyV        wW0:76
+    //   117  PshVPtr        rW0:76
+    //   118  CALLSYS        q:0x26e7a396ec0         ; int ALokiPlayerState::GetTeamIndex_BP() const
+    //   121  CpyRtoV4       wW0:11
+    //   122  CMPi           rW0:12 rW1:11
+    //   124  JNZ            ->129
+    //   126  FreeNullV8     wW0:76
+    //   127  JMP            ->159
+    //   129  PshVPtr        rW0:76
+    //   130  CALLSYS        q:0x26e7a390b00         ; ALokiCharacter@ ALokiPlayerState::GetLokiCharacter() const
+    //   133  STOREOBJ       wW0:80
+    //   134  PshVPtr        rW0:80
+    //   135  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //   138  JLowZ          ->157
+    //   140  PSF            rW0:60
+    //   141  PshVPtr        rW0:80
+    //   142  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   145  PSF            rW0:60
+    //   146  PSF            rW0:54
+    //   147  CALLSYS        q:0x26e69d07940         ; float64 FVector::Dist2D(const FVector&) const
+    //   150  CpyRtoV8       wW0:30
+    //   151  CMPd           rW0:30 rW1:62
+    //   153  JNS            ->157
+    //   155  CpyVtoV8       wW0:62 rW1:30
+    //   157  FreeNullV8     wW0:80
+    //   158  FreeNullV8     wW0:76
+    //   159  LoadVObjR      rW0:68 W1:16 DW2:268448510; TArrayIterator::CanProceed  (+16)
+    //   162  RDR1           wW0:3
+    //   163  CpyVtoR1       rW0:3
+    //   164  JLowNZ         ->109
+    //   166  CMPd           rW0:62 rW1:28
+    //   168  JNP            ->174
+    //   170  CpyVtoV8       wW0:28 rW1:62
+    //   172  PshVPtr        rW0:46
+    //   173  RefCpyV        wW0:32
+    //   174  FreeNullV8     wW0:46
+    //   175  LoadVObjR      rW0:38 W1:16 DW2:268448585; TArrayIterator::CanProceed  (+16)
+    //   178  RDR1           wW0:3
+    //   179  CpyVtoR1       rW0:3
+    //   180  JLowNZ         ->61
+    //   182  CmpPtrNull     rW0:32
+    //   183  JNZ            ->229
+    //   185  PSF            rW0:16
+    //   186  CALLSYS        q:0x26e6ef28040         ; int TArray<ALokiPlayerStart@>::Num() const
+    //   189  CpyRtoV4       wW0:11
+    //   190  CMPIi          rW0:11 d:0
+    //   192  JNZ            ->206
+    //   194  FreeNullV8     wW0:6
+    //   195  PSF            rW0:22
+    //   196  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //   199  PSF            rW0:16
+    //   200  CALLSYS        q:0x26e7a108c80         ; void TArray<ALokiPlayerStart@>::$beh2()
+    //   203  LOADOBJ        rW0:6
+    //   204  JMP            ->238
+    //   206  PSF            rW0:16
+    //   207  CALLSYS        q:0x26e6ef28040         ; int TArray<ALokiPlayerStart@>::Num() const
+    //   210  CpyRtoV4       wW0:83
+    //   211  SUBIi          wW0:83 rW1:83 DW2:1
+    //   214  PshV4          rW0:83
+    //   215  PshC4          d:0
+    //   217  CALLSYS        q:0x26e69d2b300         ; int Math::RandRange(int, int)
+    //   220  CpyRtoV4       wW0:84
+    //   221  PshV4          rW0:84
+    //   222  PSF            rW0:16
+    //   223  Thiscall1      q:0x26e6ef27cc0         ; ALokiPlayerStart@& TArray<ALokiPlayerStart@>::opIndex(int)
+    //   226  PshRPtr
+    //   227  RDSPtr
+    //   228  RefCpyV        wW0:32
+    //   229  PSF            rW0:22
+    //   230  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //   233  PSF            rW0:16
+    //   234  CALLSYS        q:0x26e7a108c80         ; void TArray<ALokiPlayerStart@>::$beh2()
+    //   237  LOADOBJ        rW0:32
+    //   238  RET            W0:2
+

@@ -1,0 +1,392 @@
+// ============================================================================
+//  MODULE   Armory.LokiPlayerControllerShopSkylandsComponent
+//  SOURCE   Armory/LokiPlayerControllerShopSkylandsComponent.as
+//  CONTENT  1 class(es), 19 function(s), 0 enum(s), 1 global(s), 2844 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiPlayerControllerShopSkylandsComponent;
+
+ULokiPlayerControllerShopSkylandsComponent@ ULokiPlayerControllerShopSkylandsComponent()   // traits=0x20
+{
+    ULokiPlayerControllerShopSkylandsComponent v2;
+
+    v2 = ULokiPlayerControllerShopSkylandsComponent();
+    return v2;
+}
+
+UClass@ ULokiPlayerControllerShopSkylandsComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiPlayerControllerShopSkylandsComponent);
+    return v2;
+}
+
+ULokiPlayerControllerShopSkylandsComponent@ ULokiPlayerControllerShopSkylandsComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiPlayerControllerShopSkylandsComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiPlayerControllerShopSkylandsComponent, v2, typeid(ULokiPlayerControllerShopSkylandsComponent@), WithName);
+    return v2;
+}
+
+ULokiPlayerControllerShopSkylandsComponent@ ULokiPlayerControllerShopSkylandsComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiPlayerControllerShopSkylandsComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerShopSkylandsComponent, v2, typeid(ULokiPlayerControllerShopSkylandsComponent@), WithName);
+    return v2;
+}
+
+ULokiPlayerControllerShopSkylandsComponent@ ULokiPlayerControllerShopSkylandsComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiPlayerControllerShopSkylandsComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerShopSkylandsComponent, v2, typeid(ULokiPlayerControllerShopSkylandsComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ULokiPlayerControllerShopSkylandsComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiPlayerControllerShopSkylandsComponent
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_SaleItem)
+    FLokiShopInventory SaleItem;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TSubclassOf<ULokiLootTable@> ShopSaleTable;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bPlayAnimation;
+
+    ULokiPlayerControllerShopSkylandsComponent()   // traits=0x21
+    {
+        auto v1;
+
+        this.SaleItem = FLokiShopInventory();
+        this.ShopSaleTable = TSubclassOf<ULokiLootTable@>();
+        this.ShopSaleTable = nullptr;
+        v1 = false;
+        this.bPlayAnimation = v1;
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent, NoOp)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void MarkAnimationPlayed()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = false;
+        this.bPlayAnimation = v1;
+        return;
+    }
+
+    void ServerBuyShopSaleItem(const FLokiShopInventory& Item)   // traits=0x20
+    {
+        __Evt_PushArgument__FLokiShopInventory(Item);
+        __Evt_Execute(this, n"ServerBuyShopSaleItem");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ServerBuyShopSaleItem, BlueprintCallable, BlueprintEvent, NetServer)
+    void ServerBuyShopSaleItem_Implementation(const FLokiShopInventory& Item)   // traits=0x20
+    {
+        this.AuthBuyShopSaleItem(Item);
+        return;
+    }
+
+    UFUNCTION(BlueprintAuthorityOnly, CanOverrideEvent)
+    void AuthBuyShopSaleItem(const FLokiShopInventory& Item)   // traits=0x20
+    {
+        TSubclassOf<ALokiBaseItem@> v2;
+        bool v3;
+        bool v4;
+        AActor v6;
+        ALokiPlayerController v8;
+        ALokiPlayerController v10;
+        ALokiPlayerState v14;
+        auto v16;
+        auto v17;
+        ALokiBaseItem v20;
+        int v21;
+        ULokiInventoryComponentComboItems v26;
+        ALokiBaseItem v28;
+        ELokiAddToInventoryReason v29;
+        auto v30;
+        FGameEvent_OnItemPurchase_PlayerState v46;
+        UGameEventRouterComponent v48;
+        ALokiServerAnalyticsManager v52;
+        FAnalyticsItemPurchaseEvent v72;
+        FString v76;
+        UClass v78;
+        auto v79;
+        auto v80;
+
+        v2 = TSubclassOf<ALokiBaseItem@>();
+        v2 = Item.ItemClass;
+        v3 = v2 == this.SaleItem.ItemClass;
+        v3 = !v3;
+        if (!v3) {
+            v3 = 0;
+        } else {
+            v2 = TSubclassOf<ALokiBaseItem@>();
+            v2 = Item.ItemClass;
+            v4 = v2 == nullptr;
+            v4 = !v4;
+            v3 = v4;
+        }
+        if (v3) {
+            return;
+        } else {
+            v6 = this.GetOwner();
+            if (v6 != nullptr) {
+                v8 = cast<ALokiPlayerController@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v10 = v8;
+            if (v10 == nullptr) {
+                return;
+            } else {
+                v14 = v10.GetLokiPlayerState();
+                if (v14 == nullptr) {
+                    return;
+                } else {
+                    v16 = Item.PriceOverride;
+                    if (v16 < 0) {
+                        v20 = Item.ItemClass.GetDefaultObject();
+                        v17 = v20.ShopkeeperGoldPrice;
+                        v21 = v17;
+                    } else {
+                        v16 = Item.PriceOverride;
+                        v21 = v16;
+                    }
+                    v17 = v14.GetWalletGold();
+                    if (v17 < v21) {
+                        return;
+                    } else {
+                        v26 = v14.GetInventory();
+                        if (v26 == nullptr) {
+                            return;
+                        } else {
+                            v4 = false;
+                            v28 = SpawnActor(Item.ItemClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v4, nullptr);
+                            v3 = false;
+                            v4 = true;
+                            v29 = ELokiAddToInventoryReason::FromGround;
+                            v30 = v26.TryAddToInventory(v28, v29, NAME_None, -1, v4, v3);
+                            v30 = !v30;
+                            if (v30) {
+                                v28.DestroyActor()  /* UFunction K2_DestroyActor */;
+                                return;
+                            } else {
+                                v3 = false;
+                                v14.ConsumeWalletCurrency("Gold", v21, v3);
+                                v46 = FGameEvent_OnItemPurchase_PlayerState();
+                                v46.Item = v28;
+                                v46.GoldCost = v21;
+                                v46.PlayerState = v14;
+                                v48 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+                                v48.BroadcastEvent(v46, typeid(FGameEvent_OnItemPurchase_PlayerState), v14);
+                                v52 = ALokiServerAnalyticsManager::GetFromContext(__WorldContext);
+                                if (v52 != nullptr) {
+                                    v72 = FAnalyticsItemPurchaseEvent();
+                                    v76 = LokiAnalytics::GetMatchId(__WorldContext);
+                                    v72.Game_Id = v76;
+                                    v72.Player_Id = v14.PlatformPlayerID;
+                                    v78 = UClass@(Item.ItemClass);
+                                    v76 = System::GetClassDisplayName(v78);
+                                    v72.Item_Id = v76;
+                                    v16 = v14.GetWalletCurrencyAmount("Gold");
+                                    v72.Remaining_Gold = v16;
+                                    v72.Cost = v21;
+                                    v79 = Gameplay::GetServerTime(__WorldContext);
+                                    v72.Game_Time = v79;
+                                    v80 = false;
+                                    v72.Source = v80;
+                                    v52.AddItemPurchaseEvent(v72);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    void ServerSwapSlotAndBuyItem(const FLokiShopInventory& ShopItem, const int InventorySlotIndex)   // traits=0x20
+    {
+        __Evt_PushArgument__FLokiShopInventory(ShopItem);
+        __Evt_PushArgument__int(InventorySlotIndex);
+        __Evt_Execute(this, n"ServerSwapSlotAndBuyItem");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ServerSwapSlotAndBuyItem, BlueprintCallable, BlueprintEvent, NetServer)
+    void ServerSwapSlotAndBuyItem_Implementation(const FLokiShopInventory& ShopItem, const int InventorySlotIndex)   // traits=0x20
+    {
+        auto v1;
+        ALokiBaseItem v4;
+        FName v6;
+
+        v1 = ShopItem.ItemClass.IsValid();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = ShopItem.ItemClass.GetDefaultObject();
+            v6 = v4.GetSlotName();
+            v1 = this.AuthDropPowerAtSlot(v6, InventorySlotIndex);
+            if (v1) {
+                this.AuthBuyShopSaleItem(ShopItem);
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    bool AuthDropPowerAtSlot(const FName& SlotName, const int SlotIndex)   // traits=0x20
+    {
+        AActor v2;
+        ALokiPlayerController v4;
+        ALokiPlayerController v6;
+        auto v7;
+        ALokiPlayerState v12;
+        ULokiInventoryComponentComboItems v16;
+        ALokiBaseItem v20;
+        ELokiRemoveFromInventoryReason v21;
+        auto v22;
+
+        v2 = this.GetOwner();
+        if (v2 != nullptr) {
+            v4 = cast<ALokiPlayerController@>(v2);
+        } else {
+            v4 = nullptr;
+        }
+        v6 = v4;
+        if (v6 == nullptr) {
+            v7 = false;
+            return v7;
+        } else {
+            v12 = v6.GetLokiPlayerState();
+            if (v12 == nullptr) {
+                v7 = false;
+                return v7;
+            } else {
+                v16 = v12.GetInventory();
+                if (v16 == nullptr) {
+                    v7 = false;
+                    return v7;
+                } else {
+                    v20 = v16.GetItemFromSlot(SlotName, SlotIndex);
+                    if (v20 != nullptr) {
+                        v22 = 2;
+                        v21 = v22;
+                        v7 = v16.TryRemoveFromInventory(v20, v21);
+                        return v7;
+                    } else {
+                        v7 = false;
+                    }
+                }
+            }
+        }
+        return v7;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnRep_SaleItem()   // traits=0x28
+    {
+        auto v1;
+
+        v1 = true;
+        this.bPlayAnimation = v1;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnPlayerInitialized(const FGameEvent_GameReady_Controller& Event, const EGameEventStatefulEventType EventType, const AController@ Context)   // traits=0x28
+    {
+        auto v1;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            this.RollNewShopItem();
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnDayNightChanged(const FGameEvent_DayNightChanged& Event, const EGameEventStatefulEventType EventType, const AActor@ Context)   // traits=0x28
+    {
+        auto v1;
+        auto v3;
+        int v4;
+        int v5;
+        auto v6;
+        auto v7;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v3 = Event.CurrDayNightState;
+            v4 = int(v3);
+            if (v4 != 0) {
+                v1 = 0;
+            } else {
+                v3 = Event.PrevDayNightState;
+                v5 = int(v3);
+                v6 = v5 == 1;
+                v1 = v6;
+            }
+            if (v1) {
+                v7 = true;
+            } else {
+                v5 = Event.DaysEncountered;
+                if (v5 != 1) {
+                    v6 = 0;
+                } else {
+                    v4 = Event.NightsEncountered;
+                    v7 = v4 == 0;
+                    v6 = v7;
+                }
+                v7 = v6;
+            }
+            if (v7) {
+                this.RollNewShopItem();
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void RollNewShopItem()   // traits=0x28
+    {
+        return;
+    }
+
+    void ~ULokiPlayerControllerShopSkylandsComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

@@ -1,0 +1,73 @@
+=== ORDER-INDEPENDENT VALUE: pages an image has that tutorial-hero (the best single image) lacks ===
+  loadout                                  291
+  missions                                 291
+  roster                                   289
+  store                                    245
+  menu                                     214
+  heromastery                              202
+  toggles                                  196
+  claimflow-AFTER                          172
+  claimflow-BEFORE                         156
+  vmbuild                                  151
+  crash-20260815-200514                    136
+  rcb                                      136
+  lobby-dispatch-decrypted                 131
+  accountpass                              126
+  s132-landstart-live                      125
+  s131-rideable-live                       118
+  s131-droppod-live                        116
+  s132-dismount-live                        92
+  s129-poolgate                             76
+  crash-20260820-021637                     41
+  crash-20260820-005902                     38
+  crash-20260819-181559                     37
+  crash-20260819-200129                     32
+  crash-20260820-142858                     32
+  crash-20260815-160759                      2
+
+=== LEAVE-ONE-OUT: pages LOST from the union if this image were deleted ===
+  claimflow-AFTER                            3 pages would be lost
+  heromastery                                4 pages would be lost
+  lobby-dispatch-decrypted                  10 pages would be lost
+  rcb                                       13 pages would be lost
+  s132-dismount-live                         1 pages would be lost
+  s132-landstart-live                        4 pages would be lost
+  toggles                                   42 pages would be lost
+  vmbuild                                    5 pages would be lost
+
+=== DARK SET: 13587 pages = 55.7 MB (44.87%) ===
+contiguous dark runs: 2323   (mean 5.8 pages/run)
+top 25 runs:
+   RVA 0x0050d000 .. 0x008a0fff    916 pages      3664 KB
+   RVA 0x00083000 .. 0x001f4fff    370 pages      1480 KB
+   RVA 0x073c6000 .. 0x0751cfff    343 pages      1372 KB
+   RVA 0x00d07000 .. 0x00e2efff    296 pages      1184 KB
+   RVA 0x04ce7000 .. 0x04dfbfff    277 pages      1108 KB
+   RVA 0x00329000 .. 0x00418fff    240 pages       960 KB
+   RVA 0x06d83000 .. 0x06e5afff    216 pages       864 KB
+   RVA 0x009e5000 .. 0x00a6efff    138 pages       552 KB
+   RVA 0x0094a000 .. 0x009cefff    133 pages       532 KB
+   RVA 0x00494000 .. 0x0050afff    119 pages       476 KB
+   RVA 0x0668d000 .. 0x06701fff    117 pages       468 KB
+   RVA 0x00299000 .. 0x00307fff    111 pages       444 KB
+   RVA 0x0758d000 .. 0x075f5fff    105 pages       420 KB
+   RVA 0x00e4b000 .. 0x00eb0fff    102 pages       408 KB
+   RVA 0x00eb2000 .. 0x00f11fff     96 pages       384 KB
+   RVA 0x008b9000 .. 0x00916fff     94 pages       376 KB
+   RVA 0x01512000 .. 0x0156ffff     94 pages       376 KB
+   RVA 0x00c78000 .. 0x00ccafff     83 pages       332 KB
+   RVA 0x05d1d000 .. 0x05d6efff     82 pages       328 KB
+   RVA 0x06d09000 .. 0x06d58fff     80 pages       320 KB
+   RVA 0x05056000 .. 0x050a1fff     76 pages       304 KB
+   RVA 0x00aa6000 .. 0x00af0fff     75 pages       300 KB
+   RVA 0x00454000 .. 0x0048efff     59 pages       236 KB
+   RVA 0x072b4000 .. 0x072edfff     58 pages       232 KB
+   RVA 0x04e78000 .. 0x04eb0fff     57 pages       228 KB
+top-25 runs cover 4337 of 13587 dark pages (31.9%)
+dark pages by run length:
+     1 page:   1017 pages
+        2-4:   2035 pages
+       5-16:   3257 pages
+      17-64:   3115 pages
+     65-256:   1961 pages
+       >256:   2202 pages

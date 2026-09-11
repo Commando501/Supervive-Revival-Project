@@ -1,0 +1,100 @@
+SESSION 51 — ZERO-INJECTION READY-GATE: the 5th flag IS bHasProcessedStorefront
+=================================================================================
+(2026-07-06; offline schema + capture.log analysis. Track-1 of the dedicated-server
+roadmap: make the STORE + HUNTERS roster work with NO per-launch shim.)
+
+BACKGROUND
+----------
+The empty ALL HUNTERS grid + empty STORE share ONE native gate (proven S45-S48):
+WBP_HeroPicker gates LoadCharacters on CatalogManager::IsCatalogDataReady()
+(impl modRVA +0x57BB700, rcx=CatalogManager). That impl returns TRUE only if the
+5 bytes [CatMgr+0x350..+0x354] are ALL nonzero. Live read (S47): 01 01 01 01 **00**
+=> +0x354 == 0 => gate FALSE => grid binds OnCatalogDataReady and waits forever.
+catalog_store_fix.dll works around it (NOP the jz / hold +0x354=1), but that's a
+per-launch injection with hardcoded RVAs. The durable fix = get the client to set
++0x354 natively.
+
+THE FINDING (usmap schema, tools/usmapdump/schema.txt:10788)
+-----------------------------------------------------------
+CatalogManager : UClass:Object (21 props). Its LAST FIVE properties are exactly
+five consecutive bool flags — these ARE the [+0x350..+0x354] bytes the reader checks:
+
+  +0x350  bHasProcessedManifest          = 01  (ContentManifest processed)
+  +0x351  bHasProcessedFreeInventory     = 01
+  +0x352  bHasProcessedPremiumInventory  = 01
+  +0x353  bHasProcessedPlayerInventory   = 01
+  +0x354  bHasProcessedStorefront        = 00  <-- THE STUCK FLAG
+
+(Mapping is by usmap property order = UE memory layout order; 5 trailing bools,
+last-declared = highest offset = the unset +0x354. STRONG but confirm live with
+`usmapdump extract` offsets or peek the 5 bytes and correlate.)
+
+=> The ~13-session "mystery 5th catalog sub-flag" is NOT obscure: the client simply
+   never marks the STOREFRONT as processed. 4 of 5 processing steps complete
+   (manifest + free/premium/player inventory), storefront never does.
+
+WHY THIS MATTERS
+----------------
+This reframes the permanent ready-gate fix from deep native RE into a BACKEND-shaped
+problem (this project's wheelhouse): find the storefront response whose successful
+processing sets bHasProcessedStorefront, serve it, and IsCatalogDataReady flips true
+NATIVELY -> grid + store build with NO shim. Likely also unblocks the store tabs'
+per-tile gate for free (shared catalog-ready path).
+
+IT IS "NEVER", NOT "LATE" (rules out a pure timing fix)
+------------------------------------------------------
+The grid never repopulates even after the user OPENS the store (which does fetch
+/storefront/offers). If bHasProcessedStorefront merely flipped late, OnCatalogDataReady
+would fire on the flip and build the grid. It doesn't => the flag NEVER gets set =>
+our storefront response is not reaching the client's "mark processed" code path.
+
+STOREFRONT ENDPOINT SURFACE (capture.log, fully enumerated — no hidden endpoint)
+--------------------------------------------------------------------------------
+  GET /content-service/manifest/{version}   (handleContentManifest)  -> sets Manifest flag
+  GET /storefront/battlepass/progressiontracks (handleProgressionTracks)
+  GET /storefront/heroes                    (handleHeroes)
+  GET /storefront/wallet/{id}               (handleWallet)
+  GET /storefront/offers/{id}               (handlePlayerStore)      <- storefront?
+  GET /storefront/real/offers/{id}          (handleRealMoneyStore)   <- storefront?
+Inventory (sets the other 3 flags): /inventory/players/{id}, /inventory/free, premium.
+So bHasProcessedStorefront is set by processing /storefront/offers and/or
+/storefront/real/offers (and/or a StorefrontManager step fed by them).
+
+HYPOTHESES for why storefront isn't "processed" (test single-variable)
+----------------------------------------------------------------------
+H2a: our FLokiStorefrontPlayerStore is accepted enough to render tiles (when the gate
+     is forced) but lacks a field/marker the "processed" path requires (e.g. a status,
+     a non-empty required sub-list, RotatingOffers/NextRotation which we omit).
+H2b: bHasProcessedStorefront is gated on BOTH /storefront/offers AND
+     /storefront/real/offers succeeding; one of them currently no-ops.
+H2c: the StorefrontManager sub-object (CatalogManager.StorefrontManager) needs a
+     storefront-definition/manifest we return empty (check content-service/manifest
+     body — bHasProcessedManifest sets, but the storefront portion may be absent).
+H2d: TIMING after all — the offers fetch is lazy (on store-open) and the "processed"
+     write is skipped unless it happens inside the initial catalog-load sequence.
+     (Weaker: contradicted by "never flips even after open", unless the write is
+     one-shot-guarded to the load path.)
+
+NEXT PROBES (live; need elevation / a relaunch — pair with task B)
+-----------------------------------------------------------------
+1. CONFIRM the offset->field mapping: `usmapdump extract <pid>` and read the byte
+   offsets of the 5 bHasProcessed bools (or peek [CatMgr+0x350..0x354] and match the
+   live 01 01 01 01 00). Find CatMgr: scan for vtable abs base+0x8831758, the instance
+   whose +0x60 Catalog map Num>0 (not the CDO).
+2. FIND THE WRITER of bHasProcessedStorefront: no general displacement scanner exists
+   in usmapdump yet (the `pattern` cmd is hardcoded to GMalloc). Build a new subcommand
+   that scans executable regions for `C6 8? 54 03 00 00 ??` (mov byte [reg+0x354], imm)
+   and variants, then disasm each hit to find the CatalogManager::ProcessStorefront-ish
+   routine and see what it reads/what gates the write. (Offline to write; run elevated.)
+3. BACKEND single-variable tests (revert between each, per CLAUDE.md): add
+   RotatingOffers+NextRotation to handlePlayerStore; populate /storefront/real/offers;
+   check the content-service/manifest body for a storefront section. After each,
+   relaunch WITHOUT the shim (-NoHook) and read [CatMgr+0x354] — did it flip to 01?
+   Success = grid+store render with no injection.
+
+If solved: catalog_store_fix.dll's ready-gate half becomes unnecessary (the purchasable
+poke was already made durable via handleInventory owning cosmetics), i.e. the STORE +
+roster work on a clean boot with zero native patching — the true permanent fix.
+
+See also: docs/session-47-tile-widget-FOUND.txt (the IsCatalogDataReady disasm),
+memory/supervive-store-status.md, memory/supervive-hero-roster-blocker.md.

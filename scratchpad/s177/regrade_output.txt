@@ -1,0 +1,191 @@
+[CTRL] ProcessInternal 0x13454A0 -> LIT (expect LIT)
+[CTRL] Respawn        0x5A6AC40 -> DARK (expect DARK)
+
+lines asserting coverage-blindness WITH a >=16MB .text RVA on them: 69
+  now STALE (>=1 named address is READABLE in merged14): 61
+  still accurate (all named addresses still dark)     : 8
+
+=== STALE COVERAGE-BLINDNESS CLAIMS (the analysis they blocked is now free) ===
+  CLAUDE.md:2938
+     NOW READABLE: 0x1f8cfc0
+     `0x1F8CFC0` all-zero claim; line 3772 has "45 % of `.text` is undecrypted" as general
+  CLAUDE.md:2961
+     NOW READABLE: 0x1f8cfc0
+     states `[M]` *"`0x1F8CFC0` is an all-zero page, so **the packet format is unreadable offline**"* and
+  CLAUDE.md:4306
+     NOW READABLE: 0x56772cf
+     (`0x56772CF`). ⚠ **Bounded — 45 % of `.text` is undecrypted and `CurrentPhase` is REPLICATED**, so
+  docs\coverage-audit-s101.md:185
+     NOW READABLE: 0x1f8cfc0
+     > **Display**, 0 hits in 14 logs; the echo impl `0x1F8CFC0` is a 100 % zero page).
+  docs\coverage-audit-s101.md:187
+     NOW READABLE: 0x5875000
+     > `TryJoinQueue`'s page `0x5875000` is 100 % zero in every dump. **★ The settling experiment costs
+  docs\coverage-audit-s101.md:677
+     NOW READABLE: 0x1f8cfc0
+     > Loki logs** — and the UDP-echo implementation `0x1F8CFC0` is a **100 % zero page**. No captured
+  docs\coverage-audit-s101.md:685
+     NOW READABLE: 0x5875000
+     > UNKNOWN**: `TryJoinQueue`'s implementation page `0x5875000` is 100 % zero in every dump we own.
+  docs\drop-sequence-status-s150.md:1157
+     NOW READABLE: 0x56eba30, 0x56deb00
+     `[I]` (undecrypted); only the getter `0x56EBA30` + gate `CanLaunchDropPod 0x56DEB00` are `[M]`.
+  docs\fk-playability-audit-s134.md:53
+     NOW READABLE: 0x1384d50, 0x5611090
+     | 9 | `fk13.c`: "ALL TEN `ALokiCharacter` exec verbs are dead" | **CORRECTED** — 8 FOLDED + 2 **COVERAGE-BLOCKED**, and `lane-d-empty-impl-census.tsv` grades both blocked
+  docs\fk-playability-audit-s134.md:204
+     NOW READABLE: 0x5875000
+     | **FK-5d — `TryJoinQueue`'s page is 100 % zero** | **STALE.** `0x5875000` DARK→LIT (S133 party/queue sweep). The most-cited dark address in the repo (11 citations) and e
+  docs\fk-playability-audit-s134.md:332
+     NOW READABLE: 0x5875000, 0x5875e90, 0x5875e90
+     | **`0x5875000` / `TryJoinQueue 0x5875E90` is 100 % zero** — the most-cited dark address (11 citations) | `ignorance-map:401,2271`; `fk5-battle-gate-settled.md:88,420,942
+  docs\fk-playability-audit-s134.md:334
+     NOW READABLE: 0x56ce5f0
+     | **`TryUpdateAbilitySystem` impl `0x56CE5F0` — all-zero page, "clean negative"** | `fk3-fk4-settled.md:529`; `strxref-open-questions.md:198` | **LIT** (and LIT in `merge
+  docs\fk-playability-audit-s134.md:335
+     NOW READABLE: 0x5456000
+     | **16 COVERAGE-BLOCKED `(class,func)` keys on page `0x5456000`** (the five `AuthPlayer*` + `GetLandingTeleportLocation`) | `fk22:4,154,613,662` | **3,860/4,096 non-zero.
+  docs\fk-playability-audit-s134.md:353
+     NOW READABLE: 0x55cf760, 0x1384d50, 0x556d910
+     | **`ALokiPlayerCheats` impls "dark everywhere"** | `fk6-cheat-surface-settled.md:740-742` | Re-grade with the `.data` record table, which works on undecrypted pages. `Ch
+  docs\fk-playability-audit-s134.md:366
+     NOW READABLE: 0x5456000
+     | **2** | Re-grade all 100 drop-class `(class,func)` keys with the S130 `.data` record table **plus** a `merged10` disassembly of page `0x5456000`. | The 16 COVERAGE-BLOC
+  docs\fk1-exec-sweep-s153.md:210
+     NOW READABLE: 0x55653e0, 0x338c990, 0x5565000, 0x338c000
+     | `ALokiPlayerCheats::SetGamepadAimSettings` | **REAL** | impl `0x55653E0` is a 5-byte `E9 <rel32>` JMP trampoline → `0x338C990`; page `0x5565000` (trampoline) went DARK→
+  docs\fk1-stub-claim-recheck.md:88
+     NOW READABLE: 0x534c000
+     Page coverage `0x534C000` = **3877 / 4096 nonzero** (not coverage-blocked). Identical in both dumps.
+  docs\fk15-handlenotif-jumptable-20260813.md:46
+     NOW READABLE: 0x4b03000, 0x4b05000, 0x4b06000
+     existing dumps (`0x4b03000`, `0x4b05000`, `0x4b06000` were 100 % zero). Pushing
+  docs\fk20-coverage-settled.md:360
+     NOW READABLE: 0x1f8cfc0
+     > `0x1F8CFC0` is an all-zero page, so **the packet format is unreadable offline**
+  docs\fk20-coverage-settled.md:406
+     NOW READABLE: 0x56ce5f0
+     `0x56CE5F0` (`TryUpdateAbilitySystem` impl, `fk3-fk4-settled.md:529` "all-zero page") and
+  docs\fk22-dropphase-reachability.md:4
+     NOW READABLE: 0x5456000
+     > **COVERAGE-BLOCKED**, most of them on `.text` page **`0x5456000`** (the five
+  docs\fk22-dropphase-reachability.md:154
+     NOW READABLE: 0x5456000
+     - **`AuthPlayerEnterWorldAttachedToRidable` is COVERAGE-BLOCKED and the blocked/covered split is a `.text` PAGE BOUNDARY, not a semantic one.** Page `0x5456000` reads cov
+  docs\fk22-dropphase-reachability.md:375
+     NOW READABLE: 0x55653e0
+     | **COVERAGE negative control** `ALokiGameState::AuthSetDeathCircle` | must report separately, never as EMPTY | impl `0x55653e0`, page **0/4096 non-zero in 13/13 images**
+  docs\fk22-dropphase-reachability.md:393
+     NOW READABLE: 0x5601020, 0x567a160, 0x442b4c0
+     | **coverage of the targets** | must not be zero pages | `0x5601020` decrypted **18/18** images; `0x567a160` **17/18** (sole zero = `dumps/crash-20260815-160759`); `0x442
+  docs\fk22-dropphase-reachability.md:411
+     NOW READABLE: 0x56772cf
+     - Across the decrypted `.text` of `merged2` there is **exactly ONE byte store to displacement `+0xA44`**, at `0x56772CF` (`44 88 a7 44 0a 00 00` = `mov byte ptr [rdi+0xa4
+  docs\fk22-dropphase-reachability.md:555
+     NOW READABLE: 0x5614690, 0x5601020, 0x5453ab9
+     ⚠⚠ **REFUTED — do not restate line 1's finding 9.** It claimed *"transitions 4→5, 6→7 and 7→8 have NO native caller anywhere in the image, so they can only originate in B
+  docs\fk22-dropphase-reachability.md:608
+     NOW READABLE: 0x56c58a0   still dark: 0x5442960
+     - ⚠ **Line 3 mis-verdicted `ULokiPreloadComponent::OnRoundPhaseChanged` as COVERAGE-BLOCKED.** Its thunk `0x5442960` really is 32 zero bytes in 18/18 — but the **same `.d
+  docs\fk22-dropphase-reachability.md:627
+     NOW READABLE: 0x5456c80
+     8. → intro → `UpdateCharacterLocations` (gated `state == 4`) → `ULokiRideableComponent::GetLandingTeleportLocation` (**COVERAGE-BLOCKED**, thunk `0x5456C80` zero in 18/18
+  docs\fk22-dropphase-reachability.md:639
+     NOW READABLE: 0x2c2ce30, 0x5456000
+     ⚠ **REFUTED sub-claim:** *"`PlayersInside` can never be populated, so `UpdateDropPhaseHiddenActors` is dead."* `AuthAddPlayer`/`AuthRemovePlayer` really are empty folds (
+  docs\fk22-dropphase-reachability.md:691
+     NOW READABLE: 0x5456c80   still dark: 0x560ee70, 0x55a34e0
+     - **Coverage-blocked, denominator stated:** `0x560EE70`, `0x5456C80`, `0x55A34E0/37F0/3F50`, the five `AuthPlayerEnterWorld*`, `TryLaunchDropPod`, `SelectDropPodDestinati
+  docs\fk22-dropphase-reachability.md:699
+     NOW READABLE: 0x5614690
+     2. **★★ A universal negative asserted over a 45 %-dark image.** *"Transitions 4→5, 6→7, 7→8 have NO native caller anywhere"* — from an `E8`/`E9` sweep of a `.text` that i
+  docs\fk22-dropphase-reachability.md:704
+     NOW READABLE: 0x56c58a0
+     7. **★ A verdict that contradicts the reporter's own instrument.** `ULokiPreloadComponent::OnRoundPhaseChanged` was filed COVERAGE-BLOCKED on a zero **thunk**, while the 
+  docs\fk27-successor-gc-rooting-settled.md:247
+     NOW READABLE: 0x1259d72
+     * `fn 0x01259D72`'s caller is genuinely coverage-blocked (no `E8`/`E9`, no stored pointer —
+  docs\fk3-fk4-settled.md:527
+     NOW READABLE: 0x5302de0
+     | `PollForFeatureTogglesReady` | exec `0x5302DE0` | all-zero page | in-match / drop-in / tutorial world |
+  docs\fk3-fk4-settled.md:529
+     NOW READABLE: 0x56ce5f0
+     | `TryUpdateAbilitySystem` impl | `0x56CE5F0` | all-zero page | same (GAS never runs at menu) |
+  docs\fk5-battle-gate-settled.md:5
+     NOW READABLE: 0x1f8cfc0
+     > This file states, graded `[M]`, that *"`0x1F8CFC0` is an all-zero page, so **the packet
+  docs\fk5-battle-gate-settled.md:88
+     NOW READABLE: 0x5875000
+     | 5 | `UPartyManager::TryJoinQueue`'s implementation page `0x5875000` is likewise **100 % zero**. The real matchmaking path has never executed in any *dumped* state. | `[
+  docs\fk5-battle-gate-settled.md:420
+     NOW READABLE: 0x5875000
+     | **4** | **`TryJoinQueue`'s own native preconditions.** Page `0x5875000` is 100 % zero. | BATTLE | §2.5 | **`[U]` — the largest residual** |
+  docs\fk5-battle-gate-settled.md:473
+     NOW READABLE: 0x1f8cfc0
+     what §2.5's all-zero page at `0x1F8CFC0` shows at instruction level. The chain closes.
+  docs\fk5-battle-gate-settled.md:693
+     NOW READABLE: 0x1f8cfc0
+     **Rationale.** `0x1F8CFC0` is an all-zero page, so **the packet format is unreadable offline** `[M]`.
+  docs\fk5-battle-gate-settled.md:942
+     NOW READABLE: 0x5875000, 0x5875e90
+     | **1** | **`UPartyManager::TryJoinQueue`'s own preconditions.** *The largest residual.* Whether anything in it requires a completed latency measurement is genuinely `[U]
+  docs\fk5-battle-practice-gate-s105.md:390
+     NOW READABLE: 0x5875000
+     `0x5875000`, which is **100 % zero in `dumps/merged.dump.exe`** — i.e. across every game state we
+  docs\fk5-battle-practice-gate-s105.md:581
+     NOW READABLE: 0x5875000
+     * **`UPartyManager::TryJoinQueue`'s own preconditions.** Its entry page (`0x5875000`) is 100 % zero
+  docs\fk5-latency-subsystem-re.md:497
+     NOW READABLE: 0x1f8cfc0
+     | ICMP-module UDP echo entry (**undecrypted**) | `0x1F8CFC0` |
+  docs\fk5-latency-subsystem-re.md:502
+     NOW READABLE: 0x5875e90
+     | `UPartyManager::TryJoinQueue` (impl, **undecrypted**) | `0x5875E90` |
+  docs\ignorance-map-s101.md:422
+     NOW READABLE: 0x1f8cfc0
+     > implementation `0x1F8CFC0` is a **100 % zero page**. Nothing ever asked for a QoS endpoint because
+  docs\ignorance-map-s101.md:446
+     NOW READABLE: 0x5875000
+     > page `0x5875000` is 100 % zero in every dump we own, so its preconditions are unreadable offline.
+  docs\ignorance-map-s101.md:1479
+     NOW READABLE: 0x56363f0, 0x53800d0, 0x38047f0, 0x5676f10, 0x334e7a0, 0x5648e48, 0x39c3db0, 0x5648d6f, 0x33560c5, 0x5648210, 0x5648d97, 0x5648e34, 0x5648e6f, 0x55cd510, 0x55cd572, 0x5456000
+     | **★★★★★ S130 THIRD UPDATE (2026-08-20) — THE POOL GATE IS NAMED, AND THE POOL IS **NOT** THE BLOCKER.** → `docs/s130-actor-pool-gate-settled.md`, `docs/fk22-dropphase-r
+  docs\ignorance-map-s101.md:2140
+     NOW READABLE: 0x56481d0, 0x56481d7
+     | **f** | **"A blank result from `fkdis.py d <rva>` means the page is not decrypted"** | a zero page and a failed decode print the same nothing | **It is a QUERY failure.
+  docs\ignorance-map-s101.md:2367
+     NOW READABLE: 0x1f8cfc0, 0x5875000
+     | ↳ | **✅ SETTLED S105 → `docs/fk5-battle-gate-settled.md`.** *Row preserved above; its diagnosis was right and is now measured.* No `ULatencyMeasurer` has **ever** been 
+  docs\method-rules.md:159
+     NOW READABLE: 0x5614690, 0x5601020, 0x5453ab9
+     | **★★ S124-k** | an `E8`/`E9` sweep of `.text` presented as exhaustive | `merged2` `.text` is **16,638 of 30,281 pages = 54.95 %** decrypted | *"transitions 4→5, 6→7, 7→
+  docs\method-rules.md:162
+     NOW READABLE: 0x56c58a0
+     | **★ S124-n** | a verdict that **contradicts the reporter's own instrument** | — | `ULokiPreloadComponent::OnRoundPhaseChanged` filed COVERAGE-BLOCKED off a zero **thunk
+  docs\method-rules.md:203
+     NOW READABLE: 0x56481d0, 0x56481d7
+     | **★★ S130-c** | a **blank** result from `fkdis.py d <rva>` | capstone decodes nothing when `<rva>` is not an instruction boundary | reads **identically to "the page is 
+  docs\method-rules.md:221
+     NOW READABLE: 0x1f8cfc0, 0x1f8cfc0, 0x1f8be90, 0x1f8be90
+     | **★★★★★ S133-b** | a **coverage-blindness verdict pinned to the wrong function** | `docs/fk5-battle-gate-settled.md:664` grades `[M]`: *"`0x1F8CFC0` is an all-zero page
+  docs\next-session-prompt-s134.md:132
+     NOW READABLE: 0x5456000
+     - **FK-22 §2.5's 16 COVERAGE-BLOCKED keys**: page `0x5456000` (the five `AuthPlayer*` entry points and
+  docs\s135-queue-arms-a-match.md:478
+     NOW READABLE: 0x3bbf3c0
+     | `APawn::SpawnDefaultController` (slot **280** = `+0x8C0`) | `0x3BBF3C0` | **DARK** — page never decrypted. NOT stripped, NOT confirmed real. |
+  docs\s156-checksimultaneous-disassembly.md:238
+     NOW READABLE: 0x551ba00
+     | `EndAbility` wrapper (0x551BA00) | N/A | Super call is DARK | wrapper LIT | **High** — coverage-blocked |
+  docs\s156-grade-internaltryactivateability.md:14
+     NOW READABLE: 0x449371f   still dark: 0x4480b30
+     `0x449371F: call 0x4480B30`, on a coverage-blocked target page.
+  docs\strxref-open-questions.md:116
+     NOW READABLE: 0x5302de0
+     | `PollForFeatureTogglesReady` | `0x5302DE0` | **all-zero page — undecrypted** |
+  docs\strxref-open-questions.md:198
+     NOW READABLE: 0x56ce5f0
+     - `0x56CE5F0`'s body is an **all-zero page in this dump** — undecrypted. Clean negative:
+  docs\strxref-open-questions.md:339
+     NOW READABLE: 0x52fd980
+     not compute one. `IsEasyAntiCheatEnabled` exec `0x52FD980` (body undecrypted).

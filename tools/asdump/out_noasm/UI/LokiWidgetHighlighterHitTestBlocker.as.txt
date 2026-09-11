@@ -1,0 +1,206 @@
+// ============================================================================
+//  MODULE   UI.LokiWidgetHighlighterHitTestBlocker
+//  SOURCE   UI/LokiWidgetHighlighterHitTestBlocker.as
+//  CONTENT  1 class(es), 5 function(s), 0 enum(s), 1 global(s), 1888 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiWidgetHighlighterHitTestBlocker_AS;
+
+ULokiWidgetHighlighterHitTestBlocker_AS@ ULokiWidgetHighlighterHitTestBlocker_AS()   // traits=0x20
+{
+    ULokiWidgetHighlighterHitTestBlocker_AS v2;
+
+    v2 = ULokiWidgetHighlighterHitTestBlocker_AS();
+    return v2;
+}
+
+UClass@ ULokiWidgetHighlighterHitTestBlocker_AS::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiWidgetHighlighterHitTestBlocker_AS);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiWidgetHighlighterHitTestBlocker_AS : UUserWidget
+// unreal base : /Script/UMG.UserWidget
+// C++ header  : ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+// static class global: __StaticType_ULokiWidgetHighlighterHitTestBlocker_AS
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    UWidget@ TargetWidget;
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UOverlay@ TopBlocker;
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UOverlay@ LeftBlocker;
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UOverlay@ BottomBlocker;
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UOverlay@ RightBlocker;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bHideBasedOnActivatableParent;
+
+    ULokiWidgetHighlighterHitTestBlocker_AS()   // traits=0x21
+    {
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetTargetWidget(UWidget@ Target, const bool bShouldHideBasedOnActivatableParent = false)   // traits=0x20
+    {
+        this.TargetWidget = Target;
+        this.bHideBasedOnActivatableParent = bShouldHideBasedOnActivatableParent;
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const FGeometry& MyGeometry, const float64 DeltaTime)   // traits=0x20
+    {
+        FVector2D v4;
+        FVector2D v8;
+        float64 v10;
+        auto v11;
+        float64 v14;
+        auto v15;
+        float64 v18;
+        auto v19;
+        FGeometry v33;
+        FVector2D v38;
+        FVector2D v42;
+        auto v43;
+        UCommonActivatableWidget v46;
+        UClass v48;
+        TSubclassOf<UObject@> v50;
+        UWidget v52;
+        UCommonActivatableWidget v54;
+        UCanvasPanelSlot v56;
+        FGeometry v84;
+        FVector2D v88;
+        FVector2D v92;
+        FVector2D v96;
+        FVector2D v100;
+        FVector2D v104;
+        FVector2D v108;
+        FVector2D v112;
+
+        v8 = WidgetLayout::GetViewportSize(__WorldContext);
+        v11 = WidgetLayout::GetViewportScale(__WorldContext);
+        v14 = float64(v11);
+        v10 = v14;
+        v14 = 0;
+        if (v10 <= v14) {
+            v15 = true;
+        } else {
+            v14 = v8.X;
+            v18 = 0;
+            v19 = v14 <= v18;
+            v15 = v19;
+        }
+        if (v15) {
+            v15 = true;
+        } else {
+            v14 = v8.Y;
+            v18 = 0;
+            v19 = v14 <= v18;
+            v15 = v19;
+        }
+        if (v15) {
+            v15 = true;
+        } else {
+            v19 = IsValid(this.TargetWidget);
+            v19 = !v19;
+            v15 = v19;
+        }
+        if (v15) {
+            return;
+        } else {
+            this.TargetWidget.GetCachedGeometry();
+            v33 = FGeometry(this.TargetWidget.GetCachedGeometry());
+            v4 = Slate::GetAbsolutePosition(v33);
+            v38 = Slate::GetAbsoluteSize(v33);
+            v15 = this.TargetWidget.IsVisible();
+            if (!v15) {
+                v43 = 0;
+            } else {
+                v19 = this.bHideBasedOnActivatableParent;
+                v43 = v19;
+            }
+            if (v43) {
+                v48 = UCommonActivatableWidget::StaticClass();
+                v50 = TSubclassOf<UObject@>(v48);
+                v52 = ULokiUIUtilities::FindParentWidgetOfAnyType(this.TargetWidget, v50);
+                if (v52 != nullptr) {
+                    v54 = cast<UCommonActivatableWidget@>(v52);
+                } else {
+                    v54 = nullptr;
+                }
+                v46 = v54;
+                if (IsValid(v46)) {
+                    v43 = v46.IsActivated();
+                    v15 = v43;
+                }
+            }
+            v14 = v38.X;
+            if (Math::IsNearlyZero(v14, 9.99999993922529e-09)) {
+                v43 = true;
+            } else {
+                v14 = v38.Y;
+                v19 = Math::IsNearlyZero(v14, 9.99999993922529e-09);
+                v43 = v19;
+            }
+            if (v43) {
+                v43 = true;
+            } else {
+                v19 = v15;
+                v19 = !v19;
+                v43 = v19;
+            }
+            if (v43) {
+                v56 = WidgetLayout::SlotAsCanvasSlot(this.LeftBlocker);
+                v56.SetSize(FVector2D::ZeroVector);
+                v56 = WidgetLayout::SlotAsCanvasSlot(this.TopBlocker);
+                v56.SetSize(FVector2D::ZeroVector);
+                v56 = WidgetLayout::SlotAsCanvasSlot(this.RightBlocker);
+                v56.SetSize(FVector2D::ZeroVector);
+                v56 = WidgetLayout::SlotAsCanvasSlot(this.BottomBlocker);
+                v56.SetSize(FVector2D::ZeroVector);
+                return;
+            } else {
+                v84 = WidgetLayout::GetViewportWidgetGeometry(__WorldContext);
+                v42 = Slate::GetAbsolutePosition(v84);
+                v88 = v4 - v42;
+                v92 = v88 / v10;
+                v96 = v88 + v38;
+                v104 = v8 - v96;
+                v96 = v104 / v10;
+                v14 = v92.X;
+                v104 = FVector2D(v14, 0);
+                v18 = v92.Y;
+                v100 = FVector2D(0, v18);
+                v14 = v96.X;
+                v108 = FVector2D(v14, 0);
+                v18 = v96.Y;
+                v112 = FVector2D(0, v18);
+                v56 = WidgetLayout::SlotAsCanvasSlot(this.LeftBlocker);
+                v56.SetSize(v104);
+                v56 = WidgetLayout::SlotAsCanvasSlot(this.TopBlocker);
+                v56.SetSize(v100);
+                v56 = WidgetLayout::SlotAsCanvasSlot(this.RightBlocker);
+                v56.SetSize(v108);
+                v56 = WidgetLayout::SlotAsCanvasSlot(this.BottomBlocker);
+                v56.SetSize(v112);
+            }
+        }
+        return;
+    }
+
+}
+

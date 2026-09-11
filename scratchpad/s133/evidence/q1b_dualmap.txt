@@ -1,0 +1,135 @@
+dump: dumps/crashpad-20260806-234816-s111pi-I5_1/reports/006b2788-25bc-42b0-a263-9729f87a97b1.dmp
+  MEM_IMAGE allocations with span 0x4066000 : ['0xff760000', '0x7ffd3b400000']
+
+  AllocationBase 0xFF760000   regions=10   in_modlist=False
+     +0x00000000  size 0x00007000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00007000  size 0x00001000  prot=EXECUTE_WRITECOPY aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00008000  size 0x007C7000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x007CF000  size 0x00170000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0093F000  size 0x0000D000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0094C000  size 0x00930000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0127C000  size 0x0022E000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x014AA000  size 0x00076000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x01520000  size 0x02A49000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x03F69000  size 0x000FD000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+
+  AllocationBase 0x7FFD3B400000   regions=15   in_modlist=False
+     +0x00000000  size 0x00007000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00007000  size 0x00001000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00008000  size 0x007C7000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x007CF000  size 0x00170000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0093F000  size 0x00005000  prot=READWRITE        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00944000  size 0x00002000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00946000  size 0x00001000  prot=READWRITE        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00947000  size 0x00003000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0094A000  size 0x00001000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0094B000  size 0x00001000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0094C000  size 0x00930000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0127C000  size 0x0022E000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x014AA000  size 0x00076000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x01520000  size 0x02A49000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x03F69000  size 0x000FD000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+
+  boundary offsets (low  0xFF760000): ['0x0', '0x7000', '0x8000', '0x7cf000', '0x93f000', '0x94c000', '0x127c000', '0x14aa000', '0x1520000', '0x3f69000', '0x4066000']
+  boundary offsets (high 0x7FFD3B400000): ['0x0', '0x7000', '0x8000', '0x7cf000', '0x93f000', '0x944000', '0x946000', '0x947000', '0x94a000', '0x94b000', '0x94c000', '0x127c000', '0x14aa000', '0x1520000', '0x3f69000', '0x4066000']
+  shared boundary offsets: 11 of 11(low)/16(high)  -> ['0x0', '0x7000', '0x8000', '0x7cf000', '0x93f000', '0x94c000', '0x127c000', '0x14aa000', '0x1520000', '0x3f69000', '0x4066000']
+  EXECUTE regions low : [('0x7000', '0x1000'), ('0x7cf000', '0x170000'), ('0x127c000', '0x22e000'), ('0x1520000', '0x2a49000')]
+  EXECUTE regions high: [('0x7000', '0x1000'), ('0x7cf000', '0x170000'), ('0x127c000', '0x22e000'), ('0x1520000', '0x2a49000')]
+  EXECUTE offset+size sets identical? True
+
+  [CONTROL] ntdll.dll @0x7FFD3B150000 regions=2 in_modlist=True span=0x10000
+     +0x00000000  size 0x00001000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00001000  size 0x0000F000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+
+================================================================================================
+
+dump: dumps/crashpad-20260814-155530/reports/271d081e-c5de-43b4-aab6-c4e15da9877f.dmp
+  MEM_IMAGE allocations with span 0x4066000 : ['0xff760000', '0x7ffa42600000']
+
+  AllocationBase 0xFF760000   regions=10   in_modlist=False
+     +0x00000000  size 0x00007000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00007000  size 0x00001000  prot=EXECUTE_WRITECOPY aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00008000  size 0x007C7000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x007CF000  size 0x00170000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0093F000  size 0x0000D000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0094C000  size 0x00930000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0127C000  size 0x0022E000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x014AA000  size 0x00076000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x01520000  size 0x02A49000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x03F69000  size 0x000FD000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+
+  AllocationBase 0x7FFA42600000   regions=15   in_modlist=False
+     +0x00000000  size 0x00007000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00007000  size 0x00001000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00008000  size 0x007C7000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x007CF000  size 0x00170000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0093F000  size 0x00005000  prot=READWRITE        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00944000  size 0x00002000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00946000  size 0x00001000  prot=READWRITE        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00947000  size 0x00003000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0094A000  size 0x00001000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0094B000  size 0x00001000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0094C000  size 0x00930000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0127C000  size 0x0022E000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x014AA000  size 0x00076000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x01520000  size 0x02A49000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x03F69000  size 0x000FD000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+
+  boundary offsets (low  0xFF760000): ['0x0', '0x7000', '0x8000', '0x7cf000', '0x93f000', '0x94c000', '0x127c000', '0x14aa000', '0x1520000', '0x3f69000', '0x4066000']
+  boundary offsets (high 0x7FFA42600000): ['0x0', '0x7000', '0x8000', '0x7cf000', '0x93f000', '0x944000', '0x946000', '0x947000', '0x94a000', '0x94b000', '0x94c000', '0x127c000', '0x14aa000', '0x1520000', '0x3f69000', '0x4066000']
+  shared boundary offsets: 11 of 11(low)/16(high)  -> ['0x0', '0x7000', '0x8000', '0x7cf000', '0x93f000', '0x94c000', '0x127c000', '0x14aa000', '0x1520000', '0x3f69000', '0x4066000']
+  EXECUTE regions low : [('0x7000', '0x1000'), ('0x7cf000', '0x170000'), ('0x127c000', '0x22e000'), ('0x1520000', '0x2a49000')]
+  EXECUTE regions high: [('0x7000', '0x1000'), ('0x7cf000', '0x170000'), ('0x127c000', '0x22e000'), ('0x1520000', '0x2a49000')]
+  EXECUTE offset+size sets identical? True
+
+  [CONTROL] ntdll.dll @0x7FFA422D0000 regions=2 in_modlist=True span=0x10000
+     +0x00000000  size 0x00001000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00001000  size 0x0000F000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+
+================================================================================================
+
+dump: dumps/crashpad-20260820-143225/reports/4c2b7a2d-6169-4fe6-bcb6-fdaa185824d7.dmp
+  MEM_IMAGE allocations with span 0x4066000 : ['0xff760000', '0x7ffb57400000']
+
+  AllocationBase 0xFF760000   regions=10   in_modlist=False
+     +0x00000000  size 0x00007000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00007000  size 0x00001000  prot=EXECUTE_WRITECOPY aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00008000  size 0x007C7000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x007CF000  size 0x00170000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0093F000  size 0x0000D000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0094C000  size 0x00930000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0127C000  size 0x0022E000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x014AA000  size 0x00076000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x01520000  size 0x02A49000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x03F69000  size 0x000FD000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+
+  AllocationBase 0x7FFB57400000   regions=15   in_modlist=False
+     +0x00000000  size 0x00007000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00007000  size 0x00001000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00008000  size 0x007C7000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x007CF000  size 0x00170000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0093F000  size 0x00005000  prot=READWRITE        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00944000  size 0x00002000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00946000  size 0x00001000  prot=READWRITE        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00947000  size 0x00003000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0094A000  size 0x00001000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0094B000  size 0x00001000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0094C000  size 0x00930000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x0127C000  size 0x0022E000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x014AA000  size 0x00076000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x01520000  size 0x02A49000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x03F69000  size 0x000FD000  prot=WRITECOPY        aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+
+  boundary offsets (low  0xFF760000): ['0x0', '0x7000', '0x8000', '0x7cf000', '0x93f000', '0x94c000', '0x127c000', '0x14aa000', '0x1520000', '0x3f69000', '0x4066000']
+  boundary offsets (high 0x7FFB57400000): ['0x0', '0x7000', '0x8000', '0x7cf000', '0x93f000', '0x944000', '0x946000', '0x947000', '0x94a000', '0x94b000', '0x94c000', '0x127c000', '0x14aa000', '0x1520000', '0x3f69000', '0x4066000']
+  shared boundary offsets: 11 of 11(low)/16(high)  -> ['0x0', '0x7000', '0x8000', '0x7cf000', '0x93f000', '0x94c000', '0x127c000', '0x14aa000', '0x1520000', '0x3f69000', '0x4066000']
+  EXECUTE regions low : [('0x7000', '0x1000'), ('0x7cf000', '0x170000'), ('0x127c000', '0x22e000'), ('0x1520000', '0x2a49000')]
+  EXECUTE regions high: [('0x7000', '0x1000'), ('0x7cf000', '0x170000'), ('0x127c000', '0x22e000'), ('0x1520000', '0x2a49000')]
+  EXECUTE offset+size sets identical? True
+
+  [CONTROL] ntdll.dll @0x7FFB57050000 regions=2 in_modlist=True span=0x10000
+     +0x00000000  size 0x00001000  prot=READONLY         aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+     +0x00001000  size 0x0000F000  prot=EXECUTE_READ     aprot=EXECUTE_WRITECOPY  COMMIT/IMAGE
+
+================================================================================================
+

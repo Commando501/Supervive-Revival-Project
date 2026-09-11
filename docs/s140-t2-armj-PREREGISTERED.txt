@@ -1,0 +1,127 @@
+S140 TIER 2 FOLLOW-UP -- PRE-REGISTRATION
+ARM J: THE FIXED-POINT TEST. Does a LARGE Velocity persist, and does the pawn translate?
+
+Written and committed BEFORE the injection. Nothing below may be edited after the flight.
+
+Date: 2026-08-23
+Arm:  tools/sigbypass-mod/build/tutorial_launch_sentinel_big.dll
+      RAW .text digest 52fceb9be6de532f   (VSIZE d4048f1c0ffe1430)
+      build.ps1 -Name tutorial_launch -Variant sentinel-big
+      (-DKBSPSARMS=0xBA0 = ARM D + F + G + H + J ; -DKSHSENTX=600.0 -DKSHPLRY=600.0)
+
+
+=================================================================================================
+0. WHY THIS EXPERIMENT EXISTS -- AND WHY IT IS THE OPPOSITE OF ARM H
+=================================================================================================
+ARM H chose 2^-10 = 0.0009765625 uu/s precisely so it could NOT perturb the system under test, and
+it answered its question: ULokiCMC::StartNewPhysics 0x055C2430 RUNS [M].
+
+Then the lane-2 adversarial verifier established a mechanism that undercuts ARM H's SECOND, weaker
+observation ("something writes Velocity"):
+
+  *** A SMALL NON-ZERO VELOCITY CAN CONVERT A NO-WRITE INTO A WRITE. ***
+  On the below-tolerance arm of a GetSafeNormal-shaped block the three ucomisd at
+  0x055B8838 / 0x055B883E / 0x055B884A all fall through to je 0x55B8865 and the write is SKIPPED.
+  And in engine PhysFalling, 2^-10 gives SizeSq 9.5367431640625e-07 (0x035ED9B3 call 0x035F4620),
+  after which 0x035ED9BB movups [rsi],xmm0 + 0x035ED9C3 movsd [rsi+0x10],xmm1 write Velocity on
+  the <= 1e-3 arm.
+
+Both ARM H flights put the sentinel there themselves, so every observation of Velocity CHANGING was
+made in a world we perturbed. What is established is only:
+  [M]             something writes the BOT Velocity once it holds a SMALL non-zero value
+  NOT ESTABLISHED that anything writes Velocity when it is EXACTLY ZERO
+
+*** IF EXACTLY-ZERO SKIPS THE WRITE PATH, THE STANDING NULL IS A FIXED POINT: zero -> no write ->
+stays zero. That is a MUCH SIMPLER WALL than a routine that computes zero, and it predicts that a
+LARGE injected Velocity would PERSIST and MOVE THE PAWN. ***
+
+ARM J tests that prediction. It PERTURBS BY DESIGN. That is the point, and it is why 600 uu/s is
+correct here and would have been wrong in ARM H.
+
+
+=================================================================================================
+1. THE ARM
+=================================================================================================
+Identical staging to ARM H (ARM D -> F -> G -> H), then:
+  * BOT    (GAS-TREATED by ARM G):   Velocity := (600, 0, 0)   -- +X
+  * PLAYER (UNTREATED by ARM G):     Velocity := (0, 600, 0)   -- +Y
+    DIFFERENT AXES ON PURPOSE: the two objects stay distinguishable and cross-contamination of the
+    CMC resolution is immediately visible, exactly as the two distinct poisons were in ARM H.
+  * WRITE ONCE. The sampler does NOT re-write (that is ARM H2's job and it is compiled OUT here:
+    KBSPSARMS bit10 is CLEAR, so the burst does not run).
+  * Sample at +250 / +750 / +2000 / +5000 / +10000 ms on the WORKER thread after FsDisarm, each
+    printing raw hex + decoded Velocity, the payload at +0x16B0, the flag, TimeSinceFallingStart,
+    Acceleration, the pawn location AND **DISTANCE TRAVELLED from the latched start location**.
+  * BOT Velocity is restored to (0,0,0) at the end. THE PLAYER'S IS NOT RESTORED by this arm --
+    say so in the write-up; the client is disposable and dies to FK-32 within minutes anyway.
+
+THE PLAYER IS NOT A CONTROL HERE, IT IS A SECOND TREATMENT ARM. It is untreated by ARM G (no
+AttributeSetStorage, AnalogInputModifier = 0), so bot-vs-player is a GAS-treatment contrast.
+
+
+=================================================================================================
+2. PRE-REGISTERED OUTCOMES -- DO NOT REINTERPRET AFTER THE FACT
+=================================================================================================
+Per object, over the five samples:
+
+ A. Velocity PERSISTS at ~600  AND  the pawn TRANSLATES (moved >> 0 uu)
+    -> ***** THE WHOLE DOWNSTREAM MOVER WORKS. The wall is PURELY "nothing converts Acceleration
+       into Velocity", and the standing null IS a fixed point. This is the biggest possible
+       outcome and it reframes the remaining work entirely. *****                            [M]
+
+ B. Velocity PERSISTS at ~600  AND  the pawn does NOT translate
+    -> the mover does not consume Velocity. The wall is BETWEEN Velocity and the actual move
+       (UpdateComponentVelocity / MoveUpdatedComponent / the safe-move chain), NOT in
+       CalcVelocity at all.                                                                  [M]
+
+ C. Velocity DECAYS toward 0 across samples (a profile, not a step)
+    -> something DAMPS it. The decay profile is itself diagnostic: a smooth decay implicates
+       braking/friction (ARM G wrote GroundFriction 8 and BrakingDecelerationWalking 2048), a
+       step to 0 implicates a hard clamp. REPORT THE PROFILE, do not summarise it.           [M]
+
+ D. Velocity is ZERO by the FIRST sample (+250 ms)
+    -> a hard zeroing site fires on a large Velocity too. That REFUTES the fixed-point
+       hypothesis and puts CalcVelocity's clamp (or a sibling) back in play.                 [M]
+
+ E. BOT and PLAYER disagree
+    -> a real GAS-treatment dependency in the MOVER, not just in Acceleration. Report it as the
+       result; it is not noise.                                                              [M]
+
+ VOID conditions (unchanged from ARM H, all of which can fire):
+   - either identity control fails (CMC+0x198 == pawn, CMC+0x68 == cmc)
+   - a readback fails                      -> that side is UNINTERPRETABLE, not a null
+   - a payload holds the OTHER object's value / axis  -> the WHOLE run is void
+   - vptr is not base+0x088F8570           -> the whole test is void
+   - TimeSinceFallingStart does not advance -> no frames passed; nothing is interpretable
+   - the client dies before the sampler completes -> NOT OBTAINED
+
+RIDE-ALONG, and it is FREE this flight:
+   - MinAnalogWalkSpeed @CMC+0x290 -- NOT OBTAINED in ARM H (the client died first). The probe
+     tools/re/cmc_earlyout_readout.py now reads it and prints the disjunction:
+       >= 1e-4 -> the max() cannot fall below 1e-4 whatever GetMaxSpeed() does, so CalcVelocity's
+                  input clamp is DEAD. This is the EXPECTED outcome.
+       <  1e-4 -> the clamp still hangs on GetMaxSpeed().
+   - LogCharacterMovement=Log has been pinned in the USER Engine.ini (FK-11's proven channel) via
+     configs/set-log-verbosity.ps1 -Preset ClassA -Categories @{ LogCharacterMovement='Log' }.
+     ** NEGATIVE-ONLY AND WITH NO POSITIVE CONTROL: ** the only reachable site fires when
+     IsSimulatingPhysics() is TRUE, which S139 measured FALSE. ITS SILENCE IS UNINTERPRETABLE.
+     It is pinned to give the category a voice for future sessions, NOT to be read this flight.
+
+
+=================================================================================================
+3. DIGESTS -- verified before the flight
+=================================================================================================
+  REGRESSION GATES, reproduced EXACTLY from the edited source:
+    botai            5e47c13cf7f0a158   UNCHANGED
+    gasattr          2fcc2536e21f18e3   UNCHANGED
+    gasattr-ctrl     4465ebc4d7168c03   UNCHANGED
+  NEW / MOVED:
+    sentinel-big     52fceb9be6de532f   <- THE ARM
+    gasattr-sentinel c52d9ecc632233ca   <- MOVED from the flown ce56fd715de835a1 by the
+                                           distance-travelled + start-location additions, which
+                                           sit OUTSIDE the bit-11 guard.
+  ⚠⚠ INSTRUMENT-DISCIPLINE DEFECT, RECORDED AGAINST MYSELF: the repo rule is "archive every A/B arm
+     before rebuilding", and the FLOWN gasattr-sentinel (ce56fd715de835a1) was overwritten in
+     build/ before it was archived. It is recoverable -- rebuild from commit 3176139 with an
+     unmodified build.ps1 -- and the flown flight-2 artifact sentinel-burst 62b5423febd6f779 IS
+     intact in dumps/s140-arms-t2/. Say so rather than quietly re-recording a digest.

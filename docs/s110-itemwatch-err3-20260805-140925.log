@@ -1,0 +1,408 @@
+====================================================================================================
+item_watch  2026-08-05 14:09:25   pid=35340  base=0x7FF681610000
+log=G:\git\Supervive Revival Project\docs\s110-itemwatch-err3-20260805-140925.log
+csv=G:\git\Supervive Revival Project\docs\s110-itemwatch-err3-20260805-140925.csv
+====================================================================================================
+FUObjectArray @0x7FF68B448930  objects=0x213712499A0  numElements=189716
+chunks: 0x21371FD0008(65536), 0x21496AD0008(65536), 0x21498040008(58644)
+live objects: 177228 of 189716 slots
+
+--- CALIBRATION (400 sampled objects) --------------------------------------------------
+  InternalIndex @0x10  (matches the array slot for 400/400 objects)
+  ObjectFlags  @0x0C  (RF_ClassDefaultObject on 100% of 20 CDOs, 0% of 380 others)
+----------------------------------------------------------------------------------------------------
+decoys: 256 control objects (half uniform, half from the top 20% of indices, seed=1)
+scanning 177228 live objects for class~='AnimSequence' name~=None ...
+  scan took 2.4 s, 231 hit(s)
+[t=   2.361] +TARGET AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681 obj=0x213FCD72A00 item=0x213720ED3E0 idx=48681
+           baseline item{obj=0x213FCD72A00 flags=00000004 [2:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 48681, array slot is 48681 -> AGREE
+           from scan
+[t=   2.362] +TARGET AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682 obj=0x213FCD72600 item=0x213720ED3F8 idx=48682
+           baseline item{obj=0x213FCD72600 flags=00000004 [2:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 48682, array slot is 48682 -> AGREE
+           from scan
+[t=   2.362] +TARGET AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683 obj=0x213FCD72400 item=0x213720ED410 idx=48683
+           baseline item{obj=0x213FCD72400 flags=00000004 [2:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 48683, array slot is 48683 -> AGREE
+           from scan
+[t=   2.362] +TARGET AnimSequence/A_GenericBiped_JumpIntro#48687 obj=0x213FCD71E00 item=0x213720ED470 idx=48687
+           baseline item{obj=0x213FCD71E00 flags=00000004 [2:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 48687, array slot is 48687 -> AGREE
+           from scan
+[t=   2.362] +TARGET AnimSequence/A_Glider_Skylands_PutAway#53669 obj=0x21410275800 item=0x2137210A780 idx=53669
+           baseline item{obj=0x21410275800 flags=00000004 [2:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53669, array slot is 53669 -> AGREE
+           from scan
+[t=   2.362] +TARGET AnimSequence/A_Glider_Skylands_Loop#53670 obj=0x21410275600 item=0x2137210A798 idx=53670
+           baseline item{obj=0x21410275600 flags=00000004 [2:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53670, array slot is 53670 -> AGREE
+           from scan
+[t=   2.362] +TARGET AnimSequence/A_Glider_Skylands_Deploy#53671 obj=0x21410275400 item=0x2137210A7B0 idx=53671
+           baseline item{obj=0x21410275400 flags=00000004 [2:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53671, array slot is 53671 -> AGREE
+           from scan
+[t=   2.362] +TARGET AnimSequence/A_Shared_Resurrect_Loop#53779 obj=0x21410274C00 item=0x2137210B1D0 idx=53779
+           baseline item{obj=0x21410274C00 flags=00000004 [2:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53779, array slot is 53779 -> AGREE
+           from scan
+[t=   2.362] +TARGET AnimSequence/A_Shared_Resurrect_Intro#53780 obj=0x21410274A00 item=0x2137210B1E8 idx=53780
+           baseline item{obj=0x21410274A00 flags=00000004 [2:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53780, array slot is 53780 -> AGREE
+           from scan
+[t=   2.362] +TARGET AnimSequence/A_Shared_Idle#53781       obj=0x21410274800 item=0x2137210B200 idx=53781
+           baseline item{obj=0x21410274800 flags=00000004 [2:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53781, array slot is 53781 -> AGREE
+           from scan
+[t=   2.362] +TARGET AnimSequence/A_Shared_Movement_Run_N#53782 obj=0x21410274600 item=0x2137210B218 idx=53782
+           baseline item{obj=0x21410274600 flags=00000004 [2:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53782, array slot is 53782 -> AGREE
+           from scan
+[t=   2.362] +TARGET AnimSequence/A_Base_Idle_Breathe#53788 obj=0x21410274400 item=0x2137210B2A8 idx=53788
+           baseline item{obj=0x21410274400 flags=00000004 [2:?] cluster=0 serial=0}
+           baseline obj {ObjectFlags=0028000B [Public,Standalone,Transactional,WasLoaded,LoadCompleted]}
+           InternalIndex: object says 53788, array slot is 53788 -> AGREE
+           from scan
+
+--- VERDICT TABLE, registered before the run (docs/next-session-prompt-s110.md S0) --------
+  A  item.SerialNumber changes, or item.Object -> a DIFFERENT object
+     => SLOT RECYCLED. The object was really destroyed and the index reissued.
+  B  item.Object -> 0 (and Flags -> 0), no recycle yet
+     => FreeUObjectIndex ran: ~UObjectBase executed. Real destruction.
+  C  a new item-flag bit appears before B, and that bit is the one the sweep sees spike
+     population-wide  => the REACHABILITY PASS marked it. If we rooted it, the poked bit
+     is NOT honoured by this build's GC.
+  D  neither the item nor the sweep moves, but the object's vtable/NamePrivate go bad
+     => OUT-OF-BAND teardown (package unload / stream-out / explicit destroy), or the
+     pointer was never the object we thought. GC was never involved.
+  VOID  no target event AND no decoy event => the watcher never showed it can see a change.
+----------------------------------------------------------------------------------------------------
+
+[t=   0.000] watching 12 target(s); interval=50 ms sweep=250 ms (stride 1/8)
+[t=   2.363] SWEEP#1  live~177216 free~12504  (1-in-8 sample, scaled)  bits: bit2 78%, bit24 1%, bit25 18%, bit30 22%
+[t=   5.041] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681 item{obj=0x213FCD72A00 flags=00000004 ser=0} obj{gcAlive}
+[t=   5.041] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682 item{obj=0x213FCD72600 flags=00000004 ser=0} obj{gcAlive}
+[t=   5.041] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683 item{obj=0x213FCD72400 flags=00000004 ser=0} obj{gcAlive}
+[t=   5.041] alive  AnimSequence/A_GenericBiped_JumpIntro#48687 item{obj=0x213FCD71E00 flags=00000004 ser=0} obj{gcAlive}
+[t=   5.041] alive  AnimSequence/A_Glider_Skylands_PutAway#53669 item{obj=0x21410275800 flags=00000004 ser=0} obj{gcAlive}
+[t=   5.041] alive  AnimSequence/A_Glider_Skylands_Loop#53670 item{obj=0x21410275600 flags=00000004 ser=0} obj{gcAlive}
+[t=   5.041] alive  AnimSequence/A_Glider_Skylands_Deploy#53671 item{obj=0x21410275400 flags=00000004 ser=0} obj{gcAlive}
+[t=   5.041] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000004 ser=0} obj{gcAlive}
+[t=   5.041] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000004 ser=0} obj{gcAlive}
+[t=   5.041] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000004 ser=0} obj{gcAlive}
+[t=   5.041] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000004 ser=0} obj{gcAlive}
+[t=   5.041] alive  AnimSequence/A_Base_Idle_Breathe#53788 item{obj=0x21410274400 flags=00000004 ser=0} obj{gcAlive}
+[t=  10.090] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681 item{obj=0x213FCD72A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  10.090] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682 item{obj=0x213FCD72600 flags=00000004 ser=0} obj{gcAlive}
+[t=  10.090] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683 item{obj=0x213FCD72400 flags=00000004 ser=0} obj{gcAlive}
+[t=  10.090] alive  AnimSequence/A_GenericBiped_JumpIntro#48687 item{obj=0x213FCD71E00 flags=00000004 ser=0} obj{gcAlive}
+[t=  10.090] alive  AnimSequence/A_Glider_Skylands_PutAway#53669 item{obj=0x21410275800 flags=00000004 ser=0} obj{gcAlive}
+[t=  10.090] alive  AnimSequence/A_Glider_Skylands_Loop#53670 item{obj=0x21410275600 flags=00000004 ser=0} obj{gcAlive}
+[t=  10.090] alive  AnimSequence/A_Glider_Skylands_Deploy#53671 item{obj=0x21410275400 flags=00000004 ser=0} obj{gcAlive}
+[t=  10.090] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000004 ser=0} obj{gcAlive}
+[t=  10.090] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  10.090] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000004 ser=0} obj{gcAlive}
+[t=  10.090] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000004 ser=0} obj{gcAlive}
+[t=  10.090] alive  AnimSequence/A_Base_Idle_Breathe#53788 item{obj=0x21410274400 flags=00000004 ser=0} obj{gcAlive}
+[t=  15.091] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681 item{obj=0x213FCD72A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  15.091] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682 item{obj=0x213FCD72600 flags=00000004 ser=0} obj{gcAlive}
+[t=  15.091] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683 item{obj=0x213FCD72400 flags=00000004 ser=0} obj{gcAlive}
+[t=  15.091] alive  AnimSequence/A_GenericBiped_JumpIntro#48687 item{obj=0x213FCD71E00 flags=00000004 ser=0} obj{gcAlive}
+[t=  15.091] alive  AnimSequence/A_Glider_Skylands_PutAway#53669 item{obj=0x21410275800 flags=00000004 ser=0} obj{gcAlive}
+[t=  15.091] alive  AnimSequence/A_Glider_Skylands_Loop#53670 item{obj=0x21410275600 flags=00000004 ser=0} obj{gcAlive}
+[t=  15.091] alive  AnimSequence/A_Glider_Skylands_Deploy#53671 item{obj=0x21410275400 flags=00000004 ser=0} obj{gcAlive}
+[t=  15.091] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000004 ser=0} obj{gcAlive}
+[t=  15.091] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  15.091] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000004 ser=0} obj{gcAlive}
+[t=  15.091] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000004 ser=0} obj{gcAlive}
+[t=  15.091] alive  AnimSequence/A_Base_Idle_Breathe#53788 item{obj=0x21410274400 flags=00000004 ser=0} obj{gcAlive}
+[t=  20.091] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681 item{obj=0x213FCD72A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  20.091] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682 item{obj=0x213FCD72600 flags=00000004 ser=0} obj{gcAlive}
+[t=  20.091] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683 item{obj=0x213FCD72400 flags=00000004 ser=0} obj{gcAlive}
+[t=  20.091] alive  AnimSequence/A_GenericBiped_JumpIntro#48687 item{obj=0x213FCD71E00 flags=00000004 ser=0} obj{gcAlive}
+[t=  20.091] alive  AnimSequence/A_Glider_Skylands_PutAway#53669 item{obj=0x21410275800 flags=00000004 ser=0} obj{gcAlive}
+[t=  20.091] alive  AnimSequence/A_Glider_Skylands_Loop#53670 item{obj=0x21410275600 flags=00000004 ser=0} obj{gcAlive}
+[t=  20.091] alive  AnimSequence/A_Glider_Skylands_Deploy#53671 item{obj=0x21410275400 flags=00000004 ser=0} obj{gcAlive}
+[t=  20.091] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000004 ser=0} obj{gcAlive}
+[t=  20.091] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  20.091] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000004 ser=0} obj{gcAlive}
+[t=  20.091] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000004 ser=0} obj{gcAlive}
+[t=  20.091] alive  AnimSequence/A_Base_Idle_Breathe#53788 item{obj=0x21410274400 flags=00000004 ser=0} obj{gcAlive}
+[t=  25.096] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681 item{obj=0x213FCD72A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  25.096] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682 item{obj=0x213FCD72600 flags=00000004 ser=0} obj{gcAlive}
+[t=  25.096] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683 item{obj=0x213FCD72400 flags=00000004 ser=0} obj{gcAlive}
+[t=  25.096] alive  AnimSequence/A_GenericBiped_JumpIntro#48687 item{obj=0x213FCD71E00 flags=00000004 ser=0} obj{gcAlive}
+[t=  25.096] alive  AnimSequence/A_Glider_Skylands_PutAway#53669 item{obj=0x21410275800 flags=00000004 ser=0} obj{gcAlive}
+[t=  25.096] alive  AnimSequence/A_Glider_Skylands_Loop#53670 item{obj=0x21410275600 flags=00000004 ser=0} obj{gcAlive}
+[t=  25.096] alive  AnimSequence/A_Glider_Skylands_Deploy#53671 item{obj=0x21410275400 flags=00000004 ser=0} obj{gcAlive}
+[t=  25.096] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000004 ser=0} obj{gcAlive}
+[t=  25.096] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  25.096] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000004 ser=0} obj{gcAlive}
+[t=  25.096] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000004 ser=0} obj{gcAlive}
+[t=  25.096] alive  AnimSequence/A_Base_Idle_Breathe#53788 item{obj=0x21410274400 flags=00000004 ser=0} obj{gcAlive}
+[t=  30.146] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681 item{obj=0x213FCD72A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  30.146] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682 item{obj=0x213FCD72600 flags=00000004 ser=0} obj{gcAlive}
+[t=  30.146] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683 item{obj=0x213FCD72400 flags=00000004 ser=0} obj{gcAlive}
+[t=  30.146] alive  AnimSequence/A_GenericBiped_JumpIntro#48687 item{obj=0x213FCD71E00 flags=00000004 ser=0} obj{gcAlive}
+[t=  30.146] alive  AnimSequence/A_Glider_Skylands_PutAway#53669 item{obj=0x21410275800 flags=00000004 ser=0} obj{gcAlive}
+[t=  30.146] alive  AnimSequence/A_Glider_Skylands_Loop#53670 item{obj=0x21410275600 flags=00000004 ser=0} obj{gcAlive}
+[t=  30.146] alive  AnimSequence/A_Glider_Skylands_Deploy#53671 item{obj=0x21410275400 flags=00000004 ser=0} obj{gcAlive}
+[t=  30.146] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000004 ser=0} obj{gcAlive}
+[t=  30.146] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  30.146] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000004 ser=0} obj{gcAlive}
+[t=  30.146] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000004 ser=0} obj{gcAlive}
+[t=  30.146] alive  AnimSequence/A_Base_Idle_Breathe#53788 item{obj=0x21410274400 flags=00000004 ser=0} obj{gcAlive}
+[t=  35.146] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681 item{obj=0x213FCD72A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  35.146] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682 item{obj=0x213FCD72600 flags=00000004 ser=0} obj{gcAlive}
+[t=  35.146] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683 item{obj=0x213FCD72400 flags=00000004 ser=0} obj{gcAlive}
+[t=  35.146] alive  AnimSequence/A_GenericBiped_JumpIntro#48687 item{obj=0x213FCD71E00 flags=00000004 ser=0} obj{gcAlive}
+[t=  35.146] alive  AnimSequence/A_Glider_Skylands_PutAway#53669 item{obj=0x21410275800 flags=00000004 ser=0} obj{gcAlive}
+[t=  35.146] alive  AnimSequence/A_Glider_Skylands_Loop#53670 item{obj=0x21410275600 flags=00000004 ser=0} obj{gcAlive}
+[t=  35.146] alive  AnimSequence/A_Glider_Skylands_Deploy#53671 item{obj=0x21410275400 flags=00000004 ser=0} obj{gcAlive}
+[t=  35.146] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000004 ser=0} obj{gcAlive}
+[t=  35.146] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000004 ser=0} obj{gcAlive}
+[t=  35.146] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000004 ser=0} obj{gcAlive}
+[t=  35.146] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000004 ser=0} obj{gcAlive}
+[t=  35.146] alive  AnimSequence/A_Base_Idle_Breathe#53788 item{obj=0x21410274400 flags=00000004 ser=0} obj{gcAlive}
+[t=  39.239] AnimSequence/A_KaijuHealer_Abi item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t=  39.239] AnimSequence/A_KaijuHealer_Abi item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t=  39.239] AnimSequence/A_KaijuHealer_Abi item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t=  39.239] AnimSequence/A_GenericBiped_Ju item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t=  39.239] AnimSequence/A_Glider_Skylands item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t=  39.239] AnimSequence/A_Glider_Skylands item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t=  39.239] AnimSequence/A_Glider_Skylands item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t=  39.239] AnimSequence/A_Shared_Resurrec item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t=  39.239] AnimSequence/A_Shared_Resurrec item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t=  39.239] AnimSequence/A_Shared_Idle#537 item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t=  39.239] AnimSequence/A_Shared_Movement item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t=  39.239] AnimSequence/A_Base_Idle_Breat item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+[t=  39.239] *** POPULATION FLAG SPIKE *** live~177216  bit1(?) +78pp
+[t=  39.239] decoy control: 232 slot(s) changed (#105473 flags 00000004->00000002; #174085 flags 00000004->00000002; #128007 flags 00000004->00000002)
+[t=  39.491] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  39.744] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  39.997] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  40.149] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681 item{obj=0x213FCD72A00 flags=00000002 ser=0} obj{gcAlive}
+[t=  40.149] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682 item{obj=0x213FCD72600 flags=00000002 ser=0} obj{gcAlive}
+[t=  40.149] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683 item{obj=0x213FCD72400 flags=00000002 ser=0} obj{gcAlive}
+[t=  40.149] alive  AnimSequence/A_GenericBiped_JumpIntro#48687 item{obj=0x213FCD71E00 flags=00000002 ser=0} obj{gcAlive}
+[t=  40.149] alive  AnimSequence/A_Glider_Skylands_PutAway#53669 item{obj=0x21410275800 flags=00000002 ser=0} obj{gcAlive}
+[t=  40.149] alive  AnimSequence/A_Glider_Skylands_Loop#53670 item{obj=0x21410275600 flags=00000002 ser=0} obj{gcAlive}
+[t=  40.149] alive  AnimSequence/A_Glider_Skylands_Deploy#53671 item{obj=0x21410275400 flags=00000002 ser=0} obj{gcAlive}
+[t=  40.149] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000002 ser=0} obj{gcAlive}
+[t=  40.149] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000002 ser=0} obj{gcAlive}
+[t=  40.149] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000002 ser=0} obj{gcAlive}
+[t=  40.149] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000002 ser=0} obj{gcAlive}
+[t=  40.149] alive  AnimSequence/A_Base_Idle_Breathe#53788 item{obj=0x21410274400 flags=00000002 ser=0} obj{gcAlive}
+[t=  40.249] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  40.502] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  40.755] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  41.007] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  41.260] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  41.512] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  41.765] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  42.017] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  42.269] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  42.522] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  42.774] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  43.026] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  43.279] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  43.531] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  43.783] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  44.036] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  44.289] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  44.542] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  44.795] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  45.047] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  45.198] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681 item{obj=0x213FCD72A00 flags=00000002 ser=0} obj{gcAlive}
+[t=  45.198] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682 item{obj=0x213FCD72600 flags=00000002 ser=0} obj{gcAlive}
+[t=  45.198] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683 item{obj=0x213FCD72400 flags=00000002 ser=0} obj{gcAlive}
+[t=  45.198] alive  AnimSequence/A_GenericBiped_JumpIntro#48687 item{obj=0x213FCD71E00 flags=00000002 ser=0} obj{gcAlive}
+[t=  45.198] alive  AnimSequence/A_Glider_Skylands_PutAway#53669 item{obj=0x21410275800 flags=00000002 ser=0} obj{gcAlive}
+[t=  45.198] alive  AnimSequence/A_Glider_Skylands_Loop#53670 item{obj=0x21410275600 flags=00000002 ser=0} obj{gcAlive}
+[t=  45.198] alive  AnimSequence/A_Glider_Skylands_Deploy#53671 item{obj=0x21410275400 flags=00000002 ser=0} obj{gcAlive}
+[t=  45.198] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000002 ser=0} obj{gcAlive}
+[t=  45.198] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000002 ser=0} obj{gcAlive}
+[t=  45.198] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000002 ser=0} obj{gcAlive}
+[t=  45.198] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000002 ser=0} obj{gcAlive}
+[t=  45.198] alive  AnimSequence/A_Base_Idle_Breathe#53788 item{obj=0x21410274400 flags=00000002 ser=0} obj{gcAlive}
+[t=  45.300] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  45.553] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  45.805] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  46.057] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  46.310] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  46.562] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  46.815] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  47.066] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  47.319] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  47.571] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  47.825] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  48.077] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  48.331] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  48.584] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  48.836] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  49.089] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  49.341] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  49.593] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  49.845] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  50.097] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  50.248] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681 item{obj=0x213FCD72A00 flags=00000002 ser=0} obj{gcAlive}
+[t=  50.248] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682 item{obj=0x213FCD72600 flags=00000002 ser=0} obj{gcAlive}
+[t=  50.248] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683 item{obj=0x213FCD72400 flags=00000002 ser=0} obj{gcAlive}
+[t=  50.248] alive  AnimSequence/A_GenericBiped_JumpIntro#48687 item{obj=0x213FCD71E00 flags=00000002 ser=0} obj{gcAlive}
+[t=  50.248] alive  AnimSequence/A_Glider_Skylands_PutAway#53669 item{obj=0x21410275800 flags=00000002 ser=0} obj{gcAlive}
+[t=  50.248] alive  AnimSequence/A_Glider_Skylands_Loop#53670 item{obj=0x21410275600 flags=00000002 ser=0} obj{gcAlive}
+[t=  50.248] alive  AnimSequence/A_Glider_Skylands_Deploy#53671 item{obj=0x21410275400 flags=00000002 ser=0} obj{gcAlive}
+[t=  50.248] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000002 ser=0} obj{gcAlive}
+[t=  50.248] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000002 ser=0} obj{gcAlive}
+[t=  50.248] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000002 ser=0} obj{gcAlive}
+[t=  50.248] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000002 ser=0} obj{gcAlive}
+[t=  50.248] alive  AnimSequence/A_Base_Idle_Breathe#53788 item{obj=0x21410274400 flags=00000002 ser=0} obj{gcAlive}
+[t=  50.349] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  50.601] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  50.854] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  51.106] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  51.359] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  51.611] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  51.864] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  52.115] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  52.367] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  52.621] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  52.873] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  53.127] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  53.379] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  53.631] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  53.884] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  54.136] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  54.388] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  54.641] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  54.892] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  55.146] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  55.297] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681 item{obj=0x213FCD72A00 flags=00000002 ser=0} obj{gcAlive}
+[t=  55.297] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682 item{obj=0x213FCD72600 flags=00000002 ser=0} obj{gcAlive}
+[t=  55.297] alive  AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683 item{obj=0x213FCD72400 flags=00000002 ser=0} obj{gcAlive}
+[t=  55.297] alive  AnimSequence/A_GenericBiped_JumpIntro#48687 item{obj=0x213FCD71E00 flags=00000002 ser=0} obj{gcAlive}
+[t=  55.297] alive  AnimSequence/A_Glider_Skylands_PutAway#53669 item{obj=0x21410275800 flags=00000002 ser=0} obj{gcAlive}
+[t=  55.297] alive  AnimSequence/A_Glider_Skylands_Loop#53670 item{obj=0x21410275600 flags=00000002 ser=0} obj{gcAlive}
+[t=  55.297] alive  AnimSequence/A_Glider_Skylands_Deploy#53671 item{obj=0x21410275400 flags=00000002 ser=0} obj{gcAlive}
+[t=  55.297] alive  AnimSequence/A_Shared_Resurrect_Loop#53779 item{obj=0x21410274C00 flags=00000002 ser=0} obj{gcAlive}
+[t=  55.297] alive  AnimSequence/A_Shared_Resurrect_Intro#53780 item{obj=0x21410274A00 flags=00000002 ser=0} obj{gcAlive}
+[t=  55.297] alive  AnimSequence/A_Shared_Idle#53781       item{obj=0x21410274800 flags=00000002 ser=0} obj{gcAlive}
+[t=  55.297] alive  AnimSequence/A_Shared_Movement_Run_N#53782 item{obj=0x21410274600 flags=00000002 ser=0} obj{gcAlive}
+[t=  55.297] alive  AnimSequence/A_Base_Idle_Breathe#53788 item{obj=0x21410274400 flags=00000002 ser=0} obj{gcAlive}
+[t=  55.399] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  55.652] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  55.905] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  56.157] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  56.409] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  56.662] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  56.915] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  57.168] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  57.420] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  57.673] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  57.925] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  58.177] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  58.429] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  58.682] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  58.934] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  59.186] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  59.438] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  59.690] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  59.949] *** POPULATION FLAG SPIKE *** live~177208  bit1(?) +78pp
+[t=  60.050] duration reached
+
+====================================================================================================
+SUMMARY  observed 60.1 s, 1142 ticks, 229 sweeps, 496219 RPM calls
+  max observed sampling gap: 55 ms  <- ALIASING BOUND: any state shorter than this could
+     have been missed, and no 'X never happened' claim below is stronger than that.
+  decoy control: 232 event(s) across 256 control objects
+  MEASURED reachability-mark bit: bit 1 (0x00000002) -- spiked population-wide in 83 sweep(s)
+     (stock EInternalObjectFlags calls bit 28 Unreachable; this is the measurement, not the guess)
+  GC activity seen at t = 39.2(mark), 39.5(mark), 39.7(mark), 40.0(mark), 40.2(mark), 40.5(mark), 40.8(mark), 41.0(mark), 41.3(mark), 41.5(mark), 41.8(mark), 42.0(mark), 42.3(mark), 42.5(mark), 42.8(mark), 43.0(mark), 43.3(mark), 43.5(mark), 43.8(mark), 44.0(mark), 44.3(mark), 44.5(mark), 44.8(mark), 45.0(mark), 45.3(mark), 45.6(mark), 45.8(mark), 46.1(mark), 46.3(mark), 46.6(mark), 46.8(mark), 47.1(mark), 47.3(mark), 47.6(mark), 47.8(mark), 48.1(mark), 48.3(mark), 48.6(mark), 48.8(mark), 49.1(mark), 49.3(mark), 49.6(mark), 49.8(mark), 50.1(mark), 50.3(mark), 50.6(mark), 50.9(mark), 51.1(mark), 51.4(mark), 51.6(mark), 51.9(mark), 52.1(mark), 52.4(mark), 52.6(mark), 52.9(mark), 53.1(mark), 53.4(mark), 53.6(mark), 53.9(mark), 54.1(mark), 54.4(mark), 54.6(mark), 54.9(mark), 55.1(mark), 55.4(mark), 55.7(mark), 55.9(mark), 56.2(mark), 56.4(mark), 56.7(mark), 56.9(mark), 57.2(mark), 57.4(mark), 57.7(mark), 57.9(mark), 58.2(mark), 58.4(mark), 58.7(mark), 58.9(mark), 59.2(mark), 59.4(mark), 59.7(mark), 59.9(mark)
+  live-object count: start 177216, min 177208 @t=39.5, max 177216 @t=2.4, end 177208
+
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Outro#48681   acquired t=2.361 from scan
+  obj=0x213FCD72A00  item=0x213720ED3E0  idx=48681
+  BASELINE item{obj=0x213FCD72A00 flags=00000004 [2:?] cluster=0 serial=0}
+    t=  39.239  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 55 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Intro#48682   acquired t=2.362 from scan
+  obj=0x213FCD72600  item=0x213720ED3F8  idx=48682
+  BASELINE item{obj=0x213FCD72600 flags=00000004 [2:?] cluster=0 serial=0}
+    t=  39.239  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 55 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_KaijuHealer_Ability_ChannelHeal_Loop#48683   acquired t=2.362 from scan
+  obj=0x213FCD72400  item=0x213720ED410  idx=48683
+  BASELINE item{obj=0x213FCD72400 flags=00000004 [2:?] cluster=0 serial=0}
+    t=  39.239  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 55 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_GenericBiped_JumpIntro#48687   acquired t=2.362 from scan
+  obj=0x213FCD71E00  item=0x213720ED470  idx=48687
+  BASELINE item{obj=0x213FCD71E00 flags=00000004 [2:?] cluster=0 serial=0}
+    t=  39.239  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 55 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Glider_Skylands_PutAway#53669   acquired t=2.362 from scan
+  obj=0x21410275800  item=0x2137210A780  idx=53669
+  BASELINE item{obj=0x21410275800 flags=00000004 [2:?] cluster=0 serial=0}
+    t=  39.239  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 55 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Glider_Skylands_Loop#53670   acquired t=2.362 from scan
+  obj=0x21410275600  item=0x2137210A798  idx=53670
+  BASELINE item{obj=0x21410275600 flags=00000004 [2:?] cluster=0 serial=0}
+    t=  39.239  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 55 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Glider_Skylands_Deploy#53671   acquired t=2.362 from scan
+  obj=0x21410275400  item=0x2137210A7B0  idx=53671
+  BASELINE item{obj=0x21410275400 flags=00000004 [2:?] cluster=0 serial=0}
+    t=  39.239  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 55 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Shared_Resurrect_Loop#53779   acquired t=2.362 from scan
+  obj=0x21410274C00  item=0x2137210B1D0  idx=53779
+  BASELINE item{obj=0x21410274C00 flags=00000004 [2:?] cluster=0 serial=0}
+    t=  39.239  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 55 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Shared_Resurrect_Intro#53780   acquired t=2.362 from scan
+  obj=0x21410274A00  item=0x2137210B1E8  idx=53780
+  BASELINE item{obj=0x21410274A00 flags=00000004 [2:?] cluster=0 serial=0}
+    t=  39.239  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 55 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Shared_Idle#53781   acquired t=2.362 from scan
+  obj=0x21410274800  item=0x2137210B200  idx=53781
+  BASELINE item{obj=0x21410274800 flags=00000004 [2:?] cluster=0 serial=0}
+    t=  39.239  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 55 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Shared_Movement_Run_N#53782   acquired t=2.362 from scan
+  obj=0x21410274600  item=0x2137210B218  idx=53782
+  BASELINE item{obj=0x21410274600 flags=00000004 [2:?] cluster=0 serial=0}
+    t=  39.239  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 55 ms)
+----------------------------------------------------------------------------------------------------
+TARGET AnimSequence/A_Base_Idle_Breathe#53788   acquired t=2.362 from scan
+  obj=0x21410274400  item=0x2137210B2A8  idx=53788
+  BASELINE item{obj=0x21410274400 flags=00000004 [2:?] cluster=0 serial=0}
+    t=  39.239  item.Flags 00000004 -> 00000002   [+bit1(?)  -bit2(?)]
+  VERDICT: alive at end of watch -- no death observed (aliasing bound 55 ms)
+====================================================================================================
+log: G:\git\Supervive Revival Project\docs\s110-itemwatch-err3-20260805-140925.log
+csv: G:\git\Supervive Revival Project\docs\s110-itemwatch-err3-20260805-140925.csv

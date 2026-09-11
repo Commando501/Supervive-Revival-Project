@@ -1,0 +1,15 @@
+# Asset: Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntryObject.uasset
+# 5 exports total
+
+## [UBlueprintGeneratedClass] WBP_UI_LeaderboardEntryObject_C  (ExportType=BlueprintGeneratedClass)
+   (no properties)
+## [UFunction] OnNameChanged__DelegateSignature  (ExportType=Function)
+   (no properties)
+## [UFunction] OnPlayerNameChanged  (ExportType=Function)
+   (no properties)
+## [UFunction] SetEntry  (ExportType=Function)
+   (no properties)
+## [UObject] Default__WBP_UI_LeaderboardEntryObject_C  (ExportType=WBP_UI_LeaderboardEntryObject_C)
+   - Entry (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - OnNameChanged (MulticastInlineDelegateProperty) = CUE4Parse.UE4.Objects.UObject.FMulticastScriptDelegate (MulticastInlineDelegateProperty)
+

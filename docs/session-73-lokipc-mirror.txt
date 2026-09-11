@@ -1,0 +1,169 @@
+SESSION 73 — LokiPlayerController mirror: the go/no-go spike for the dedicated-server route
+===========================================================================================
+Date: 2026-07-11 (autonomous). Continues S72's conclusion: the client-side hybrid is a dead
+end (4 walls); the ONLY remaining route to a controllable hero is running the real match
+machinery SERVER-side. Before committing to that large effort, the user asked me to "take a
+crack at the LokiPlayerController mirror" — the decisive go/no-go, because EVERY route
+(force-open S63, missions-DS, S71 pawn, S72 hybrid) converges on the same wall: the client
+refuses hero control while its LOCAL networked PC is a STOCK APlayerController ("Attempting to
+get null controller. Use TryGetLocalLokiController"). If the stub can make the client's local PC
+a LOKI-typed controller, that wall falls and the DS route is alive; if not, it's dead.
+
+APPROACH (re-attack the S41 wall with the matured S70 schema-injection technique)
+--------------------------------------------------------------------------------
+S41 concluded the stub MUST use a stock APlayerController because the real Loki PC's modified
+RPC signatures broke the connection. But S41 predates the mature NetGUID-by-path mirror
+technique that made ALokiGameState (S70, 43 props) and ALokiPlayerState_Missions (S54) work.
+Re-attack: define native mirror classes named to path-match the client's PC hierarchy, set the
+mirror as PlayerControllerClass, and let the client resolve the class NetGUID by path to ITS OWN
+native LokiPlayerController — so the client instantiates a Loki-typed local PC and the
+TryGetLocalLokiController cast succeeds.
+
+CLIENT HIERARCHY (schema.txt / usmap — property counts):
+  BP_LokiPlayerController_Dev_C (BP) : LokiPlayerController (78 own props)
+                                     : LokiBaseController   (2 own props)
+                                     : PlayerController (stock) : Controller : ...
+Almost all 78 LokiPlayerController props are clearly NON-replicated (delegates, gamepad/aim
+config floats, local cursor/UI state, component refs); the CPF_Net subset that actually needs
+mirroring is a small handful — but the usmap CANNOT tell us which are replicated (it lacks net
+flags, and is unreliable for replicated shapes per CLAUDE.md). So the replicated-prop list must
+come from a LIVE capture (rep_expand_class.py), exactly as S69 did for GameState.
+
+WHAT WAS BUILT (unreal-stub/Source/Loki/)
+-----------------------------------------
+- LokiPlayerControllerStub.{h,cpp}: two native mirrors —
+    ALokiBaseController   : APlayerController      (path /Script/Loki.LokiBaseController)
+    ALokiPlayerController  : ALokiBaseController    (path /Script/Loki.LokiPlayerController)
+  FIRST BUILD = ZERO added replicated props (single-variable diagnostic baseline). Relies on NO
+  unreliable usmap data: the mirror carries only the inherited stock PC reps + the injected
+  AActor.ServerState, but is now LOKI-TYPED. The live "Invalid replicated field N" then scopes
+  the prop reconstruction (the S41 N=0 / S69 GameState method).
+- LokiStubGameMode ctor: PlayerControllerClass = ALokiPlayerController::StaticClass()
+  (was stock APlayerController). SINGLE VARIABLE under test. Revert one line to restore the
+  S41/S70 stock-PC spectator baseline (documented in the code).
+- Loki.cpp: boot DumpClassNetCacheLayout(ALokiBaseController) + (ALokiPlayerController) added —
+  the headless alignment check.
+
+HEADLESS VERIFICATION (built + booted; no client needed) — ALL CLEAN
+--------------------------------------------------------------------
+- Build.bat LokiEditor Win64 Development: exit 0 (UHT generated reflection for both classes;
+  compiled + linked clean, -WarningsAsErrors). Engine: H:\Unreal Engine\UE_5.4.
+- Ran the stub headless (UnrealEditor-Cmd ... /Engine/Maps/Entry?listen -game -server -Port=7777
+  -nullrhi -abslog=docs/ds-server.log). Boot markers:
+    * "ALokiPlayerController constructed (S73 mirror, path /Script/Loki.LokiPlayerController ...)"
+    * "LokiStubGameMode constructed with PlayerControllerClass=ALokiPlayerController ..."
+    * "IpNetDriver listening on port 7777"
+  Boot DumpClassNetCacheLayout (stub-side ClassNetCache, the reconstruction reference):
+    PlayerController  FirstOwnedClassRep=13 ClassReps=16 NetFields=81  (base index 15)
+       [15] TargetViewRotation, [16] AsyncPhysicsDataComponent_DEPRECATED, [17] SpawnLocation
+       [18..98] 81 stock RPCs (ClientAckTimeDilation ... ServerVerifyViewTarget ... etc.)
+    LokiBaseController   FirstOwnedClassRep=16 ClassReps=16 NetFields=0  (base index 99)
+    LokiPlayerController FirstOwnedClassRep=16 ClassReps=16 NetFields=0  (base index 99)
+  => the mirror is the intended zero-prop baseline: stock PC net-cache (16 reps + 81 RPCs) +
+  ServerState, now Loki-typed, with ZERO Loki additions. Structurally exactly as designed.
+
+THE GO/NO-GO, SHARPENED WITH HARD NUMBERS (the honest read)
+-----------------------------------------------------------
+The stub-half is done and clean. The DECISIVE test — does the client ACCEPT a Loki-typed PC and
+does TryGetLocalLokiController fire — needs the live client (UAC + Steam; not doable in this
+autonomous session). What the headless work already sharpens:
+
+  * PROP reconstruction (tractable): the replicated subset of LokiBaseController(2)+
+    LokiPlayerController(78) is a small handful; capture it live (rep_expand_class.py) and add in
+    field order, iterating on "Invalid replicated field N" like the S70 GameState mirror. This is
+    the SAME method that already succeeded for GameState.
+
+  * RPC reconstruction (THE WALL, confirmed bidirectional): stock APlayerController already has
+    81 net functions; the client's LokiPlayerController adds its own (ServerVerifyViewTarget's
+    40-param modified sig — already handled via the Loki.cpp inject — plus more). Unlike GameState
+    (one-way data, 0 RPCs — which is WHY that mirror was clean), the PC is RPC-heavy and
+    BIDIRECTIONAL: once the client's local PC is a LokiPlayerController it SENDS Loki PC RPCs to
+    the stub, each addressed by net-index into the ClassNetCache. If the mirror's NetFields (RPC
+    set, name-sorted, count) don't match the client's, the index resolves wrong / overflows →
+    SERVER-side receive desync → connection close. This can't be suppressed like a one-way
+    server->client RPC. It is exactly the S41 wall.
+
+  MITIGATION that could make it bounded (test on the live run): NetworkChecksumMode=None means no
+  fingerprint reject, and NetFields are NAME-SORTED. If the mirror declares the SAME-NAMED net
+  functions as the client's LokiPlayerController (even empty/stub bodies), the name-sorted index
+  space aligns and incoming RPCs route to the right stub function; only the RPCs the client
+  actually SENDS EARLY need their (modified) signature reconstructed to parse without overflow.
+  So the reconstruction is (a) enumerate the client's LokiPlayerController net functions live
+  (func_enum.py / find_ufunc.py), (b) declare matching-named UFUNCTIONs on the mirror, (c) match
+  the signature only for the ones fired early. Bounded, but per-RPC and needs live data.
+
+THE ONE REMAINING STEP (live client test — the go/no-go verdict)
+---------------------------------------------------------------
+Recipe (elevated PS; Steam running; stub already builds):
+  1. Stub first: UnrealEditor-Cmd "<abs>\unreal-stub\Loki.uproject" /Engine/Maps/Entry?listen
+     -game -server -Port=7777 -nullrhi -NoSplash -Unattended -abslog=<repo>\docs\ds-server.log
+     (poll for "listening on port 7777"). ags at 127.0.0.1:7777, forceTutorialMatch=true.
+  2. Client: configs\launch-redirect.ps1 -NoHook (background). Auto-arms the match ~1 min.
+  3. WATCH client Loki.log (C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log):
+       GO signals: NO immediate "Invalid replicated field N in PlayerController" close; the
+         client makes a LokiPlayerController local PC; "TryGetLocalLokiController" stops logging
+         null / the connection survives the way S70 did.
+       Scoping signals: "ReceivedBunch: Invalid replicated field N in <PC>" -> N = first Loki rep
+         to add (rep_expand_class.py LokiPlayerController); OR a server-side RPC receive error in
+         ds-server.log naming the RPC that desynced -> that's the first RPC to declare/sign.
+  4. If it survives + PC is Loki-typed: capture the client's LokiPlayerController rep layout +
+     net-function list live; reconstruct iteratively (props first, then the fired RPCs). If it
+     desyncs on an RPC the client sends before we can align it, that pins the wall's cost.
+  REVERT to the S70 spectator baseline anytime: LokiStubGameMode ctor PlayerControllerClass =
+  APlayerController::StaticClass().
+
+★★★ LIVE TEST RESULT — GO. The Loki-PC mirror WORKS. ★★★
+--------------------------------------------------------
+Ran the full stack live: stub-first on 7777 (S73 mirror) + ags (forceTutorialMatch, address
+127.0.0.1:7777) + launch-redirect.ps1 -NoHook (Steam running). The client armed the tutorial
+match (~1 min), connected to 127.0.0.1:7777, traveled to LVL_Tutorial, and entered its real
+LokiGameState (S70 milestone held). THE DECISIVE RESULT:
+  * The client's LOCAL networked PC is a real LokiPlayerController — log:
+      Object: LokiPlayerController /Game/Loki/Maps/Tutorial/LVL_Tutorial:PersistentLevel.LokiPlayerController_2147480972
+    and the client runs ALokiBaseController::TryUIReady. The by-path bind resolved
+    /Script/Loki.LokiPlayerController to the client's OWN native class.
+  * "Attempting to get null controller / TryGetLocalLokiController" = ZERO occurrences (grep -c = 0).
+    That was THE S72 wall. The Loki-typed local PC makes the cast succeed.
+  * Connection STABLE: stub "Join succeeded"; PostLogin spawned+possessed DefaultPawn_1
+    (PC->GetPawn()=DefaultPawn_1, hasConnection=1); client alive 40s+ in-world, no
+    Closing/ConnectionTimeout/NetworkFailure (the lone "reconnect" is LogMessenger = the
+    unrelated AccelByte lobby WebSocket, not the game NetConnection).
+=> S41's hard NO ("the stub MUST use a stock PC; the real Loki PC breaks the connection") is
+OVERTURNED with the matured S70 by-path mirror technique. The DS route is ALIVE past the PC wall.
+
+THE REMAINING DESYNC — net-cache index-space mismatch (the anticipated wall, now pinpointed)
+-------------------------------------------------------------------------------------------
+The mirror carries the STOCK PC net-cache (16 reps + 81 RPCs, 0 Loki additions); the client's
+real LokiPlayerController inserts its own Loki reps + RPCs, which SHIFT the shared FClassNetCache
+index space. So both directions misread PC bunches:
+  * CLIENT side (Loki.log) LogNet ReadFieldHeaderAndPayload "Error reading payload", OutField
+    histogram: ClientRetryClientRestart x178, ClientRestart x3, ClientSetCameraMode x2,
+    ClientSetRotation x1, ClientSetHUD x1, ClientEnableNetworkVoice x1, ClientCapBandwidth x1.
+    These are STOCK APlayerController server->client RPCs — the stub sends one at ITS stock index,
+    the client resolves that index to a DIFFERENT (shifted) function and fails the payload read.
+    (ClientRetryClientRestart dominates because the stub's PostLogin possession keeps re-sending
+    ClientRestart, which the client misreads every retry.)
+  * STUB side (ds-server.log) same error, OutField: Pawn on LokiPlayerController_0 — the client's
+    possession/pawn update, misread by the stub's stock index space.
+FIX (next, iterative — the reconstruction phase): mirror the client's LokiBaseController +
+LokiPlayerController REPLICATED PROPS and NET FUNCTIONS (RPCs) so the name-sorted NetFields +
+ClassReps index spaces realign. Capture live off the RUNNING client (still up):
+  - props: tools/re/rep_expand_class.py on LokiPlayerController / LokiBaseController (the CPF_Net
+    subset in field order; raise the field-cap like S69 did for GameState).
+  - RPCs: tools/re/func_enum.py / find_ufunc.py to list LokiPlayerController + LokiBaseController
+    net functions (names for index alignment; signatures for the ones fired early — e.g.
+    ClientRetryClientRestart's, and the client's possession-ack path). Declare same-named UFUNCTIONs
+    on the mirror (empty bodies OK for index alignment; match the signature for early-fired ones).
+Verify each iteration with the boot DumpClassNetCacheLayout (already dumps both classes) BEFORE
+relaunch, then re-test: success = the OutField errors clear + the client possesses DefaultPawn_1
+(ServerAcknowledgePossession back to the stub) = first controllable-pawn milestone over the DS route.
+
+STATE AT HANDOFF (LEFT RUNNING for the reconstruction)
+------------------------------------------------------
+Stub (UnrealEditor-Cmd PID 80080) + ags (PID 54848) + client (SUPERVIVE PID 78404) LEFT RUNNING;
+the client is in LVL_Tutorial with a Loki-typed local PC (LokiPlayerController_2147480972). ds log
+docs/ds-server.log; client C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log. The live
+client is the capture source for the reps + RPC set (do the RE now while it's up). Mirror files:
+unreal-stub/Source/Loki/LokiPlayerControllerStub.{h,cpp}. LokiStubGameMode PlayerControllerClass =
+ALokiPlayerController (one-line revert to APlayerController restores the S70 stock-PC spectator baseline).
+Reusable: the mirror scaffold — extend its UPROPERTY(Replicated) props + UFUNCTION RPCs from the live captures.

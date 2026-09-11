@@ -1,0 +1,112 @@
+exec_chain_grade enumerated 18325 UHT UFunctions across 1679 owners
+scan_native_pairs found 17892 raw pairs, assigned 16490 (class,func) -> thunk keys
+enumeration time: 13.0s
+
+CONTROL AdjustHealth       @ 0x5294270: REAL
+CONTROL AuthCheatSetHealth @ 0x52FD620: STRIPPED
+  ==> both controls passed
+
+v1 CSV loaded: 15129 (class,name) keys
+
+=== S153 v2 sweep — SUMMARY ===
+scan time:                     10.8s
+total UFunctions enumerated:   16490
+delta vs v1 (fk13natreg):      +1596 newly enumerated
+
+Verdicts:
+  STRIPPED       318  (1.93%)
+  REAL         11105  (67.34%)
+  DARK          5067  (30.73%)
+  OOR              0  (0.00%)
+
+NEW-in-v2 entries: 1596
+  NEW STRIPPED: 17
+  NEW REAL:     1299
+  NEW DARK:     280
+
+=== Top 20 classes with most fk13natreg-missed UFunctions ===
+  APlayerController                                             new= 163  new_stripped=  0  (total this class: 163)
+  UPrimitiveComponent                                           new= 150  new_stripped=  0  (total this class: 150)
+  AActor                                                        new= 126  new_stripped=  0  (total this class: 126)
+  USkeletalMeshComponent                                        new= 105  new_stripped=  0  (total this class: 105)
+  UAnimInstance                                                 new= 104  new_stripped=  0  (total this class: 104)
+  ULokiGameplaySpell                                            new=  72  new_stripped=  2  (total this class: 72)
+  ALokiGameMode                                                 new=  68  new_stripped=  7  (total this class: 68)
+  USceneComponent                                               new=  61  new_stripped=  0  (total this class: 61)
+  UUserWidget                                                   new=  55  new_stripped=  0  (total this class: 55)
+  ALokiScoreboardRow                                            new=  50  new_stripped=  0  (total this class: 50)
+  UWidget                                                       new=  48  new_stripped=  0  (total this class: 48)
+  UMovieGraphValueContainer                                     new=  32  new_stripped=  0  (total this class: 32)
+  APawn                                                         new=  29  new_stripped=  0  (total this class: 29)
+  UListView                                                     new=  27  new_stripped=  0  (total this class: 27)
+  USkyAtmosphereComponent                                       new=  25  new_stripped=  0  (total this class: 25)
+  AHUD                                                          new=  24  new_stripped=  0  (total this class: 24)
+  UActorComponent                                               new=  23  new_stripped=  0  (total this class: 23)
+  UPreviewGeometry                                              new=  21  new_stripped=  0  (total this class: 21)
+  UInstancedStaticMeshComponent                                 new=  20  new_stripped=  0  (total this class: 20)
+  UCameraComponent                                              new=  18  new_stripped=  0  (total this class: 18)
+
+=== NEW STRIPPED entries (fk13natreg missed these; v2 finds them) ===
+  ALandscapeProxy::EditorApplySpline  thunk=0x2C2CAA0  wrapper-hides-stub 0x2C2CAA0 -> call 0xF7EC20 -> fold: void_ret (c2 00 00)
+  ALandscapeProxy::EditorSetLandscapeMaterial  thunk=0x2C2CE30  wrapper-hides-stub 0x2C2CE30 -> call 0xF7EC20 -> fold: void_ret (c2 00 00)
+  ALandscapeProxy::LandscapeExportHeightmapToRenderTarget  thunk=0x2C2CEF0  wrapper-hides-stub 0x2C2CEF0 -> call 0xB9E1F0 -> fold: mov al,1; ret (LokiIsClie
+  ALokiGameMode::CheatCantEndGame  thunk=0x52FD980  wrapper-hides-stub 0x52FD980 -> call 0xF7EB60 -> fold: xor al,al; ret (LokiIsSer
+  ALokiGameMode::DevGameModeCheatsEnabled  thunk=0x51629C0  wrapper-hides-stub 0x51629C0 -> call 0xF7EB60 -> fold: xor al,al; ret (LokiIsSer
+  ALokiGameMode::EliminateTeam  thunk=0x5349CB0  wrapper-hides-stub 0x5349CB0 -> call 0xF7EC20 -> fold: void_ret (c2 00 00)
+  ALokiGameMode::GameModeCheat  thunk=0x5349DC0  wrapper-hides-stub 0x5349DC0 -> call 0xF7EC20 -> fold: void_ret (c2 00 00)
+  ALokiGameMode::GetAutomaticRespawnTimerAdditionalTime  thunk=0x5349FB0  wrapper-hides-stub 0x5349FB0 -> call 0xFC6CF0 -> fold: xorps xmm0,xmm0; ret (0.0
+  ALokiGameMode::SpawnPlayer  thunk=0x534C070  wrapper-hides-stub 0x534C070 -> call 0xF7EB50 -> fold: xor eax,eax; ret (false/n
+  ALokiGameMode::TickAFKChecking  thunk=0x5254180  wrapper-hides-stub 0x5254180 -> tail-jmp 0xF7EC20 -> fold: void_ret (c2 00 00)
+  ULokiGameplaySpell::CallSpellCompleteEvent  thunk=0x5254180  wrapper-hides-stub 0x5254180 -> tail-jmp 0xF7EC20 -> fold: void_ret (c2 00 00)
+  ULokiGameplaySpell::SimulateInputReleasedForAI  thunk=0x5254180  wrapper-hides-stub 0x5254180 -> tail-jmp 0xF7EC20 -> fold: void_ret (c2 00 00)
+  ULokiSpellSwapper::AddSubSpell  thunk=0x5438720  wrapper-hides-stub 0x5438720 -> call 0xF7EC20 -> fold: void_ret (c2 00 00)
+  ULokiSpellSwapper::NextSpell  thunk=0x52FD980  wrapper-hides-stub 0x52FD980 -> call 0xF7EB60 -> fold: xor al,al; ret (LokiIsSer
+  ULokiSpellSwapper::PreviousSpell  thunk=0x52FD980  wrapper-hides-stub 0x52FD980 -> call 0xF7EB60 -> fold: xor al,al; ret (LokiIsSer
+  ULokiSpellSwapper::RemoveSubSpell  thunk=0x5469F00  wrapper-hides-stub 0x5469F00 -> call 0xB9E1F0 -> fold: mov al,1; ret (LokiIsClie
+  ULokiSpellSwapper::SwitchSpell  thunk=0x52FD2D0  wrapper-hides-stub 0x52FD2D0 -> call 0xF7EB60 -> fold: xor al,al; ret (LokiIsSer
+
+=== Classes fk13natreg missed ENTIRELY (v2 enumerates them from scratch): 83 ===
+  AActor                                                        total= 126  stripped=  0  dark=  0
+  ACameraActor                                                  total=   1  stripped=  0  dark=  0
+  AEmitter                                                      total=  12  stripped=  0  dark=  0
+  AHUD                                                          total=  24  stripped=  0  dark= 16
+  ALandscapeProxy                                               total=  10  stripped=  3  dark=  0  <-- FK-1 CANDIDATES
+  ALight                                                        total=  13  stripped=  0  dark=  0
+  ALokiDropHidableActor                                         total=   2  stripped=  0  dark=  0
+  ALokiGameMode                                                 total=  68  stripped=  7  dark= 19  <-- FK-1 CANDIDATES
+  ALokiGameStateBase                                            total=   2  stripped=  0  dark=  0
+  ALokiGameplayCueNotify_Actor                                  total=   3  stripped=  0  dark=  0
+  ALokiHeightMap                                                total=   7  stripped=  0  dark=  0
+  ALokiRoundGameMode                                            total=  13  stripped=  0  dark=  0
+  ALokiScoreboardRow                                            total=  50  stripped=  0  dark=  1
+  APawn                                                         total=  29  stripped=  0  dark=  1
+  APlayerController                                             total= 163  stripped=  0  dark=  9
+  ASpotLight                                                    total=   2  stripped=  0  dark=  0
+  AStaticMeshActor                                              total=   1  stripped=  0  dark=  0
+  UActorComponent                                               total=  23  stripped=  0  dark=  0
+  UAkGameObject                                                 total=   9  stripped=  0  dark=  0
+  UAnimInstance                                                 total= 104  stripped=  0  dark= 43
+  UAnimNotify                                                   total=   3  stripped=  0  dark=  0
+  UAnimNotifyState_Trail                                        total=   1  stripped=  0  dark=  0
+  UAnimationAsset                                               total=   2  stripped=  0  dark=  0
+  UBlueprintAsyncActionBase                                     total=   1  stripped=  0  dark=  0
+  UBrainComponent                                               total=   5  stripped=  0  dark=  0
+  UCameraComponent                                              total=  18  stripped=  0  dark=  0
+  UCommonBoundActionButton                                      total=   1  stripped=  0  dark=  0
+  UContentWidget                                                total=   3  stripped=  0  dark=  0
+  UControlRig                                                   total=  14  stripped=  0  dark=  9
+  UDataDrivenCVarEngineSubsystem                                total=   1  stripped=  0  dark=  0
+  UDataLayerAsset                                               total=   5  stripped=  0  dark=  0
+  UEnhancedInputLocalPlayerSubsystem                            total=   1  stripped=  0  dark=  0
+  UEnvQueryContext_BlueprintBase                                total=   1  stripped=  0  dark=  0
+  UGameplayEffect                                               total=   3  stripped=  0  dark=  0
+  UGameplayTask_TimeLimitedExecution                            total=   1  stripped=  0  dark=  0
+  UGenericPlatformPlayerModel                                   total=  16  stripped=  0  dark=  0
+  UInstancedStaticMeshComponent                                 total=  20  stripped=  0  dark= 14
+  UInvokePhase                                                  total=   2  stripped=  0  dark=  0
+  ULevelStreaming                                               total=  14  stripped=  0  dark=  8
+  UListView                                                     total=  27  stripped=  0  dark=  0
+  ... and 43 more classes
+
+CSV: scratchpad/s153_native_ufunction_sweep_v2.csv
+Delta detail: scratchpad/s153_native_ufunction_sweep_v2_delta.txt

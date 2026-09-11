@@ -1,0 +1,489 @@
+// ============================================================================
+//  MODULE   GameMode.LokiGameMode_ExoticLootComponent
+//  SOURCE   GameMode/LokiGameMode_ExoticLootComponent.as
+//  CONTENT  2 class(es), 14 function(s), 0 enum(s), 1 global(s), 1760 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiExoticLootComponent;
+
+ULokiExoticLootComponent@ ULokiExoticLootComponent()   // traits=0x20
+{
+    v2 = ULokiExoticLootComponent();
+    return v2;
+}
+/* ---- ULokiExoticLootComponent: 7 dwords / 4 instructions (cache offset 0x7c6f6) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84919 ULokiExoticLootComponent              
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ULokiExoticLootComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ULokiExoticLootComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x7c7bb) ----
+    0000  PshGPtr       __StaticType_ULokiExoticLootComponent       
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ULokiExoticLootComponent@ ULokiExoticLootComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiExoticLootComponent, v2, typeid(ULokiExoticLootComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x7c8fd) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972692                                    ; ULokiExoticLootComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiExoticLootComponent       
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiExoticLootComponent@ ULokiExoticLootComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiExoticLootComponent, v2, typeid(ULokiExoticLootComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x7ca57) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972692                                    ; ULokiExoticLootComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiExoticLootComponent       
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiExoticLootComponent@ ULokiExoticLootComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiExoticLootComponent, v2, typeid(ULokiExoticLootComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x7cbac) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972692                                    ; ULokiExoticLootComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiExoticLootComponent       
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiExoticLootComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiExoticLootComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Loot)
+    TMap<int, TSubclassOf<ULokiLootTable@>> DayToLootTable;
+    TMap<int, FExoticItemList> DayToExotics;
+    private FRandomStream RandomSeed;
+
+    ULokiExoticLootComponent()   // traits=0x21
+    {
+        this.DayToLootTable = TMap();
+        this.DayToExotics = TMap();
+        this.RandomSeed = FRandomStream();
+        return;
+    }
+    /* ---- ULokiExoticLootComponent: 23 dwords / 12 instructions (cache offset 0x7da3c) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230868                                 ; .DayToLootTable
+        000C  CALLSYS       TMap::$beh0                                 
+        0018  PshVPtr       this                                        
+        001C  ADDSi         288 134230868                                 ; .DayToExotics
+        0024  CALLSYS       TMap::$beh0                                 
+        0030  PshVPtr       this                                        
+        0034  ADDSi         368 134230868                                 ; .RandomSeed
+        003C  CALLSYS       FRandomStream::$beh0                        
+        0048  PshVPtr       this                                        
+        004C  FinConstruct  ULokiExoticLootComponent                    
+        0058  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v6 = Loki::GetLokiGameState(__WorldContext);
+            if (v6 == nullptr) {
+                return;
+            } else {
+                v7 = false;
+                v9 = v6.GetRandomStream(v7);
+                v9 = this.RandomSeed;
+                this.GenerateExotics();
+            }
+        }
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 40 dwords / 23 instructions (cache offset 0x7cdd3) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsServer                                
+        0018  JLowZ         31                                            -> L009C
+        0020  PshGPtr       __WorldContext                              
+        002C  CALLSYS       GetLokiGameState                            
+        0038  STOREOBJ      v6                                          
+        003C  CmpPtrNull    v6                                          
+        0040  JNZ           2                                             -> L0050
+        0048  JMP           19                                            -> L009C
+      L0050:
+        0050  SetV1         v7 0                                        
+        0058  PshV4         v7                                          
+        005C  PSF           v9                                          
+        0060  PshVPtr       v6                                          
+        0064  CALLSYS       ALokiGameState::GetRandomStream             
+        0070  PSF           v9                                          
+        0074  PshVPtr       this                                        
+        0078  ADDSi         368 134230868                                 ; .RandomSeed
+        0080  COPY          8 67116385                                    ; FRandomStream
+        0088  PopPtr                                                    
+        008C  PshVPtr       this                                        
+        0090  CALLINTF      84917                                         ; ULokiExoticLootComponent::GenerateExotics
+        0098  FreeNullV8    v6                                          
+      L009C:
+        009C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    TSubclassOf<AActor@> GetOneExoticForCurrentDay()   // traits=0x20
+    {
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 == nullptr) {
+            arg_m2 = TSubclassOf();
+            v8 = TSubclassOf(nullptr);
+            arg_m2 = v8;
+            return;
+        } else {
+            v9 = v4.GetCurrentDay();
+            v14.FExoticItemList();
+            if (this.DayToExotics.Find(v9, v14)) {
+                v10 = v14.Exotics.Num();
+                if (v10 == 0) {
+                    this.GenerateLootForDay(v9);
+                }
+                v15 = v14.Exotics.Num();
+                if (v15 > 0) {
+                    v18 = TSubclassOf(v14.Exotics[0]);
+                    v14.Exotics.RemoveAt(0);
+                    this.DayToExotics.Add(v9, v14);
+                    arg_m2 = TSubclassOf();
+                    arg_m2 = v18;
+                    v14.~FExoticItemList();
+                    return;
+                }
+            } else {
+                arg_m2 = TSubclassOf();
+                v8 = TSubclassOf(nullptr);
+                arg_m2 = v8;
+                v14.~FExoticItemList();
+            }
+        }
+        return;
+    }
+    /* ---- GetOneExoticForCurrentDay: 131 dwords / 75 instructions (cache offset 0x7cfcf) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetLokiGameState                            
+        0018  STOREOBJ      v4                                          
+        001C  CmpPtrNull    v4                                          
+        0020  JNZ           16                                            -> L0068
+        0028  PshVPtr       arg_m2                                      
+        002C  CALLSYS       TSubclassOf::$beh0                          
+        0038  PshNull                                                   
+        003C  PSF           v8                                          
+        0040  CALLSYS       TSubclassOf::$beh0                          
+        004C  PSF           v8                                          
+        0050  PshVPtr       arg_m2                                      
+        0054  CALLSYS       TSubclassOf::opAssign                       
+        0060  JMP           104                                           -> L0208
+      L0068:
+        0068  PshVPtr       v4                                          
+        006C  CALLSYS       ALokiGameState::GetCurrentDay               
+        0078  CpyRtoV4      v9                                          
+        007C  PSF           v14                                         
+        0080  CALL          84922                                         ; FExoticItemList::FExoticItemList
+        0088  PSF           v14                                         
+        008C  PSF           v9                                          
+        0090  PshVPtr       this                                        
+        0094  ADDSi         288 134230868                                 ; .DayToExotics
+        009C  CALLSYS       TMap::Find                                  
+        00A8  JLowZ         69                                            -> L01C4
+        00B0  PSF           v14                                         
+        00B4  ADDSi         0 134230869                                   ; .Exotics
+        00BC  CALLSYS       TArray::Num                                 
+        00C8  CpyRtoV4      v10                                         
+        00CC  CMPIi         v10 0                                       
+        00D4  JNZ           4                                             -> L00EC
+        00DC  PshV4         v9                                          
+        00E0  PshVPtr       this                                        
+        00E4  CALLINTF      84918                                         ; ULokiExoticLootComponent::GenerateLootForDay
+      L00EC:
+        00EC  PSF           v14                                         
+        00F0  ADDSi         0 134230869                                   ; .Exotics
+        00F8  CALLSYS       TArray::Num                                 
+        0104  CpyRtoV4      v15                                         
+        0108  CMPIi         v15 0                                       
+        0110  JNP           43                                            -> L01C4
+        0118  PshC4         0                                           
+        0120  PSF           v14                                         
+        0124  ADDSi         0 134230869                                   ; .Exotics
+        012C  Thiscall1     TArray::opIndex                             
+        0138  PshRPtr                                                   
+        013C  PSF           v18                                         
+        0140  CALLSYS       TSubclassOf::$beh0                          
+        014C  PshC4         0                                           
+        0154  PSF           v14                                         
+        0158  ADDSi         0 134230869                                   ; .Exotics
+        0160  CALLSYS       TArray::RemoveAt                            
+        016C  PSF           v14                                         
+        0170  PSF           v9                                          
+        0174  PshVPtr       this                                        
+        0178  ADDSi         288 134230868                                 ; .DayToExotics
+        0180  CALLSYS       TMap::Add                                   
+        018C  PshVPtr       arg_m2                                      
+        0190  CALLSYS       TSubclassOf::$beh0                          
+        019C  PSF           v18                                         
+        01A0  PshVPtr       arg_m2                                      
+        01A4  CALLSYS       TSubclassOf::opAssign                       
+        01B0  PSF           v14                                         
+        01B4  CALL          85498                                         ; FExoticItemList::~FExoticItemList
+        01BC  JMP           17                                            -> L0208
+      L01C4:
+        01C4  PshVPtr       arg_m2                                      
+        01C8  CALLSYS       TSubclassOf::$beh0                          
+        01D4  PshNull                                                   
+        01D8  PSF           v8                                          
+        01DC  CALLSYS       TSubclassOf::$beh0                          
+        01E8  PSF           v8                                          
+        01EC  PshVPtr       arg_m2                                      
+        01F0  CALLSYS       TSubclassOf::opAssign                       
+        01FC  PSF           v14                                         
+        0200  CALL          85498                                         ; FExoticItemList::~FExoticItemList
+      L0208:
+        0208  RET           4                                           
+    */
+
+    private void GenerateExotics()   // traits=0x28
+    {
+        v4 = TArray();
+        this.DayToLootTable.GetKeys(v4);
+        v10 = v4.Iterator();
+        while (true) {
+            v17 = v10.CanProceed;
+            if (!v17) break;
+            v19 = *refReg;
+            v18 = v19;
+            v10.Proceed();
+            this.GenerateLootForDay(v18);
+        }
+        return;
+    }
+    /* ---- GenerateExotics: 42 dwords / 25 instructions (cache offset 0x7d409) ----
+        0000  PSF           v4                                          
+        0004  CALLSYS       TArray::$beh0                               
+        0010  PSF           v4                                          
+        0014  PshVPtr       this                                        
+        0018  ADDSi         208 134230868                                 ; .DayToLootTable
+        0020  CALLSYS       TMap::GetKeys                               
+        002C  PSF           v10                                         
+        0030  PSF           v4                                          
+        0034  CALLSYS       TArray::Iterator                            
+        0040  JMP           12                                            -> L0078
+      L0048:
+        0048  SUSPEND                                                   
+        004C  PSF           v10                                         
+        0050  CALLSYS       TArrayIterator::Proceed                     
+        005C  RDR4          v19                                         
+        0060  CpyVtoV4      v18 v19                                     
+        0068  PshV4         v18                                         
+        006C  PshVPtr       this                                        
+        0070  CALLINTF      84918                                         ; ULokiExoticLootComponent::GenerateLootForDay
+      L0078:
+        0078  LoadVObjR     v10 16 268448598                              ; .CanProceed
+        0084  RDR1          v17                                         
+        0088  CpyVtoR1      v17                                         
+        008C  JLowNZ        -19                                           -> L0048
+        0094  PSF           v4                                          
+        0098  CALLSYS       TArray::$beh2                               
+        00A4  RET           2                                           
+    */
+
+    private void GenerateLootForDay(const int Day)   // traits=0x28
+    {
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v8 = TSubclassOf();
+            if (this.DayToLootTable.Find(Day, v8)) {
+                if (v8 == nullptr) {
+                    return;
+                } else {
+                    v12 = TArray();
+                    v12.Add(v8);
+                    v16 = LokiGameplay::GetAllLootFromLootTables(__WorldContext, v12);
+                    v21 = v16.Num();
+                    v20 = ULokiLootTable::GenerateFromClassWithStream(__WorldContext, v8, this.RandomSeed, v21);
+                    v30.FExoticItemList();
+                    v30.Exotics = v20;
+                    this.DayToExotics.Add(Day, v30);
+                    v30.~FExoticItemList();
+                }
+            }
+        }
+        return;
+    }
+    /* ---- GenerateLootForDay: 103 dwords / 58 instructions (cache offset 0x7d5dc) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetLokiGameState                            
+        0018  STOREOBJ      v4                                          
+        001C  CmpPtrNull    v4                                          
+        0020  JNZ           2                                             -> L0030
+        0028  JMP           90                                            -> L0198
+      L0030:
+        0030  PSF           v8                                          
+        0034  CALLSYS       TSubclassOf::$beh0                          
+        0040  PSF           v8                                          
+        0044  PSF           Day                                         
+        0048  PshVPtr       this                                        
+        004C  ADDSi         208 134230868                                 ; .DayToLootTable
+        0054  CALLSYS       TMap::Find                                  
+        0060  JLowZ         76                                            -> L0198
+        0068  PshNull                                                   
+        006C  PSF           v8                                          
+        0070  CALLSYS       TSubclassOf::opEquals                       
+        007C  JLowZ         2                                             -> L008C
+        0084  JMP           67                                            -> L0198
+      L008C:
+        008C  PSF           v12                                         
+        0090  CALLSYS       TArray::$beh0                               
+        009C  PSF           v8                                          
+        00A0  PSF           v12                                         
+        00A4  CALLSYS       TArray::Add                                 
+        00B0  PSF           v12                                         
+        00B4  PshGPtr       __WorldContext                              
+        00C0  PSF           v16                                         
+        00C4  CALLSYS       GetAllLootFromLootTables                    
+        00D0  PSF           v16                                         
+        00D4  CALLSYS       TArray::Num                                 
+        00E0  CpyRtoV4      v21                                         
+        00E4  PshV4         v21                                         
+        00E8  PshVPtr       this                                        
+        00EC  ADDSi         368 134230868                                 ; .RandomSeed
+        00F4  PSF           v8                                          
+        00F8  PshGPtr       __WorldContext                              
+        0104  PSF           v20                                         
+        0108  CALLSYS       GenerateFromClassWithStream                 
+        0114  PSF           v30                                         
+        0118  CALL          84922                                         ; FExoticItemList::FExoticItemList
+        0120  PSF           v20                                         
+        0124  PSF           v30                                         
+        0128  ADDSi         0 134230869                                   ; .Exotics
+        0130  CALLSYS       TArray::opAssign                            
+        013C  PSF           v30                                         
+        0140  PSF           Day                                         
+        0144  PshVPtr       this                                        
+        0148  ADDSi         288 134230868                                 ; .DayToExotics
+        0150  CALLSYS       TMap::Add                                   
+        015C  PSF           v30                                         
+        0160  CALL          85498                                         ; FExoticItemList::~FExoticItemList
+        0168  PSF           v20                                         
+        016C  CALLSYS       TArray::$beh2                               
+        0178  PSF           v16                                         
+        017C  CALLSYS       TArray::$beh2                               
+        0188  PSF           v12                                         
+        018C  CALLSYS       TArray::$beh2                               
+      L0198:
+        0198  RET           3                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = false;
+        this.SetComponentTickEnabled(v1);
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 15 dwords / 9 instructions (cache offset 0x7d943) ----
+        0000  SetV1         v1 0                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       UActorComponent::SetComponentTickEnabled    
+        001C  SetV1         v1 1                                        
+        0024  PshV4         v1                                          
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       UActorComponent::SetbExcludeFromClient      
+        0038  RET           2                                           
+    */
+
+    void ~ULokiExoticLootComponent()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ULokiExoticLootComponent: 13 dwords / 7 instructions (cache offset 0x7db76) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230868                                 ; .DayToLootTable
+        000C  CALLSYS       TMap::$beh2                                 
+        0018  PshVPtr       this                                        
+        001C  ADDSi         288 134230868                                 ; .DayToExotics
+        0024  CALLSYS       TMap::$beh2                                 
+        0030  RET           2                                           
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FExoticItemList
+{
+    UPROPERTY()
+    TArray<TSubclassOf<AActor@>> Exotics;
+
+    FExoticItemList()   // traits=0x21
+    {
+        this.Exotics = TArray();
+        return;
+    }
+    /* ---- FExoticItemList: 7 dwords / 4 instructions (cache offset 0x7dd8e) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230869                                   ; .Exotics
+        000C  CALLSYS       TArray::$beh0                               
+        0018  RET           2                                           
+    */
+
+    void ~FExoticItemList()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~FExoticItemList: 7 dwords / 4 instructions (cache offset 0x7de77) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230869                                   ; .Exotics
+        000C  CALLSYS       TArray::$beh2                               
+        0018  RET           2                                           
+    */
+
+}
+

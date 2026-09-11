@@ -1,0 +1,10 @@
+=== PAGE PROBE BASELINE-before-botspawn  pid=50272  20:03:44 ===
+target                                               protect          rd   first16
+*** SpawnBot 0x556D910 (ARM E G6 target)             NOACCESS         NO   --
+*** 0x5556D50 (E5 receipt, past PlayerState gate)    NOACCESS         NO   --
+*** OnUnPossess 0x55667F0 (E6 receipt)               NOACCESS         NO   --
+MakeNewBotController 0x5563660 [CTRL]                NOACCESS         NO   --
+OnPossess 0x5565470 [CTRL]                           NOACCESS         NO   --
+SpawnAIFromClass 0x4631C50 [CTRL]                    EXECUTE_READ     YES  405341544155415641574881ecf00000
+AController::Possess 0x36E2B60 [CTRL]                EXECUTE_READ     YES  48895c242055565741564157488d6c24
+SpawnBot expected prologue: 40555356574154415541564157488dac

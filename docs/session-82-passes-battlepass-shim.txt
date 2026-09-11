@@ -1,0 +1,153 @@
+================================================================================
+SESSION 82 HANDOFF — PASSES (BATTLEPASS) BROUGHT ONLINE VIA FORCE-GATE SHIM
+================================================================================
+Date: 2026-07-18/19.  Branch: dedicated-server-stub.
+Companion memory: supervive-passes-battlepass-status (read it first; this doc is the deep detail).
+Goal of the route: make the PASSES section of the main menu render (it was empty + tight-looping).
+
+--------------------------------------------------------------------------------
+0. TL;DR — WHAT'S DONE AND WHAT'S LEFT
+--------------------------------------------------------------------------------
+DONE (keystone cracked, live-verified, reproducible across relaunches):
+  * The 15/s GET /storefront/battlepass/progressiontracks TIGHT-LOOP is FIXED — the client now
+    adopts a "current published" progression track.
+  * The HUNTER'S JOURNEY account-pass VIEW MODEL is BUILT and ASSET-BOUND in memory:
+    BattlepassViewManager.bInitialized=1, AccountPassViewModel (ID="HuntersJourney",
+    IsAccountPass=1), ProgressionTrackAsset = the packed HuntersJourney_C (85 tiers).
+  * Achieved with a native shim (tools/sigbypass-mod/battlepass_adopt_fix.cpp) + backend edits.
+  * ONE-COMMAND ORACLE: python tools/re/battlepass_oracle.py   (shows all of the above live).
+
+LEFT (the last visible piece — the tier GRID):
+  * AccountPassViewModel.Levels (+0xC8) = 0. The tier tiles come from this array, which the
+    game's tier widget populates on DISPLAY (open PASSES -> Hunter's Journey). We could NOT
+    verify the grid draws — computer-use/screenshots were unavailable this session.
+  * A shim force-call of the populate (0x57DF4B0) CRASHED with synthetic args (see §6). Two ways
+    forward: (a) open the tab and look; (b) RE the REAL caller's args for 0x57DF4B0 and call it right.
+  * SEASONAL pass is still null (no packed season asset exists — only HuntersJourney_C does).
+
+--------------------------------------------------------------------------------
+1. THE MECHANISM (fully reverse-engineered — this is why the loop happened)
+--------------------------------------------------------------------------------
+BattlepassInfoManager (BPIM) polls progressiontracks. Its RefreshOperation (a LokiOperation @BPIM+0x80)
+re-arms FOREVER because adoption is version-gated and never succeeds:
+  - Response body 0x57CFD90 fetches the endpoint; binds OnSuccess=0x57C8130 / OnError=0x57C7BD0.
+  - OnSuccess (0x57C8130, __fastcall rcx=BPIM, rdx=&aggregate):
+      cancel retry timer (0x57C1A00);
+      `cmp [rdx+0x10](Version), [BPIM+0x50](adopted); jle skip`   <-- THE GATE
+      copy aggregate.ProgressionTracks -> BPIM+0x40 (deep-copy 0x524D870);
+      BPIM+0x50 = Version;  Broadcast BPIM+0x30 delegate (0x3071C30)  => ViewManager builds VMs;
+      tail: if BPIM+0x50 < BPIM+0x58 (target, hardcoded =1 at factory 0x57BBFCE) -> re-arm (0x57D84F0).
+  - The obfuscated SDK converter turns our parsed AccelByteModelsListProgressionTrackInfo (0x90) into
+    the internal LokiPublishedProgressionTrack (0x120) and yields Version=0 (drops our tracks for a
+    reason locked in VMProtect'd code — NOT statically isolatable; diag string "CurrentPublished
+    ProgressionTracks has no Manifest" @0x8B40CE2). Version 0 !> adopted 0 -> broadcast skipped ->
+    BPIM+0x40 stays empty -> adopted stays 0 < target 1 -> re-fetch forever.
+  - CRITICAL: the UFunction SetCurrentPublishedProgressionTracks (thunk 0x5256880) is a COMPILED-OUT
+    ret-0 no-op (impl 0xF7EC20 = `c2 00 00`, ICF-folded, 4659 callers). Do NOT try to call it.
+  - BACKEND ROUTE IS EXHAUSTED: tried Active/window/enum, PrimaryAssetId-form ID, dropping
+    RewardTrackCodes, ms-ISO dates — the oracle (BPIM+0x48) never went non-zero. No backend response
+    satisfies the converter. Hence the shim.
+
+--------------------------------------------------------------------------------
+2. THE FIX — battlepass_adopt_fix.cpp (tools/sigbypass-mod/)
+--------------------------------------------------------------------------------
+On the game thread (ProcessInternal hook base+0x13454A0), it:
+  1. Finds BPIM, BattlepassViewManager, and Default__HuntersJourney_C (GUObjectArray class/name scan).
+  2. Builds a LokiPublishedProgressionTracks aggregate = { ProgressionTracks:[ one
+     LokiPublishedProgressionTrack: ProgressionTrackID FString "HuntersJourney",
+     Details.InternalId FString "HuntersJourney", IsAccountPass=1, everything else zero/empty ],
+     Version:100 }.
+  3. Calls OnSuccess 0x57C8130(BPIM, &aggregate) directly -> Version 100 > adopted -> adopt +
+     broadcast -> ViewManager builds the account VM.
+  4. Directly writes AccountPassViewModel+0xE8 = &HuntersJourney_C (the build-time resolver keys off
+     something other than ProgressionTrackID, so we bind it ourselves).
+  (5. A populate call to 0x57DF4B0 is present but GATED OFF — it crashed; see §6.)
+Marker: docs/battlepass-adopt-marker.txt.  FStrings are read-only (deep-copied by the game).
+
+--------------------------------------------------------------------------------
+3. BACKEND CHANGES (server/internal/menu/menu.go, interactive/interactive.go)
+--------------------------------------------------------------------------------
+All accepted (no deserialization errors); none are sufficient alone (the client-side converter/shim is
+the gate), but they represent the correct published state:
+  * handleProgressionTracks: returns TWO tracks (SEASON_PASS "supervive-season-1" +
+    PROGRESSION_TRACK "HuntersJourney"), full AccelByteModelsListProgressionTrackInfo (Active,
+    RFC3339 window, verified enums).
+  * NEW route GET /progression/players/{id}/tracks/rewards -> handleEmptyDataPaging (downstream of the
+    broadcast; the ViewManager can request it — currently not hit).
+  * handleGetProgression + handlePlayerProgressionTracks return a HuntersJourney enrollment (this set
+    ProgressionManager+0x208 in a parallel finding, but the account pass is driven by the InfoManager
+    adoption above, not this).
+
+--------------------------------------------------------------------------------
+4. GROUND TRUTH — addresses/offsets/structs (this build; module base 0x7FF6AF000000, NO ASLR)
+    (RVAs are build-specific — REGENERATE on any game update via the dumps + tools below.)
+--------------------------------------------------------------------------------
+FUNCTIONS (RVA):
+  0x57C8130  OnSuccess (adoption sink)         __fastcall(rcx=BPIM, rdx=&LokiPublishedProgressionTracks)
+  0x57CFD90  progressiontracks refresh body    (binds OnSuccess/OnError; holds the endpoint string)
+  0x57CDFF0  ViewManager OnUpdatedCurrentPublishedProgressionTracks impl (thunk 0x5256190)
+  0x57DF4B0  BattlepassViewModel populate (Levels)  (rcx=VM, rdx=TArray progress, r8=progress struct) — CRASHES w/ synthetic args
+  0x57B1130  level-enumerate (reads VM+0xE8 -> [asset+0xB8] LevelClass; level XP @+0x338)
+  0x3071C30  FMulticastDelegate Broadcast    0x57D84F0 LokiOperation re-arm    0x524D870 track deep-copy
+  0x5256880  SetCurrentPublishedProgressionTracks thunk -> 0xF7EC20 ret-0 NO-OP (do not use)
+  0x13454A0  ProcessInternal (game-thread hook)
+GLOBALS (RVA): 0x9E38930 GUObjectArray, 0x9D81450 NamePool, 0x9D49158 g_gameTid.
+BattlepassInfoManager members:  +0x30 delegate | +0x40/+0x48(Num)/+0x4C tracks TArray | +0x50 adopted |
+  +0x58 target(=1) | +0x68 StorefrontService | +0x70 LoginManager | +0x80 RefreshOperation | +0x1C8 ProgressionManager.
+BattlepassViewManager:  +0x30 bInitialized | +0x58 BattlepassViewModels(map) | +0xA8 MasteryViewModels |
+  +0x198 AccountPassViewModel | +0x1A8 SeasonalPassViewModel | +0x1C8 ProgressionManager | +0x1E0 BattlepassViewModelClass.
+BattlepassViewModel (BP_BattlepassViewModel_C):  +0x60 ID FString | +0x70 LevelsToDisplay | +0x88 IsAccountPass |
+  +0x89 IsSeasonalPass | +0x8C Season PrimaryAssetId | +0xC8 Levels TArray | +0xE8 ProgressionTrackAsset.
+LokiPublishedProgressionTracks (0x18):  +0x00 ProgressionTracks TArray<LokiPublishedProgressionTrack> | +0x10 Version int64.
+LokiPublishedProgressionTrack (0x120):  +0x00 ProgressionTrackID FString | +0x10 Details(0x98) | +0xA8 IsRetired |
+  +0xA9 IsAccountPass | +0xAA IsReferralPass | +0xAB IsSeasonalPass | +0xB0 PurchaseDetails(0x70).
+  Details LokiBattlepassProgressionTrack (0x98): +0x00 InternalId FString | +0x10 Season PrimaryAssetId | +0x20 Start DT |
+    +0x28 End DT | +0x30 TierPurchaseDetails(0x40) | +0x70 RewardTracks TArray | +0x80 AutoClaimRewards | +0x84 LevelPace |
+    +0x88 ExperienceRequiredPerLevel TArray.
+Packed asset: Default__HuntersJourney_C (class HuntersJourney_C : LokiDataAsset_ProgressionTrack); InternalName@+0x40
+  "HuntersJourney"; LevelRewards Map@+0x68 (Num@+0x70 = 85); LevelClass@+0xB8. Season pass has NO packed asset.
+
+--------------------------------------------------------------------------------
+5. REPRODUCE (from a crashed/fresh state)
+--------------------------------------------------------------------------------
+  1. ELEVATED PowerShell:  cd "G:\git\Supervive Revival Project"; .\configs\launch-redirect.ps1
+     (rebuilds ags w/ the backend edits + boots the game + injects catalog_store_fix etc.; ~half of
+     launches boot-crash — just re-run.) Wait for the menu (Loki.log "Wallet fetched").
+  2. Build shim (clang from the Swift toolchain worked this session):
+     clang++ -shared -O2 tools/sigbypass-mod/battlepass_adopt_fix.cpp -o tools/sigbypass-mod/battlepass_adopt_fix.dll -lkernel32
+  3. Inject:  tools\inject\inject.exe mmap <GAME_PID> "G:\git\Supervive Revival Project\tools\sigbypass-mod\battlepass_adopt_fix.dll"
+  4. Verify:  python tools\re\battlepass_oracle.py     (expect: loop_stopped=True, AccountPassViewModel non-null, +0xE8 bound, 85 tiers)
+     and cat docs\battlepass-adopt-marker.txt.
+  To RE-run the shim on an already-injected game, bump `Version` in BuildAggregate() above the current
+  adopted value (the marker prints it), rebuild, re-inject.
+
+--------------------------------------------------------------------------------
+6. THE OPEN PROBLEM — render the tier GRID (Levels)
+--------------------------------------------------------------------------------
+AccountPassViewModel.Levels (+0xC8 TArray) = 0. The tier tiles read this. It is built by 0x57DF4B0,
+which enumerates ProgressionTrackAsset (+0xE8, now bound, 85 tiers) using the player's progress.
+  * Force-calling 0x57DF4B0(VM, empty-TArray, zeroed-progress-struct) CRASHED the game thread — the
+    args (rdx = a TArray checked at +8; r8 = a struct read at +4 dword=tier, +8 dword=xp, +0xc byte=
+    cleared) need REAL content the zeroed versions don't provide; it derefs more context. (Reverted; gated off.)
+NEXT (pick one):
+  (A) VISUAL: open PASSES -> Hunter's Journey on the running game (shim already applied) and see if the
+      grid draws — the widget likely calls the populate with real args on Construct. Needs computer-use/screenshot.
+  (B) NATIVE-RIGHT: RE the REAL caller of 0x57DF4B0 (find it via callxref in dumps/vmbuild) to learn how
+      it builds rdx (the per-tier progress TArray) and r8 (the progress struct) — likely from the
+      /progression/.../tracks/rewards data — then construct those in the shim and call it. Then Levels>0
+      and the oracle confirms without a screenshot.
+  (C) Also worth: RE the build-time +0xE8 resolver (near 0x57BF050 / the account-VM builder) so the
+      game's OWN build binds the asset AND populates Levels natively (we currently bind +0xE8 by hand).
+
+--------------------------------------------------------------------------------
+7. TOOLS (persistent)
+--------------------------------------------------------------------------------
+  tools/re/battlepass_oracle.py    — one-command live status (the oracle).
+  tools/re/offline_disasm.py       — capstone disasm over a dump; repoint the DUMP const. Dumps:
+       dumps/vmbuild/  (LATEST — VM-build path decrypted, after the shim ran)
+       dumps/accountpass/  (after backend lever A)      dumps/merged.dump.exe (menu/store/roster/missions)
+       Re-dump anytime: tools/usmapdump/usmapdump.exe dumpimage SUPERVIVE-Win64-Shipping.exe dumps/<name>
+  tools/re/obj_by_class.py <PID> 0x7FF6AF000000 <ClassSubstr>   — find live instances.
+  tools/re/class_props.py / class_funcs.py                       — UStruct offsets / UFunctions.
+  usmapdump schema.txt — the usmap (struct/enum defs; container element types are often WRONG — verify live).
+================================================================================

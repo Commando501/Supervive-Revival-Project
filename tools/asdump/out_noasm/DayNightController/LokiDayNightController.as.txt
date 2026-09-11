@@ -1,0 +1,508 @@
+// ============================================================================
+//  MODULE   DayNightController.LokiDayNightController
+//  SOURCE   DayNightController/LokiDayNightController.as
+//  CONTENT  5 class(es), 57 function(s), 0 enum(s), 1 global(s), 2640 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+event FTimelineChangedDelegate;
+event FDayNightStateChangedDelegate;
+event FDayBeginDelegate;
+event FDayEndDelegate;
+
+const TSubclassOf<UObject@> __StaticType_ALokiDayNightController_AS;
+
+ALokiDayNightController_AS@ ALokiDayNightController_AS()   // traits=0x20
+{
+    ALokiDayNightController_AS v2;
+
+    v2 = ALokiDayNightController_AS();
+    return v2;
+}
+
+UClass@ ALokiDayNightController_AS::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiDayNightController_AS);
+    return v2;
+}
+
+ALokiDayNightController_AS@ ALokiDayNightController_AS::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiDayNightController_AS v8;
+
+    v2 = __StaticType_ALokiDayNightController_AS.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiDayNightController_AS@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ALokiDayNightController_AS : ALokiDayNightController
+// unreal base : /Script/Loki.LokiDayNightController
+// C++ header  : ../../../Loki/Source/Loki/World/LokiDayNightController.h
+// static class global: __StaticType_ALokiDayNightController_AS
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FTimelineChangedDelegate OnTimelineChanged;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FDayNightStateChangedDelegate OnDayNightStateChanged;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FDayBeginDelegate OnDayBegin;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FDayEndDelegate OnDayEnd;
+
+    ALokiDayNightController_AS()   // traits=0x21
+    {
+        this.OnTimelineChanged.FTimelineChangedDelegate();
+        this.OnDayNightStateChanged.FDayNightStateChangedDelegate();
+        this.OnDayBegin.FDayBeginDelegate();
+        this.OnDayEnd.FDayEndDelegate();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod)
+    bool IsCharacterInShadow(ALokiCharacter@ Character) const   // traits=0x24
+    {
+        auto v1;
+
+        v1 = this.BP_IsCharacterInShadow(Character);
+        return v1;
+    }
+
+    void AuthCheatNightToDay(const float64 Time)   // traits=0x20
+    {
+        __Evt_PushArgument__float(Time);
+        __Evt_Execute(this, n"AuthCheatNightToDay");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthCheatNightToDay, BlueprintCallable, BlueprintEvent, NetMulticast)
+    void AuthCheatNightToDay_Implementation(const float64 Time)   // traits=0x20
+    {
+        this.BP_CheatNightToDay(Time);
+        return;
+    }
+
+    void AuthCheatDayToNight(const float64 Time)   // traits=0x20
+    {
+        __Evt_PushArgument__float(Time);
+        __Evt_Execute(this, n"AuthCheatDayToNight");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthCheatDayToNight, BlueprintCallable, BlueprintEvent, NetMulticast)
+    void AuthCheatDayToNight_Implementation(const float64 Time)   // traits=0x20
+    {
+        this.BP_CheatDayToNight(Time);
+        return;
+    }
+
+    protected bool BP_IsCharacterInShadow(ALokiCharacter@ Character) const   // traits=0x34
+    {
+        bool v1;
+        auto v2;
+
+        __Evt_PushArgument__ALokiCharacter(Character);
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"BP_IsCharacterInShadow");
+        return v1;
+    }
+
+    UFUNCTION(UnrealName=BP_IsCharacterInShadow, BlueprintCallable, BlueprintEvent, BlueprintPure, CanOverrideEvent, ConstMethod, meta.BlueprintProtected)
+    protected bool BP_IsCharacterInShadow_Implementation(ALokiCharacter@ Character) const   // traits=0x34
+    {
+        auto v1;
+
+        v1 = false;
+        return v1;
+    }
+
+    protected void BP_CheatNightToDay(const float64 Time)   // traits=0x30
+    {
+        __Evt_PushArgument__float(Time);
+        __Evt_Execute(this, n"BP_CheatNightToDay");
+        return;
+    }
+
+    UFUNCTION(UnrealName=BP_CheatNightToDay, BlueprintEvent, CanOverrideEvent, NoOp, meta.BlueprintProtected)
+    protected void BP_CheatNightToDay_Implementation(const float64 Time)   // traits=0x30
+    {
+        return;
+    }
+
+    protected void BP_CheatDayToNight(const float64 Time)   // traits=0x30
+    {
+        __Evt_PushArgument__float(Time);
+        __Evt_Execute(this, n"BP_CheatDayToNight");
+        return;
+    }
+
+    UFUNCTION(UnrealName=BP_CheatDayToNight, BlueprintEvent, CanOverrideEvent, NoOp, meta.BlueprintProtected)
+    protected void BP_CheatDayToNight_Implementation(const float64 Time)   // traits=0x30
+    {
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = true;
+        this.SetbReplicates(v1);
+        return;
+    }
+
+    void ~ALokiDayNightController_AS()   // traits=0x22
+    {
+        this.OnTimelineChanged.~FTimelineChangedDelegate();
+        this.OnDayNightStateChanged.~FDayNightStateChangedDelegate();
+        this.OnDayBegin.~FDayBeginDelegate();
+        this.OnDayEnd.~FDayEndDelegate();
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FTimelineChangedDelegate
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FTimelineChangedDelegate()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FTimelineChangedDelegate(const FTimelineChangedDelegate& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FTimelineChangedDelegate& opAssign(const FTimelineChangedDelegate& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast(const float64 SimpleTrack, const float64 RampTrack) const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_PushArgument__float(SimpleTrack);
+            __Evt_PushArgument__float(RampTrack);
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FTimelineChangedDelegate));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FTimelineChangedDelegate()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FDayNightStateChangedDelegate
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FDayNightStateChangedDelegate()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FDayNightStateChangedDelegate(const FDayNightStateChangedDelegate& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FDayNightStateChangedDelegate& opAssign(const FDayNightStateChangedDelegate& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast(const ELokiDayNightState Current, const ELokiDayNightState Next) const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_PushArgument__ELokiDayNightState(Current);
+            __Evt_PushArgument__ELokiDayNightState(Next);
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FDayNightStateChangedDelegate));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FDayNightStateChangedDelegate()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FDayBeginDelegate
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FDayBeginDelegate()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FDayBeginDelegate(const FDayBeginDelegate& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FDayBeginDelegate& opAssign(const FDayBeginDelegate& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FDayBeginDelegate));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FDayBeginDelegate()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FDayEndDelegate
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FDayEndDelegate()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FDayEndDelegate(const FDayEndDelegate& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FDayEndDelegate& opAssign(const FDayEndDelegate& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FDayEndDelegate));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FDayEndDelegate()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

@@ -1,0 +1,167 @@
+ELokiGameFeatureToggle -- authoritative member list, from tools/usmapdump/schema.txt.
+Answers ignorance-map A-2 ('read the 149 toggle names'). Extracted 2026-08-15 (S120).
+
+COUNT: 149 real members (values 0..148). The declaration reads '(151 values)' because it
+counts two sentinels -- Count=149 and ELokiGameFeatureToggle_MAX=150 -- which are NOT
+features. STATE THE UNIT: 149 toggles, 151 enum values.
+
+WARNING TWO DIFFERENT SYSTEMS. These names belong to
+  ULokiGameFeatureToggles::Get(ELokiGameFeatureToggle)   -- enum-keyed; S85 measured its
+    readiness is per-PlayerController, set at round-start, NOT by our served config.
+The UI's visibility gates instead call
+  UClientConfigManager::IsFeatureEnabled(FString)        -- STRING-keyed, e.g. "LobbyRewards".
+Those literals live in Blueprint bytecode in the paks and are ABSENT from the exe
+('LobbyRewards' does not appear in the binary at all), so they are NOT in this list.
+
+WARNING All five keys handleClientConfig serves today are ENUM names from this list (marked),
+  i.e. aimed at the enum system rather than at the string-keyed UI gates.
+
+  0  UseCirclePhasesOverride
+  1  UseFinalCircleLocationOverride
+  2  IgnoreClientVersionDangerous
+  3  UseLegacyRes
+  4  SniperLaser
+  5  RecordReplays
+  6  TownFunctionalityEnabled
+  7  GraveyardFunctionalityEnabled
+  8  SimplifiedCosmeticsOnDedicatedServer
+  9  LingeringBrushVisibility
+ 10  FullscreenVision
+ 11  SpectatorViewAllTeams
+ 12  EnableTalentSystem
+ 13  Suffixes
+ 14  DeathmatchNotMaxLevel
+ 15  MultiDeathCircles
+ 16  TalentQuests
+ 17  ActiveShield
+ 18  RedeployableBases
+ 19  QuestGivers
+ 20  LevelingPassives
+ 21  EnhancedHomingTasks
+ 22  SignificanceManager
+ 23  LootOnExecute
+ 24  BoatShops
+ 25  Missions
+ 26  XPCategories
+ 27  DMEconomy
+ 28  DMEconomySoulboundPowers
+ 29  MinimapVisionCones
+ 30  DeathCircleExperimentation
+ 31  DisallowGrindingFromWalking
+ 32  MultithreadedAnimationTick
+ 33  DropPhaseDebugTool
+ 34  GliderSmoothedForce
+ 35  SlowFallAbyss
+ 36  ValidateConnectionSecret
+ 37  EndOfGameFlowV2
+ 38  Forges
+ 39  DMImbalancedEquipment
+ 40  GatedGlider
+ 41  HitTaggingV2
+ 42  VaultsV3
+ 43  DeathmatchPowerups
+ 44  EnemyTeamNotify
+ 45  FirstPersonDrop
+ 46  HeroJourneyPerks
+ 47  StarterPowers
+ 48  OptimizeOccluders
+ 49  WispExecute
+ 50  ExhaustionCircle
+ 51  PilotVO
+ 52  AbilityUpgrades
+ 53  Vulnerable
+ 54  ConditionalCelebrationVO
+ 55  ClientYawLock
+ 56  GlobalFriendlyFire
+ 57  ProjectileHighGroundRange
+ 58  GzipEndOfMatch
+ 59  GzipTeamElimination
+ 60  HunterVO
+ 61  PhysicsDashes
+ 62  SpellExperiment
+ 63  TrainingBattleRoyale
+ 64  BetterMinionBehavior
+ 65  RPCShortAudioInFog
+ 66  BotSkins
+ 67  AutoDupeTeamElimItems
+ 68  ProjectilePrediction
+ 69  SkipCosmeticFeatureOwnershipValidation
+ 70  SpicyArena
+ 71  SpicyArenaSuddenDeath
+ 72  EvolvingEquipment
+ 73  AttachAudioListenerToHero   <== SERVED TODAY
+ 74  CinematicFinisher
+ 75  ClientSpellBuffering
+ 76  CursorCharacterAim   <== SERVED TODAY
+ 77  AimingLaserV2
+ 78  ADSv2
+ 79  GzipRealTimeAnalytics
+ 80  RealTimeExperienceAnalytics
+ 81  ImportantVO
+ 82  DeadSpectatorCameraLock   <== SERVED TODAY
+ 83  CharacterCheatDetection
+ 84  OccluderCulling
+ 85  QuestsBeginner
+ 86  QuestsExperienced
+ 87  WinterEvent   <== SERVED TODAY
+ 88  Season_0
+ 89  AggressiveTensionCircleTunings
+ 90  RespawnOnCapturePoints
+ 91  BRAutomaticRespawns
+ 92  BRAutomaticRespawnsSoloMode
+ 93  BRAutomaticArmorUpgrades
+ 94  BRAutomaticUAVOnAudioInFog
+ 95  InfiniteMana
+ 96  BotsKeepMatchesAlive
+ 97  BarracudaRiskyFeature
+ 98  BonfireUAVs   <== SERVED TODAY
+ 99  BonusMinionRewards
+100  GoldForEverything
+101  CreepGoldToNearbyAlliesOnly
+102  AutoClaimMissionRewards
+103  CantStopFull
+104  CantStopPartial
+105  KnockRiderEffect
+106  Armory
+107  ElmoFire
+108  AirDashSpeedClamp
+109  BaseCampShopRefreshHourly
+110  BaseCampShopRefreshDaily
+111  RespawnOnRespawnBeacons
+112  RecallToClosestAlly
+113  Airships
+114  BigHead
+115  SplitDashAndAbilityHaste
+116  GemsForArmory
+117  RangeIncrease
+118  HunterJourneyFeatureUnlock
+119  FastRespawnBeacons
+120  HitStop
+121  ChangesFor1Point0
+122  JinAbilityFix
+123  GliderV2
+124  TargettedRecalls
+125  SoloExperiments
+126  FastProgression
+127  AirdooRiderSkipSmallDashes
+128  MultithreadedVisibilityServer
+129  DashCurves
+130  DirectionalInfluence
+131  CustomsArmoryUnlock
+132  CastWhileMantling
+133  FudgeMantlingSouth
+134  LessBinarySlams
+135  PunishMissedSlams
+136  ArenaDeathCircle
+137  SpawnVisionOnHeroDeath
+138  RemoteStore
+139  OnDeathStore
+140  ArmoryFuture
+141  ArenaRemoteStore
+142  AllyRecallSilences
+143  AntiHealPercent
+144  Level4AbilityUncap
+145  LocalRadarEnabled
+146  PieSlicePlane
+147  ForceAnonymizeNonTeamParty
+148  AlterCircleRadiusBasedOnPlayerCount

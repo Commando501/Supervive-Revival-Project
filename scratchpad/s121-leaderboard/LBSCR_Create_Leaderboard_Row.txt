@@ -1,0 +1,852 @@
+# Asset:         Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardScreen.uasset
+# UFunction:     Create Leaderboard Row
+# FunctionFlags: FUNC_Public, FUNC_HasDefaults, FUNC_BlueprintCallable, FUNC_BlueprintEvent
+# Outer class:   WBP_UI_LeaderboardScreen_C
+# ScriptBytecode entries: 49
+# ChildProperties: 22
+# --- Parameters / locals (FField chain) ---
+#   [0] FIntProperty  ?
+#   [1] FStructProperty  ?
+#   [2] FStructProperty  ?
+#   [3] FInt64Property  ?
+#   [4] FStructProperty  ?
+#   [5] FArrayProperty  ?
+#   [6] FTextProperty  ?
+#   [7] FIntProperty  ?
+#   [8] FStructProperty  ?
+#   [9] FTextProperty  ?
+#   [10] FStructProperty  ?
+#   [11] FStructProperty  ?
+#   [12] FObjectProperty  ?
+#   [13] FObjectProperty  ?
+#   [14] FObjectProperty  ?
+#   [15] FObjectProperty  ?
+#   [16] FObjectProperty  ?
+#   [17] FObjectProperty  ?
+#   [18] FObjectProperty  ?
+#   [19] FObjectProperty  ?
+#   [20] FObjectProperty  ?
+#   [21] FDoubleProperty  ?
+
+# --- ScriptBytecode tree ---
+[  0] EX_Let
+  Property: CallFunc_PrimaryAssetIDFromString_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_PrimaryAssetIDFromString_ReturnValue
+      StatementIndex: 9
+  Assignment:
+    EX_CallMath
+      StackNode: PrimaryAssetIDFromString
+      Parameters: [1]
+        [  0] EX_Context
+          ObjectExpression:
+            EX_InstanceVariable
+              Variable: WBP_UI_Leaderboard_ComboBox_Heroes
+              StatementIndex: 28
+          Offset: 9
+          RValuePointer: SelectedItemKey
+          ContextExpression:
+            EX_InstanceVariable
+              Variable: SelectedItemKey
+              StatementIndex: 49
+          StatementIndex: 27
+      StatementIndex: 18
+  StatementIndex: 0
+[  1] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetOwningPlayer_ReturnValue_2
+      StatementIndex: 60
+  Assignment:
+    EX_VirtualFunction
+      VirtualFunctionName: GetOwningPlayer
+      Parameters: [0]
+      StatementIndex: 69
+  StatementIndex: 59
+[  2] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Create_ReturnValue_2
+      StatementIndex: 84
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_ObjectConst
+          Value: Default__WidgetBlueprintLibrary
+          StatementIndex: 94
+      Offset: 29
+      RValuePointer: CallFunc_Create_ReturnValue_2
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: Create
+          Parameters: [3]
+            [  0] EX_Self
+              StatementIndex: 124
+            [  1] EX_ObjectConst
+              Value: WBP_UI_LeaderboardEntry_PlayerName_C
+              StatementIndex: 125
+            [  2] EX_LocalVariable
+              Variable: CallFunc_GetOwningPlayer_ReturnValue_2
+              StatementIndex: 134
+          StatementIndex: 115
+      StatementIndex: 93
+  StatementIndex: 83
+[  3] EX_Context
+  ObjectExpression:
+    EX_ObjectConst
+      Value: Default__KismetSystemLibrary
+      StatementIndex: 145
+  Offset: 41
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: SetStructurePropertyByName
+      Parameters: [3]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_Create_ReturnValue_2
+          StatementIndex: 175
+        [  1] EX_NameConst
+          Value: Leaderboard Ranking
+          StatementIndex: 184
+        [  2] EX_LocalVariable
+          Variable: Entry
+          StatementIndex: 197
+      StatementIndex: 166
+  StatementIndex: 144
+[  4] EX_CallMath
+  StackNode: SetNamePropertyByName
+  Parameters: [3]
+    [  0] EX_LocalVariable
+      Variable: CallFunc_Create_ReturnValue_2
+      StatementIndex: 216
+    [  1] EX_NameConst
+      Value: Hero Name Override
+      StatementIndex: 225
+    [  2] EX_StructMemberContext
+      Property: PrimaryAssetName
+      StructExpression:
+        EX_LocalVariable
+          Variable: CallFunc_PrimaryAssetIDFromString_ReturnValue
+          StatementIndex: 247
+      StatementIndex: 238
+  StatementIndex: 207
+[  5] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_AddChildToGrid_ReturnValue_2
+      StatementIndex: 258
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_InstanceVariable
+          Variable: LeaderboardRankings
+          StatementIndex: 268
+      Offset: 33
+      RValuePointer: CallFunc_AddChildToGrid_ReturnValue_2
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: AddChildToGrid
+          Parameters: [3]
+            [  0] EX_LocalVariable
+              Variable: CallFunc_Create_ReturnValue_2
+              StatementIndex: 298
+            [  1] EX_LocalVariable
+              Variable: Index
+              StatementIndex: 307
+            [  2] EX_IntConst
+              Value: 2
+              StatementIndex: 316
+          StatementIndex: 289
+      StatementIndex: 267
+  StatementIndex: 257
+[  6] EX_Let
+  Property: Left
+  Variable:
+    EX_StructMemberContext
+      Property: Left
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin
+          StatementIndex: 340
+      StatementIndex: 331
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 349
+  StatementIndex: 322
+[  7] EX_Let
+  Property: Top
+  Variable:
+    EX_StructMemberContext
+      Property: Top
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin
+          StatementIndex: 372
+      StatementIndex: 363
+  Assignment:
+    EX_FloatConst
+      Value: 6
+      StatementIndex: 381
+  StatementIndex: 354
+[  8] EX_Let
+  Property: Right
+  Variable:
+    EX_StructMemberContext
+      Property: Right
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin
+          StatementIndex: 404
+      StatementIndex: 395
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 413
+  StatementIndex: 386
+[  9] EX_Let
+  Property: Bottom
+  Variable:
+    EX_StructMemberContext
+      Property: Bottom
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin
+          StatementIndex: 436
+      StatementIndex: 427
+  Assignment:
+    EX_FloatConst
+      Value: 6
+      StatementIndex: 445
+  StatementIndex: 418
+[ 10] EX_Context
+  ObjectExpression:
+    EX_LocalVariable
+      Variable: CallFunc_AddChildToGrid_ReturnValue_2
+      StatementIndex: 451
+  Offset: 19
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: SetPadding
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin
+          StatementIndex: 481
+      StatementIndex: 472
+  StatementIndex: 450
+[ 11] EX_Context
+  ObjectExpression:
+    EX_LocalVariable
+      Variable: CallFunc_AddChildToGrid_ReturnValue_2
+      StatementIndex: 492
+  Offset: 12
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: SetVerticalAlignment
+      Parameters: [1]
+        [  0] EX_ByteConst
+          Value: 2
+          StatementIndex: 522
+      StatementIndex: 513
+  StatementIndex: 491
+[ 12] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetOwningPlayer_ReturnValue_1
+      StatementIndex: 526
+  Assignment:
+    EX_VirtualFunction
+      VirtualFunctionName: GetOwningPlayer
+      Parameters: [0]
+      StatementIndex: 535
+  StatementIndex: 525
+[ 13] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Create_ReturnValue_1
+      StatementIndex: 550
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_ObjectConst
+          Value: Default__WidgetBlueprintLibrary
+          StatementIndex: 560
+      Offset: 29
+      RValuePointer: CallFunc_Create_ReturnValue_1
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: Create
+          Parameters: [3]
+            [  0] EX_Self
+              StatementIndex: 590
+            [  1] EX_ObjectConst
+              Value: WBP_UI_LeaderboardEntry_Text_C
+              StatementIndex: 591
+            [  2] EX_LocalVariable
+              Variable: CallFunc_GetOwningPlayer_ReturnValue_1
+              StatementIndex: 600
+          StatementIndex: 581
+      StatementIndex: 559
+  StatementIndex: 549
+[ 14] EX_Let
+  Property: CallFunc_Conv_IntToInt64_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_IntToInt64_ReturnValue
+      StatementIndex: 619
+  Assignment:
+    EX_CallMath
+      StackNode: Conv_IntToInt64
+      Parameters: [1]
+        [  0] EX_StructMemberContext
+          Property: Rank
+          StructExpression:
+            EX_LocalVariable
+              Variable: Entry
+              StatementIndex: 646
+          StatementIndex: 637
+      StatementIndex: 628
+  StatementIndex: 610
+[ 15] EX_Let
+  Property: ArgumentName
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentName
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 674
+      StatementIndex: 665
+  Assignment:
+    EX_StringConst
+      Value: rank
+      StatementIndex: 683
+  StatementIndex: 656
+[ 16] EX_Let
+  Property: ArgumentValueType
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueType
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 707
+      StatementIndex: 698
+  Assignment:
+    EX_ByteConst
+      Value: 0
+      StatementIndex: 716
+  StatementIndex: 689
+[ 17] EX_Let
+  Property: ArgumentValue
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValue
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 736
+      StatementIndex: 727
+  Assignment:
+    EX_TextConst
+      Value: CUE4Parse.UE4.Kismet.FScriptText
+      StatementIndex: 745
+  StatementIndex: 718
+[ 18] EX_Let
+  Property: ArgumentValueInt
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueInt
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 765
+      StatementIndex: 756
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_IntToInt64_ReturnValue
+      StatementIndex: 774
+  StatementIndex: 747
+[ 19] EX_Let
+  Property: ArgumentValueFloat
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueFloat
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 801
+      StatementIndex: 792
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 810
+  StatementIndex: 783
+[ 20] EX_Let
+  Property: ArgumentValueDouble
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueDouble
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 833
+      StatementIndex: 824
+  Assignment:
+    EX_DoubleConst
+      Value: 0
+      StatementIndex: 842
+  StatementIndex: 815
+[ 21] EX_Let
+  Property: ArgumentValueGender
+  Variable:
+    EX_StructMemberContext
+      Property: ArgumentValueGender
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_FormatArgumentData
+          StatementIndex: 869
+      StatementIndex: 860
+  Assignment:
+    EX_ByteConst
+      Value: 0
+      StatementIndex: 878
+  StatementIndex: 851
+[ 22] EX_SetArray
+  AssigningProperty:
+    EX_LocalVariable
+      Variable: K2Node_MakeArray_Array
+      StatementIndex: 881
+  Elements: [1]
+    [  0] EX_LocalVariable
+      Variable: K2Node_MakeStruct_FormatArgumentData
+      StatementIndex: 890
+  StatementIndex: 880
+[ 23] EX_Let
+  Property: CallFunc_Format_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Format_ReturnValue
+      StatementIndex: 909
+  Assignment:
+    EX_CallMath
+      StackNode: Format
+      Parameters: [2]
+        [  0] EX_TextConst
+          Value: CUE4Parse.UE4.Kismet.FScriptText
+          StatementIndex: 927
+        [  1] EX_LocalVariable
+          Variable: K2Node_MakeArray_Array
+          StatementIndex: 975
+      StatementIndex: 918
+  StatementIndex: 900
+[ 24] EX_CallMath
+  StackNode: SetTextPropertyByName
+  Parameters: [3]
+    [  0] EX_LocalVariable
+      Variable: CallFunc_Create_ReturnValue_1
+      StatementIndex: 994
+    [  1] EX_NameConst
+      Value: Text
+      StatementIndex: 1003
+    [  2] EX_LocalVariable
+      Variable: CallFunc_Format_ReturnValue
+      StatementIndex: 1016
+  StatementIndex: 985
+[ 25] EX_CallMath
+  StackNode: SetIntPropertyByName
+  Parameters: [3]
+    [  0] EX_LocalVariable
+      Variable: CallFunc_Create_ReturnValue_1
+      StatementIndex: 1035
+    [  1] EX_NameConst
+      Value: Rank
+      StatementIndex: 1044
+    [  2] EX_StructMemberContext
+      Property: Rank
+      StructExpression:
+        EX_LocalVariable
+          Variable: Entry
+          StatementIndex: 1066
+      StatementIndex: 1057
+  StatementIndex: 1026
+[ 26] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_AddChildToGrid_ReturnValue
+      StatementIndex: 1077
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_InstanceVariable
+          Variable: LeaderboardRankings
+          StatementIndex: 1087
+      Offset: 33
+      RValuePointer: CallFunc_AddChildToGrid_ReturnValue
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: AddChildToGrid
+          Parameters: [3]
+            [  0] EX_LocalVariable
+              Variable: CallFunc_Create_ReturnValue_1
+              StatementIndex: 1117
+            [  1] EX_LocalVariable
+              Variable: Index
+              StatementIndex: 1126
+            [  2] EX_IntConst
+              Value: 0
+              StatementIndex: 1135
+          StatementIndex: 1108
+      StatementIndex: 1086
+  StatementIndex: 1076
+[ 27] EX_Let
+  Property: Left
+  Variable:
+    EX_StructMemberContext
+      Property: Left
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin_2
+          StatementIndex: 1159
+      StatementIndex: 1150
+  Assignment:
+    EX_FloatConst
+      Value: 16
+      StatementIndex: 1168
+  StatementIndex: 1141
+[ 28] EX_Let
+  Property: Top
+  Variable:
+    EX_StructMemberContext
+      Property: Top
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin_2
+          StatementIndex: 1191
+      StatementIndex: 1182
+  Assignment:
+    EX_FloatConst
+      Value: 6
+      StatementIndex: 1200
+  StatementIndex: 1173
+[ 29] EX_Let
+  Property: Right
+  Variable:
+    EX_StructMemberContext
+      Property: Right
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin_2
+          StatementIndex: 1223
+      StatementIndex: 1214
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 1232
+  StatementIndex: 1205
+[ 30] EX_Let
+  Property: Bottom
+  Variable:
+    EX_StructMemberContext
+      Property: Bottom
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin_2
+          StatementIndex: 1255
+      StatementIndex: 1246
+  Assignment:
+    EX_FloatConst
+      Value: 6
+      StatementIndex: 1264
+  StatementIndex: 1237
+[ 31] EX_Context
+  ObjectExpression:
+    EX_LocalVariable
+      Variable: CallFunc_AddChildToGrid_ReturnValue
+      StatementIndex: 1270
+  Offset: 19
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: SetPadding
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin_2
+          StatementIndex: 1300
+      StatementIndex: 1291
+  StatementIndex: 1269
+[ 32] EX_Context
+  ObjectExpression:
+    EX_LocalVariable
+      Variable: CallFunc_AddChildToGrid_ReturnValue
+      StatementIndex: 1311
+  Offset: 12
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: SetVerticalAlignment
+      Parameters: [1]
+        [  0] EX_ByteConst
+          Value: 2
+          StatementIndex: 1341
+      StatementIndex: 1332
+  StatementIndex: 1310
+[ 33] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetOwningPlayer_ReturnValue
+      StatementIndex: 1345
+  Assignment:
+    EX_VirtualFunction
+      VirtualFunctionName: GetOwningPlayer
+      Parameters: [0]
+      StatementIndex: 1354
+  StatementIndex: 1344
+[ 34] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Create_ReturnValue
+      StatementIndex: 1369
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_ObjectConst
+          Value: Default__WidgetBlueprintLibrary
+          StatementIndex: 1379
+      Offset: 29
+      RValuePointer: CallFunc_Create_ReturnValue
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: Create
+          Parameters: [3]
+            [  0] EX_Self
+              StatementIndex: 1409
+            [  1] EX_ObjectConst
+              Value: WBP_UI_LeaderboardEntry_Text_C
+              StatementIndex: 1410
+            [  2] EX_LocalVariable
+              Variable: CallFunc_GetOwningPlayer_ReturnValue
+              StatementIndex: 1419
+          StatementIndex: 1400
+      StatementIndex: 1378
+  StatementIndex: 1368
+[ 35] EX_Let
+  Property: 0
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_FCeil_A_ImplicitCast
+      StatementIndex: 1438
+  Assignment:
+    EX_Cast
+      ConversionType: CST_FloatToDouble
+      Target:
+        EX_StructMemberContext
+          Property: Value
+          StructExpression:
+            EX_LocalVariable
+              Variable: Entry
+              StatementIndex: 1458
+          StatementIndex: 1449
+      StatementIndex: 1447
+  StatementIndex: 1429
+[ 36] EX_Let
+  Property: CallFunc_FCeil_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_FCeil_ReturnValue
+      StatementIndex: 1476
+  Assignment:
+    EX_CallMath
+      StackNode: FCeil
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_FCeil_A_ImplicitCast
+          StatementIndex: 1494
+      StatementIndex: 1485
+  StatementIndex: 1467
+[ 37] EX_Let
+  Property: CallFunc_Conv_IntToText_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_IntToText_ReturnValue
+      StatementIndex: 1513
+  Assignment:
+    EX_CallMath
+      StackNode: Conv_IntToText
+      Parameters: [5]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_FCeil_ReturnValue
+          StatementIndex: 1531
+        [  1] EX_False
+          StatementIndex: 1540
+        [  2] EX_True
+          StatementIndex: 1541
+        [  3] EX_IntConst
+          Value: 1
+          StatementIndex: 1542
+        [  4] EX_IntConst
+          Value: 324
+          StatementIndex: 1547
+      StatementIndex: 1522
+  StatementIndex: 1504
+[ 38] EX_CallMath
+  StackNode: SetTextPropertyByName
+  Parameters: [3]
+    [  0] EX_LocalVariable
+      Variable: CallFunc_Create_ReturnValue
+      StatementIndex: 1562
+    [  1] EX_NameConst
+      Value: Text
+      StatementIndex: 1571
+    [  2] EX_LocalVariable
+      Variable: CallFunc_Conv_IntToText_ReturnValue
+      StatementIndex: 1584
+  StatementIndex: 1553
+[ 39] EX_CallMath
+  StackNode: SetIntPropertyByName
+  Parameters: [3]
+    [  0] EX_LocalVariable
+      Variable: CallFunc_Create_ReturnValue
+      StatementIndex: 1603
+    [  1] EX_NameConst
+      Value: Rank
+      StatementIndex: 1612
+    [  2] EX_StructMemberContext
+      Property: Rank
+      StructExpression:
+        EX_LocalVariable
+          Variable: Entry
+          StatementIndex: 1634
+      StatementIndex: 1625
+  StatementIndex: 1594
+[ 40] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_AddChildToGrid_ReturnValue_1
+      StatementIndex: 1645
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_InstanceVariable
+          Variable: LeaderboardRankings
+          StatementIndex: 1655
+      Offset: 33
+      RValuePointer: CallFunc_AddChildToGrid_ReturnValue_1
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: AddChildToGrid
+          Parameters: [3]
+            [  0] EX_LocalVariable
+              Variable: CallFunc_Create_ReturnValue
+              StatementIndex: 1685
+            [  1] EX_LocalVariable
+              Variable: Index
+              StatementIndex: 1694
+            [  2] EX_IntConst
+              Value: 1
+              StatementIndex: 1703
+          StatementIndex: 1676
+      StatementIndex: 1654
+  StatementIndex: 1644
+[ 41] EX_Let
+  Property: Left
+  Variable:
+    EX_StructMemberContext
+      Property: Left
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin_1
+          StatementIndex: 1727
+      StatementIndex: 1718
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 1736
+  StatementIndex: 1709
+[ 42] EX_Let
+  Property: Top
+  Variable:
+    EX_StructMemberContext
+      Property: Top
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin_1
+          StatementIndex: 1759
+      StatementIndex: 1750
+  Assignment:
+    EX_FloatConst
+      Value: 6
+      StatementIndex: 1768
+  StatementIndex: 1741
+[ 43] EX_Let
+  Property: Right
+  Variable:
+    EX_StructMemberContext
+      Property: Right
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin_1
+          StatementIndex: 1791
+      StatementIndex: 1782
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 1800
+  StatementIndex: 1773
+[ 44] EX_Let
+  Property: Bottom
+  Variable:
+    EX_StructMemberContext
+      Property: Bottom
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin_1
+          StatementIndex: 1823
+      StatementIndex: 1814
+  Assignment:
+    EX_FloatConst
+      Value: 6
+      StatementIndex: 1832
+  StatementIndex: 1805
+[ 45] EX_Context
+  ObjectExpression:
+    EX_LocalVariable
+      Variable: CallFunc_AddChildToGrid_ReturnValue_1
+      StatementIndex: 1838
+  Offset: 19
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: SetPadding
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin_1
+          StatementIndex: 1868
+      StatementIndex: 1859
+  StatementIndex: 1837
+[ 46] EX_Context
+  ObjectExpression:
+    EX_LocalVariable
+      Variable: CallFunc_AddChildToGrid_ReturnValue_1
+      StatementIndex: 1879
+  Offset: 12
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: SetVerticalAlignment
+      Parameters: [1]
+        [  0] EX_ByteConst
+          Value: 2
+          StatementIndex: 1909
+      StatementIndex: 1900
+  StatementIndex: 1878
+[ 47] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 1913
+  StatementIndex: 1912
+[ 48] EX_EndOfScript
+  StatementIndex: 1914

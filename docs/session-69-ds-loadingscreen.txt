@@ -1,0 +1,181 @@
+SESSION 69 — DS ROUTE: loading-screen stall DIAGNOSED + client GameState replicated schema CAPTURED live
+=========================================================================================================
+Date: 2026-07-11 (autonomous, log-driven — no computer-use; screenshots user-gated but the logs told the
+whole story). Continues the DS-route handoff (docs/next-session-prompt-ds-stub.md). Goal: (step 1) diagnose
+exactly what gates the client leaving the SUPERVIVE loading screen after it Joins the stub, and (step 2 start)
+capture the LokiGameState replicated schema needed to schema-inject it.
+
+RESULT: step 1 DONE (stall root-caused) + the essential step-2 artifact (LokiGameState's exact live CPF_Net
+rep layout) captured. No stub code changed yet — the mirror is the next session's focused, now-de-risked build.
+
+CONFIG FIXES THIS SESSION
+-------------------------
+- server/internal/interactive/interactive.go buildTutorialMatchInfo: ConnectionDetails.address flipped from ""
+  (S65/S68 force-open hybrid) back to "127.0.0.1:7777" for the DS route. forceTutorialMatch stays true (auto-arms
+  the match at idle, ~1/min poll -> connect, no START click). CanDisassociate stays true.
+- DOC BUG found + worked around: CLAUDE.md's `go build -C server -o server\ags.exe ./cmd/ags` is WRONG when run
+  by hand from repo root — `-C server` changes cwd to server/, so `-o server\ags.exe` writes to server\SERVER\ags.exe
+  (a stray nested dir) and leaves the real binary stale. The launcher (launch-redirect.ps1:189) is FINE because it
+  passes an ABSOLUTE -o path. For a manual rebuild use `go build -C server -o ags.exe ./cmd/ags` (relative -o =
+  ags.exe inside server/). launch-redirect.ps1 rebuilds ags itself anyway, so a manual build isn't needed for launch.
+
+HOW THE DS RUN WAS DRIVEN (reproducible, autonomous)
+----------------------------------------------------
+1. Start stub FIRST (must be listening before the client arms the match, else the 20s connect timeout bounces to
+   login): UnrealEditor-Cmd Loki.uproject /Engine/Maps/Entry?listen -game -server -Port=7777 -nullrhi -NoSplash
+   -Unattended -abslog=docs\ds-server.log. Poll ds-server.log for "IpNetDriver listening on port 7777" (~30s boot).
+   Stub DLL was already up to date (built 1:24 PM; no source change) — no rebuild needed for a diagnostic run.
+2. launch-redirect.ps1 -NoHook (elevated, RUN IN BACKGROUND — it blocks on the game). It rebuilds ags (picks up the
+   address edit), regens certs, re-appends the CA, sets hosts, launches the client. NOTE: the shipping exe's
+   `& $exe` returns early (Steam relaunch pattern) so the launcher "task" reports done while the GAME keeps running.
+3. Client boots -> menu -> after ~1 min the idle client polls /core-game/players, forceTutorialMatch reports the
+   match, the client fetches MatchInfo (address 127.0.0.1:7777) and connects. Watch ds-server.log + client Loki.log.
+
+THE FULL CONNECT + JOIN CHAIN (S62 reproduced, clean)
+-----------------------------------------------------
+Client Loki.log:
+  LogTravelManager: Attempting to travel to Match: ... Address:"127.0.0.1:7777" ...
+  LogTravelManager: starting client travel, address: 127.0.0.1/Game/Loki/Maps/LVL_Login?...
+  Browse "127.0.0.1/Game/Loki/Maps/LVL_Login?..." + Loaded StatelessConnectHandlerComponent
+  LoadMap: 127.0.0.1/Game/Loki/Maps/Tutorial/LVL_Tutorial?...?game=/Script/Loki.LokiStubGameMode   <- server rewrote
+      travel to LVL_Tutorial (ULokiGameInstance::ModifyClientTravelLevelURL) + LokiStubGameMode
+  Bringing World LVL_Tutorial up for play -> LoadMap complete -> UPendingNetGame::TravelCompleted
+Stub ds-server.log (matching timestamps):
+  LogNet: Login request: ?...Name=<id> userId: NULL:<id> platform: NULL
+  ShouldReplicateActor: SUPPRESSING DefaultPawn_0 (DefaultPawn)
+  ShouldReplicateFunction: SUPPRESSING ClientSetViewTarget on PlayerController_0
+  LokiStubGM: PostLogin: spawned ALokiPlayerState_Missions ... (Missions=0 FinalMissionProgress=0) — replicating.
+  LogNet: Join succeeded: <id>
+  (+ earlier at map-up: SUPPRESSING GameStateBase_0 (GameStateBase), WorldInfo_1 (WorldSettings),
+   GameplayDebuggerCategoryReplicator_0)
+
+>>> THE STALL (root cause) <<<
+------------------------------
+After TravelCompleted into LVL_Tutorial the client does NOTHING game-related and sits on the "DROP IN, GEAR UP…
+LOADING" screen INDEFINITELY (verified stable 9+ minutes; only periodic Vivox/messenger/platform-refresh noise,
+no crash, no timeout). CRITICALLY: there is NO "LogLokiGameState: Entering game state ..." after travel (there IS
+one for the Login map: "Entering game state BP_LoginGameState_C"). The client has NO replicated GameState.
+
+WHY: the stub's LokiNetDriver::IsClassNetCacheDivergent SUPPRESSES AGameStateBase (+ DefaultPawn + WorldSettings)
+to keep the connection alive despite schema divergence. But the GameState is exactly the actor the client needs
+replicated to leave the loading screen — its native match-state check (CurrentPhase / match-ready) never sees a
+valid LokiGameState, so the loading screen never clears. This is the handoff's predicted "fundamental tension".
+
+FIX DIRECTION (unchanged from handoff, now with the exact schema): un-suppress GameState + schema-inject a native
+ALokiGameState mirror (LokiPlayerState_Missions pattern) so the client's replica hydrates with a PLAYING state.
+
+CLASS HIERARCHY (from schema.txt + S65)
+---------------------------------------
+  BP_LokiGameState_Tutorial_C  (Blueprint; the tutorial map's actual GameStateClass, per S65)
+    : LokiGameState        (NATIVE /Script/Loki.LokiGameState — 136 props, 43 replicated)
+      : LokiGameStateBase  (NATIVE /Script/Loki.LokiGameStateBase — 6 props, 0 replicated)
+        : GameStateBase    (stock engine — 4 replicated)
+          : Info : Actor   (Actor has the stub's injected ServerState @ RepIndex 10)
+The tutorial GameState is a BP leaf, but its NATIVE ancestors are in /Script/Loki, so the by-path mirror trick
+(name the stub UCLASS `LokiGameState` -> path /Script/Loki.LokiGameState -> client binds its own class) APPLIES.
+The client's loading-screen/match logic is native (on LokiGameState), NOT the BP leaf, so a replicated native
+ALokiGameState should satisfy it (spectator-in-world first = the milestone). The stub class can derive directly
+from AGameStateBase (LokiGameStateBase adds 0 net props, so RepIndex accumulation is identical either way).
+
+*** THE MONEY ARTIFACT: LokiGameState live CPF_Net rep layout (captured via RPM from the running client) ***
+------------------------------------------------------------------------------------------------------------
+Reproduce: find the UClass addr with tools/re/find_uclass.py <PID> <BASE> <Name> Class, then
+           tools/re/rep_expand_class.py <PID> <BASE> <ClassAddr>  (NB: raise its i<40 field cap — LokiGameState
+           has 136 fields; scratch copy used i<300). BASE = game module base (ASLR; Get-Process MainModule).
+
+GameStateBase own replicated props (4, matches stock UE5.4 — NO PlayerArray in the rep layout):
+  [0] GameModeClass                 ClassProperty
+  [1] SpectatorClass                ClassProperty
+  [2] bReplicatedHasBegunPlay       BoolProperty
+  [3] ReplicatedWorldTimeSecondsDouble DoubleProperty
+LokiGameStateBase own replicated props: 0
+LokiGameState own replicated props (43 props -> 67 RepLayout leaf cmds), in field/RepIndex order:
+   bGetPreventWeaponFire        Bool
+   bGetPreventMovement          Bool
+   SpawnSelectEndTime           Float
+   WinningTeam                  Int
+   WinningPawn                  Object*   (NetGUID)
+   WinStreak                    Int
+   TeamScores                   TArray<Int>
+   TeamScoreToWin               Int
+   TeamStates                   TArray<Object*>   (NetGUID array)
+   bIsSuddenDeath               Bool
+   GameOverWorldTime            Float
+   GameSuddenDeathOverWorldTime Float
+   GameDuration                 Float
+   RoundStartTime               Float
+   ReplicatedNumRemainingPlayers Int
+   MaxPlayersPerTeam            Int
+   GameStartWorldTime           Float
+   DayNightState                Enum   (** need underlying enum bit-width — see REMAINING **)
+   LastDayNightChangeTime       Float
+   TotalDayNightTime            Float
+   EndgamePhase                 Int
+   DeathCirclePhase             Int
+   MatchStartDetails            Struct LokiSharedMatchStartDetails (member-wise, NOT NetSerializeNative):
+       MatchID                  Str
+       TeamIDs                  TArray<Int64>
+       Participants             TArray<SharedMatchStartParticipant>:
+           PlayerID             Str
+           PartyId              Str
+           IsAnonymous          Bool
+           PlayerName           Str
+           AccountLevel         Int
+           TeamID               Int64
+           <PrimaryAssetId>     (recurse PrimaryAssetType{Name:Name} + PrimaryAssetName:Name)  # field A
+           <PrimaryAssetId>     (recurse PrimaryAssetType{Name:Name} + PrimaryAssetName:Name)  # field B
+           KillTotal            Int
+           HypeTotal            Int
+           WinStreak            Int
+           IsBot                Bool
+           IsRanked             Bool
+           TitleIds             TArray<PrimaryAssetId>
+       bShouldForceAnonymizeNonTeamParties Bool
+   bDeathCircleRegenerated      Bool
+   AutomaticRespawnEndPhaseOverride Int
+   AscendingArmorOverrideTier0  Int
+   AscendingArmorOverrideTier1  Int
+   AscendingArmorOverrideTier2  Int
+   AscendingArmorOverrideTier4  Int   (note: no Tier3 in this list)
+   EquipmentUpgradeCostTier0..5 Int  (6 props)
+   AudioPulseMaxDistance        Int
+   AudioPulseCutoffFactorShort  Float
+   AudioPulseCutoffFactorMedium Float
+   AudioPulseCutoffFactorLong   Float
+   NumTeams                     Int
+   LokiDebugTarget              Object*
+   DeathCircle                  Object*
+   CurrentPhase                 Enum   (** likely THE loading-screen gate; need enum bit-width **)
+
+Likely loading-screen gate fields to set to a "playing" value: CurrentPhase (enum), EndgamePhase/DeathCirclePhase,
+RoundStartTime/GameStartWorldTime (real world-time), ReplicatedNumRemainingPlayers, and MatchStartDetails populated
+(MatchID + one Participant = the local player). Exact gate TBD — mirror all 43 (RepLayout must align cmd-for-cmd),
+then bisect which value flips the loading screen.
+
+NEXT SESSION (step 2 implementation — all schema in hand)
+---------------------------------------------------------
+1. Add unreal-stub ALokiGameState : AGameStateBase (UCLASS -> path /Script/Loki.LokiGameState), mirroring the 43
+   replicated props above in EXACT order (member-wise USTRUCTs FLokiSharedMatchStartDetails + FSharedMatchStartParticipant,
+   reuse engine FPrimaryAssetId so it expands to 2 Name cmds like the client). GetLifetimeReplicatedProps lists all 43.
+   Follow the LokiPlayerState_Missions.{h,cpp} pattern exactly (by-path bind, member-wise structs, no custom serializer
+   unless a live desync says otherwise).
+2. LokiStubGameMode: set GameStateClass = ALokiGameState::StaticClass() (currently stock AGameStateBase).
+3. LokiNetDriver::IsClassNetCacheDivergent: remove the AGameStateBase term (un-suppress) — but ONLY once the mirror is
+   the GameStateClass, else a stock-schema GameState bunch desyncs. (WorldSettings + DefaultPawn stay suppressed.)
+4. Boot-dump: add DumpClassNetCacheLayout(ALokiGameState::StaticClass()) in Loki.cpp so the stub log confirms 43 reps
+   at the expected indices before connecting. Rebuild stub (~240s; kill UnrealEditor-Cmd first — LNK1104).
+5. Live: relaunch (stub first, then launch-redirect -NoHook). Read client Loki.log: SUCCESS = "Entering game state"
+   for the tutorial + the loading screen clears (spectator view of the live tutorial world = the milestone). If the
+   client rejects the bunch: "ReceivedBunch: Invalid replicated field N" -> a RepLayout desync at cmd N; the usual
+   suspects are the enum widths (DayNightState/CurrentPhase) and the nested MatchStartDetails element format
+   (mirror-vs-live cmd count, exactly like the S54 missions desync). Iterate with rep_expand_class / field_walk.
+REMAINING LIVE-RE (grab next launch, ~2 min): DayNightState + CurrentPhase underlying enum + max value (bit width),
+and confirm MatchStartDetails leaf order — both via the same find_uclass + rep_expand tooling on the running client.
+
+STATE AT HANDOFF
+----------------
+- ags built with address=127.0.0.1:7777 (DS route). Stub unchanged (S62 state, ModifyClientTravelLevelURL->LVL_Tutorial,
+  seeds off). New reusable tool tools/re/find_uclass.py (find UClass by exact object name -> feed rep_expand_class).
+- At end of session the diagnostic run was STILL LIVE (game pid 27232 on the loading screen, stub pid 74128 listening,
+  ags running) — left running (not killed; per CLAUDE.md don't kill SUPERVIVE without warning). A fresh run is needed
+  for step-2 testing anyway (kill SUPERVIVE + stub first). The connect+Join+stall reproduces every launch.

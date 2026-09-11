@@ -1,0 +1,335 @@
+// ============================================================================
+//  MODULE   UAV.UAVMapActor
+//  SOURCE   UAV/UAVMapActor.as
+//  CONTENT  1 class(es), 10 function(s), 0 enum(s), 1 global(s), 1124 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_AUAVMapActor;
+
+AUAVMapActor@ AUAVMapActor()   // traits=0x20
+{
+    v2 = AUAVMapActor();
+    return v2;
+}
+/* ---- AUAVMapActor: 7 dwords / 4 instructions (cache offset 0xbeb7e) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         85421 AUAVMapActor                          
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ AUAVMapActor::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_AUAVMapActor);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0xbec37) ----
+    0000  PshGPtr       __StaticType_AUAVMapActor                   
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+AUAVMapActor@ AUAVMapActor::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    v2 = __StaticType_AUAVMapActor.Get();
+    v4 = TSubclassOf(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<AUAVMapActor@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0xbee58) ----
+    0000  PshVPtr       Level                                       
+    0004  PshV4         bDeferredSpawn                              
+    0008  PshVPtr       Name                                        
+    000C  PshVPtr       Rotation                                    
+    0010  PshVPtr       Location                                    
+    0014  PshGPtr       __StaticType_AUAVMapActor                   
+    0020  CHKREF                                                    
+    0024  CALLSYS       TSubclassOf::Get                            
+    0030  STOREOBJ      v2                                          
+    0034  PshVPtr       v2                                          
+    0038  PSF           v4                                          
+    003C  CALLSYS       TSubclassOf::$beh0                          
+    0048  PSF           v4                                          
+    004C  CALLSYS       SpawnActor                                  
+    0058  STOREOBJ      v6                                          
+    005C  CmpPtrNull    v6                                          
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972746                                    ; AUAVMapActor@
+    0070  PSF           v8                                          
+    0074  PshVPtr       v6                                          
+    0078  CALLSYS       UObject::opCast                             
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8                                          
+  L0090:
+    0090  LOADOBJ       v8                                          
+    0094  RET           9                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class AUAVMapActor : AActor
+// unreal base : /Script/Engine.Actor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+// static class global: __StaticType_AUAVMapActor
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    int MyItemID;
+
+    AUAVMapActor()   // traits=0x21
+    {
+        return;
+    }
+    /* ---- AUAVMapActor: 5 dwords / 3 instructions (cache offset 0xbfbf9) ----
+        0000  PshVPtr       this                                        
+        0004  FinConstruct  AUAVMapActor                                
+        0010  RET           2                                           
+    */
+
+    void ClientUpdateIcon(const FLokiFuzzyPlayerLocationItem& Item)   // traits=0x20
+    {
+        __Evt_PushArgument__FLokiFuzzyPlayerLocationItem(Item);
+        __Evt_Execute(this, n"ClientUpdateIcon");
+        return;
+    }
+    /* ---- ClientUpdateIcon: 15 dwords / 8 instructions (cache offset 0xbf0a0) ----
+        0000  PshVPtr       Item                                        
+        0004  CALLSYS       __Evt_PushArgument__FLokiFuzzyPlayerLocationItem
+        0010  PshC4         204                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientUpdateIcon, BlueprintEvent, CanOverrideEvent, NoOp)
+    void ClientUpdateIcon_Implementation(const FLokiFuzzyPlayerLocationItem& Item)   // traits=0x20
+    {
+        return;
+    }
+    /* ---- ClientUpdateIcon_Implementation: 1 dwords / 1 instructions (cache offset 0xbf1a9) ----
+        0000  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void Init(const FLokiFuzzyPlayerLocationItem& Item)   // traits=0x20
+    {
+        v2 = true;
+        v1 = v2;
+        v3 = Item.ID;
+        this.MyItemID = v3;
+        v3 = Item.ID;
+        if (v3 < 0) {
+            v2 = false;
+            v1 = v2;
+        }
+        v6 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v6 != nullptr) {
+            v35 = false;
+            v34 = FGameEvent_FuzzyPlayerLocation_Update();
+            v48 = v6.RegisterForEvent(this, v34, typeid(FGameEvent_FuzzyPlayerLocation_Update), nullptr, n"OnUpdate", v35);
+            v35 = false;
+            v74 = FGameEvent_FuzzyPlayerLocation_Remove();
+            v48 = v6.RegisterForEvent(this, v74, typeid(FGameEvent_FuzzyPlayerLocation_Remove), nullptr, n"OnRemove", v35);
+        } else {
+            v2 = false;
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientUpdateIcon(Item);
+            return;
+        } else {
+            this.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+    /* ---- Init: 115 dwords / 65 instructions (cache offset 0xbf2c4) ----
+        0000  SetV1         v2 1                                        
+        0008  CpyVtoV4      v1 v2                                       
+        0010  LoadRObjR     Item 12 67120891                              ; .ID
+        001C  RDR4          v3                                          
+        0020  LoadThisR     912 134230922                                 ; this.MyItemID
+        0028  WRTV4         v3                                          
+        002C  LoadRObjR     Item 12 67120891                              ; .ID
+        0038  RDR4          v3                                          
+        003C  CMPIi         v3 0                                        
+        0044  JNS           4                                             -> L005C
+        004C  SetV1         v2 0                                        
+        0054  CpyVtoV4      v1 v2                                       
+      L005C:
+        005C  PshGPtr       __WorldContext                              
+        0068  CALLSYS       GetGlobalGameEventRouter                    
+        0074  STOREOBJ      v6                                          
+        0078  CmpPtrNull    v6                                          
+        007C  JZ            64                                            -> L0184
+        0084  SetV1         v35 0                                       
+        008C  PshV4         v35                                         
+        0090  PshC4         90                                          
+        0098  CALLSYS       __STATIC_NAME                               
+        00A4  PshRPtr                                                   
+        00A8  PshNull                                                   
+        00AC  TYPEID        67120893                                      ; FGameEvent_FuzzyPlayerLocation_Update
+        00B4  PSF           v34                                         
+        00B8  CALLSYS       FGameEvent_FuzzyPlayerLocation_Update::$beh0
+        00C4  PSF           v34                                         
+        00C8  PshVPtr       this                                        
+        00CC  PSF           v48                                         
+        00D0  PshVPtr       v6                                          
+        00D4  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        00E0  PSF           v34                                         
+        00E4  CALLSYS       FGameEvent_FuzzyPlayerLocation_Update::$beh2
+        00F0  PSF           v48                                         
+        00F4  CALLSYS       FGameEventListenerHandle::$beh2             
+        0100  SetV1         v35 0                                       
+        0108  PshV4         v35                                         
+        010C  PshC4         91                                          
+        0114  CALLSYS       __STATIC_NAME                               
+        0120  PshRPtr                                                   
+        0124  PshNull                                                   
+        0128  TYPEID        67120894                                      ; FGameEvent_FuzzyPlayerLocation_Remove
+        0130  PSF           v74                                         
+        0134  CALLSYS       FGameEvent_FuzzyPlayerLocation_Remove::$beh0
+        0140  PSF           v74                                         
+        0144  PshVPtr       this                                        
+        0148  PSF           v48                                         
+        014C  PshVPtr       v6                                          
+        0150  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        015C  PSF           v74                                         
+        0160  CALLSYS       FGameEvent_FuzzyPlayerLocation_Remove::$beh2
+        016C  PSF           v48                                         
+        0170  CALLSYS       FGameEventListenerHandle::$beh2             
+        017C  JMP           4                                             -> L0194
+      L0184:
+        0184  SetV1         v2 0                                        
+        018C  CpyVtoV4      v1 v2                                       
+      L0194:
+        0194  CpyVtoR1      v1                                          
+        0198  JLowZ         6                                             -> L01B8
+        01A0  PshVPtr       Item                                        
+        01A4  PshVPtr       this                                        
+        01A8  CALLINTF      85416                                         ; AUAVMapActor::ClientUpdateIcon
+        01B0  JMP           4                                             -> L01C8
+      L01B8:
+        01B8  PshVPtr       this                                        
+        01BC  CALLSYS       AActor::DestroyActor                        
+      L01C8:
+        01C8  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnUpdate(const FGameEvent_FuzzyPlayerLocation_Update& Event, const AActor@& Context)   // traits=0x28
+    {
+        v24 = FLokiFuzzyPlayerLocationItem(Event.PlayerLocationItem);
+        v25 = v24.ID;
+        v26 = this.MyItemID;
+        if (v25 != v26) {
+            return;
+        } else {
+            this.SetActorLocation(v24.Location)  /* UFunction K2_SetActorLocation */;
+            this.ClientUpdateIcon(v24);
+        }
+        return;
+    }
+    /* ---- OnUpdate: 40 dwords / 23 instructions (cache offset 0xbf6ec) ----
+        0000  PshVPtr       Event                                       
+        0004  ADDSi         8 67120893                                    ; .PlayerLocationItem
+        000C  PSF           v24                                         
+        0010  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh0         
+        001C  LoadVObjR     v24 12 67120891                               ; .ID
+        0028  RDR4          v25                                         
+        002C  LoadThisR     912 134230922                                 ; this.MyItemID
+        0034  RDR4          v26                                         
+        0038  CMPi          v25 v26                                     
+        0040  JZ            6                                             -> L0060
+        0048  PSF           v24                                         
+        004C  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh2         
+        0058  JMP           15                                            -> L009C
+      L0060:
+        0060  PSF           v24                                         
+        0064  ADDSi         24 67120891                                   ; .Location
+        006C  PshVPtr       this                                        
+        0070  CALLSYS       AActor::SetActorLocation                    
+        007C  PSF           v24                                         
+        0080  PshVPtr       this                                        
+        0084  CALLINTF      85416                                         ; AUAVMapActor::ClientUpdateIcon
+        008C  PSF           v24                                         
+        0090  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh2         
+      L009C:
+        009C  RET           6                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnRemove(const FGameEvent_FuzzyPlayerLocation_Remove& Event, const AActor@& Context)   // traits=0x28
+    {
+        v24 = FLokiFuzzyPlayerLocationItem(Event.PlayerLocationItem);
+        v25 = v24.ID;
+        v26 = this.MyItemID;
+        if (v25 != v26) {
+            return;
+        } else {
+            this.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+    /* ---- OnRemove: 33 dwords / 18 instructions (cache offset 0xbf938) ----
+        0000  PshVPtr       Event                                       
+        0004  ADDSi         8 67120894                                    ; .PlayerLocationItem
+        000C  PSF           v24                                         
+        0010  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh0         
+        001C  LoadVObjR     v24 12 67120891                               ; .ID
+        0028  RDR4          v25                                         
+        002C  LoadThisR     912 134230922                                 ; this.MyItemID
+        0034  RDR4          v26                                         
+        0038  CMPi          v25 v26                                     
+        0040  JZ            6                                             -> L0060
+        0048  PSF           v24                                         
+        004C  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh2         
+        0058  JMP           8                                             -> L0080
+      L0060:
+        0060  PshVPtr       this                                        
+        0064  CALLSYS       AActor::DestroyActor                        
+        0070  PSF           v24                                         
+        0074  CALLSYS       FLokiFuzzyPlayerLocationItem::$beh2         
+      L0080:
+        0080  RET           6                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = false;
+        this.SetbReplicates(v1);
+        v1 = false;
+        this.PrimaryActorTick.SetbStartWithTickEnabled(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 17 dwords / 10 instructions (cache offset 0xbfb00) ----
+        0000  SetV1         v1 0                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       AActor::SetbReplicates                      
+        001C  SetV1         v1 0                                        
+        0024  PshV4         v1                                          
+        0028  PshVPtr       this                                        
+        002C  ADDSi         56 67111343                                   ; .PrimaryActorTick
+        0034  CALLSYS       FActorTickFunction::SetbStartWithTickEnabled
+        0040  RET           2                                           
+    */
+
+}
+

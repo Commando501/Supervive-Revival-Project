@@ -1,0 +1,82 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[S148] RM_BOTFIGHT isolated self-damage calibration: require the unique local possessed hero's existing live ASC; no wiring, bot, team, grant, activation, or legacy damage arm.
+[BF] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF68F4A54A0 stub=0x249936B2B60 funcCls=0x248085EB000 gameTid=12900
+[S148] ===== isolated self-owned ASC damage calibration =====
+[S148] policy KBFARMS=0 seedBits=447A0000/447A0000 delta=-250 expectedCurrent=443B8000 laterMin=250ms laterTimeoutGrace=5000ms
+[S148] owner-census class-chain mode=CLASSIFY_ONLY directChecks=5
+[S155] ===== bind-avatar preflight (KBFBINDAVATAR=1) =====
+[FS] arm: swapped=17563 BP UFunctions  (scan 3687 ms over 161662 objects, 34253 UFunctions total) -- NO .text WRITE
+[S155] BIND_AVATAR result=ok pc=0x24983603B20 hero=0x2499E312AE0 ps=0x24979C8DDE0 asc=0x24847ED3400 carrier=0x2498A4564E0 owner=0x2498A4564E0
+[S155] AvatarActor@0x410 pre=0x0 post=0x2499E312AE0 avatarBound=1
+[S155] proceed=yes preflight_reached=1 handing off to S148 PREFLIGHT
+[S156] ===== max-health seed preflight (KBFSEEDMAXHEALTH=1) =====
+[S148] local-owner candidate[0] GI=0x24901E43740 LocalPlayers[0]=0x24854D40E00 PC=0x24983603B20
+[S148] active owner GI=0x24901E43740 class=0x24905F3E470 LocalPlayers@0x40 Data=0x24902920820 Num=1 Max=4 memberIndex=0 membership=1 scanComplete=1
+[S148] owner LocalPlayer=0x24854D40E00 class=0x24814792680 PC@0x38 candidates=1 PC=0x24983603B20 class=0x24979786A60 Player@0x458 Pawn@0x3F8 hero=0x2499E312AE0 class=0x2499066CCD0 Controller@0x400 ASCStorage@0xF00 ASC=0x24847ED3400 class=0x24815540100 AvatarActor@0x410=0x2499E312AE0 avatarBound=1 ascOwned=1
+[S148] world identity PCLevel=0x24A0624C800 HeroLevel=0x24A0624C800 LevelClass=0x2481149AB00 OwningWorld@0xC8 World=0x248C0C875E0 class=0x24811406F00 OwningGameInstance@0x2D0 valid=1
+[S148] SpawnedAttributes@0x168 prop=0x24851721A00 inner=0x24851721980 expectedOwner=AbilitySystemComponent type=ArrayProperty innerType=ObjectProperty<AttributeSet> provenance=1 memberTypes=1 Data=0x24985F00200 Num=2 Max=4 healthCandidates=1 candidateIndex=1
+[S148] registration scan complete=1 count=1 selectedAscOwns=1 censusClosure=1 set=0x249B2AC38E0 ASC=0x24847ED3400
+[S148] target set=0x249B2AC38E0 class=0x2481554DD00 Health@0x70 MaxHealth@0x80 HealthOwner=LokiAttributeSetHealth MaxOwner=LokiAttributeSetHealth HealthStruct=GameplayAttributeData MaxStruct=GameplayAttributeData expected=GameplayAttributeData HealthStructPtr=0x2480F9CA190 MaxHealthStructPtr=0x2480F9CA190 structPayload=1 superPropertiesSize=56 setPropertiesSize=280 layoutValid=1 HealthBits=00000000/00000000 MaxBits=00000000/00000000 CDO=0(certain=1) CDOOuter=0(chainValid=1) writable=1 issues=0x200
+[S148] local-owner candidate[0] GI=0x24901E43740 LocalPlayers[0]=0x24854D40E00 PC=0x24983603B20
+[S148] active owner GI=0x24901E43740 class=0x24905F3E470 LocalPlayers@0x40 Data=0x24902920820 Num=1 Max=4 memberIndex=0 membership=1 scanComplete=1
+[S148] owner LocalPlayer=0x24854D40E00 class=0x24814792680 PC@0x38 candidates=1 PC=0x24983603B20 class=0x24979786A60 Player@0x458 Pawn@0x3F8 hero=0x2499E312AE0 class=0x2499066CCD0 Controller@0x400 ASCStorage@0xF00 ASC=0x24847ED3400 class=0x24815540100 AvatarActor@0x410=0x2499E312AE0 avatarBound=1 ascOwned=1
+[S148] world identity PCLevel=0x24A0624C800 HeroLevel=0x24A0624C800 LevelClass=0x2481149AB00 OwningWorld@0xC8 World=0x248C0C875E0 class=0x24811406F00 OwningGameInstance@0x2D0 valid=1
+[S148] SpawnedAttributes@0x168 prop=0x24851721A00 inner=0x24851721980 expectedOwner=AbilitySystemComponent type=ArrayProperty innerType=ObjectProperty<AttributeSet> provenance=1 memberTypes=1 Data=0x24985F00200 Num=2 Max=4 healthCandidates=1 candidateIndex=1
+[S148] registration scan complete=1 count=1 selectedAscOwns=1 censusClosure=1 set=0x249B2AC38E0 ASC=0x24847ED3400
+[S148] target set=0x249B2AC38E0 class=0x2481554DD00 Health@0x70 MaxHealth@0x80 HealthOwner=LokiAttributeSetHealth MaxOwner=LokiAttributeSetHealth HealthStruct=GameplayAttributeData MaxStruct=GameplayAttributeData expected=GameplayAttributeData HealthStructPtr=0x2480F9CA190 MaxHealthStructPtr=0x2480F9CA190 structPayload=1 superPropertiesSize=56 setPropertiesSize=280 layoutValid=1 HealthBits=00000000/00000000 MaxBits=447A0000/447A0000 CDO=0(certain=1) CDOOuter=0(chainValid=1) writable=1 issues=0x0
+[S156] MAX_HEALTH_SEEDED result=ok pair=0x249B2AC3968 maxPre=00000000/00000000 maxPost=447A0000/447A0000 structPayload=1 layoutValid=1 writable=1 preIssues=0x200 postIssues=0x0 exact=yes
+[S156] proceed=yes handing off to S148 PREFLIGHT with MaxHealth=1000/1000
+[S148] local-owner candidate[0] GI=0x24901E43740 LocalPlayers[0]=0x24854D40E00 PC=0x24983603B20
+[S148] active owner GI=0x24901E43740 class=0x24905F3E470 LocalPlayers@0x40 Data=0x24902920820 Num=1 Max=4 memberIndex=0 membership=1 scanComplete=1
+[S148] owner LocalPlayer=0x24854D40E00 class=0x24814792680 PC@0x38 candidates=1 PC=0x24983603B20 class=0x24979786A60 Player@0x458 Pawn@0x3F8 hero=0x2499E312AE0 class=0x2499066CCD0 Controller@0x400 ASCStorage@0xF00 ASC=0x24847ED3400 class=0x24815540100 AvatarActor@0x410=0x2499E312AE0 avatarBound=1 ascOwned=1
+[S148] world identity PCLevel=0x24A0624C800 HeroLevel=0x24A0624C800 LevelClass=0x2481149AB00 OwningWorld@0xC8 World=0x248C0C875E0 class=0x24811406F00 OwningGameInstance@0x2D0 valid=1
+[S148] SpawnedAttributes@0x168 prop=0x24851721A00 inner=0x24851721980 expectedOwner=AbilitySystemComponent type=ArrayProperty innerType=ObjectProperty<AttributeSet> provenance=1 memberTypes=1 Data=0x24985F00200 Num=2 Max=4 healthCandidates=1 candidateIndex=1
+[S148] registration scan complete=1 count=1 selectedAscOwns=1 censusClosure=1 set=0x249B2AC38E0 ASC=0x24847ED3400
+[S148] target set=0x249B2AC38E0 class=0x2481554DD00 Health@0x70 MaxHealth@0x80 HealthOwner=LokiAttributeSetHealth MaxOwner=LokiAttributeSetHealth HealthStruct=GameplayAttributeData MaxStruct=GameplayAttributeData expected=GameplayAttributeData HealthStructPtr=0x2480F9CA190 MaxHealthStructPtr=0x2480F9CA190 structPayload=1 superPropertiesSize=56 setPropertiesSize=280 layoutValid=1 HealthBits=00000000/00000000 MaxBits=447A0000/447A0000 CDO=0(certain=1) CDOOuter=0(chainValid=1) writable=1 issues=0x0
+[S148] AdjustHealth native resolve ufunc=0x2480FC96E40 flags=0x04020401 thunk=0x7FF6933F4270 class=0x248085EB000 functionClassExact=yes owner=0x24815540100 ownerExact=yes thunkExact=yes child=0x24853695E80 declaredChild=0x24853695E80 PropertiesSize=4 parmCount=1 chainComplete=yes HealthDeltaProp=0x24853695E80 off=0x0 size=4 arrayDim=1 propFlags=0x0018001040000280 resolved=yes
+[S148] local-owner candidate[0] GI=0x24901E43740 LocalPlayers[0]=0x24854D40E00 PC=0x24983603B20
+[S148] active owner GI=0x24901E43740 class=0x24905F3E470 LocalPlayers@0x40 Data=0x24902920820 Num=1 Max=4 memberIndex=0 membership=1 scanComplete=1
+[S148] owner LocalPlayer=0x24854D40E00 class=0x24814792680 PC@0x38 candidates=1 PC=0x24983603B20 class=0x24979786A60 Player@0x458 Pawn@0x3F8 hero=0x2499E312AE0 class=0x2499066CCD0 Controller@0x400 ASCStorage@0xF00 ASC=0x24847ED3400 class=0x24815540100 AvatarActor@0x410=0x2499E312AE0 avatarBound=1 ascOwned=1
+[S148] world identity PCLevel=0x24A0624C800 HeroLevel=0x24A0624C800 LevelClass=0x2481149AB00 OwningWorld@0xC8 World=0x248C0C875E0 class=0x24811406F00 OwningGameInstance@0x2D0 valid=1
+[S148] SpawnedAttributes@0x168 prop=0x24851721A00 inner=0x24851721980 expectedOwner=AbilitySystemComponent type=ArrayProperty innerType=ObjectProperty<AttributeSet> provenance=1 memberTypes=1 Data=0x24985F00200 Num=2 Max=4 healthCandidates=1 candidateIndex=1
+[S148] registration scan complete=1 count=1 selectedAscOwns=1 censusClosure=1 set=0x249B2AC38E0 ASC=0x24847ED3400
+[S148] target set=0x249B2AC38E0 class=0x2481554DD00 Health@0x70 MaxHealth@0x80 HealthOwner=LokiAttributeSetHealth MaxOwner=LokiAttributeSetHealth HealthStruct=GameplayAttributeData MaxStruct=GameplayAttributeData expected=GameplayAttributeData HealthStructPtr=0x2480F9CA190 MaxHealthStructPtr=0x2480F9CA190 structPayload=1 superPropertiesSize=56 setPropertiesSize=280 layoutValid=1 HealthBits=00000000/00000000 MaxBits=447A0000/447A0000 CDO=0(certain=1) CDOOuter=0(chainValid=1) writable=1 issues=0x0
+[S148] PRESEED_REVALIDATION issues=0x0 identityStable=yes censusClosure=1 structPayload=1
+[S148] local-owner candidate[0] GI=0x24901E43740 LocalPlayers[0]=0x24854D40E00 PC=0x24983603B20
+[S148] active owner GI=0x24901E43740 class=0x24905F3E470 LocalPlayers@0x40 Data=0x24902920820 Num=1 Max=4 memberIndex=0 membership=1 scanComplete=1
+[S148] owner LocalPlayer=0x24854D40E00 class=0x24814792680 PC@0x38 candidates=1 PC=0x24983603B20 class=0x24979786A60 Player@0x458 Pawn@0x3F8 hero=0x2499E312AE0 class=0x2499066CCD0 Controller@0x400 ASCStorage@0xF00 ASC=0x24847ED3400 class=0x24815540100 AvatarActor@0x410=0x2499E312AE0 avatarBound=1 ascOwned=1
+[S148] world identity PCLevel=0x24A0624C800 HeroLevel=0x24A0624C800 LevelClass=0x2481149AB00 OwningWorld@0xC8 World=0x248C0C875E0 class=0x24811406F00 OwningGameInstance@0x2D0 valid=1
+[S148] SpawnedAttributes@0x168 prop=0x24851721A00 inner=0x24851721980 expectedOwner=AbilitySystemComponent type=ArrayProperty innerType=ObjectProperty<AttributeSet> provenance=1 memberTypes=1 Data=0x24985F00200 Num=2 Max=4 healthCandidates=1 candidateIndex=1
+[S148] registration scan complete=1 count=1 selectedAscOwns=1 censusClosure=1 set=0x249B2AC38E0 ASC=0x24847ED3400
+[S148] target set=0x249B2AC38E0 class=0x2481554DD00 Health@0x70 MaxHealth@0x80 HealthOwner=LokiAttributeSetHealth MaxOwner=LokiAttributeSetHealth HealthStruct=GameplayAttributeData MaxStruct=GameplayAttributeData expected=GameplayAttributeData HealthStructPtr=0x2480F9CA190 MaxHealthStructPtr=0x2480F9CA190 structPayload=1 superPropertiesSize=56 setPropertiesSize=280 layoutValid=1 HealthBits=447A0000/447A0000 MaxBits=447A0000/447A0000 CDO=0(certain=1) CDOOuter=0(chainValid=1) writable=1 issues=0x0
+[S148] seed originalBits=00000000/00000000 readbackBits=447A0000/447A0000 faulted=no identityStable=yes exact=yes
+[S148] CALL_ISSUED AdjustHealth HealthDeltaBits=C37A0000 callCount=1
+[S189] POSTSHOTS_ARMED planned=1 adjustFn=0x000002480FC96E40 adjustThunk=0x00007FF6933F4270 adjustChild=0x0000024853695E80 deltaOff=0
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[S148] local-owner candidate[0] GI=0x24901E43740 LocalPlayers[0]=0x24854D40E00 PC=0x24983603B20
+[S148] active owner GI=0x24901E43740 class=0x24905F3E470 LocalPlayers@0x40 Data=0x24902920820 Num=1 Max=4 memberIndex=0 membership=1 scanComplete=1
+[S148] owner LocalPlayer=0x24854D40E00 class=0x24814792680 PC@0x38 candidates=1 PC=0x24983603B20 class=0x24979786A60 Player@0x458 Pawn@0x3F8 hero=0x2499E312AE0 class=0x2499066CCD0 Controller@0x400 ASCStorage@0xF00 ASC=0x24847ED3400 class=0x24815540100 AvatarActor@0x410=0x2499E312AE0 avatarBound=1 ascOwned=1
+[S148] world identity PCLevel=0x24A0624C800 HeroLevel=0x24A0624C800 LevelClass=0x2481149AB00 OwningWorld@0xC8 World=0x248C0C875E0 class=0x24811406F00 OwningGameInstance@0x2D0 valid=1
+[S148] SpawnedAttributes@0x168 prop=0x24851721A00 inner=0x24851721980 expectedOwner=AbilitySystemComponent type=ArrayProperty innerType=ObjectProperty<AttributeSet> provenance=1 memberTypes=1 Data=0x24985F00200 Num=2 Max=4 healthCandidates=1 candidateIndex=1
+[S148] registration scan complete=1 count=1 selectedAscOwns=1 censusClosure=1 set=0x249B2AC38E0 ASC=0x24847ED3400
+[S148] target set=0x249B2AC38E0 class=0x2481554DD00 Health@0x70 MaxHealth@0x80 HealthOwner=LokiAttributeSetHealth MaxOwner=LokiAttributeSetHealth HealthStruct=GameplayAttributeData MaxStruct=GameplayAttributeData expected=GameplayAttributeData HealthStructPtr=0x2480F9CA190 MaxHealthStructPtr=0x2480F9CA190 structPayload=1 superPropertiesSize=56 setPropertiesSize=280 layoutValid=1 HealthBits=443B8000/443B8000 MaxBits=447A0000/447A0000 CDO=0(certain=1) CDOOuter=0(chainValid=1) writable=1 issues=0x0
+[S148] immediate return issues=0x0 identityStable=yes HealthBits=443B8000/443B8000 receipt=yes; returning to game until notBefore=503211796 timeout=503216796
+[S148] CALL_IN_FLIGHT_WAIT observedPhase=CALL_ISSUED elapsed=120000ms; hold cap reached, disarm deferred fail-stop until callback publication
+[S148] local-owner candidate[0] GI=0x24901E43740 LocalPlayers[0]=0x24854D40E00 PC=0x24983603B20
+[S148] active owner GI=0x24901E43740 class=0x24905F3E470 LocalPlayers@0x40 Data=0x24902920820 Num=1 Max=4 memberIndex=0 membership=1 scanComplete=1
+[S148] owner LocalPlayer=0x24854D40E00 class=0x24814792680 PC@0x38 candidates=1 PC=0x24983603B20 class=0x24979786A60 Player@0x458 Pawn@0x3F8 hero=0x2499E312AE0 class=0x2499066CCD0 Controller@0x400 ASCStorage@0xF00 ASC=0x24847ED3400 class=0x24815540100 AvatarActor@0x410=0x2499E312AE0 avatarBound=1 ascOwned=1
+[S148] world identity PCLevel=0x24A0624C800 HeroLevel=0x24A0624C800 LevelClass=0x2481149AB00 OwningWorld@0xC8 World=0x248C0C875E0 class=0x24811406F00 OwningGameInstance@0x2D0 valid=1
+[S148] SpawnedAttributes@0x168 prop=0x24851721A00 inner=0x24851721980 expectedOwner=AbilitySystemComponent type=ArrayProperty innerType=ObjectProperty<AttributeSet> provenance=1 memberTypes=1 Data=0x24985F00200 Num=2 Max=4 healthCandidates=1 candidateIndex=1
+[S148] registration scan complete=1 count=1 selectedAscOwns=1 censusClosure=1 set=0x249B2AC38E0 ASC=0x24847ED3400
+[S148] target set=0x249B2AC38E0 class=0x2481554DD00 Health@0x70 MaxHealth@0x80 HealthOwner=LokiAttributeSetHealth MaxOwner=LokiAttributeSetHealth HealthStruct=GameplayAttributeData MaxStruct=GameplayAttributeData expected=GameplayAttributeData HealthStructPtr=0x2480F9CA190 MaxHealthStructPtr=0x2480F9CA190 structPayload=1 superPropertiesSize=56 setPropertiesSize=280 layoutValid=1 HealthBits=443B8000/443B8000 MaxBits=447A0000/447A0000 CDO=0(certain=1) CDOOuter=0(chainValid=1) writable=1 issues=0x0
+[S148] RESULT=SELF_DAMAGE_CALIBRATED originalBits=00000000/00000000 seedBits=447A0000/447A0000 immediateBits=443B8000/443B8000 laterBits=443B8000/443B8000 elapsed=266ms callCount=1
+[S189] SHOT_2 PRECHECK preBits=443B8000/443B8000 preHP=750.00 floorBits=43960000 continuityOK=yes
+[S189] SHOT_2 CALL_ISSUED deltaBits=42C80000 deltaHP=100.00 callCount=2
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[S189] SHOT_2 POST postBits=44548000/44548000 postHP=850.00 observedDeltaHP=+100.00 arithmeticOK=yes rvalBits=00000000 identityStable=yes issues=0x0
+[S189] POSTSHOTS_COMPLETE fired=1 requested=1 aborted=no reason=none finalBits=44548000/44548000 finalHP=850.00
+[S148] funcswap drain complete; no admitted FsThunk body/OnPI overlaps restoration; new/prefetched roots parked at gate
+[FS] disarm: restored=17563 of 17563 swapped (scan 3016 ms, 34253 UFunctions live)
+[BF] worker done (hits=104 hitsGT=104)

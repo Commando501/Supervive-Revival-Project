@@ -1,0 +1,196 @@
+SESSION 62 — /core-game/players match shape: ROOT-CAUSED the "no travel" via the usmap
+=======================================================================================
+Date: 2026-07-11. Continues S61 (native solo-start walls all down; client fires the real
+POST /startSoloMode then rapid-polls GET /core-game/players and WAITS — but the served
+"InProgress @127.0.0.1:7777" match did NOT trigger travel). This session was STATIC +
+backend (game was down / launch is UAC-gated / computer-use denied on the game window), so
+no live re-test yet — but it root-causes S61's silent no-travel from ground truth and ships
+the corrected backend. One live pass should now either travel or reveal the exact next route.
+
+STATE AT START
+--------------
+- Game NOT running (exited from S61's stuck poll). ags PID 93656 (S61 build) + Steam up.
+- Live launch/click is user-gated, so this session did the offline RE + code; the live sweep
+  is the first thing for the next session (recipe at the bottom).
+
+★★★ ROOT CAUSE (usmap ground truth, decisive) ★★★
+--------------------------------------------------
+The pre-S62 handleCoreGamePlayer returned an INVENTED shape (MatchParticipant + nested
+MatchInfo with Address/Port/State/GameMap + ContentService* + legacy hasActiveMatch). The
+schema.txt usmap dump shows the REAL model is only 4 fields:
+
+    CoreGamePlayer : (4 props)
+        ID               StrProperty
+        MatchID          StrProperty     <-- the signal: non-empty == "you have a match"
+        Version          Int64Property
+        CanDisassociate  BoolProperty
+
+So at the TOP LEVEL of our response, the ONLY field that matched was CanDisassociate(=false).
+MatchID was ABSENT -> the client parsed MatchID="" -> "no active match" -> it just kept
+polling forever. That is EXACTLY the S61 symptom (response parses clean, zero LogJson errors,
+no travel, no NetConnection). The S53 "binary scan" CoreGamePlayer model (MatchParticipant/
+ContentServicePrimaryAsset/CanDisassociate) was WRONG — those are fields of OTHER structs, not
+CoreGamePlayer. usmap is authoritative for struct field layout; trust it here.
+
+Capture.log proof (this capture IS the S61 session — ags PID/time match): after the single
+POST /startSoloMode the client hammered GET /core-game/players 11721x and NEVER hit any match-
+details route. It never escalates because MatchID stayed empty. Populate MatchID and it will.
+
+THE FULL MODEL CHAIN (from schema.txt / mappings.usmap — all ground truth)
+--------------------------------------------------------------------------
+- ECoreGameMatchState (10): PreHeroSelect0 HeroSelect1 Preallocate2 Allocating3 AwaitingReady4
+  InProgress5 Deallocating6 Closing7 Unknown8 MAX9.
+- CoreGamePlayer {ID, MatchID, Version, CanDisassociate}  <-- GET /core-game/players/{id}
+- CoreGameMatchModel : UClass:Object  (the client's live model)
+    bIsValid, MatchState(enum), SelfModel(CoreGameParticipantModel), TeamMembers, TeamSize,
+    ChampionTeamDetails, MatchInfo(struct MatchInfo), LastUpdated, + OnUpdated* delegates.
+- CoreGameManager : PlatformManager
+    OnPlayerUpdated OnMatchInfoUpdated OnMatchStarted OnMatchCompleted, CoreGameService,
+    CoreGameMatchModel, HeroSelectModel, ValidRegions(RegionHostList), ...
+- MatchInfo : (19 props)
+    ID, Version(int64), Created(DateTime), GameConfig(CoreGameMatchGameConfig), State(str),
+    StateEnum(enum<str>), GameVersion, PlayerInfo(MatchParticipant), QueueID, Region,
+    ConnectionDetails(CoreGameServerInfo), TeamInfo, HeroSelect*Seconds(4 floats),
+    ChampionTeamDetails, OwnerID, CustomGameDetails.
+- CoreGameMatchGameConfig : MapName, GameMode, ServerCulture, CanAlwaysDisassociate,
+    MaxHeroDuplicates, RequiresDropLeader, BotConfig, Extra, MaxTeamSize, CVars(Map),
+    RandomSeed, SoloModeStartLocation(int).   <-- solo-start position lives here
+- CoreGameServerInfo (=ConnectionDetails) : address, ServerID, MachineID, RegionID, FleetID,
+    RoutingToken.   <-- for a LOCAL solo tutorial: EMPTY address (no DS)
+- MatchParticipant : (17) ID, TeamID, PartyId, PickOrder, DisplayName, Tag, HeroAssetID(PAID),
+    CosmeticsAssetID, LuxeSkinChromaAssetID, OwnedCosmeticsFeatures, LockedIn, IsDropLeader,
+    PersonalizationLoadout, IsRanked, Rank, AccountLevel, Mastery.
+- ALSO NOTABLE: MatchStartWrapper : UClass:Object {MatchDetails(CoreGameMatchDetails),
+    AttempLogin(bool)} and CoreGameMatchDetails (16: ID QueueID State StateEnum Participants
+    GameVersion GameConfig ServerInfo ContentManifest HeroSelectStartTime MatchStartTime
+    ProgressionEnabled SpectatorConnectionSecret OwnerID NexonGameSecurity*). The match-details
+    fetch MIGHT return one of these instead of MatchInfo — if the MatchInfo probe trips a
+    deserialize error, try MatchStartWrapper/CoreGameMatchDetails shape (AttempLogin=true is
+    likely the "travel now" flag).
+
+WHAT S62 SHIPPED (server/internal/interactive/, builds + vet clean; NOT yet live-tested)
+----------------------------------------------------------------------------------------
+1. handleCoreGamePlayer -> the REAL CoreGamePlayer {ID, MatchID, Version, CanDisassociate}.
+   Idle => MatchID:"" Version:0. When a solo-start is armed (playerState.SoloMode != "",
+   set by POST /startSoloMode) => MatchID:"match-<id>" Version:1. This is the decisive fix.
+   Knobs: const forceTutorialMatch(=false) to force-arm out of flow; const tutorialMatchState
+   (="InProgress") is the STATE SWEEP knob for the match route.
+2. NEW route GET /core-game/matches/{matchId} -> handleCoreGameMatch -> buildTutorialMatchInfo:
+   usmap MatchInfo for a LOCAL tutorial. KEY: ConnectionDetails.address = "" (empty => local
+   map load, not a DS NetConnection — S61 made ZERO NetConnection attempts, favoring local).
+   GameConfig.MapName = "/Game/Loki/Maps/Tutorial/LVL_Tutorial", GameMode "tutorialNew",
+   SoloModeStartLocation 0; State/StateEnum = tutorialMatchState. Route path is a BEST GUESS —
+   if the client uses a different route it falls to the {} catch-all and shows in capture.log.
+3. playerState.SoloMode is now TRANSIENT (json:"-"): never persisted. Rationale: the corrected
+   CoreGamePlayer actually drives client action, so persisting SoloMode would report a phantom
+   match at every FRESH boot (login/menu) and risk an auto-rejoin/travel loop into the still-
+   unproven tutorial session gate. In-memory => clean idle boot; armed only by live startSoloMode.
+   (Also auto-drops the stale S61 "soloMode":"tutorialNew" from state/interactive.json on next save.)
+Docs updated: docs/endpoints.md core-game rows; this file. Memory: supervive-tutorial-launch-status.
+
+NEXT SESSION (LIVE — the first thing to do; needs user to launch + click START)
+-------------------------------------------------------------------------------
+The corrected shape is the single-variable probe. Because SoloMode is now transient, the match
+is armed ONLY by a live START click (which is also when gate-2 must be poked). Recipe:
+1. Kill stale game (Stop-Process -Name SUPERVIVE-Win64-Shipping -Force). Steam first.
+2. Rebuild+restart ags is already done this session (server\ags.exe is the S62 build). If ags
+   isn't the S62 build: `& "$env:ProgramFiles\Go\bin\go.exe" build -C server -o server\ags.exe
+   ./cmd/ags` then restart it (reuses certs, no cacert re-append).
+3. .\configs\launch-redirect.ps1  (DEFAULT — need the full menu + roster; NOT -NoHook). Wait for
+   WBP_UI_MainMenu_MenuRootV2 in Loki.log.
+4. Poke GATE 2 (per-launch): find live PartyModel (scratchpad/pm_flags.py), poke
+   PartyModel+0x558+0x18 = {Data=<addr of a live L"default" wide string>, Num=8, Max=8}
+   (usmapdump wstrings ... "default" for the addr; usmapdump poke works on the heap PartyModel).
+5. Ask the USER to select a hunter, then Practice/Tutorials -> Basic Training -> START.
+   (Computer-use on the game window is DENIED — you cannot click it.)
+6. WATCH: docs/capture.log for POST /startSoloMode then a burst of GET /core-game/players, then
+   WHAT ROUTE THE CLIENT HITS NEXT (does it request /core-game/matches/match-<id>? or another
+   path?). Loki.log for "Browse"/"LoadMap"/"Bringing World LVL_Tutorial" (local travel) or
+   LogNet/NetConnection (server connect).
+   OUTCOMES:
+   (a) Client fetches /core-game/matches/match-<id> and travels -> WIN (tutorial loads via menu
+       route WITH a session -> should create the PlayerState, clearing the S61 gate). Verify hero
+       drop-in.
+   (b) Client fetches a DIFFERENT match route (seen in capture.log) -> re-point handleCoreGameMatch
+       (or add that route), rebuild ags, hot-swap. Client is still polling, picks it up.
+   (c) Client escalates but the MatchInfo shape errors (Loki.log "Deserialization failure" names
+       the field) -> fix that field; consider MatchStartWrapper/CoreGameMatchDetails shape.
+   (d) Client STILL doesn't escalate even with a non-empty MatchID -> the match isn't fetched via
+       HTTP; check the /startSoloMode RESPONSE body (make it a MatchStartWrapper) or a WS push.
+7. STATE SWEEP: if it escalates+fetches but won't travel, flip const tutorialMatchState
+   (InProgress -> HeroSelect -> AwaitingReady -> ...), rebuild ags, hot-swap (no re-click while the
+   same session polls). Fast loop.
+
+DURABLE FOLLOW-UPS (unchanged from S61)
+---------------------------------------
+- Gate-2 poke is per-launch. Durable fix = the /party JSON field that populates
+  PartyModel+0x558+0x18 = "default" (key not yet mapped — trace /party-parse -> PartyModel).
+- hero= was EMPTY in the /startSoloMode call; select a hunter first for the drop-in hero.
+
+Key files: server/internal/interactive/interactive.go (handleCoreGamePlayer, handleCoreGameMatch,
+buildTutorialMatchInfo, tutorialMatchState/forceTutorialMatch), store.go (SoloMode json:"-").
+Ground-truth model source: schema.txt (usmap dump) — CoreGamePlayer@13149, MatchInfo@29046,
+CoreGameMatchGameConfig@13039, CoreGameServerInfo@13161, ECoreGameMatchState@58064.
+
+=====================================================================================
+★★★ LIVE (S62, 2026-07-11) — MENU ROUTE PROVEN END-TO-END TO A REAL DS NETCONNECTION ★★★
+=====================================================================================
+Ran the whole thing live (user clicked START; gate-2 poked per-launch; computer-use denied so
+the user did the clicks, I drove ags + RPM). RESULT: the menu route now drives the FULL chain
+with ZERO native intervention (no force-open, no login-vtable patch, no browse_hook):
+
+  START -> POST /startSoloMode -> GET /core-game/players returns MatchID (real CoreGamePlayer)
+   -> client fetches GET /core-game/matches/match-<id> (our route guess was CORRECT)
+   -> LogTravelManager: "Attempting to travel to Match: ... Address:"127.0.0.1:7777" ..."
+   -> UI enters UI_CoreGameScreenRoot (pre-game DROP lobby: hero shown, DROP LEADER, emote wheel)
+   -> PacketHandlerLog: StatelessConnectHandlerComponent + LogHandshake: 'GameNetDriver' handshake
+   -> (nothing on 7777) 20s -> LogNet ConnectionTimeout -> graceful fallback to the LOGIN screen.
+
+*** THE CLIENT FIRES A REAL UE NETCONNECTION (StatelessConnect / GameNetDriver) TO THE ADDRESS WE
+SERVE IN MatchInfo.ConnectionDetails.address. *** This is the SAME handshake surface the DS-stub
+chapter (dedicated-server-stub.md S5) captured via the crash-prone browse_hook — now triggered
+CLEANLY through the real menu. A failed connect does NOT crash: it times out (20s) and returns to
+the Steam login screen (recoverable). So the tutorial-via-menu is now purely a DEDICATED-SERVER
+problem: stand up a UE5.4 DS at 127.0.0.1:7777 that answers this handshake + hosts the tutorial
+(the S6 stub already listens on UDP 7777; blockers were NetCL mismatch + the browse_hook crash —
+the browse_hook is now IRRELEVANT since the menu triggers the connect natively).
+
+KEY BEHAVIOURAL FINDINGS (all live-verified this session):
+1. TRAVEL IS ONE-SHOT AT MATCH ENTRY. The client fires its travel/connect attempt exactly once,
+   when it FIRST enters the match, using the ConnectionDetails.address present AT THAT MOMENT.
+   - First live entry had address="" (my initial "local tutorial" guess) -> "Attempting to travel
+     ... Address:''" -> parked forever in the pre-game lobby (NO local map Browse; the menu route
+     does NOT do a local open — it always connects to a server address).
+   - Serving the address LATER (hot-swap) did NOT re-fire travel; nor did bumping MatchInfo.Version.
+     Only a FRESH entry (address present on the first fetch) fires the connect with the address.
+2. The client keeps re-fetching /core-game/players + /core-game/matches ~1/min while parked, but
+   uses those only to refresh the model — not to re-trigger travel.
+3. CanDisassociate (CoreGamePlayer) gates whether the client may LEAVE a match. false -> the in-
+   match "back to lobby" is a client-side no-op (no HTTP) and the client is STUCK on the pre-game
+   screen; even an empty MatchID on /core-game/players won't evict it. Set true. (Once stuck, only
+   a game relaunch frees it — the leave is client-side, no backend release exists.)
+4. ConnectionDetails.address is read into the travel as the server host:port ("127.0.0.1:7777").
+   ServerID/MachineID/FleetID were also populated but the connect keys on address.
+
+AGS CODE STATE AT END (all live-validated):
+  - handleCoreGamePlayer: real CoreGamePlayer {ID, MatchID, Version, CanDisassociate=true}; MatchID
+    set when SoloMode armed (or forceTutorialMatch); Version = matchStateVersion (per-start bump).
+  - buildTutorialMatchInfo: ConnectionDetails.address = "127.0.0.1:7777" (+ ServerID/MachineID/
+    FleetID), GameConfig MapName/GameMode=tutorialNew/SoloModeStartLocation=0, State/StateEnum=
+    tutorialMatchState ("InProgress"). NOTE: with no DS on 7777, every menu START now connects ->
+    times out (20s) -> bounces to login. That's expected until the DS exists.
+  - forceTutorialMatch = false (default). matchStateVersion = time.Now().Unix() at process start.
+
+LIVE-LAUNCH GOTCHAS (this session): first boot random-crashed in Vivox init (Access Token Service
+Unavailable) BEFORE reaching menu — unrelated to ags, just relaunch. Gate-2 poke is per-launch
+(PartyModel addr changes; base stable 0x7FF6B54F0000). Reusable scratchpad probes recreated this
+session: pm_flags.py (find live PartyModel @+0x558+0x18 gate + gate1@+0x550), poke_gate2.py
+(VirtualAllocEx L"default\0" + write the FString {Data,Num=8,Max=8}); obj_iter.py in tools/re is
+the GUObjectArray class-name iterator they're built on (NAMEPOOL rva 0x9D81450, OBJOBJECTS rva
+0x9E38930, UObject Class@+0x18/Name@+0x20).
+
+NEXT: build/point a UE5.4 DS at 127.0.0.1:7777 (dedicated-server-stub.md S6 scaffold) that answers
+the StatelessConnect handshake (EngineNetworkVersion 34, GameNetworkVersion 0, NetworkChecksum
+3716198887 per S5) + hosts LVL_Tutorial with BP_LokiGameMode_Tutorial. The menu now delivers the
+client to it cleanly — the session/PlayerState the force-open route couldn't create should come
+from the proper server-hosted join.

@@ -1,0 +1,1012 @@
+==============================================================================
+MODULE   Minions.LokiNodePathingComponent
+SOURCE   Minions/LokiNodePathingComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiNodePathingComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiNodePathingComponent@ ULokiNodePathingComponent()
+// 4 instr, 28 B bytecode, id=0x29D68774, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiNodePathingComponent v2;
+
+    v2 = ULokiNodePathingComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85230 q:0x26e6ed79100; new ULokiNodePathingComponent   ctor=ULokiNodePathingComponent::ULokiNodePathingComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x5EC305B1, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiNodePathingComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057e658         ; __StaticType_ULokiNodePathingComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ULokiNodePathingComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xBF20DB53, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiNodePathingComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiNodePathingComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972720            ; ULokiNodePathingComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057e658         ; __StaticType_ULokiNodePathingComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiNodePathingComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xD433C51E, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiNodePathingComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiNodePathingComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972720            ; ULokiNodePathingComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057e658         ; __StaticType_ULokiNodePathingComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiNodePathingComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x443F4ADB, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiNodePathingComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiNodePathingComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972720            ; ULokiNodePathingComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057e658         ; __StaticType_ULokiNodePathingComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS(meta=(IsBlueprintBase=true, Blueprintable=true))
+class ULokiNodePathingComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnInstance) TArray<AActor@> PathNodeActors;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) float64 RotationPrecision;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TArray<AActor@> CurrNodeActorList;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) ALokiCharacter@ OwningCharacter;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) AAIController@ OwningAIController;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) AActor@ LastPathingActor;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) AActor@ RotateToActor;
+
+}
+
+------------------------------------------------------------------------------
+ULokiNodePathingComponent() const
+// 12 instr, 92 B bytecode, id=0x64F0CB1B, varspace=2
+------------------------------------------------------------------------------
+{
+    this.PathNodeActors = TArray<AActor@>();
+    this.CurrNodeActorList = TArray<AActor@>();
+    this.RotationPrecision = 10;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:208 d:134230896      ; ULokiNodePathingComponent::PathNodeActors  (+208)
+    //     3  CALLSYS        q:0x26e6ee8b680         ; void TArray<AActor@>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:232 d:134230896      ; ULokiNodePathingComponent::CurrNodeActorList  (+232)
+    //     9  CALLSYS        q:0x26e6ee8b680         ; void TArray<AActor@>::$beh0()
+    //    12  SetV8          wW0:2 q:0x4024000000000000
+    //    15  LoadThisR      W0:224 d:134230896      ; ULokiNodePathingComponent::RotationPrecision  (+224)
+    //    17  WRTV8          rW0:2
+    //    18  PshVPtr        rW0:0
+    //    19  FinConstruct   q:0x26e6ed79100         ; ULokiNodePathingComponent
+    //    22  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: LokiBeginPlay
+void LokiBeginPlay_Implementation()
+// 22 instr, 144 B bytecode, id=0xDC39401F, varspace=5
+------------------------------------------------------------------------------
+{
+    AActor v2;
+    ALokiCharacter v4;
+
+    v2 = this.GetOwner();
+    if (v2 == null) {
+        v4 = null;
+    } else {
+        v4 = cast<ALokiCharacter>(v2);
+    }
+    this.OwningCharacter = v4;
+    if (Loki::LokiIsServer(__WorldContext)) {
+        this.InitializeAIController();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140856817            ; ALokiCharacter@
+    //    10  PSF            rW0:4
+    //    11  PshVPtr        rW0:2
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:4
+    //    18  PshVPtr        rW0:4
+    //    19  PshVPtr        rW0:0
+    //    20  ADDSi          W0:248 d:134230896      ; ULokiNodePathingComponent::OwningCharacter  (+248)
+    //    22  REFCPY
+    //    23  PopPtr
+    //    24  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    27  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //    30  JLowZ          ->35
+    //    32  PshVPtr        rW0:0
+    //    33  CALLINTF       d:85217                 ; void ULokiNodePathingComponent::InitializeAIController()
+    //    35  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 7 instr, 52 B bytecode, id=0xF0D967CB, varspace=1
+------------------------------------------------------------------------------
+{
+    if (Loki::LokiIsServer(__WorldContext)) {
+        this.UpdateRotationToActor(DeltaSeconds);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->12
+    //     8  PshV8          rW0:-2
+    //     9  PshVPtr        rW0:0
+    //    10  CALLINTF       d:85225                 ; void ULokiNodePathingComponent::UpdateRotationToActor(const float64)
+    //    12  RET            W0:4
+
+------------------------------------------------------------------------------
+void InitializeAIController()
+// 37 instr, 228 B bytecode, id=0xCBA26B33, varspace=6
+------------------------------------------------------------------------------
+{
+    AController v2;
+    AAIController v4;
+
+    v2 = this.OwningCharacter.GetController();
+    if (v2 == null) {
+        v4 = null;
+    } else {
+        v4 = cast<AAIController>(v2);
+    }
+    this.OwningAIController = v4;
+    v4 = this.OwningAIController;
+    if (v4 == null) {
+        this.OwningCharacter.ReceiveControllerChangedDelegate.AddUFunction(this, __STATIC_NAME(83));
+    } else {
+        this.OnAIControllerInitialized();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:248 d:134230896      ; ULokiNodePathingComponent::OwningCharacter  (+248)
+    //     3  RDSPtr
+    //     4  CALLSYS        q:0x26e797d6ec0         ; AController@ APawn::GetController() const
+    //     7  STOREOBJ       wW0:2
+    //     8  CmpPtrNull     rW0:2
+    //     9  JZ             ->20
+    //    11  TYPEID         d:1140853236            ; AAIController@
+    //    13  PSF            rW0:4
+    //    14  PshVPtr        rW0:2
+    //    15  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    18  JMP            ->21
+    //    20  ClrVPtr        wW0:4
+    //    21  PshVPtr        rW0:4
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:256 d:134230896      ; ULokiNodePathingComponent::OwningAIController  (+256)
+    //    25  REFCPY
+    //    26  PopPtr
+    //    27  PshVPtr        rW0:0
+    //    28  ADDSi          W0:256 d:134230896      ; ULokiNodePathingComponent::OwningAIController  (+256)
+    //    30  RDSPtr
+    //    31  RefCpyV        wW0:4
+    //    32  CmpPtrNull     rW0:4
+    //    33  JZ             ->40
+    //    35  PshVPtr        rW0:0
+    //    36  CALLINTF       d:85220                 ; void ULokiNodePathingComponent::OnAIControllerInitialized()
+    //    38  JMP            ->56
+    //    40  PshC4          d:83
+    //    42  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    45  PshRPtr
+    //    46  PshVPtr        rW0:0
+    //    47  PshVPtr        rW0:0
+    //    48  ADDSi          W0:248 d:134230896      ; ULokiNodePathingComponent::OwningCharacter  (+248)
+    //    50  RDSPtr
+    //    51  ADDSi          W0:1044 d:67111506      ; APawn::ReceiveControllerChangedDelegate  (+1044)
+    //    53  CALLSYS        q:0x26e772291c0         ; void FPawnControllerChangedSignature::AddUFunction(UObject@, const FName&)
+    //    56  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetPathNodes(TArray<AActor@>&inout PathActors)
+// 5 instr, 32 B bytecode, id=0x8056E9E6, varspace=0
+------------------------------------------------------------------------------
+{
+    this.PathNodeActors = PathActors;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:208 d:134230896      ; ULokiNodePathingComponent::PathNodeActors  (+208)
+    //     4  CALLSYS        q:0x26e70663dc0         ; TArray<AActor@>& TArray<AActor@>::opAssign(const TArray<AActor@>&)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnControllerChanged(APawn@ Pawn, AController@ OldController, AController@ NewController)
+// 28 instr, 164 B bytecode, id=0x338AE34A, varspace=3
+------------------------------------------------------------------------------
+{
+    AAIController v2;
+
+    if (NewController == null) {
+        v2 = null;
+    } else {
+        v2 = cast<AAIController>(NewController);
+    }
+    this.OwningAIController = v2;
+    v2 = this.OwningAIController;
+    if (v2 != null) {
+        this.OwningCharacter.ReceiveControllerChangedDelegate.UnbindObject(this);
+        this.OnAIControllerInitialized();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CmpPtrNull     rW0:-6
+    //     1  JZ             ->12
+    //     3  TYPEID         d:1140853236            ; AAIController@
+    //     5  PSF            rW0:2
+    //     6  PshVPtr        rW0:-6
+    //     7  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    10  JMP            ->13
+    //    12  ClrVPtr        wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:256 d:134230896      ; ULokiNodePathingComponent::OwningAIController  (+256)
+    //    17  REFCPY
+    //    18  PopPtr
+    //    19  PshVPtr        rW0:0
+    //    20  ADDSi          W0:256 d:134230896      ; ULokiNodePathingComponent::OwningAIController  (+256)
+    //    22  RDSPtr
+    //    23  RefCpyV        wW0:2
+    //    24  CmpPtrNull     rW0:2
+    //    25  JZ             ->40
+    //    27  PshVPtr        rW0:0
+    //    28  PshVPtr        rW0:0
+    //    29  ADDSi          W0:248 d:134230896      ; ULokiNodePathingComponent::OwningCharacter  (+248)
+    //    31  RDSPtr
+    //    32  ADDSi          W0:1044 d:67111506      ; APawn::ReceiveControllerChangedDelegate  (+1044)
+    //    34  CALLSYS        q:0x26e77228e40         ; void FPawnControllerChangedSignature::UnbindObject(UObject@)
+    //    37  PshVPtr        rW0:0
+    //    38  CALLINTF       d:85220                 ; void ULokiNodePathingComponent::OnAIControllerInitialized()
+    //    40  RET            W0:8
+
+------------------------------------------------------------------------------
+void OnAIControllerInitialized()
+// 16 instr, 116 B bytecode, id=0x386EDCFE, varspace=4
+------------------------------------------------------------------------------
+{
+    FTimerHandle v4;
+
+    this.OwningAIController.ReceiveMoveCompleted.AddUFunction(this, __STATIC_NAME(84));
+    v4 = System::SetTimerForNextTick(this, "StartMoving");
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:84
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  PshVPtr        rW0:0
+    //     8  ADDSi          W0:256 d:134230896      ; ULokiNodePathingComponent::OwningAIController  (+256)
+    //    10  RDSPtr
+    //    11  ADDSi          W0:1224 d:67111412      ; AAIController::ReceiveMoveCompleted  (+1224)
+    //    13  CALLSYS        q:0x26e70fff200         ; void FAIMoveCompletedSignature::AddUFunction(const UObject@, const FName&)
+    //    16  PGA            q:0x26e6f113ad0         ; "StartMoving"
+    //    19  PshVPtr        rW0:0
+    //    20  PSF            rW0:4
+    //    21  CALLSYS        q:0x26e79b1c800         ; FTimerHandle System::SetTimerForNextTick(UObject@, FString)
+    //    24  PSF            rW0:4
+    //    25  CALLSYS        q:0x26e786b8c80         ; void FTimerHandle::$beh2()
+    //    28  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void StartMoving()
+// 26 instr, 144 B bytecode, id=0xD53E1B47, varspace=3
+------------------------------------------------------------------------------
+{
+    AActor v2;
+
+    v2 = this.FindClosestPathingActor();
+    this.LastPathingActor = v2;
+    v2 = this.LastPathingActor;
+    if (v2 != null) {
+        this.StartRotatingToActor(this.LastPathingActor);
+    }
+    this.OwningCharacter.SetIdle(false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85228                 ; AActor@ ULokiNodePathingComponent::FindClosestPathingActor()
+    //     3  STOREOBJ       wW0:2
+    //     4  PshVPtr        rW0:2
+    //     5  PshVPtr        rW0:0
+    //     6  ADDSi          W0:264 d:134230896      ; ULokiNodePathingComponent::LastPathingActor  (+264)
+    //     8  REFCPY
+    //     9  PopPtr
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:264 d:134230896      ; ULokiNodePathingComponent::LastPathingActor  (+264)
+    //    13  RDSPtr
+    //    14  RefCpyV        wW0:2
+    //    15  CmpPtrNull     rW0:2
+    //    16  JZ             ->25
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:264 d:134230896      ; ULokiNodePathingComponent::LastPathingActor  (+264)
+    //    21  RDSPtr
+    //    22  PshVPtr        rW0:0
+    //    23  CALLINTF       d:85224                 ; void ULokiNodePathingComponent::StartRotatingToActor(AActor@)
+    //    25  SetV1          wW0:3 d:0
+    //    27  PshV4          rW0:3
+    //    28  PshVPtr        rW0:0
+    //    29  ADDSi          W0:248 d:134230896      ; ULokiNodePathingComponent::OwningCharacter  (+248)
+    //    31  RDSPtr
+    //    32  CALLSYS        q:0x26e7a191200         ; void ALokiCharacter::SetIdle(bool)
+    //    35  RET            W0:2
+
+------------------------------------------------------------------------------
+void BuildNodeActorList()
+// 56 instr, 364 B bytecode, id=0xA91D7795, varspace=13
+------------------------------------------------------------------------------
+{
+    auto v1;
+    TArray<AActor@> v6;
+    AActor v12;
+
+    this.CurrNodeActorList.Empty(0);
+    v6 = TArray<AActor@>();
+    if (this.LastPathingActor != null) {
+        v6.Add(this.LastPathingActor);
+        v12 = this.FindRandomPathingActor(v6);
+        this.CurrNodeActorList.Add(v12);
+        v6 = this.CurrNodeActorList;
+    }
+    while (true) {
+        v1 = this.CurrNodeActorList.Num();
+        if (v1 < this.PathNodeActors.Num()) {
+            v12 = this.FindRandomPathingActor(v6);
+            this.CurrNodeActorList.Add(v12);
+            v6.Add(v12);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:0
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:232 d:134230896      ; ULokiNodePathingComponent::CurrNodeActorList  (+232)
+    //     5  CALLSYS        q:0x26e6ef54bc0         ; void TArray<AActor@>::Empty(int)
+    //     8  PSF            rW0:6
+    //     9  CALLSYS        q:0x26e6ee8b680         ; void TArray<AActor@>::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:264 d:134230896      ; ULokiNodePathingComponent::LastPathingActor  (+264)
+    //    15  RDSPtr
+    //    16  RefCpyV        wW0:8
+    //    17  CmpPtrNull     rW0:8
+    //    18  JZ             ->47
+    //    20  PshVPtr        rW0:0
+    //    21  ADDSi          W0:264 d:134230896      ; ULokiNodePathingComponent::LastPathingActor  (+264)
+    //    23  PSF            rW0:6
+    //    24  CALLSYS        q:0x26e6ef26440         ; void TArray<AActor@>::Add(const AActor@ const&)
+    //    27  PSF            rW0:6
+    //    28  PshVPtr        rW0:0
+    //    29  CALLINTF       d:85229                 ; AActor@ ULokiNodePathingComponent::FindRandomPathingActor(TArray<AActor@>&)
+    //    31  STOREOBJ       wW0:12
+    //    32  PSF            rW0:12
+    //    33  PshVPtr        rW0:0
+    //    34  ADDSi          W0:232 d:134230896      ; ULokiNodePathingComponent::CurrNodeActorList  (+232)
+    //    36  CALLSYS        q:0x26e6ef26440         ; void TArray<AActor@>::Add(const AActor@ const&)
+    //    39  PshVPtr        rW0:0
+    //    40  ADDSi          W0:232 d:134230896      ; ULokiNodePathingComponent::CurrNodeActorList  (+232)
+    //    42  PSF            rW0:6
+    //    43  CALLSYS        q:0x26e70663dc0         ; TArray<AActor@>& TArray<AActor@>::opAssign(const TArray<AActor@>&)
+    //    46  FreeNullV8     wW0:12
+    //    47  PshVPtr        rW0:0
+    //    48  ADDSi          W0:232 d:134230896      ; ULokiNodePathingComponent::CurrNodeActorList  (+232)
+    //    50  CALLSYS        q:0x26e6ee8b4c0         ; int TArray<AActor@>::Num() const
+    //    53  CpyRtoV4       wW0:1
+    //    54  PshVPtr        rW0:0
+    //    55  ADDSi          W0:208 d:134230896      ; ULokiNodePathingComponent::PathNodeActors  (+208)
+    //    57  CALLSYS        q:0x26e6ee8b4c0         ; int TArray<AActor@>::Num() const
+    //    60  CpyRtoV4       wW0:13
+    //    61  CMPi           rW0:1 rW1:13
+    //    63  JNS            ->86
+    //    65  SUSPEND
+    //    66  PSF            rW0:6
+    //    67  PshVPtr        rW0:0
+    //    68  CALLINTF       d:85229                 ; AActor@ ULokiNodePathingComponent::FindRandomPathingActor(TArray<AActor@>&)
+    //    70  STOREOBJ       wW0:12
+    //    71  PSF            rW0:12
+    //    72  PshVPtr        rW0:0
+    //    73  ADDSi          W0:232 d:134230896      ; ULokiNodePathingComponent::CurrNodeActorList  (+232)
+    //    75  CALLSYS        q:0x26e6ef26440         ; void TArray<AActor@>::Add(const AActor@ const&)
+    //    78  PSF            rW0:12
+    //    79  PSF            rW0:6
+    //    80  CALLSYS        q:0x26e6ef26440         ; void TArray<AActor@>::Add(const AActor@ const&)
+    //    83  FreeNullV8     wW0:12
+    //    84  JMP            ->47
+    //    86  PSF            rW0:6
+    //    87  CALLSYS        q:0x26e70663f80         ; void TArray<AActor@>::$beh2()
+    //    90  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnMoveCompleted(const FAIRequestID&inout RequestID, const EPathFollowingResult MovementResult)
+// 34 instr, 224 B bytecode, id=0x934D9973, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.CurrNodeActorList.Num();
+    if (v1 == 0) {
+        this.BuildNodeActorList();
+    }
+    v1 = this.CurrNodeActorList.Num();
+    if (v1 > 0) {
+        this.LastPathingActor = this.CurrNodeActorList[0];
+        this.CurrNodeActorList.RemoveAt(0);
+        this.StartRotatingToActor(this.LastPathingActor);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:232 d:134230896      ; ULokiNodePathingComponent::CurrNodeActorList  (+232)
+    //     3  CALLSYS        q:0x26e6ee8b4c0         ; int TArray<AActor@>::Num() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CMPIi          rW0:1 d:0
+    //     9  JNZ            ->14
+    //    11  PshVPtr        rW0:0
+    //    12  CALLINTF       d:85222                 ; void ULokiNodePathingComponent::BuildNodeActorList()
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:232 d:134230896      ; ULokiNodePathingComponent::CurrNodeActorList  (+232)
+    //    17  CALLSYS        q:0x26e6ee8b4c0         ; int TArray<AActor@>::Num() const
+    //    20  CpyRtoV4       wW0:1
+    //    21  CMPIi          rW0:1 d:0
+    //    23  JNP            ->55
+    //    25  PshC4          d:0
+    //    27  PshVPtr        rW0:0
+    //    28  ADDSi          W0:232 d:134230896      ; ULokiNodePathingComponent::CurrNodeActorList  (+232)
+    //    30  Thiscall1      q:0x26e6ee8b140         ; AActor@& TArray<AActor@>::opIndex(int)
+    //    33  PshRPtr
+    //    34  RDSPtr
+    //    35  PshVPtr        rW0:0
+    //    36  ADDSi          W0:264 d:134230896      ; ULokiNodePathingComponent::LastPathingActor  (+264)
+    //    38  REFCPY
+    //    39  PopPtr
+    //    40  PshC4          d:0
+    //    42  PshVPtr        rW0:0
+    //    43  ADDSi          W0:232 d:134230896      ; ULokiNodePathingComponent::CurrNodeActorList  (+232)
+    //    45  CALLSYS        q:0x26e6ef57cc0         ; void TArray<AActor@>::RemoveAt(int)
+    //    48  PshVPtr        rW0:0
+    //    49  ADDSi          W0:264 d:134230896      ; ULokiNodePathingComponent::LastPathingActor  (+264)
+    //    51  RDSPtr
+    //    52  PshVPtr        rW0:0
+    //    53  CALLINTF       d:85224                 ; void ULokiNodePathingComponent::StartRotatingToActor(AActor@)
+    //    55  RET            W0:5
+
+------------------------------------------------------------------------------
+void StartRotatingToActor(AActor@ RotateActor)
+// 17 instr, 92 B bytecode, id=0xA5F57B23, varspace=3
+------------------------------------------------------------------------------
+{
+    if (RotateActor != null) {
+        this.RotateToActor = RotateActor;
+        this.OwningAIController.SetFocus(this.RotateToActor);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  RefCpyV        wW0:2
+    //     2  CmpPtrNull     rW0:2
+    //     3  JZ             ->22
+    //     5  PshVPtr        rW0:-2
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:272 d:134230896      ; ULokiNodePathingComponent::RotateToActor  (+272)
+    //     9  REFCPY
+    //    10  PopPtr
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:272 d:134230896      ; ULokiNodePathingComponent::RotateToActor  (+272)
+    //    14  RDSPtr
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:256 d:134230896      ; ULokiNodePathingComponent::OwningAIController  (+256)
+    //    18  RDSPtr
+    //    19  CALLSYS        q:0x26e797a6280         ; void AAIController::SetFocus(AActor@)   [UFunction K2_SetFocus]
+    //    22  RET            W0:4
+
+------------------------------------------------------------------------------
+void UpdateRotationToActor(const float64 DeltaSeconds)
+// 68 instr, 460 B bytecode, id=0xF746A617, varspace=44
+------------------------------------------------------------------------------
+{
+    auto v3;
+    FVector v10;
+    FVector v16;
+    FVector v28;
+    FVector v34;
+    float64 v36;
+    float64 v42;
+    float64 v44;
+
+    if (this.RotateToActor != null) {
+        v16 = this.OwningCharacter.GetActorForwardVector();
+        v10 = this.RotateToActor.GetActorLocation();
+        v28 = this.OwningCharacter.GetActorLocation();
+        v34.Normalize(0);
+        if (!v16.IsNearlyZero(0.0001)) {
+            v3 = v34.IsNearlyZero(0.0001);
+        } else {
+            v3 = true;
+        }
+        if (!v3) {
+            v36 = v16.CosineAngle2D(v34);
+            v42 = v36;
+        } else {
+            v42 = 1;
+        }
+        v44 = Math::Acos(v42);
+        v42 = Math::RadiansToDegrees(v44);
+        v36 = this.RotationPrecision;
+        if (v42 < v36) {
+            this.RotateToActor = null;
+            this.OnFinishedRotatingToActor();
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:272 d:134230896      ; ULokiNodePathingComponent::RotateToActor  (+272)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JNZ            ->10
+    //     8  JMP            ->114
+    //    10  PSF            rW0:16
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:248 d:134230896      ; ULokiNodePathingComponent::OwningCharacter  (+248)
+    //    14  RDSPtr
+    //    15  CALLSYS        q:0x26e79707cc0         ; FVector AActor::GetActorForwardVector() const
+    //    18  PSF            rW0:10
+    //    19  PshVPtr        rW0:0
+    //    20  ADDSi          W0:272 d:134230896      ; ULokiNodePathingComponent::RotateToActor  (+272)
+    //    22  RDSPtr
+    //    23  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    26  PSF            rW0:28
+    //    27  PshVPtr        rW0:0
+    //    28  ADDSi          W0:248 d:134230896      ; ULokiNodePathingComponent::OwningCharacter  (+248)
+    //    30  RDSPtr
+    //    31  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    34  PSF            rW0:28
+    //    35  PSF            rW0:34
+    //    36  PSF            rW0:10
+    //    37  CALLSYS        q:0x26e69d00cc0         ; FVector FVector::opSub(const FVector&) const
+    //    40  PshC8          q:0x3e45798ee0000000
+    //    43  PSF            rW0:34
+    //    44  CALLSYS        q:0x26e69d04140         ; bool FVector::Normalize(float64)
+    //    47  PshC8          q:0x3f1a36e2e0000000
+    //    50  PSF            rW0:16
+    //    51  CALLSYS        q:0x26e69d044c0         ; bool FVector::IsNearlyZero(float64) const
+    //    54  JLowZ          ->60
+    //    56  SetV1          wW0:3 d:1
+    //    58  JMP            ->70
+    //    60  PshC8          q:0x3f1a36e2e0000000
+    //    63  PSF            rW0:34
+    //    64  CALLSYS        q:0x26e69d044c0         ; bool FVector::IsNearlyZero(float64) const
+    //    67  CpyRtoV4       wW0:39
+    //    68  CpyVtoV4       wW0:3 rW1:39
+    //    70  CpyVtoR1       rW0:3
+    //    71  JLowZ          ->78
+    //    73  SetV8          wW0:42 q:0x3ff0000000000000
+    //    76  JMP            ->86
+    //    78  PSF            rW0:34
+    //    79  PSF            rW0:16
+    //    80  CALLSYS        q:0x26e69d08e40         ; float64 FVector::CosineAngle2D(FVector) const
+    //    83  CpyRtoV8       wW0:36
+    //    84  CpyVtoV8       wW0:42 rW1:36
+    //    86  PshV8          rW0:42
+    //    87  CALLSYS        q:0x26e7035ba00         ; float64 Math::Acos(float64)
+    //    90  CpyRtoV8       wW0:44
+    //    91  PSF            rW0:44
+    //    92  CALLSYS        q:0x26e70352fc0         ; float64 Math::RadiansToDegrees(const float64&)
+    //    95  CpyRtoV8       wW0:38
+    //    96  CpyVtoV8       wW0:42 rW1:38
+    //    98  LoadThisR      W0:224 d:134230896      ; ULokiNodePathingComponent::RotationPrecision  (+224)
+    //   100  RDR8           wW0:36
+    //   101  CMPd           rW0:42 rW1:36
+    //   103  JNS            ->114
+    //   105  PshNull
+    //   106  PshVPtr        rW0:0
+    //   107  ADDSi          W0:272 d:134230896      ; ULokiNodePathingComponent::RotateToActor  (+272)
+    //   109  REFCPY
+    //   110  PopPtr
+    //   111  PshVPtr        rW0:0
+    //   112  CALLINTF       d:85226                 ; void ULokiNodePathingComponent::OnFinishedRotatingToActor()
+    //   114  RET            W0:4
+
+------------------------------------------------------------------------------
+void OnFinishedRotatingToActor()
+// 12 instr, 64 B bytecode, id=0x6556EBBD, varspace=3
+------------------------------------------------------------------------------
+{
+    if (this.LastPathingActor != null) {
+        this.MoveToActor(this.LastPathingActor);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:264 d:134230896      ; ULokiNodePathingComponent::LastPathingActor  (+264)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->15
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:264 d:134230896      ; ULokiNodePathingComponent::LastPathingActor  (+264)
+    //    11  RDSPtr
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:85227                 ; bool ULokiNodePathingComponent::MoveToActor(AActor@)
+    //    15  RET            W0:2
+
+------------------------------------------------------------------------------
+bool MoveToActor(AActor@ LocationActor)
+// 32 instr, 196 B bytecode, id=0x1FEA091C, varspace=13
+------------------------------------------------------------------------------
+{
+    auto v3;
+    TSubclassOf<UNavigationQueryFilter@> v6;
+    auto v7;
+
+    if (LocationActor != null) {
+        v3 = true;
+        v6 = TSubclassOf<UNavigationQueryFilter@>(null);
+        v7 = false;
+        if (int(this.OwningAIController.MoveToActor(LocationActor, 100, true, true, false, v6, true)) == 2) {
+            v7 = true;
+            goto L48;
+        }
+    }
+    v3 = false;
+    L48:
+    return v3;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  RefCpyV        wW0:2
+    //     2  CmpPtrNull     rW0:2
+    //     3  JZ             ->45
+    //     5  SetV1          wW0:3 d:1
+    //     7  PshV4          rW0:3
+    //     8  PshNull
+    //     9  PSF            rW0:6
+    //    10  CALLSYS        q:0x26e6ef00e80         ; void TSubclassOf<UNavigationQueryFilter@>::$beh0(UClass@)
+    //    13  PSF            rW0:6
+    //    14  SetV1          wW0:7 d:0
+    //    16  PshV4          rW0:7
+    //    17  SetV1          wW0:8 d:1
+    //    19  PshV4          rW0:8
+    //    20  SetV1          wW0:9 d:1
+    //    22  PshV4          rW0:9
+    //    23  PshC4          d:1120403456
+    //    25  PshVPtr        rW0:-2
+    //    26  PshVPtr        rW0:0
+    //    27  ADDSi          W0:256 d:134230896      ; ULokiNodePathingComponent::OwningAIController  (+256)
+    //    29  RDSPtr
+    //    30  CALLSYS        q:0x26e797a60c0         ; EPathFollowingRequestResult AAIController::MoveToActor(AActor@, float, bool, bool, bool, TSubclassOf<UNavigationQueryFilter@>, bool)
+    //    33  CpyRtoV4       wW0:11
+    //    34  sbTOi          wW0:12 rW1:11
+    //    36  CMPIi          rW0:12 d:2
+    //    38  JNZ            ->45
+    //    40  SetV1          wW0:7 d:1
+    //    42  CpyVtoR4       rW0:7
+    //    43  JMP            ->48
+    //    45  SetV1          wW0:3 d:0
+    //    47  CpyVtoR4       rW0:3
+    //    48  RET            W0:4
+
+------------------------------------------------------------------------------
+AActor@ FindClosestPathingActor()
+// 52 instr, 332 B bytecode, id=0xCFBD8C2F, varspace=53
+------------------------------------------------------------------------------
+{
+    AActor v2;
+    FVector v8;
+    auto v10;
+    auto v12;
+    FVector v22;
+    FVector v28;
+    TArrayIterator<AActor@> v34;
+    auto v41;
+    AActor v44;
+
+    v8 = FVector();
+    v10 = -1;
+    v28 = this.GetOwner().GetActorLocation();
+    v34 = this.PathNodeActors.Iterator();
+    while (true) {
+        v41 = v34.CanProceed;
+        if (!v41) break;
+        v44 = v34.Proceed();
+        if (v44 != null) {
+            v22 = v44.GetActorLocation();
+            v12 = v28.DistSquared(v22);
+            if (v2 != null) {
+                v41 = v12 < v10;
+            } else {
+                v41 = true;
+            }
+            if (v41) {
+                v2 = v44;
+                v8 = v22;
+                v10 = v12;
+            }
+        }
+    }
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:8
+    //     1  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //     4  SetV8          wW0:10 q:0xbff0000000000000
+    //     7  PshVPtr        rW0:0
+    //     8  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    11  STOREOBJ       wW0:14
+    //    12  PSF            rW0:28
+    //    13  PshVPtr        rW0:14
+    //    14  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    17  PSF            rW0:34
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:208 d:134230896      ; ULokiNodePathingComponent::PathNodeActors  (+208)
+    //    21  CALLSYS        q:0x26e6ef23880         ; TArrayIterator<AActor@> TArray<AActor@>::Iterator()
+    //    24  JMP            ->74
+    //    26  SUSPEND
+    //    27  PSF            rW0:34
+    //    28  CALLSYS        q:0x26e6ef23500         ; AActor@& TArrayIterator<AActor@>::Proceed()
+    //    31  PshRPtr
+    //    32  RDSPtr
+    //    33  RefCpyV        wW0:44
+    //    34  CmpPtrNull     rW0:44
+    //    35  JZ             ->73
+    //    37  PSF            rW0:22
+    //    38  PshVPtr        rW0:44
+    //    39  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    42  PSF            rW0:22
+    //    43  PSF            rW0:28
+    //    44  CALLSYS        q:0x26e69d07b00         ; float64 FVector::DistSquared(const FVector&) const
+    //    47  CpyRtoV8       wW0:12
+    //    48  CmpPtrNull     rW0:2
+    //    49  JNZ            ->55
+    //    51  SetV1          wW0:41 d:1
+    //    53  JMP            ->61
+    //    55  CMPd           rW0:12 rW1:10
+    //    57  TS
+    //    58  CpyRtoV4       wW0:53
+    //    59  CpyVtoV4       wW0:41 rW1:53
+    //    61  CpyVtoR1       rW0:41
+    //    62  JLowZ          ->73
+    //    64  PshVPtr        rW0:44
+    //    65  RefCpyV        wW0:2
+    //    66  PSF            rW0:22
+    //    67  PSF            rW0:8
+    //    68  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    71  CpyVtoV8       wW0:10 rW1:12
+    //    73  FreeNullV8     wW0:44
+    //    74  LoadVObjR      rW0:34 W1:16 DW2:268448553; TArrayIterator::CanProceed  (+16)
+    //    77  RDR1           wW0:41
+    //    78  CpyVtoR1       rW0:41
+    //    79  JLowNZ         ->26
+    //    81  LOADOBJ        rW0:2
+    //    82  RET            W0:2
+
+------------------------------------------------------------------------------
+AActor@ FindRandomPathingActor(TArray<AActor@>&inout IgnoreActors)
+// 50 instr, 328 B bytecode, id=0x00E48C25, varspace=12
+------------------------------------------------------------------------------
+{
+    int v2;
+    auto v3;
+    int v4;
+    auto v5;
+    auto v6;
+    AActor v8;
+    auto v9;
+    AActor v12;
+
+    v2 = this.PathNodeActors.Num();
+    v2 = v2 - 1;
+    v4 = Math::RandRange(0, v2);
+    v5 = 0;
+    while (true) {
+        if (v5 < this.PathNodeActors.Num()) {
+            v8 = this.PathNodeActors[v4];
+            if (v8 == null) {
+                v6 = 0;
+                goto L57;
+            }
+            v9 = IgnoreActors.Contains(v8);
+            v9 = !v9;
+            v6 = v9;
+            L57:
+            if (v6) {
+                goto L81;
+            }
+            v3 = v4 + 1;
+            v2 = this.PathNodeActors.Num();
+            v4 = v3 % v2;
+            v5++;
+        }
+    }
+    L81:
+    return v12;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:208 d:134230896      ; ULokiNodePathingComponent::PathNodeActors  (+208)
+    //     3  CALLSYS        q:0x26e6ee8b4c0         ; int TArray<AActor@>::Num() const
+    //     6  CpyRtoV4       wW0:2
+    //     7  SUBIi          wW0:2 rW1:2 DW2:1
+    //    10  PshV4          rW0:2
+    //    11  PshC4          d:0
+    //    13  CALLSYS        q:0x26e69d2b300         ; int Math::RandRange(int, int)
+    //    16  CpyRtoV4       wW0:4
+    //    17  SetV4          wW0:5 d:0
+    //    19  PshVPtr        rW0:0
+    //    20  ADDSi          W0:208 d:134230896      ; ULokiNodePathingComponent::PathNodeActors  (+208)
+    //    22  CALLSYS        q:0x26e6ee8b4c0         ; int TArray<AActor@>::Num() const
+    //    25  CpyRtoV4       wW0:1
+    //    26  CMPi           rW0:5 rW1:1
+    //    28  JNS            ->79
+    //    30  SUSPEND
+    //    31  PshV4          rW0:4
+    //    32  PshVPtr        rW0:0
+    //    33  ADDSi          W0:208 d:134230896      ; ULokiNodePathingComponent::PathNodeActors  (+208)
+    //    35  Thiscall1      q:0x26e6ee8b140         ; AActor@& TArray<AActor@>::opIndex(int)
+    //    38  PshRPtr
+    //    39  RDSPtr
+    //    40  RefCpyV        wW0:8
+    //    41  CmpPtrNull     rW0:8
+    //    42  JNZ            ->48
+    //    44  SetV4          wW0:6 d:0
+    //    46  JMP            ->57
+    //    48  PSF            rW0:8
+    //    49  PshVPtr        rW0:-2
+    //    50  CALLSYS        q:0x26e6ef54f40         ; bool TArray<AActor@>::Contains(const AActor@ const&) const
+    //    53  CpyRtoV4       wW0:9
+    //    54  NOT            rW0:9
+    //    55  CpyVtoV4       wW0:6 rW1:9
+    //    57  CpyVtoR1       rW0:6
+    //    58  JLowZ          ->63
+    //    60  LOADOBJ        rW0:8
+    //    61  JMP            ->81
+    //    63  ADDIi          wW0:3 rW1:4 DW2:1
+    //    66  PshVPtr        rW0:0
+    //    67  ADDSi          W0:208 d:134230896      ; ULokiNodePathingComponent::PathNodeActors  (+208)
+    //    69  CALLSYS        q:0x26e6ee8b4c0         ; int TArray<AActor@>::Num() const
+    //    72  CpyRtoV4       wW0:2
+    //    73  MODi           wW0:4 rW1:3 rW2:2
+    //    75  IncVi          rW0:5
+    //    76  FreeNullV8     wW0:8
+    //    77  JMP            ->19
+    //    79  FreeNullV8     wW0:12
+    //    80  LOADOBJ        rW0:12
+    //    81  RET            W0:4
+
+------------------------------------------------------------------------------
+~ULokiNodePathingComponent()
+// 7 instr, 52 B bytecode, id=0xAD7B7C4B, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:208 d:134230896      ; ULokiNodePathingComponent::PathNodeActors  (+208)
+    //     3  CALLSYS        q:0x26e70663f80         ; void TArray<AActor@>::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:232 d:134230896      ; ULokiNodePathingComponent::CurrNodeActorList  (+232)
+    //     9  CALLSYS        q:0x26e70663f80         ; void TArray<AActor@>::$beh2()
+    //    12  RET            W0:2
+

@@ -1,0 +1,1305 @@
+# Asset:         Loki/Content/Loki/Core/GameModes/Components/Comp_GameMode_DropPlane_Tutorial.uasset
+# UFunction:     ExecuteUbergraph_Comp_GameMode_DropPlane_Tutorial
+# FunctionFlags: FUNC_Final, FUNC_UbergraphFunction, FUNC_HasDefaults
+# Outer class:   Comp_GameMode_DropPlane_Tutorial_C
+# ScriptBytecode entries: 113
+# ChildProperties: 49
+# --- Parameters / locals (FField chain) ---
+#   [0] FIntProperty  ?
+#   [1] FEnumProperty  ?
+#   [2] FBoolProperty  ?
+#   [3] FObjectProperty  ?
+#   [4] FIntProperty  ?
+#   [5] FIntProperty  ?
+#   [6] FIntProperty  ?
+#   [7] FIntProperty  ?
+#   [8] FObjectProperty  ?
+#   [9] FEnumProperty  ?
+#   [10] FBoolProperty  ?
+#   [11] FEnumProperty  ?
+#   [12] FBoolProperty  ?
+#   [13] FIntProperty  ?
+#   [14] FDelegateProperty  ?
+#   [15] FIntProperty  ?
+#   [16] FStructProperty  ?
+#   [17] FStructProperty  ?
+#   [18] FIntProperty  ?
+#   [19] FIntProperty  ?
+#   [20] FObjectProperty  ?
+#   [21] FIntProperty  ?
+#   [22] FDelegateProperty  ?
+#   [23] FBoolProperty  ?
+#   [24] FIntProperty  ?
+#   [25] FObjectProperty  ?
+#   [26] FObjectProperty  ?
+#   [27] FObjectProperty  ?
+#   [28] FObjectProperty  ?
+#   [29] FBoolProperty  ?
+#   [30] FBoolProperty  ?
+#   [31] FObjectProperty  ?
+#   [32] FBoolProperty  ?
+#   [33] FBoolProperty  ?
+#   [34] FObjectProperty  ?
+#   [35] FStructProperty  ?
+#   [36] FEnumProperty  ?
+#   [37] FObjectProperty  ?
+#   [38] FStructProperty  ?
+#   [39] FArrayProperty  ?
+#   [40] FBoolProperty  ?
+#   [41] FObjectProperty  ?
+#   [42] FIntProperty  ?
+#   [43] FBoolProperty  ?
+#   [44] FBoolProperty  ?
+#   [45] FArrayProperty  ?
+#   [46] FObjectProperty  ?
+#   [47] FIntProperty  ?
+#   [48] FBoolProperty  ?
+
+# --- ScriptBytecode tree ---
+[  0] EX_PushExecutionFlow
+  PushingAddress: 2635
+  StatementIndex: 0
+[  1] EX_ComputedJump
+  CodeOffsetExpression:
+    EX_LocalVariable
+      Variable: EntryPoint
+      StatementIndex: 6
+  StatementIndex: 5
+[  2] EX_PushExecutionFlow
+  PushingAddress: 365
+  StatementIndex: 15
+[  3] EX_SetArray
+  AssigningProperty:
+    EX_LocalVariable
+      Variable: CallFunc_GetAllActorsOfClass_OutActors_1
+      StatementIndex: 21
+  Elements: [0]
+  StatementIndex: 20
+[  4] EX_CallMath
+  StackNode: GetAllActorsOfClass
+  Parameters: [3]
+    [  0] EX_Self
+      StatementIndex: 40
+    [  1] EX_ObjectConst
+      Value: BP_TrainingVolumeBase_C
+      StatementIndex: 41
+    [  2] EX_LocalVariable
+      Variable: CallFunc_GetAllActorsOfClass_OutActors_1
+      StatementIndex: 50
+  StatementIndex: 31
+[  5] EX_Let
+  Property: Temp_int_Loop_Counter_Variable
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Loop_Counter_Variable
+      StatementIndex: 69
+  Assignment:
+    EX_IntConst
+      Value: 0
+      StatementIndex: 78
+  StatementIndex: 60
+[  6] EX_Let
+  Property: Temp_int_Array_Index_Variable
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Array_Index_Variable
+      StatementIndex: 92
+  Assignment:
+    EX_IntConst
+      Value: 0
+      StatementIndex: 101
+  StatementIndex: 83
+[  7] EX_Let
+  Property: CallFunc_Array_Length_ReturnValue_2
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Array_Length_ReturnValue_2
+      StatementIndex: 115
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_ObjectConst
+          Value: Default__KismetArrayLibrary
+          StatementIndex: 125
+      Offset: 19
+      RValuePointer: CallFunc_Array_Length_ReturnValue_2
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: Array_Length
+          Parameters: [1]
+            [  0] EX_LocalVariable
+              Variable: CallFunc_GetAllActorsOfClass_OutActors_1
+              StatementIndex: 155
+          StatementIndex: 146
+      StatementIndex: 124
+  StatementIndex: 106
+[  8] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Less_IntInt_ReturnValue_2
+      StatementIndex: 166
+  Assignment:
+    EX_CallMath
+      StackNode: Less_IntInt
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: Temp_int_Loop_Counter_Variable
+          StatementIndex: 184
+        [  1] EX_LocalVariable
+          Variable: CallFunc_Array_Length_ReturnValue_2
+          StatementIndex: 193
+      StatementIndex: 175
+  StatementIndex: 165
+[  9] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: CallFunc_Less_IntInt_ReturnValue_2
+      StatementIndex: 204
+  StatementIndex: 203
+[ 10] EX_Let
+  Property: Temp_int_Array_Index_Variable
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Array_Index_Variable
+      StatementIndex: 222
+  Assignment:
+    EX_LocalVariable
+      Variable: Temp_int_Loop_Counter_Variable
+      StatementIndex: 231
+  StatementIndex: 213
+[ 11] EX_PushExecutionFlow
+  PushingAddress: 402
+  StatementIndex: 240
+[ 12] EX_Context
+  ObjectExpression:
+    EX_ObjectConst
+      Value: Default__KismetArrayLibrary
+      StatementIndex: 246
+  Offset: 37
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: Array_Get
+      Parameters: [3]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_GetAllActorsOfClass_OutActors_1
+          StatementIndex: 276
+        [  1] EX_LocalVariable
+          Variable: Temp_int_Array_Index_Variable
+          StatementIndex: 285
+        [  2] EX_LocalVariable
+          Variable: CallFunc_Array_Get_Item_2
+          StatementIndex: 294
+      StatementIndex: 267
+  StatementIndex: 245
+[ 13] EX_Context
+  ObjectExpression:
+    EX_Context
+      ObjectExpression:
+        EX_LocalVariable
+          Variable: CallFunc_Array_Get_Item_2
+          StatementIndex: 306
+      Offset: 9
+      RValuePointer: Box
+      ContextExpression:
+        EX_InstanceVariable
+          Variable: Box
+          StatementIndex: 327
+      StatementIndex: 305
+  Offset: 16
+  RValuePointer: 0
+  ContextExpression:
+    EX_VirtualFunction
+      VirtualFunctionName: SetCollisionEnabled
+      Parameters: [1]
+        [  0] EX_ByteConst
+          Value: 1
+          StatementIndex: 361
+      StatementIndex: 348
+  StatementIndex: 304
+[ 14] EX_PopExecutionFlow
+  StatementIndex: 364
+[ 15] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: LokiDropPlane
+      StatementIndex: 366
+  Offset: 14
+  RValuePointer: 0
+  ContextExpression:
+    EX_VirtualFunction
+      VirtualFunctionName: K2_DestroyActor
+      Parameters: [0]
+      StatementIndex: 387
+  StatementIndex: 365
+[ 16] EX_PopExecutionFlow
+  StatementIndex: 401
+[ 17] EX_Let
+  Property: CallFunc_Add_IntInt_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Add_IntInt_ReturnValue
+      StatementIndex: 411
+  Assignment:
+    EX_CallMath
+      StackNode: Add_IntInt
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: Temp_int_Loop_Counter_Variable
+          StatementIndex: 429
+        [  1] EX_IntConst
+          Value: 1
+          StatementIndex: 438
+      StatementIndex: 420
+  StatementIndex: 402
+[ 18] EX_Let
+  Property: Temp_int_Loop_Counter_Variable
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Loop_Counter_Variable
+      StatementIndex: 453
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_Add_IntInt_ReturnValue
+      StatementIndex: 462
+  StatementIndex: 444
+[ 19] EX_Jump
+  CodeOffset: 106
+  StatementIndex: 471
+[ 20] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: LokiDropPlane
+      StatementIndex: 477
+  Offset: 11
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: SetCanJump
+      Parameters: [1]
+        [  0] EX_True
+          StatementIndex: 507
+      StatementIndex: 498
+  StatementIndex: 476
+[ 21] EX_PopExecutionFlow
+  StatementIndex: 509
+[ 22] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: LokiGameMode
+      StatementIndex: 511
+  Offset: 12
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: GoToPhase
+      Parameters: [1]
+        [  0] EX_ByteConst
+          Value: 6
+          StatementIndex: 541
+      StatementIndex: 532
+  StatementIndex: 510
+[ 23] EX_PopExecutionFlow
+  StatementIndex: 544
+[ 24] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: K2Node_SwitchEnum_CmpSuccess
+      StatementIndex: 546
+  Assignment:
+    EX_CallMath
+      StackNode: NotEqual_ByteByte
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: K2Node_CustomEvent_NewPhase_1
+          StatementIndex: 564
+        [  1] EX_ByteConst
+          Value: 5
+          StatementIndex: 573
+      StatementIndex: 555
+  StatementIndex: 545
+[ 25] EX_JumpIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: K2Node_SwitchEnum_CmpSuccess
+      StatementIndex: 581
+  CodeOffset: 935
+  StatementIndex: 576
+[ 26] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: K2Node_SwitchEnum_CmpSuccess
+      StatementIndex: 591
+  Assignment:
+    EX_CallMath
+      StackNode: NotEqual_ByteByte
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: K2Node_CustomEvent_NewPhase_1
+          StatementIndex: 609
+        [  1] EX_ByteConst
+          Value: 6
+          StatementIndex: 618
+      StatementIndex: 600
+  StatementIndex: 590
+[ 27] EX_JumpIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: K2Node_SwitchEnum_CmpSuccess
+      StatementIndex: 626
+  CodeOffset: 681
+  StatementIndex: 621
+[ 28] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: K2Node_SwitchEnum_CmpSuccess
+      StatementIndex: 636
+  Assignment:
+    EX_CallMath
+      StackNode: NotEqual_ByteByte
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: K2Node_CustomEvent_NewPhase_1
+          StatementIndex: 654
+        [  1] EX_ByteConst
+          Value: 7
+          StatementIndex: 663
+      StatementIndex: 645
+  StatementIndex: 635
+[ 29] EX_JumpIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: K2Node_SwitchEnum_CmpSuccess
+      StatementIndex: 671
+  CodeOffset: 990
+  StatementIndex: 666
+[ 30] EX_PopExecutionFlow
+  StatementIndex: 680
+[ 31] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: LokiGameMode
+      StatementIndex: 682
+  Offset: 12
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: GoToPhase
+      Parameters: [1]
+        [  0] EX_ByteConst
+          Value: 7
+          StatementIndex: 712
+      StatementIndex: 703
+  StatementIndex: 681
+[ 32] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetLokiGameState_ReturnValue_1
+      StatementIndex: 716
+  Assignment:
+    EX_CallMath
+      StackNode: GetLokiGameState
+      Parameters: [1]
+        [  0] EX_Self
+          StatementIndex: 734
+      StatementIndex: 725
+  StatementIndex: 715
+[ 33] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetComponentByClass_ReturnValue
+      StatementIndex: 737
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_LocalVariable
+          Variable: CallFunc_GetLokiGameState_ReturnValue_1
+          StatementIndex: 747
+      Offset: 19
+      RValuePointer: CallFunc_GetComponentByClass_ReturnValue
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: GetComponentByClass
+          Parameters: [1]
+            [  0] EX_ObjectConst
+              Value: Comp_GameState_DropTutorial_C
+              StatementIndex: 777
+          StatementIndex: 768
+      StatementIndex: 746
+  StatementIndex: 736
+[ 34] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_IsValid_ReturnValue
+      StatementIndex: 788
+  Assignment:
+    EX_CallMath
+      StackNode: IsValid
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_GetComponentByClass_ReturnValue
+          StatementIndex: 806
+      StatementIndex: 797
+  StatementIndex: 787
+[ 35] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: CallFunc_IsValid_ReturnValue
+      StatementIndex: 817
+  StatementIndex: 816
+[ 36] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetLokiGameState_ReturnValue_1
+      StatementIndex: 827
+  Assignment:
+    EX_CallMath
+      StackNode: GetLokiGameState
+      Parameters: [1]
+        [  0] EX_Self
+          StatementIndex: 845
+      StatementIndex: 836
+  StatementIndex: 826
+[ 37] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetComponentByClass_ReturnValue
+      StatementIndex: 848
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_LocalVariable
+          Variable: CallFunc_GetLokiGameState_ReturnValue_1
+          StatementIndex: 858
+      Offset: 19
+      RValuePointer: CallFunc_GetComponentByClass_ReturnValue
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: GetComponentByClass
+          Parameters: [1]
+            [  0] EX_ObjectConst
+              Value: Comp_GameState_DropTutorial_C
+              StatementIndex: 888
+          StatementIndex: 879
+      StatementIndex: 857
+  StatementIndex: 847
+[ 38] EX_Context
+  ObjectExpression:
+    EX_LocalVariable
+      Variable: CallFunc_GetComponentByClass_ReturnValue
+      StatementIndex: 899
+  Offset: 14
+  RValuePointer: 0
+  ContextExpression:
+    EX_VirtualFunction
+      VirtualFunctionName: OnDropPhaseStart
+      Parameters: [0]
+      StatementIndex: 920
+  StatementIndex: 898
+[ 39] EX_PopExecutionFlow
+  StatementIndex: 934
+[ 40] EX_CallMath
+  StackNode: Delay
+  Parameters: [3]
+    [  0] EX_Self
+      StatementIndex: 944
+    [  1] EX_FloatConst
+      Value: 1
+      StatementIndex: 945
+    [  2] EX_StructConst
+      Struct: LatentActionInfo
+      StructSize: 32
+      Properties: [4]
+        [  0] EX_SkipOffsetConst
+          Value: 510
+          StatementIndex: 963
+        [  1] EX_IntConst
+          Value: -963274338
+          StatementIndex: 968
+        [  2] EX_NameConst
+          Value: ExecuteUbergraph_Comp_GameMode_DropPlane_Tutorial
+          StatementIndex: 973
+        [  3] EX_Self
+          StatementIndex: 986
+      StatementIndex: 950
+  StatementIndex: 935
+[ 41] EX_PopExecutionFlow
+  StatementIndex: 989
+[ 42] EX_CallMath
+  StackNode: Delay
+  Parameters: [3]
+    [  0] EX_Self
+      StatementIndex: 999
+    [  1] EX_FloatConst
+      Value: 1
+      StatementIndex: 1000
+    [  2] EX_StructConst
+      Struct: LatentActionInfo
+      StructSize: 32
+      Properties: [4]
+        [  0] EX_SkipOffsetConst
+          Value: 476
+          StatementIndex: 1018
+        [  1] EX_IntConst
+          Value: 2063541968
+          StatementIndex: 1023
+        [  2] EX_NameConst
+          Value: ExecuteUbergraph_Comp_GameMode_DropPlane_Tutorial
+          StatementIndex: 1028
+        [  3] EX_Self
+          StatementIndex: 1041
+      StatementIndex: 1005
+  StatementIndex: 990
+[ 43] EX_PopExecutionFlow
+  StatementIndex: 1044
+[ 44] EX_PopExecutionFlow
+  StatementIndex: 1045
+[ 45] EX_PopExecutionFlow
+  StatementIndex: 1046
+[ 46] EX_Let
+  Property: Temp_int_Array_Index_Variable_1
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Array_Index_Variable_1
+      StatementIndex: 1056
+  Assignment:
+    EX_IntConst
+      Value: 0
+      StatementIndex: 1065
+  StatementIndex: 1047
+[ 47] EX_Let
+  Property: CallFunc_Array_Length_ReturnValue_1
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Array_Length_ReturnValue_1
+      StatementIndex: 1079
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_ObjectConst
+          Value: Default__KismetArrayLibrary
+          StatementIndex: 1089
+      Offset: 19
+      RValuePointer: CallFunc_Array_Length_ReturnValue_1
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: Array_Length
+          Parameters: [1]
+            [  0] EX_LocalVariable
+              Variable: CallFunc_GetAllActorsOfClass_OutActors
+              StatementIndex: 1119
+          StatementIndex: 1110
+      StatementIndex: 1088
+  StatementIndex: 1070
+[ 48] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Less_IntInt_ReturnValue_1
+      StatementIndex: 1130
+  Assignment:
+    EX_CallMath
+      StackNode: Less_IntInt
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: Temp_int_Loop_Counter_Variable_1
+          StatementIndex: 1148
+        [  1] EX_LocalVariable
+          Variable: CallFunc_Array_Length_ReturnValue_1
+          StatementIndex: 1157
+      StatementIndex: 1139
+  StatementIndex: 1129
+[ 49] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: CallFunc_Less_IntInt_ReturnValue_1
+      StatementIndex: 1168
+  StatementIndex: 1167
+[ 50] EX_Let
+  Property: Temp_int_Array_Index_Variable_1
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Array_Index_Variable_1
+      StatementIndex: 1186
+  Assignment:
+    EX_LocalVariable
+      Variable: Temp_int_Loop_Counter_Variable_1
+      StatementIndex: 1195
+  StatementIndex: 1177
+[ 51] EX_PushExecutionFlow
+  PushingAddress: 1329
+  StatementIndex: 1204
+[ 52] EX_Context
+  ObjectExpression:
+    EX_ObjectConst
+      Value: Default__KismetArrayLibrary
+      StatementIndex: 1210
+  Offset: 37
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: Array_Get
+      Parameters: [3]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_GetAllActorsOfClass_OutActors
+          StatementIndex: 1240
+        [  1] EX_LocalVariable
+          Variable: Temp_int_Array_Index_Variable_1
+          StatementIndex: 1249
+        [  2] EX_LocalVariable
+          Variable: CallFunc_Array_Get_Item_1
+          StatementIndex: 1258
+      StatementIndex: 1231
+  StatementIndex: 1209
+[ 53] EX_Context
+  ObjectExpression:
+    EX_Context
+      ObjectExpression:
+        EX_LocalVariable
+          Variable: CallFunc_Array_Get_Item_1
+          StatementIndex: 1270
+      Offset: 9
+      RValuePointer: Box
+      ContextExpression:
+        EX_InstanceVariable
+          Variable: Box
+          StatementIndex: 1291
+      StatementIndex: 1269
+  Offset: 16
+  RValuePointer: 0
+  ContextExpression:
+    EX_VirtualFunction
+      VirtualFunctionName: SetCollisionEnabled
+      Parameters: [1]
+        [  0] EX_ByteConst
+          Value: 0
+          StatementIndex: 1325
+      StatementIndex: 1312
+  StatementIndex: 1268
+[ 54] EX_PopExecutionFlow
+  StatementIndex: 1328
+[ 55] EX_Let
+  Property: CallFunc_Add_IntInt_ReturnValue_1
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Add_IntInt_ReturnValue_1
+      StatementIndex: 1338
+  Assignment:
+    EX_CallMath
+      StackNode: Add_IntInt
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: Temp_int_Loop_Counter_Variable_1
+          StatementIndex: 1356
+        [  1] EX_IntConst
+          Value: 1
+          StatementIndex: 1365
+      StatementIndex: 1347
+  StatementIndex: 1329
+[ 56] EX_Let
+  Property: Temp_int_Loop_Counter_Variable_1
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Loop_Counter_Variable_1
+      StatementIndex: 1380
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_Add_IntInt_ReturnValue_1
+      StatementIndex: 1389
+  StatementIndex: 1371
+[ 57] EX_Jump
+  CodeOffset: 1070
+  StatementIndex: 1398
+[ 58] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: K2Node_SwitchEnum_CmpSuccess_1
+      StatementIndex: 1404
+  Assignment:
+    EX_CallMath
+      StackNode: NotEqual_ByteByte
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: K2Node_CustomEvent_NewPhase
+          StatementIndex: 1422
+        [  1] EX_ByteConst
+          Value: 6
+          StatementIndex: 1431
+      StatementIndex: 1413
+  StatementIndex: 1403
+[ 59] EX_JumpIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: K2Node_SwitchEnum_CmpSuccess_1
+      StatementIndex: 1439
+  CodeOffset: 1449
+  StatementIndex: 1434
+[ 60] EX_PopExecutionFlow
+  StatementIndex: 1448
+[ 61] EX_Let
+  Property: Temp_int_Loop_Counter_Variable_2
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Loop_Counter_Variable_2
+      StatementIndex: 1458
+  Assignment:
+    EX_IntConst
+      Value: 0
+      StatementIndex: 1467
+  StatementIndex: 1449
+[ 62] EX_Let
+  Property: Temp_int_Array_Index_Variable_2
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Array_Index_Variable_2
+      StatementIndex: 1481
+  Assignment:
+    EX_IntConst
+      Value: 0
+      StatementIndex: 1490
+  StatementIndex: 1472
+[ 63] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetGameState_ReturnValue
+      StatementIndex: 1496
+  Assignment:
+    EX_CallMath
+      StackNode: GetGameState
+      Parameters: [1]
+        [  0] EX_Self
+          StatementIndex: 1514
+      StatementIndex: 1505
+  StatementIndex: 1495
+[ 64] EX_Let
+  Property: CallFunc_Array_Length_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Array_Length_ReturnValue
+      StatementIndex: 1525
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_ObjectConst
+          Value: Default__KismetArrayLibrary
+          StatementIndex: 1535
+      Offset: 41
+      RValuePointer: CallFunc_Array_Length_ReturnValue
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: Array_Length
+          Parameters: [1]
+            [  0] EX_Context
+              ObjectExpression:
+                EX_LocalVariable
+                  Variable: CallFunc_GetGameState_ReturnValue
+                  StatementIndex: 1566
+              Offset: 9
+              RValuePointer: PlayerArray
+              ContextExpression:
+                EX_InstanceVariable
+                  Variable: PlayerArray
+                  StatementIndex: 1587
+              StatementIndex: 1565
+          StatementIndex: 1556
+      StatementIndex: 1534
+  StatementIndex: 1516
+[ 65] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Less_IntInt_ReturnValue
+      StatementIndex: 1598
+  Assignment:
+    EX_CallMath
+      StackNode: Less_IntInt
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: Temp_int_Loop_Counter_Variable_2
+          StatementIndex: 1616
+        [  1] EX_LocalVariable
+          Variable: CallFunc_Array_Length_ReturnValue
+          StatementIndex: 1625
+      StatementIndex: 1607
+  StatementIndex: 1597
+[ 66] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: CallFunc_Less_IntInt_ReturnValue
+      StatementIndex: 1636
+  StatementIndex: 1635
+[ 67] EX_Let
+  Property: Temp_int_Array_Index_Variable_2
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Array_Index_Variable_2
+      StatementIndex: 1654
+  Assignment:
+    EX_LocalVariable
+      Variable: Temp_int_Loop_Counter_Variable_2
+      StatementIndex: 1663
+  StatementIndex: 1645
+[ 68] EX_PushExecutionFlow
+  PushingAddress: 2045
+  StatementIndex: 1672
+[ 69] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetGameState_ReturnValue
+      StatementIndex: 1678
+  Assignment:
+    EX_CallMath
+      StackNode: GetGameState
+      Parameters: [1]
+        [  0] EX_Self
+          StatementIndex: 1696
+      StatementIndex: 1687
+  StatementIndex: 1677
+[ 70] EX_Context
+  ObjectExpression:
+    EX_ObjectConst
+      Value: Default__KismetArrayLibrary
+      StatementIndex: 1699
+  Offset: 59
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: Array_Get
+      Parameters: [3]
+        [  0] EX_Context
+          ObjectExpression:
+            EX_LocalVariable
+              Variable: CallFunc_GetGameState_ReturnValue
+              StatementIndex: 1730
+          Offset: 9
+          RValuePointer: PlayerArray
+          ContextExpression:
+            EX_InstanceVariable
+              Variable: PlayerArray
+              StatementIndex: 1751
+          StatementIndex: 1729
+        [  1] EX_LocalVariable
+          Variable: Temp_int_Array_Index_Variable_2
+          StatementIndex: 1760
+        [  2] EX_LocalVariable
+          Variable: CallFunc_Array_Get_Item
+          StatementIndex: 1769
+      StatementIndex: 1720
+  StatementIndex: 1698
+[ 71] EX_Let
+  Property: 0
+  Variable:
+    EX_LocalVariable
+      Variable: K2Node_DynamicCast_AsLoki_Player_State
+      StatementIndex: 1788
+  Assignment:
+    EX_DynamicCast
+      ClassPtr: LokiPlayerState
+      Target:
+        EX_LocalVariable
+          Variable: CallFunc_Array_Get_Item
+          StatementIndex: 1806
+      StatementIndex: 1797
+  StatementIndex: 1779
+[ 72] EX_Let
+  Property: 0
+  Variable:
+    EX_LocalVariable
+      Variable: K2Node_DynamicCast_bSuccess
+      StatementIndex: 1824
+  Assignment:
+    EX_Cast
+      ConversionType: CST_ObjectToBool
+      Target:
+        EX_LocalVariable
+          Variable: K2Node_DynamicCast_AsLoki_Player_State
+          StatementIndex: 1835
+      StatementIndex: 1833
+  StatementIndex: 1815
+[ 73] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: K2Node_DynamicCast_bSuccess
+      StatementIndex: 1845
+  StatementIndex: 1844
+[ 74] EX_FinalFunction
+  StackNode: AddPlayerToDropPlane
+  Parameters: [1]
+    [  0] EX_LocalVariable
+      Variable: K2Node_DynamicCast_AsLoki_Player_State
+      StatementIndex: 1863
+  StatementIndex: 1854
+[ 75] EX_Let
+  Property: 0
+  Variable:
+    EX_LocalVariable
+      Variable: K2Node_DynamicCast_AsLoki_Character
+      StatementIndex: 1882
+  Assignment:
+    EX_DynamicCast
+      ClassPtr: LokiCharacter
+      Target:
+        EX_Context
+          ObjectExpression:
+            EX_LocalVariable
+              Variable: K2Node_DynamicCast_AsLoki_Player_State
+              StatementIndex: 1901
+          Offset: 9
+          RValuePointer: PawnPrivate
+          ContextExpression:
+            EX_InstanceVariable
+              Variable: PawnPrivate
+              StatementIndex: 1922
+          StatementIndex: 1900
+      StatementIndex: 1891
+  StatementIndex: 1873
+[ 76] EX_Let
+  Property: 0
+  Variable:
+    EX_LocalVariable
+      Variable: K2Node_DynamicCast_bSuccess_1
+      StatementIndex: 1940
+  Assignment:
+    EX_Cast
+      ConversionType: CST_ObjectToBool
+      Target:
+        EX_LocalVariable
+          Variable: K2Node_DynamicCast_AsLoki_Character
+          StatementIndex: 1951
+      StatementIndex: 1949
+  StatementIndex: 1931
+[ 77] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: K2Node_DynamicCast_bSuccess_1
+      StatementIndex: 1961
+  StatementIndex: 1960
+[ 78] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_AuthRemoveAbilityPoint_ReturnValue
+      StatementIndex: 1971
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_LocalVariable
+          Variable: K2Node_DynamicCast_AsLoki_Character
+          StatementIndex: 1981
+      Offset: 10
+      RValuePointer: CallFunc_AuthRemoveAbilityPoint_ReturnValue
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: AuthRemoveAbilityPoint
+          Parameters: [0]
+          StatementIndex: 2002
+      StatementIndex: 1980
+  StatementIndex: 1970
+[ 79] EX_Context
+  ObjectExpression:
+    EX_LocalVariable
+      Variable: K2Node_DynamicCast_AsLoki_Player_State
+      StatementIndex: 2013
+  Offset: 10
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: AuthSetSpawnTeamLeader
+      Parameters: [0]
+      StatementIndex: 2034
+  StatementIndex: 2012
+[ 80] EX_PopExecutionFlow
+  StatementIndex: 2044
+[ 81] EX_Let
+  Property: CallFunc_Add_IntInt_ReturnValue_2
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Add_IntInt_ReturnValue_2
+      StatementIndex: 2054
+  Assignment:
+    EX_CallMath
+      StackNode: Add_IntInt
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: Temp_int_Loop_Counter_Variable_2
+          StatementIndex: 2072
+        [  1] EX_IntConst
+          Value: 1
+          StatementIndex: 2081
+      StatementIndex: 2063
+  StatementIndex: 2045
+[ 82] EX_Let
+  Property: Temp_int_Loop_Counter_Variable_2
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Loop_Counter_Variable_2
+      StatementIndex: 2096
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_Add_IntInt_ReturnValue_2
+      StatementIndex: 2105
+  StatementIndex: 2087
+[ 83] EX_Jump
+  CodeOffset: 1495
+  StatementIndex: 2114
+[ 84] EX_LocalFinalFunction
+  StackNode: ReceiveBeginPlay
+  Parameters: [0]
+  StatementIndex: 2119
+[ 85] EX_PushExecutionFlow
+  PushingAddress: 2207
+  StatementIndex: 2129
+[ 86] EX_PushExecutionFlow
+  PushingAddress: 2401
+  StatementIndex: 2134
+[ 87] EX_SetArray
+  AssigningProperty:
+    EX_LocalVariable
+      Variable: CallFunc_GetAllActorsOfClass_OutActors
+      StatementIndex: 2140
+  Elements: [0]
+  StatementIndex: 2139
+[ 88] EX_CallMath
+  StackNode: GetAllActorsOfClass
+  Parameters: [3]
+    [  0] EX_Self
+      StatementIndex: 2159
+    [  1] EX_ObjectConst
+      Value: BP_TrainingVolumeBase_C
+      StatementIndex: 2160
+    [  2] EX_LocalVariable
+      Variable: CallFunc_GetAllActorsOfClass_OutActors
+      StatementIndex: 2169
+  StatementIndex: 2150
+[ 89] EX_Let
+  Property: Temp_int_Loop_Counter_Variable_1
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Loop_Counter_Variable_1
+      StatementIndex: 2188
+  Assignment:
+    EX_IntConst
+      Value: 0
+      StatementIndex: 2197
+  StatementIndex: 2179
+[ 90] EX_Jump
+  CodeOffset: 1047
+  StatementIndex: 2202
+[ 91] EX_CallMath
+  StackNode: ServerOnly
+  Parameters: [2]
+    [  0] EX_Self
+      StatementIndex: 2216
+    [  1] EX_LocalVariable
+      Variable: CallFunc_ServerOnly_OutputExecs
+      StatementIndex: 2217
+  StatementIndex: 2207
+[ 92] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: K2Node_SwitchEnum_CmpSuccess_2
+      StatementIndex: 2228
+  Assignment:
+    EX_CallMath
+      StackNode: NotEqual_ByteByte
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_ServerOnly_OutputExecs
+          StatementIndex: 2246
+        [  1] EX_ByteConst
+          Value: 1
+          StatementIndex: 2255
+      StatementIndex: 2237
+  StatementIndex: 2227
+[ 93] EX_JumpIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: K2Node_SwitchEnum_CmpSuccess_2
+      StatementIndex: 2263
+  CodeOffset: 2273
+  StatementIndex: 2258
+[ 94] EX_PopExecutionFlow
+  StatementIndex: 2272
+[ 95] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetLokiGameState_ReturnValue
+      StatementIndex: 2274
+  Assignment:
+    EX_CallMath
+      StackNode: GetLokiGameState
+      Parameters: [1]
+        [  0] EX_Self
+          StatementIndex: 2292
+      StatementIndex: 2283
+  StatementIndex: 2273
+[ 96] EX_BindDelegate
+  FunctionName: OnRoundPhaseChanged
+  Delegate:
+    EX_LocalVariable
+      Variable: K2Node_CreateDelegate_OutputDelegate_1
+      StatementIndex: 2307
+  ObjectTerm:
+    EX_Self
+      StatementIndex: 2316
+  StatementIndex: 2294
+[ 97] EX_AddMulticastDelegate
+  Delegate:
+    EX_Context
+      ObjectExpression:
+        EX_LocalVariable
+          Variable: CallFunc_GetLokiGameState_ReturnValue
+          StatementIndex: 2319
+      Offset: 9
+      RValuePointer: OnRoundPhaseChanged
+      ContextExpression:
+        EX_InstanceVariable
+          Variable: OnRoundPhaseChanged
+          StatementIndex: 2340
+      StatementIndex: 2318
+  DelegateToAdd:
+    EX_LocalVariable
+      Variable: K2Node_CreateDelegate_OutputDelegate_1
+      StatementIndex: 2349
+  StatementIndex: 2317
+[ 98] EX_BindDelegate
+  FunctionName: PlaneDropLocationChangedEvent
+  Delegate:
+    EX_LocalVariable
+      Variable: K2Node_CreateDelegate_OutputDelegate
+      StatementIndex: 2371
+  ObjectTerm:
+    EX_Self
+      StatementIndex: 2380
+  StatementIndex: 2358
+[ 99] EX_AddMulticastDelegate
+  Delegate:
+    EX_InstanceVariable
+      Variable: OnPlaneDropLocationChanged
+      StatementIndex: 2382
+  DelegateToAdd:
+    EX_LocalVariable
+      Variable: K2Node_CreateDelegate_OutputDelegate
+      StatementIndex: 2391
+  StatementIndex: 2381
+[100] EX_PopExecutionFlow
+  StatementIndex: 2400
+[101] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetGlobalGameEventRouter_ReturnValue
+      StatementIndex: 2402
+  Assignment:
+    EX_CallMath
+      StackNode: GetGlobalGameEventRouter
+      Parameters: [1]
+        [  0] EX_Self
+          StatementIndex: 2420
+      StatementIndex: 2411
+  StatementIndex: 2401
+[102] EX_Let
+  Property: CallFunc_K2_RegisterForEvent_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_K2_RegisterForEvent_ReturnValue
+      StatementIndex: 2431
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_LocalVariable
+          Variable: CallFunc_GetGlobalGameEventRouter_ReturnValue
+          StatementIndex: 2441
+      Offset: 36
+      RValuePointer: CallFunc_K2_RegisterForEvent_ReturnValue
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: K2_RegisterForEvent
+          Parameters: [5]
+            [  0] EX_Self
+              StatementIndex: 2471
+            [  1] EX_ObjectConst
+              Value: GameEvent_OnBattleRoyalePlayerPhase_PlayerState
+              StatementIndex: 2472
+            [  2] EX_NoObject
+              StatementIndex: 2481
+            [  3] EX_NameConst
+              Value: OnGameEvent_OnBattleRoyalePlayerPhase_PlayerState
+              StatementIndex: 2482
+            [  4] EX_ByteConst
+              Value: 0
+              StatementIndex: 2495
+          StatementIndex: 2462
+      StatementIndex: 2440
+  StatementIndex: 2422
+[103] EX_PopExecutionFlow
+  StatementIndex: 2498
+[104] EX_LocalVirtualFunction
+  VirtualFunctionName: PlaneDropLocationChanged
+  Parameters: [2]
+    [  0] EX_LocalVariable
+      Variable: K2Node_CustomEvent_StartLocation
+      StatementIndex: 2512
+    [  1] EX_LocalVariable
+      Variable: K2Node_CustomEvent_EndLocation
+      StatementIndex: 2521
+  StatementIndex: 2499
+[105] EX_PopExecutionFlow
+  StatementIndex: 2531
+[106] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_IsValid_ReturnValue_1
+      StatementIndex: 2533
+  Assignment:
+    EX_CallMath
+      StackNode: IsValid
+      Parameters: [1]
+        [  0] EX_StructMemberContext
+          Property: PlayerState
+          StructExpression:
+            EX_LocalVariable
+              Variable: K2Node_CustomEvent_EventData
+              StatementIndex: 2560
+          StatementIndex: 2551
+      StatementIndex: 2542
+  StatementIndex: 2532
+[107] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: CallFunc_IsValid_ReturnValue_1
+      StatementIndex: 2571
+  StatementIndex: 2570
+[108] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: K2Node_SwitchEnum_CmpSuccess_3
+      StatementIndex: 2581
+  Assignment:
+    EX_CallMath
+      StackNode: NotEqual_ByteByte
+      Parameters: [2]
+        [  0] EX_StructMemberContext
+          Property: PlayerPhase
+          StructExpression:
+            EX_LocalVariable
+              Variable: K2Node_CustomEvent_EventData
+              StatementIndex: 2608
+          StatementIndex: 2599
+        [  1] EX_ByteConst
+          Value: 3
+          StatementIndex: 2617
+      StatementIndex: 2590
+  StatementIndex: 2580
+[109] EX_JumpIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: K2Node_SwitchEnum_CmpSuccess_3
+      StatementIndex: 2625
+  CodeOffset: 15
+  StatementIndex: 2620
+[110] EX_PopExecutionFlow
+  StatementIndex: 2634
+[111] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 2636
+  StatementIndex: 2635
+[112] EX_EndOfScript
+  StatementIndex: 2637

@@ -1,0 +1,287 @@
+{
+ "0x1266b34": [
+  "MEM",
+  "mov qword ptr [rsp + 0x16c8], rax",
+  "0x1265df0"
+ ],
+ "0x1266b4b": [
+  "MEM",
+  "mov rcx, qword ptr [rsp + 0x16c8]",
+  "0x1265df0"
+ ],
+ "0x127d79f": [
+  "MEM",
+  "mov qword ptr [rsp + 0x16c8], rax",
+  "0x127bab0"
+ ],
+ "0x127d7ae": [
+  "MEM",
+  "mov rcx, qword ptr [rsp + 0x16c8]",
+  "0x127bab0"
+ ],
+ "0x1293c67": [
+  "MEM",
+  "mov qword ptr [rsp + 0x16c8], rax",
+  "0x128e530"
+ ],
+ "0x1293c7e": [
+  "MEM",
+  "mov rcx, qword ptr [rsp + 0x16c8]",
+  "0x128e530"
+ ],
+ "0x13a0293": [
+  "MEM",
+  "lea rcx, [rsp + 0x16c8]",
+  "0x13969a0"
+ ],
+ "0x148fad4": [
+  "MEM",
+  "movups xmmword ptr [rbp + 0x16c8], xmm0",
+  "0x148cafa"
+ ],
+ "0x148fb00": [
+  "MEM",
+  "lea r9, [rbp + 0x16c8]",
+  "0x148cafa"
+ ],
+ "0x14b50a0": [
+  "MEM",
+  "lea rcx, [rbp + 0x16c8]",
+  "0x14b4410"
+ ],
+ "0x27d5171": [
+  "MEM",
+  "mov qword ptr [rbp + 0x16c8], r15",
+  "0x27d4a03"
+ ],
+ "0x393486e": [
+  "MEM",
+  "movups xmmword ptr [rbp + 0x16c8], xmm0",
+  "0x392f460"
+ ],
+ "0x3934875": [
+  "MEM",
+  "mov qword ptr [rbp + 0x16c8], rax",
+  "0x392f460"
+ ],
+ "0x3934883": [
+  "MEM",
+  "movups xmm0, xmmword ptr [rbp + 0x16c8]",
+  "0x392f460"
+ ],
+ "0x3a432d4": [
+  "MEM",
+  "mov dword ptr [rdi + 0x16c8], r14d",
+  "0x3a42d80"
+ ],
+ "0x3a6cf26": [
+  "MEM",
+  "mov edx, dword ptr [rsi + 0x16c8]",
+  "0x3a6cea0"
+ ],
+ "0x3c54fff": [
+  "MEM",
+  "movups xmmword ptr [rbp + 0x16c8], xmm0",
+  "0x3c516b0"
+ ],
+ "0x3e2d792": [
+  "IMM",
+  "imul ecx, edx, 0x16c8",
+  "0x3e2d630"
+ ],
+ "0x472d190": [
+  "MEM",
+  "mov qword ptr [rbp + 0x16c8], r14",
+  "0x472b320"
+ ],
+ "0x4832fb0": [
+  "MEM",
+  "mov qword ptr [rbp + 0x16c8], rax",
+  "0x4832f40"
+ ],
+ "0x483eba1": [
+  "MEM",
+  "mov qword ptr [rbp + 0x16c8], rsi",
+  "0x483cf90"
+ ],
+ "0x4843539": [
+  "MEM",
+  "mov byte ptr [rbp + 0x16c8], sil",
+  "0x48418a0"
+ ],
+ "0x48472dd": [
+  "MEM",
+  "mov qword ptr [rbp + 0x16c8], r14",
+  "0x4845730"
+ ],
+ "0x4850f8d": [
+  "MEM",
+  "mov qword ptr [rbp + 0x16c8], r14",
+  "0x484f3b0"
+ ],
+ "0x485a91c": [
+  "MEM",
+  "mov qword ptr [rbp + 0x16c8], rsi",
+  "0x48570b0"
+ ],
+ "0x486992e": [
+  "MEM",
+  "movups xmmword ptr [rbp + 0x16c8], xmm0",
+  "0x4869050"
+ ],
+ "0x4869947": [
+  "MEM",
+  "mov qword ptr [rbp + 0x16c8], rax",
+  "0x4869050"
+ ],
+ "0x4869955": [
+  "MEM",
+  "movups xmm1, xmmword ptr [rbp + 0x16c8]",
+  "0x4869050"
+ ],
+ "0x486bc21": [
+  "MEM",
+  "movups xmmword ptr [rbp + 0x16c8], xmm0",
+  "0x486b620"
+ ],
+ "0x486bc67": [
+  "MEM",
+  "mov qword ptr [rbp + 0x16c8], rbx",
+  "0x486b620"
+ ],
+ "0x486bc6e": [
+  "MEM",
+  "movups xmm1, xmmword ptr [rbp + 0x16c8]",
+  "0x486b620"
+ ],
+ "0x4af370d": [
+  "MEM",
+  "mov dword ptr [rdi + 0x16c8], r14d",
+  "0x4af2200"
+ ],
+ "0x4b03cc6": [
+  "MEM",
+  "cmp dword ptr [rdi + 0x16c8], r13d",
+  "0x4b02c80"
+ ],
+ "0x52921e9": [
+  "MEM",
+  "mov rcx, qword ptr [rbx + 0x16c8]",
+  "0x5292040"
+ ],
+ "0x52c9a08": [
+  "MEM",
+  "movups xmmword ptr [rbp + 0x16c8], xmm0",
+  "0x52c6110"
+ ],
+ "0x530ab43": [
+  "MEM",
+  "cmp byte ptr [rbx + 0x16c8], 0",
+  "0x530aaa0"
+ ],
+ "0x530ab4c": [
+  "MEM",
+  "mov byte ptr [rbx + 0x16c8], 0",
+  "0x530aaa0"
+ ],
+ "0x5513c05": [
+  "MEM",
+  "mov qword ptr [rdi + 0x16c8], rbp",
+  "0x5513a00"
+ ],
+ "0x559c59e": [
+  "MEM",
+  "cmp byte ptr [rax + 0x16c8], 0",
+  "0x559c560"
+ ],
+ "0x559ea48": [
+  "MEM",
+  "mov word ptr [r14 + 0x16c8], bp",
+  "0x559e180"
+ ],
+ "0x559fdf4": [
+  "MEM",
+  "mov byte ptr [rdi + 0x16c8], sil",
+  "0x559f580"
+ ],
+ "0x55a6bcb": [
+  "MEM",
+  "movups xmmword ptr [rsi + 0x16c8], xmm0",
+  "0x55a6a30"
+ ],
+ "0x55a7562": [
+  "MEM",
+  "movups xmmword ptr [rbx + 0x16c8], xmm0",
+  "0x55a747b"
+ ],
+ "0x55b860b": [
+  "MEM",
+  "mov byte ptr [r15 + 0x16c8], 0",
+  "0x55b85d5"
+ ],
+ "0x55bdd6c": [
+  "MEM",
+  "movups xmmword ptr [rbx + 0x16c8], xmm0",
+  "0x55bdd5e"
+ ],
+ "0x55be974": [
+  "MEM",
+  "movups xmmword ptr [rbx + 0x16c8], xmm0",
+  "0x55be930"
+ ],
+ "0x55c0304": [
+  "MEM",
+  "movups xmm0, xmmword ptr [rbx + 0x16c8]",
+  "0x55c00c0"
+ ],
+ "0x55c099e": [
+  "MEM",
+  "movups xmm0, xmmword ptr [rbx + 0x16c8]",
+  "0x55c0970"
+ ],
+ "0x55c0da9": [
+  "MEM",
+  "mov byte ptr [rbx + 0x16c8], 1",
+  "0x55c0d66"
+ ],
+ "0x6e80b2e": [
+  "MEM",
+  "lea rbx, [rcx + 0x16c8]",
+  "0x6e80b10"
+ ],
+ "0x6e8c422": [
+  "IMM",
+  "mov ecx, 0x16c8",
+  "0x6e8c3f6"
+ ],
+ "0x6e8d22f": [
+  "IMM",
+  "mov eax, 0x16c8",
+  "0x6e8d1d0"
+ ],
+ "0x6e8ed0e": [
+  "IMM",
+  "mov edx, 0x16c8",
+  "0x6e8ead9"
+ ],
+ "0x6e8f253": [
+  "IMM",
+  "mov eax, 0x16c8",
+  "0x6e8f1f0"
+ ],
+ "0x6e92cad": [
+  "MEM",
+  "lea r11, [rcx + 0x16c8]",
+  "0x6e92ca0"
+ ],
+ "0x6e92d2d": [
+  "IMM",
+  "add rcx, 0x16c8",
+  "0x6e92d10"
+ ],
+ "0x6e92d5e": [
+  "MEM",
+  "lea rdx, [r11 + 0x16c8]",
+  "0x6e92d10"
+ ]
+}

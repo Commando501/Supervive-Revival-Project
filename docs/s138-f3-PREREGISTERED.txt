@@ -1,0 +1,106 @@
+S138 FLIGHT 3 -- PRE-REGISTRATION
+Written 2026-08-23 BEFORE launching. Not editable afterwards; corrections go in the write-up.
+
+================================================================================================
+0. WHAT IS BEING FLOWN, AND WHY
+================================================================================================
+The S138 latch fix (docs/s138-latch-fix-rebuild.md) is rebuilt, verified and UNFLOWN. This flight
+does two things:
+
+  (A) VALIDATE THE FIX. Flight 2's G3/G4 gate read a LokiGameStateUAVComponent -- a COMPONENT --
+      because the latch used a SUBSTRING chain test. The fixed arm uses an EXACT chain-element
+      match, keeps ALL candidates, prints each one's FULL CHAIN, cross-checks against
+      World->GameState, and has an explicit NOT MEASURED state.
+
+  (B) SETTLE THE DIVERT. SpawnBot returned a pawn but left early via one of FOUR jumps to the
+      success tail 0x556DED2:
+          0x556DD63  GetLokiGameState == NULL
+          0x556DE6A  GetTeamState == NULL          <- (b), now known permanently blocked
+          0x556DE76  pawn->Controller == NULL      <- excluded: Possess ran
+          0x556DE82  controller IsA(LokiBotController) fail  <- excluded: it IS one
+      The discriminator is ONE READ, and it is free:  [PlayerState + 0x8C8].
+
+ARMS (RAW / VIRTUALSIZE), all archived at dumps/s138-arms-v2/:
+  tutorial_launch_botspawn.dll           b2203efd62161182 / 213e0010ed8fd003   (page-decrypt step)
+  tutorial_launch_spawnbot_premade.dll   302c2d29dfa3c4c5 / ebd0300408d590af   (ARM E, fixed)
+  regression gate botai                  5e47c13cf7f0a158 -- UNCHANGED by the fix
+
+================================================================================================
+1. THE DISCRIMINATOR -- state it before the flight so it cannot be reinterpreted after
+================================================================================================
+From the disassembly (two independent parties, machine-exhaustive):
+
+    0x556DD69  mov  rdi,[rbx+0x3d8]     ; rbx = the NEW PAWN -> its PlayerState
+    0x556DD73  je   0x556DE58           ; GATE 1  PlayerState null
+    0x556DD83  je   0x556DE58           ; GATE 2  IsA(ALokiPlayerState)
+    0x556DD89  cmp  dword [rdi+0x8c8],1
+    0x556DD90  jg   0x556DE58           ; GATE 3  PlatformPlayerID.ArrayNum > 1
+    ---- BLOCK 0x556DD96..0x556DE57 ----
+    0x556DDAD  mov  [rsi+0xe8],eax      ; the component's bot counter ++
+    0x556DDB3  Printf(L"bot%d")
+    0x556DDB8..0x556DE0B  move that FString into [rdi+0x8c0]   ; PlayerState->PlatformPlayerID
+    0x556DE43  ServerSetHeroClass  -> 0xF7EC20 void fold (no-op)
+    0x556DE53  SetPlayerTeam       -> 0xF7EB60 false fold (no-op)
+
+G2 measures [PS+0x8C8] BEFORE the call. In flight 2 it read 0.
+If the block RUNS, it writes an FString into [PS+0x8C0] and its Num into [PS+0x8C8].
+
+  P1  [PS+0x8C8] AFTER the call is NON-ZERO  =>  the naming block RAN
+                                             =>  execution passed 0x556DD63
+                                             =>  the divert was 0x556DE6A (GetTeamState)
+  P2  [PS+0x8C8] AFTER the call is STILL 0   =>  the block did NOT run
+                                             =>  the divert was 0x556DD63 (no GameState)
+
+  P3  If P1: [PS+0x8C0] holds an FString whose text is "bot" followed by a digit.
+      Reading that string is a SECOND, independent confirmation of the same branch.
+  P4  If P1: the component's bot counter [comp+0xE8] incremented across the call.
+
+⚠ These are mutually exclusive and BOTH are informative. There is no "uninterpretable" outcome
+  here UNLESS the arm refuses before the call or the client dies first.
+⚠ Read the PlayerState pointer the ARM ITSELF prints at G2 -- do not re-derive it independently,
+  or a mismatch becomes ambiguous between "different object" and "different divert".
+
+================================================================================================
+2. PREDICTIONS FOR THE FIX ITSELF (A)
+================================================================================================
+  F1  The marker prints "G3/G4 GameState candidates: N" with N >= 0, and the OLD line
+      "G3/G4 LokiGameState=0x..." does NOT appear. (Static probe already confirmed the old string
+      is absent from the binary; this is the runtime half.)
+  F2  No candidate printed has a class whose chain is a COMPONENT chain. Specifically:
+      LokiGameStateUAVComponent MUST NOT appear as a gsCand. That is the whole point of the fix.
+  F3  Each candidate line carries a full chain containing an element exactly "LokiGameState".
+  F4  A "World->GameState = 0x... (AUTHORITATIVE)" line appears, OR the explicit fallback line.
+  F5  If the world is healthy, the expected candidate is BP_LokiGameState_Tutorial_C -- the class
+      the client's own log names ("Entering game state BP_LokiGameState_Tutorial_C_...").
+  F6  TeamStates.Num on the REAL GameState is expected to be 0. ⚠ That is NOT a defect and NOT a
+      new finding -- S138 established offline that TeamStates can never be non-empty on a client
+      (GetOrCreateTeamState impl 0x5634BD0 returns nullptr unconditionally; SetNumTeams is the
+      void fold). A non-zero value would be the surprise and would REFUTE that offline result.
+
+================================================================================================
+3. WHAT WOULD MAKE THIS FLIGHT UNINTERPRETABLE
+================================================================================================
+  U1  The arm REFUSES at a gate -> a staging statement, not a result. G6 in particular refuses if
+      SpawnBot's page is not decrypted, which is why botspawn is injected FIRST.
+  U2  [BS] done absent, or called=0 -> the arm was a no-op (the S136 lesson). Read called= only
+      AFTER [BS] done.
+  U3  The client dies before the post-call read. CAPTURE AS YOU GO -- both S138 sittings and both
+      S137 sittings ended in FK-32.
+  U4  If G2's PlayerState pointer and the post-call read target differ, the read is void.
+
+================================================================================================
+4. PROCEDURE
+================================================================================================
+  1. launch -NoHook; settle gate (uptime >=125s, TryUIReady SUCCESS, LobbyV2_Persistent)
+  2. POST joinQueue; confirm MatchID + a GAME-UA GET /core-game/matches/
+  3. fk24-stage.ps1 -SkipProbe   (gft -> fo -> sp), wait for [SP] done step=4
+  4. page probe BASELINE  (expect SpawnBot 0x556D910 NOACCESS)
+  5. inject botspawn; wait [BS] done; page probe AFTER (expect SpawnBot READABLE, prologue
+     40555356574154415541564157488dac)
+  6. inject spawnbot_premade; wait [BS] done
+  7. READ [PS+0x8C8] and [PS+0x8C0] -- THE DISCRIMINATOR
+  8. external playerstate_readout + obj_by_chain =LokiBotController
+  9. dumpimage EITHER WAY
+
+⛔ SCOPE, unchanged: even on full success this is NOT a working bot. ServerSetHeroClass and
+   SetPlayerTeam are stripped folds and stay that way. Say "SpawnBot ran its premade path".

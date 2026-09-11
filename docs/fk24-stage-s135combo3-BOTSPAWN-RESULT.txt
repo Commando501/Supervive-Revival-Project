@@ -1,0 +1,66 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[BS] RM_BOTSPAWN (S135): SpawnClassBotAtLoc on the tutorial GameMode's own bot spawner.
+[BS] CO-OP VS. AI is already ACCESSIBLE (tile + FIND MATCH work, S133); what has never
+[BS] happened is a BOT. The bots queue's own gamemode IS Breach, so this arm does NOT
+[BS] use it: Comp_BP_BotSpawner_C rides on BP_LokiGameMode_Tutorial, and [M] it has ZERO
+[BS] ServerOnly/HasAuthority/SpawnPlayer occurrences (control: 8 in the gamemode's own
+[BS] ubergraph) -- so it is free of BOTH the FK-42 exec-pin gates and FK-1's stripped
+[BS] SpawnPlayer. Inject into a STAGED TUTORIAL WORLD (gft -> fo -> sp -> this).
+[BS] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF60A2854A0 stub=0x2978ED31140 funcCls=0x2961A7DB000 gameTid=41832
+[BS] ---- A0: BASELINE WORLD SCAN (read-only; NO CALL) ----
+[FS] arm: swapped=17563 BP UFunctions  (scan 3641 ms over 154890 objects, 34253 UFunctions total) -- NO .text WRITE
+[BS]   heroCand[0] 0x29701468040 'LokiHeroCharacterGrid' cls='LokiHeroCharacterGrid' root=0x0 locOff=0x158 -> no readable location
+[BS]   heroCand[1] 0x296C33D8020 'BP_HERO_Ronin_C' cls='BP_HERO_Ronin_C' root=0x29661B511E0 locOff=0x158 -> USABLE
+[BS] census A0       BotController-chain=0  LokiHeroCharacter-chain=2  (136483 objects, 1024 classes memoised, 3765 ms)
+[BS] hero candidates: 2; chosen=0x296C33D8020
+[BS] ---- RESOLVE ----
+[FS] hot: 0 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   (none -- the swapped functions are not being dispatched on the game thread)
+[PH] gm-cand[0] 0x29709B90040 'EndOfGameModel'  chain=EndOfGameModel<-Object  [+0x418]=0x0 not-live
+[PH] world 0x2979E8A75E0 'LVL_Tutorial' AuthorityGameMode@0x250=0x0  GameState@0x258=0x0
+[FS] *** ARMED AND LIVE: hitsGT=1 allThreadCalls=1 after 8016 ms (~0 game-thread dispatches/s) ***
+[PH] gm-cand[1] 0x297AE4D2920 'Comp_GameMode_EoGFinisher'  chain=Comp_GameMode_EoGFinisher_C<-Comp_GameMode_EoGFinisher_Code_C<-ActorComponent<-Object  [+0x418]=0xACA160000000000 not-live
+[PH] gm-cand[2] 0x2977FD8C400 'Comp_GameMode_DeathCircle'  chain=Comp_GameMode_DeathCircle_C<-ActorComponent<-Object  [+0x418]=0x1EDBF0001EDBE not-live
+[PH] gm-cand[3] 0x29780A991C0 'Comp_GameMode_DropPlane_Tutorial'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object  [+0x418]=0x2C0042002C004100 not-live
+[PH] gm-cand[4] 0x297FA208080 'Comp_GameMode_ShopKeepers'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x296CE58AA40 LIVE-UOBJECT
+[PH] gm-cand[5] 0x2970B3D52A0 'BP_LokiGameMode_Tutorial_C'  chain=BP_LokiGameMode_Tutorial_C<-LokiTutorialGameMode<-LokiRoundGameMode<-LokiGameMode<-LokiGameModeBase<-GameModeBase<-Info<-LokiActor<-Actor<-Object  [+0x418]=0x297B4CCA060 LIVE-UOBJECT
+[PH] gm-cand[6] 0x297F9781900 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x140000000C not-live
+[PH] gm-cand[7] 0x29787C77C60 'Comp_GameMode_EoGFinisher_GEN_VARIABLE'  chain=Comp_GameMode_EoGFinisher_C<-Comp_GameMode_EoGFinisher_Code_C<-ActorComponent<-Object  [+0x418]=0x1D000002 not-live
+[PH] gm-cand[8] 0x296FBFA1A80 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[9] 0x2978A26F800 'Comp_GameMode_DeathCircle_GEN_VARIABLE'  chain=Comp_GameMode_DeathCircle_C<-ActorComponent<-Object  [+0x418]=0x3F6000003F649249 not-live
+[PH] gm-cand[10] 0x297F9917D80 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[11] 0x297FA57F400 'Comp_GameMode_WipeoutRespawns_GEN_VARIABLE'  chain=Comp_GameMode_WipeoutRespawns_C<-ActorComponent<-Object  [+0x418]=0x29786F5D0C0 LIVE-UOBJECT
+[PH] gm-cand[12] 0x297F9914480 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x1AFFFFFFFF not-live
+[PH] gm-cand[13] 0x297FA57F200 'Comp_GameMode_Vaults_GEN_VARIABLE'  chain=Comp_GameMode_Vaults_C<-ActorComponent<-Object  [+0x418]=0x29786F5D0C0 LIVE-UOBJECT
+[PH] gm-cand[14] 0x29780834780 'Comp_GameMode_QuestManager_GEN_VARIABLE'  chain=Comp_GameMode_QuestManager_C<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[15] 0x29778B2D580 'Comp_GameMode_Biomes_GEN_VARIABLE'  chain=Comp_GameMode_Biomes_C<-Comp_GameMode_Biomes_Code_C<-LokiBiomeManagerComponent<-ActorComponent<-Object  [+0x418]=0x0 not-live
+[PH] gm-cand[16] 0x2977D1A5500 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x418]=0x190F000019000002 not-live
+[PH] gm-cand[17] 0x2978083B5C0 'Comp_GameMode_RoundReset_GEN_VARIABLE'  chain=Comp_GameMode_RoundReset_C<-ActorComponent<-Object  [+0x418]=0x800000003 not-live
+[PH] gm enumeration: 18 live *GameMode instance(s), 1 deriving from LokiRoundGameMode; world=0x2979E8A75E0
+[BS] gameMode=0x2970B3D52A0 via the ONLY live instance deriving from LokiRoundGameMode (the class that DECLARES GoToPhase); no World AuthorityGameMode available
+[BS] gameMode class='BP_LokiGameMode_Tutorial_C'
+[BS] Comp_BP_BotSpawner@0x808 = 0x297AE728400  name='Comp_BP_BotSpawner' class='Comp_BP_BotSpawner_C'
+[BS] SpawnableBots@+0xD8: Data=0x297833ED480 Num=13 Max=16 (Initialize Bot Options RAN)
+[BS] fn=0x297B18C7B00 params: Team@0x0 Loc@0x8 Diff@0x20 Class@0x28 Level@0x30 CreatedBot@0x38
+[BS] heroClass 'BP_HERO_Ronin_C' = 0x29785FBB140 chain=BP_HERO_Ronin_C<-BP_LokiHeroCharacter_C<-BP_LokiHeroCharacter_Code_C<-LokiHeroCharacter_AS<-LokiHeroCharacter<-LokiCharacter<-Character<-Pawn<-LokiActor<-Actor<-Object -> DERIVES FROM LokiHeroCharacter
+[BS] playerHero=0x296C33D8020 'BP_HERO_Ronin_C' class='BP_HERO_Ronin_C'
+[BS]   PlayerState=0x2962F9CDDE0 teamOff=0xE88 playerTeam=-1
+[BS]   heroLoc = (0.0, 0.0, 13240.0)  [root=0x29661B511E0 locOff=0x158]
+[BS] ARGS: team=0 (player=-1) spawnLoc=(600.0, 0.0, 13240.0) diff=1 level=1 hero='BP_HERO_Ronin_C'
+[BS] ---- A1: STABILITY RE-SCAN after 750 ms settle (still NO CALL) ----
+[FS] t=+15s hitsGT=1 called=0 allThreadCalls=1 swapped=17563
+[BS] census A1       BotController-chain=0  LokiHeroCharacter-chain=2  (136483 objects, 1024 classes memoised, 4969 ms)
+[BS] ---- THE CALL: SpawnClassBotAtLoc ----
+[FF] CallBP frame=ZEROONLY (0x48..0x80 zeroed)
+[BS] call returned ok=0 faulted=0 refused=0 CreatedBot=0x0 ''
+[BS] ! CreatedBot is NOT the verdict -- see the header. The census delta is.
+[BS] ---- A2: POST-CALL SCAN ----
+[BS] census A2       BotController-chain=0  LokiHeroCharacter-chain=3  (136952 objects, 1024 classes memoised, 4172 ms)
+[FS] disarm: restored=17563 of 17563 swapped (scan 3703 ms, 34253 UFunctions live)
+[BS] ---------------- RM_BOTSPAWN SUMMARY ----------------
+[BS] resolved=1 roster=13 team=0(player=-1) called=1 faulted=0 refused=0
+[BS] botControllers A0=0 A1=0 A2=0 | heroCharacters A0=2 A1=2 A2=3
+[BS] VERDICT: a hero pawn appeared (+1) with NO bot controller. A pawn with no AI is not a bot; check whether MakeNewBotController is one of the stripped impls.
+[BS] done (step=4 resolved=1 called=1 faulted=0 dCtl=0 dHero=1 hits=1 hitsGT=1)

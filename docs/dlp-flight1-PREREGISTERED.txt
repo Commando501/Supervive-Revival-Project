@@ -1,0 +1,195 @@
+S150-drop DLP FLIGHT 1 — PRE-REGISTERED PREDICTIONS
+=====================================================
+Written BEFORE launch, per docs/next-session-prompt-s150-drop-dlp.md §5.
+Do NOT edit after the flight; add a post-flight results section instead.
+
+Artifact
+--------
+  build            : tools/sigbypass-mod/build/tutorial_launch_droplandplay.dll
+  .text sha256[:16]: RAW=157795de805b8fbc  VSIZE=1d1e378178b3ef23
+  file size        : 398,848 bytes
+  imports          : KERNEL32.dll (82), USER32.dll (3)
+  verify_dll.py    : PASS (no C++ exception machinery, no CRT import)
+  --dupes          : droplandplay is NOT in any duplicate group (unique)
+  build.ps1 flags  : -DKRUNMODE=RM_DROPLANDPLAY -DKISDLP=1 -DKFSNAME="" -DKFRAMEINIT=1
+                     -DKFAULTINFO=1 -DKOUTPARMRET=1 -DKDPARMS=0x33 -DKPDARMS=0x1FF
+                     -DKPDCDOPOKE=1 -DKDXLANDING=2 -DKNOTELE=1 -DKFLYMODE=1
+
+PF-1 (DLL-size vs manual-map threshold)  --  PASS
+--------------------------------------------------
+  DLP file size                            : 398,848 bytes
+  Largest historical FLOWN tutorial_launch : 283,648 bytes (droppod_pe_cdopoke, flight 4b)
+  Ratio                                    : 1.41x
+  Handoff threshold                        : investigate mmap.go if >2x  -->  1.41x is UNDER
+  Verdict                                  : proceed. The manual mapper (tools/inject/mmap.go)
+                                             has successfully mapped 283K+ DLLs many times.
+                                             1.41x is not "significantly larger".
+
+PF-2 (regression digest audit)  --  PASS
+----------------------------------------
+  All 9 recorded regression gates reproduce byte-identical after DLP edits:
+    botai              5e47c13cf7f0a158  MATCH
+    play               9bc10a4552c596e1  MATCH
+    dropplane_b1only   dcb19157cf45f9aa  MATCH
+    droppod-pe-cdopoke 283c1692a2135680  MATCH
+    dismount           0fe6d7ae1f26e16b  MATCH
+    dismount-landstart 62f257c191027ee3  MATCH
+    mount-ride         9b7f88af3210c438  MATCH
+    mount-descend      c26e8831f45d7548  MATCH
+    mount-phaseb       d69642beacc5e7a8  MATCH
+  Isolation strategy: every DLP addition is gated `#if KISDLP ... #endif`. Non-DLP variants
+  build with default KISDLP=0 (undefined at their build lines; source's `#ifndef KISDLP
+  #define KISDLP 0 #endif` supplies the default). Preprocessor strips every DLP addition
+  before the compiler sees the file.
+
+PF-3 (record DLP digest)  --  DONE
+----------------------------------
+  RAW  = 157795de805b8fbc  <== the new regression gate for `droplandplay`
+  VSIZE= 1d1e378178b3ef23
+  file = 398,848 bytes    rawsize=258,560  vsize=258,368  pad=192
+
+Flight prerequisites
+--------------------
+  * ELEVATED PowerShell (redirect requires admin)
+  * Steam running BEFORE launch (Auth Failure 14005 otherwise)
+  * server/internal/interactive/interactive.go `forceTutorialMatch = true` (already set)
+  * `docs/capture.log` backed up if evidence still needed (ags truncates on restart)
+
+Flight recipe
+-------------
+  # Terminal 1 (elevated PowerShell). Steam must be running.
+  cd "G:\git\Supervive Revival Project"
+  .\configs\launch-redirect.ps1 -NoHook
+
+  # Terminal 2 (elevated PowerShell), once the game process appears.
+  # Stage the world with gft + fo + sp, skip the standard probe:
+  .\configs\fk24-stage.ps1 -Probe tools\sigbypass-mod\build\tutorial_launch_droplandplay.dll -SkipProbe -Label dlp-flight1 -AllowStale
+
+  # WAIT for `[SP] done step=4` in docs/tutorial-launch-marker.txt (or the stager's copy
+  # docs/fk24-stage-dlp-flight1-3-sp.txt) before injecting DLP.
+
+  # Take an early dumpimage (evidence survives mid-arm death; per §6.10):
+  tools\usmapdump\usmapdump.exe dumpimage 'SUPERVIVE-Win64-Shipping.exe' dumps\s150-dlp-flight1-early
+
+  # Inject DLP:
+  & tools\inject\inject.exe mmap <PID> tools\sigbypass-mod\build\tutorial_launch_droplandplay.dll
+
+  # Monitor docs/tutorial-launch-marker.txt for [DLP], [DP], [PD], [DX], [PL] lines.
+
+Success predictions (unified marker stream)
+-------------------------------------------
+The marker file should show ONE FILE containing all four phases in sequence.
+
+PHASE 0 (DP):
+  [DLP] RM_DROPLANDPLAY (S150-drop): DP -> PD -> DX -> PL, ONE injection, phase advances...
+  [DLP] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+  [DLP] armed; holding for up to 600000 ms (KDLPPLAYHOLDMS). Phases will advance on OnPI hits.
+  [DLP] ============ PHASE 0: DP (drop-plane spawn) ============
+  [DP]  ... (the full existing DP marker output through case 8)
+  [DP]  ================ game-thread arms COMPLETE (B4 runs on the worker after a settle) =====
+  [DLP] === PHASE 0 (DP) COMPLETE, advancing to PHASE 1 (PD) ===
+
+  EXPECTED per §6.9: `[DP]  B1 SpawnPlane AFTER: FAULTED (SEH-captured) rva=0x13495DD`
+  The SEH is LOCAL to DoDropPlane's ladder. The plane IS spawned (§6.9 says statements
+  [6]..[9] execute before the fault at [10]). DropShip census must move 0 -> 1.
+
+  ⚠ If [DP] never appears or the phase 0->1 advance line is missing after ~30 s, DP failed.
+    The DLP FinalReport will attribute the phase.
+
+PHASE 1 (PD):
+  [DLP] ============ PHASE 1: PD (drop-pod spawn) ============
+  [PD]  ... (the full existing PD marker output)
+  [PD]  ================ game-thread arms COMPLETE (C4 runs on the worker after a settle) =====
+  [DLP] === PHASE 1 (PD) COMPLETE, advancing to PHASE 2 (DX) ===
+
+  EXPECTED: BP_DropPod_Tutorial_C count +1, PodTeamIndex=0, LokiRideable non-null.
+
+PHASE 2 (DX):
+  [DLP] ============ PHASE 2: DX (dismount, land at PlayerStart) ============
+  [DX]  cand[0] ps=... cls=LokiPlayerState_HeroAffiliated | GATE5 UNMEASURED -> SKIP
+  [DX]  cand[1] ps=... cls=BP_LokiPlayerState_C | GATE5 PASS | GATE6 PASS
+  [DX]  picked cand[1] ... hero=... 'BP_HERO_Ronin_C'
+  [DX]  D3 detach(PS in array) AFTER: fault=no
+  [DX]  hero before=(0.0, 0.0, 13240.0)  after=(-3206.4, 5070.5, 138.0)
+  [DX]  ============ game-thread arms COMPLETE ============
+  [DLP] === PHASE 2 (DX) COMPLETE, advancing to PHASE 3 (PL) ===
+
+  EXPECTED: hero moved to landing coord ~(-3206, 5070, 138 -> 90).
+            Detach fault=no. PlayersAttached.Num: 0 -> 1 -> 0.
+
+PHASE 3 (PL):
+  [DLP] ============ PHASE 3: PL (play at landing) ============
+  [PL]  ... (existing PL marker output)
+  [PL]  *** init complete: body=BUILT; camera + WASD active ***
+  [ANIM] PlayAnimation(run, loop) ok
+  [ANIM] PlayAnimation(idle, loop) ok
+  [DIAG] hero=(-3206, 5070, ~90) ...   <-- landed and settled
+  [DIAG] hero=(-1960, 5070, 90) ...    <-- WALKED, Z stayed 90 (Walking mode, KFLYMODE=1)
+  [DLP] PL (phase 3) has no terminal -- FsHold(KDLPPLAYHOLDMS=600000) will release the arm...
+
+  EXPECTED: hero coord ~(-1960, 5070, 90) or thereabouts. Matches flight 4b behaviour.
+            X moves (WASD locomotion), Z stays 90 (ground-level, matching Walking mode).
+
+WORKER RELEASE (after PL hold expires OR fault):
+  [DLP] ================= RM_DROPLANDPLAY FINAL REPORT =================
+  [DLP] terminal phase: 3 (PL)   faultPhase: -1   entered: DP=1 PD=1 DX=1 PL=1
+  [DLP] --- per-phase summaries (from the sub-arms' own FinalReports) ---
+  [DP]  ... (DpFinalReport table)
+  [PD]  ... (PdFinalReport table)
+  [DX]  ... (DxFinalReport verdict)
+  [DLP]   PL entered -- ran under FsHold(KDLPPLAYHOLDMS) until timeout; ...
+  [DLP] done (terminalPhase=3 faultPhase=-1 entered: DP=1 PD=1 DX=1 PL=1 called=... hitsGT=...)
+
+Terminal SUCCESS
+----------------
+  * `[DLP] === PHASE N COMPLETE, advancing to PHASE N+1 ===` lines for N = 0, 1, 2
+  * `[DLP] PL (phase 3) has no terminal` line appears
+  * `[DLP] terminal phase: 3 (PL)   faultPhase: -1`
+  * `entered: DP=1 PD=1 DX=1 PL=1`
+  * Hero final coord ~(-1960, 5070, 90) or thereabouts (Z=90 constant during walk).
+  * Client alive (no crashpad handoff).
+
+Terminal FAULT
+--------------
+  Any of:
+  * `[DLP] *** FAULT in DoDropLandPlay orchestrator at phase N (name) -- fault=... ***`
+  * `[DLP] *** VERDICT: FAULTED at phase N (name). Do NOT read later phases as results. ***`
+  * `[DLP] N: XxResolve failed -- HALTING (fault attributed to phase N)`
+  * `entered: DP=1 PD=0 DX=0 PL=0` (halt at DP)
+  * `entered: DP=1 PD=1 DX=0 PL=0` (halt at PD)
+  * `entered: DP=1 PD=1 DX=1 PL=0` (halt at DX)
+  * Exit code 9 (fault) vs 0 (success)
+
+Pre-registered risks + fallbacks (from §6 of the handoff)
+---------------------------------------------------------
+  R1 DLL size            (PF-1 passed: 1.41x is under the 2x threshold)
+  R2 KFRAMEINIT scope    (RAII: DP entry sets FI_S80=2; SubladderTerminate resets to KFRAMEINIT
+                          default when advancing past DP)
+  R3 DP __except kills   (DoDropPlane's OWN __except sets g_done=1 on ANY exception. In DLP
+                          mode this halts the arm; DlpFinalReport shows faultPhase=0. That is
+                          the correct behaviour: a DP SEH means DP failed; do NOT continue.)
+  R4 Regression blast    (verified: all 9 gates byte-identical, --dupes clean)
+  R5 Stale globals       (Worker resets g_dlpPhase/g_dlpFaultPhase/g_dlp*Entered before FsArm)
+  R6 KNOTELE/KFLYMODE    (build line includes both; verify by absence of `[PL] teleporting`)
+  R7 RdResolve timing    (DX first entry calls RdResolve on the game thread; if it fails,
+                          halt with g_dlpFaultPhase=2)
+  R8 Failed-attribution  (DlpFinalReport prints terminalPhase + faultPhase + entered=... per
+                          phase; the "***VERDICT: FAULTED at phase N***" line is unambiguous)
+  R9/R10                 (FK-31/FK-32 budget improved -- fewer injections)
+
+After-flight actions
+--------------------
+  If SUCCESS:
+    1. Preserve marker: `Copy-Item docs/tutorial-launch-marker.txt docs/dlp-flight1-final-marker.txt`
+    2. Late dumpimage: `usmapdump.exe dumpimage ... dumps\s150-dlp-flight1-success`
+    3. Terminate: `Get-Process SUPERVIVE-Win64-Shipping,ags | %{ $_.Kill() }`
+    4. Update docs/drop-sequence-status-s150.md with the flight result.
+    5. Commit.
+
+  If FAULT:
+    1. Preserve marker + late dumpimage as above.
+    2. Read `[DLP] FAULT at phase N` + `g_dlpFaultPhase` -- that's your localisation.
+    3. Design a targeted next step based on the failure mode (§6 of the handoff).
+    4. Do NOT re-fly without diagnosing.
+
+--- end of pre-registration ---

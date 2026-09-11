@@ -1,0 +1,379 @@
+==============================================================================
+MODULE   FFA.FFABotSpawner
+SOURCE   FFA/FFABotSpawner.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_UFFABotSpawnerComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UFFABotSpawnerComponent@ UFFABotSpawnerComponent()
+// 4 instr, 28 B bytecode, id=0x5D766BAB, varspace=2
+------------------------------------------------------------------------------
+{
+    UFFABotSpawnerComponent v2;
+
+    v2 = UFFABotSpawnerComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84838 q:0x26e6ed71900; new UFFABotSpawnerComponent   ctor=UFFABotSpawnerComponent::UFFABotSpawnerComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x755E4359, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UFFABotSpawnerComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057d958         ; __StaticType_UFFABotSpawnerComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UFFABotSpawnerComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xAECA0A60, varspace=2
+------------------------------------------------------------------------------
+{
+    UFFABotSpawnerComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UFFABotSpawnerComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972683            ; UFFABotSpawnerComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057d958         ; __StaticType_UFFABotSpawnerComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UFFABotSpawnerComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xDA36ACDE, varspace=2
+------------------------------------------------------------------------------
+{
+    UFFABotSpawnerComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UFFABotSpawnerComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972683            ; UFFABotSpawnerComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057d958         ; __StaticType_UFFABotSpawnerComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UFFABotSpawnerComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x101F7464, varspace=2
+------------------------------------------------------------------------------
+{
+    UFFABotSpawnerComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UFFABotSpawnerComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972683            ; UFFABotSpawnerComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057d958         ; __StaticType_UFFABotSpawnerComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class UFFABotSpawnerComponent : ULokiBotSpawnerComponent
+// base /Script/Loki.LokiBotSpawnerComponent  ->  ../../../Loki/Source/Loki/AI/Bots/LokiBotSpawnerComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TArray<FPrimaryAssetId> AvailableBots;
+
+}
+
+------------------------------------------------------------------------------
+UFFABotSpawnerComponent() const
+// 6 instr, 44 B bytecode, id=0x30016226, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AvailableBots = TArray<FPrimaryAssetId>();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //     3  CALLSYS        q:0x26e6ee89000         ; void TArray<FPrimaryAssetId>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  FinConstruct   q:0x26e6ed71900         ; UFFABotSpawnerComponent
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 139 instr, 1064 B bytecode, id=0x47F6199F, varspace=36
+------------------------------------------------------------------------------
+{
+    FPrimaryAssetId v4;
+    TArray<TSubclassOf<ALokiHeroCharacter@>> v8;
+    TArrayIterator<FPrimaryAssetId> v14;
+    auto v21;
+    FPrimaryAssetId v24;
+    ELokiAssetLookupExecPins v25;
+    ULokiHeroAsset v30;
+    TSubclassOf<ALokiHeroCharacter@> v34;
+
+    v4 = FPrimaryAssetId("Hero:assault");
+    this.AvailableBots.Add(v4);
+    v4 = FPrimaryAssetId("Hero:firefox");
+    this.AvailableBots.Add(v4);
+    v4 = FPrimaryAssetId("Hero:freeze");
+    this.AvailableBots.Add(v4);
+    v4 = FPrimaryAssetId("Hero:sniper");
+    this.AvailableBots.Add(v4);
+    v4 = FPrimaryAssetId("Hero:flex");
+    this.AvailableBots.Add(v4);
+    v4 = FPrimaryAssetId("Hero:hookguy");
+    this.AvailableBots.Add(v4);
+    v4 = FPrimaryAssetId("Hero:rocketjumper");
+    this.AvailableBots.Add(v4);
+    v4 = FPrimaryAssetId("Hero:Storm");
+    this.AvailableBots.Add(v4);
+    v4 = FPrimaryAssetId("Hero:BurstCaster");
+    this.AvailableBots.Add(v4);
+    v4 = FPrimaryAssetId("Hero:BountyHunter");
+    this.AvailableBots.Add(v4);
+    v8 = TArray<TSubclassOf<ALokiHeroCharacter@>>();
+    v14 = this.AvailableBots.Iterator();
+    while (true) {
+        v21 = v14.CanProceed;
+        if (!v21) break;
+        v24 = v14.Proceed();
+        v25 = 1;
+        v30 = ULokiAssetLoader::GetHeroAssetFromPrimaryAssetId(__WorldContext, v24, v25);
+        if (int(v25) == 1) {
+            continue;
+        }
+        v34 = TSubclassOf<ALokiHeroCharacter@>();
+        v34 = System::LoadClassAsset_Blocking(v30.GameplayBlueprint);
+        if (v34.IsValid()) {
+            v8.Add(v34);
+        }
+    }
+    this.SetSpawnableBots(v8);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PGA            q:0x26e6f114f80         ; "Hero:assault"
+    //     3  PSF            rW0:4
+    //     4  CALLSYS        q:0x26e7861af80         ; void FPrimaryAssetId::$beh0(const FString&)
+    //     7  PSF            rW0:4
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //    11  CALLSYS        q:0x26e6ee88e40         ; void TArray<FPrimaryAssetId>::Add(const FPrimaryAssetId&)
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e786a1200         ; void FPrimaryAssetId::$beh2()
+    //    18  PGA            q:0x26e6f1153a0         ; "Hero:firefox"
+    //    21  PSF            rW0:4
+    //    22  CALLSYS        q:0x26e7861af80         ; void FPrimaryAssetId::$beh0(const FString&)
+    //    25  PSF            rW0:4
+    //    26  PshVPtr        rW0:0
+    //    27  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //    29  CALLSYS        q:0x26e6ee88e40         ; void TArray<FPrimaryAssetId>::Add(const FPrimaryAssetId&)
+    //    32  PSF            rW0:4
+    //    33  CALLSYS        q:0x26e786a1200         ; void FPrimaryAssetId::$beh2()
+    //    36  PGA            q:0x26e6f1153c0         ; "Hero:freeze"
+    //    39  PSF            rW0:4
+    //    40  CALLSYS        q:0x26e7861af80         ; void FPrimaryAssetId::$beh0(const FString&)
+    //    43  PSF            rW0:4
+    //    44  PshVPtr        rW0:0
+    //    45  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //    47  CALLSYS        q:0x26e6ee88e40         ; void TArray<FPrimaryAssetId>::Add(const FPrimaryAssetId&)
+    //    50  PSF            rW0:4
+    //    51  CALLSYS        q:0x26e786a1200         ; void FPrimaryAssetId::$beh2()
+    //    54  PGA            q:0x26e6f115330         ; "Hero:sniper"
+    //    57  PSF            rW0:4
+    //    58  CALLSYS        q:0x26e7861af80         ; void FPrimaryAssetId::$beh0(const FString&)
+    //    61  PSF            rW0:4
+    //    62  PshVPtr        rW0:0
+    //    63  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //    65  CALLSYS        q:0x26e6ee88e40         ; void TArray<FPrimaryAssetId>::Add(const FPrimaryAssetId&)
+    //    68  PSF            rW0:4
+    //    69  CALLSYS        q:0x26e786a1200         ; void FPrimaryAssetId::$beh2()
+    //    72  PGA            q:0x26e6f115340         ; "Hero:flex"
+    //    75  PSF            rW0:4
+    //    76  CALLSYS        q:0x26e7861af80         ; void FPrimaryAssetId::$beh0(const FString&)
+    //    79  PSF            rW0:4
+    //    80  PshVPtr        rW0:0
+    //    81  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //    83  CALLSYS        q:0x26e6ee88e40         ; void TArray<FPrimaryAssetId>::Add(const FPrimaryAssetId&)
+    //    86  PSF            rW0:4
+    //    87  CALLSYS        q:0x26e786a1200         ; void FPrimaryAssetId::$beh2()
+    //    90  PGA            q:0x26e6f114e50         ; "Hero:hookguy"
+    //    93  PSF            rW0:4
+    //    94  CALLSYS        q:0x26e7861af80         ; void FPrimaryAssetId::$beh0(const FString&)
+    //    97  PSF            rW0:4
+    //    98  PshVPtr        rW0:0
+    //    99  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //   101  CALLSYS        q:0x26e6ee88e40         ; void TArray<FPrimaryAssetId>::Add(const FPrimaryAssetId&)
+    //   104  PSF            rW0:4
+    //   105  CALLSYS        q:0x26e786a1200         ; void FPrimaryAssetId::$beh2()
+    //   108  PGA            q:0x26e6f115360         ; "Hero:rocketjumper"
+    //   111  PSF            rW0:4
+    //   112  CALLSYS        q:0x26e7861af80         ; void FPrimaryAssetId::$beh0(const FString&)
+    //   115  PSF            rW0:4
+    //   116  PshVPtr        rW0:0
+    //   117  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //   119  CALLSYS        q:0x26e6ee88e40         ; void TArray<FPrimaryAssetId>::Add(const FPrimaryAssetId&)
+    //   122  PSF            rW0:4
+    //   123  CALLSYS        q:0x26e786a1200         ; void FPrimaryAssetId::$beh2()
+    //   126  PGA            q:0x26e6f1150f0         ; "Hero:Storm"
+    //   129  PSF            rW0:4
+    //   130  CALLSYS        q:0x26e7861af80         ; void FPrimaryAssetId::$beh0(const FString&)
+    //   133  PSF            rW0:4
+    //   134  PshVPtr        rW0:0
+    //   135  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //   137  CALLSYS        q:0x26e6ee88e40         ; void TArray<FPrimaryAssetId>::Add(const FPrimaryAssetId&)
+    //   140  PSF            rW0:4
+    //   141  CALLSYS        q:0x26e786a1200         ; void FPrimaryAssetId::$beh2()
+    //   144  PGA            q:0x26e6f115420         ; "Hero:BurstCaster"
+    //   147  PSF            rW0:4
+    //   148  CALLSYS        q:0x26e7861af80         ; void FPrimaryAssetId::$beh0(const FString&)
+    //   151  PSF            rW0:4
+    //   152  PshVPtr        rW0:0
+    //   153  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //   155  CALLSYS        q:0x26e6ee88e40         ; void TArray<FPrimaryAssetId>::Add(const FPrimaryAssetId&)
+    //   158  PSF            rW0:4
+    //   159  CALLSYS        q:0x26e786a1200         ; void FPrimaryAssetId::$beh2()
+    //   162  PGA            q:0x26e6f1153d0         ; "Hero:BountyHunter"
+    //   165  PSF            rW0:4
+    //   166  CALLSYS        q:0x26e7861af80         ; void FPrimaryAssetId::$beh0(const FString&)
+    //   169  PSF            rW0:4
+    //   170  PshVPtr        rW0:0
+    //   171  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //   173  CALLSYS        q:0x26e6ee88e40         ; void TArray<FPrimaryAssetId>::Add(const FPrimaryAssetId&)
+    //   176  PSF            rW0:4
+    //   177  CALLSYS        q:0x26e786a1200         ; void FPrimaryAssetId::$beh2()
+    //   180  PSF            rW0:8
+    //   181  CALLSYS        q:0x26e6ef27400         ; void TArray<TSubclassOf<ALokiHeroCharacter@>>::$beh0()
+    //   184  PSF            rW0:14
+    //   185  PshVPtr        rW0:0
+    //   186  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //   188  CALLSYS        q:0x26e6ef2e240         ; TArrayIterator<FPrimaryAssetId> TArray<FPrimaryAssetId>::Iterator()
+    //   191  JMP            ->249
+    //   193  SUSPEND
+    //   194  PSF            rW0:14
+    //   195  CALLSYS        q:0x26e6ef2dec0         ; FPrimaryAssetId& TArrayIterator<FPrimaryAssetId>::Proceed()
+    //   198  CpyRtoV8       wW0:24
+    //   199  SetV1          wW0:26 d:1
+    //   201  CpyVtoV4       wW0:25 rW1:26
+    //   203  PSF            rW0:25
+    //   204  PshVPtr        rW0:24
+    //   205  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   208  CALLSYS        q:0x26e7a0ac640         ; const ULokiHeroAsset@ ULokiAssetLoader::GetHeroAssetFromPrimaryAssetId(UObject@, FPrimaryAssetId, ELokiAssetLookupExecPins&)
+    //   211  STOREOBJ       wW0:30
+    //   212  sbTOi          wW0:31 rW1:25
+    //   214  CMPIi          rW0:31 d:1
+    //   216  JNZ            ->221
+    //   218  FreeNullV8     wW0:30
+    //   219  JMP            ->249
+    //   221  PshVPtr        rW0:30
+    //   222  ADDSi          W0:120 d:67115174       ; ULokiHeroAsset::GameplayBlueprint  (+120)
+    //   224  CALLSYS        q:0x26e79b1fac0         ; UClass@ System::LoadClassAsset_Blocking(TSoftClassPtr<UObject@>)
+    //   227  STOREOBJ       wW0:36
+    //   228  PshVPtr        rW0:36
+    //   229  PSF            rW0:34
+    //   230  CALLSYS        q:0x26e6ef2dd00         ; void TSubclassOf<ALokiHeroCharacter@>::$beh0()
+    //   233  PSF            rW0:34
+    //   234  CALLSYS        q:0x26e6ef2db40         ; void TSubclassOf<ALokiHeroCharacter@>::opAssign(UClass@)
+    //   237  PSF            rW0:34
+    //   238  CALLSYS        q:0x26e6ef2d7c0         ; bool TSubclassOf<ALokiHeroCharacter@>::IsValid() const
+    //   241  JLowZ          ->248
+    //   243  PSF            rW0:34
+    //   244  PSF            rW0:8
+    //   245  CALLSYS        q:0x26e6ef2d600         ; void TArray<TSubclassOf<ALokiHeroCharacter@>>::Add(const TSubclassOf<ALokiHeroCharacter@>&)
+    //   248  FreeNullV8     wW0:30
+    //   249  LoadVObjR      rW0:14 W1:16 DW2:268448588; TArrayIterator::CanProceed  (+16)
+    //   252  RDR1           wW0:21
+    //   253  CpyVtoR1       rW0:21
+    //   254  JLowNZ         ->193
+    //   256  PSF            rW0:8
+    //   257  PshVPtr        rW0:0
+    //   258  CALLSYS        q:0x26e7a138ac0         ; void ULokiBotSpawnerComponent::SetSpawnableBots(const TArray<TSubclassOf<ALokiHeroCharacter@>>&)
+    //   261  PSF            rW0:8
+    //   262  CALLSYS        q:0x26e7a139000         ; void TArray<TSubclassOf<ALokiHeroCharacter@>>::$beh2()
+    //   265  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent, Const)
+// UFunction name: GetNextTeamIndex
+int GetNextTeamIndex_Implementation()
+// 5 instr, 32 B bytecode, id=0xC2D6223A, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.SpawnedTeamCount + 4;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:212 d:67114974       ; ULokiBotSpawnerComponent::SpawnedTeamCount  (+212)
+    //     2  RDR4           wW0:1
+    //     3  ADDIi          wW0:2 rW1:1 DW2:4
+    //     6  CpyVtoR4       rW0:2
+    //     7  RET            W0:2
+
+------------------------------------------------------------------------------
+~UFFABotSpawnerComponent()
+// 4 instr, 28 B bytecode, id=0x16C6474A, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:464 d:134230859      ; UFFABotSpawnerComponent::AvailableBots  (+464)
+    //     3  CALLSYS        q:0x26e7861f3c0         ; void TArray<FPrimaryAssetId>::$beh2()
+    //     6  RET            W0:2
+

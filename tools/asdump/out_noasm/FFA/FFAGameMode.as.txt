@@ -1,0 +1,301 @@
+// ============================================================================
+//  MODULE   FFA.FFAGameMode
+//  SOURCE   FFA/FFAGameMode.as
+//  CONTENT  1 class(es), 17 function(s), 0 enum(s), 1 global(s), 2252 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_AFFAGameMode;
+
+AFFAGameMode@ AFFAGameMode()   // traits=0x20
+{
+    AFFAGameMode v2;
+
+    v2 = AFFAGameMode();
+    return v2;
+}
+
+UClass@ AFFAGameMode::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_AFFAGameMode);
+    return v2;
+}
+
+AFFAGameMode@ AFFAGameMode::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    AFFAGameMode v8;
+
+    v2 = __StaticType_AFFAGameMode.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<AFFAGameMode@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class AFFAGameMode : ALokiDropInGameMode
+// unreal base : /Script/Loki.LokiDropInGameMode
+// C++ header  : ../../../Loki/Source/Loki/GameModes/LokiDropInGameMode.h
+// static class global: __StaticType_AFFAGameMode
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    int LevelToGrant;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSubclassOf<ALokiBaseItem@> BandageItem;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSubclassOf<ALokiBaseItem@> ArmorItem;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    TSet<ALokiPlayerState@> InitializedPlayerStates;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSet<ALokiPlayerController@> ConnectedPlayerControllers;
+
+    AFFAGameMode()   // traits=0x21
+    {
+        this.BandageItem = TSubclassOf<ALokiBaseItem@>();
+        this.ArmorItem = TSubclassOf<ALokiBaseItem@>();
+        this.InitializedPlayerStates = TSet<ALokiPlayerState@>();
+        this.ConnectedPlayerControllers = TSet<ALokiPlayerController@>();
+        return;
+    }
+
+    UFUNCTION(UnrealName=ShouldTeamBeEliminated, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    bool ShouldTeamBeEliminated_Implementation(const int TeamIndex)   // traits=0x20
+    {
+        auto v1;
+
+        v1 = false;
+        return v1;
+    }
+
+    UFUNCTION(UnrealName=OnPlayerSpawned_BP, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnPlayerSpawned_BP_Implementation(ALokiCharacter@ Character, ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        int v2;
+
+        this.OnCharacterRespawned(Character);
+        if (this.InitializedPlayerStates.Contains(PlayerState)) {
+            return;
+        } else {
+            v2 = this.LevelToGrant;
+            Character.AuthGrantLevel(v2);
+            this.InitializedPlayerStates.Add(PlayerState);
+            this.InitPlayer(PlayerState);
+        }
+        return;
+    }
+
+    void InitPlayer(ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiPlayerState(PlayerState);
+        __Evt_Execute(this, n"InitPlayer");
+        return;
+    }
+
+    UFUNCTION(UnrealName=InitPlayer, BlueprintEvent, CanOverrideEvent, NoOp)
+    void InitPlayer_Implementation(ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnPostLogin, BlueprintOverride, BlueprintEvent, CanOverrideEvent, NoOp)
+    void OnPostLogin_Implementation(APlayerController@ NewPlayer)   // traits=0x20
+    {
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnLogout, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnLogout_Implementation(AController@ ExistingController)   // traits=0x20
+    {
+        ALokiGameState v4;
+        auto v5;
+        TArray<ALokiPlayerState@> v10;
+        TArrayConstIterator<ALokiPlayerState@> v16;
+        auto v23;
+        ALokiPlayerState v26;
+        auto v27;
+        uint8 v28;
+        APlayerState v30;
+        ALokiPlayerState v32;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        v5 = 0;
+        v10 = v4.GetLokiPlayerStates();
+        v16 = v10.Iterator();
+        while (true) {
+            v23 = v16.CanProceed;
+            if (!v23) break;
+            v26 = v16.Proceed();
+            v16.Proceed();
+            v23 = v26.IsABot();
+            v23 = !v23;
+            if (!v23) {
+                v23 = 0;
+            } else {
+                v27 = this.DisconnectedPlayerStates.Contains(v26.PlatformPlayerID);
+                v27 = !v27;
+                v23 = v27;
+            }
+            if (v23) {
+                v5++;
+            }
+        }
+        if (v5 == 0) {
+            v28 = false;
+            this.GracefullyShutdown("AllPlayersDisconnected", v28);
+        }
+        v30 = ExistingController.PlayerState;
+        if (v30 != nullptr) {
+            v32 = cast<ALokiPlayerState@>(v30);
+        } else {
+            v32 = nullptr;
+        }
+        v26 = v32;
+        if (v26 == nullptr) {
+            v27 = 0;
+        } else {
+            v23 = v26.IsABot();
+            v23 = !v23;
+            v27 = v23;
+        }
+        if (v27) {
+            this.DisconnectedPlayerStates.Remove(v26.PlatformPlayerID);
+            v26.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+
+    void OnCharacterRespawned(ALokiCharacter@ Character)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiCharacter(Character);
+        __Evt_Execute(this, n"OnCharacterRespawned");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnCharacterRespawned, BlueprintEvent, CanOverrideEvent)
+    void OnCharacterRespawned_Implementation(ALokiCharacter@ Character)   // traits=0x20
+    {
+        Character.ResetAllCooldowns();
+        this.AddBandages(Character);
+        this.ResetArmor(Character);
+        return;
+    }
+
+    void ResetArmor(ALokiCharacter@ Character)   // traits=0x20
+    {
+        ULokiInventoryComponentBase v4;
+        TArray<FLokiInventoryItemAndSlot> v8;
+        TArrayIterator<FLokiInventoryItemAndSlot> v18;
+        bool v25;
+        auto v28;
+        FName v31;
+        ELokiRemoveFromInventoryReason v32;
+        ALokiBaseItem v34;
+        bool v35;
+        bool v36;
+        ELokiAddToInventoryReason v37;
+
+        v4 = ULokiInventoryComponentBase::GetInventoryComponent(Character);
+        v8 = v4.GetAllItemsAndSlots();
+        v18 = v8.Iterator();
+        while (true) {
+            v25 = v18.CanProceed;
+            if (!v25) break;
+            v28 = v18.Proceed();
+            v31 = FName(v28.SlotCategory);
+            v25 = v31 == n"Shield";
+            if (v25) {
+                v32 = ELokiRemoveFromInventoryReason::Destroyed;
+                v4.TryRemoveFromInventory(v28.ItemActor, v32);
+            }
+        }
+        v35 = false;
+        v36 = true;
+        v37 = ELokiAddToInventoryReason::Initial;
+        v25 = false;
+        v34 = SpawnActor(this.ArmorItem, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v25, nullptr);
+        v4.TryAddToInventory(v34, v37, NAME_None, -1, v36, v35);
+        return;
+    }
+
+    void AddBandages(ALokiCharacter@ Character)   // traits=0x20
+    {
+        ULokiInventoryComponentBase v4;
+        TArray<FLokiInventoryItemAndSlot> v8;
+        TSet<FName> v32;
+        TArrayIterator<FLokiInventoryItemAndSlot> v40;
+        bool v47;
+        auto v50;
+        ELokiRemoveFromInventoryReason v51;
+        auto v52;
+        ALokiBaseItem v56;
+        bool v57;
+        bool v58;
+        ELokiAddToInventoryReason v59;
+
+        v4 = ULokiInventoryComponentBase::GetInventoryComponent(Character);
+        v8 = v4.GetAllItemsAndSlots();
+        v32 = TSet<FName>();
+        v32.Add(n"Health");
+        v32.Add(n"Consumable");
+        v40 = v8.Iterator();
+        while (true) {
+            v47 = v40.CanProceed;
+            if (!v47) break;
+            v50 = v40.Proceed();
+            if (v32.Contains(v50.SlotCategory)) {
+                v51 = ELokiRemoveFromInventoryReason::Destroyed;
+                v4.TryRemoveFromInventory(v50.ItemActor, v51);
+            }
+        }
+        v52 = 0;
+        while (true) {
+            if (v52 >= 3) break;
+            v57 = false;
+            v58 = true;
+            v59 = ELokiAddToInventoryReason::Initial;
+            v47 = false;
+            v56 = SpawnActor(this.BandageItem, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v47, nullptr);
+            v52++;
+            v4.TryAddToInventory(v56, v59, NAME_None, -1, v58, v57);
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=HandleStartingNewPlayer, BlueprintOverride, BlueprintEvent, CanOverrideEvent, NoOp)
+    void HandleStartingNewPlayer_Implementation(APlayerController@ NewPlayer)   // traits=0x20
+    {
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = 15;
+        this.LevelToGrant = v1;
+        return;
+    }
+
+    void ~AFFAGameMode()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

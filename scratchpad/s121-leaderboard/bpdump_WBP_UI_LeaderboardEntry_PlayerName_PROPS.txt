@@ -1,0 +1,87 @@
+# Asset: Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.uasset
+# 21 exports total
+
+## [UFunction] Add Hero Portrait  (ExportType=Function)
+   (no properties)
+## [UFunction] Destruct  (ExportType=Function)
+   (no properties)
+## [UFunction] ExecuteUbergraph_WBP_UI_LeaderboardEntry_PlayerName  (ExportType=Function)
+   (no properties)
+## [UFunction] GetModuleName  (ExportType=Function)
+   (no properties)
+## [UFunction] On Change Display Name  (ExportType=Function)
+   (no properties)
+## [UFunction] PreConstruct  (ExportType=Function)
+   (no properties)
+## [UFunction] Set Player Display Name  (ExportType=Function)
+   (no properties)
+## [UObject] HorizontalBox_0  (ExportType=HorizontalBox)
+   - Slots (ArrayProperty):
+       [0] HorizontalBoxSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0.HorizontalBoxSlot_1' (ObjectPro...(+6)
+       [1] HorizontalBoxSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0.HorizontalBoxSlot_4' (ObjectPro...(+6)
+       [2] HorizontalBoxSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0.HorizontalBoxSlot_5' (ObjectPro...(+6)
+       [3] HorizontalBoxSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0.HorizontalBoxSlot_2' (ObjectPro...(+6)
+
+## [UObject] HorizontalBoxSlot_1  (ExportType=HorizontalBoxSlot)
+   - Padding (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - VerticalAlignment (ByteProperty) = 2 (ByteProperty)
+   - Parent (ObjectProperty) = HorizontalBox'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0' (ObjectProperty)
+   - Content (ObjectProperty) = WBP_UI_LeaderboardEntry_Text_C'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.WBP_UI_LeaderboardEntry_PlayerName' (ObjectProperty)
+
+## [UObject] HorizontalBoxSlot_2  (ExportType=HorizontalBoxSlot)
+   - Padding (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - HorizontalAlignment (ByteProperty) = 3 (ByteProperty)
+   - VerticalAlignment (ByteProperty) = 2 (ByteProperty)
+   - Parent (ObjectProperty) = HorizontalBox'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0' (ObjectProperty)
+   - Content (ObjectProperty) = Overlay'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.Overlay_HeroPortrait' (ObjectProperty)
+
+## [UObject] HorizontalBoxSlot_4  (ExportType=HorizontalBoxSlot)
+   - VerticalAlignment (ByteProperty) = 2 (ByteProperty)
+   - Parent (ObjectProperty) = HorizontalBox'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0' (ObjectProperty)
+   - Content (ObjectProperty) = WBP_UI_LeaderboardEntry_Text_C'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.WBP_UI_LeaderboardEntry_HeroName' (ObjectProperty)
+
+## [UObject] HorizontalBoxSlot_5  (ExportType=HorizontalBoxSlot)
+   - Size (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - Parent (ObjectProperty) = HorizontalBox'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0' (ObjectProperty)
+   - Content (ObjectProperty) = Spacer'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.Spacer_97' (ObjectProperty)
+
+## [UObject] Overlay_HeroPortrait  (ExportType=Overlay)
+   - Slots (ArrayProperty):
+       [0] OverlaySlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.Overlay_HeroPortrait.OverlaySlot_0' (ObjectProperty)
+   - Slot (ObjectProperty) = HorizontalBoxSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0.HorizontalBoxSlot_2' (ObjectProperty)
+   - bIsVariable (BoolProperty) = True (BoolProperty)
+
+## [UObject] OverlaySlot_0  (ExportType=OverlaySlot)
+   - Parent (ObjectProperty) = Overlay'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.Overlay_HeroPortrait' (ObjectProperty)
+   - Content (ObjectProperty) = WBP_UI_LeaderboardEntry_HeroPortrait_C'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.WBP_UI_LeaderboardEntry_HeroPortrait' (ObjectProperty)
+
+## [UObject] Spacer_97  (ExportType=Spacer)
+   - Slot (ObjectProperty) = HorizontalBoxSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0.HorizontalBoxSlot_5' (ObjectProperty)
+
+## [UObject] WBP_UI_LeaderboardEntry_HeroPortrait  (ExportType=WBP_UI_LeaderboardEntry_HeroPortrait_C)
+   - Slot (ObjectProperty) = OverlaySlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.Overlay_HeroPortrait.OverlaySlot_0' (ObjectProperty)
+
+## [UObject] Default__WBP_UI_LeaderboardEntry_PlayerName_C  (ExportType=WBP_UI_LeaderboardEntry_PlayerName_C)
+   - UberGraphFrame (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - Leaderboard Ranking (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+   - bHasScriptImplementedTick (BoolProperty) = False (BoolProperty)
+   - bHasScriptImplementedPaint (BoolProperty) = False (BoolProperty)
+   - Clipping (EnumProperty) = EWidgetClipping::EWidgetClipping::ClipToBounds (EnumProperty)
+
+## [UObject] WBP_UI_LeaderboardEntry_HeroName  (ExportType=WBP_UI_LeaderboardEntry_Text_C)
+   - Text (TextProperty) = (???) (TextProperty)
+   - ColorAndOpacity (StructProperty) = ABFFFFFF (FLinearColor, StructProperty)
+   - Slot (ObjectProperty) = HorizontalBoxSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0.HorizontalBoxSlot_4' (ObjectProperty)
+
+## [UObject] WBP_UI_LeaderboardEntry_PlayerName  (ExportType=WBP_UI_LeaderboardEntry_Text_C)
+   - Text (TextProperty) = Player (TextProperty)
+   - Slot (ObjectProperty) = HorizontalBoxSlot'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0.HorizontalBoxSlot_1' (ObjectProperty)
+   - Clipping (EnumProperty) = EWidgetClipping::EWidgetClipping::ClipToBounds (EnumProperty)
+
+## [UWidgetBlueprintGeneratedClass] WBP_UI_LeaderboardEntry_PlayerName_C  (ExportType=WidgetBlueprintGeneratedClass)
+   - WidgetTree (ObjectProperty) = WidgetTree'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree' (ObjectProperty)
+   - UberGraphFunction (ObjectProperty) = Function'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:ExecuteUbergraph_WBP_UI_LeaderboardEntry_PlayerName' (ObjectProperty)
+
+## [UObject] WidgetTree  (ExportType=WidgetTree)
+   - RootWidget (ObjectProperty) = HorizontalBox'/Game/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.WBP_UI_LeaderboardEntry_PlayerName_C:WidgetTree.HorizontalBox_0' (ObjectProperty)
+

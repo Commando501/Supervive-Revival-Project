@@ -1,0 +1,149 @@
+==============================================================================
+MODULE   Barracuda.Shop.BarraucdaShopFilterWidget
+SOURCE   Barracuda/Shop/BarraucdaShopFilterWidget.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_UBarraucdaShopFilterWidget;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarraucdaShopFilterWidget@ UBarraucdaShopFilterWidget()
+// 4 instr, 28 B bytecode, id=0xFDB1C63B, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarraucdaShopFilterWidget v2;
+
+    v2 = UBarraucdaShopFilterWidget();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84423 q:0x26e6865fd00; new UBarraucdaShopFilterWidget   ctor=UBarraucdaShopFilterWidget::UBarraucdaShopFilterWidget
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x8C55FC7F, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarraucdaShopFilterWidget);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b27d8         ; __StaticType_UBarraucdaShopFilterWidget
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+==============================================================================
+UCLASS()
+class FBarracudaShopTagFilter
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FText Label;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FGameplayTag Tag;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FGameplayTag RecommendedHeroTag;
+
+}
+
+------------------------------------------------------------------------------
+FBarracudaShopTagFilter() const
+// 10 instr, 76 B bytecode, id=0x7033CBE6, varspace=0
+------------------------------------------------------------------------------
+{
+    this.Label = FText();
+    this.Tag = FGameplayTag();
+    this.RecommendedHeroTag = FGameplayTag();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230817        ; FBarracudaShopTagFilter::Label  (+0)
+    //     3  CALLSYS        q:0x26e69d0d280         ; void FText::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:16 d:134230817       ; FBarracudaShopTagFilter::Tag  (+16)
+    //     9  CALLSYS        q:0x26e78762380         ; void FGameplayTag::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:24 d:134230817       ; FBarracudaShopTagFilter::RecommendedHeroTag  (+24)
+    //    15  CALLSYS        q:0x26e78762380         ; void FGameplayTag::$beh0()
+    //    18  RET            W0:2
+
+------------------------------------------------------------------------------
+~FBarracudaShopTagFilter()
+// 10 instr, 76 B bytecode, id=0x43580CA2, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230817        ; FBarracudaShopTagFilter::Label  (+0)
+    //     3  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:16 d:134230817       ; FBarracudaShopTagFilter::Tag  (+16)
+    //     9  CALLSYS        q:0x26e787621c0         ; void FGameplayTag::$beh2()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:24 d:134230817       ; FBarracudaShopTagFilter::RecommendedHeroTag  (+24)
+    //    15  CALLSYS        q:0x26e787621c0         ; void FGameplayTag::$beh2()
+    //    18  RET            W0:2
+
+==============================================================================
+UCLASS()
+class UBarraucdaShopFilterWidget : UUserWidget
+// base /Script/UMG.UserWidget  ->  ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) TArray<FBarracudaShopTagFilter> TagFilters;
+
+}
+
+------------------------------------------------------------------------------
+UBarraucdaShopFilterWidget() const
+// 6 instr, 44 B bytecode, id=0xD491733C, varspace=0
+------------------------------------------------------------------------------
+{
+    this.TagFilters = TArray<FBarracudaShopTagFilter>();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:744 d:134230818      ; UBarraucdaShopFilterWidget::TagFilters  (+744)
+    //     3  CALLSYS        q:0x26e6ef0c9c0         ; void TArray<FBarracudaShopTagFilter>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  FinConstruct   q:0x26e6865fd00         ; UBarraucdaShopFilterWidget
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+~UBarraucdaShopFilterWidget()
+// 4 instr, 28 B bytecode, id=0xFFA5BB6D, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:744 d:134230818      ; UBarraucdaShopFilterWidget::TagFilters  (+744)
+    //     3  CALLSYS        q:0x26e7b1aeb00         ; void TArray<FBarracudaShopTagFilter>::$beh2()
+    //     6  RET            W0:2
+

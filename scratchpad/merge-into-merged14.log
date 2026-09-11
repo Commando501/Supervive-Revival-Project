@@ -1,0 +1,6 @@
+﻿  primary merged13.dump.exe  base 0x7FF608F40000  51.91% non-zero
+  base relocations: 1403750 non-ABSOLUTE entries (types map[0:3048 10:1403750], 0 outside all sections)
+  per section: .text=0 .rdata=1257732 .data=146018 .pdata=0 .msvcjmc=0 CPADinfo=0 .rodata=0 _RDATA=0 .rsrc=0 .reloc=0
+  merged SUPERVIVE-Win64-Shipping.dump.exe  +52372 bytes (0.05 MB)  [14 pages; took .text; overlap conflicts 0 (clean)]
+  wrote dumps/merged14.dump.exe  (169.9 MB, 51.94% non-zero merged)
+  wrote dumps/merged14.dump.exe.txt

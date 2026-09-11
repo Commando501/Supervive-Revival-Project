@@ -1,0 +1,80 @@
+SESSION 42 — STEP 9: the scan_shim AssetManager fix is REAL but does NOT populate
+the grid, because the hero catalog the grid shows is built AT MENU-LOAD from the
+AssetManager — and the scan (post-menu) is too late. Early injection (to scan
+before menu-load) crashed the fragile early game. Honest, precise final state.
+==============================================================================
+Date: 2026-07-02
+Branch: dedicated-server-stub
+
+WHAT IS PROVEN (real achievement)
+---------------------------------
+scan_shim.cpp, injected post-menu via `inject mmap` (non-elevated), reliably calls
+UAssetManager::ScanPathsForPrimaryAssets (+0x34CF9F0) for all 30 types on the game
+thread and registers them — Hero -> added=25, etc. Hero AssetMap (td+0x178) goes
+Num=0 -> 25. Repeatable, NO crash. The AssetManager IS populatable at runtime.
+
+WHY THE GRID STAYS EMPTY ANYWAY (the timing wall)
+-------------------------------------------------
+Relaunched clean, let the menu stabilize, injected post-menu, confirmed the scan
+ran (Hero=25) BEFORE opening HUNTERS for the first time — then opened HUNTERS: the
+ALL HUNTERS grid is STILL EMPTY (zoom-confirmed: header + role-filter icons, zero
+tiles). Log evidence pins the reason:
+  - `ChangeBundleStateForPrimaryAssets failed to find NameData` fires ONCE at
+    MENU-LOAD (LVL_LobbyV2 load), i.e. BEFORE the post-menu scan. That is the menu
+    building its hero catalog via the primary-asset system — and it fails because
+    the types aren't registered yet (the scan hasn't run).
+  - Opening HUNTERS produces NO enumeration / ChangeBundleState / AssetManager log
+    activity at all (only a "LeafmostActiveNode not updated" UI warning). So the
+    grid does NOT re-query the AssetManager on open — it displays a catalog BUILT
+    ONCE AT MENU-LOAD and cached.
+=> The grid IS driven by the AssetManager (the menu-load ChangeBundleState proves
+   it), but the catalog is built at menu-load. A post-menu scan populates the
+   AssetMap too late — the (empty) catalog is already built. Confirmed: enumeration
+   fns (GetPrimaryAssetIdList etc.) are all stock/inherited (step-8 vtdiff), so the
+   catalog WOULD contain 25 heroes IF the types were registered before menu-load.
+
+THE EARLY-INJECTION ATTEMPT (to scan before menu-load) — CRASHED
+---------------------------------------------------------------
+Injected scan_shim via `inject watch-now` (early, at process start; the shim polls
+for the populated AssetTypeMap then scans). The shim DID find the singleton
+(typemap num=30) — but the game CRASHED (Sentry crashpad) before the scan's APC
+fired. The crash context: the game was loading HERO ABILITY GameplayCues
+(ShieldBot.Dash, Flash, Hook, HookGuy.Charge...) then crashed during
+InvalidateAllWidgets. The scan APC never fired ([apc] FIRING absent), so the scan
+did NOT cause it — it is the game's own early-init fragility (hero-content load +
+the known rendering instability), likely aggravated by manual-mapping into the
+still-unpacking process. NOT the anti-cheat fail-fast; NOT a scan crash.
+
+NET
+---
+Root cause (from step 6/8) is correct and the AssetManager fix works. But the
+VISIBLE grid needs the types registered BEFORE menu-load builds the hero catalog,
+and the only way tried to achieve that (early mmap injection) destabilized the
+fragile early game. So the grid is not yet populated end-to-end.
+
+PATHS TO A POPULATED GRID (next session)
+----------------------------------------
+1. STABLE EARLY INJECTION (most direct): get the scan to run in the window AFTER
+   StartInitialLoading registers the types but BEFORE menu-load's ChangeBundleState.
+   - watch-now (immediate mmap) is too early -> crashes. Try: inject slightly later
+     via `inject watch <name> <dll> <RVAhex> <expectedHex>` gated on an init
+     milestone, OR fold the scan into browse_hook.dll (its early injection is proven
+     stable on the dedicated-server path), OR delay the shim's worker start until a
+     later init marker.
+   - Then at menu-load ChangeBundleState succeeds -> catalog built WITH 25 heroes.
+2. TRIGGER A CATALOG REBUILD POST-SCAN (avoids early injection): after the post-menu
+   scan, force the menu to rebuild its hero catalog (re-run the menu-load path).
+   Needs RE of the catalog-build trigger (what fires ChangeBundleStateForPrimaryAssets
+   at menu-load) and a way to re-invoke it — e.g., a menu/level reload, or calling the
+   build function via injection.
+3. INVESTIGATE the D3D12/hero-content crash directly (if early injection keeps
+   crashing): the game loading all 25 heroes' content at once may hit the same
+   rendering wall — worth confirming it's just early-mmap fragility vs a content-load
+   crash by testing a stable early injection.
+
+FILES
+-----
+- tools/sigbypass-mod/scan_shim.cpp (works post-menu; timing-robust poll added).
+- docs/scan-shim-marker.txt (both runs' logs).
+- docs/session-42-step8-FIX-WORKS.txt (the AssetManager-level proof — accurate, but
+  note the grid caveat here: AssetManager populated != grid populated).

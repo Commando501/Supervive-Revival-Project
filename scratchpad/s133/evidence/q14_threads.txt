@@ -1,0 +1,28 @@
+ThreadNamesStream: 123 entries, 75 NON-EMPTY
+  sample named threads: ['AudioMixerNullCallbackThread', 'AudioMixerRenderThread(1)', 'Background Worker #10', 'Background Worker #11', 'Background Worker #12', 'Background Worker #13', 'Background Worker #2', 'Background Worker #3', 'Background Worker #4', 'Background Worker #5', 'Background Worker #6', 'Background Worker #7', 'Background Worker #8', 'Background Worker #9', 'BackgroundThreadPool #0', 'BackgroundThreadPool #1', 'Chrome_IOThread', 'Client Analytics Event Thread', 'CompositorTileWorker1', 'D3D Background Thread 0', 'D3D Background Thread 1', 'D3D Background Thread 2', 'D3D Background Thread 3', 'Electra::ExecAsync', 'FAsyncLoadingThread']
+
+PER-THREAD stack composition (threads whose stack qwords are runtime.dll-DOMINATED)
+hidden runtime.dll mappings: [('0xff760000', '0x4066000'), ('0x7ffb57400000', '0x4066000')]
+rt%    rt     game   othmod tid      stack    name
+85.5   59     0      10     33284    0x6000   
+84.0   79     0      15     27888    0x6000   
+78.6   55     0      15     15156    0x6000   
+78.3   72     1      19     44732    0x6000   
+77.7   73     1      20     54176    0x6000   
+76.5   13     0      4      43920    0x2000   
+69.2   45     14     6      15264    0x4000   
+64.2   210    81     36     45704    0x13000  Foreground Worker #0
+64.0   55     18     13     53124    0x4000   IoService
+60.0   33     15     7      26716    0x20000  
+58.5   38     16     11     41620    0x4000   FAsyncWriter_Loki
+56.4   75     53     5      40240    0x5000   AudioMixerRenderThread(1)
+56.3   40     22     9      47932    0x4000   OnlineAsyncTaskThreadNull DefaultInstance(1)
+56.2   333    148    112    47048    0x17000  Background Worker #9
+54.3   44     22     15     48968    0x5000   
+  ...
+7.2    11     1      140    28736    0x800000 
+6.5    17     0      245    40676    0x5000   D3D Background Thread 2
+6.4    17     0      250    53136    0x5000   D3D Background Thread 0
+6.1    17     0      261    48948    0x5000   D3D Background Thread 3
+4.0    10     0      238    17036    0x5000   D3D Background Thread 1
+threads scanned with >=8 resolvable qwords: 123 of 123

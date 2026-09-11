@@ -1,0 +1,56 @@
+﻿[stage] pre-flight: is ags serving an armed match?
+[stage]   /core-game/players -> MatchID='match-9b9d2c887e2524f918e383a895f2f1c2' Version=1786223388
+[stage] waiting for game process...
+[stage] game process -> OK (0s)
+[stage] game PID=13692 started=08/08/2026 16:09:51
+[stage] parked match model (uiready + match fetched + uptime) -> OK (140s)
+[stage] uptime=140s
+[stage] >>> inject gft
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\gft_ready_fix.dll into PID 13692
+[stage]       remote image base: 0x27B8C610000 (size 0x25000)
+[stage]       relocations applied (delta 0x27A0C610000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x17D entries at 0x27B8C632000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x27B8C610000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage] force-open DLL: tutorial_launch_fo.dll
+[stage]     spacing: 5s since last inject, waiting 15s more (min gap 20s)
+[stage] >>> inject fo
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\tutorial_launch_fo.dll into PID 13692
+[stage]       remote image base: 0x27B8C640000 (size 0x2C000)
+[stage]       relocations applied (delta 0x27A0C640000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x196 entries at 0x27B8C669000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x27B8C640000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     marker -> fk24-stage-s112p3-trt-22-2-fo.txt
+[stage] LVL_Tutorial load complete -> OK (9s)
+[stage]     spacing: 19s since last inject, waiting 1s more (min gap 20s)
+[stage] >>> inject sp
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\tutorial_launch_sp.dll into PID 13692
+[stage]       remote image base: 0x27B89A70000 (size 0x36000)
+[stage]       relocations applied (delta 0x27A09A70000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x1AA entries at 0x27B89AA3000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x27B89A70000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     marker -> fk24-stage-s112p3-trt-22-3-sp.txt
+[stage] [SP] done step=4 (hero possessed) -> OK (12s)
+[stage]     spacing: 17s since last inject, waiting 3s more (min gap 20s)
+[stage] >>> inject probe-tutorial_launch_play_funcswap_one
+[stage]     Manual-mapping G:\git\Supervive Revival 
+Project\tools\sigbypass-mod\build\tutorial_launch_play_funcswap_one.dll into PID 13692
+[stage]       remote image base: 0x27B8F770000 (size 0x42000)
+[stage]       relocations applied (delta 0x27A0F770000)
+[stage]       import: KERNEL32.dll
+[stage]       import: USER32.dll
+[stage]       exception table: 0x1BA entries at 0x27B8F7AF000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x27B8F770000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     marker -> fk24-stage-s112p3-trt-22-4-probe-tutorial_launch_play_funcswap_one.txt
+[stage] probe injected; armed window begins
+[stage] stage complete

@@ -1,0 +1,2783 @@
+// ============================================================================
+//  MODULE   Barracuda.Spawners.BarracudaMinionSpawner
+//  SOURCE   Barracuda/Spawners/BarracudaMinionSpawner.as
+//  CONTENT  4 class(es), 34 function(s), 1 enum(s), 1 global(s), 10236 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+enum EBarracudaRespawnBehaviorType
+{
+    AlwaysSpawn = 0,
+    ReplaceSpawns = 1,
+    SkipSpawnWhenOldExists = 2,
+    StartRespawnTimerAfterDeath = 3,
+    AliveAtNight = 4,
+    AliveDuringDay = 5,
+}
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaMinionSpawner;
+
+ABarracudaMinionSpawner@ ABarracudaMinionSpawner()   // traits=0x20
+{
+    v2 = ABarracudaMinionSpawner();
+    return v2;
+}
+/* ---- ABarracudaMinionSpawner: 7 dwords / 4 instructions (cache offset 0x3d278) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84455 ABarracudaMinionSpawner               
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ABarracudaMinionSpawner::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ABarracudaMinionSpawner);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x3d33c) ----
+    0000  PshGPtr       __StaticType_ABarracudaMinionSpawner        
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ABarracudaMinionSpawner@ ABarracudaMinionSpawner::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    v2 = __StaticType_ABarracudaMinionSpawner.Get();
+    v4 = TSubclassOf(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ABarracudaMinionSpawner@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x3d568) ----
+    0000  PshVPtr       Level                                       
+    0004  PshV4         bDeferredSpawn                              
+    0008  PshVPtr       Name                                        
+    000C  PshVPtr       Rotation                                    
+    0010  PshVPtr       Location                                    
+    0014  PshGPtr       __StaticType_ABarracudaMinionSpawner        
+    0020  CHKREF                                                    
+    0024  CALLSYS       TSubclassOf::Get                            
+    0030  STOREOBJ      v2                                          
+    0034  PshVPtr       v2                                          
+    0038  PSF           v4                                          
+    003C  CALLSYS       TSubclassOf::$beh0                          
+    0048  PSF           v4                                          
+    004C  CALLSYS       SpawnActor                                  
+    0058  STOREOBJ      v6                                          
+    005C  CmpPtrNull    v6                                          
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972617                                    ; ABarracudaMinionSpawner@
+    0070  PSF           v8                                          
+    0074  PshVPtr       v6                                          
+    0078  CALLSYS       UObject::opCast                             
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8                                          
+  L0090:
+    0090  LOADOBJ       v8                                          
+    0094  RET           9                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FGametimeToLevel
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 Gametime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int Level;
+
+    FGametimeToLevel()   // traits=0x21
+    {
+        v2 = 0;
+        this.Gametime = v2;
+        v3 = 0;
+        this.Level = v3;
+        return;
+    }
+    /* ---- FGametimeToLevel: 12 dwords / 7 instructions (cache offset 0x3d819) ----
+        0000  LoadThisR     0 134230819                                   ; this.Gametime
+        0008  SetV8         v2 0x0                                      
+        0014  WRTV8         v2                                          
+        0018  LoadThisR     8 134230819                                   ; this.Level
+        0020  SetV4         v3 0                                        
+        0028  WRTV4         v3                                          
+        002C  RET           2                                           
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FMinionWaveEntry
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSubclassOf<ALokiMinionCharacter@> MinionClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int Count;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int MinimumMatchTime;
+
+    FMinionWaveEntry()   // traits=0x21
+    {
+        this.MinionClass = TSubclassOf();
+        v1 = 0;
+        this.Count = v1;
+        v1 = 0;
+        this.MinimumMatchTime = v1;
+        return;
+    }
+    /* ---- FMinionWaveEntry: 17 dwords / 10 instructions (cache offset 0x3db2e) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230820                                   ; .MinionClass
+        000C  CALLSYS       TSubclassOf::$beh0                          
+        0018  LoadThisR     8 134230820                                   ; this.Count
+        0020  SetV4         v1 0                                        
+        0028  WRTV4         v1                                          
+        002C  LoadThisR     12 134230820                                  ; this.MinimumMatchTime
+        0034  SetV4         v1 0                                        
+        003C  WRTV4         v1                                          
+        0040  RET           2                                           
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FMinionWave
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<FMinionWaveEntry> Entries;
+
+    FMinionWave()   // traits=0x21
+    {
+        this.Entries = TArray();
+        return;
+    }
+    /* ---- FMinionWave: 7 dwords / 4 instructions (cache offset 0x3dd3a) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230821                                   ; .Entries
+        000C  CALLSYS       TArray::$beh0                               
+        0018  RET           2                                           
+    */
+
+    void ~FMinionWave()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~FMinionWave: 7 dwords / 4 instructions (cache offset 0x3de1f) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         0 134230821                                   ; .Entries
+        000C  CALLSYS       TArray::$beh2                               
+        0018  RET           2                                           
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ABarracudaMinionSpawner : ALokiActor
+// unreal base : /Script/Engine.LokiActor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/LokiActor.h
+// static class global: __StaticType_ABarracudaMinionSpawner
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    int InitialTeam;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 SpawnPeriod;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    EBarracudaPhaseType MinimumBarracudaPhaseType;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.EditCondition=RespawnType != EBarracudaRespawnBehaviorType::AliveAtNight && RespawnType != EBarracudaRespawnBehaviorType::AliveDuringDay)
+    float64 InitialSpawnDelay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bStaggerSpawn;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bSpawnAtAveragePlayerLevel;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<FGametimeToLevel> LevelThresholdsByGametime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    EBarracudaRespawnBehaviorType RespawnType;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FMinionWave Wave;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bShowTimer;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bTimerRequiresVision;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient, Replicated, ReplicationCondition=0)
+    bool bSpawnLoopHasStarted;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    float64 LastSpawnTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    float64 SpawnLoopStartTime;
+    UPROPERTY(BlueprintReadable, Transient)
+    private float64 NextSpawnTime;
+    UPROPERTY(BlueprintReadable, Transient)
+    bool bHasLivingMinion;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.RootComponent)
+    UCapsuleComponent@ CapsuleCollision;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    ULokiTeamComponent@ TeamComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UBarracudaLaneComponent@ LaneComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UMapIconComponent@ MapIconComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UVisibilityReceiver@ VisibilityReceiver;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<TSubclassOf<UGameplayEffect@>> StartingEffects;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    TArray<ALokiMinionCharacter@> MinionInstances;
+    int CurrentWaveBufferIndex;
+    TArray<TSubclassOf<ALokiMinionCharacter@>> WaveBuffer;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    UAkAudioEvent@ SpawnAudioEvent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    FGameplayTag SpawnPilotVO;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Barracks)
+    TSubclassOf<UGameplayEffect@> BarracksDownEffect;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Barracks)
+    TSubclassOf<AActor@> BarracksClass;
+
+    ABarracudaMinionSpawner()   // traits=0x21
+    {
+        this.LevelThresholdsByGametime = TArray();
+        this.Wave.FMinionWave();
+        this.StartingEffects = TArray();
+        this.MinionInstances = TArray();
+        this.WaveBuffer = TArray();
+        this.SpawnPilotVO = FGameplayTag();
+        this.BarracksDownEffect = TSubclassOf();
+        this.BarracksClass = TSubclassOf();
+        v1 = 0;
+        this.CurrentWaveBufferIndex = v1;
+        return;
+    }
+    /* ---- ABarracudaMinionSpawner: 57 dwords / 30 instructions (cache offset 0x43b46) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         992 134230793                                 ; .LevelThresholdsByGametime
+        000C  CALLSYS       TArray::$beh0                               
+        0018  PshVPtr       this                                        
+        001C  ADDSi         1016 134230793                                ; .Wave
+        0024  CALL          84430                                         ; FMinionWave::FMinionWave
+        002C  PshVPtr       this                                        
+        0030  ADDSi         1112 134230793                                ; .StartingEffects
+        0038  CALLSYS       TArray::$beh0                               
+        0044  PshVPtr       this                                        
+        0048  ADDSi         1128 134230793                                ; .MinionInstances
+        0050  CALLSYS       TArray::$beh0                               
+        005C  PshVPtr       this                                        
+        0060  ADDSi         1152 134230793                                ; .WaveBuffer
+        0068  CALLSYS       TArray::$beh0                               
+        0074  PshVPtr       this                                        
+        0078  ADDSi         1176 134230793                                ; .SpawnPilotVO
+        0080  CALLSYS       FGameplayTag::$beh0                         
+        008C  PshVPtr       this                                        
+        0090  ADDSi         1184 134230793                                ; .BarracksDownEffect
+        0098  CALLSYS       TSubclassOf::$beh0                          
+        00A4  PshVPtr       this                                        
+        00A8  ADDSi         1192 134230793                                ; .BarracksClass
+        00B0  CALLSYS       TSubclassOf::$beh0                          
+        00BC  SetV4         v1 0                                        
+        00C4  LoadThisR     1144 134230793                                ; this.CurrentWaveBufferIndex
+        00CC  WRTV4         v1                                          
+        00D0  PshVPtr       this                                        
+        00D4  FinConstruct  ABarracudaMinionSpawner                     
+        00E0  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v4 = this.TeamComponent;
+            if (v4 != nullptr) {
+                v5 = this.InitialTeam;
+                this.TeamComponent.AuthSetTeamIndex(v5);
+            }
+            v8 = Loki::GetLokiGameState(__WorldContext);
+            v8.OnRoundPhaseChanged.AddUFunction(this, n"AuthOnNewRoundPhase");
+            v8.OnNewDayNightStateDelegate.AddUFunction(this, n"AuthOnNewDayNightState");
+            v12 = this.VisibilityReceiver;
+            if (v12 != nullptr) {
+                this.VisibilityReceiver.OnVisibilityEvaluated.AddUFunction(this, n"HandleVisibilityEvaluated");
+            }
+            v16 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+            if (v16 != nullptr) {
+                v21 = false;
+                v20 = FGameEvent_BarracudaPhaseChanged();
+                v34 = v16.RegisterForEvent(this, v20, typeid(FGameEvent_BarracudaPhaseChanged), nullptr, n"AuthHandleBarracudaPhaseChanged", v21);
+            }
+            this.AuthTryEnablingSpawnLoop();
+        }
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v1 = this.bShowTimer;
+            this.MapIconComponent.SetIconVisible(v1);
+        }
+        return;
+    }
+    /* ---- LokiBeginPlay_Implementation: 150 dwords / 86 instructions (cache offset 0x3f0c7) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsServer                                
+        0018  JLowZ         122                                           -> L0208
+        0020  PshVPtr       this                                        
+        0024  ADDSi         1080 134230793                                ; .TeamComponent
+        002C  RDSPtr                                                    
+        0030  RefCpyV       v4                                          
+        0034  CmpPtrNull    v4                                          
+        0038  JZ            11                                            -> L006C
+        0040  LoadThisR     952 134230793                                 ; this.InitialTeam
+        0048  RDR4          v5                                          
+        004C  PshV4         v5                                          
+        0050  PshVPtr       this                                        
+        0054  ADDSi         1080 134230793                                ; .TeamComponent
+        005C  RDSPtr                                                    
+        0060  CALLSYS       ULokiTeamComponent::AuthSetTeamIndex        
+      L006C:
+        006C  PshGPtr       __WorldContext                              
+        0078  CALLSYS       GetLokiGameState                            
+        0084  STOREOBJ      v8                                          
+        0088  PshC4         24                                          
+        0090  CALLSYS       __STATIC_NAME                               
+        009C  PshRPtr                                                   
+        00A0  PshVPtr       this                                        
+        00A4  PshVPtr       v8                                          
+        00A8  ADDSi         1424 67115161                                 ; .OnRoundPhaseChanged
+        00B0  CALLSYS       FNewRoundPhase::AddUFunction                
+        00BC  PshC4         25                                          
+        00C4  CALLSYS       __STATIC_NAME                               
+        00D0  PshRPtr                                                   
+        00D4  PshVPtr       this                                        
+        00D8  PshVPtr       v8                                          
+        00DC  ADDSi         1768 67115161                                 ; .OnNewDayNightStateDelegate
+        00E4  CALLSYS       FNewDayNightStateSignature::AddUFunction    
+        00F0  PshVPtr       this                                        
+        00F4  ADDSi         1104 134230793                                ; .VisibilityReceiver
+        00FC  RDSPtr                                                    
+        0100  RefCpyV       v12                                         
+        0104  CmpPtrNull    v12                                         
+        0108  JZ            16                                            -> L0150
+        0110  PshC4         26                                          
+        0118  CALLSYS       __STATIC_NAME                               
+        0124  PshRPtr                                                   
+        0128  PshVPtr       this                                        
+        012C  PshVPtr       this                                        
+        0130  ADDSi         1104 134230793                                ; .VisibilityReceiver
+        0138  RDSPtr                                                    
+        013C  ADDSi         264 67115573                                  ; .OnVisibilityEvaluated
+        0144  CALLSYS       FOnVisbilityEvaluated::AddUFunction         
+      L0150:
+        0150  PshGPtr       __WorldContext                              
+        015C  CALLSYS       GetGlobalGameEventRouter                    
+        0168  STOREOBJ      v16                                         
+        016C  CmpPtrNull    v16                                         
+        0170  JZ            31                                            -> L01F4
+        0178  SetV1         v21 0                                       
+        0180  PshV4         v21                                         
+        0184  PshC4         10                                          
+        018C  CALLSYS       __STATIC_NAME                               
+        0198  PshRPtr                                                   
+        019C  PshNull                                                   
+        01A0  TYPEID        67120880                                      ; FGameEvent_BarracudaPhaseChanged
+        01A8  PSF           v20                                         
+        01AC  CALLSYS       FGameEvent_BarracudaPhaseChanged::$beh0     
+        01B8  PSF           v20                                         
+        01BC  PshVPtr       this                                        
+        01C0  PSF           v34                                         
+        01C4  PshVPtr       v16                                         
+        01C8  CALLSYS       UGameEventRouterComponent::RegisterForEvent 
+        01D4  PSF           v20                                         
+        01D8  CALLSYS       FGameEvent_BarracudaPhaseChanged::$beh2     
+        01E4  PSF           v34                                         
+        01E8  CALLSYS       FGameEventListenerHandle::$beh2             
+      L01F4:
+        01F4  PshVPtr       this                                        
+        01F8  CALLINTF      84436                                         ; ABarracudaMinionSpawner::AuthTryEnablingSpawnLoop
+        0200  FreeNullV8    v16                                         
+        0204  FreeNullV8    v8                                          
+      L0208:
+        0208  PshGPtr       __WorldContext                              
+        0214  CALLSYS       LokiIsClient                                
+        0220  JLowZ         11                                            -> L0254
+        0228  LoadThisR     1032 134230793                                ; this.bShowTimer
+        0230  RDR1          v1                                          
+        0234  PshV4         v1                                          
+        0238  PshVPtr       this                                        
+        023C  ADDSi         1096 134230793                                ; .MapIconComponent
+        0244  RDSPtr                                                    
+        0248  CALLSYS       UMapIconComponent::SetIconVisible           
+      L0254:
+        0254  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ClientGetMapIconState(bool&out bShowLivingIcon, float64&out SecondsRemaining)   // traits=0x20
+    {
+        v1 = true;
+        bShowLivingIcon = v1;
+        v4 = 0;
+        SecondsRemaining = v4;
+        v1 = false;
+        v6 = Loki::GetLocalTeamIndex(__WorldContext, v1);
+        v10 = GetBarracudaTeamStateTeamOnly(v6);
+        if (v10 == nullptr) {
+            return;
+        } else {
+            v12 = 0;
+            v1 = v10.SpawnerToSpawnTime.Find(this, v12);
+            v1 = !v1;
+            if (v1) {
+                return;
+            } else {
+                v15 = Gameplay::GetServerTime(__WorldContext);
+                v4 = float64(v15);
+                v14 = v4;
+                v16 = this.RespawnType;
+                v5 = int(v16);
+                if (v5 == 4) {
+                    v22 = Loki::GetLokiGameState(__WorldContext);
+                    v26 = GetBarracudaGameStateComponent();
+                    if (v22 == nullptr) {
+                        v1 = 0;
+                    } else {
+                        v27 = v26 != nullptr;
+                        v1 = v27;
+                    }
+                    if (v1) {
+                        v28 = v22.DayNightState;
+                        v17 = int(v28);
+                        if (v17 == 0) {
+                            v27 = false;
+                            bShowLivingIcon = v27;
+                            v4 = v26.SecondsUntilNextDayNightSwap();
+                            SecondsRemaining = v4;
+                        }
+                    }
+                    return;
+                } else {
+                    v16 = this.RespawnType;
+                    v5 = int(v16);
+                    if (v5 == 5) {
+                        v22 = Loki::GetLokiGameState(__WorldContext);
+                        v26 = GetBarracudaGameStateComponent();
+                        if (v22 == nullptr) {
+                            v27 = 0;
+                        } else {
+                            v1 = v26 != nullptr;
+                            v27 = v1;
+                        }
+                        if (v27) {
+                            v28 = v22.DayNightState;
+                            v5 = int(v28);
+                            if (v5 == 1) {
+                                v1 = false;
+                                bShowLivingIcon = v1;
+                                v4 = v26.SecondsUntilNextDayNightSwap();
+                                SecondsRemaining = v4;
+                            }
+                        }
+                        return;
+                    } else {
+                        if (v14 > v12) {
+                            return;
+                        } else {
+                            v1 = false;
+                            bShowLivingIcon = v1;
+                            v4 = v12 - v14;
+                            SecondsRemaining = v4;
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- ClientGetMapIconState: 192 dwords / 119 instructions (cache offset 0x3f598) ----
+        0000  SetV1         v1 1                                        
+        0008  PshVPtr       bShowLivingIcon                             
+        000C  PopRPtr                                                   
+        0010  WRTV1         v1                                          
+        0014  SetV8         v4 0x0                                      
+        0020  PshVPtr       SecondsRemaining                            
+        0024  PopRPtr                                                   
+        0028  WRTV8         v4                                          
+        002C  SetV1         v1 0                                        
+        0034  PshV4         v1                                          
+        0038  PshGPtr       __WorldContext                              
+        0044  CALLSYS       GetLocalTeamIndex                           
+        0050  CpyRtoV4      v6                                          
+        0054  PshV4         v6                                          
+        0058  CALL          84279                                         ; GetBarracudaTeamStateTeamOnly
+        0060  STOREOBJ      v10                                         
+        0064  CmpPtrNull    v10                                         
+        0068  JNZ           2                                             -> L0078
+        0070  JMP           161                                           -> L02FC
+      L0078:
+        0078  SetV8         v12 0x0                                     
+        0084  PSF           v12                                         
+        0088  PSF           this                                        
+        008C  PshVPtr       v10                                         
+        0090  ADDSi         1024 134230792                                ; .SpawnerToSpawnTime
+        0098  CALLSYS       TMap::Find                                  
+        00A4  CpyRtoV4      v1                                          
+        00A8  NOT           v1                                          
+        00AC  CpyVtoR1      v1                                          
+        00B0  JLowZ         2                                             -> L00C0
+        00B8  JMP           143                                           -> L02FC
+      L00C0:
+        00C0  PshGPtr       __WorldContext                              
+        00CC  CALLSYS       GetServerTime                               
+        00D8  CpyRtoV4      v15                                         
+        00DC  fTOd          v4 v15                                      
+        00E4  CpyVtoV8      v14 v4                                      
+        00EC  LoadThisR     1008 134230793                                ; this.RespawnType
+        00F4  RDR1          v16                                         
+        00F8  sbTOi         v5 v16                                      
+        0100  CMPIi         v5 4                                        
+        0108  JNZ           49                                            -> L01D4
+        0110  PshGPtr       __WorldContext                              
+        011C  CALLSYS       GetLokiGameState                            
+        0128  STOREOBJ      v22                                         
+        012C  CALL          84263                                         ; GetBarracudaGameStateComponent
+        0134  STOREOBJ      v26                                         
+        0138  CmpPtrNull    v22                                         
+        013C  JNZ           4                                             -> L0154
+        0144  SetV4         v1 0                                        
+        014C  JMP           5                                             -> L0168
+      L0154:
+        0154  CmpPtrNull    v26                                         
+        0158  TNZ                                                       
+        015C  CpyRtoV4      v27                                         
+        0160  CpyVtoV4      v1 v27                                      
+      L0168:
+        0168  CpyVtoR1      v1                                          
+        016C  JLowZ         22                                            -> L01CC
+        0174  LoadRObjR     v22 1726 67115161                             ; .DayNightState
+        0180  RDR1          v28                                         
+        0184  sbTOi         v17 v28                                     
+        018C  CMPIi         v17 0                                       
+        0194  JNZ           12                                            -> L01CC
+        019C  SetV1         v27 0                                       
+        01A4  PshVPtr       bShowLivingIcon                             
+        01A8  PopRPtr                                                   
+        01AC  WRTV1         v27                                         
+        01B0  PshVPtr       v26                                         
+        01B4  CALLINTF      84228                                         ; UBarracudaGameStateComponent::SecondsUntilNextDayNightSwap
+        01BC  CpyRtoV8      v4                                          
+        01C0  PshVPtr       SecondsRemaining                            
+        01C4  PopRPtr                                                   
+        01C8  WRTV8         v4                                          
+      L01CC:
+        01CC  JMP           74                                            -> L02FC
+      L01D4:
+        01D4  LoadThisR     1008 134230793                                ; this.RespawnType
+        01DC  RDR1          v16                                         
+        01E0  sbTOi         v5 v16                                      
+        01E8  CMPIi         v5 5                                        
+        01F0  JNZ           49                                            -> L02BC
+        01F8  PshGPtr       __WorldContext                              
+        0204  CALLSYS       GetLokiGameState                            
+        0210  STOREOBJ      v22                                         
+        0214  CALL          84263                                         ; GetBarracudaGameStateComponent
+        021C  STOREOBJ      v26                                         
+        0220  CmpPtrNull    v22                                         
+        0224  JNZ           4                                             -> L023C
+        022C  SetV4         v27 0                                       
+        0234  JMP           5                                             -> L0250
+      L023C:
+        023C  CmpPtrNull    v26                                         
+        0240  TNZ                                                       
+        0244  CpyRtoV4      v1                                          
+        0248  CpyVtoV4      v27 v1                                      
+      L0250:
+        0250  CpyVtoR1      v27                                         
+        0254  JLowZ         22                                            -> L02B4
+        025C  LoadRObjR     v22 1726 67115161                             ; .DayNightState
+        0268  RDR1          v28                                         
+        026C  sbTOi         v5 v28                                      
+        0274  CMPIi         v5 1                                        
+        027C  JNZ           12                                            -> L02B4
+        0284  SetV1         v1 0                                        
+        028C  PshVPtr       bShowLivingIcon                             
+        0290  PopRPtr                                                   
+        0294  WRTV1         v1                                          
+        0298  PshVPtr       v26                                         
+        029C  CALLINTF      84228                                         ; UBarracudaGameStateComponent::SecondsUntilNextDayNightSwap
+        02A4  CpyRtoV8      v4                                          
+        02A8  PshVPtr       SecondsRemaining                            
+        02AC  PopRPtr                                                   
+        02B0  WRTV8         v4                                          
+      L02B4:
+        02B4  JMP           16                                            -> L02FC
+      L02BC:
+        02BC  CMPd          v14 v12                                     
+        02C4  JNP           2                                             -> L02D4
+        02CC  JMP           10                                            -> L02FC
+      L02D4:
+        02D4  SetV1         v1 0                                        
+        02DC  PshVPtr       bShowLivingIcon                             
+        02E0  PopRPtr                                                   
+        02E4  WRTV1         v1                                          
+        02E8  SUBd          v4 v12 v14                                  
+        02F0  PshVPtr       SecondsRemaining                            
+        02F4  PopRPtr                                                   
+        02F8  WRTV8         v4                                          
+      L02FC:
+        02FC  RET           6                                           
+    */
+
+    void AuthSetNextSpawnTime(const float64 NewTime)   // traits=0x20
+    {
+        this.NextSpawnTime = NewTime;
+        v1 = this.bTimerRequiresVision;
+        v1 = !v1;
+        if (v1) {
+            this.GrantTimerToAllTeams();
+        }
+        return;
+    }
+    /* ---- AuthSetNextSpawnTime: 14 dwords / 10 instructions (cache offset 0x3fae7) ----
+        0000  LoadThisR     1056 134230793                                ; this.NextSpawnTime
+        0008  WRTV8         NewTime                                     
+        000C  LoadThisR     1033 134230793                                ; this.bTimerRequiresVision
+        0014  RDR1          v1                                          
+        0018  NOT           v1                                          
+        001C  CpyVtoR1      v1                                          
+        0020  JLowZ         3                                             -> L0034
+        0028  PshVPtr       this                                        
+        002C  CALLINTF      84453                                         ; ABarracudaMinionSpawner::GrantTimerToAllTeams
+      L0034:
+        0034  RET           4                                           
+    */
+
+    UFUNCTION(CanOverrideEvent)
+    void AuthOnNewRoundPhase(const ERoundPhase NewPhase)   // traits=0x20
+    {
+        this.AuthTryEnablingSpawnLoop();
+        return;
+    }
+    /* ---- AuthOnNewRoundPhase: 4 dwords / 3 instructions (cache offset 0x3fbfc) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84436                                         ; ABarracudaMinionSpawner::AuthTryEnablingSpawnLoop
+        000C  RET           3                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void AuthHandleBarracudaPhaseChanged(const FGameEvent_BarracudaPhaseChanged& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.AuthTryEnablingSpawnLoop();
+        return;
+    }
+    /* ---- AuthHandleBarracudaPhaseChanged: 4 dwords / 3 instructions (cache offset 0x3fd7a) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84436                                         ; ABarracudaMinionSpawner::AuthTryEnablingSpawnLoop
+        000C  RET           6                                           
+    */
+
+    private void AuthTryEnablingSpawnLoop()   // traits=0x28
+    {
+        v1 = this.bSpawnLoopHasStarted;
+        if (v1) {
+            return;
+        } else {
+            v4 = Loki::GetLokiGameState(__WorldContext);
+            if (v4 == nullptr) {
+                return;
+            } else {
+                v7 = v4.GetCurrentPhase();
+                v8 = int(v7);
+                if (v8 != 7) {
+                    return;
+                } else {
+                    v11 = GetCurrentBarracudaPhaseType();
+                    v9 = int(v11);
+                    v10 = this.MinimumBarracudaPhaseType;
+                    v8 = int(v10);
+                    if (v9 < v8) {
+                        return;
+                    } else {
+                        v1 = true;
+                        this.bSpawnLoopHasStarted = v1;
+                        v12 = Gameplay::GetServerTime(__WorldContext);
+                        v14 = float64(v12);
+                        this.SpawnLoopStartTime = v14;
+                        if (this.IsClockBasedSpawning()) {
+                            v14 = this.SpawnLoopStartTime;
+                            v16 = this.InitialSpawnDelay;
+                            v14 = v14 + v16;
+                            this.AuthSetNextSpawnTime(v14);
+                        } else {
+                            this.AuthCheckDayNightSpawn();
+                        }
+                        this.GrantTimerToAllTeams();
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- AuthTryEnablingSpawnLoop: 92 dwords / 53 instructions (cache offset 0x3fe8f) ----
+        0000  LoadThisR     1034 134230793                                ; this.bSpawnLoopHasStarted
+        0008  RDR1          v1                                          
+        000C  CpyVtoR1      v1                                          
+        0010  JLowZ         2                                             -> L0020
+        0018  JMP           83                                            -> L016C
+      L0020:
+        0020  PshGPtr       __WorldContext                              
+        002C  CALLSYS       GetLokiGameState                            
+        0038  STOREOBJ      v4                                          
+        003C  CmpPtrNull    v4                                          
+        0040  JNZ           2                                             -> L0050
+        0048  JMP           71                                            -> L016C
+      L0050:
+        0050  PshVPtr       v4                                          
+        0054  CALLSYS       ALokiGameState::GetCurrentPhase             
+        0060  CpyRtoV4      v7                                          
+        0064  sbTOi         v8 v7                                       
+        006C  CMPIi         v8 7                                        
+        0074  JZ            2                                             -> L0084
+        007C  JMP           58                                            -> L016C
+      L0084:
+        0084  CALL          84265                                         ; GetCurrentBarracudaPhaseType
+        008C  CpyRtoV4      v11                                         
+        0090  sbTOi         v9 v11                                      
+        0098  LoadThisR     968 134230793                                 ; this.MinimumBarracudaPhaseType
+        00A0  RDR1          v10                                         
+        00A4  sbTOi         v8 v10                                      
+        00AC  CMPi          v9 v8                                       
+        00B4  JNS           2                                             -> L00C4
+        00BC  JMP           42                                            -> L016C
+      L00C4:
+        00C4  SetV1         v1 1                                        
+        00CC  LoadThisR     1034 134230793                                ; this.bSpawnLoopHasStarted
+        00D4  WRTV1         v1                                          
+        00D8  PshGPtr       __WorldContext                              
+        00E4  CALLSYS       GetServerTime                               
+        00F0  CpyRtoV4      v12                                         
+        00F4  fTOd          v14 v12                                     
+        00FC  LoadThisR     1048 134230793                                ; this.SpawnLoopStartTime
+        0104  WRTV8         v14                                         
+        0108  PshVPtr       this                                        
+        010C  CALLINTF      84449                                         ; ABarracudaMinionSpawner::IsClockBasedSpawning
+        0114  JLowZ         14                                            -> L0154
+        011C  LoadThisR     1048 134230793                                ; this.SpawnLoopStartTime
+        0124  RDR8          v14                                         
+        0128  LoadThisR     976 134230793                                 ; this.InitialSpawnDelay
+        0130  RDR8          v16                                         
+        0134  ADDd          v14 v14 v16                                 
+        013C  PshV8         v14                                         
+        0140  PshVPtr       this                                        
+        0144  CALLINTF      84433                                         ; ABarracudaMinionSpawner::AuthSetNextSpawnTime
+        014C  JMP           3                                             -> L0160
+      L0154:
+        0154  PshVPtr       this                                        
+        0158  CALLINTF      84450                                         ; ABarracudaMinionSpawner::AuthCheckDayNightSpawn
+      L0160:
+        0160  PshVPtr       this                                        
+        0164  CALLINTF      84453                                         ; ABarracudaMinionSpawner::GrantTimerToAllTeams
+      L016C:
+        016C  RET           2                                           
+    */
+
+    UFUNCTION(CanOverrideEvent)
+    void AuthOnNewDayNightState(const ELokiDayNightState NewState, const ELokiDayNightState OldState)   // traits=0x20
+    {
+        this.AuthCheckDayNightSpawn();
+        return;
+    }
+    /* ---- AuthOnNewDayNightState: 4 dwords / 3 instructions (cache offset 0x401a8) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84450                                         ; ABarracudaMinionSpawner::AuthCheckDayNightSpawn
+        000C  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = this.IsSpawningAllowed();
+            v1 = !v1;
+            if (v1) {
+                return;
+            }
+            this.AuthCleanMinionReferences();
+            this.AuthTryUpdatingNextSpawnTime();
+            if (this.AuthShouldSpawnWave()) {
+                v2 = this.RespawnType;
+                v3 = int(v2);
+                if (v3 == 1) {
+                    this.AuthCleanupMinions();
+                }
+                this.AuthSpawnWave();
+                v2 = this.RespawnType;
+                v4 = int(v2);
+                if (v4 == 3) {
+                    this.AuthSetNextSpawnTime(13830554455654793216);
+                } else {
+                    v6 = this.NextSpawnTime;
+                    v8 = this.SpawnPeriod;
+                    v6 = v6 + v8;
+                    this.AuthSetNextSpawnTime(v6);
+                }
+            }
+            return;
+        } else {
+            v1 = this.bShowTimer;
+            if (!v1) {
+                v1 = 0;
+            } else {
+                v9 = this.bSpawnLoopHasStarted;
+                v1 = v9;
+            }
+            this.MapIconComponent.SetIconVisible(v1);
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 99 dwords / 59 instructions (cache offset 0x402ec) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsServer                                
+        0018  JLowZ         67                                            -> L012C
+        0020  PshVPtr       this                                        
+        0024  CALLINTF      84439                                         ; ABarracudaMinionSpawner::IsSpawningAllowed
+        002C  CpyRtoV4      v1                                          
+        0030  NOT           v1                                          
+        0034  CpyVtoR1      v1                                          
+        0038  JLowZ         2                                             -> L0048
+        0040  JMP           80                                            -> L0188
+      L0048:
+        0048  PshVPtr       this                                        
+        004C  CALLINTF      84446                                         ; ABarracudaMinionSpawner::AuthCleanMinionReferences
+        0054  PshVPtr       this                                        
+        0058  CALLINTF      84448                                         ; ABarracudaMinionSpawner::AuthTryUpdatingNextSpawnTime
+        0060  PshVPtr       this                                        
+        0064  CALLINTF      84447                                         ; ABarracudaMinionSpawner::AuthShouldSpawnWave
+        006C  JLowZ         44                                            -> L0124
+        0074  LoadThisR     1008 134230793                                ; this.RespawnType
+        007C  RDR1          v2                                          
+        0080  sbTOi         v3 v2                                       
+        0088  CMPIi         v3 1                                        
+        0090  JNZ           3                                             -> L00A4
+        0098  PshVPtr       this                                        
+        009C  CALLINTF      84445                                         ; ABarracudaMinionSpawner::AuthCleanupMinions
+      L00A4:
+        00A4  PshVPtr       this                                        
+        00A8  CALLINTF      84441                                         ; ABarracudaMinionSpawner::AuthSpawnWave
+        00B0  LoadThisR     1008 134230793                                ; this.RespawnType
+        00B8  RDR1          v2                                          
+        00BC  sbTOi         v4 v2                                       
+        00C4  CMPIi         v4 3                                        
+        00CC  JNZ           8                                             -> L00F4
+        00D4  PshC8         0xbff0000000000000                          
+        00E0  PshVPtr       this                                        
+        00E4  CALLINTF      84433                                         ; ABarracudaMinionSpawner::AuthSetNextSpawnTime
+        00EC  JMP           12                                            -> L0124
+      L00F4:
+        00F4  LoadThisR     1056 134230793                                ; this.NextSpawnTime
+        00FC  RDR8          v6                                          
+        0100  LoadThisR     960 134230793                                 ; this.SpawnPeriod
+        0108  RDR8          v8                                          
+        010C  ADDd          v6 v6 v8                                    
+        0114  PshV8         v6                                          
+        0118  PshVPtr       this                                        
+        011C  CALLINTF      84433                                         ; ABarracudaMinionSpawner::AuthSetNextSpawnTime
+      L0124:
+        0124  JMP           23                                            -> L0188
+      L012C:
+        012C  LoadThisR     1032 134230793                                ; this.bShowTimer
+        0134  RDR1          v1                                          
+        0138  CpyVtoR1      v1                                          
+        013C  JLowNZ        4                                             -> L0154
+        0144  SetV4         v1 0                                        
+        014C  JMP           5                                             -> L0168
+      L0154:
+        0154  LoadThisR     1034 134230793                                ; this.bSpawnLoopHasStarted
+        015C  RDR1          v9                                          
+        0160  CpyVtoV4      v1 v9                                       
+      L0168:
+        0168  PshV4         v1                                          
+        016C  PshVPtr       this                                        
+        0170  ADDSi         1096 134230793                                ; .MapIconComponent
+        0178  RDSPtr                                                    
+        017C  CALLSYS       UMapIconComponent::SetIconVisible           
+      L0188:
+        0188  RET           4                                           
+    */
+
+    private bool IsSpawningAllowed()   // traits=0x28
+    {
+        v1 = this.bSpawnLoopHasStarted;
+        v1 = !v1;
+        if (v1) {
+            v1 = false;
+            return v1;
+        } else {
+            v4 = Loki::GetLokiGameState(__WorldContext);
+            v5 = v4.GetCurrentPhase();
+            v6 = int(v5);
+            if (v6 != 7) {
+                v1 = false;
+                return v1;
+            } else {
+                v10 = GetBarracudaGameStateComponent();
+                if (v10 == nullptr) {
+                    v1 = false;
+                    return v1;
+                } else {
+                    if (Loki::HasAnyMatchingGameplayTags(this, v10.DisabledSpawnerTypes)) {
+                        v1 = false;
+                        return v1;
+                    } else {
+                        v1 = true;
+                    }
+                }
+            }
+        }
+        return v1;
+    }
+    /* ---- IsSpawningAllowed: 64 dwords / 38 instructions (cache offset 0x40603) ----
+        0000  LoadThisR     1034 134230793                                ; this.bSpawnLoopHasStarted
+        0008  RDR1          v1                                          
+        000C  NOT           v1                                          
+        0010  CpyVtoR1      v1                                          
+        0014  JLowZ         5                                             -> L0030
+        001C  SetV1         v1 0                                        
+        0024  CpyVtoR4      v1                                          
+        0028  JMP           51                                            -> L00FC
+      L0030:
+        0030  PshGPtr       __WorldContext                              
+        003C  CALLSYS       GetLokiGameState                            
+        0048  STOREOBJ      v4                                          
+        004C  PshVPtr       v4                                          
+        0050  CALLSYS       ALokiGameState::GetCurrentPhase             
+        005C  CpyRtoV4      v5                                          
+        0060  sbTOi         v6 v5                                       
+        0068  CMPIi         v6 7                                        
+        0070  JZ            5                                             -> L008C
+        0078  SetV1         v1 0                                        
+        0080  CpyVtoR4      v1                                          
+        0084  JMP           28                                            -> L00FC
+      L008C:
+        008C  CALL          84263                                         ; GetBarracudaGameStateComponent
+        0094  STOREOBJ      v10                                         
+        0098  CmpPtrNull    v10                                         
+        009C  JNZ           5                                             -> L00B8
+        00A4  SetV1         v1 0                                        
+        00AC  CpyVtoR4      v1                                          
+        00B0  JMP           17                                            -> L00FC
+      L00B8:
+        00B8  PshVPtr       v10                                         
+        00BC  ADDSi         400 134230778                                 ; .DisabledSpawnerTypes
+        00C4  PshVPtr       this                                        
+        00C8  CALLSYS       HasAnyMatchingGameplayTags                  
+        00D4  JLowZ         5                                             -> L00F0
+        00DC  SetV1         v1 0                                        
+        00E4  CpyVtoR4      v1                                          
+        00E8  JMP           3                                             -> L00FC
+      L00F0:
+        00F0  SetV1         v1 1                                        
+        00F8  CpyVtoR4      v1                                          
+      L00FC:
+        00FC  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod)
+    bool HasNextRespawnTime() const   // traits=0x24
+    {
+        v2 = this.NextSpawnTime;
+        v4 = 0;
+        v5 = v2 >= v4;
+        return v5;
+    }
+    /* ---- HasNextRespawnTime: 12 dwords / 8 instructions (cache offset 0x40812) ----
+        0000  LoadThisR     1056 134230793                                ; this.NextSpawnTime
+        0008  RDR8          v2                                          
+        000C  SetV8         v4 0x0                                      
+        0018  CMPd          v2 v4                                       
+        0020  TNS                                                       
+        0024  CpyRtoV4      v5                                          
+        0028  CpyVtoR4      v5                                          
+        002C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    void AuthSpawnWave()   // traits=0x20
+    {
+        v1 = Gameplay::GetServerTime(__WorldContext);
+        v4 = float64(v1);
+        this.LastSpawnTime = v4;
+        v5 = this.bStaggerSpawn;
+        if (v5) {
+            this.BeginStaggerSpawn();
+            return;
+        } else {
+            v5 = false;
+            v6 = v5;
+            v8 = LokiTeam::GetTeamFromActor(this);
+            v14 = this.Wave.Entries.Iterator();
+            while (true) {
+                v5 = v14.CanProceed;
+                if (!v5) break;
+                v22 = v14.Proceed();
+                v24 = TSubclassOf();
+                v24 = v22.MinionClass;
+                v5 = v24 == nullptr;
+                v5 = !v5;
+                if (!v5) {
+                    v5 = 0;
+                } else {
+                    v7 = v22.Count;
+                    v26 = v7 > 0;
+                    v5 = v26;
+                }
+                if (v5) {
+                    v27 = 0;
+                    while (true) {
+                        v25 = v22.Count;
+                        if (v27 >= v25) break;
+                        v5 = true;
+                        v34 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                        v36 = SpawnActor(v22.MinionClass, v34, FRotator::ZeroRotator, NAME_None, v5, nullptr);
+                        v38 = v36;
+                        if (v38 != nullptr) {
+                            v5 = true;
+                            v6 = v5;
+                            if (this.LaneComponent.HasLaneIndex()) {
+                                v40 = UBarracudaLaneComponent::Get(v38, NAME_None);
+                                if (v40 == nullptr) {
+                                    v44 = UBarracudaLaneComponent::StaticClass();
+                                    v46 = TSubclassOf(v44);
+                                    v48 = v38.CreateComponent(v46, NAME_None);
+                                    if (v48 != nullptr) {
+                                        v42 = cast<UBarracudaLaneComponent@>(v48);
+                                    } else {
+                                        v42 = nullptr;
+                                    }
+                                    v40 = v42;
+                                }
+                                v25 = this.LaneComponent.LaneIndex;
+                                v40.SetLaneIndex(v25);
+                            }
+                            LokiTeam::SetTeamForActor(v38, v8);
+                            FinishSpawningActor(v38);
+                            v49 = 0;
+                            while (true) {
+                                v50 = this.StartingEffects.Num();
+                                if (v49 >= v50) break;
+                                v52 = v38.GetLokiAbilitySystem_BP();
+                                v66 = v52.MakeEffectContext();
+                                v5 = false;
+                                v68 = v52.ApplyGameplayEffectToSelf(this.StartingEffects[v27], 0, v66, v5)  /* UFunction BP_ApplyGameplayEffectToSelf */;
+                                v49++;
+                            }
+                            LokiTeam::SetTeamForActor(v38, v8);
+                            this.SetMinionLevel(v38);
+                            this.MinionInstances.Add(v38);
+                            v5 = true;
+                            this.bHasLivingMinion = v5;
+                        }
+                        v27++;
+                    }
+                }
+            }
+            if (v6) {
+                this.PlaySpawnAudioEvent();
+            }
+        }
+        return;
+    }
+    /* ---- AuthSpawnWave: 296 dwords / 180 instructions (cache offset 0x4092f) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetServerTime                               
+        0018  CpyRtoV4      v1                                          
+        001C  fTOd          v4 v1                                       
+        0024  LoadThisR     1040 134230793                                ; this.LastSpawnTime
+        002C  WRTV8         v4                                          
+        0030  LoadThisR     984 134230793                                 ; this.bStaggerSpawn
+        0038  RDR1          v5                                          
+        003C  CpyVtoR1      v5                                          
+        0040  JLowZ         5                                             -> L005C
+        0048  PshVPtr       this                                        
+        004C  CALLINTF      84443                                         ; ABarracudaMinionSpawner::BeginStaggerSpawn
+        0054  JMP           272                                           -> L049C
+      L005C:
+        005C  SetV1         v5 0                                        
+        0064  CpyVtoV4      v6 v5                                       
+        006C  PshVPtr       this                                        
+        0070  CALLSYS       GetTeamFromActor                            
+        007C  CpyRtoV4      v8                                          
+        0080  PSF           v14                                         
+        0084  PshVPtr       this                                        
+        0088  ADDSi         1016 134230793                                ; .Wave
+        0090  ADDSi         0 134230821                                   ; .Entries
+        0098  CALLSYS       TArray::Iterator                            
+        00A4  JMP           239                                           -> L0468
+      L00AC:
+        00AC  SUSPEND                                                   
+        00B0  PSF           v14                                         
+        00B4  CALLSYS       TArrayIterator::Proceed                     
+        00C0  CpyRtoV8      v22                                         
+        00C4  PSF           v24                                         
+        00C8  CALLSYS       TSubclassOf::$beh0                          
+        00D4  PshVPtr       v22                                         
+        00D8  ADDSi         0 134230820                                   ; .MinionClass
+        00E0  PSF           v24                                         
+        00E4  CALLSYS       TSubclassOf::opAssign                       
+        00F0  PshNull                                                   
+        00F4  PSF           v24                                         
+        00F8  CALLSYS       TSubclassOf::opEquals                       
+        0104  CpyRtoV4      v5                                          
+        0108  NOT           v5                                          
+        010C  CpyVtoR1      v5                                          
+        0110  JLowNZ        4                                             -> L0128
+        0118  SetV4         v5 0                                        
+        0120  JMP           10                                            -> L0150
+      L0128:
+        0128  LoadRObjR     v22 8 134230820                               ; .Count
+        0134  RDR4          v7                                          
+        0138  CMPIi         v7 0                                        
+        0140  TP                                                        
+        0144  CpyRtoV4      v26                                         
+        0148  CpyVtoV4      v5 v26                                      
+      L0150:
+        0150  CpyVtoR1      v5                                          
+        0154  JLowZ         195                                           -> L0468
+        015C  SetV4         v27 0                                       
+        0164  JMP           183                                           -> L0448
+      L016C:
+        016C  SUSPEND                                                   
+        0170  PshNull                                                   
+        0174  SetV1         v5 1                                        
+        017C  PshV4         v5                                          
+        0180  PshGPtr       NAME_None                                   
+        018C  PshGPtr       FRotator::ZeroRotator                       
+        0198  PSF           v34                                         
+        019C  PshVPtr       this                                        
+        01A0  CALLSYS       AActor::GetActorLocation                    
+        01AC  PSF           v34                                         
+        01B0  PshVPtr       v22                                         
+        01B4  ADDSi         0 134230820                                   ; .MinionClass
+        01BC  CALLSYS       SpawnActor                                  
+        01C8  STOREOBJ      v36                                         
+        01CC  PshVPtr       v36                                         
+        01D0  RefCpyV       v38                                         
+        01D4  CmpPtrNull    v38                                         
+        01D8  JZ            152                                           -> L0440
+        01E0  SetV1         v5 1                                        
+        01E8  CpyVtoV4      v6 v5                                       
+        01F0  PshVPtr       this                                        
+        01F4  ADDSi         1088 134230793                                ; .LaneComponent
+        01FC  RDSPtr                                                    
+        0200  CALLINTF      84099                                         ; UBarracudaLaneComponent::HasLaneIndex
+        0208  JLowZ         55                                            -> L02EC
+        0210  PshGPtr       NAME_None                                   
+        021C  PshVPtr       v38                                         
+        0220  CALL          84114                                         ; Get
+        0228  STOREOBJ      v40                                         
+        022C  CmpPtrNull    v40                                         
+        0230  JNZ           32                                            -> L02B8
+        0238  PshGPtr       NAME_None                                   
+        0244  CALL          84113                                         ; StaticClass
+        024C  STOREOBJ      v44                                         
+        0250  PshVPtr       v44                                         
+        0254  PSF           v46                                         
+        0258  CALLSYS       TSubclassOf::$beh0                          
+        0264  PSF           v46                                         
+        0268  PshVPtr       v38                                         
+        026C  CALLSYS       AActor::CreateComponent                     
+        0278  STOREOBJ      v48                                         
+        027C  CmpPtrNull    v48                                         
+        0280  JZ            9                                             -> L02AC
+        0288  TYPEID        1207972595                                    ; UBarracudaLaneComponent@
+        0290  PSF           v42                                         
+        0294  PshVPtr       v48                                         
+        0298  CALLSYS       UObject::opCast                             
+        02A4  JMP           1                                             -> L02B0
+      L02AC:
+        02AC  ClrVPtr       v42                                         
+      L02B0:
+        02B0  PshVPtr       v42                                         
+        02B4  RefCpyV       v40                                         
+      L02B8:
+        02B8  PshVPtr       this                                        
+        02BC  ADDSi         1088 134230793                                ; .LaneComponent
+        02C4  RDSPtr                                                    
+        02C8  ADDSi         208 134230771                                 ; .LaneIndex
+        02D0  PopRPtr                                                   
+        02D4  RDR4          v25                                         
+        02D8  PshV4         v25                                         
+        02DC  PshVPtr       v40                                         
+        02E0  CALLINTF      84100                                         ; UBarracudaLaneComponent::SetLaneIndex
+        02E8  FreeNullV8    v40                                         
+      L02EC:
+        02EC  PshV4         v8                                          
+        02F0  PshVPtr       v38                                         
+        02F4  CALLSYS       SetTeamForActor                             
+        0300  PshVPtr       v38                                         
+        0304  CALLSYS       FinishSpawningActor                         
+        0310  SetV4         v49 0                                       
+        0318  JMP           40                                            -> L03C0
+      L0320:
+        0320  SUSPEND                                                   
+        0324  PshVPtr       v38                                         
+        0328  CALLSYS       ALokiCharacter::GetLokiAbilitySystem_BP     
+        0334  STOREOBJ      v52                                         
+        0338  PSF           v66                                         
+        033C  PshVPtr       v52                                         
+        0340  CALLSYS       UAbilitySystemComponent::MakeEffectContext  
+        034C  SetV1         v5 0                                        
+        0354  PshV4         v5                                          
+        0358  PSF           v66                                         
+        035C  PshC4         0                                           
+        0364  PshV4         v27                                         
+        0368  PshVPtr       this                                        
+        036C  ADDSi         1112 134230793                                ; .StartingEffects
+        0374  Thiscall1     TArray::opIndex                             
+        0380  PshRPtr                                                   
+        0384  PSF           v68                                         
+        0388  PshVPtr       v52                                         
+        038C  CALLSYS       UAbilitySystemComponent::ApplyGameplayEffectToSelf
+        0398  PSF           v68                                         
+        039C  CALLSYS       FActiveGameplayEffectHandle::$beh2          
+        03A8  PSF           v66                                         
+        03AC  CALLSYS       FGameplayEffectContextHandle::$beh2         
+        03B8  FreeNullV8    v52                                         
+        03BC  IncVi         v49                                         
+      L03C0:
+        03C0  PshVPtr       this                                        
+        03C4  ADDSi         1112 134230793                                ; .StartingEffects
+        03CC  CALLSYS       TArray::Num                                 
+        03D8  CpyRtoV4      v50                                         
+        03DC  CMPi          v49 v50                                     
+        03E4  JS            -51                                           -> L0320
+        03EC  PshV4         v8                                          
+        03F0  PshVPtr       v38                                         
+        03F4  CALLSYS       SetTeamForActor                             
+        0400  PshVPtr       v38                                         
+        0404  PshVPtr       this                                        
+        0408  CALLINTF      84442                                         ; ABarracudaMinionSpawner::SetMinionLevel
+        0410  PSF           v38                                         
+        0414  PshVPtr       this                                        
+        0418  ADDSi         1128 134230793                                ; .MinionInstances
+        0420  CALLSYS       TArray::Add                                 
+        042C  SetV1         v5 1                                        
+        0434  LoadThisR     1064 134230793                                ; this.bHasLivingMinion
+        043C  WRTV1         v5                                          
+      L0440:
+        0440  FreeNullV8    v38                                         
+        0444  IncVi         v27                                         
+      L0448:
+        0448  LoadRObjR     v22 8 134230820                               ; .Count
+        0454  RDR4          v25                                         
+        0458  CMPi          v27 v25                                     
+        0460  JS            -191                                          -> L016C
+      L0468:
+        0468  LoadVObjR     v14 16 268448550                              ; .CanProceed
+        0474  RDR1          v5                                          
+        0478  CpyVtoR1      v5                                          
+        047C  JLowNZ        -246                                          -> L00AC
+        0484  CpyVtoR1      v6                                          
+        0488  JLowZ         3                                             -> L049C
+        0490  PshVPtr       this                                        
+        0494  CALLINTF      84454                                         ; ABarracudaMinionSpawner::PlaySpawnAudioEvent
+      L049C:
+        049C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetMinionLevel(ALokiCharacter@ Minion)   // traits=0x20
+    {
+        v1 = this.bSpawnAtAveragePlayerLevel;
+        if (v1) {
+            v4 = 0;
+            v7 = 0;
+            v9 = 0;
+            while (true) {
+                if (v9 > 1) break;
+                v14 = LokiGameplay::GetPlayerStatesOnTeam(__WorldContext, v9);
+                v20 = v14.Iterator();
+                while (true) {
+                    v1 = v20.CanProceed;
+                    if (!v1) break;
+                    v28 = v20.Proceed();
+                    v20.Proceed();
+                    v10 = v28.GetPlayerLevel();
+                    v6 = float64(v10);
+                    v4 = v4 + v6;
+                    v7++;
+                }
+                v9++;
+            }
+            v6 = float64(v7);
+            v6 = v4 / v6;
+            v10 = Math::RoundToInt(v6);
+            v29 = Math::Max(1, v10);
+            Minion.AuthGrantLevel(v29);
+            return;
+        } else {
+            v32 = Loki::GetLokiGameState(__WorldContext);
+            if (v32 != nullptr) {
+                v6 = v32.GetServerWorldTimeSeconds();
+                v35 = v32.GameStartWorldTime;
+                v38 = float64(v35);
+                v6 = v6 - v38;
+                v9 = -1;
+                v44 = this.LevelThresholdsByGametime.Iterator();
+                while (true) {
+                    v1 = v44.CanProceed;
+                    if (!v1) break;
+                    v52 = v44.Proceed();
+                    v4 = v52.Gametime;
+                    if (v6 <= v4) {
+                        v1 = 0;
+                    } else {
+                        v8 = v52.Level;
+                        v53 = v8 > v9;
+                        v1 = v53;
+                    }
+                    if (v1) {
+                        v10 = v52.Level;
+                        v9 = v10;
+                    }
+                }
+                if (v9 > 0) {
+                    Minion.AuthGrantLevel(v9);
+                }
+            }
+        }
+        return;
+    }
+    /* ---- SetMinionLevel: 178 dwords / 102 instructions (cache offset 0x4112f) ----
+        0000  LoadThisR     985 134230793                                 ; this.bSpawnAtAveragePlayerLevel
+        0008  RDR1          v1                                          
+        000C  CpyVtoR1      v1                                          
+        0010  JLowZ         83                                            -> L0164
+        0018  SetV8         v4 0x0                                      
+        0024  SetV4         v7 0                                        
+        002C  SetV4         v9 0                                        
+        0034  JMP           47                                            -> L00F8
+      L003C:
+        003C  SUSPEND                                                   
+        0040  PSF           v20                                         
+        0044  PshV4         v9                                          
+        0048  PshGPtr       __WorldContext                              
+        0054  PSF           v14                                         
+        0058  CALLSYS       GetPlayerStatesOnTeam                       
+        0064  PSF           v14                                         
+        0068  CALLSYS       TArray::Iterator                            
+        0074  JMP           19                                            -> L00C8
+      L007C:
+        007C  SUSPEND                                                   
+        0080  PSF           v20                                         
+        0084  CALLSYS       TArrayConstIterator::Proceed                
+        0090  PshRPtr                                                   
+        0094  RDSPtr                                                    
+        0098  RefCpyV       v28                                         
+        009C  PshVPtr       v28                                         
+        00A0  CALLSYS       ALokiPlayerState::GetPlayerLevel            
+        00AC  CpyRtoV4      v10                                         
+        00B0  iTOd          v6 v10                                      
+        00B8  ADDd          v4 v4 v6                                    
+        00C0  IncVi         v7                                          
+        00C4  FreeNullV8    v28                                         
+      L00C8:
+        00C8  LoadVObjR     v20 16 268448511                              ; .CanProceed
+        00D4  RDR1          v1                                          
+        00D8  CpyVtoR1      v1                                          
+        00DC  JLowNZ        -26                                           -> L007C
+        00E4  PSF           v14                                         
+        00E8  CALLSYS       TArray::$beh2                               
+        00F4  IncVi         v9                                          
+      L00F8:
+        00F8  CMPIi         v9 1                                        
+        0100  JNP           -51                                           -> L003C
+        0108  iTOd          v6 v7                                       
+        0110  DIVd          v6 v4 v6                                    
+        0118  PshV8         v6                                          
+        011C  CALLSYS       RoundToInt                                  
+        0128  CpyRtoV4      v10                                         
+        012C  PshV4         v10                                         
+        0130  PshC4         1                                           
+        0138  CALLSYS       Max                                         
+        0144  CpyRtoV4      v29                                         
+        0148  PshV4         v29                                         
+        014C  PshVPtr       Minion                                      
+        0150  CALLSYS       ALokiCharacter::AuthGrantLevel              
+        015C  JMP           88                                            -> L02C4
+      L0164:
+        0164  PshGPtr       __WorldContext                              
+        0170  CALLSYS       GetLokiGameState                            
+        017C  STOREOBJ      v32                                         
+        0180  CmpPtrNull    v32                                         
+        0184  JZ            77                                            -> L02C0
+        018C  PshVPtr       v32                                         
+        0190  CALLSYS       AGameStateBase::GetServerWorldTimeSeconds   
+        019C  CpyRtoV8      v6                                          
+        01A0  LoadRObjR     v32 1720 67115161                             ; .GameStartWorldTime
+        01AC  RDR4          v35                                         
+        01B0  fTOd          v38 v35                                     
+        01B8  SUBd          v6 v6 v38                                   
+        01C0  SetV4         v9 -1                                       
+        01C8  PSF           v44                                         
+        01CC  PshVPtr       this                                        
+        01D0  ADDSi         992 134230793                                 ; .LevelThresholdsByGametime
+        01D8  CALLSYS       TArray::Iterator                            
+        01E4  JMP           37                                            -> L0280
+      L01EC:
+        01EC  SUSPEND                                                   
+        01F0  PSF           v44                                         
+        01F4  CALLSYS       TArrayIterator::Proceed                     
+        0200  CpyRtoV8      v52                                         
+        0204  LoadRObjR     v52 0 134230819                               ; .Gametime
+        0210  RDR8          v4                                          
+        0214  CMPd          v6 v4                                       
+        021C  JP            4                                             -> L0234
+        0224  SetV4         v1 0                                        
+        022C  JMP           10                                            -> L025C
+      L0234:
+        0234  LoadRObjR     v52 8 134230819                               ; .Level
+        0240  RDR4          v8                                          
+        0244  CMPi          v8 v9                                       
+        024C  TP                                                        
+        0250  CpyRtoV4      v53                                         
+        0254  CpyVtoV4      v1 v53                                      
+      L025C:
+        025C  CpyVtoR1      v1                                          
+        0260  JLowZ         6                                             -> L0280
+        0268  LoadRObjR     v52 8 134230819                               ; .Level
+        0274  RDR4          v10                                         
+        0278  CpyVtoV4      v9 v10                                      
+      L0280:
+        0280  LoadVObjR     v44 16 268448551                              ; .CanProceed
+        028C  RDR1          v1                                          
+        0290  CpyVtoR1      v1                                          
+        0294  JLowNZ        -44                                           -> L01EC
+        029C  CMPIi         v9 0                                        
+        02A4  JNP           5                                             -> L02C0
+        02AC  PshV4         v9                                          
+        02B0  PshVPtr       Minion                                      
+        02B4  CALLSYS       ALokiCharacter::AuthGrantLevel              
+      L02C0:
+        02C0  FreeNullV8    v32                                         
+      L02C4:
+        02C4  RET           4                                           
+    */
+
+    void BeginStaggerSpawn()   // traits=0x20
+    {
+        this.WaveBuffer.Empty(0);
+        v6 = TArray();
+        v9 = Gameplay::GetServerTime(__WorldContext);
+        v12 = float64(v9);
+        v8 = v12;
+        v18 = this.Wave.Entries.Iterator();
+        while (true) {
+            v25 = v18.CanProceed;
+            if (!v25) break;
+            v28 = v18.Proceed();
+            v30 = TSubclassOf();
+            v30 = v28.MinionClass;
+            v25 = v30 == nullptr;
+            v25 = !v25;
+            if (!v25) {
+                v25 = 0;
+            } else {
+                v1 = v28.Count;
+                v32 = v1 > 0;
+                v25 = v32;
+            }
+            if (v25) {
+                v33 = 0;
+                while (true) {
+                    v31 = v28.Count;
+                    if (v33 >= v31) break;
+                    v31 = v28.MinimumMatchTime;
+                    v12 = float64(v31);
+                    if (v8 >= v12) {
+                        this.WaveBuffer.Add(v28.MinionClass);
+                    }
+                    v33++;
+                }
+            }
+        }
+        v31 = 0;
+        this.CurrentWaveBufferIndex = v31;
+        this.StaggerSpawn();
+        return;
+    }
+    /* ---- BeginStaggerSpawn: 131 dwords / 74 instructions (cache offset 0x4164c) ----
+        0000  PshC4         0                                           
+        0008  PshVPtr       this                                        
+        000C  ADDSi         1152 134230793                                ; .WaveBuffer
+        0014  CALLSYS       TArray::Empty                               
+        0020  PSF           v6                                          
+        0024  CALLSYS       TArray::$beh0                               
+        0030  PshGPtr       __WorldContext                              
+        003C  CALLSYS       GetServerTime                               
+        0048  CpyRtoV4      v9                                          
+        004C  fTOd          v12 v9                                      
+        0054  CpyVtoV8      v8 v12                                      
+        005C  PSF           v18                                         
+        0060  PshVPtr       this                                        
+        0064  ADDSi         1016 134230793                                ; .Wave
+        006C  ADDSi         0 134230821                                   ; .Entries
+        0074  CALLSYS       TArray::Iterator                            
+        0080  JMP           77                                            -> L01BC
+      L0088:
+        0088  SUSPEND                                                   
+        008C  PSF           v18                                         
+        0090  CALLSYS       TArrayIterator::Proceed                     
+        009C  CpyRtoV8      v28                                         
+        00A0  PSF           v30                                         
+        00A4  CALLSYS       TSubclassOf::$beh0                          
+        00B0  PshVPtr       v28                                         
+        00B4  ADDSi         0 134230820                                   ; .MinionClass
+        00BC  PSF           v30                                         
+        00C0  CALLSYS       TSubclassOf::opAssign                       
+        00CC  PshNull                                                   
+        00D0  PSF           v30                                         
+        00D4  CALLSYS       TSubclassOf::opEquals                       
+        00E0  CpyRtoV4      v25                                         
+        00E4  NOT           v25                                         
+        00E8  CpyVtoR1      v25                                         
+        00EC  JLowNZ        4                                             -> L0104
+        00F4  SetV4         v25 0                                       
+        00FC  JMP           10                                            -> L012C
+      L0104:
+        0104  LoadRObjR     v28 8 134230820                               ; .Count
+        0110  RDR4          v1                                          
+        0114  CMPIi         v1 0                                        
+        011C  TP                                                        
+        0120  CpyRtoV4      v32                                         
+        0124  CpyVtoV4      v25 v32                                     
+      L012C:
+        012C  CpyVtoR1      v25                                         
+        0130  JLowZ         33                                            -> L01BC
+        0138  SetV4         v33 0                                       
+        0140  JMP           21                                            -> L019C
+      L0148:
+        0148  SUSPEND                                                   
+        014C  LoadRObjR     v28 12 134230820                              ; .MinimumMatchTime
+        0158  RDR4          v31                                         
+        015C  iTOd          v12 v31                                     
+        0164  CMPd          v8 v12                                      
+        016C  JS            9                                             -> L0198
+        0174  PshVPtr       v28                                         
+        0178  ADDSi         0 134230820                                   ; .MinionClass
+        0180  PshVPtr       this                                        
+        0184  ADDSi         1152 134230793                                ; .WaveBuffer
+        018C  CALLSYS       TArray::Add                                 
+      L0198:
+        0198  IncVi         v33                                         
+      L019C:
+        019C  LoadRObjR     v28 8 134230820                               ; .Count
+        01A8  RDR4          v31                                         
+        01AC  CMPi          v33 v31                                     
+        01B4  JS            -29                                           -> L0148
+      L01BC:
+        01BC  LoadVObjR     v18 16 268448550                              ; .CanProceed
+        01C8  RDR1          v25                                         
+        01CC  CpyVtoR1      v25                                         
+        01D0  JLowNZ        -84                                           -> L0088
+        01D8  SetV4         v31 0                                       
+        01E0  LoadThisR     1144 134230793                                ; this.CurrentWaveBufferIndex
+        01E8  WRTV4         v31                                         
+        01EC  PshVPtr       this                                        
+        01F0  CALLINTF      84444                                         ; ABarracudaMinionSpawner::StaggerSpawn
+        01F8  PSF           v6                                          
+        01FC  CALLSYS       TArray::$beh2                               
+        0208  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void StaggerSpawn()   // traits=0x20
+    {
+        v2 = LokiTeam::GetTeamFromActor(this);
+        v3 = this.CurrentWaveBufferIndex;
+        v1 = this.WaveBuffer.Num();
+        if (v3 < v1) {
+            v4 = true;
+            v10 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v3 = this.CurrentWaveBufferIndex;
+            v12 = SpawnActor(this.WaveBuffer[v3], v10, FRotator::ZeroRotator, NAME_None, v4, nullptr);
+            v14 = v12;
+            if (v14 != nullptr) {
+                if (this.LaneComponent.HasLaneIndex()) {
+                    v16 = UBarracudaLaneComponent::Get(v14, NAME_None);
+                    if (v16 == nullptr) {
+                        v20 = UBarracudaLaneComponent::StaticClass();
+                        v22 = TSubclassOf(v20);
+                        v24 = v14.CreateComponent(v22, NAME_None);
+                        if (v24 != nullptr) {
+                            v18 = cast<UBarracudaLaneComponent@>(v24);
+                        } else {
+                            v18 = nullptr;
+                        }
+                        v16 = v18;
+                    }
+                    v3 = this.LaneComponent.LaneIndex;
+                    v16.SetLaneIndex(v3);
+                }
+                LokiTeam::SetTeamForActor(v14, v2);
+                FinishSpawningActor(v14);
+                v25 = 0;
+                while (true) {
+                    v3 = this.StartingEffects.Num();
+                    if (v25 >= v3) break;
+                    v28 = v14.GetLokiAbilitySystem_BP();
+                    v42 = v28.MakeEffectContext();
+                    v4 = false;
+                    v45 = v28.ApplyGameplayEffectToSelf(this.StartingEffects[v25], 0, v42, v4)  /* UFunction BP_ApplyGameplayEffectToSelf */;
+                    v25++;
+                }
+                v48 = TSubclassOf();
+                v48 = this.BarracksDownEffect;
+                v4 = v48 == nullptr;
+                v4 = !v4;
+                if (!v4) {
+                    v4 = 0;
+                } else {
+                    v50 = TSubclassOf();
+                    v50 = this.BarracksClass;
+                    v51 = v50 == nullptr;
+                    v51 = !v51;
+                    v4 = v51;
+                }
+                if (v4) {
+                    v56 = TArray();
+                    v20 = UClass@(this.BarracksClass);
+                    GetAllActorsOfClass(v20, v56, typeid(TArray));
+                    v4 = false;
+                    v57 = v4;
+                    v64 = v56.Iterator();
+                    while (true) {
+                        v51 = v64.CanProceed;
+                        if (!v51) break;
+                        v72 = v64.Proceed();
+                        v64.Proceed();
+                        v20 = UBarracudaLaneComponent::StaticClass();
+                        v22 = TSubclassOf(v20);
+                        v24 = v72.GetComponentByClass(v22);
+                        if (v24 != nullptr) {
+                            v18 = cast<UBarracudaLaneComponent@>(v24);
+                        } else {
+                            v18 = nullptr;
+                        }
+                        v16 = v18;
+                        if (v16 != nullptr) {
+                            v3 = v16.LaneIndex;
+                            v1 = this.LaneComponent.LaneIndex;
+                            if (v3 == v1) {
+                                v4 = true;
+                                v57 = v4;
+                                break;
+                            }
+                        }
+                    }
+                    v51 = v57;
+                    v51 = !v51;
+                    v4 = false;
+                    v4 = !v4;
+                    if (v51 == v4) {
+                        v28 = v14.GetLokiAbilitySystem_BP();
+                        v36 = v28.MakeEffectContext();
+                        v4 = false;
+                        v45 = v28.ApplyGameplayEffectToSelf(this.BarracksDownEffect, 0, v36, v4)  /* UFunction BP_ApplyGameplayEffectToSelf */;
+                    }
+                }
+                LokiTeam::SetTeamForActor(v14, v2);
+                this.SetMinionLevel(v14);
+                this.MinionInstances.Add(v14);
+                v4 = true;
+                this.bHasLivingMinion = v4;
+            }
+            this.CurrentWaveBufferIndex++;
+            v4 = false;
+            v51 = false;
+            v76 = System::SetTimer(this, n"StaggerSpawn", 1056964608, v51, v4, 0, 0);
+        }
+        return;
+    }
+    /* ---- StaggerSpawn: 432 dwords / 265 instructions (cache offset 0x419b5) ----
+        0000  PshVPtr       this                                        
+        0004  CALLSYS       GetTeamFromActor                            
+        0010  CpyRtoV4      v2                                          
+        0014  LoadThisR     1144 134230793                                ; this.CurrentWaveBufferIndex
+        001C  RDR4          v3                                          
+        0020  PshVPtr       this                                        
+        0024  ADDSi         1152 134230793                                ; .WaveBuffer
+        002C  CALLSYS       TArray::Num                                 
+        0038  CpyRtoV4      v1                                          
+        003C  CMPi          v3 v1                                       
+        0044  JNS           412                                           -> L06BC
+        004C  PshNull                                                   
+        0050  SetV1         v4 1                                        
+        0058  PshV4         v4                                          
+        005C  PshGPtr       NAME_None                                   
+        0068  PshGPtr       FRotator::ZeroRotator                       
+        0074  PSF           v10                                         
+        0078  PshVPtr       this                                        
+        007C  CALLSYS       AActor::GetActorLocation                    
+        0088  PSF           v10                                         
+        008C  LoadThisR     1144 134230793                                ; this.CurrentWaveBufferIndex
+        0094  RDR4          v3                                          
+        0098  PshV4         v3                                          
+        009C  PshVPtr       this                                        
+        00A0  ADDSi         1152 134230793                                ; .WaveBuffer
+        00A8  Thiscall1     TArray::opIndex                             
+        00B4  PshRPtr                                                   
+        00B8  CALLSYS       SpawnActor                                  
+        00C4  STOREOBJ      v12                                         
+        00C8  PshVPtr       v12                                         
+        00CC  RefCpyV       v14                                         
+        00D0  CmpPtrNull    v14                                         
+        00D4  JZ            345                                           -> L0640
+        00DC  PshVPtr       this                                        
+        00E0  ADDSi         1088 134230793                                ; .LaneComponent
+        00E8  RDSPtr                                                    
+        00EC  CALLINTF      84099                                         ; UBarracudaLaneComponent::HasLaneIndex
+        00F4  JLowZ         55                                            -> L01D8
+        00FC  PshGPtr       NAME_None                                   
+        0108  PshVPtr       v14                                         
+        010C  CALL          84114                                         ; Get
+        0114  STOREOBJ      v16                                         
+        0118  CmpPtrNull    v16                                         
+        011C  JNZ           32                                            -> L01A4
+        0124  PshGPtr       NAME_None                                   
+        0130  CALL          84113                                         ; StaticClass
+        0138  STOREOBJ      v20                                         
+        013C  PshVPtr       v20                                         
+        0140  PSF           v22                                         
+        0144  CALLSYS       TSubclassOf::$beh0                          
+        0150  PSF           v22                                         
+        0154  PshVPtr       v14                                         
+        0158  CALLSYS       AActor::CreateComponent                     
+        0164  STOREOBJ      v24                                         
+        0168  CmpPtrNull    v24                                         
+        016C  JZ            9                                             -> L0198
+        0174  TYPEID        1207972595                                    ; UBarracudaLaneComponent@
+        017C  PSF           v18                                         
+        0180  PshVPtr       v24                                         
+        0184  CALLSYS       UObject::opCast                             
+        0190  JMP           1                                             -> L019C
+      L0198:
+        0198  ClrVPtr       v18                                         
+      L019C:
+        019C  PshVPtr       v18                                         
+        01A0  RefCpyV       v16                                         
+      L01A4:
+        01A4  PshVPtr       this                                        
+        01A8  ADDSi         1088 134230793                                ; .LaneComponent
+        01B0  RDSPtr                                                    
+        01B4  ADDSi         208 134230771                                 ; .LaneIndex
+        01BC  PopRPtr                                                   
+        01C0  RDR4          v3                                          
+        01C4  PshV4         v3                                          
+        01C8  PshVPtr       v16                                         
+        01CC  CALLINTF      84100                                         ; UBarracudaLaneComponent::SetLaneIndex
+        01D4  FreeNullV8    v16                                         
+      L01D8:
+        01D8  PshV4         v2                                          
+        01DC  PshVPtr       v14                                         
+        01E0  CALLSYS       SetTeamForActor                             
+        01EC  PshVPtr       v14                                         
+        01F0  CALLSYS       FinishSpawningActor                         
+        01FC  SetV4         v25 0                                       
+        0204  JMP           40                                            -> L02AC
+      L020C:
+        020C  SUSPEND                                                   
+        0210  PshVPtr       v14                                         
+        0214  CALLSYS       ALokiCharacter::GetLokiAbilitySystem_BP     
+        0220  STOREOBJ      v28                                         
+        0224  PSF           v42                                         
+        0228  PshVPtr       v28                                         
+        022C  CALLSYS       UAbilitySystemComponent::MakeEffectContext  
+        0238  SetV1         v4 0                                        
+        0240  PshV4         v4                                          
+        0244  PSF           v42                                         
+        0248  PshC4         0                                           
+        0250  PshV4         v25                                         
+        0254  PshVPtr       this                                        
+        0258  ADDSi         1112 134230793                                ; .StartingEffects
+        0260  Thiscall1     TArray::opIndex                             
+        026C  PshRPtr                                                   
+        0270  PSF           v45                                         
+        0274  PshVPtr       v28                                         
+        0278  CALLSYS       UAbilitySystemComponent::ApplyGameplayEffectToSelf
+        0284  PSF           v45                                         
+        0288  CALLSYS       FActiveGameplayEffectHandle::$beh2          
+        0294  PSF           v42                                         
+        0298  CALLSYS       FGameplayEffectContextHandle::$beh2         
+        02A4  FreeNullV8    v28                                         
+        02A8  IncVi         v25                                         
+      L02AC:
+        02AC  PshVPtr       this                                        
+        02B0  ADDSi         1112 134230793                                ; .StartingEffects
+        02B8  CALLSYS       TArray::Num                                 
+        02C4  CpyRtoV4      v3                                          
+        02C8  CMPi          v25 v3                                      
+        02D0  JS            -51                                           -> L020C
+        02D8  PSF           v48                                         
+        02DC  CALLSYS       TSubclassOf::$beh0                          
+        02E8  PshVPtr       this                                        
+        02EC  ADDSi         1184 134230793                                ; .BarracksDownEffect
+        02F4  PSF           v48                                         
+        02F8  CALLSYS       TSubclassOf::opAssign                       
+        0304  PshNull                                                   
+        0308  PSF           v48                                         
+        030C  CALLSYS       TSubclassOf::opEquals                       
+        0318  CpyRtoV4      v4                                          
+        031C  NOT           v4                                          
+        0320  CpyVtoR1      v4                                          
+        0324  JLowNZ        4                                             -> L033C
+        032C  SetV4         v4 0                                        
+        0334  JMP           20                                            -> L038C
+      L033C:
+        033C  PSF           v50                                         
+        0340  CALLSYS       TSubclassOf::$beh0                          
+        034C  PshVPtr       this                                        
+        0350  ADDSi         1192 134230793                                ; .BarracksClass
+        0358  PSF           v50                                         
+        035C  CALLSYS       TSubclassOf::opAssign                       
+        0368  PshNull                                                   
+        036C  PSF           v50                                         
+        0370  CALLSYS       TSubclassOf::opEquals                       
+        037C  CpyRtoV4      v51                                         
+        0380  NOT           v51                                         
+        0384  CpyVtoV4      v4 v51                                      
+      L038C:
+        038C  CpyVtoR1      v4                                          
+        0390  JLowZ         149                                           -> L05EC
+        0398  PSF           v56                                         
+        039C  CALLSYS       TArray::$beh0                               
+        03A8  TYPEID        268448552                                     ; TArray
+        03B0  PSF           v56                                         
+        03B4  PshVPtr       this                                        
+        03B8  ADDSi         1192 134230793                                ; .BarracksClass
+        03C0  CALLSYS       TSubclassOf::opImplConv                     
+        03CC  STOREOBJ      v20                                         
+        03D0  PshVPtr       v20                                         
+        03D4  CALLSYS       GetAllActorsOfClass                         
+        03E0  SetV1         v4 0                                        
+        03E8  CpyVtoV4      v57 v4                                      
+        03F0  PSF           v64                                         
+        03F4  PSF           v56                                         
+        03F8  CALLSYS       TArray::Iterator                            
+        0404  JMP           66                                            -> L0514
+      L040C:
+        040C  SUSPEND                                                   
+        0410  PSF           v64                                         
+        0414  CALLSYS       TArrayIterator::Proceed                     
+        0420  PshRPtr                                                   
+        0424  RDSPtr                                                    
+        0428  RefCpyV       v72                                         
+        042C  CALL          84113                                         ; StaticClass
+        0434  STOREOBJ      v20                                         
+        0438  PshVPtr       v20                                         
+        043C  PSF           v22                                         
+        0440  CALLSYS       TSubclassOf::$beh0                          
+        044C  PSF           v22                                         
+        0450  PshVPtr       v72                                         
+        0454  CALLSYS       AActor::GetComponentByClass                 
+        0460  STOREOBJ      v24                                         
+        0464  CmpPtrNull    v24                                         
+        0468  JZ            9                                             -> L0494
+        0470  TYPEID        1207972595                                    ; UBarracudaLaneComponent@
+        0478  PSF           v18                                         
+        047C  PshVPtr       v24                                         
+        0480  CALLSYS       UObject::opCast                             
+        048C  JMP           1                                             -> L0498
+      L0494:
+        0494  ClrVPtr       v18                                         
+      L0498:
+        0498  PshVPtr       v18                                         
+        049C  RefCpyV       v16                                         
+        04A0  CmpPtrNull    v16                                         
+        04A4  JZ            24                                            -> L050C
+        04AC  LoadRObjR     v16 208 134230771                             ; .LaneIndex
+        04B8  RDR4          v3                                          
+        04BC  PshVPtr       this                                        
+        04C0  ADDSi         1088 134230793                                ; .LaneComponent
+        04C8  RDSPtr                                                    
+        04CC  ADDSi         208 134230771                                 ; .LaneIndex
+        04D4  PopRPtr                                                   
+        04D8  RDR4          v1                                          
+        04DC  CMPi          v3 v1                                       
+        04E4  JNZ           8                                             -> L050C
+        04EC  SetV1         v4 1                                        
+        04F4  CpyVtoV4      v57 v4                                      
+        04FC  FreeNullV8    v16                                         
+        0500  FreeNullV8    v72                                         
+        0504  JMP           9                                             -> L0530
+      L050C:
+        050C  FreeNullV8    v16                                         
+        0510  FreeNullV8    v72                                         
+      L0514:
+        0514  LoadVObjR     v64 16 268448553                              ; .CanProceed
+        0520  RDR1          v51                                         
+        0524  CpyVtoR1      v51                                         
+        0528  JLowNZ        -73                                           -> L040C
+      L0530:
+        0530  CpyVtoV4      v51 v57                                     
+        0538  NOT           v51                                         
+        053C  SetV1         v4 0                                        
+        0544  NOT           v4                                          
+        0548  CMPi          v51 v4                                      
+        0550  JNZ           33                                            -> L05DC
+        0558  PshVPtr       v14                                         
+        055C  CALLSYS       ALokiCharacter::GetLokiAbilitySystem_BP     
+        0568  STOREOBJ      v28                                         
+        056C  PSF           v36                                         
+        0570  PshVPtr       v28                                         
+        0574  CALLSYS       UAbilitySystemComponent::MakeEffectContext  
+        0580  SetV1         v4 0                                        
+        0588  PshV4         v4                                          
+        058C  PSF           v36                                         
+        0590  PshC4         0                                           
+        0598  PshVPtr       this                                        
+        059C  ADDSi         1184 134230793                                ; .BarracksDownEffect
+        05A4  PSF           v45                                         
+        05A8  PshVPtr       v28                                         
+        05AC  CALLSYS       UAbilitySystemComponent::ApplyGameplayEffectToSelf
+        05B8  PSF           v45                                         
+        05BC  CALLSYS       FActiveGameplayEffectHandle::$beh2          
+        05C8  PSF           v36                                         
+        05CC  CALLSYS       FGameplayEffectContextHandle::$beh2         
+        05D8  FreeNullV8    v28                                         
+      L05DC:
+        05DC  PSF           v56                                         
+        05E0  CALLSYS       TArray::$beh2                               
+      L05EC:
+        05EC  PshV4         v2                                          
+        05F0  PshVPtr       v14                                         
+        05F4  CALLSYS       SetTeamForActor                             
+        0600  PshVPtr       v14                                         
+        0604  PshVPtr       this                                        
+        0608  CALLINTF      84442                                         ; ABarracudaMinionSpawner::SetMinionLevel
+        0610  PSF           v14                                         
+        0614  PshVPtr       this                                        
+        0618  ADDSi         1128 134230793                                ; .MinionInstances
+        0620  CALLSYS       TArray::Add                                 
+        062C  SetV1         v4 1                                        
+        0634  LoadThisR     1064 134230793                                ; this.bHasLivingMinion
+        063C  WRTV1         v4                                          
+      L0640:
+        0640  LoadThisR     1144 134230793                                ; this.CurrentWaveBufferIndex
+        0648  INCi                                                      
+        064C  PshC4         0                                           
+        0654  PshC4         0                                           
+        065C  SetV1         v4 0                                        
+        0664  PshV4         v4                                          
+        0668  SetV1         v51 0                                       
+        0670  PshV4         v51                                         
+        0674  PshC4         1056964608                                  
+        067C  PshC4         27                                          
+        0684  CALLSYS       __STATIC_NAME                               
+        0690  PshRPtr                                                   
+        0694  PshVPtr       this                                        
+        0698  PSF           v76                                         
+        069C  CALLSYS       SetTimer                                    
+        06A8  PSF           v76                                         
+        06AC  CALLSYS       FTimerHandle::$beh2                         
+        06B8  FreeNullV8    v14                                         
+      L06BC:
+        06BC  RET           2                                           
+    */
+
+    void AuthCleanupMinions()   // traits=0x20
+    {
+        v2 = this.MinionInstances.Num();
+        v4 = v2 - 1;
+        while (true) {
+            if (v4 < 0) break;
+            v8 = this.MinionInstances[v4];
+            if (v8 != nullptr) {
+                v12 = UBarracudaMinionRewardComponent::Get(v8, NAME_None);
+                if (v12 != nullptr) {
+                    v12.DisableAllRewards();
+                }
+                v8.DestroyActor()  /* UFunction K2_DestroyActor */;
+            }
+            this.MinionInstances.RemoveAt(v4);
+            v4--;
+        }
+        this.MinionInstances.Empty(0);
+        v5 = false;
+        this.bHasLivingMinion = v5;
+        return;
+    }
+    /* ---- AuthCleanupMinions: 71 dwords / 43 instructions (cache offset 0x42479) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         1128 134230793                                ; .MinionInstances
+        000C  CALLSYS       TArray::Num                                 
+        0018  CpyRtoV4      v2                                          
+        001C  SUBIi         v4 v2 1                                     
+        0028  JMP           41                                            -> L00D4
+      L0030:
+        0030  SUSPEND                                                   
+        0034  PshV4         v4                                          
+        0038  PshVPtr       this                                        
+        003C  ADDSi         1128 134230793                                ; .MinionInstances
+        0044  Thiscall1     TArray::opIndex                             
+        0050  PshRPtr                                                   
+        0054  RDSPtr                                                    
+        0058  RefCpyV       v8                                          
+        005C  CmpPtrNull    v8                                          
+        0060  JZ            18                                            -> L00B0
+        0068  PshGPtr       NAME_None                                   
+        0074  PshVPtr       v8                                          
+        0078  CALL          84293                                         ; Get
+        0080  STOREOBJ      v12                                         
+        0084  CmpPtrNull    v12                                         
+        0088  JZ            3                                             -> L009C
+        0090  PshVPtr       v12                                         
+        0094  CALLINTF      84285                                         ; UBarracudaMinionRewardComponent::DisableAllRewards
+      L009C:
+        009C  PshVPtr       v8                                          
+        00A0  CALLSYS       AActor::DestroyActor                        
+        00AC  FreeNullV8    v12                                         
+      L00B0:
+        00B0  PshV4         v4                                          
+        00B4  PshVPtr       this                                        
+        00B8  ADDSi         1128 134230793                                ; .MinionInstances
+        00C0  CALLSYS       TArray::RemoveAt                            
+        00CC  FreeNullV8    v8                                          
+        00D0  DecVi         v4                                          
+      L00D4:
+        00D4  CMPIi         v4 0                                        
+        00DC  JNS           -45                                           -> L0030
+        00E4  PshC4         0                                           
+        00EC  PshVPtr       this                                        
+        00F0  ADDSi         1128 134230793                                ; .MinionInstances
+        00F8  CALLSYS       TArray::Empty                               
+        0104  SetV1         v5 0                                        
+        010C  LoadThisR     1064 134230793                                ; this.bHasLivingMinion
+        0114  WRTV1         v5                                          
+        0118  RET           2                                           
+    */
+
+    void AuthCleanMinionReferences()   // traits=0x20
+    {
+        v2 = this.MinionInstances.Num();
+        v4 = v2 - 1;
+        while (true) {
+            if (v4 < 0) break;
+            v8 = this.MinionInstances[v4];
+            v5 = LokiGameplay::IsAlive(v8);
+            v5 = !v5;
+            if (v5) {
+                this.MinionInstances.RemoveAt(v4);
+            }
+            v4--;
+        }
+        if (this.MinionInstances.IsEmpty()) {
+            v5 = false;
+            this.bHasLivingMinion = v5;
+        }
+        return;
+    }
+    /* ---- AuthCleanMinionReferences: 59 dwords / 36 instructions (cache offset 0x42693) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         1128 134230793                                ; .MinionInstances
+        000C  CALLSYS       TArray::Num                                 
+        0018  CpyRtoV4      v2                                          
+        001C  SUBIi         v4 v2 1                                     
+        0028  JMP           29                                            -> L00A4
+      L0030:
+        0030  SUSPEND                                                   
+        0034  PshV4         v4                                          
+        0038  PshVPtr       this                                        
+        003C  ADDSi         1128 134230793                                ; .MinionInstances
+        0044  Thiscall1     TArray::opIndex                             
+        0050  PshRPtr                                                   
+        0054  RDSPtr                                                    
+        0058  RefCpyV       v8                                          
+        005C  PshVPtr       v8                                          
+        0060  CALLSYS       IsAlive                                     
+        006C  CpyRtoV4      v5                                          
+        0070  NOT           v5                                          
+        0074  CpyVtoR1      v5                                          
+        0078  JLowZ         7                                             -> L009C
+        0080  PshV4         v4                                          
+        0084  PshVPtr       this                                        
+        0088  ADDSi         1128 134230793                                ; .MinionInstances
+        0090  CALLSYS       TArray::RemoveAt                            
+      L009C:
+        009C  FreeNullV8    v8                                          
+        00A0  DecVi         v4                                          
+      L00A4:
+        00A4  CMPIi         v4 0                                        
+        00AC  JNS           -33                                           -> L0030
+        00B4  PshVPtr       this                                        
+        00B8  ADDSi         1128 134230793                                ; .MinionInstances
+        00C0  CALLSYS       TArray::IsEmpty                             
+        00CC  JLowZ         5                                             -> L00E8
+        00D4  SetV1         v5 0                                        
+        00DC  LoadThisR     1064 134230793                                ; this.bHasLivingMinion
+        00E4  WRTV1         v5                                          
+      L00E8:
+        00E8  RET           2                                           
+    */
+
+    bool AuthShouldSpawnWave()   // traits=0x20
+    {
+        v1 = this.HasNextRespawnTime();
+        v1 = !v1;
+        if (v1) {
+            v1 = false;
+            return v1;
+        } else {
+            v5 = Gameplay::GetServerTime(__WorldContext);
+            v8 = float64(v5);
+            v4 = v8;
+            v8 = this.NextSpawnTime;
+            if (v4 < v8) {
+                v1 = false;
+                return v1;
+            } else {
+                v9 = this.RespawnType;
+                v10 = int(v9);
+                if (v10 != 2) {
+                    v1 = 0;
+                } else {
+                    v12 = this.MinionInstances.IsEmpty();
+                    v12 = !v12;
+                    v1 = v12;
+                }
+                if (v1) {
+                    v12 = false;
+                    return v12;
+                } else {
+                    v1 = true;
+                }
+            }
+        }
+        return v1;
+    }
+    /* ---- AuthShouldSpawnWave: 71 dwords / 42 instructions (cache offset 0x4285f) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84440                                         ; ABarracudaMinionSpawner::HasNextRespawnTime
+        000C  CpyRtoV4      v1                                          
+        0010  NOT           v1                                          
+        0014  CpyVtoR1      v1                                          
+        0018  JLowZ         5                                             -> L0034
+        0020  SetV1         v1 0                                        
+        0028  CpyVtoR4      v1                                          
+        002C  JMP           57                                            -> L0118
+      L0034:
+        0034  PshGPtr       __WorldContext                              
+        0040  CALLSYS       GetServerTime                               
+        004C  CpyRtoV4      v5                                          
+        0050  fTOd          v8 v5                                       
+        0058  CpyVtoV8      v4 v8                                       
+        0060  LoadThisR     1056 134230793                                ; this.NextSpawnTime
+        0068  RDR8          v8                                          
+        006C  CMPd          v4 v8                                       
+        0074  JNS           5                                             -> L0090
+        007C  SetV1         v1 0                                        
+        0084  CpyVtoR4      v1                                          
+        0088  JMP           34                                            -> L0118
+      L0090:
+        0090  LoadThisR     1008 134230793                                ; this.RespawnType
+        0098  RDR1          v9                                          
+        009C  sbTOi         v10 v9                                      
+        00A4  CMPIi         v10 2                                       
+        00AC  JZ            4                                             -> L00C4
+        00B4  SetV4         v1 0                                        
+        00BC  JMP           10                                            -> L00EC
+      L00C4:
+        00C4  PshVPtr       this                                        
+        00C8  ADDSi         1128 134230793                                ; .MinionInstances
+        00D0  CALLSYS       TArray::IsEmpty                             
+        00DC  CpyRtoV4      v12                                         
+        00E0  NOT           v12                                         
+        00E4  CpyVtoV4      v1 v12                                      
+      L00EC:
+        00EC  CpyVtoR1      v1                                          
+        00F0  JLowZ         5                                             -> L010C
+        00F8  SetV1         v12 0                                       
+        0100  CpyVtoR4      v12                                         
+        0104  JMP           3                                             -> L0118
+      L010C:
+        010C  SetV1         v1 1                                        
+        0114  CpyVtoR4      v1                                          
+      L0118:
+        0118  RET           2                                           
+    */
+
+    void AuthTryUpdatingNextSpawnTime()   // traits=0x20
+    {
+        if (this.HasNextRespawnTime()) {
+            return;
+        } else {
+            v5 = Gameplay::GetServerTime(__WorldContext);
+            v8 = float64(v5);
+            v4 = v8;
+            v9 = this.RespawnType;
+            v10 = int(v9);
+            if (v10 != 3) {
+                v1 = 0;
+            } else {
+                v12 = this.MinionInstances.IsEmpty();
+                v1 = v12;
+            }
+            if (v1) {
+                v8 = this.SpawnPeriod;
+                v8 = v4 + v8;
+                this.AuthSetNextSpawnTime(v8);
+            }
+        }
+        return;
+    }
+    /* ---- AuthTryUpdatingNextSpawnTime: 53 dwords / 30 instructions (cache offset 0x42a58) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84440                                         ; ABarracudaMinionSpawner::HasNextRespawnTime
+        000C  JLowZ         2                                             -> L001C
+        0014  JMP           45                                            -> L00D0
+      L001C:
+        001C  PshGPtr       __WorldContext                              
+        0028  CALLSYS       GetServerTime                               
+        0034  CpyRtoV4      v5                                          
+        0038  fTOd          v8 v5                                       
+        0040  CpyVtoV8      v4 v8                                       
+        0048  LoadThisR     1008 134230793                                ; this.RespawnType
+        0050  RDR1          v9                                          
+        0054  sbTOi         v10 v9                                      
+        005C  CMPIi         v10 3                                       
+        0064  JZ            4                                             -> L007C
+        006C  SetV4         v1 0                                        
+        0074  JMP           9                                             -> L00A0
+      L007C:
+        007C  PshVPtr       this                                        
+        0080  ADDSi         1128 134230793                                ; .MinionInstances
+        0088  CALLSYS       TArray::IsEmpty                             
+        0094  CpyRtoV4      v12                                         
+        0098  CpyVtoV4      v1 v12                                      
+      L00A0:
+        00A0  CpyVtoR1      v1                                          
+        00A4  JLowZ         9                                             -> L00D0
+        00AC  LoadThisR     960 134230793                                 ; this.SpawnPeriod
+        00B4  RDR8          v8                                          
+        00B8  ADDd          v8 v4 v8                                    
+        00C0  PshV8         v8                                          
+        00C4  PshVPtr       this                                        
+        00C8  CALLINTF      84433                                         ; ABarracudaMinionSpawner::AuthSetNextSpawnTime
+      L00D0:
+        00D0  RET           2                                           
+    */
+
+    bool IsClockBasedSpawning()   // traits=0x20
+    {
+        v1 = this.RespawnType;
+        v2 = int(v1);
+        if (v2 == 4) {
+            v4 = 0;
+            return;
+        } else {
+            v1 = this.RespawnType;
+            v3 = int(v1);
+            v5 = v3 != 5;
+            v4 = v5;
+        }
+        return v4;
+    }
+    /* ---- IsClockBasedSpawning: 26 dwords / 16 instructions (cache offset 0x42be9) ----
+        0000  LoadThisR     1008 134230793                                ; this.RespawnType
+        0008  RDR1          v1                                          
+        000C  sbTOi         v2 v1                                       
+        0014  CMPIi         v2 4                                        
+        001C  JNZ           4                                             -> L0034
+        0024  SetV4         v4 0                                        
+        002C  JMP           11                                            -> L0060
+      L0034:
+        0034  LoadThisR     1008 134230793                                ; this.RespawnType
+        003C  RDR1          v1                                          
+        0040  sbTOi         v3 v1                                       
+        0048  CMPIi         v3 5                                        
+        0050  TNZ                                                       
+        0054  CpyRtoV4      v5                                          
+        0058  CpyVtoV4      v4 v5                                       
+      L0060:
+        0060  CpyVtoR4      v4                                          
+        0064  RET           2                                           
+    */
+
+    void AuthCheckDayNightSpawn()   // traits=0x20
+    {
+        v1 = this.bSpawnLoopHasStarted;
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = Loki::GetLokiGameState(__WorldContext);
+            if (v4 == nullptr) {
+                return;
+            } else {
+                v8 = v4.DayNightState;
+                v7 = v8;
+                v9 = this.RespawnType;
+                v10 = int(v9);
+                if (v10 == 4) {
+                    v11 = int(v7);
+                    if (v11 == 1) {
+                        this.AuthSpawnWave();
+                    } else {
+                        this.AuthCleanupMinions();
+                    }
+                    return;
+                } else {
+                    v9 = this.RespawnType;
+                    v10 = int(v9);
+                    if (v10 == 5) {
+                        v11 = int(v7);
+                        if (v11 == 0) {
+                            this.AuthSpawnWave();
+                            return;
+                        } else {
+                            this.AuthCleanupMinions();
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- AuthCheckDayNightSpawn: 76 dwords / 43 instructions (cache offset 0x42ce0) ----
+        0000  LoadThisR     1034 134230793                                ; this.bSpawnLoopHasStarted
+        0008  RDR1          v1                                          
+        000C  NOT           v1                                          
+        0010  CpyVtoR1      v1                                          
+        0014  JLowZ         2                                             -> L0024
+        001C  JMP           66                                            -> L012C
+      L0024:
+        0024  PshGPtr       __WorldContext                              
+        0030  CALLSYS       GetLokiGameState                            
+        003C  STOREOBJ      v4                                          
+        0040  CmpPtrNull    v4                                          
+        0044  JNZ           2                                             -> L0054
+        004C  JMP           54                                            -> L012C
+      L0054:
+        0054  LoadRObjR     v4 1726 67115161                              ; .DayNightState
+        0060  RDR1          v8                                          
+        0064  CpyVtoV4      v7 v8                                       
+        006C  LoadThisR     1008 134230793                                ; this.RespawnType
+        0074  RDR1          v9                                          
+        0078  sbTOi         v10 v9                                      
+        0080  CMPIi         v10 4                                       
+        0088  JNZ           16                                            -> L00D0
+        0090  sbTOi         v11 v7                                      
+        0098  CMPIi         v11 1                                       
+        00A0  JNZ           5                                             -> L00BC
+        00A8  PshVPtr       this                                        
+        00AC  CALLINTF      84441                                         ; ABarracudaMinionSpawner::AuthSpawnWave
+        00B4  JMP           3                                             -> L00C8
+      L00BC:
+        00BC  PshVPtr       this                                        
+        00C0  CALLINTF      84445                                         ; ABarracudaMinionSpawner::AuthCleanupMinions
+      L00C8:
+        00C8  JMP           23                                            -> L012C
+      L00D0:
+        00D0  LoadThisR     1008 134230793                                ; this.RespawnType
+        00D8  RDR1          v9                                          
+        00DC  sbTOi         v10 v9                                      
+        00E4  CMPIi         v10 5                                       
+        00EC  JNZ           14                                            -> L012C
+        00F4  sbTOi         v11 v7                                      
+        00FC  CMPIi         v11 0                                       
+        0104  JNZ           5                                             -> L0120
+        010C  PshVPtr       this                                        
+        0110  CALLINTF      84441                                         ; ABarracudaMinionSpawner::AuthSpawnWave
+        0118  JMP           3                                             -> L012C
+      L0120:
+        0120  PshVPtr       this                                        
+        0124  CALLINTF      84445                                         ; ABarracudaMinionSpawner::AuthCleanupMinions
+      L012C:
+        012C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void HandleVisibilityEvaluated(UVisibilityReceiver@ EvaluatedVisibilityReceiver, const TArray<int>&in TeamsIndicesWithVision)   // traits=0x28
+    {
+        v6 = TeamsIndicesWithVision.Iterator();
+        while (true) {
+            v13 = v6.CanProceed;
+            if (!v13) break;
+            v15 = *refReg;
+            v14 = v15;
+            v6.Proceed();
+            this.GrantTimerToTeam(v14);
+        }
+        return;
+    }
+    /* ---- HandleVisibilityEvaluated: 27 dwords / 17 instructions (cache offset 0x4300d) ----
+        0000  PSF           v6                                          
+        0004  PshVPtr       TeamsIndicesWithVision                      
+        0008  CALLSYS       TArray::Iterator                            
+        0014  JMP           12                                            -> L004C
+      L001C:
+        001C  SUSPEND                                                   
+        0020  PSF           v6                                          
+        0024  CALLSYS       TArrayConstIterator::Proceed                
+        0030  RDR4          v15                                         
+        0034  CpyVtoV4      v14 v15                                     
+        003C  PshV4         v14                                         
+        0040  PshVPtr       this                                        
+        0044  CALLINTF      84452                                         ; ABarracudaMinionSpawner::GrantTimerToTeam
+      L004C:
+        004C  LoadVObjR     v6 16 268448554                               ; .CanProceed
+        0058  RDR1          v13                                         
+        005C  CpyVtoR1      v13                                         
+        0060  JLowNZ        -19                                           -> L001C
+        0068  RET           6                                           
+    */
+
+    private void GrantTimerToTeam(const int TeamIndex)   // traits=0x28
+    {
+        v4 = GetBarracudaTeamStateTeamOnly(TeamIndex);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v8 = 0;
+            if (this.HasNextRespawnTime()) {
+                v10 = this.NextSpawnTime;
+                v8 = v10;
+            }
+            v4.SetSpawnerSpawnTime(this, v8);
+        }
+        return;
+    }
+    /* ---- GrantTimerToTeam: 28 dwords / 18 instructions (cache offset 0x431f2) ----
+        0000  PshV4         TeamIndex                                   
+        0004  CALL          84279                                         ; GetBarracudaTeamStateTeamOnly
+        000C  STOREOBJ      v4                                          
+        0010  CmpPtrNull    v4                                          
+        0014  JNZ           2                                             -> L0024
+        001C  JMP           18                                            -> L006C
+      L0024:
+        0024  SetV8         v8 0x0                                      
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84440                                         ; ABarracudaMinionSpawner::HasNextRespawnTime
+        003C  JLowZ         5                                             -> L0058
+        0044  LoadThisR     1056 134230793                                ; this.NextSpawnTime
+        004C  RDR8          v10                                         
+        0050  CpyVtoV8      v8 v10                                      
+      L0058:
+        0058  PshV8         v8                                          
+        005C  PshVPtr       this                                        
+        0060  PshVPtr       v4                                          
+        0064  CALLINTF      84274                                         ; ABarracudaTeamState_TeamOnly::SetSpawnerSpawnTime
+      L006C:
+        006C  RET           3                                           
+    */
+
+    private void GrantTimerToAllTeams()   // traits=0x28
+    {
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v5 = true;
+            v6 = true;
+            v10 = v4.GetTeamStates(v6, v5);
+            v20 = v10.Iterator();
+            while (true) {
+                v5 = v20.CanProceed;
+                if (!v5) break;
+                v28 = v20.Proceed();
+                v20.Proceed();
+                v29 = v28.GetIndex();
+                this.GrantTimerToTeam(v29);
+            }
+        }
+        return;
+    }
+    /* ---- GrantTimerToAllTeams: 60 dwords / 37 instructions (cache offset 0x43337) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetLokiGameState                            
+        0018  STOREOBJ      v4                                          
+        001C  CmpPtrNull    v4                                          
+        0020  JNZ           2                                             -> L0030
+        0028  JMP           47                                            -> L00EC
+      L0030:
+        0030  SetV1         v5 1                                        
+        0038  PshV4         v5                                          
+        003C  SetV1         v6 1                                        
+        0044  PshV4         v6                                          
+        0048  PSF           v10                                         
+        004C  PshVPtr       v4                                          
+        0050  CALLSYS       ALokiGameState::GetTeamStates               
+        005C  PSF           v20                                         
+        0060  PSF           v10                                         
+        0064  CALLSYS       TArray::Iterator                            
+        0070  JMP           18                                            -> L00C0
+      L0078:
+        0078  SUSPEND                                                   
+        007C  PSF           v20                                         
+        0080  CALLSYS       TArrayIterator::Proceed                     
+        008C  PshRPtr                                                   
+        0090  RDSPtr                                                    
+        0094  RefCpyV       v28                                         
+        0098  PshVPtr       v28                                         
+        009C  CALLSYS       ALokiTeamState::GetIndex                    
+        00A8  CpyRtoV4      v29                                         
+        00AC  PshV4         v29                                         
+        00B0  PshVPtr       this                                        
+        00B4  CALLINTF      84452                                         ; ABarracudaMinionSpawner::GrantTimerToTeam
+        00BC  FreeNullV8    v28                                         
+      L00C0:
+        00C0  LoadVObjR     v20 16 268448555                              ; .CanProceed
+        00CC  RDR1          v5                                          
+        00D0  CpyVtoR1      v5                                          
+        00D4  JLowNZ        -25                                           -> L0078
+        00DC  PSF           v10                                         
+        00E0  CALLSYS       TArray::$beh2                               
+      L00EC:
+        00EC  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void PlaySpawnAudioEvent()   // traits=0x20
+    {
+        v2 = this.SpawnAudioEvent;
+        if (v2 != nullptr) {
+            LokiAudio::PostEventActor(__WorldContext, this.SpawnAudioEvent, this);
+        }
+        if (this.SpawnPilotVO.IsValid()) {
+            v8 = FString();
+            ULokiBarkUtilities::RequestVOPilot(__WorldContext, this.SpawnPilotVO, v8);
+        }
+        return;
+    }
+    /* ---- PlaySpawnAudioEvent: 46 dwords / 26 instructions (cache offset 0x43567) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         1168 134230793                                ; .SpawnAudioEvent
+        000C  RDSPtr                                                    
+        0010  RefCpyV       v2                                          
+        0014  CmpPtrNull    v2                                          
+        0018  JZ            11                                            -> L004C
+        0020  PshVPtr       this                                        
+        0024  PshVPtr       this                                        
+        0028  ADDSi         1168 134230793                                ; .SpawnAudioEvent
+        0030  RDSPtr                                                    
+        0034  PshGPtr       __WorldContext                              
+        0040  CALLSYS       PostEventActor                              
+      L004C:
+        004C  PshVPtr       this                                        
+        0050  ADDSi         1176 134230793                                ; .SpawnPilotVO
+        0058  CALLSYS       FGameplayTag::IsValid                       
+        0064  JLowZ         18                                            -> L00B4
+        006C  PSF           v8                                          
+        0070  CALLSYS       FString::$beh0                              
+        007C  PSF           v8                                          
+        0080  PshVPtr       this                                        
+        0084  ADDSi         1176 134230793                                ; .SpawnPilotVO
+        008C  PshGPtr       __WorldContext                              
+        0098  CALLSYS       RequestVOPilot                              
+        00A4  PSF           v8                                          
+        00A8  CALLSYS       FString::$beh2                              
+      L00B4:
+        00B4  RET           2                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = true;
+        this.SetbReplicates(v1);
+        v1 = true;
+        this.SetbAlwaysRelevant(v1);
+        v2 = true;
+        this.SetNetDormancy(v2);
+        v3 = true;
+        this.LokiReplicationStrategy.CustomReplicationStrategy = v3;
+        v1 = false;
+        this.LokiReplicationStrategy.bDistanceBased = v1;
+        v4 = 0;
+        this.InitialTeam = v4;
+        v6 = 4629137466983448576;
+        this.SpawnPeriod = v6;
+        v7 = false;
+        this.MinimumBarracudaPhaseType = v7;
+        v6 = 0;
+        this.InitialSpawnDelay = v6;
+        v8 = false;
+        this.RespawnType = v8;
+        v1 = false;
+        this.bSpawnLoopHasStarted = v1;
+        v6 = 0;
+        this.LastSpawnTime = v6;
+        v1 = false;
+        this.bStaggerSpawn = v1;
+        v1 = true;
+        this.bShowTimer = v1;
+        v1 = true;
+        this.bTimerRequiresVision = v1;
+        v6 = 13830554455654793216;
+        this.NextSpawnTime = v6;
+        v1 = false;
+        this.bHasLivingMinion = v1;
+        v1 = true;
+        this.CapsuleCollision.SetCapsuleHalfHeight(1125187584, v1);
+        v1 = true;
+        this.CapsuleCollision.SetCapsuleRadius(1112014848, v1);
+        v1 = true;
+        this.CapsuleCollision.SetCollisionProfileName(n"Trigger", v1);
+        v1 = true;
+        this.CapsuleCollision.SetNotifyRigidBodyCollision(v1);
+        v1 = true;
+        this.VisibilityReceiver.bVisibilityNotificationsEnabled = v1;
+        v1 = true;
+        this.VisibilityReceiver.bUsedOutsideOfReplication = v1;
+        v1 = false;
+        this.bSpawnAtAveragePlayerLevel = v1;
+        return;
+    }
+    /* ---- __InitDefaults: 179 dwords / 107 instructions (cache offset 0x4376e) ----
+        0000  SetV1         v1 1                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       AActor::SetbReplicates                      
+        001C  SetV1         v1 1                                        
+        0024  PshV4         v1                                          
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       AActor::SetbAlwaysRelevant                  
+        0038  SetV1         v2 1                                        
+        0040  PshV4         v2                                          
+        0044  PshVPtr       this                                        
+        0048  CALLSYS       AActor::SetNetDormancy                      
+        0054  SetV1         v3 1                                        
+        005C  PshVPtr       this                                        
+        0060  ADDSi         904 67111343                                  ; .LokiReplicationStrategy
+        0068  ADDSi         0 67118017                                    ; .CustomReplicationStrategy
+        0070  PopRPtr                                                   
+        0074  WRTV1         v3                                          
+        0078  SetV1         v1 0                                        
+        0080  PshVPtr       this                                        
+        0084  ADDSi         904 67111343                                  ; .LokiReplicationStrategy
+        008C  ADDSi         2 67118017                                    ; .bDistanceBased
+        0094  PopRPtr                                                   
+        0098  WRTV1         v1                                          
+        009C  SetV4         v4 0                                        
+        00A4  LoadThisR     952 134230793                                 ; this.InitialTeam
+        00AC  WRTV4         v4                                          
+        00B0  SetV8         v6 0x403e000000000000                       
+        00BC  LoadThisR     960 134230793                                 ; this.SpawnPeriod
+        00C4  WRTV8         v6                                          
+        00C8  SetV1         v7 0                                        
+        00D0  LoadThisR     968 134230793                                 ; this.MinimumBarracudaPhaseType
+        00D8  WRTV1         v7                                          
+        00DC  SetV8         v6 0x0                                      
+        00E8  LoadThisR     976 134230793                                 ; this.InitialSpawnDelay
+        00F0  WRTV8         v6                                          
+        00F4  SetV1         v8 0                                        
+        00FC  LoadThisR     1008 134230793                                ; this.RespawnType
+        0104  WRTV1         v8                                          
+        0108  SetV1         v1 0                                        
+        0110  LoadThisR     1034 134230793                                ; this.bSpawnLoopHasStarted
+        0118  WRTV1         v1                                          
+        011C  SetV8         v6 0x0                                      
+        0128  LoadThisR     1040 134230793                                ; this.LastSpawnTime
+        0130  WRTV8         v6                                          
+        0134  SetV1         v1 0                                        
+        013C  LoadThisR     984 134230793                                 ; this.bStaggerSpawn
+        0144  WRTV1         v1                                          
+        0148  SetV1         v1 1                                        
+        0150  LoadThisR     1032 134230793                                ; this.bShowTimer
+        0158  WRTV1         v1                                          
+        015C  SetV1         v1 1                                        
+        0164  LoadThisR     1033 134230793                                ; this.bTimerRequiresVision
+        016C  WRTV1         v1                                          
+        0170  SetV8         v6 0xbff0000000000000                       
+        017C  LoadThisR     1056 134230793                                ; this.NextSpawnTime
+        0184  WRTV8         v6                                          
+        0188  SetV1         v1 0                                        
+        0190  LoadThisR     1064 134230793                                ; this.bHasLivingMinion
+        0198  WRTV1         v1                                          
+        019C  SetV1         v1 1                                        
+        01A4  PshV4         v1                                          
+        01A8  PshC4         1125187584                                  
+        01B0  PshVPtr       this                                        
+        01B4  ADDSi         1072 134230793                                ; .CapsuleCollision
+        01BC  RDSPtr                                                    
+        01C0  CALLSYS       UCapsuleComponent::SetCapsuleHalfHeight     
+        01CC  SetV1         v1 1                                        
+        01D4  PshV4         v1                                          
+        01D8  PshC4         1112014848                                  
+        01E0  PshVPtr       this                                        
+        01E4  ADDSi         1072 134230793                                ; .CapsuleCollision
+        01EC  RDSPtr                                                    
+        01F0  CALLSYS       UCapsuleComponent::SetCapsuleRadius         
+        01FC  SetV1         v1 1                                        
+        0204  PshV4         v1                                          
+        0208  PshC4         12                                          
+        0210  CALLSYS       __STATIC_NAME                               
+        021C  PshRPtr                                                   
+        0220  PshVPtr       this                                        
+        0224  ADDSi         1072 134230793                                ; .CapsuleCollision
+        022C  RDSPtr                                                    
+        0230  CALLSYS       UPrimitiveComponent::SetCollisionProfileName
+        023C  SetV1         v1 1                                        
+        0244  PshV4         v1                                          
+        0248  PshVPtr       this                                        
+        024C  ADDSi         1072 134230793                                ; .CapsuleCollision
+        0254  RDSPtr                                                    
+        0258  CALLSYS       UPrimitiveComponent::SetNotifyRigidBodyCollision
+        0264  SetV1         v1 1                                        
+        026C  PshVPtr       this                                        
+        0270  ADDSi         1104 134230793                                ; .VisibilityReceiver
+        0278  RDSPtr                                                    
+        027C  ADDSi         260 67115573                                  ; .bVisibilityNotificationsEnabled
+        0284  PopRPtr                                                   
+        0288  WRTV1         v1                                          
+        028C  SetV1         v1 1                                        
+        0294  PshVPtr       this                                        
+        0298  ADDSi         1104 134230793                                ; .VisibilityReceiver
+        02A0  RDSPtr                                                    
+        02A4  ADDSi         259 67115573                                  ; .bUsedOutsideOfReplication
+        02AC  PopRPtr                                                   
+        02B0  WRTV1         v1                                          
+        02B4  SetV1         v1 0                                        
+        02BC  LoadThisR     985 134230793                                 ; this.bSpawnAtAveragePlayerLevel
+        02C4  WRTV1         v1                                          
+        02C8  RET           2                                           
+    */
+
+    void ~ABarracudaMinionSpawner()   // traits=0x22
+    {
+        this.Wave.~FMinionWave();
+        return;
+    }
+    /* ---- ~ABarracudaMinionSpawner: 36 dwords / 19 instructions (cache offset 0x43d07) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         992 134230793                                 ; .LevelThresholdsByGametime
+        000C  CALLSYS       TArray::$beh2                               
+        0018  PshVPtr       this                                        
+        001C  ADDSi         1016 134230793                                ; .Wave
+        0024  CALL          85475                                         ; FMinionWave::~FMinionWave
+        002C  PshVPtr       this                                        
+        0030  ADDSi         1112 134230793                                ; .StartingEffects
+        0038  CALLSYS       TArray::$beh2                               
+        0044  PshVPtr       this                                        
+        0048  ADDSi         1128 134230793                                ; .MinionInstances
+        0050  CALLSYS       TArray::$beh2                               
+        005C  PshVPtr       this                                        
+        0060  ADDSi         1152 134230793                                ; .WaveBuffer
+        0068  CALLSYS       TArray::$beh2                               
+        0074  PshVPtr       this                                        
+        0078  ADDSi         1176 134230793                                ; .SpawnPilotVO
+        0080  CALLSYS       FGameplayTag::$beh2                         
+        008C  RET           2                                           
+    */
+
+}
+

@@ -1,0 +1,668 @@
+// ============================================================================
+//  MODULE   Barracuda.Shop.BarracudaShopItemTreeNodeWidget
+//  SOURCE   Barracuda/Shop/BarracudaShopItemTreeNodeWidget.as
+//  CONTENT  1 class(es), 12 function(s), 0 enum(s), 1 global(s), 2088 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaShopItemTreeNodeWidget;
+
+UBarracudaShopItemTreeNodeWidget@ UBarracudaShopItemTreeNodeWidget()   // traits=0x20
+{
+    UBarracudaShopItemTreeNodeWidget v2;
+
+    v2 = UBarracudaShopItemTreeNodeWidget();
+    return v2;
+}
+/* ---- UBarracudaShopItemTreeNodeWidget: 7 dwords / 4 instructions (cache offset 0x36bdd) ----
+    0000  PSF           v2
+    0004  ALLOC         84388 UBarracudaShopItemTreeNodeWidget        ; new UBarracudaShopItemTreeNodeWidget  ctor=void UBarracudaShopItemTreeNodeWidget::UBarracudaShopItemTreeNodeWidget()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ UBarracudaShopItemTreeNodeWidget::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaShopItemTreeNodeWidget);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x36caa) ----
+    0000  PshGPtr       __StaticType_UBarracudaShopItemTreeNodeWidget
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaShopItemTreeNodeWidget : UUserWidget
+// unreal base : /Script/UMG.UserWidget
+// C++ header  : ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+// static class global: __StaticType_UBarracudaShopItemTreeNodeWidget
+{
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UPanelWidget@ ChildContainer;
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UTextBlock@ ItemName;
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UOverlay@ OwnedIndicator;
+    UPROPERTY(BlueprintReadable, meta.BindWidget)
+    UBarracudaShopItemWidget@ ShopItemWidget;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.ExposeOnSpawn)
+    int DesignTimePrviewInputCount;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.ExposeOnSpawn)
+    int DesignTimePreviewDepthCount;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    bool bDesignTimePreviewOwned;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient, meta.ExposeOnSpawn)
+    TSubclassOf<ALokiBaseItem@> ItemClass;
+    UPROPERTY(BlueprintReadable, Transient, meta.ExposeOnSpawn)
+    UBarracudaShopItemTreeWidget@ Tree;
+
+    UBarracudaShopItemTreeNodeWidget()   // traits=0x21
+    {
+        auto v1;
+        auto v2;
+
+        this.ItemClass = TSubclassOf<ALokiBaseItem@>();
+        v1 = 2;
+        this.DesignTimePrviewInputCount = v1;
+        v1 = 2;
+        this.DesignTimePreviewDepthCount = v1;
+        v2 = false;
+        this.bDesignTimePreviewOwned = v2;
+        return;
+    }
+    /* ---- UBarracudaShopItemTreeNodeWidget: 26 dwords / 15 instructions (cache offset 0x387e8) ----
+        0000  PshVPtr       this
+        0004  ADDSi         792 134230812                                 ; .ItemClass
+        000C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ALokiBaseItem@>::$beh0()
+        0018  SetV4         v1 2
+        0020  LoadThisR     776 134230812                                 ; this.DesignTimePrviewInputCount
+        0028  WRTV4         v1
+        002C  SetV4         v1 2
+        0034  LoadThisR     780 134230812                                 ; this.DesignTimePreviewDepthCount
+        003C  WRTV4         v1
+        0040  SetV1         v2 0
+        0048  LoadThisR     784 134230812                                 ; this.bDesignTimePreviewOwned
+        0050  WRTV1         v2
+        0054  PshVPtr       this
+        0058  FinConstruct  UBarracudaShopItemTreeNodeWidget
+        0064  RET           2
+    */
+
+    UBarracudaShopItemTreeNodeWidget@ CreateInputItemWidget(const TSubclassOf<ALokiBaseItem@>& InItemClass, const int InDesignTimePreviewInputCount, const int InDesignTimePreviewDepthCount)   // traits=0x20
+    {
+        UBarracudaShopItemTreeNodeWidget v2;
+
+        __Evt_PushArgument(InItemClass, typeid(TSubclassOf));
+        __Evt_PushArgument__int32(InDesignTimePreviewInputCount);
+        __Evt_PushArgument__int32(InDesignTimePreviewDepthCount);
+        __Evt_PushArgumentRef(v2, typeid(UBarracudaShopItemTreeNodeWidget@));
+        __Evt_Execute(this, n"CreateInputItemWidget");
+        return v2;
+    }
+    /* ---- CreateInputItemWidget: 32 dwords / 17 instructions (cache offset 0x37411) ----
+        0000  TYPEID        268448387                                     ; TSubclassOf
+        0008  PshVPtr       InItemClass
+        000C  CALLSYS       __Evt_PushArgument                            ; void __Evt_PushArgument(const ?&)
+        0018  PSF           InDesignTimePreviewInputCount
+        001C  CALLSYS       __Evt_PushArgument__int32                     ; void __Evt_PushArgument__int32(const int&)
+        0028  PSF           InDesignTimePreviewDepthCount
+        002C  CALLSYS       __Evt_PushArgument__int32                     ; void __Evt_PushArgument__int32(const int&)
+        0038  TYPEID        1207972636                                    ; UBarracudaShopItemTreeNodeWidget@
+        0040  PSF           v2
+        0044  CALLSYS       __Evt_PushArgumentRef                         ; void __Evt_PushArgumentRef(const ?&)
+        0050  PshC4         111
+        0058  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0064  PshRPtr
+        0068  PshVPtr       this
+        006C  CALLSYS       __Evt_Execute                                 ; void __Evt_Execute(const UObject@, const FName&)
+        0078  LOADOBJ       v2
+        007C  RET           6
+    */
+
+    UFUNCTION(UnrealName=CreateInputItemWidget, BlueprintEvent, CanOverrideEvent)
+    UBarracudaShopItemTreeNodeWidget@ CreateInputItemWidget_Implementation(const TSubclassOf<ALokiBaseItem@>& InItemClass, const int InDesignTimePreviewInputCount, const int InDesignTimePreviewDepthCount)   // traits=0x20
+    {
+        UBarracudaShopItemTreeNodeWidget v2;
+
+        return v2;
+    }
+    /* ---- CreateInputItemWidget_Implementation: 3 dwords / 3 instructions (cache offset 0x37612) ----
+        0000  FreeNullV8    v2
+        0004  LOADOBJ       v2
+        0008  RET           6
+    */
+
+    UFUNCTION(UnrealName=PreConstruct, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void PreConstruct_Implementation(const bool IsDesignTime)   // traits=0x20
+    {
+        if (IsDesignTime) {
+            this.UpdateVisuals(IsDesignTime);
+        }
+        return;
+    }
+    /* ---- PreConstruct_Implementation: 8 dwords / 6 instructions (cache offset 0x37765) ----
+        0000  CpyVtoR1      IsDesignTime
+        0004  JLowZ         4                                             -> L001C
+        000C  PshV4         IsDesignTime
+        0010  PshVPtr       this
+        0014  CALLINTF      84383                                         ; void UBarracudaShopItemTreeNodeWidget::UpdateVisuals(const bool)
+      L001C:
+        001C  RET           3
+    */
+
+    UFUNCTION(UnrealName=Construct, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Construct_Implementation()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.UpdateVisuals(v1);
+        return;
+    }
+    /* ---- Construct_Implementation: 7 dwords / 5 instructions (cache offset 0x3788f) ----
+        0000  SetV1         v1 0
+        0008  PshV4         v1
+        000C  PshVPtr       this
+        0010  CALLINTF      84383                                         ; void UBarracudaShopItemTreeNodeWidget::UpdateVisuals(const bool)
+        0018  RET           2
+    */
+
+    void UpdateVisuals(const bool bDesignTime = false)   // traits=0x20
+    {
+        auto v1;
+        ALokiBaseItem v6;
+        ESlateVisibility v8;
+        auto v9;
+
+        v1 = bDesignTime;
+        v1 = !v1;
+        if (v1) {
+            v6 = this.ItemClass.GetDefaultObject();
+            if (v6 != nullptr) {
+                this.ShopItemWidget.SetRepresentedItem(v6);
+            }
+            if (v6 != nullptr) {
+                v9 = false;
+                v8 = v9;
+            } else {
+                v9 = 2;
+                v8 = v9;
+            }
+            this.ShopItemWidget.SetVisibility(v8);
+        }
+        this.UpdateName(bDesignTime);
+        this.UpdateRootNode(bDesignTime);
+        this.UpdateOwnership(bDesignTime);
+        return;
+    }
+    /* ---- UpdateVisuals: 58 dwords / 38 instructions (cache offset 0x379d1) ----
+        0000  CpyVtoV4      v1 bDesignTime
+        0008  NOT           v1
+        000C  CpyVtoR1      v1
+        0010  JLowZ         39                                            -> L00B4
+        0018  PshVPtr       this
+        001C  ADDSi         792 134230812                                 ; .ItemClass
+        0024  CALLSYS       TSubclassOf::GetDefaultObject                 ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+        0030  STOREOBJ      v6
+        0034  CmpPtrNull    v6
+        0038  JZ            7                                             -> L005C
+        0040  PshVPtr       v6
+        0044  PshVPtr       this
+        0048  ADDSi         768 134230812                                 ; .ShopItemWidget
+        0050  RDSPtr
+        0054  CALLINTF      84403                                         ; void UBarracudaShopItemWidget::SetRepresentedItem(ALokiBaseItem@)
+      L005C:
+        005C  CmpPtrNull    v6
+        0060  JZ            6                                             -> L0080
+        0068  SetV1         v9 0
+        0070  CpyVtoV4      v8 v9
+        0078  JMP           4                                             -> L0090
+      L0080:
+        0080  SetV1         v9 2
+        0088  CpyVtoV4      v8 v9
+      L0090:
+        0090  PshV4         v8
+        0094  PshVPtr       this
+        0098  ADDSi         768 134230812                                 ; .ShopItemWidget
+        00A0  RDSPtr
+        00A4  CALLSYS       UWidget::SetVisibility                        ; void UWidget::SetVisibility(ESlateVisibility)
+        00B0  FreeNullV8    v6
+      L00B4:
+        00B4  PshV4         bDesignTime
+        00B8  PshVPtr       this
+        00BC  CALLINTF      84384                                         ; void UBarracudaShopItemTreeNodeWidget::UpdateName(const bool)
+        00C4  PshV4         bDesignTime
+        00C8  PshVPtr       this
+        00CC  CALLINTF      84385                                         ; void UBarracudaShopItemTreeNodeWidget::UpdateRootNode(const bool)
+        00D4  PshV4         bDesignTime
+        00D8  PshVPtr       this
+        00DC  CALLINTF      84386                                         ; void UBarracudaShopItemTreeNodeWidget::UpdateOwnership(const bool)
+        00E4  RET           3
+    */
+
+    void UpdateName(const bool bDesignTime)   // traits=0x20
+    {
+        FText v4;
+        FText v8;
+        auto v9;
+        auto v10;
+        ALokiBaseItem v14;
+
+        v8 = FText();
+        v10 = false;
+        v9 = v10;
+        if (bDesignTime) {
+            v4 = FText::FromString("LOREM IPSUM");
+            v8 = v4;
+        } else {
+            if (this.ItemClass.IsValid()) {
+                v14 = this.ItemClass.GetDefaultObject();
+                if (v14 != nullptr) {
+                    v4 = v14.GetPlayerFacingName();
+                    v8 = v4;
+                }
+            }
+        }
+        this.ItemName.SetText(v8);
+        return;
+    }
+    /* ---- UpdateName: 75 dwords / 42 instructions (cache offset 0x37bc0) ----
+        0000  PSF           v8
+        0004  CALLSYS       FText::$beh0                                  ; void FText::$beh0()
+        0010  SetV1         v10 0
+        0018  CpyVtoV4      v9 v10
+        0020  CpyVtoR1      bDesignTime
+        0024  JLowZ         18                                            -> L0074
+        002C  PGA           "LOREM IPSUM"
+        0038  PSF           v4
+        003C  CALLSYS       FromString                                    ; FText FText::FromString(const FString&)
+        0048  PSF           v4
+        004C  PSF           v8
+        0050  CALLSYS       FText::opAssign                               ; FText& FText::opAssign(const FText&)
+        005C  PSF           v4
+        0060  CALLSYS       FText::$beh2                                  ; void FText::$beh2()
+        006C  JMP           33                                            -> L00F8
+      L0074:
+        0074  PshVPtr       this
+        0078  ADDSi         792 134230812                                 ; .ItemClass
+        0080  CALLSYS       TSubclassOf::IsValid                          ; bool TSubclassOf<ALokiBaseItem@>::IsValid() const
+        008C  JLowZ         25                                            -> L00F8
+        0094  PshVPtr       this
+        0098  ADDSi         792 134230812                                 ; .ItemClass
+        00A0  CALLSYS       TSubclassOf::GetDefaultObject                 ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+        00AC  STOREOBJ      v14
+        00B0  CmpPtrNull    v14
+        00B4  JZ            14                                            -> L00F4
+        00BC  PSF           v4
+        00C0  PshVPtr       v14
+        00C4  CALLSYS       ALokiBaseItem::GetPlayerFacingName            ; FText ALokiBaseItem::GetPlayerFacingName() const
+        00D0  PSF           v4
+        00D4  PSF           v8
+        00D8  CALLSYS       FText::opAssign                               ; FText& FText::opAssign(const FText&)
+        00E4  PSF           v4
+        00E8  CALLSYS       FText::$beh2                                  ; void FText::$beh2()
+      L00F4:
+        00F4  FreeNullV8    v14
+      L00F8:
+        00F8  PSF           v8
+        00FC  PshVPtr       this
+        0100  ADDSi         752 134230812                                 ; .ItemName
+        0108  RDSPtr
+        010C  CALLSYS       UTextBlock::SetText                           ; void UTextBlock::SetText(FText)
+        0118  PSF           v8
+        011C  CALLSYS       FText::$beh2                                  ; void FText::$beh2()
+        0128  RET           3
+    */
+
+    void UpdateRootNode(const bool bDesignTime)   // traits=0x20
+    {
+        TArray<TSubclassOf<ALokiBaseItem@>> v4;
+        int v5;
+        int v6;
+        auto v7;
+        auto v8;
+        auto v9;
+        TSubclassOf<ALokiBaseItem@> v12;
+        ALokiBaseItem v16;
+        TArrayIterator<TSubclassOf<ALokiBaseItem@>> v22;
+        TSubclassOf<ALokiBaseItem@> v30;
+        UBarracudaShopItemTreeNodeWidget v34;
+
+        this.ChildContainer.ClearChildren();
+        v4 = TArray<TSubclassOf<ALokiBaseItem@>>();
+        if (!bDesignTime) {
+            v8 = 0;
+        } else {
+            v5 = this.DesignTimePreviewDepthCount;
+            v7 = v5 > 0;
+            v8 = v7;
+        }
+        if (v8) {
+            v9 = 0;
+            while (true) {
+                v6 = this.DesignTimePrviewInputCount;
+                if (v9 >= v6) break;
+                v12 = TSubclassOf<ALokiBaseItem@>(nullptr);
+                v4.Add(v12);
+                v9++;
+            }
+        } else {
+            v8 = bDesignTime;
+            v8 = !v8;
+            if (!v8) {
+                v8 = 0;
+            } else {
+                v7 = this.ItemClass.IsValid();
+                v8 = v7;
+            }
+            if (v8) {
+                v16 = this.ItemClass.GetDefaultObject();
+                if (v16 != nullptr) {
+                    v4 = v16.ShopRecipe.ComponentItems;
+                }
+            }
+        }
+        v5 = this.DesignTimePreviewDepthCount;
+        v5 = v5 - 1;
+        v22 = v4.Iterator();
+        while (true) {
+            v7 = v22.CanProceed;
+            if (!v7) break;
+            v30 = v22.Proceed();
+            v6 = this.DesignTimePrviewInputCount;
+            v34 = this.CreateInputItemWidget(v30, v6, v5);
+            this.ChildContainer.AddChild(v34);
+        }
+        return;
+    }
+    /* ---- UpdateRootNode: 147 dwords / 90 instructions (cache offset 0x37e6f) ----
+        0000  PshVPtr       this
+        0004  ADDSi         744 134230812                                 ; .ChildContainer
+        000C  RDSPtr
+        0010  CALLSYS       UPanelWidget::ClearChildren                   ; void UPanelWidget::ClearChildren()
+        001C  PSF           v4
+        0020  CALLSYS       TArray::$beh0                                 ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh0()
+        002C  CpyVtoR1      bDesignTime
+        0030  JLowNZ        4                                             -> L0048
+        0038  SetV4         v8 0
+        0040  JMP           9                                             -> L006C
+      L0048:
+        0048  LoadThisR     780 134230812                                 ; this.DesignTimePreviewDepthCount
+        0050  RDR4          v5
+        0054  CMPIi         v5 0
+        005C  TP
+        0060  CpyRtoV4      v7
+        0064  CpyVtoV4      v8 v7
+      L006C:
+        006C  CpyVtoR1      v8
+        0070  JLowZ         25                                            -> L00DC
+        0078  SetV4         v9 0
+        0080  JMP           12                                            -> L00B8
+      L0088:
+        0088  SUSPEND
+        008C  PshNull
+        0090  PSF           v12
+        0094  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ALokiBaseItem@>::$beh0(UClass@)
+        00A0  PSF           v12
+        00A4  PSF           v4
+        00A8  CALLSYS       TArray::Add                                   ; void TArray<TSubclassOf<ALokiBaseItem@>>::Add(const TSubclassOf<ALokiBaseItem@>&)
+        00B4  IncVi         v9
+      L00B8:
+        00B8  LoadThisR     776 134230812                                 ; this.DesignTimePrviewInputCount
+        00C0  RDR4          v6
+        00C4  CMPi          v9 v6
+        00CC  JS            -19                                           -> L0088
+        00D4  JMP           42                                            -> L0184
+      L00DC:
+        00DC  CpyVtoV4      v8 bDesignTime
+        00E4  NOT           v8
+        00E8  CpyVtoR1      v8
+        00EC  JLowNZ        4                                             -> L0104
+        00F4  SetV4         v8 0
+        00FC  JMP           9                                             -> L0128
+      L0104:
+        0104  PshVPtr       this
+        0108  ADDSi         792 134230812                                 ; .ItemClass
+        0110  CALLSYS       TSubclassOf::IsValid                          ; bool TSubclassOf<ALokiBaseItem@>::IsValid() const
+        011C  CpyRtoV4      v7
+        0120  CpyVtoV4      v8 v7
+      L0128:
+        0128  CpyVtoR1      v8
+        012C  JLowZ         20                                            -> L0184
+        0134  PshVPtr       this
+        0138  ADDSi         792 134230812                                 ; .ItemClass
+        0140  CALLSYS       TSubclassOf::GetDefaultObject                 ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+        014C  STOREOBJ      v16
+        0150  CmpPtrNull    v16
+        0154  JZ            9                                             -> L0180
+        015C  PshVPtr       v16
+        0160  ADDSi         1136 67114958                                 ; .ShopRecipe
+        0168  ADDSi         0 67121023                                    ; .ComponentItems
+        0170  PSF           v4
+        0174  CALLSYS       TArray::opAssign                              ; TArray<TSubclassOf<ALokiBaseItem@>>& TArray<TSubclassOf<ALokiBaseItem@>>::opAssign(const TArray<TSubclassOf<ALokiBaseItem@>>&)
+      L0180:
+        0180  FreeNullV8    v16
+      L0184:
+        0184  LoadThisR     780 134230812                                 ; this.DesignTimePreviewDepthCount
+        018C  RDR4          v5
+        0190  SUBIi         v5 v5 1
+        019C  PSF           v22
+        01A0  PSF           v4
+        01A4  CALLSYS       TArray::Iterator                              ; TArrayIterator<TSubclassOf<ALokiBaseItem@>> TArray<TSubclassOf<ALokiBaseItem@>>::Iterator()
+        01B0  JMP           25                                            -> L021C
+      L01B8:
+        01B8  SUSPEND
+        01BC  PSF           v22
+        01C0  CALLSYS       TArrayIterator::Proceed                       ; TSubclassOf<ALokiBaseItem@>& TArrayIterator<TSubclassOf<ALokiBaseItem@>>::Proceed()
+        01CC  CpyRtoV8      v30
+        01D0  PshV4         v5
+        01D4  LoadThisR     776 134230812                                 ; this.DesignTimePrviewInputCount
+        01DC  RDR4          v6
+        01E0  PshV4         v6
+        01E4  PshVPtr       v30
+        01E8  PshVPtr       this
+        01EC  CALLINTF      84379                                         ; UBarracudaShopItemTreeNodeWidget@ UBarracudaShopItemTreeNodeWidget::CreateInputItemWidget(const TSubclassOf<ALokiBaseItem@>&, const int, const int)
+        01F4  STOREOBJ      v34
+        01F8  PshVPtr       v34
+        01FC  PshVPtr       this
+        0200  ADDSi         744 134230812                                 ; .ChildContainer
+        0208  RDSPtr
+        020C  CALLSYS       UPanelWidget::AddChild                        ; UPanelSlot@ UPanelWidget::AddChild(UWidget@)
+        0218  FreeNullV8    v34
+      L021C:
+        021C  LoadVObjR     v22 16 268448535                              ; .CanProceed
+        0228  RDR1          v7
+        022C  CpyVtoR1      v7
+        0230  JLowNZ        -32                                           -> L01B8
+        0238  PSF           v4
+        023C  CALLSYS       TArray::$beh2                                 ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh2()
+        0248  RET           3
+    */
+
+    void UpdateOwnership(const bool bDesignTime)   // traits=0x20
+    {
+        ESlateVisibility v1;
+        auto v2;
+        ESlateVisibility v3;
+        ESlateVisibility v4;
+        ALokiBaseItem v6;
+        TSetIterator<ALokiBaseItem@> v14;
+        ALokiBaseItem v24;
+        UClass v26;
+
+        if (bDesignTime) {
+            v2 = this.bDesignTimePreviewOwned;
+            if (v2) {
+                v4 = 4;
+                v3 = v4;
+            } else {
+                v4 = true;
+                v3 = v4;
+            }
+            this.OwnedIndicator.SetVisibility(v3);
+            return;
+        } else {
+            v2 = this.ItemClass.IsValid();
+            v2 = !v2;
+            if (v2) {
+                v4 = ESlateVisibility::Collapsed;
+                this.OwnedIndicator.SetVisibility(v4);
+                return;
+            } else {
+                v14 = this.Tree.ItemsToPotentiallyMarkAsOwned.Iterator();
+                while (true) {
+                    v2 = v14.CanProceed;
+                    if (!v2) break;
+                    v24 = v14.Proceed();
+                    v14.Proceed();
+                    v26 = UClass@(this.ItemClass);
+                    if (v24.IsA(v26)) {
+                        v6 = v24;
+                        break;
+                    }
+                }
+                if (v6 != nullptr) {
+                    v1 = ESlateVisibility::SelfHitTestInvisible;
+                    this.Tree.ItemsToPotentiallyMarkAsOwned.Remove(v6);
+                    this.OwnedIndicator.SetVisibility(v1);
+                    return;
+                } else {
+                    v4 = ESlateVisibility::Collapsed;
+                    this.OwnedIndicator.SetVisibility(v4);
+                }
+            }
+        }
+        return;
+    }
+    /* ---- UpdateOwnership: 135 dwords / 83 instructions (cache offset 0x382ab) ----
+        0000  CpyVtoR1      bDesignTime
+        0004  JLowZ         26                                            -> L0074
+        000C  LoadThisR     784 134230812                                 ; this.bDesignTimePreviewOwned
+        0014  RDR1          v2
+        0018  CpyVtoR1      v2
+        001C  JLowZ         6                                             -> L003C
+        0024  SetV1         v4 4
+        002C  CpyVtoV4      v3 v4
+        0034  JMP           4                                             -> L004C
+      L003C:
+        003C  SetV1         v4 1
+        0044  CpyVtoV4      v3 v4
+      L004C:
+        004C  PshV4         v3
+        0050  PshVPtr       this
+        0054  ADDSi         760 134230812                                 ; .OwnedIndicator
+        005C  RDSPtr
+        0060  CALLSYS       UWidget::SetVisibility                        ; void UWidget::SetVisibility(ESlateVisibility)
+        006C  JMP           105                                           -> L0218
+      L0074:
+        0074  PshVPtr       this
+        0078  ADDSi         792 134230812                                 ; .ItemClass
+        0080  CALLSYS       TSubclassOf::IsValid                          ; bool TSubclassOf<ALokiBaseItem@>::IsValid() const
+        008C  CpyRtoV4      v2
+        0090  NOT           v2
+        0094  CpyVtoR1      v2
+        0098  JLowZ         12                                            -> L00D0
+        00A0  SetV1         v4 1
+        00A8  PshV4         v4
+        00AC  PshVPtr       this
+        00B0  ADDSi         760 134230812                                 ; .OwnedIndicator
+        00B8  RDSPtr
+        00BC  CALLSYS       UWidget::SetVisibility                        ; void UWidget::SetVisibility(ESlateVisibility)
+        00C8  JMP           82                                            -> L0218
+      L00D0:
+        00D0  PSF           v14
+        00D4  PshVPtr       this
+        00D8  ADDSi         800 134230812                                 ; .Tree
+        00E0  RDSPtr
+        00E4  ADDSi         752 134230813                                 ; .ItemsToPotentiallyMarkAsOwned
+        00EC  CALLSYS       TSet::Iterator                                ; TSetIterator<ALokiBaseItem@> TSet<ALokiBaseItem@>::Iterator()
+        00F8  JMP           28                                            -> L0170
+      L0100:
+        0100  SUSPEND
+        0104  PSF           v14
+        0108  CALLSYS       TSetIterator::Proceed                         ; ALokiBaseItem@ const& TSetIterator<ALokiBaseItem@>::Proceed()
+        0114  PshRPtr
+        0118  RDSPtr
+        011C  RefCpyV       v24
+        0120  PshVPtr       this
+        0124  ADDSi         792 134230812                                 ; .ItemClass
+        012C  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<ALokiBaseItem@>::opImplConv() const
+        0138  STOREOBJ      v26
+        013C  PshVPtr       v26
+        0140  PshVPtr       v24
+        0144  CALLSYS       UObject::IsA                                  ; bool UObject::IsA(const UClass@) const
+        0150  JLowZ         5                                             -> L016C
+        0158  PshVPtr       v24
+        015C  RefCpyV       v6
+        0160  FreeNullV8    v24
+        0164  JMP           8                                             -> L018C
+      L016C:
+        016C  FreeNullV8    v24
+      L0170:
+        0170  LoadVObjR     v14 24 268448542                              ; .CanProceed
+        017C  RDR1          v2
+        0180  CpyVtoR1      v2
+        0184  JLowNZ        -35                                           -> L0100
+      L018C:
+        018C  CmpPtrNull    v6
+        0190  JZ            22                                            -> L01F0
+        0198  PSF           v6
+        019C  PshVPtr       this
+        01A0  ADDSi         800 134230812                                 ; .Tree
+        01A8  RDSPtr
+        01AC  ADDSi         752 134230813                                 ; .ItemsToPotentiallyMarkAsOwned
+        01B4  CALLSYS       TSet::Remove                                  ; bool TSet<ALokiBaseItem@>::Remove(const ALokiBaseItem@ const&)
+        01C0  SetV1         v1 4
+        01C8  PshV4         v1
+        01CC  PshVPtr       this
+        01D0  ADDSi         760 134230812                                 ; .OwnedIndicator
+        01D8  RDSPtr
+        01DC  CALLSYS       UWidget::SetVisibility                        ; void UWidget::SetVisibility(ESlateVisibility)
+        01E8  JMP           10                                            -> L0218
+      L01F0:
+        01F0  SetV1         v4 1
+        01F8  PshV4         v4
+        01FC  PshVPtr       this
+        0200  ADDSi         760 134230812                                 ; .OwnedIndicator
+        0208  RDSPtr
+        020C  CALLSYS       UWidget::SetVisibility                        ; void UWidget::SetVisibility(ESlateVisibility)
+      L0218:
+        0218  RET           3
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetItem(const TSubclassOf<ALokiBaseItem@>& InItemClass)   // traits=0x20
+    {
+        bool v1;
+
+        this.ItemClass = InItemClass;
+        v1 = false;
+        this.UpdateVisuals(v1);
+        return;
+    }
+    /* ---- SetItem: 14 dwords / 9 instructions (cache offset 0x3867f) ----
+        0000  PshVPtr       InItemClass
+        0004  PshVPtr       this
+        0008  ADDSi         792 134230812                                 ; .ItemClass
+        0010  CALLSYS       TSubclassOf::opAssign                         ; TSubclassOf<ALokiBaseItem@>& TSubclassOf<ALokiBaseItem@>::opAssign(const TSubclassOf<ALokiBaseItem@>&)
+        001C  SetV1         v1 0
+        0024  PshV4         v1
+        0028  PshVPtr       this
+        002C  CALLINTF      84383                                         ; void UBarracudaShopItemTreeNodeWidget::UpdateVisuals(const bool)
+        0034  RET           4
+    */
+
+}
+

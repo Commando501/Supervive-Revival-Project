@@ -1,0 +1,152 @@
+S138 ARM E PRE-REGISTRATION -- SpawnBot with a PREMADE controller
+Written 2026-08-21, offline, BEFORE any flight. Not editable afterwards; corrections go in the
+write-up, not here.
+
+================================================================================================
+0. WHAT IS BEING TESTED, AND WHY IT IS THE WHOLE POINT
+================================================================================================
+The Loki bot pipeline has always died at ONE place:
+
+    ULokiBotSpawnerComponent::SpawnBot 0x556D910
+      -> MakeNewBotController 0x5563660
+           0x55636BB  call 0x0F7EB50     STRIPPED -> nullptr      <== FK-22's getter
+           0x55636C8  je   -> EXIT       controller NULL
+      -> 0x556DD34 test rcx,rcx / je     Possess SKIPPED
+      -> no PlayerState -> ServerSetHeroClass / SetPlayerTeam never reached
+
+[M] SpawnBot takes an `AController* PremadeBotController`, and a NON-NULL value short-circuits
+**before** MakeNewBotController is ever called:
+
+    0x556DA4F  48 8b 44 24 70        mov rax,[rsp+0x70]        the parameter
+    0x556DAA1  48 85 c0              test rax,rax
+    0x556DAA4  0f 85 88 00 00 00     jne 0x556DB32             skips 0x556DAAA..0x556DB30
+
+and the skipped region's ONLY memory writes are three stores to SpawnBot's own stack frame.
+=> **the stripped getter is never reached.** The Blueprint route cannot do this
+(`Comp_BP_BotSpawner_C::SpawnClassBotAtLoc` hardcodes `EX_NoObject` in that slot) -- but S137 can now
+MANUFACTURE the argument: ARM D produces an `ALokiBotController` possessing a hero, and ARM B gives
+it a real `BP_LokiPlayerState_C` at `+0x3C0`, which is the exact field SpawnBot consumes.
+
+================================================================================================
+1. THE CALL
+================================================================================================
+The RAW IMPL at `0x556D910`, not the exec thunk. 7 native args:
+
+  void* __fastcall(void* comp, UClass** heroClassCell, double locXYZ[3], int32 teamIndex,
+                   uint8 difficulty, void* premadeController, void* botNameFString)
+  rcx / rdx / r8 / r9d, then [rsp+0x20] difficulty, [rsp+0x28] premade, [rsp+0x30] &botName.
+
+It RETURNS the spawned `ALokiHeroCharacter*` directly, so the `CreatedBot` out-param trap (a
+`GetPlayerStatesOnTeam` scan that can return a PRE-EXISTING bot, or nothing, at that instant) does
+NOT apply to a direct call. **The census delta is still the verdict; the return is a corroborator.**
+
+⚠⚠ `BotName` is a ZEROED 16-byte FString. SpawnBot fills it and FREES it with the GAME's
+`FMemory::Free` (`0xFF9310`) on BOTH exit paths, so a shim-CRT buffer there is heap corruption.
+
+⚠⚠ RISK CLASS: **NOT CALL-ONLY.** A lane graded it CALL-ONLY and its own adversarial refuter
+REFUTED that -- an exhaustive operand scan finds **7 non-stack writes across FOUR objects**.
+SEH-guarded and separately knob-gated. This is a DIAGNOSIS, not a shipping fix.
+
+⚠ It RE-POSSESSES. ARM D's controller is already possessing a pawn, so SpawnBot's `Possess` will
+unpossess it first, driving `ALokiBotController::OnUnPossess` (`0x55667F0`) -- DARK in every image on
+disk, never executed anywhere, ever. That is a real hazard AND a free receipt (§3).
+
+================================================================================================
+2. THE SIX PRE-FLIGHT GATES -- all READ, all PRINTED, all REFUSING rather than guessing
+================================================================================================
+G1  `AController::Possess`'s authority test on our premade controller. VERIFIED BYTES:
+        0x36E2B86  test byte [rcx+0x448],4  / 0x36E2B93 jne 0x36E2E13   -> PROCEED
+        0x36E2B99  cmp  byte [rcx+0x160],3  / 0x36E2BA0 je  0x36E2E13   -> PROCEED
+        fallthrough 0x36E2BA6 = the FMessageLog warning; 0x36E2E13 reads Pawn+0x3F8 and calls
+        [rax+0x868] = slot 269 = OnPossess.
+    ⚠ A lane described `0x36E2BA0` as where Possess "refuses". **It is the jump to SUCCESS.**
+    ★ Already [M]-passed BY CONSEQUENCE (ARM D's controller reached OnPossess), but read anyway:
+      "we think it passed" is not "we watched it pass".
+G2  `PlayerState->PlatformPlayerID` ArrayNum: `0x556DD89 cmp dword [rdi+0x8c8],1 / jg 0x556DE58`.
+    If > 1 the jg SKIPS bot-naming + ServerSetHeroClass + SetPlayerTeam -- the interesting half --
+    while SpawnBot STILL returns a pawn. A null there would look like failure and would not be.
+    The arm also REFUSES outright if the controller has no PlayerState at all.
+G3/G4  a live `ALokiGameState` and its `TeamStates` (`+0x600`). Informational, not blocking:
+    SpawnBot calls its OWN `GetLokiGameState` (`0x56F01A0`) and `GetTeamState` (`0x5696D60`), and an
+    empty team array makes those gates fail -- suppressing the §3 receipt -- while SpawnBot still
+    returns a pawn.
+G5  the component, BY REFLECTED PROPERTY off the live GameMode (`Comp_BP_BotSpawner`), never by name
+    search: the SCS archetype `Comp_BP_BotSpawner_GEN_VARIABLE` coexists with the live instance and a
+    first-match scan returns the TEMPLATE. Refuses on a `_GEN_VARIABLE` hit.
+G6  a 16-byte PROLOGUE SIGNATURE on `0x556D910`
+    (`40 55 53 56 57 41 54 41 55 41 56 41 57 48 8d ac`, transcribed offline and re-read by hand).
+    It is a raw impl with no vtable slot to validate against, so this is the only self-validation
+    available -- the same substitute ARM C uses.
+
+================================================================================================
+3. PREDICTIONS
+================================================================================================
+E1  ARM D runs first and yields a `LokiBotController` possessing a hero, with a PlayerState on both
+    sides. If it does not, ARM E REFUSES and says so -- that is a STAGING statement, not a result.
+E2  All six gates pass and are printed with their raw values.
+E3  SpawnBot returns a NON-NULL `ALokiHeroCharacter*`.
+E4  ★ THE PRIMARY VERDICT IS THE CENSUS DELTA, not the return value:
+    `LokiHeroCharacter`-chain +1 across the call.
+E5  ★★ PAGE RECEIPT 1: `0x5556D50` (called at `0x556DEA2`, PAST the PlayerState gate) is DARK in
+    57/57 images. **Non-zero after the flight proves execution reached the block FK-22's route has
+    never reached.** This is binary, permanent and offline-checkable.
+E6  ★★ PAGE RECEIPT 2: `0x55667F0` `ALokiBotController::OnUnPossess`, DARK in every image.
+    **Non-zero proves Possess ran on our premade controller.**
+E7  The premade controller's `Pawn` now points at SpawnBot's NEW pawn (it re-possessed).
+E8  `=LokiBotController` stays at 1 -- SpawnBot does not create a controller when given one.
+
+================================================================================================
+4. WHAT WOULD MAKE THE RESULT UNINTERPRETABLE
+================================================================================================
+U1  ARM E REFUSED at a gate -> a STAGING statement. The census delta is UNINTERPRETABLE for ARM E.
+U2  A non-null return with `0x5556D50` STILL DARK -> execution did NOT pass the PlayerState gate;
+    the interesting half did not run, whatever the return value says. **Check the page before
+    claiming the wall is broken.**
+U3  G2 reported > 1, or TeamStates empty -> a null is explained by that, not by the wall.
+U4  `[BS] done` absent, or `called=0` -> the arm was a no-op (the S136 lesson). A census delta with
+    `called=0` is UNINTERPRETABLE, not a null.
+U5  The client dies before the capture. Both S137 sittings ended in FK-32; **capture as you go.**
+
+⛔ EVEN ON FULL SUCCESS THIS IS NOT A COMPLETE BOT. `ServerSetHeroClass` (`0x556DE43 -> 0xF7EC20`)
+and `SetPlayerTeam` (`0x556DE53 -> 0xF7EB60`) are stripped folds and remain so. A pawn is not a
+configured bot. Say "SpawnBot ran its premade path" -- never "the bot spawner works".
+
+================================================================================================
+5. THE ARMS AS BUILT  (RAW = sha256(.text[PointerToRawData:+SizeOfRawData])[:16])
+================================================================================================
+  tutorial_launch_spawnbot_premade.dll   RAW=ec6ca40c8b46297a  VSIZE=d16e5a74e253cd60   ARM D + ARM E
+  tutorial_launch_spawnbot_readonly.dll  RAW=a6cad1bb25f78c52  VSIZE=ea1112b1d22bb9d6   gates, NO call
+  tutorial_launch_lokibot.dll            RAW=e934636bea0fb9b4  VSIZE=a32f5a2d33095b4b   ARM D only
+  tutorial_launch_botai.dll              RAW=5e47c13cf7f0a158  VSIZE=f34ab2bf31cb0b34   REGRESSION GATE
+
+⚠ `lokibot` MOVED from `f8ab43b040ea8a12` -> `e934636bea0fb9b4`: ARM E's census additions (the
+GameMode/GameState latches) compile into every `KBSPS` arm. Expected, and stated so the digest is not
+mistaken for a silent change. The FLOWN S137 artifact remains `3119d75ae2ca1859`.
+⚠ `botai` UNCHANGED across every S137 and S138 source patch -- the regression gate holds.
+
+★ THE READ-ONLY CONTROL IS A GENUINELY DIFFERENT BINARY. `spawnbot-readonly` is `KBSPSARMS=0x60`
+**plus `-DKBSSBCALL=0`**, which compiles the call out. Gating it on `KBSPSARMS` alone would have made
+it byte-identical to `lokibot` -- a DEGENERATE CONTROL, the hazard this repo has recorded three times.
+`text_digest.py --dupes` over `dumps/s138-arms`: **0 duplicate groups.**
+
+PRE-FLIGHT STATIC CHECK (the S135->S136 lesson): 9 probe rows, positive control in every row.
+ARM E present in both spawnbot arms and dead-stripped from `lokibot`/`botai`; the CALLING and
+NOT-CALLING banners are MUTUALLY EXCLUSIVE, so the read-only arm cannot silently call and the calling
+arm cannot silently skip. ⚠ An earlier version of that probe used a needle ARM C also contains and
+read a false Y in `lokibot` -- **the probe was wrong, not the binary**, and the row-wise expectation
+is what caught it.
+`verify_dll.py`: PASS. `WriteProcessMemory` / `FlushInstructionCache` / `VirtualAlloc` all ABSENT.
+(`VirtualProtect` is imported -- other run modes in the same TU use it -- so the S112 import-absence
+signature is suggestive here, not proof; the no-`.text`-write property rests on the source path.)
+
+================================================================================================
+6. PROCEDURE
+================================================================================================
+Stage as usual (§2 of `docs/next-session-prompt-s138.md`), then:
+  1. `spawnbot-readonly` FIRST. It runs ARM D and every ARM E gate and calls nothing. It tells you
+     whether the flight would work, for free, and any world change under it would mean the gate
+     reads are not read-only.
+  2. `spawnbot-premade` second, into the SAME staged client.
+  3. `dumpimage` AFTERWARDS EITHER WAY -- E5/E6 are the strongest evidence and they are only
+     recoverable from a capture.
+  4. Read out with `tools/re/playerstate_readout.py` and `obj_by_chain.py =LokiBotController`.

@@ -1,0 +1,21 @@
+t_s,kind,tag,idx,item_obj,item_flags,item_cluster,item_serial,obj_vt,obj_flags,obj_idx,obj_class,obj_name,gcalive,note
+0.000,sweep,,,5773,,,1,,,,,,,live=5773 free=713
+1.014,sweep,,,5773,,,2,,,,,,,live=5773 free=713
+2.026,sweep,,,5773,,,3,,,,,,,live=5773 free=713
+3.040,sweep,,,5886,,,4,,,,,,,live=5886 free=713
+4.053,sweep,,,5886,,,5,,,,,,,live=5886 free=713
+5.069,sweep,,,5886,,,6,,,,,,,live=5886 free=713
+6.083,sweep,,,5886,,,7,,,,,,,live=5886 free=713
+7.099,sweep,,,5886,,,8,,,,,,,live=5886 free=713
+8.113,sweep,,,5886,,,9,,,,,,,live=5886 free=713
+9.126,sweep,,,5980,,,10,,,,,,,live=5980 free=713
+10.141,sweep,,,6009,,,11,,,,,,,live=6009 free=713
+11.153,sweep,,,6009,,,12,,,,,,,live=6009 free=713
+12.169,sweep,,,6012,,,13,,,,,,,live=6012 free=713
+13.179,sweep,,,6108,,,14,,,,,,,live=6108 free=713
+14.189,sweep,,,6108,,,15,,,,,,,live=6108 free=713
+15.200,sweep,,,6108,,,16,,,,,,,live=6108 free=713
+16.214,sweep,,,6113,,,17,,,,,,,live=6113 free=713
+17.228,sweep,,,6123,,,18,,,,,,,live=6123 free=713
+18.239,sweep,,,6123,,,19,,,,,,,live=6123 free=713
+19.250,sweep,,,6177,,,20,,,,,,,live=6177 free=713

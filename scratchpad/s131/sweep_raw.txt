@@ -1,0 +1,119 @@
+# records=16277 runs=1551 attributed_keys=15720
+
+## CONTROLS
+  PASS  ALokiGameMode::SpawnPlayer                      rec=0x9bdb228 thunk=0x534c070 impl=0xf7eb50 expected=0xf7eb50 -> EMPTY
+  PASS  ALokiPlayerState::AuthSetSpawnTeamLeader           rec=0x9c14f98 thunk=0x5254180 impl=0xf7ec20 expected=0xf7ec20 -> EMPTY
+  PASS  ALokiTeamState_TeamOnly::SetDropLeader                    rec=0x9c29f48 thunk=0x2c2ce30 impl=0xf7ec20 expected=0xf7ec20 -> EMPTY
+  PASS  ALokiDropPlane::OverridePlaneLocations           rec=0x9bd4b00 thunk=0x53372a0 impl=0xf7ec20 expected=0xf7ec20 -> EMPTY
+  PASS  ALokiRoundGameMode::GoToPhase                        rec=0x9c1f290 thunk=0x5457200 impl=0x5601020 expected=0x5601020 -> REAL
+  PASS  ALokiGameState::BP_AuthSetCurrentPhase           rec=0x9be9410 thunk=0x53878d0 impl=0x567a160 expected=0x567a160 -> REAL
+  PASS  ALokiRoundGameMode::OnNewPhase                       rec=0x9c1f320 thunk=0x5457480 impl=0x330c56c expected=0x330c56c -> VTABLE-FWD
+  CONTROL HIT RATE: 7/7
+
+## SWEEP
+  key count = 105
+ALokiDropPlane::AddPlayerToPlane	EMPTY	0xf7ec20	0x2c2ce30	Final|BlueprintAuthorityOnly|Native|Public	FOLD ret0(c2 00 00)	
+ALokiDropPlane::AuthLaunchDropPodForTeam	REAL	0x55cb1d0	0x5335b50	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable		4883ec28e8b717dcfd4883c4
+ALokiDropPlane::AuthStart	EMPTY	0xf7ec20	0x52fd620	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable	FOLD ret0(c2 00 00)	
+ALokiDropPlane::BP_AuthLaunchDropPodForTeam	NO-RECORD	-	-	Event|Public|BlueprintEvent
+ALokiDropPlane::CanJump	REAL	0x55cf390	0x53361f0	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		80b92404000000750d80b925
+ALokiDropPlane::GetDropPlaneMapIcon	REAL	0x5333e10	0x377c3a0	Native|Event|Public|BlueprintCallable|BlueprintEvent|BlueprintPure		48895c2410574883ec20488b
+ALokiDropPlane::GetDropPosition	REAL	0x5333e60	0x53364f0	Native|Event|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintEvent|BlueprintPure|Const		48895c240848897424105748
+ALokiDropPlane::GetDropZoneBorders	REAL	0x5333ed0	0x5336590	Native|Event|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintEvent|BlueprintPure		488bc4488958084889681048
+ALokiDropPlane::GetPlayerDropState	REAL	0x55d9ac0	0x5336940	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		4c8bc94c8bc249c1e8044c8b
+ALokiDropPlane::HasEverContainedPlayer	REAL	0x55dca90	0x53369e0	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable|BlueprintPure|Const		488b89c8030000e904000000
+ALokiDropPlane::IsPlayerInPlane	REAL	0x55dda10	0x5336b20	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		4c8b81c8030000498b802001
+ALokiDropPlane::IsReadyToSetDropPodDestination	REAL	0x5334140	0x5336bc0	Native|Event|Public|BlueprintCallable|BlueprintEvent|BlueprintPure		48895c2410574883ec20488b
+ALokiDropPlane::IsValidDropPodDestination	REAL	0x55ddc90	0x5336bf0	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintPure		48895c2408574883ec40488b
+ALokiDropPlane::IsWithinDropPlanePath	REAL	0x5334190	0x5336ce0	Native|Event|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintEvent|BlueprintPure		488bc4488958084889701048
+ALokiDropPlane::IsWithinMaxDropPodDistance	REAL	0x5334220	0x5336e30	Native|Event|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintEvent|BlueprintPure		48895c2408574883ec400f10
+ALokiDropPlane::OnPlayerEnteredRideable	REAL	0x55e0910	0x5337000	Final|Native|Private		41b001e9989d00004883ec28
+ALokiDropPlane::OnPlayerExitedRideable	REAL	0x55e0920	0x5337090	Final|Native|Private		41b002e9889d00004883c428
+ALokiDropPlane::OnRep_EndLocation	NO-RECORD	-	-	Event|Protected|BlueprintEvent
+ALokiDropPlane::OnRep_StartLocation	NO-RECORD	-	-	Event|Protected|BlueprintEvent
+ALokiDropPlane::OnRep_StartTime	REAL	0x55e0fe0	0x5337140	Final|Native|Protected		c68124040000014881c19803
+ALokiDropPlane::OnTeamDropped	NO-RECORD	-	-	Event|Public|HasDefaults|BlueprintEvent
+ALokiDropPlane::OverridePlaneLocations	EMPTY	0xf7ec20	0x53372a0	Final|Native|Public|HasDefaults|BlueprintCallable	FOLD ret0(c2 00 00)	
+ALokiDropPlane::RemovePlayerFromPlane	EMPTY	0xf7ec20	0x2c2ce30	Final|BlueprintAuthorityOnly|Native|Public	FOLD ret0(c2 00 00)	
+ALokiDropPlane::SetCanJump	EMPTY	0xf7ec20	0x5296f30	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable	FOLD ret0(c2 00 00)	
+ALokiDropPlane::UpdatePlaneMovementAndCheckDone	REAL	0x53357d0	0x3872fe0	Native|Event|Public|BlueprintCallable|BlueprintEvent		48895c2410574883ec20488b
+ULokiPlayerDropPlaneComponent::AuthEnterDropPlane	REAL	0x56dbe60	0x542d580	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable		48899108010000c340534883
+ULokiPlayerDropPlaneComponent::AuthSetCurrentRideable	EMPTY	0xf7ec20	0x2c2ce30	Final|Native|Public	FOLD ret0(c2 00 00)	
+ULokiPlayerDropPlaneComponent::AuthSetDropComplete	REAL	0x2e09510	0x542d610	Final|Native|Public		c681d000000001c3488d8d38
+ULokiPlayerDropPlaneComponent::BP_OnDropPodLaunched	NO-RECORD	-	-	Event|Protected|BlueprintEvent
+ULokiPlayerDropPlaneComponent::BroadcastEventRouterReady	REAL	0x56dd340	0x542d650	Final|Native|Protected		4885d20f8527e0d4ffc34883
+ULokiPlayerDropPlaneComponent::CanLaunchDropPod	REAL	0x56deb00	0x542d6e0	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		48895c2410574883ec20488b
+ULokiPlayerDropPlaneComponent::ClearSelectDropPodInputBinding	REAL	0x56df010	0x542d710	Final|Native|Private		48895c241048897c24185548
+ULokiPlayerDropPlaneComponent::ClearSelectedDropPodDestination	REAL	0x542b040	0x365bf40	Native|Event|Public|BlueprintCallable|BlueprintEvent		48895c2408574883ec20488b
+ULokiPlayerDropPlaneComponent::FindValidDropLocationInRadius	IMPL-PAGE-DARK	0x5605b90	0x542de10	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable	impl page dark in all 3 images	
+ULokiPlayerDropPlaneComponent::ForwardMovementInput	REAL	0x56e5db0	0x542df50	Final|Native|Public		e9fb55d4ff418d5030807c24
+ULokiPlayerDropPlaneComponent::GetDropComplete	REAL	0x3edb490	0x525f3e0	Final|Native|Public|BlueprintCallable|BlueprintPure		0fb681d0000000c333d2488b
+ULokiPlayerDropPlaneComponent::GetDropPod	REAL	0x3078470	0x542e160	Final|Native|Public		488b8110010000c34883ec38
+ULokiPlayerDropPlaneComponent::GetSelectedDropPodDestination	REAL	0x56eba30	0x542e2e0	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintPure|Const		0f1081180100000f1102f20f
+ULokiPlayerDropPlaneComponent::IsLocalPlayerStateComp	REAL	0x56ef2b0	0x542e430	Final|Native|Private		40534883ec20488b99b80000
+ULokiPlayerDropPlaneComponent::MulticastOnDropPodLaunched	REAL	0x542b2b0	0x53bd130	Net|NetReliable|Native|Event|NetMulticast|Public|BlueprintCallable		48895c2410574883ec20488b
+ULokiPlayerDropPlaneComponent::OnDropPodEnded	NO-RECORD	-	-	Event|Protected|BlueprintEvent
+ULokiPlayerDropPlaneComponent::OnDropPodStarted	NO-RECORD	-	-	Event|Protected|BlueprintEvent
+ULokiPlayerDropPlaneComponent::OnEventRouterReady	NO-RECORD	-	-	Event|Protected|BlueprintEvent
+ULokiPlayerDropPlaneComponent::OnForwardMovementInput	NO-RECORD	-	-	Event|Protected|BlueprintEvent
+ULokiPlayerDropPlaneComponent::OnPlayerExitedDropPod	EMPTY	0xf7ec20	0x542e4a0	Final|Native|Protected|HasOutParms	FOLD ret0(c2 00 00)	
+ULokiPlayerDropPlaneComponent::OnRep_CurrentRideableObject	REAL	0x56f54d0	0x542e580	Final|Native|Private		48895c2408574883ec20488b
+ULokiPlayerDropPlaneComponent::OnRep_DropLocationSelected	REAL	0x56f5620	0x542e5a0	Final|Native|Private		488b89b8000000b201e9a28e
+ULokiPlayerDropPlaneComponent::OnRep_DropPlane	REAL	0x56f5630	0x542e5c0	Final|Native|Private		4883b908010000000f85525e
+ULokiPlayerDropPlaneComponent::OnRep_DropPod	REAL	0x56f5640	0x542e5e0	Final|Native|Private		48895c2408574883ec20488b
+ULokiPlayerDropPlaneComponent::OnRightMovementInput	NO-RECORD	-	-	Event|Protected|BlueprintEvent
+ULokiPlayerDropPlaneComponent::OnSelectDropLocationEnded	NO-RECORD	-	-	Event|Protected|BlueprintEvent
+ULokiPlayerDropPlaneComponent::OnSelectDropLocationStarted	NO-RECORD	-	-	Event|Protected|BlueprintEvent
+ULokiPlayerDropPlaneComponent::RightMovementInput	REAL	0x56f9650	0x542e8c0	Final|Native|Public		e9ab1dd3ff4181f80000800f
+ULokiPlayerDropPlaneComponent::SelectDropPodDestination	IMPL-PAGE-DARK	0x56fa590	0x542e940	Final|Native|Protected	impl page dark in all 3 images	
+ULokiPlayerDropPlaneComponent::ServerLaunchDropPod	REAL	0x542b530	0x3f74b90	Final|Net|NetReliable|Native|Event|Private|NetServer		48895c2408574883ec20488b
+ULokiPlayerDropPlaneComponent::ServerPassDropLeader	REAL	0x542b570	0x3c651a0	Net|NetReliable|Native|Event|Public|NetServer|BlueprintCallable		48895c2408574883ec20488b
+ULokiPlayerDropPlaneComponent::ServerSetDropPodDestination	REAL	0x542b600	0x542e9f0	Net|NetReliable|Native|Event|Public|NetServer|HasDefaults|BlueprintCallable		48895c2408574883ec400f10
+ULokiPlayerDropPlaneComponent::SetDropPodDestination	REAL	0x542b970	0x542ee20	Native|Event|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintEvent		48895c2408574883ec400f10
+ULokiPlayerDropPlaneComponent::TryLaunchDropPod	IMPL-PAGE-DARK	0x56ff1d0	0x542eef0	Final|Native|Protected|BlueprintCallable	impl page dark in all 3 images	
+ULokiRideableComponent::AuthAddPlayer	EMPTY	0xf7ec20	0x2c2ce30	Final|BlueprintAuthorityOnly|Native|Public	FOLD ret0(c2 00 00)	
+ULokiRideableComponent::AuthPlayerDetachPlayerFromRidable	REAL	0x55cccb0	0x5456100	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable		4885d20f84ae010000488954
+ULokiRideableComponent::AuthPlayerEnterWorld	REAL	0x55cce70	0x54561d0	Final|BlueprintAuthorityOnly|Native|Public|HasOutParms|HasDefaults|BlueprintCallable		4885d20f848c060000555741
+ULokiRideableComponent::AuthPlayerEnterWorldAttachedToRidable	REAL	0x55cd510	0x5456380	Final|BlueprintAuthorityOnly|Native|Public|HasOutParms|HasDefaults|BlueprintCallable		4885d20f847a02000048895c
+ULokiRideableComponent::AuthPlayerEnterWorldNew	EMPTY	0xf7ec20	0x5456460	Final|BlueprintAuthorityOnly|Native|Public|HasOutParms|HasDefaults|BlueprintCallable	FOLD ret0(c2 00 00)	
+ULokiRideableComponent::AuthPlayerPreSpawnOnAddToPlane	REAL	0x55cd800	0x5456540	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable		4885d20f84e601000048895c
+ULokiRideableComponent::AuthRemovePlayer	EMPTY	0xf7ec20	0x2c2ce30	Final|BlueprintAuthorityOnly|Native|Public	FOLD ret0(c2 00 00)	
+ULokiRideableComponent::AuthSetCanJump	EMPTY	0xf7ec20	0x5296f30	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable	FOLD ret0(c2 00 00)	
+ULokiRideableComponent::CanExit	REAL	0x525c240	0x5260ec0	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		0fb68118010000c34883ec20
+ULokiRideableComponent::ContainsPlayer	REAL	0x55d0270	0x5456700	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		488b81200100004863892801
+ULokiRideableComponent::GetLandingTeleportLocation	REAL	0x55d89f0	0x5456c80	Final|Native|Public|HasDefaults|BlueprintCallable		40555356574157488dac2420
+ULokiRideableComponent::GetRidePosition	REAL	0x55dab50	0x5457070	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable|BlueprintPure|Const		48895c240848897424105748
+ULokiRideableComponent::HasEverContainedPlayer	REAL	0x55dcaa0	0x5457280	Final|Native|Public|BlueprintCallable|BlueprintPure|Const		488b81200100004c8bca4c63
+ULokiRideableComponent::MulticastOnPlayerEntered	REAL	0x5453780	0x53bd130	Final|Net|NetReliable|Native|Event|NetMulticast|Private		48895c2410574883ec20488b
+ULokiRideableComponent::MulticastOnPlayerEnteredWorld	REAL	0x54537c0	0x3bcd5b0	Final|Net|NetReliable|Native|Event|NetMulticast|Private		48895c2410574883ec20488b
+ULokiRideableComponent::MulticastOnPlayerExited	REAL	0x5453800	0x54573b0	Final|Net|NetReliable|Native|Event|NetMulticast|Private		48895c2408574883ec30488b
+ULokiRideableComponent::OnRep_PlayersInsideCount	REAL	0x55e0fc0	0x5457730	Final|Native|Private		8b911c0100004881c1e00000
+ULokiRideableComponent::OnRep_bCanExit	REAL	0x55e1000	0x54577b0	Final|Native|Private		0fb691180100004881c1d000
+ALokiTeamState_TeamOnly::GetByTeamIndex	REAL	0x56e6740	0x5483940	Final|Native|Static|Public|BlueprintCallable|BlueprintPure		48895c2408574883ec208bfa
+ALokiTeamState_TeamOnly::GetDropLeader	IMPL-PAGE-DARK	0x3259330	0x5483c00	Final|Native|Public|BlueprintCallable|BlueprintPure|Const	impl page dark in all 3 images	
+ALokiTeamState_TeamOnly::GetFuzzyPlayerLocationComponentByTeamIndex	REAL	0x56e7b90	0x5483db0	Final|Native|Static|Public|BlueprintCallable		48895c2408574883ec208bfa
+ALokiTeamState_TeamOnly::GetTeamVaultDataComponentByTeamIndex	REAL	0x56ec410	0x54841f0	Final|Native|Static|Public|BlueprintCallable		48895c2408574883ec208bfa
+ALokiTeamState_TeamOnly::OnRep_DropLeader	REAL	0x56f5610	0x5484fe0	Final|Native|Private		e9fb5000004883ec38e8f7ff
+ALokiTeamState_TeamOnly::OnRep_ReplicatedBarkData	REAL	0x56f5ea0	0x5485020	Final|Native|Private		48895c2410574881ec900100
+ALokiTeamState_TeamOnly::SetDropLeader	EMPTY	0xf7ec20	0x2c2ce30	Final|Native|Public|BlueprintCallable	FOLD ret0(c2 00 00)	
+ALokiDropPodBase::GetDropAboveAmount	REAL	0x55d7b70	0x5336430	Final|Native|Public|BlueprintCallable		f30f100568914602c3488b0b
+ALokiDropPodBase::OnPilotPlayerStateReplicated	NO-RECORD	-	-	Event|Protected|BlueprintEvent
+ALokiDropPodBase::OnRep_PilotPlayerState	REAL	0x55e0fb0	0x5337120	Final|Native|Protected		e91b33d5ff488b5c24404889
+ALokiDropPodBase::SetPilotPlayerState	REAL	0x55e59e0	0x53375e0	Final|Native|Public		488991c003000041b80b0000
+ALokiDropPodBase::StartPlayerPodSteering	REAL	0x55e6a70	0x5337670	Final|Native|Public		40534883ec3080b9b8030000
+ALokiDropPodBase::StopPlayerPodSteering	REAL	0x55e7050	0x5337690	Final|Native|Public		40534883ec2080b9b8030000
+ULokiGameModeDropPlaneComponent::AddPlayerToDropPlane	REAL	0x55cbb60	0x5350630	Final|Native|Protected|BlueprintCallable|Const		4056574883ec38488bf1488b
+ULokiGameModeDropPlaneComponent::GeneratePlanePoints	REAL	0x55d4940	0x5350bd0	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable|Const		488bc4488958084889701057
+ULokiGameModeDropPlaneComponent::SetDropPlane	REAL	0x55e55e0	0x5352f20	Final|Native|Protected|BlueprintCallable		48895c240848897424104889
+ULokiGameModeDropPlaneComponent::SpawnPlane	NO-RECORD	-	-	Event|Protected|BlueprintEvent
+ULokiDropPhaseLibrary::BroadcastDropPodCrewDetachEvent	REAL	0x55ce3a0	0x5335d10	Final|Native|Static|Public|HasOutParms		4885c90f847801000048895c
+ULokiDropPhaseLibrary::BroadcastDropPodDirectionChangeEvent	REAL	0x55ce530	0x5335e30	Final|Native|Static|Public|HasOutParms		4885c90f847801000048895c
+ULokiDropPhaseLibrary::BroadcastDropPodLeaderDetachEvent	REAL	0x55ce6c0	0x5335f30	Final|Native|Static|Public|HasOutParms		4885c90f847801000048895c
+ULokiDropPhaseLibrary::BroadcastDropPodStateChangeEvent	REAL	0x55ce850	0x5336060	Final|Native|Static|Public|HasOutParms		4885c90f847801000048895c
+ULokiRideableInterface::GetRidePosition	NO-RECORD	-	-	Native|Event|Public|HasOutParms|HasDefaults|BlueprintEvent|Const
+ALokiGameMode::SpawnPlayer	EMPTY	0xf7eb50	0x534c070	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable	FOLD xor eax;ret	
+ALokiPlayerState::AuthSetSpawnTeamLeader	EMPTY	0xf7ec20	0x5254180	Final|Native|Public|BlueprintCallable	FOLD ret0(c2 00 00)	
+ULokiCharacterMovementComponent::AuthBeginGlideDiveFromDropPod	EMPTY	0xf7ec20	0x530bfd0	Final|BlueprintAuthorityOnly|Native|Public|HasOutParms|HasDefaults|BlueprintCallable	FOLD ret0(c2 00 00)	
+ULokiCharacterMovementComponent::AuthBeginGlideDive	EMPTY	0xf7ec20	0x5254180	Final|BlueprintAuthorityOnly|Native|Public|BlueprintCallable	FOLD ret0(c2 00 00)	
+ULokiCharacterMovementComponent::EndGlideDive	REAL	0x55a8580	0x530c500	Final|Native|Public|BlueprintCallable		c7814c120000000080bfc341
+ALokiServerAnalyticsManager::AddTeamDropEvent	REAL	0x557eae0	0x5463350	Final|Native|Public|HasOutParms|HasDefaults|BlueprintCallable		488bc4488958104889701855

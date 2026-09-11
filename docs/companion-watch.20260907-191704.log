@@ -1,0 +1,23 @@
+[cw] game pid=9672
+[cw] t=+  1.52s NEW CHILD pid=39636  name=conhost.exe  path=C:\Windows\System32\conhost.exe
+[cw]     SKIP kill (name 'conhost.exe' != --only-name 'runtime.dll')
+[cw] t=+  6.27s NEW CHILD pid=41732  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     SKIP kill (name 'EpicWebHelper.exe' != --only-name 'runtime.dll')
+[cw] t=+  6.45s NEW CHILD pid=33360  name=crashpad_handler.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Plugins\SentrySDK\Binaries\Win64\crashpad_handler.exe
+[cw]     SKIP kill (name 'crashpad_handler.exe' != --only-name 'runtime.dll')
+[cw] t=+ 10.92s NEW CHILD pid=45416  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     SKIP kill (name 'EpicWebHelper.exe' != --only-name 'runtime.dll')
+[cw] t=+ 10.92s NEW CHILD pid=45252  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     SKIP kill (name 'EpicWebHelper.exe' != --only-name 'runtime.dll')
+[cw] t=+126.34s NEW CHILD pid=35900  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     SKIP kill (name 'EpicWebHelper.exe' != --only-name 'runtime.dll')
+[cw] t=+127.17s CHILD EXITED pid=35900 name=EpicWebHelper.exe
+[cw] t=+181.46s NEW CHILD pid=28300  name=runtime.dll  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Binaries\Win64\runtime.dll
+[cw]     kill_process(28300) -> True
+[cw] t=+181.59s CHILD EXITED pid=28300 name=runtime.dll
+[cw] t=+566.83s CHILD EXITED pid=39636 name=conhost.exe
+[cw] t=+566.83s CHILD EXITED pid=45252 name=EpicWebHelper.exe
+[cw] t=+566.96s CHILD EXITED pid=41732 name=EpicWebHelper.exe
+[cw] t=+566.96s CHILD EXITED pid=45416 name=EpicWebHelper.exe
+[cw] t=+567.21s CHILD EXITED pid=33360 name=crashpad_handler.exe
+[cw] game process gone (t=+567.22s), stopping. polls=4530

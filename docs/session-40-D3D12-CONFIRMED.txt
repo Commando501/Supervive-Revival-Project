@@ -1,0 +1,162 @@
+=== SESSION 40 FINAL — D3D12 CLASS HYPOTHESIS FULLY CONFIRMED ===
+
+Follow-up test: re-run DX11 mode and capture Sentry's local minidump
+before it uploads/is consumed. Parse the DX11 dump and compare with
+D3D12 and nullrhi dumps.
+
+**Result: DEFINITIVE CONFIRMATION that the D3D12 crash is in our
+target class and DX11/nullrhi crash in a completely different location
+(ntdll.dll). The class is D3D12-specific.**
+
+--- Method ---
+
+Kept the pre-existing Sentry dump list, ran the same DX11 test that
+crashed at 24s post-Join earlier. Sentry saved a new dump at
+`.sentry-native/reports/3f7cbd45-e4d0-41a8-b17e-b2b28fa32e32.dmp`
+(39.5 MB). Parsed with `parse-any-dump.py`.
+
+--- DX11 crash: SAME AS nullrhi, NOT the target class ---
+
+DX11 crash registers:
+    Rip = 0x00007FF8F0400001  (ntdll.dll + 0x230001 — same as nullrhi)
+    Rax = 0, Rcx = 0, Rsi = 0  (nulls — same pattern as nullrhi)
+    Rbx = 0x4B00E5F656938BA1   (garbage — same pattern as nullrhi)
+    R8, R9, R10, R11: garbage/high-entropy values
+
+**Modules loaded during DX11 crash:**
+- d3dcompiler_47.dll, d3d9.dll, dxgi.dll, d3d11.dll ✓
+- **D3D12Core.dll: NOT PRESENT**
+- Many nv*.dll (NVIDIA driver) ✓
+
+Compare to D3D12 crash from `UECC-Windows-D06CC55E.../UEMinidump.dmp`:
+- D3D12Core.dll: PRESENT (0x7FF8103D0000-0x7FF810981000)
+- Crash at Rip = SUPERVIVE +0x2976FF0 (target class)
+
+--- Corrected renderer matrix (FINAL) ---
+
+| Renderer  | Crash Location                            | D3D12Core loaded? |
+|-----------|-------------------------------------------|-------------------|
+| D3D12     | SUPERVIVE +0x2976FF0 (OUR TARGET CLASS)   | YES               |
+| DX11      | ntdll.dll +0x230001 (unrelated fatal)     | NO                |
+| nullrhi   | ntdll.dll +0x230001 (same unrelated fatal)| NO                |
+| Vulkan    | hang in RHI init, no crash                | N/A               |
+
+The DX11 and nullrhi crashes are BOTH the same ntdll fatal error —
+almost certainly a UE 5.4 subsystem that expected a real D3D12 device
+and hits a null-pointer dereference or similar API misuse when D3D12Core
+isn't loaded. That's a SEPARATE issue from our target class crash.
+
+--- Class identification: CONFIRMED ---
+
+The class at vtable RVA +0x7B9E188 is:
+- **Only reachable when D3D12Core.dll is loaded** (renderer = D3D12)
+- **Called heavily by D3D12Core.dll** (minidump call stack shows
+  ~10 D3D12Core.dll frames interleaved with SUPERVIVE frames)
+- Object size 15,504 bytes; multi-inheritance
+- Parent class (232 bytes, vtable +0x7B9DE88) has method
+  emitting assertion logs referencing `D3D12CommandList.cpp`
+- Log strings adjacent to the vtable reference `GraphicsCommandList`,
+  `CopyCommandList`, `D3D12CommandContext.cpp`, `D3D12Residency.h`
+
+All signals now agree: the class is a **UE 5.4 D3D12 RHI class**,
+specifically one that D3D12Core.dll calls into (device child /
+command list wrapper / pipeline state object / similar).
+
+Most likely candidate: **FD3D12CommandContext** or **FD3D12CommandList**
+descendant. The parent-class hypothesis stands: parent = FD3D12CommandList
+(232 bytes), our class inherits from it (15,504 bytes).
+
+--- The crash scenario, restated with confidence ---
+
+D3D12 mode:
+1. Client boots, initializes D3D12 RHI, loads D3D12Core.dll
+2. Client connects to our stub, reaches ReceivedJoin
+3. Client fetches menu data (25 heroes, wallet) via ags Messenger
+4. Client tries to record initial render commands for the menu UI
+5. Somewhere in the render-command setup, `slot 1` (RVA 0x2976F70)
+   of our D3D12 class fires
+6. The `subarray at index 2` inside the "slot parent" object (vtable
+   +0x7B9DC48, 0x160 bytes) has count=1, cap=4, but Data still points
+   at .rdata const-default (never allocated)
+7. The write `array[0] = value` targets read-only memory at
+   RVA +0x7ADB368
+8. EXCEPTION_ACCESS_VIOLATION writing address 0x7FF68A55B368
+
+The uninit TArray belongs to the 0x160-byte slot-parent instance (a
+sibling class in the D3D12 RHI). Our target class OWNS that instance
+inline. Some earlier initialization step normally populates the TArray's
+Data pointer via an initial `Add()` (which triggers Grow()), but our
+server-side suppression causes that init to be skipped.
+
+--- Path forward for session 41+ ---
+
+Given the class is confirmed D3D12-specific:
+
+- **Path B-lite (schema-inject PC replicated fields, un-suppress
+  APlayerController)** — if the missed initialization is triggered by
+  UE Actor rendering callbacks (PrimitiveComponent.CreateRenderProxy,
+  SceneProxy allocations, etc.), replicating PC/GameState properly
+  might restore the init sequence. Multi-hour engineering commitment
+  but now has a concrete target: the FD3D12CommandContext-owned
+  slot-parent TArray.
+- **Path C (D3D12-specific workaround)** — disable D3D12 subsystems
+  that create these command contexts. If they're for ray tracing,
+  DirectStorage, or a specific NVIDIA feature (nvapi64 was loaded),
+  disabling those via `-noraytracing` / `-disablepath` / CVars might
+  avoid the crash without needing to fix replication.
+- **Live debugger with breakpoint at RVA 0x2976F70** — set breakpoint
+  at fn start, inspect the caller for each hit. Would tell us which
+  UE subsystem is invoking this method. Requires bypassing SUPERVIVE's
+  anti-debug (which we haven't tackled yet).
+
+Recommendation: try Path C variant `-noraytracing` next as a fast probe
+(under D3D12 mode). If it eliminates the crash, we've found the specific
+D3D12 subsystem responsible. If not, escalate to Path B-lite.
+
+--- Chapter state (end of session 40 — Path A1 DEFINITIVELY CONCLUDED) ---
+
+- Route-around fires cleanly against live bunches: DONE (S35)
+- Full suppression keeps connection stable through Join: DONE (S39)
+- Client reaches menu, fetches 25 heroes + inventory + wallet: DONE (S39)
+- Crash class identified as UE 5.4 D3D12 RHI class
+  (FD3D12CommandContext / related): CONFIRMED (this doc)
+- D3D12Core.dll heavily involved in crash call stack: CONFIRMED
+- DX11 and nullrhi crashes are UNRELATED (ntdll.dll fatal): CONFIRMED
+- Menu-data replication: TODO (contingent on unwedging D3D12 crash)
+
+--- Renderer matrix understanding (final) ---
+
+Under D3D12 mode: crash IS reproducible at our target class. Client
+survives 64 s because the D3D12 device init is complete and subsequent
+render setup takes time to hit the specific uninit-TArray path.
+
+Under DX11/nullrhi mode: D3D12Core.dll doesn't load, so our target
+class is never touched. But SOME OTHER UE 5.4 subsystem also fails
+under DX11/nullrhi (probably one that expects a real D3D12 device
+for feature detection or DirectStorage init), causing a fatal ntdll
+error at different timing (24 s / 32 s).
+
+Under Vulkan mode: RHI init hangs before any subsystem gets far enough
+to test. SUPERVIVE probably doesn't ship Vulkan shaders.
+
+--- Tooling artifacts (session 40 minidump analysis) ---
+
+- `docs/session-40-D3D12-CONFIRMED.txt` — this doc.
+- `scratchpad/parse-any-dump.py` — general-purpose minidump register +
+  stack + module extractor. Reusable for future crash analysis.
+- Preserved minidumps:
+  - D3D12 mode: `UECC-Windows-D06CC55E4D5F89435DB8F6BFC05647E4_0000/UEMinidump.dmp`
+  - DX11 mode: `.sentry-native/reports/3f7cbd45-e4d0-41a8-b17e-b2b28fa32e32.dmp`
+  - nullrhi mode: `.sentry-native/reports/91ac7f82-cd4c-498c-b0a5-1467ac6cd59f.dmp`
+
+--- DO NOT for session 41+ ---
+
+- Don't rely on any earlier session-40 docs that claimed to "retract" the
+  D3D12 hypothesis. Those retractions were themselves incorrect (they
+  assumed DX11/nullrhi crashes were at the same address as D3D12).
+- Don't test DX11 or nullrhi expecting menu-load progress — they fail
+  earlier due to an unrelated crash.
+- Don't test Vulkan — it hangs, and SUPERVIVE doesn't ship Vulkan
+  shaders.
+- DO test D3D12 mode with D3D12-subsystem cmdline flags (`-noraytracing`,
+  `-noDirectStorage`, etc.) as the next cheap probe.

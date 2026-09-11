@@ -1,0 +1,155 @@
+// ============================================================================
+//  MODULE   MostWanted.LokiGameStateMostWantedComponent
+//  SOURCE   MostWanted/LokiGameStateMostWantedComponent.as
+//  CONTENT  1 class(es), 9 function(s), 0 enum(s), 1 global(s), 864 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiGameStateMostWantedComponent;
+
+ULokiGameStateMostWantedComponent@ ULokiGameStateMostWantedComponent()   // traits=0x20
+{
+    ULokiGameStateMostWantedComponent v2;
+
+    v2 = ULokiGameStateMostWantedComponent();
+    return v2;
+}
+
+UClass@ ULokiGameStateMostWantedComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiGameStateMostWantedComponent);
+    return v2;
+}
+
+ULokiGameStateMostWantedComponent@ ULokiGameStateMostWantedComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiGameStateMostWantedComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiGameStateMostWantedComponent, v2, typeid(ULokiGameStateMostWantedComponent@), WithName);
+    return v2;
+}
+
+ULokiGameStateMostWantedComponent@ ULokiGameStateMostWantedComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiGameStateMostWantedComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiGameStateMostWantedComponent, v2, typeid(ULokiGameStateMostWantedComponent@), WithName);
+    return v2;
+}
+
+ULokiGameStateMostWantedComponent@ ULokiGameStateMostWantedComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiGameStateMostWantedComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiGameStateMostWantedComponent, v2, typeid(ULokiGameStateMostWantedComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiGameStateMostWantedComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiGameStateMostWantedComponent
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    int MostWantedCount;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    int ActiveMostWantedCount;
+
+    ULokiGameStateMostWantedComponent()   // traits=0x21
+    {
+        auto v1;
+
+        v1 = 0;
+        this.MostWantedCount = v1;
+        v1 = 0;
+        this.ActiveMostWantedCount = v1;
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        UGameEventRouterComponent v4;
+        FGameEvent_MostWanted v24;
+        auto v25;
+        FGameEventListenerHandle v38;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v4 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+            v25 = false;
+            v24 = FGameEvent_MostWanted();
+            v38 = v4.RegisterForEvent(this, v24, typeid(FGameEvent_MostWanted), nullptr, n"HandleMostWantedEvent", v25);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void HandleMostWantedEvent(const FGameEvent_MostWanted& Event, const AActor@& Context)   // traits=0x20
+    {
+        auto v1;
+        int v2;
+        int v3;
+        auto v4;
+
+        v1 = Event.State;
+        v2 = int(v1);
+        if (v2 <= 4) {
+            if (v2 >= 0) {
+                v3 = v2 - 0;
+                switch (v3)
+                {
+                    case 0: goto L012C;
+                    case 1: goto L0074;
+                    case 2: goto L0088;
+                    case 3: goto L00D0;
+                    case 4: goto L00E4;
+                }
+    L0074:
+                this.MostWantedCount++;
+                return;
+    L0088:
+                v2 = this.MostWantedCount;
+                v2 = v2 - 1;
+                v4 = Math::Max(0, v2);
+                this.MostWantedCount = v4;
+                return;
+    L00D0:
+                this.ActiveMostWantedCount++;
+                return;
+    L00E4:
+                v4 = this.ActiveMostWantedCount;
+                v3 = v4 - 1;
+                v4 = Math::Max(0, v3);
+                this.ActiveMostWantedCount = v4;
+                return;
+    L012C:
+                return;
+            }
+        } else {
+            throw;  /* code 0 */
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = true;
+        this.SetbReplicates(v1);
+        v1 = false;
+        this.SetComponentTickEnabled(v1);
+        return;
+    }
+
+}
+

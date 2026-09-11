@@ -1,0 +1,144 @@
+#include "LokiStatelessConnect.h"
+#include "PacketHandler.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogLokiStateless, Log, All);
+
+LokiStatelessConnect::LokiStatelessConnect()
+	: StatelessConnectHandlerComponent()
+{
+	UE_LOG(LogLokiStateless, Display,
+	       TEXT("LokiStatelessConnect constructed — 8-byte wrapper adapter active."));
+}
+
+void LokiStatelessConnect::IncomingConnectionless(FIncomingPacketRef PacketRef)
+{
+	FBitReader& Packet = PacketRef.Packet;
+	const int64 OriginalBits = Packet.GetNumBits();
+
+	// Only strip if packet is at least 8 bytes (wrapper) + something. Smaller
+	// packets are not TheoryCraft-wrapped (or are too small to contain anything
+	// meaningful) — pass through unchanged.
+	if (OriginalBits < LokiWrapperBits)
+	{
+		StatelessConnectHandlerComponent::IncomingConnectionless(PacketRef);
+		return;
+	}
+
+	const uint8* Data = Packet.GetData();
+	const int64 OriginalBytes = (OriginalBits + 7) / 8;
+
+	// Sanity-check wrapper signature bytes. If they don't match we may be
+	// receiving non-TheoryCraft traffic — log and pass through.
+	const bool bSignatureValid =
+		Data[0] == LokiWrapperByte0 &&
+		Data[2] == LokiWrapperByte2 &&
+		Data[3] == LokiWrapperByte3 &&
+		Data[4] == LokiWrapperByte4 &&
+		Data[5] == LokiWrapperByte5 &&
+		Data[7] == LokiWrapperByte7;
+
+	if (!bSignatureValid)
+	{
+		UE_LOG(LogLokiStateless, Warning,
+		       TEXT("Wrapper signature mismatch (got %02X ?? %02X %02X %02X %02X ?? %02X), passing packet through."),
+		       Data[0], Data[2], Data[3], Data[4], Data[5], Data[7]);
+		StatelessConnectHandlerComponent::IncomingConnectionless(PacketRef);
+		return;
+	}
+
+	// Copy inner packet (bytes 8+) to a temp buffer — SetData below Empty()s
+	// the FBitReader's internal buffer before copying from src, so passing
+	// GetData() + 8 would be a use-after-free.
+	const int64 InnerBytes = OriginalBytes - LokiWrapperBytes;
+	const int64 InnerBits = OriginalBits - LokiWrapperBits;
+
+	TArray<uint8> Inner;
+	Inner.Append(Data + LokiWrapperBytes, InnerBytes);
+
+	// Session 16: hex-dump full incoming packet so we can decode the inner
+	// content and cross-reference against our outgoing reply.
+	FString FullHex;
+	FullHex.Reserve(OriginalBytes * 3);
+	for (int64 i = 0; i < OriginalBytes; ++i)
+	{
+		FullHex.Appendf(TEXT("%02X "), Data[i]);
+	}
+	UE_LOG(LogLokiStateless, Verbose,
+	       TEXT("Stripping wrapper: %lld bits -> %lld bits (wrapper bytes: %02X %02X %02X %02X %02X %02X %02X %02X)"),
+	       OriginalBits, InnerBits,
+	       Data[0], Data[1], Data[2], Data[3], Data[4], Data[5], Data[6], Data[7]);
+	UE_LOG(LogLokiStateless, Verbose, TEXT("Stripping wrapper: full %lld bytes: %s"), OriginalBytes, *FullHex);
+
+	// Session 15: capture wrapper bytes 1 and 6 to mirror in our reply.
+	// 172 captured packets showed no CRC/sum/hash pattern but the values are
+	// effectively unique per packet — likely session-state assigned by the
+	// client-side LokiNetSocketSubsystem.
+	LastIncomingByte1 = Data[1];
+	LastIncomingByte6 = Data[6];
+	bHasLastIncoming = true;
+
+	Packet.SetData(Inner.GetData(), InnerBits);
+
+	StatelessConnectHandlerComponent::IncomingConnectionless(PacketRef);
+}
+
+void LokiStatelessConnect::Incoming(FBitReader& Packet)
+{
+	const int64 OriginalBits = Packet.GetNumBits();
+
+	// Same 8-byte-front-strip logic as IncomingConnectionless. Only strip if
+	// packet is at least 8 bytes and the signature bytes match (skip through if
+	// they don't — this lets us tolerate the very first pre-handshake packets
+	// that might be routed through Incoming for any reason).
+	if (OriginalBits >= LokiWrapperBits)
+	{
+		const uint8* Data = Packet.GetData();
+		const bool bSignatureValid =
+			Data[0] == LokiWrapperByte0 &&
+			Data[2] == LokiWrapperByte2 &&
+			Data[3] == LokiWrapperByte3 &&
+			Data[4] == LokiWrapperByte4 &&
+			Data[5] == LokiWrapperByte5 &&
+			Data[7] == LokiWrapperByte7;
+
+		if (bSignatureValid)
+		{
+			const int64 OriginalBytes = (OriginalBits + 7) / 8;
+			const int64 InnerBytes = OriginalBytes - LokiWrapperBytes;
+			const int64 InnerBits = OriginalBits - LokiWrapperBits;
+
+			TArray<uint8> Inner;
+			Inner.Append(Data + LokiWrapperBytes, InnerBytes);
+
+			UE_LOG(LogLokiStateless, Verbose,
+			       TEXT("[Incoming] Stripping wrapper: %lld bits -> %lld bits (wrapper bytes: %02X %02X %02X %02X %02X %02X %02X %02X)"),
+			       OriginalBits, InnerBits,
+			       Data[0], Data[1], Data[2], Data[3], Data[4], Data[5], Data[6], Data[7]);
+
+			// Session 23: hex-dump the FULL inner bytes for the RPC bunch RE work.
+			// The ServerVerifyViewTarget RPC arrives on a channel-3 bunch inside a
+			// large packet; we need the raw bytes to decode the RPC arg struct.
+			// Only dump packets larger than 128 bits post-strip to avoid spamming
+			// the log with routine acks/heartbeats.
+			if (InnerBits > 128)
+			{
+				FString FullHex;
+				FullHex.Reserve(InnerBytes * 3);
+				for (int64 i = 0; i < InnerBytes; ++i)
+				{
+					FullHex.Appendf(TEXT("%02X "), Inner[i]);
+				}
+				UE_LOG(LogLokiStateless, Verbose,
+				       TEXT("[Incoming] full inner %lld bytes: %s"), InnerBytes, *FullHex);
+			}
+
+			LastIncomingByte1 = Data[1];
+			LastIncomingByte6 = Data[6];
+			bHasLastIncoming = true;
+
+			Packet.SetData(Inner.GetData(), InnerBits);
+		}
+	}
+
+	StatelessConnectHandlerComponent::Incoming(Packet);
+}

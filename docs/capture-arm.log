@@ -1,0 +1,4 @@
+
+#1 23:45:20.560  GET /configuration/client
+    -> 200  (87ms)
+    User-Agent: s122-verify-NOT-the-game

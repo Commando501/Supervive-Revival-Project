@@ -1,0 +1,47 @@
+
+[2026.09.11-00.23.45:214][434]LogAbilitySystem: Verbose: Cue recycling - GC_Ronin_Execute_Highlight_C_2147470472
+[2026.09.11-00.31.53:981][298]LogAbilitySystem: Verbose: Added GE: Default__GE_Ronin_Selector_Attack_2_C. 
+ReplicationID: 1. Key: 0. PredictionKey: 0
+[2026.09.11-00.31.53:981][298]LogAbilitySystem: Verbose: InternalOnActiveGameplayEffectAdded: Auth: TRUE Handle: 14 
+Def: Default__GE_Ronin_Selector_Attack_2_C
+[2026.09.11-00.31.54:283][298]LogAbilitySystem: Property Health new value is: 83.00
+[2026.09.11-00.31.54:283][298]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_LightAttack_Damage_C
+[2026.09.11-00.31.54:283][298]LogAbilitySystem: Display: GameplayCueNotify 
+/Game/Loki/Characters/Heroes/Ronin/Abilities/LMB/ChargeBlade/GC_Ronin_LightAttack_Impact.GC_Ronin_LightAttack_Impact_C 
+was not loaded when GameplayCue was invoked. Starting async loading.
+[2026.09.11-00.31.54:534][298]LogAbilitySystem: Property Health new value is: 66.00
+[2026.09.11-00.31.54:534][298]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_LightAttack_Damage_C
+[2026.09.11-00.31.54:534][298]LogAbilitySystem: Display: GameplayCueNotify 
+/Game/Loki/Characters/Heroes/Ronin/Abilities/LMB/ChargeBlade/GC_Ronin_LightAttack_Impact.GC_Ronin_LightAttack_Impact_C 
+was not loaded when GameplayCue was invoked. Starting async loading.
+[2026.09.11-00.31.54:785][298]LogAbilitySystem: Property Health new value is: 49.00
+[2026.09.11-00.31.54:785][298]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_LightAttack_Damage_C
+[2026.09.11-00.31.54:785][298]LogAbilitySystem: Display: GameplayCueNotify 
+/Game/Loki/Characters/Heroes/Ronin/Abilities/LMB/ChargeBlade/GC_Ronin_LightAttack_Impact.GC_Ronin_LightAttack_Impact_C 
+was not loaded when GameplayCue was invoked. Starting async loading.
+[2026.09.11-00.31.55:036][298]LogAbilitySystem: Property Health new value is: 32.00
+[2026.09.11-00.31.55:036][298]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_LightAttack_Damage_C
+[2026.09.11-00.31.55:037][298]LogAbilitySystem: Display: GameplayCueNotify 
+/Game/Loki/Characters/Heroes/Ronin/Abilities/LMB/ChargeBlade/GC_Ronin_LightAttack_Impact.GC_Ronin_LightAttack_Impact_C 
+was not loaded when GameplayCue was invoked. Starting async loading.
+[2026.09.11-00.31.55:287][298]LogAbilitySystem: Property Health new value is: 15.00
+[2026.09.11-00.31.55:287][298]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_LightAttack_Damage_C
+[2026.09.11-00.31.55:287][298]LogAbilitySystem: Display: GameplayCueNotify 
+/Game/Loki/Characters/Heroes/Ronin/Abilities/LMB/ChargeBlade/GC_Ronin_LightAttack_Impact.GC_Ronin_LightAttack_Impact_C 
+was not loaded when GameplayCue was invoked. Starting async loading.
+[2026.09.11-00.31.55:538][298]LogAbilitySystem: Property Health new value is: 0.00
+[2026.09.11-00.31.55:538][298]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_LightAttack_Damage_C
+[2026.09.11-00.31.55:538][298]LogAbilitySystem: Display: GameplayCueNotify 
+/Game/Loki/Characters/Heroes/Ronin/Abilities/LMB/ChargeBlade/GC_Ronin_LightAttack_Impact.GC_Ronin_LightAttack_Impact_C 
+was not loaded when GameplayCue was invoked. Starting async loading.
+[2026.09.11-00.32.00:041][300]LogAbilitySystem: Verbose: Cue preparing for reuse - 
+GC_Ronin_Execute_Highlight_C_2147470472
+[2026.09.11-00.32.00:041][300]LogAbilitySystem: VeryVerbose: GC_Ronin_Execute_Highlight_C_2147470472 - OnActive
+[2026.09.11-00.32.01:608][347]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect: Auth: TRUE Handle: 14 
+Def: Default__GE_Ronin_Selector_Attack_2_C
+[2026.09.11-00.32.01:608][347]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect while locked; Counting as 
+a Pending Remove: Auth: TRUE Handle: 14 Def: Default__GE_Ronin_Selector_Attack_2_C
+[2026.09.11-00.32.01:608][347]LogAbilitySystem: Verbose: DecrementLock decrementing a pending remove: Auth: TRUE 
+Handle: 14 Def: Default__GE_Ronin_Selector_Attack_2_C
+
+

@@ -1,0 +1,825 @@
+// ============================================================================
+//  MODULE   Items.LokiItemVisualsComponent
+//  SOURCE   Items/LokiItemVisualsComponent.as
+//  CONTENT  1 class(es), 14 function(s), 0 enum(s), 1 global(s), 2876 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiItemVisualsComponent;
+
+ULokiItemVisualsComponent@ ULokiItemVisualsComponent()   // traits=0x20
+{
+    ULokiItemVisualsComponent v2;
+
+    v2 = ULokiItemVisualsComponent();
+    return v2;
+}
+/* ---- ULokiItemVisualsComponent: 7 dwords / 4 instructions (cache offset 0xa110f) ----
+    0000  PSF           v2
+    0004  ALLOC         85189 ULokiItemVisualsComponent               ; new ULokiItemVisualsComponent  ctor=void ULokiItemVisualsComponent::ULokiItemVisualsComponent()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ ULokiItemVisualsComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiItemVisualsComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0xa11d5) ----
+    0000  PshGPtr       __StaticType_ULokiItemVisualsComponent
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+ULokiItemVisualsComponent@ ULokiItemVisualsComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiItemVisualsComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiItemVisualsComponent, v2, typeid(ULokiItemVisualsComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0xa1318) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972714                                    ; ULokiItemVisualsComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiItemVisualsComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetComponentByClass                   ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+ULokiItemVisualsComponent@ ULokiItemVisualsComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiItemVisualsComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiItemVisualsComponent, v2, typeid(ULokiItemVisualsComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0xa1473) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972714                                    ; ULokiItemVisualsComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiItemVisualsComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass           ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+ULokiItemVisualsComponent@ ULokiItemVisualsComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiItemVisualsComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiItemVisualsComponent, v2, typeid(ULokiItemVisualsComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0xa15c9) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972714                                    ; ULokiItemVisualsComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiItemVisualsComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_CreateComponentByClass                ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiItemVisualsComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiItemVisualsComponent
+{
+    private TMap<TSubclassOf<ALokiBaseItem@>, bool> RecommendedItems;
+    private TMap<TSubclassOf<ALokiBaseItem@>, bool> PreferredItems;
+
+    ULokiItemVisualsComponent()   // traits=0x21
+    {
+        this.RecommendedItems = TMap<TSubclassOf<ALokiBaseItem@>, bool>();
+        this.PreferredItems = TMap<TSubclassOf<ALokiBaseItem@>, bool>();
+        return;
+    }
+    /* ---- ULokiItemVisualsComponent: 17 dwords / 9 instructions (cache offset 0xa2f47) ----
+        0000  PshVPtr       this
+        0004  ADDSi         208 134230890                                 ; .RecommendedItems
+        000C  CALLSYS       TMap::$beh0                                   ; void TMap<TSubclassOf<ALokiBaseItem@>, bool>::$beh0()
+        0018  PshVPtr       this
+        001C  ADDSi         288 134230890                                 ; .PreferredItems
+        0024  CALLSYS       TMap::$beh0                                   ; void TMap<TSubclassOf<ALokiBaseItem@>, bool>::$beh0()
+        0030  PshVPtr       this
+        0034  FinConstruct  ULokiItemVisualsComponent
+        0040  RET           2
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        bool v1;
+        UGameEventRouterComponent v4;
+        FGameEventListenerHandle v18;
+        FGameEvent_OnInventoryItemAdded_PlayerState v24;
+        auto v25;
+        FGameEventListenerHandle v38;
+        FGameEvent_OnInventoryItemRemoved_PlayerState v54;
+
+        v1 = false;
+        this.SetComponentTickEnabled(v1);
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v4 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+            v25 = false;
+            v24 = FGameEvent_OnInventoryItemAdded_PlayerState();
+            v38 = v4.RegisterForEvent(this, v24, typeid(FGameEvent_OnInventoryItemAdded_PlayerState), nullptr, n"OnInventoryItemAdded", v25);
+            v25 = false;
+            v54 = FGameEvent_OnInventoryItemRemoved_PlayerState();
+            v18 = v4.RegisterForEvent(this, v54, typeid(FGameEvent_OnInventoryItemRemoved_PlayerState), nullptr, n"OnInventoryItemRemoved", v25);
+        }
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 86 dwords / 48 instructions (cache offset 0xa1758) ----
+        0000  SetV1         v1 0
+        0008  PshV4         v1
+        000C  PshVPtr       this
+        0010  CALLSYS       UActorComponent::SetComponentTickEnabled      ; void UActorComponent::SetComponentTickEnabled(bool)
+        001C  PshGPtr       __WorldContext
+        0028  CALLSYS       LokiIsClient                                  ; bool Loki::LokiIsClient(const UObject@)
+        0034  JLowZ         70                                            -> L0154
+        003C  PshGPtr       __WorldContext
+        0048  CALLSYS       GetGlobalGameEventRouter                      ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+        0054  STOREOBJ      v4
+        0058  SetV1         v25 0
+        0060  PshV4         v25
+        0064  PshC4         81
+        006C  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0078  PshRPtr
+        007C  PshNull
+        0080  TYPEID        67120925                                      ; FGameEvent_OnInventoryItemAdded_PlayerState
+        0088  PSF           v24
+        008C  CALLSYS       FGameEvent_OnInventoryItemAdded_PlayerState::$beh0  ; void FGameEvent_OnInventoryItemAdded_PlayerState::$beh0()
+        0098  PSF           v24
+        009C  PshVPtr       this
+        00A0  PSF           v38
+        00A4  PshVPtr       v4
+        00A8  CALLSYS       UGameEventRouterComponent::RegisterForEvent   ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+        00B4  PSF           v24
+        00B8  CALLSYS       FGameEvent_OnInventoryItemAdded_PlayerState::$beh2  ; void FGameEvent_OnInventoryItemAdded_PlayerState::$beh2()
+        00C4  SetV1         v25 0
+        00CC  PshV4         v25
+        00D0  PshC4         82
+        00D8  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        00E4  PshRPtr
+        00E8  PshNull
+        00EC  TYPEID        67120926                                      ; FGameEvent_OnInventoryItemRemoved_PlayerState
+        00F4  PSF           v54
+        00F8  CALLSYS       FGameEvent_OnInventoryItemRemoved_PlayerState::$beh0  ; void FGameEvent_OnInventoryItemRemoved_PlayerState::$beh0()
+        0104  PSF           v54
+        0108  PshVPtr       this
+        010C  PSF           v18
+        0110  PshVPtr       v4
+        0114  CALLSYS       UGameEventRouterComponent::RegisterForEvent   ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+        0120  PSF           v54
+        0124  CALLSYS       FGameEvent_OnInventoryItemRemoved_PlayerState::$beh2  ; void FGameEvent_OnInventoryItemRemoved_PlayerState::$beh2()
+        0130  PSF           v18
+        0134  CALLSYS       FGameEventListenerHandle::$beh2               ; void FGameEventListenerHandle::$beh2()
+        0140  PSF           v38
+        0144  CALLSYS       FGameEventListenerHandle::$beh2               ; void FGameEventListenerHandle::$beh2()
+        0150  FreeNullV8    v4
+      L0154:
+        0154  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    bool IsRecommendedItem(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        auto v1;
+        TSubclassOf<ALokiBaseItem@> v4;
+        UObject v6;
+        bool v7;
+        ALokiCharacter v10;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = false;
+            return v1;
+        } else {
+            v4 = TSubclassOf<ALokiBaseItem@>(Item.BaseClass);
+            v6 = UObject@(v4);
+            v1 = IsValid(v6);
+            v1 = !v1;
+            if (v1) {
+                v1 = false;
+                return v1;
+            } else {
+                v1 = false;
+                v7 = v1;
+                if (this.RecommendedItems.Contains(v4)) {
+                    this.RecommendedItems.Find(v4, v7);
+                    return v7;
+                } else {
+                    v10 = Loki::GetLocalLokiCharacter(__WorldContext);
+                    v1 = IsValid(v10);
+                    v1 = !v1;
+                    if (v1) {
+                        v1 = true;
+                        return v1;
+                    } else {
+                        v1 = this.EvaluateItemRecommended(v4);
+                        v7 = v1;
+                        this.RecommendedItems.Add(v4, v7);
+                    }
+                }
+            }
+        }
+        return v7;
+    }
+    /* ---- IsRecommendedItem: 101 dwords / 60 instructions (cache offset 0xa1a99) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0018  JLowZ         5                                             -> L0034
+        0020  SetV1         v1 0
+        0028  CpyVtoR4      v1
+        002C  JMP           87                                            -> L0190
+      L0034:
+        0034  PshVPtr       Item
+        0038  ADDSi         1672 67114958                                 ; .BaseClass
+        0040  PSF           v4
+        0044  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ALokiBaseItem@>::$beh0(const TSubclassOf<ALokiBaseItem@>&)
+        0050  PSF           v4
+        0054  CALLSYS       TSubclassOf::opImplConv                       ; UObject@ TSubclassOf<ALokiBaseItem@>::opImplConv() const
+        0060  STOREOBJ      v6
+        0064  PshVPtr       v6
+        0068  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0074  CpyRtoV4      v1
+        0078  NOT           v1
+        007C  CpyVtoR1      v1
+        0080  JLowZ         5                                             -> L009C
+        0088  SetV1         v1 0
+        0090  CpyVtoR4      v1
+        0094  JMP           61                                            -> L0190
+      L009C:
+        009C  SetV1         v1 0
+        00A4  CpyVtoV4      v7 v1
+        00AC  PSF           v4
+        00B0  PshVPtr       this
+        00B4  ADDSi         208 134230890                                 ; .RecommendedItems
+        00BC  CALLSYS       TMap::Contains                                ; bool TMap<TSubclassOf<ALokiBaseItem@>, bool>::Contains(const TSubclassOf<ALokiBaseItem@>&) const
+        00C8  JLowZ         11                                            -> L00FC
+        00D0  PSF           v7
+        00D4  PSF           v4
+        00D8  PshVPtr       this
+        00DC  ADDSi         208 134230890                                 ; .RecommendedItems
+        00E4  CALLSYS       TMap::Find                                    ; bool TMap<TSubclassOf<ALokiBaseItem@>, bool>::Find(const TSubclassOf<ALokiBaseItem@>&, bool&) const
+        00F0  CpyVtoR4      v7
+        00F4  JMP           37                                            -> L0190
+      L00FC:
+        00FC  PshGPtr       __WorldContext
+        0108  CALLSYS       GetLocalLokiCharacter                         ; ALokiCharacter@ Loki::GetLocalLokiCharacter(UObject@)
+        0114  STOREOBJ      v10
+        0118  PshVPtr       v10
+        011C  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0128  CpyRtoV4      v1
+        012C  NOT           v1
+        0130  CpyVtoR1      v1
+        0134  JLowZ         5                                             -> L0150
+        013C  SetV1         v1 1
+        0144  CpyVtoR4      v1
+        0148  JMP           16                                            -> L0190
+      L0150:
+        0150  PSF           v4
+        0154  PshVPtr       this
+        0158  CALLINTF      85184                                         ; bool ULokiItemVisualsComponent::EvaluateItemRecommended(const TSubclassOf<ALokiBaseItem@>&)
+        0160  CpyRtoV4      v1
+        0164  CpyVtoV4      v7 v1
+        016C  PSF           v7
+        0170  PSF           v4
+        0174  PshVPtr       this
+        0178  ADDSi         208 134230890                                 ; .RecommendedItems
+        0180  CALLSYS       TMap::Add                                     ; void TMap<TSubclassOf<ALokiBaseItem@>, bool>::Add(const TSubclassOf<ALokiBaseItem@>&, const bool&)
+        018C  CpyVtoR4      v7
+      L0190:
+        0190  RET           4
+    */
+
+    bool EvaluateItemRecommended(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        auto v1;
+        UObject v4;
+        ALokiCharacter v6;
+        ALokiHeroCharacter v8;
+        ALokiHeroCharacter v10;
+        ALokiLoadout v12;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = false;
+            return v1;
+        } else {
+            v4 = UObject@(ItemClass);
+            v1 = IsValid(v4);
+            v1 = !v1;
+            if (v1) {
+                v1 = false;
+                return v1;
+            } else {
+                v6 = Loki::GetLocalLokiCharacter(__WorldContext);
+                if (v6 != nullptr) {
+                    v8 = cast<ALokiHeroCharacter@>(v6);
+                } else {
+                    v8 = nullptr;
+                }
+                v10 = v8;
+                if (IsValid(v10)) {
+                    v12 = v10.DefaultRecommendedLoadout.GetDefaultObject();
+                    v1 = v12.ItemClasses.Contains(ItemClass);
+                    return v1;
+                } else {
+                    v1 = false;
+                }
+            }
+        }
+        return v1;
+    }
+    /* ---- EvaluateItemRecommended: 82 dwords / 48 instructions (cache offset 0xa1e7d) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0018  JLowZ         5                                             -> L0034
+        0020  SetV1         v1 0
+        0028  CpyVtoR4      v1
+        002C  JMP           68                                            -> L0144
+      L0034:
+        0034  PshVPtr       ItemClass
+        0038  CALLSYS       TSubclassOf::opImplConv                       ; UObject@ TSubclassOf<ALokiBaseItem@>::opImplConv() const
+        0044  STOREOBJ      v4
+        0048  PshVPtr       v4
+        004C  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0058  CpyRtoV4      v1
+        005C  NOT           v1
+        0060  CpyVtoR1      v1
+        0064  JLowZ         5                                             -> L0080
+        006C  SetV1         v1 0
+        0074  CpyVtoR4      v1
+        0078  JMP           49                                            -> L0144
+      L0080:
+        0080  PshGPtr       __WorldContext
+        008C  CALLSYS       GetLocalLokiCharacter                         ; ALokiCharacter@ Loki::GetLocalLokiCharacter(UObject@)
+        0098  STOREOBJ      v6
+        009C  CmpPtrNull    v6
+        00A0  JZ            9                                             -> L00CC
+        00A8  TYPEID        1140857000                                    ; ALokiHeroCharacter@
+        00B0  PSF           v8
+        00B4  PshVPtr       v6
+        00B8  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        00C4  JMP           1                                             -> L00D0
+      L00CC:
+        00CC  ClrVPtr       v8
+      L00D0:
+        00D0  PshVPtr       v8
+        00D4  RefCpyV       v10
+        00D8  PshVPtr       v10
+        00DC  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        00E8  JLowZ         18                                            -> L0138
+        00F0  PshVPtr       ItemClass
+        00F4  PshVPtr       v10
+        00F8  ADDSi         6776 67115176                                 ; .DefaultRecommendedLoadout
+        0100  CALLSYS       TSubclassOf::GetDefaultObject                 ; ALokiLoadout@ TSubclassOf<ALokiLoadout@>::GetDefaultObject() const
+        010C  STOREOBJ      v12
+        0110  PshVPtr       v12
+        0114  ADDSi         920 67115221                                  ; .ItemClasses
+        011C  CALLSYS       TArray::Contains                              ; bool TArray<TSubclassOf<ALokiBaseItem@>>::Contains(const TSubclassOf<ALokiBaseItem@>&) const
+        0128  CpyRtoV4      v1
+        012C  CpyVtoR4      v1
+        0130  JMP           3                                             -> L0144
+      L0138:
+        0138  SetV1         v1 0
+        0140  CpyVtoR4      v1
+      L0144:
+        0144  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    bool IsPreferredItem(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        auto v1;
+        TSubclassOf<ALokiBaseItem@> v4;
+        UObject v6;
+        bool v7;
+        ALokiCharacter v10;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = false;
+            return v1;
+        } else {
+            v4 = TSubclassOf<ALokiBaseItem@>(Item.BaseClass);
+            v6 = UObject@(v4);
+            v1 = IsValid(v6);
+            v1 = !v1;
+            if (v1) {
+                v1 = false;
+                return v1;
+            } else {
+                v1 = false;
+                v7 = v1;
+                if (this.PreferredItems.Contains(v4)) {
+                    this.PreferredItems.Find(v4, v7);
+                    return v7;
+                } else {
+                    v10 = Loki::GetLocalLokiCharacter(__WorldContext);
+                    v1 = IsValid(v10);
+                    v1 = !v1;
+                    if (v1) {
+                        v1 = true;
+                        return v1;
+                    } else {
+                        v1 = this.EvaluateItemPreferred(Item);
+                        v7 = v1;
+                        this.PreferredItems.Add(v4, v7);
+                    }
+                }
+            }
+        }
+        return v7;
+    }
+    /* ---- IsPreferredItem: 101 dwords / 60 instructions (cache offset 0xa2106) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0018  JLowZ         5                                             -> L0034
+        0020  SetV1         v1 0
+        0028  CpyVtoR4      v1
+        002C  JMP           87                                            -> L0190
+      L0034:
+        0034  PshVPtr       Item
+        0038  ADDSi         1672 67114958                                 ; .BaseClass
+        0040  PSF           v4
+        0044  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ALokiBaseItem@>::$beh0(const TSubclassOf<ALokiBaseItem@>&)
+        0050  PSF           v4
+        0054  CALLSYS       TSubclassOf::opImplConv                       ; UObject@ TSubclassOf<ALokiBaseItem@>::opImplConv() const
+        0060  STOREOBJ      v6
+        0064  PshVPtr       v6
+        0068  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0074  CpyRtoV4      v1
+        0078  NOT           v1
+        007C  CpyVtoR1      v1
+        0080  JLowZ         5                                             -> L009C
+        0088  SetV1         v1 0
+        0090  CpyVtoR4      v1
+        0094  JMP           61                                            -> L0190
+      L009C:
+        009C  SetV1         v1 0
+        00A4  CpyVtoV4      v7 v1
+        00AC  PSF           v4
+        00B0  PshVPtr       this
+        00B4  ADDSi         288 134230890                                 ; .PreferredItems
+        00BC  CALLSYS       TMap::Contains                                ; bool TMap<TSubclassOf<ALokiBaseItem@>, bool>::Contains(const TSubclassOf<ALokiBaseItem@>&) const
+        00C8  JLowZ         11                                            -> L00FC
+        00D0  PSF           v7
+        00D4  PSF           v4
+        00D8  PshVPtr       this
+        00DC  ADDSi         288 134230890                                 ; .PreferredItems
+        00E4  CALLSYS       TMap::Find                                    ; bool TMap<TSubclassOf<ALokiBaseItem@>, bool>::Find(const TSubclassOf<ALokiBaseItem@>&, bool&) const
+        00F0  CpyVtoR4      v7
+        00F4  JMP           37                                            -> L0190
+      L00FC:
+        00FC  PshGPtr       __WorldContext
+        0108  CALLSYS       GetLocalLokiCharacter                         ; ALokiCharacter@ Loki::GetLocalLokiCharacter(UObject@)
+        0114  STOREOBJ      v10
+        0118  PshVPtr       v10
+        011C  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0128  CpyRtoV4      v1
+        012C  NOT           v1
+        0130  CpyVtoR1      v1
+        0134  JLowZ         5                                             -> L0150
+        013C  SetV1         v1 1
+        0144  CpyVtoR4      v1
+        0148  JMP           16                                            -> L0190
+      L0150:
+        0150  PshVPtr       Item
+        0154  PshVPtr       this
+        0158  CALLINTF      85186                                         ; bool ULokiItemVisualsComponent::EvaluateItemPreferred(ALokiBaseItem@)
+        0160  CpyRtoV4      v1
+        0164  CpyVtoV4      v7 v1
+        016C  PSF           v7
+        0170  PSF           v4
+        0174  PshVPtr       this
+        0178  ADDSi         288 134230890                                 ; .PreferredItems
+        0180  CALLSYS       TMap::Add                                     ; void TMap<TSubclassOf<ALokiBaseItem@>, bool>::Add(const TSubclassOf<ALokiBaseItem@>&, const bool&)
+        018C  CpyVtoR4      v7
+      L0190:
+        0190  RET           4
+    */
+
+    bool EvaluateItemPreferred(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        auto v1;
+        ALokiCharacter v4;
+        ALokiHeroCharacter v6;
+        ALokiHeroCharacter v8;
+        TArrayIterator<FGameplayAttribute> v14;
+        FGameplayAttribute v22;
+        TArrayIterator<TSubclassOf<UGameplayEffect@>> v28;
+        TSubclassOf<UGameplayEffect@> v36;
+        float32 v37;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = false;
+            return v1;
+        } else {
+            v4 = Loki::GetLocalLokiCharacter(__WorldContext);
+            if (v4 != nullptr) {
+                v6 = cast<ALokiHeroCharacter@>(v4);
+            } else {
+                v6 = nullptr;
+            }
+            v8 = v6;
+            if (IsValid(v8)) {
+                v14 = v8.RelevantEquipmentAttributes.Iterator();
+                while (true) {
+                    v1 = v14.CanProceed;
+                    if (!v1) break;
+                    v22 = v14.Proceed();
+                    v28 = Item.InventoryEffects.Iterator();
+                    while (true) {
+                        v1 = v28.CanProceed;
+                        if (!v1) break;
+                        v36 = v28.Proceed();
+                        v37 = 0;
+                        if (UAbilitySystemComponent::GetEffectModifierValueAtLevel(v36, v22, 0, v37, v37, v37, v37, v37)) {
+                            v1 = true;
+                            return v1;
+                        }
+                    }
+                }
+            }
+            v1 = false;
+        }
+        return v1;
+    }
+    /* ---- EvaluateItemPreferred: 110 dwords / 65 instructions (cache offset 0xa24e1) ----
+        0000  PshGPtr       __WorldContext
+        000C  CALLSYS       LokiIsServer                                  ; bool Loki::LokiIsServer(const UObject@)
+        0018  JLowZ         5                                             -> L0034
+        0020  SetV1         v1 0
+        0028  CpyVtoR4      v1
+        002C  JMP           96                                            -> L01B4
+      L0034:
+        0034  PshGPtr       __WorldContext
+        0040  CALLSYS       GetLocalLokiCharacter                         ; ALokiCharacter@ Loki::GetLocalLokiCharacter(UObject@)
+        004C  STOREOBJ      v4
+        0050  CmpPtrNull    v4
+        0054  JZ            9                                             -> L0080
+        005C  TYPEID        1140857000                                    ; ALokiHeroCharacter@
+        0064  PSF           v6
+        0068  PshVPtr       v4
+        006C  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0078  JMP           1                                             -> L0084
+      L0080:
+        0080  ClrVPtr       v6
+      L0084:
+        0084  PshVPtr       v6
+        0088  RefCpyV       v8
+        008C  PshVPtr       v8
+        0090  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        009C  JLowZ         65                                            -> L01A8
+        00A4  PSF           v14
+        00A8  PshVPtr       v8
+        00AC  ADDSi         7128 67115176                                 ; .RelevantEquipmentAttributes
+        00B4  CALLSYS       TArray::Iterator                              ; TArrayIterator<FGameplayAttribute> TArray<FGameplayAttribute>::Iterator()
+        00C0  JMP           49                                            -> L018C
+      L00C8:
+        00C8  SUSPEND
+        00CC  PSF           v14
+        00D0  CALLSYS       TArrayIterator::Proceed                       ; FGameplayAttribute& TArrayIterator<FGameplayAttribute>::Proceed()
+        00DC  CpyRtoV8      v22
+        00E0  PSF           v28
+        00E4  PshVPtr       Item
+        00E8  ADDSi         1328 67114958                                 ; .InventoryEffects
+        00F0  CALLSYS       TArray::Iterator                              ; TArrayIterator<TSubclassOf<UGameplayEffect@>> TArray<TSubclassOf<UGameplayEffect@>>::Iterator()
+        00FC  JMP           27                                            -> L0170
+      L0104:
+        0104  SUSPEND
+        0108  PSF           v28
+        010C  CALLSYS       TArrayIterator::Proceed                       ; TSubclassOf<UGameplayEffect@>& TArrayIterator<TSubclassOf<UGameplayEffect@>>::Proceed()
+        0118  CpyRtoV8      v36
+        011C  SetV4         v37 0
+        0124  PSF           v37
+        0128  PSF           v37
+        012C  PSF           v37
+        0130  PSF           v37
+        0134  PSF           v37
+        0138  PshC4         0
+        0140  PshVPtr       v22
+        0144  PshVPtr       v36
+        0148  CALLSYS       GetEffectModifierValueAtLevel                 ; bool UAbilitySystemComponent::GetEffectModifierValueAtLevel(TSubclassOf<UGameplayEffect@>, FGameplayAttribute, int, float32&, float32&, float32&, float32&, float32&)
+        0154  JLowZ         5                                             -> L0170
+        015C  SetV1         v1 1
+        0164  CpyVtoR4      v1
+        0168  JMP           17                                            -> L01B4
+      L0170:
+        0170  LoadVObjR     v28 16 268448620                              ; .CanProceed
+        017C  RDR1          v1
+        0180  CpyVtoR1      v1
+        0184  JLowNZ        -34                                           -> L0104
+      L018C:
+        018C  LoadVObjR     v14 16 268448619                              ; .CanProceed
+        0198  RDR1          v1
+        019C  CpyVtoR1      v1
+        01A0  JLowNZ        -56                                           -> L00C8
+      L01A8:
+        01A8  SetV1         v1 0
+        01B0  CpyVtoR4      v1
+      L01B4:
+        01B4  RET           4
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnInventoryItemAdded(const FGameEvent_OnInventoryItemAdded_PlayerState& Event, const ALokiPlayerState@ Context)   // traits=0x28
+    {
+        ALokiBaseItem v2;
+        auto v3;
+        UObject v6;
+        TArray<ALokiBaseItem@> v10;
+        UClass v12;
+        TArrayIterator<ALokiBaseItem@> v18;
+        ALokiBaseItem v26;
+
+        v2 = Event.Item;
+        v3 = v2.bAllowUpgradesFromDupes;
+        if (v3) {
+            v6 = UObject@(v2.BaseClass);
+            if (IsValid(v6)) {
+                v10 = TArray<ALokiBaseItem@>();
+                v12 = UClass@(v2.BaseClass);
+                GetAllActorsOfClass(v12, v10, typeid(TArray));
+                v18 = v10.Iterator();
+                while (true) {
+                    v3 = v18.CanProceed;
+                    if (!v3) break;
+                    v26 = v18.Proceed();
+                    v18.Proceed();
+                    v26.DirtyDupeVisuals();
+                }
+            }
+        }
+        return;
+    }
+    /* ---- OnInventoryItemAdded: 75 dwords / 45 instructions (cache offset 0xa28c0) ----
+        0000  PshVPtr       Event
+        0004  ADDSi         8 67120925                                    ; .Item
+        000C  RDSPtr
+        0010  RefCpyV       v2
+        0014  LoadRObjR     v2 1680 67114958                              ; .bAllowUpgradesFromDupes
+        0020  RDR1          v3
+        0024  CpyVtoR1      v3
+        0028  JLowZ         62                                            -> L0128
+        0030  PshVPtr       v2
+        0034  ADDSi         1672 67114958                                 ; .BaseClass
+        003C  CALLSYS       TSubclassOf::opImplConv                       ; UObject@ TSubclassOf<ALokiBaseItem@>::opImplConv() const
+        0048  STOREOBJ      v6
+        004C  PshVPtr       v6
+        0050  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        005C  JLowZ         49                                            -> L0128
+        0064  PSF           v10
+        0068  CALLSYS       TArray::$beh0                                 ; void TArray<ALokiBaseItem@>::$beh0()
+        0074  TYPEID        268448621                                     ; TArray
+        007C  PSF           v10
+        0080  PshVPtr       v2
+        0084  ADDSi         1672 67114958                                 ; .BaseClass
+        008C  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<ALokiBaseItem@>::opImplConv() const
+        0098  STOREOBJ      v12
+        009C  PshVPtr       v12
+        00A0  CALLSYS       GetAllActorsOfClass                           ; void GetAllActorsOfClass(UClass@, ?&)
+        00AC  PSF           v18
+        00B0  PSF           v10
+        00B4  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiBaseItem@> TArray<ALokiBaseItem@>::Iterator()
+        00C0  JMP           13                                            -> L00FC
+      L00C8:
+        00C8  SUSPEND
+        00CC  PSF           v18
+        00D0  CALLSYS       TArrayIterator::Proceed                       ; ALokiBaseItem@& TArrayIterator<ALokiBaseItem@>::Proceed()
+        00DC  PshRPtr
+        00E0  RDSPtr
+        00E4  RefCpyV       v26
+        00E8  PshVPtr       v26
+        00EC  CALLSYS       ALokiBaseItem::DirtyDupeVisuals               ; void ALokiBaseItem::DirtyDupeVisuals()
+        00F8  FreeNullV8    v26
+      L00FC:
+        00FC  LoadVObjR     v18 16 268448622                              ; .CanProceed
+        0108  RDR1          v3
+        010C  CpyVtoR1      v3
+        0110  JLowNZ        -20                                           -> L00C8
+        0118  PSF           v10
+        011C  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiBaseItem@>::$beh2()
+      L0128:
+        0128  RET           6
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnInventoryItemRemoved(const FGameEvent_OnInventoryItemRemoved_PlayerState& Event, const ALokiPlayerState@ Context)   // traits=0x28
+    {
+        ALokiBaseItem v2;
+        auto v3;
+        UObject v6;
+        TArray<ALokiBaseItem@> v10;
+        UClass v12;
+        TArrayIterator<ALokiBaseItem@> v18;
+        ALokiBaseItem v26;
+
+        v2 = Event.Item;
+        v3 = v2.bAllowUpgradesFromDupes;
+        if (v3) {
+            v6 = UObject@(v2.BaseClass);
+            if (IsValid(v6)) {
+                v10 = TArray<ALokiBaseItem@>();
+                v12 = UClass@(v2.BaseClass);
+                GetAllActorsOfClass(v12, v10, typeid(TArray));
+                v18 = v10.Iterator();
+                while (true) {
+                    v3 = v18.CanProceed;
+                    if (!v3) break;
+                    v26 = v18.Proceed();
+                    v18.Proceed();
+                    v26.DirtyDupeVisuals();
+                }
+            }
+        }
+        return;
+    }
+    /* ---- OnInventoryItemRemoved: 75 dwords / 45 instructions (cache offset 0xa2c1e) ----
+        0000  PshVPtr       Event
+        0004  ADDSi         8 67120926                                    ; .Item
+        000C  RDSPtr
+        0010  RefCpyV       v2
+        0014  LoadRObjR     v2 1680 67114958                              ; .bAllowUpgradesFromDupes
+        0020  RDR1          v3
+        0024  CpyVtoR1      v3
+        0028  JLowZ         62                                            -> L0128
+        0030  PshVPtr       v2
+        0034  ADDSi         1672 67114958                                 ; .BaseClass
+        003C  CALLSYS       TSubclassOf::opImplConv                       ; UObject@ TSubclassOf<ALokiBaseItem@>::opImplConv() const
+        0048  STOREOBJ      v6
+        004C  PshVPtr       v6
+        0050  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        005C  JLowZ         49                                            -> L0128
+        0064  PSF           v10
+        0068  CALLSYS       TArray::$beh0                                 ; void TArray<ALokiBaseItem@>::$beh0()
+        0074  TYPEID        268448621                                     ; TArray
+        007C  PSF           v10
+        0080  PshVPtr       v2
+        0084  ADDSi         1672 67114958                                 ; .BaseClass
+        008C  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<ALokiBaseItem@>::opImplConv() const
+        0098  STOREOBJ      v12
+        009C  PshVPtr       v12
+        00A0  CALLSYS       GetAllActorsOfClass                           ; void GetAllActorsOfClass(UClass@, ?&)
+        00AC  PSF           v18
+        00B0  PSF           v10
+        00B4  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiBaseItem@> TArray<ALokiBaseItem@>::Iterator()
+        00C0  JMP           13                                            -> L00FC
+      L00C8:
+        00C8  SUSPEND
+        00CC  PSF           v18
+        00D0  CALLSYS       TArrayIterator::Proceed                       ; ALokiBaseItem@& TArrayIterator<ALokiBaseItem@>::Proceed()
+        00DC  PshRPtr
+        00E0  RDSPtr
+        00E4  RefCpyV       v26
+        00E8  PshVPtr       v26
+        00EC  CALLSYS       ALokiBaseItem::DirtyDupeVisuals               ; void ALokiBaseItem::DirtyDupeVisuals()
+        00F8  FreeNullV8    v26
+      L00FC:
+        00FC  LoadVObjR     v18 16 268448622                              ; .CanProceed
+        0108  RDR1          v3
+        010C  CpyVtoR1      v3
+        0110  JLowNZ        -20                                           -> L00C8
+        0118  PSF           v10
+        011C  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiBaseItem@>::$beh2()
+      L0128:
+        0128  RET           6
+    */
+
+    void ~ULokiItemVisualsComponent()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ULokiItemVisualsComponent: 13 dwords / 7 instructions (cache offset 0xa306a) ----
+        0000  PshVPtr       this
+        0004  ADDSi         208 134230890                                 ; .RecommendedItems
+        000C  CALLSYS       TMap::$beh2                                   ; void TMap<TSubclassOf<ALokiBaseItem@>, bool>::$beh2()
+        0018  PshVPtr       this
+        001C  ADDSi         288 134230890                                 ; .PreferredItems
+        0024  CALLSYS       TMap::$beh2                                   ; void TMap<TSubclassOf<ALokiBaseItem@>, bool>::$beh2()
+        0030  RET           2
+    */
+
+}
+

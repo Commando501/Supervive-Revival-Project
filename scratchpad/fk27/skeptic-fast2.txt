@@ -1,0 +1,49 @@
+pid=24252 base=0x7FF7BFF50000 objects=0x2696B1199A0 numEl=207719
+live=200475 free=7244  first-free(boundary)=39295
+
+GROUP MEMBERSHIP (print it so two runs can be diffed -- track() never did)
+  HI-ROOTED            n=32  idx=45000,45001,45056,45058,45060,45062,45064,45066,45068,45070,45118,45120,45134,45135,45136,55368,55370,56091,56100,57087,57088,57090,57092,61508,86592,93740,93843,93865,93866,94472,94517,186681
+  ORDINARY-lowidx      n=40  idx=45002,45003,45004,45005,45006,45007,45008,45009,45010,45011,45012,45013,45014,45015,45016,45017,45018,45019,45020,45021,45022,45023,45024,45025,45026,45027,45028,45029,45030,45031,45032,45033,45034,45035,45036,45037,45038,45039,45040,45041
+  ORDINARY-idxmatched  n=32  idx=45002,45003,45055,45057,45059,45061,45063,45065,45067,45069,45117,45119,45133,45137,45138,55367,55369,56090,56099,57086,57089,57091,57093,61507,86591,93739,93842,93864,93867,94471,94516,186680
+  PERMANENT            n=40  idx=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39
+  [s=108 t=   43.3] rotation bit1 -> bit0
+  [s=261 t=  104.6] rotation bit0 -> bit2
+  [s=413 t=  165.4] rotation bit2 -> bit1
+  [s=566 t=  226.7] rotation bit1 -> bit0
+  [s=719 t=  288.0] rotation bit0 -> bit2
+  [s=871 t=  348.9] rotation bit2 -> bit1
+
+================================================================================================
+RESULTS  samples=999  period=0.40 s  duration=400 s
+  rotations: s108/t43.3 bit1->bit0, s261/t104.6 bit0->bit2, s413/t165.4 bit2->bit1, s566/t226.7 bit1->bit0, s719/t288.0 bit0->bit2, s871/t348.9 bit2->bit1
+  MID-ROTATION samples (the two population reads disagreed): 0 of 999
+================================================================================================
+  D4 identity revalidation: 0 of 144 tracked slots changed object/class/name
+
+  group                   n   always  missed   always/missed(excl midrot)   distinct-low-words-seen
+  HI-ROOTED               32     32       0      32/0              [1, 2, 4] x32
+  ORDINARY-lowidx         40     40       0      40/0              [1, 2, 4] x40
+  ORDINARY-idxmatched     32     32       0      32/0              [1, 2, 4] x32
+  PERMANENT               40      0      40       0/40             [0] x40
+
+  D5 -- miss timing. sample index of every miss, per group (excl. mid-rotation samples):
+    HI-ROOTED              no misses at all
+    ORDINARY-lowidx        no misses at all
+    ORDINARY-idxmatched    no misses at all
+    PERMANENT              (all-miss by construction: these carry no low bit at all)
+
+  D1 -- raw low-nibble sequence for HI-ROOTED (first 8 objects) and 4 matched controls:
+    HI-ROOTED            #45000   2@s0 -> 1@s108 -> 4@s261 -> 2@s413 -> 1@s566 -> 4@s719 -> 2@s871
+    HI-ROOTED            #45001   2@s0 -> 1@s108 -> 4@s261 -> 2@s413 -> 1@s566 -> 4@s719 -> 2@s871
+    HI-ROOTED            #45056   2@s0 -> 1@s108 -> 4@s261 -> 2@s413 -> 1@s566 -> 4@s719 -> 2@s871
+    HI-ROOTED            #45058   2@s0 -> 1@s108 -> 4@s261 -> 2@s413 -> 1@s566 -> 4@s719 -> 2@s871
+    HI-ROOTED            #45060   2@s0 -> 1@s108 -> 4@s261 -> 2@s413 -> 1@s566 -> 4@s719 -> 2@s871
+    HI-ROOTED            #45062   2@s0 -> 1@s108 -> 4@s261 -> 2@s413 -> 1@s566 -> 4@s719 -> 2@s871
+    HI-ROOTED            #45064   2@s0 -> 1@s108 -> 4@s261 -> 2@s413 -> 1@s566 -> 4@s719 -> 2@s871
+    HI-ROOTED            #45066   2@s0 -> 1@s108 -> 4@s261 -> 2@s413 -> 1@s566 -> 4@s719 -> 2@s871
+    ORDINARY-idxmatched  #45002   2@s0 -> 1@s108 -> 4@s261 -> 2@s413 -> 1@s566 -> 4@s719 -> 2@s871
+    ORDINARY-idxmatched  #45003   2@s0 -> 1@s108 -> 4@s261 -> 2@s413 -> 1@s566 -> 4@s719 -> 2@s871
+    ORDINARY-idxmatched  #45055   2@s0 -> 1@s108 -> 4@s261 -> 2@s413 -> 1@s566 -> 4@s719 -> 2@s871
+    ORDINARY-idxmatched  #45057   2@s0 -> 1@s108 -> 4@s261 -> 2@s413 -> 1@s566 -> 4@s719 -> 2@s871
+
+  csv: G:\git\Supervive Revival Project\scratchpad\fk27\skeptic-track-fast2.csv

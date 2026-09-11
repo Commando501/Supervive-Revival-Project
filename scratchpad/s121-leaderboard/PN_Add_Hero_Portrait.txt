@@ -1,0 +1,248 @@
+# Asset:         Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.uasset
+# UFunction:     Add Hero Portrait
+# FunctionFlags: FUNC_Public, FUNC_BlueprintCallable, FUNC_BlueprintEvent
+# Outer class:   WBP_UI_LeaderboardEntry_PlayerName_C
+# ScriptBytecode entries: 15
+# ChildProperties: 8
+# --- Parameters / locals (FField chain) ---
+#   [0] FNameProperty  ?
+#   [1] FObjectProperty  ?
+#   [2] FIntProperty  ?
+#   [3] FDoubleProperty  ?
+#   [4] FObjectProperty  ?
+#   [5] FDoubleProperty  ?
+#   [6] FStructProperty  ?
+#   [7] FFloatProperty  ?
+
+# --- ScriptBytecode tree ---
+[  0] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Create_ReturnValue
+      StatementIndex: 1
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_ObjectConst
+          Value: Default__WidgetBlueprintLibrary
+          StatementIndex: 11
+      Offset: 21
+      RValuePointer: CallFunc_Create_ReturnValue
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: Create
+          Parameters: [3]
+            [  0] EX_Self
+              StatementIndex: 41
+            [  1] EX_ObjectConst
+              Value: WBP_UI_LeaderboardEntry_HeroPortrait_C
+              StatementIndex: 42
+            [  2] EX_NoObject
+              StatementIndex: 51
+          StatementIndex: 32
+      StatementIndex: 10
+  StatementIndex: 0
+[  1] EX_CallMath
+  StackNode: SetNamePropertyByName
+  Parameters: [3]
+    [  0] EX_LocalVariable
+      Variable: CallFunc_Create_ReturnValue
+      StatementIndex: 62
+    [  1] EX_NameConst
+      Value: Hero Name
+      StatementIndex: 71
+    [  2] EX_LocalVariable
+      Variable: Hero Name
+      StatementIndex: 84
+  StatementIndex: 53
+[  2] EX_Let
+  Property: CallFunc_GetChildrenCount_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetChildrenCount_ReturnValue
+      StatementIndex: 103
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_InstanceVariable
+          Variable: Overlay_HeroPortrait
+          StatementIndex: 113
+      Offset: 10
+      RValuePointer: CallFunc_GetChildrenCount_ReturnValue
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: GetChildrenCount
+          Parameters: [0]
+          StatementIndex: 134
+      StatementIndex: 112
+  StatementIndex: 94
+[  3] EX_Let
+  Property: CallFunc_Conv_IntToDouble_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_IntToDouble_ReturnValue
+      StatementIndex: 153
+  Assignment:
+    EX_CallMath
+      StackNode: Conv_IntToDouble
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_GetChildrenCount_ReturnValue
+          StatementIndex: 171
+      StatementIndex: 162
+  StatementIndex: 144
+[  4] EX_Let
+  Property: CallFunc_Multiply_DoubleDouble_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Multiply_DoubleDouble_ReturnValue
+      StatementIndex: 190
+  Assignment:
+    EX_CallMath
+      StackNode: Multiply_DoubleDouble
+      Parameters: [2]
+        [  0] EX_DoubleConst
+          Value: 50
+          StatementIndex: 208
+        [  1] EX_LocalVariable
+          Variable: CallFunc_Conv_IntToDouble_ReturnValue
+          StatementIndex: 217
+      StatementIndex: 199
+  StatementIndex: 181
+[  5] EX_Let
+  Property: Left
+  Variable:
+    EX_StructMemberContext
+      Property: Left
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin
+          StatementIndex: 245
+      StatementIndex: 236
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 254
+  StatementIndex: 227
+[  6] EX_Let
+  Property: Top
+  Variable:
+    EX_StructMemberContext
+      Property: Top
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin
+          StatementIndex: 277
+      StatementIndex: 268
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 286
+  StatementIndex: 259
+[  7] EX_Let
+  Property: 0
+  Variable:
+    EX_LocalVariable
+      Variable: K2Node_MakeStruct_Right_ImplicitCast
+      StatementIndex: 300
+  Assignment:
+    EX_Cast
+      ConversionType: CST_DoubleToFloat
+      Target:
+        EX_LocalVariable
+          Variable: CallFunc_Multiply_DoubleDouble_ReturnValue
+          StatementIndex: 311
+      StatementIndex: 309
+  StatementIndex: 291
+[  8] EX_Let
+  Property: Right
+  Variable:
+    EX_StructMemberContext
+      Property: Right
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin
+          StatementIndex: 338
+      StatementIndex: 329
+  Assignment:
+    EX_LocalVariable
+      Variable: K2Node_MakeStruct_Right_ImplicitCast
+      StatementIndex: 347
+  StatementIndex: 320
+[  9] EX_Let
+  Property: Bottom
+  Variable:
+    EX_StructMemberContext
+      Property: Bottom
+      StructExpression:
+        EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin
+          StatementIndex: 374
+      StatementIndex: 365
+  Assignment:
+    EX_FloatConst
+      Value: 0
+      StatementIndex: 383
+  StatementIndex: 356
+[ 10] EX_Context
+  ObjectExpression:
+    EX_LocalVariable
+      Variable: CallFunc_Create_ReturnValue
+      StatementIndex: 389
+  Offset: 19
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: SetPadding
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: K2Node_MakeStruct_Margin
+          StatementIndex: 419
+      StatementIndex: 410
+  StatementIndex: 388
+[ 11] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_AddChildToOverlay_ReturnValue
+      StatementIndex: 430
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_InstanceVariable
+          Variable: Overlay_HeroPortrait
+          StatementIndex: 440
+      Offset: 19
+      RValuePointer: CallFunc_AddChildToOverlay_ReturnValue
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: AddChildToOverlay
+          Parameters: [1]
+            [  0] EX_LocalVariable
+              Variable: CallFunc_Create_ReturnValue
+              StatementIndex: 470
+          StatementIndex: 461
+      StatementIndex: 439
+  StatementIndex: 429
+[ 12] EX_Context
+  ObjectExpression:
+    EX_LocalVariable
+      Variable: CallFunc_AddChildToOverlay_ReturnValue
+      StatementIndex: 481
+  Offset: 12
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: SetHorizontalAlignment
+      Parameters: [1]
+        [  0] EX_ByteConst
+          Value: 3
+          StatementIndex: 511
+      StatementIndex: 502
+  StatementIndex: 480
+[ 13] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 515
+  StatementIndex: 514
+[ 14] EX_EndOfScript
+  StatementIndex: 516

@@ -1,0 +1,2780 @@
+==============================================================================
+MODULE   Barracuda.Spawners.BarracudaMinionSpawner
+SOURCE   Barracuda/Spawners/BarracudaMinionSpawner.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+enum EBarracudaRespawnBehaviorType
+{
+    AlwaysSpawn = 0,
+    ReplaceSpawns = 1,
+    SkipSpawnWhenOldExists = 2,
+    StartRespawnTimerAfterDeath = 3,
+    AliveAtNight = 4,
+    AliveDuringDay = 5,
+}
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaMinionSpawner;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ABarracudaMinionSpawner@ ABarracudaMinionSpawner()
+// 4 instr, 28 B bytecode, id=0x5984798D, varspace=2
+------------------------------------------------------------------------------
+{
+    ABarracudaMinionSpawner v2;
+
+    v2 = ABarracudaMinionSpawner();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84455 q:0x26e7aeeca00; new ABarracudaMinionSpawner   ctor=ABarracudaMinionSpawner::ABarracudaMinionSpawner
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xB723E442, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ABarracudaMinionSpawner);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b2d58         ; __StaticType_ABarracudaMinionSpawner
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ABarracudaMinionSpawner@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0x06307F4B, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ABarracudaMinionSpawner v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ABarracudaMinionSpawner.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ABarracudaMinionSpawner>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6f1b2d58         ; __StaticType_ABarracudaMinionSpawner
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972617            ; ABarracudaMinionSpawner@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class FGametimeToLevel
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 Gametime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) int Level;
+
+}
+
+------------------------------------------------------------------------------
+FGametimeToLevel() const
+// 7 instr, 48 B bytecode, id=0x7ACC7C1F, varspace=3
+------------------------------------------------------------------------------
+{
+    this.Gametime = 0;
+    this.Level = 0;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:0 d:134230819        ; FGametimeToLevel::Gametime  (+0)
+    //     2  SetV8          wW0:2 q:0x0
+    //     5  WRTV8          rW0:2
+    //     6  LoadThisR      W0:8 d:134230819        ; FGametimeToLevel::Level  (+8)
+    //     8  SetV4          wW0:3 d:0
+    //    10  WRTV4          rW0:3
+    //    11  RET            W0:2
+
+==============================================================================
+UCLASS()
+class FMinionWaveEntry
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TSubclassOf<ALokiMinionCharacter@> MinionClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) int Count;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) int MinimumMatchTime;
+
+}
+
+------------------------------------------------------------------------------
+FMinionWaveEntry() const
+// 10 instr, 68 B bytecode, id=0xB4EB46AF, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    this.MinionClass = TSubclassOf<ALokiMinionCharacter@>();
+    v1 = 0;
+    this.Count = 0;
+    v1 = 0;
+    this.MinimumMatchTime = 0;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230820        ; FMinionWaveEntry::MinionClass  (+0)
+    //     3  CALLSYS        q:0x26e6ef0c800         ; void TSubclassOf<ALokiMinionCharacter@>::$beh0()
+    //     6  LoadThisR      W0:8 d:134230820        ; FMinionWaveEntry::Count  (+8)
+    //     8  SetV4          wW0:1 d:0
+    //    10  WRTV4          rW0:1
+    //    11  LoadThisR      W0:12 d:134230820       ; FMinionWaveEntry::MinimumMatchTime  (+12)
+    //    13  SetV4          wW0:1 d:0
+    //    15  WRTV4          rW0:1
+    //    16  RET            W0:2
+
+==============================================================================
+UCLASS()
+class FMinionWave
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TArray<FMinionWaveEntry> Entries;
+
+}
+
+------------------------------------------------------------------------------
+FMinionWave() const
+// 4 instr, 28 B bytecode, id=0x5AC81E2F, varspace=0
+------------------------------------------------------------------------------
+{
+    this.Entries = TArray<FMinionWaveEntry>();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230821        ; FMinionWave::Entries  (+0)
+    //     3  CALLSYS        q:0x26e6ef0c640         ; void TArray<FMinionWaveEntry>::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FMinionWave()
+// 4 instr, 28 B bytecode, id=0x4A597A24, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230821        ; FMinionWave::Entries  (+0)
+    //     3  CALLSYS        q:0x26e6ed80240         ; void TArray<FMinionWaveEntry>::$beh2()
+    //     6  RET            W0:2
+
+==============================================================================
+UCLASS(meta=(IsBlueprintBase=true, Blueprintable=true))
+class ABarracudaMinionSpawner : ALokiActor
+// base /Script/Engine.LokiActor  ->  ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/LokiActor.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, RepCond=0) int InitialTeam;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 SpawnPeriod;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) EBarracudaPhaseType MinimumBarracudaPhaseType;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(EditCondition=RespawnType != EBarracudaRespawnBehaviorType::AliveAtNight && RespawnType != EBarracudaRespawnBehaviorType::AliveDuringDay)) float64 InitialSpawnDelay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bStaggerSpawn;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bSpawnAtAveragePlayerLevel;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TArray<FGametimeToLevel> LevelThresholdsByGametime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, RepCond=0) EBarracudaRespawnBehaviorType RespawnType;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FMinionWave Wave;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bShowTimer;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bTimerRequiresVision;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient, Replicated, RepCond=0) bool bSpawnLoopHasStarted;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) float64 LastSpawnTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) float64 SpawnLoopStartTime;
+    UPROPERTY(BlueprintReadable, Transient) private float64 NextSpawnTime;
+    UPROPERTY(BlueprintReadable, Transient) bool bHasLivingMinion;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True, RootComponent)) UCapsuleComponent@ CapsuleCollision;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) ULokiTeamComponent@ TeamComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) UBarracudaLaneComponent@ LaneComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) UMapIconComponent@ MapIconComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) UVisibilityReceiver@ VisibilityReceiver;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TArray<TSubclassOf<UGameplayEffect@>> StartingEffects;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) TArray<ALokiMinionCharacter@> MinionInstances;
+    int CurrentWaveBufferIndex;
+    TArray<TSubclassOf<ALokiMinionCharacter@>> WaveBuffer;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) UAkAudioEvent@ SpawnAudioEvent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) FGameplayTag SpawnPilotVO;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Barracks)) TSubclassOf<UGameplayEffect@> BarracksDownEffect;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Barracks)) TSubclassOf<AActor@> BarracksClass;
+
+}
+
+------------------------------------------------------------------------------
+ABarracudaMinionSpawner() const
+// 30 instr, 228 B bytecode, id=0xDF191F5C, varspace=1
+------------------------------------------------------------------------------
+{
+    this.LevelThresholdsByGametime = TArray<FGametimeToLevel>();
+    this.Wave.FMinionWave();
+    this.StartingEffects = TArray<TSubclassOf<UGameplayEffect@>>();
+    this.MinionInstances = TArray<ALokiMinionCharacter@>();
+    this.WaveBuffer = TArray<TSubclassOf<ALokiMinionCharacter@>>();
+    this.SpawnPilotVO = FGameplayTag();
+    this.BarracksDownEffect = TSubclassOf<UGameplayEffect@>();
+    this.BarracksClass = TSubclassOf<AActor@>();
+    this.CurrentWaveBufferIndex = 0;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:992 d:134230793      ; ABarracudaMinionSpawner::LevelThresholdsByGametime  (+992)
+    //     3  CALLSYS        q:0x26e6ef21ac0         ; void TArray<FGametimeToLevel>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:1016 d:134230793     ; ABarracudaMinionSpawner::Wave  (+1016)
+    //     9  CALL           d:84430                 ; void FMinionWave::FMinionWave()
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:1112 d:134230793     ; ABarracudaMinionSpawner::StartingEffects  (+1112)
+    //    14  CALLSYS        q:0x26e6ee87240         ; void TArray<TSubclassOf<UGameplayEffect@>>::$beh0()
+    //    17  PshVPtr        rW0:0
+    //    18  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //    20  CALLSYS        q:0x26e6ef21900         ; void TArray<ALokiMinionCharacter@>::$beh0()
+    //    23  PshVPtr        rW0:0
+    //    24  ADDSi          W0:1152 d:134230793     ; ABarracudaMinionSpawner::WaveBuffer  (+1152)
+    //    26  CALLSYS        q:0x26e6ef0fac0         ; void TArray<TSubclassOf<ALokiMinionCharacter@>>::$beh0()
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:1176 d:134230793     ; ABarracudaMinionSpawner::SpawnPilotVO  (+1176)
+    //    32  CALLSYS        q:0x26e78762380         ; void FGameplayTag::$beh0()
+    //    35  PshVPtr        rW0:0
+    //    36  ADDSi          W0:1184 d:134230793     ; ABarracudaMinionSpawner::BarracksDownEffect  (+1184)
+    //    38  CALLSYS        q:0x26e6ee82700         ; void TSubclassOf<UGameplayEffect@>::$beh0()
+    //    41  PshVPtr        rW0:0
+    //    42  ADDSi          W0:1192 d:134230793     ; ABarracudaMinionSpawner::BarracksClass  (+1192)
+    //    44  CALLSYS        q:0x26e6ef0ee80         ; void TSubclassOf<AActor@>::$beh0()
+    //    47  SetV4          wW0:1 d:0
+    //    49  LoadThisR      W0:1144 d:134230793     ; ABarracudaMinionSpawner::CurrentWaveBufferIndex  (+1144)
+    //    51  WRTV4          rW0:1
+    //    52  PshVPtr        rW0:0
+    //    53  FinConstruct   q:0x26e7aeeca00         ; ABarracudaMinionSpawner
+    //    56  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: LokiBeginPlay
+void LokiBeginPlay_Implementation()
+// 86 instr, 600 B bytecode, id=0x278E52A3, varspace=34
+------------------------------------------------------------------------------
+{
+    ALokiGameState v8;
+    UGameEventRouterComponent v16;
+    FGameEvent_BarracudaPhaseChanged v20;
+    FGameEventListenerHandle v34;
+
+    if (Loki::LokiIsServer(__WorldContext)) {
+        if (this.TeamComponent != null) {
+            this.TeamComponent.AuthSetTeamIndex(this.InitialTeam);
+        }
+        v8 = Loki::GetLokiGameState(__WorldContext);
+        v8.OnRoundPhaseChanged.AddUFunction(this, __STATIC_NAME(24));
+        v8.OnNewDayNightStateDelegate.AddUFunction(this, __STATIC_NAME(25));
+        if (this.VisibilityReceiver != null) {
+            this.VisibilityReceiver.OnVisibilityEvaluated.AddUFunction(this, __STATIC_NAME(26));
+        }
+        v16 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v16 != null) {
+            v20 = FGameEvent_BarracudaPhaseChanged();
+            v34 = v16.RegisterForEvent(this, v20, null, __STATIC_NAME(10), false);
+        }
+        this.AuthTryEnablingSpawnLoop();
+    }
+    if (Loki::LokiIsClient(__WorldContext)) {
+        this.MapIconComponent.SetIconVisible(this.bShowTimer);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->130
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:1080 d:134230793     ; ABarracudaMinionSpawner::TeamComponent  (+1080)
+    //    11  RDSPtr
+    //    12  RefCpyV        wW0:4
+    //    13  CmpPtrNull     rW0:4
+    //    14  JZ             ->27
+    //    16  LoadThisR      W0:952 d:134230793      ; ABarracudaMinionSpawner::InitialTeam  (+952)
+    //    18  RDR4           wW0:5
+    //    19  PshV4          rW0:5
+    //    20  PshVPtr        rW0:0
+    //    21  ADDSi          W0:1080 d:134230793     ; ABarracudaMinionSpawner::TeamComponent  (+1080)
+    //    23  RDSPtr
+    //    24  CALLSYS        q:0x26e7a3de5c0         ; void ULokiTeamComponent::AuthSetTeamIndex(int)
+    //    27  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    30  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    33  STOREOBJ       wW0:8
+    //    34  PshC4          d:24
+    //    36  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    39  PshRPtr
+    //    40  PshVPtr        rW0:0
+    //    41  PshVPtr        rW0:8
+    //    42  ADDSi          W0:1424 d:67115161      ; ALokiGameState::OnRoundPhaseChanged  (+1424)
+    //    44  CALLSYS        q:0x26e711e98c0         ; void FNewRoundPhase::AddUFunction(const UObject@, const FName&)
+    //    47  PshC4          d:25
+    //    49  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    52  PshRPtr
+    //    53  PshVPtr        rW0:0
+    //    54  PshVPtr        rW0:8
+    //    55  ADDSi          W0:1768 d:67115161      ; ALokiGameState::OnNewDayNightStateDelegate  (+1768)
+    //    57  CALLSYS        q:0x26e711e3a40         ; void FNewDayNightStateSignature::AddUFunction(const UObject@, const FName&)
+    //    60  PshVPtr        rW0:0
+    //    61  ADDSi          W0:1104 d:134230793     ; ABarracudaMinionSpawner::VisibilityReceiver  (+1104)
+    //    63  RDSPtr
+    //    64  RefCpyV        wW0:12
+    //    65  CmpPtrNull     rW0:12
+    //    66  JZ             ->84
+    //    68  PshC4          d:26
+    //    70  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    73  PshRPtr
+    //    74  PshVPtr        rW0:0
+    //    75  PshVPtr        rW0:0
+    //    76  ADDSi          W0:1104 d:134230793     ; ABarracudaMinionSpawner::VisibilityReceiver  (+1104)
+    //    78  RDSPtr
+    //    79  ADDSi          W0:264 d:67115573       ; UVisibilityReceiver::OnVisibilityEvaluated  (+264)
+    //    81  CALLSYS        q:0x26e7719ee80         ; void FOnVisbilityEvaluated::AddUFunction(const UObject@, const FName&)
+    //    84  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    87  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //    90  STOREOBJ       wW0:16
+    //    91  CmpPtrNull     rW0:16
+    //    92  JZ             ->125
+    //    94  SetV1          wW0:21 d:0
+    //    96  PshV4          rW0:21
+    //    97  PshC4          d:10
+    //    99  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   102  PshRPtr
+    //   103  PshNull
+    //   104  TYPEID         d:67120880              ; FGameEvent_BarracudaPhaseChanged
+    //   106  PSF            rW0:20
+    //   107  CALLSYS        q:0x26e79396d00         ; void FGameEvent_BarracudaPhaseChanged::$beh0()
+    //   110  PSF            rW0:20
+    //   111  PshVPtr        rW0:0
+    //   112  PSF            rW0:34
+    //   113  PshVPtr        rW0:16
+    //   114  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //   117  PSF            rW0:20
+    //   118  CALLSYS        q:0x26e79396b40         ; void FGameEvent_BarracudaPhaseChanged::$beh2()
+    //   121  PSF            rW0:34
+    //   122  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //   125  PshVPtr        rW0:0
+    //   126  CALLINTF       d:84436                 ; void ABarracudaMinionSpawner::AuthTryEnablingSpawnLoop()
+    //   128  FreeNullV8     wW0:16
+    //   129  FreeNullV8     wW0:8
+    //   130  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   133  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //   136  JLowZ          ->149
+    //   138  LoadThisR      W0:1032 d:134230793     ; ABarracudaMinionSpawner::bShowTimer  (+1032)
+    //   140  RDR1           wW0:1
+    //   141  PshV4          rW0:1
+    //   142  PshVPtr        rW0:0
+    //   143  ADDSi          W0:1096 d:134230793     ; ABarracudaMinionSpawner::MapIconComponent  (+1096)
+    //   145  RDSPtr
+    //   146  CALLSYS        q:0x26e79f0fac0         ; void UMapIconComponent::SetIconVisible(const bool)
+    //   149  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void ClientGetMapIconState(bool&out bShowLivingIcon, float64&out SecondsRemaining)
+// 119 instr, 768 B bytecode, id=0x99CE89B4, varspace=28
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+    auto v5;
+    ABarracudaTeamState_TeamOnly v10;
+    float64 v12;
+    auto v14;
+    auto v16;
+    ALokiGameState v22;
+    UBarracudaGameStateComponent v26;
+    auto v27;
+    auto v28;
+
+    v1 = true;
+    bShowLivingIcon = true;
+    v4 = 0;
+    SecondsRemaining = 0;
+    v1 = false;
+    v10 = GetBarracudaTeamStateTeamOnly(Loki::GetLocalTeamIndex(__WorldContext, false));
+    if (v10 != null) {
+        v12 = 0;
+        v1 = v10.SpawnerToSpawnTime.Find(this, v12);
+        v1 = !v1;
+        if (!v1) {
+            v4 = float64(Gameplay::GetServerTime(__WorldContext));
+            v14 = v4;
+            v16 = this.RespawnType;
+            v5 = int(v16);
+            if (v5 != 4) {
+                v16 = this.RespawnType;
+                v5 = int(v16);
+                if (v5 != 5) {
+                    if (v14 <= v12) {
+                        v1 = false;
+                        bShowLivingIcon = false;
+                        v4 = v12 - v14;
+                        SecondsRemaining = v4;
+                    } else {
+                    }
+                } else {
+                    v22 = Loki::GetLokiGameState(__WorldContext);
+                    v26 = GetBarracudaGameStateComponent();
+                    if (v22 != null) {
+                        v1 = v26 != null;
+                        v27 = v1;
+                    } else {
+                        v27 = 0;
+                    }
+                    if (v27) {
+                        v28 = v22.DayNightState;
+                        v5 = int(v28);
+                        if (v5 == 1) {
+                            v1 = false;
+                            bShowLivingIcon = false;
+                            v4 = v26.SecondsUntilNextDayNightSwap();
+                            SecondsRemaining = v4;
+                        }
+                    }
+                }
+            } else {
+                v22 = Loki::GetLokiGameState(__WorldContext);
+                v26 = GetBarracudaGameStateComponent();
+                if (v22 != null) {
+                    v27 = v26 != null;
+                    v1 = v27;
+                } else {
+                    v1 = 0;
+                }
+                if (v1) {
+                    v28 = v22.DayNightState;
+                    if (int(v28) == 0) {
+                        v27 = false;
+                        bShowLivingIcon = false;
+                        v4 = v26.SecondsUntilNextDayNightSwap();
+                        SecondsRemaining = v4;
+                    }
+                }
+            }
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshVPtr        rW0:-2
+    //     3  PopRPtr
+    //     4  WRTV1          rW0:1
+    //     5  SetV8          wW0:4 q:0x0
+    //     8  PshVPtr        rW0:-4
+    //     9  PopRPtr
+    //    10  WRTV8          rW0:4
+    //    11  SetV1          wW0:1 d:0
+    //    13  PshV4          rW0:1
+    //    14  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    17  CALLSYS        q:0x26e7a11d980         ; int Loki::GetLocalTeamIndex(UObject@, bool)
+    //    20  CpyRtoV4       wW0:6
+    //    21  PshV4          rW0:6
+    //    22  CALL           d:84279                 ; ABarracudaTeamState_TeamOnly@ GetBarracudaTeamStateTeamOnly(const int)
+    //    24  STOREOBJ       wW0:10
+    //    25  CmpPtrNull     rW0:10
+    //    26  JNZ            ->30
+    //    28  JMP            ->191
+    //    30  SetV8          wW0:12 q:0x0
+    //    33  PSF            rW0:12
+    //    34  PSF            rW0:0
+    //    35  PshVPtr        rW0:10
+    //    36  ADDSi          W0:1024 d:134230792     ; ABarracudaTeamState_TeamOnly::SpawnerToSpawnTime  (+1024)
+    //    38  CALLSYS        q:0x26e6ef01580         ; bool TMap<ABarracudaMinionSpawner@, float64>::Find(const ABarracudaMinionSpawner@ const&, float64&) const
+    //    41  CpyRtoV4       wW0:1
+    //    42  NOT            rW0:1
+    //    43  CpyVtoR1       rW0:1
+    //    44  JLowZ          ->48
+    //    46  JMP            ->191
+    //    48  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    51  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    54  CpyRtoV4       wW0:15
+    //    55  fTOd           wW0:4 rW1:15
+    //    57  CpyVtoV8       wW0:14 rW1:4
+    //    59  LoadThisR      W0:1008 d:134230793     ; ABarracudaMinionSpawner::RespawnType  (+1008)
+    //    61  RDR1           wW0:16
+    //    62  sbTOi          wW0:5 rW1:16
+    //    64  CMPIi          rW0:5 d:4
+    //    66  JNZ            ->117
+    //    68  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    71  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    74  STOREOBJ       wW0:22
+    //    75  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //    77  STOREOBJ       wW0:26
+    //    78  CmpPtrNull     rW0:22
+    //    79  JNZ            ->85
+    //    81  SetV4          wW0:1 d:0
+    //    83  JMP            ->90
+    //    85  CmpPtrNull     rW0:26
+    //    86  TNZ
+    //    87  CpyRtoV4       wW0:27
+    //    88  CpyVtoV4       wW0:1 rW1:27
+    //    90  CpyVtoR1       rW0:1
+    //    91  JLowZ          ->115
+    //    93  LoadRObjR      rW0:22 W1:1726 DW2:67115161; ALokiGameState::DayNightState  (+1726)
+    //    96  RDR1           wW0:28
+    //    97  sbTOi          wW0:17 rW1:28
+    //    99  CMPIi          rW0:17 d:0
+    //   101  JNZ            ->115
+    //   103  SetV1          wW0:27 d:0
+    //   105  PshVPtr        rW0:-2
+    //   106  PopRPtr
+    //   107  WRTV1          rW0:27
+    //   108  PshVPtr        rW0:26
+    //   109  CALLINTF       d:84228                 ; float64 UBarracudaGameStateComponent::SecondsUntilNextDayNightSwap() const
+    //   111  CpyRtoV8       wW0:4
+    //   112  PshVPtr        rW0:-4
+    //   113  PopRPtr
+    //   114  WRTV8          rW0:4
+    //   115  JMP            ->191
+    //   117  LoadThisR      W0:1008 d:134230793     ; ABarracudaMinionSpawner::RespawnType  (+1008)
+    //   119  RDR1           wW0:16
+    //   120  sbTOi          wW0:5 rW1:16
+    //   122  CMPIi          rW0:5 d:5
+    //   124  JNZ            ->175
+    //   126  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   129  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //   132  STOREOBJ       wW0:22
+    //   133  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //   135  STOREOBJ       wW0:26
+    //   136  CmpPtrNull     rW0:22
+    //   137  JNZ            ->143
+    //   139  SetV4          wW0:27 d:0
+    //   141  JMP            ->148
+    //   143  CmpPtrNull     rW0:26
+    //   144  TNZ
+    //   145  CpyRtoV4       wW0:1
+    //   146  CpyVtoV4       wW0:27 rW1:1
+    //   148  CpyVtoR1       rW0:27
+    //   149  JLowZ          ->173
+    //   151  LoadRObjR      rW0:22 W1:1726 DW2:67115161; ALokiGameState::DayNightState  (+1726)
+    //   154  RDR1           wW0:28
+    //   155  sbTOi          wW0:5 rW1:28
+    //   157  CMPIi          rW0:5 d:1
+    //   159  JNZ            ->173
+    //   161  SetV1          wW0:1 d:0
+    //   163  PshVPtr        rW0:-2
+    //   164  PopRPtr
+    //   165  WRTV1          rW0:1
+    //   166  PshVPtr        rW0:26
+    //   167  CALLINTF       d:84228                 ; float64 UBarracudaGameStateComponent::SecondsUntilNextDayNightSwap() const
+    //   169  CpyRtoV8       wW0:4
+    //   170  PshVPtr        rW0:-4
+    //   171  PopRPtr
+    //   172  WRTV8          rW0:4
+    //   173  JMP            ->191
+    //   175  CMPd           rW0:14 rW1:12
+    //   177  JNP            ->181
+    //   179  JMP            ->191
+    //   181  SetV1          wW0:1 d:0
+    //   183  PshVPtr        rW0:-2
+    //   184  PopRPtr
+    //   185  WRTV1          rW0:1
+    //   186  SUBd           wW0:4 rW1:12 rW2:14
+    //   188  PshVPtr        rW0:-4
+    //   189  PopRPtr
+    //   190  WRTV8          rW0:4
+    //   191  RET            W0:6
+
+------------------------------------------------------------------------------
+void AuthSetNextSpawnTime(const float64 NewTime)
+// 10 instr, 56 B bytecode, id=0xB2984EB9, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    this.NextSpawnTime = NewTime;
+    v1 = this.bTimerRequiresVision;
+    v1 = !v1;
+    if (v1) {
+        this.GrantTimerToAllTeams();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1056 d:134230793     ; ABarracudaMinionSpawner::NextSpawnTime  (+1056)
+    //     2  WRTV8          rW0:-2
+    //     3  LoadThisR      W0:1033 d:134230793     ; ABarracudaMinionSpawner::bTimerRequiresVision  (+1033)
+    //     5  RDR1           wW0:1
+    //     6  NOT            rW0:1
+    //     7  CpyVtoR1       rW0:1
+    //     8  JLowZ          ->13
+    //    10  PshVPtr        rW0:0
+    //    11  CALLINTF       d:84453                 ; void ABarracudaMinionSpawner::GrantTimerToAllTeams()
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(CanOverrideEvent)
+void AuthOnNewRoundPhase(const ERoundPhase NewPhase)
+// 3 instr, 16 B bytecode, id=0x08B7CC57, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthTryEnablingSpawnLoop();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84436                 ; void ABarracudaMinionSpawner::AuthTryEnablingSpawnLoop()
+    //     3  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void AuthHandleBarracudaPhaseChanged(const FGameEvent_BarracudaPhaseChanged&inout Event, const AActor@ Context)
+// 3 instr, 16 B bytecode, id=0x2DE1C239, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthTryEnablingSpawnLoop();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84436                 ; void ABarracudaMinionSpawner::AuthTryEnablingSpawnLoop()
+    //     3  RET            W0:6
+
+------------------------------------------------------------------------------
+void AuthTryEnablingSpawnLoop()
+// 53 instr, 368 B bytecode, id=0x0FE779C9, varspace=16
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiGameState v4;
+    auto v8;
+    auto v9;
+    float64 v14;
+
+    v1 = this.bSpawnLoopHasStarted;
+    if (!v1) {
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 != null) {
+            v8 = int(v4.GetCurrentPhase());
+            if (v8 == 7) {
+                v9 = int(GetCurrentBarracudaPhaseType());
+                v8 = int(this.MinimumBarracudaPhaseType);
+                if (v9 >= v8) {
+                    v1 = true;
+                    this.bSpawnLoopHasStarted = true;
+                    v14 = float64(Gameplay::GetServerTime(__WorldContext));
+                    this.SpawnLoopStartTime = v14;
+                    if (!this.IsClockBasedSpawning()) {
+                        this.AuthCheckDayNightSpawn();
+                    } else {
+                        v14 = this.SpawnLoopStartTime;
+                        v14 = v14 + this.InitialSpawnDelay;
+                        this.AuthSetNextSpawnTime(v14);
+                    }
+                    this.GrantTimerToAllTeams();
+                } else {
+                }
+            } else {
+            }
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1034 d:134230793     ; ABarracudaMinionSpawner::bSpawnLoopHasStarted  (+1034)
+    //     2  RDR1           wW0:1
+    //     3  CpyVtoR1       rW0:1
+    //     4  JLowZ          ->8
+    //     6  JMP            ->91
+    //     8  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    11  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    14  STOREOBJ       wW0:4
+    //    15  CmpPtrNull     rW0:4
+    //    16  JNZ            ->20
+    //    18  JMP            ->91
+    //    20  PshVPtr        rW0:4
+    //    21  CALLSYS        q:0x26e7a25f580         ; ERoundPhase ALokiGameState::GetCurrentPhase() const
+    //    24  CpyRtoV4       wW0:7
+    //    25  sbTOi          wW0:8 rW1:7
+    //    27  CMPIi          rW0:8 d:7
+    //    29  JZ             ->33
+    //    31  JMP            ->91
+    //    33  CALL           d:84265                 ; EBarracudaPhaseType GetCurrentBarracudaPhaseType()
+    //    35  CpyRtoV4       wW0:11
+    //    36  sbTOi          wW0:9 rW1:11
+    //    38  LoadThisR      W0:968 d:134230793      ; ABarracudaMinionSpawner::MinimumBarracudaPhaseType  (+968)
+    //    40  RDR1           wW0:10
+    //    41  sbTOi          wW0:8 rW1:10
+    //    43  CMPi           rW0:9 rW1:8
+    //    45  JNS            ->49
+    //    47  JMP            ->91
+    //    49  SetV1          wW0:1 d:1
+    //    51  LoadThisR      W0:1034 d:134230793     ; ABarracudaMinionSpawner::bSpawnLoopHasStarted  (+1034)
+    //    53  WRTV1          rW0:1
+    //    54  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    57  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    60  CpyRtoV4       wW0:12
+    //    61  fTOd           wW0:14 rW1:12
+    //    63  LoadThisR      W0:1048 d:134230793     ; ABarracudaMinionSpawner::SpawnLoopStartTime  (+1048)
+    //    65  WRTV8          rW0:14
+    //    66  PshVPtr        rW0:0
+    //    67  CALLINTF       d:84449                 ; bool ABarracudaMinionSpawner::IsClockBasedSpawning()
+    //    69  JLowZ          ->85
+    //    71  LoadThisR      W0:1048 d:134230793     ; ABarracudaMinionSpawner::SpawnLoopStartTime  (+1048)
+    //    73  RDR8           wW0:14
+    //    74  LoadThisR      W0:976 d:134230793      ; ABarracudaMinionSpawner::InitialSpawnDelay  (+976)
+    //    76  RDR8           wW0:16
+    //    77  ADDd           wW0:14 rW1:14 rW2:16
+    //    79  PshV8          rW0:14
+    //    80  PshVPtr        rW0:0
+    //    81  CALLINTF       d:84433                 ; void ABarracudaMinionSpawner::AuthSetNextSpawnTime(const float64)
+    //    83  JMP            ->88
+    //    85  PshVPtr        rW0:0
+    //    86  CALLINTF       d:84450                 ; void ABarracudaMinionSpawner::AuthCheckDayNightSpawn()
+    //    88  PshVPtr        rW0:0
+    //    89  CALLINTF       d:84453                 ; void ABarracudaMinionSpawner::GrantTimerToAllTeams()
+    //    91  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(CanOverrideEvent)
+void AuthOnNewDayNightState(const ELokiDayNightState NewState, const ELokiDayNightState OldState)
+// 3 instr, 16 B bytecode, id=0xBFBB3B8F, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthCheckDayNightSpawn();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84450                 ; void ABarracudaMinionSpawner::AuthCheckDayNightSpawn()
+    //     3  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 59 instr, 396 B bytecode, id=0xC6987929, varspace=9
+------------------------------------------------------------------------------
+{
+    bool v1;
+    auto v2;
+    float64 v6;
+
+    if (!Loki::LokiIsServer(__WorldContext)) {
+        v1 = this.bShowTimer;
+        if (v1) {
+            v1 = this.bSpawnLoopHasStarted;
+        } else {
+            v1 = 0;
+        }
+        this.MapIconComponent.SetIconVisible(v1);
+    } else {
+        v1 = this.IsSpawningAllowed();
+        v1 = !v1;
+        if (!v1) {
+            this.AuthCleanMinionReferences();
+            this.AuthTryUpdatingNextSpawnTime();
+            if (this.AuthShouldSpawnWave()) {
+                v2 = this.RespawnType;
+                if (int(v2) == 1) {
+                    this.AuthCleanupMinions();
+                }
+                this.AuthSpawnWave();
+                v2 = this.RespawnType;
+                if (int(v2) != 3) {
+                    v6 = this.NextSpawnTime;
+                    v6 = v6 + this.SpawnPeriod;
+                    this.AuthSetNextSpawnTime(v6);
+                } else {
+                    this.AuthSetNextSpawnTime(-1);
+                }
+            }
+        } else {
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->75
+    //     8  PshVPtr        rW0:0
+    //     9  CALLINTF       d:84439                 ; bool ABarracudaMinionSpawner::IsSpawningAllowed()
+    //    11  CpyRtoV4       wW0:1
+    //    12  NOT            rW0:1
+    //    13  CpyVtoR1       rW0:1
+    //    14  JLowZ          ->18
+    //    16  JMP            ->98
+    //    18  PshVPtr        rW0:0
+    //    19  CALLINTF       d:84446                 ; void ABarracudaMinionSpawner::AuthCleanMinionReferences()
+    //    21  PshVPtr        rW0:0
+    //    22  CALLINTF       d:84448                 ; void ABarracudaMinionSpawner::AuthTryUpdatingNextSpawnTime()
+    //    24  PshVPtr        rW0:0
+    //    25  CALLINTF       d:84447                 ; bool ABarracudaMinionSpawner::AuthShouldSpawnWave()
+    //    27  JLowZ          ->73
+    //    29  LoadThisR      W0:1008 d:134230793     ; ABarracudaMinionSpawner::RespawnType  (+1008)
+    //    31  RDR1           wW0:2
+    //    32  sbTOi          wW0:3 rW1:2
+    //    34  CMPIi          rW0:3 d:1
+    //    36  JNZ            ->41
+    //    38  PshVPtr        rW0:0
+    //    39  CALLINTF       d:84445                 ; void ABarracudaMinionSpawner::AuthCleanupMinions()
+    //    41  PshVPtr        rW0:0
+    //    42  CALLINTF       d:84441                 ; void ABarracudaMinionSpawner::AuthSpawnWave()
+    //    44  LoadThisR      W0:1008 d:134230793     ; ABarracudaMinionSpawner::RespawnType  (+1008)
+    //    46  RDR1           wW0:2
+    //    47  sbTOi          wW0:4 rW1:2
+    //    49  CMPIi          rW0:4 d:3
+    //    51  JNZ            ->61
+    //    53  PshC8          q:0xbff0000000000000
+    //    56  PshVPtr        rW0:0
+    //    57  CALLINTF       d:84433                 ; void ABarracudaMinionSpawner::AuthSetNextSpawnTime(const float64)
+    //    59  JMP            ->73
+    //    61  LoadThisR      W0:1056 d:134230793     ; ABarracudaMinionSpawner::NextSpawnTime  (+1056)
+    //    63  RDR8           wW0:6
+    //    64  LoadThisR      W0:960 d:134230793      ; ABarracudaMinionSpawner::SpawnPeriod  (+960)
+    //    66  RDR8           wW0:8
+    //    67  ADDd           wW0:6 rW1:6 rW2:8
+    //    69  PshV8          rW0:6
+    //    70  PshVPtr        rW0:0
+    //    71  CALLINTF       d:84433                 ; void ABarracudaMinionSpawner::AuthSetNextSpawnTime(const float64)
+    //    73  JMP            ->98
+    //    75  LoadThisR      W0:1032 d:134230793     ; ABarracudaMinionSpawner::bShowTimer  (+1032)
+    //    77  RDR1           wW0:1
+    //    78  CpyVtoR1       rW0:1
+    //    79  JLowNZ         ->85
+    //    81  SetV4          wW0:1 d:0
+    //    83  JMP            ->90
+    //    85  LoadThisR      W0:1034 d:134230793     ; ABarracudaMinionSpawner::bSpawnLoopHasStarted  (+1034)
+    //    87  RDR1           wW0:9
+    //    88  CpyVtoV4       wW0:1 rW1:9
+    //    90  PshV4          rW0:1
+    //    91  PshVPtr        rW0:0
+    //    92  ADDSi          W0:1096 d:134230793     ; ABarracudaMinionSpawner::MapIconComponent  (+1096)
+    //    94  RDSPtr
+    //    95  CALLSYS        q:0x26e79f0fac0         ; void UMapIconComponent::SetIconVisible(const bool)
+    //    98  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsSpawningAllowed()
+// 38 instr, 256 B bytecode, id=0x309CEEF5, varspace=12
+------------------------------------------------------------------------------
+{
+    auto v1;
+    UBarracudaGameStateComponent v10;
+
+    v1 = this.bSpawnLoopHasStarted;
+    v1 = !v1;
+    if (!v1) {
+        if (int(Loki::GetLokiGameState(__WorldContext).GetCurrentPhase()) == 7) {
+            v10 = GetBarracudaGameStateComponent();
+            if (v10 != null) {
+                if (!Loki::HasAnyMatchingGameplayTags(this, v10.DisabledSpawnerTypes)) {
+                    v1 = true;
+                } else {
+                    v1 = false;
+                }
+            } else {
+                v1 = false;
+            }
+        } else {
+            v1 = false;
+        }
+    } else {
+        v1 = false;
+    }
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1034 d:134230793     ; ABarracudaMinionSpawner::bSpawnLoopHasStarted  (+1034)
+    //     2  RDR1           wW0:1
+    //     3  NOT            rW0:1
+    //     4  CpyVtoR1       rW0:1
+    //     5  JLowZ          ->12
+    //     7  SetV1          wW0:1 d:0
+    //     9  CpyVtoR4       rW0:1
+    //    10  JMP            ->63
+    //    12  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    15  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    18  STOREOBJ       wW0:4
+    //    19  PshVPtr        rW0:4
+    //    20  CALLSYS        q:0x26e7a25f580         ; ERoundPhase ALokiGameState::GetCurrentPhase() const
+    //    23  CpyRtoV4       wW0:5
+    //    24  sbTOi          wW0:6 rW1:5
+    //    26  CMPIi          rW0:6 d:7
+    //    28  JZ             ->35
+    //    30  SetV1          wW0:1 d:0
+    //    32  CpyVtoR4       rW0:1
+    //    33  JMP            ->63
+    //    35  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //    37  STOREOBJ       wW0:10
+    //    38  CmpPtrNull     rW0:10
+    //    39  JNZ            ->46
+    //    41  SetV1          wW0:1 d:0
+    //    43  CpyVtoR4       rW0:1
+    //    44  JMP            ->63
+    //    46  PshVPtr        rW0:10
+    //    47  ADDSi          W0:400 d:134230778      ; UBarracudaGameStateComponent::DisabledSpawnerTypes  (+400)
+    //    49  PshVPtr        rW0:0
+    //    50  CALLSYS        q:0x26e7a11bbc0         ; bool Loki::HasAnyMatchingGameplayTags(const UObject@, const FGameplayTagContainer&)
+    //    53  JLowZ          ->60
+    //    55  SetV1          wW0:1 d:0
+    //    57  CpyVtoR4       rW0:1
+    //    58  JMP            ->63
+    //    60  SetV1          wW0:1 d:1
+    //    62  CpyVtoR4       rW0:1
+    //    63  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Const)
+bool HasNextRespawnTime()
+// 8 instr, 48 B bytecode, id=0x88D0FEF8, varspace=5
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v5;
+
+    v2 = this.NextSpawnTime;
+    v5 = v2 >= 0;
+    return v5;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1056 d:134230793     ; ABarracudaMinionSpawner::NextSpawnTime  (+1056)
+    //     2  RDR8           wW0:2
+    //     3  SetV8          wW0:4 q:0x0
+    //     6  CMPd           rW0:2 rW1:4
+    //     8  TNS
+    //     9  CpyRtoV4       wW0:5
+    //    10  CpyVtoR4       rW0:5
+    //    11  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+void AuthSpawnWave()
+// 180 instr, 1184 B bytecode, id=0x6E709470, varspace=68
+------------------------------------------------------------------------------
+{
+    auto v5;
+    auto v6;
+    int v8;
+    TArrayIterator<FMinionWaveEntry> v14;
+    auto v22;
+    TSubclassOf<ALokiMinionCharacter@> v24;
+    int v25;
+    int v27;
+    FVector v34;
+    ALokiMinionCharacter v38;
+    UBarracudaLaneComponent v40;
+    UBarracudaLaneComponent v42;
+    TSubclassOf<UActorComponent@> v46;
+    UActorComponent v48;
+    auto v49;
+    ULokiAbilitySystemComponent v52;
+    FGameplayEffectContextHandle v66;
+    FActiveGameplayEffectHandle v68;
+
+    this.LastSpawnTime = float64(Gameplay::GetServerTime(__WorldContext));
+    v5 = this.bStaggerSpawn;
+    if (!v5) {
+        v5 = false;
+        v6 = false;
+        v8 = LokiTeam::GetTeamFromActor(this);
+        v14 = this.Wave.Entries.Iterator();
+        while (true) {
+            v5 = v14.CanProceed;
+            if (!v5) break;
+            v22 = v14.Proceed();
+            v24 = TSubclassOf<ALokiMinionCharacter@>();
+            v24 = v22.MinionClass;
+            v5 = v24 == null;
+            v5 = !v5;
+            if (v5) {
+                v5 = v22.Count > 0;
+            } else {
+                v5 = 0;
+            }
+            if (v5) {
+                v27 = 0;
+                while (true) {
+                    v25 = v22.Count;
+                    if (v27 >= v25) break;
+                    v5 = true;
+                    v34 = this.GetActorLocation();
+                    v38 = SpawnActor(v22.MinionClass, v34, FRotator::ZeroRotator, NAME_None, true, null);
+                    if (v38 != null) {
+                        v5 = true;
+                        v6 = true;
+                        if (this.LaneComponent.HasLaneIndex()) {
+                            v40 = UBarracudaLaneComponent::Get(v38, NAME_None);
+                            if (v40 == null) {
+                                v46 = TSubclassOf<UActorComponent@>(UBarracudaLaneComponent::StaticClass());
+                                v48 = v38.CreateComponent(v46, NAME_None);
+                                if (v48 == null) {
+                                    v42 = null;
+                                } else {
+                                    v42 = cast<UBarracudaLaneComponent>(v48);
+                                }
+                                v40 = v42;
+                            }
+                            v25 = this.LaneComponent.LaneIndex;
+                            v40.SetLaneIndex(v25);
+                        }
+                        FinishSpawningActor(v38);
+                        v49 = 0;
+                        LokiTeam::SetTeamForActor(v38, v8);
+                        while (v49 < this.StartingEffects.Num()) {
+                            v52 = v38.GetLokiAbilitySystem_BP();
+                            v66 = v52.MakeEffectContext();
+                            v5 = false;
+                            v68 = v52.ApplyGameplayEffectToSelf(this.StartingEffects[v27], 0, v66, false);
+                            v49++;
+                        }
+                        this.SetMinionLevel(v38);
+                        this.MinionInstances.Add(v38);
+                        v5 = true;
+                        this.bHasLivingMinion = true;
+                    }
+                    v27++;
+                }
+            }
+        }
+        if (v6) {
+            this.PlaySpawnAudioEvent();
+        }
+    } else {
+        this.BeginStaggerSpawn();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //     6  CpyRtoV4       wW0:1
+    //     7  fTOd           wW0:4 rW1:1
+    //     9  LoadThisR      W0:1040 d:134230793     ; ABarracudaMinionSpawner::LastSpawnTime  (+1040)
+    //    11  WRTV8          rW0:4
+    //    12  LoadThisR      W0:984 d:134230793      ; ABarracudaMinionSpawner::bStaggerSpawn  (+984)
+    //    14  RDR1           wW0:5
+    //    15  CpyVtoR1       rW0:5
+    //    16  JLowZ          ->23
+    //    18  PshVPtr        rW0:0
+    //    19  CALLINTF       d:84443                 ; void ABarracudaMinionSpawner::BeginStaggerSpawn()
+    //    21  JMP            ->295
+    //    23  SetV1          wW0:5 d:0
+    //    25  CpyVtoV4       wW0:6 rW1:5
+    //    27  PshVPtr        rW0:0
+    //    28  CALLSYS        q:0x26e7a4113c0         ; int LokiTeam::GetTeamFromActor(const AActor@)
+    //    31  CpyRtoV4       wW0:8
+    //    32  PSF            rW0:14
+    //    33  PshVPtr        rW0:0
+    //    34  ADDSi          W0:1016 d:134230793     ; ABarracudaMinionSpawner::Wave  (+1016)
+    //    36  ADDSi          W0:0 d:134230821        ; FMinionWave::Entries  (+0)
+    //    38  CALLSYS        q:0x26e6ef0bf40         ; TArrayIterator<FMinionWaveEntry> TArray<FMinionWaveEntry>::Iterator()
+    //    41  JMP            ->282
+    //    43  SUSPEND
+    //    44  PSF            rW0:14
+    //    45  CALLSYS        q:0x26e6ef0bbc0         ; FMinionWaveEntry& TArrayIterator<FMinionWaveEntry>::Proceed()
+    //    48  CpyRtoV8       wW0:22
+    //    49  PSF            rW0:24
+    //    50  CALLSYS        q:0x26e6ef0c800         ; void TSubclassOf<ALokiMinionCharacter@>::$beh0()
+    //    53  PshVPtr        rW0:22
+    //    54  ADDSi          W0:0 d:134230820        ; FMinionWaveEntry::MinionClass  (+0)
+    //    56  PSF            rW0:24
+    //    57  CALLSYS        q:0x26e793ab140         ; TSubclassOf<ALokiMinionCharacter@>& TSubclassOf<ALokiMinionCharacter@>::opAssign(const TSubclassOf<ALokiMinionCharacter@>&)
+    //    60  PshNull
+    //    61  PSF            rW0:24
+    //    62  CALLSYS        q:0x26e6ef0ba00         ; bool TSubclassOf<ALokiMinionCharacter@>::opEquals(UClass@) const
+    //    65  CpyRtoV4       wW0:5
+    //    66  NOT            rW0:5
+    //    67  CpyVtoR1       rW0:5
+    //    68  JLowNZ         ->74
+    //    70  SetV4          wW0:5 d:0
+    //    72  JMP            ->84
+    //    74  LoadRObjR      rW0:22 W1:8 DW2:134230820; FMinionWaveEntry::Count  (+8)
+    //    77  RDR4           wW0:7
+    //    78  CMPIi          rW0:7 d:0
+    //    80  TP
+    //    81  CpyRtoV4       wW0:26
+    //    82  CpyVtoV4       wW0:5 rW1:26
+    //    84  CpyVtoR1       rW0:5
+    //    85  JLowZ          ->282
+    //    87  SetV4          wW0:27 d:0
+    //    89  JMP            ->274
+    //    91  SUSPEND
+    //    92  PshNull
+    //    93  SetV1          wW0:5 d:1
+    //    95  PshV4          rW0:5
+    //    96  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    99  PshGPtr        q:0x26e76817c48         ; FRotator::ZeroRotator
+    //   102  PSF            rW0:34
+    //   103  PshVPtr        rW0:0
+    //   104  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   107  PSF            rW0:34
+    //   108  PshVPtr        rW0:22
+    //   109  ADDSi          W0:0 d:134230820        ; FMinionWaveEntry::MinionClass  (+0)
+    //   111  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //   114  STOREOBJ       wW0:36
+    //   115  PshVPtr        rW0:36
+    //   116  RefCpyV        wW0:38
+    //   117  CmpPtrNull     rW0:38
+    //   118  JZ             ->272
+    //   120  SetV1          wW0:5 d:1
+    //   122  CpyVtoV4       wW0:6 rW1:5
+    //   124  PshVPtr        rW0:0
+    //   125  ADDSi          W0:1088 d:134230793     ; ABarracudaMinionSpawner::LaneComponent  (+1088)
+    //   127  RDSPtr
+    //   128  CALLINTF       d:84099                 ; bool UBarracudaLaneComponent::HasLaneIndex()
+    //   130  JLowZ          ->187
+    //   132  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   135  PshVPtr        rW0:38
+    //   136  CALL           d:84114                 ; UBarracudaLaneComponent@ UBarracudaLaneComponent::Get(const AActor@, const FName&)
+    //   138  STOREOBJ       wW0:40
+    //   139  CmpPtrNull     rW0:40
+    //   140  JNZ            ->174
+    //   142  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   145  CALL           d:84113                 ; UClass@ UBarracudaLaneComponent::StaticClass()
+    //   147  STOREOBJ       wW0:44
+    //   148  PshVPtr        rW0:44
+    //   149  PSF            rW0:46
+    //   150  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //   153  PSF            rW0:46
+    //   154  PshVPtr        rW0:38
+    //   155  CALLSYS        q:0x26e7b0783c0         ; UActorComponent@ AActor::CreateComponent(const TSubclassOf<UActorComponent@>&, const FName&)
+    //   158  STOREOBJ       wW0:48
+    //   159  CmpPtrNull     rW0:48
+    //   160  JZ             ->171
+    //   162  TYPEID         d:1207972595            ; UBarracudaLaneComponent@
+    //   164  PSF            rW0:42
+    //   165  PshVPtr        rW0:48
+    //   166  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   169  JMP            ->172
+    //   171  ClrVPtr        wW0:42
+    //   172  PshVPtr        rW0:42
+    //   173  RefCpyV        wW0:40
+    //   174  PshVPtr        rW0:0
+    //   175  ADDSi          W0:1088 d:134230793     ; ABarracudaMinionSpawner::LaneComponent  (+1088)
+    //   177  RDSPtr
+    //   178  ADDSi          W0:208 d:134230771      ; UBarracudaLaneComponent::LaneIndex  (+208)
+    //   180  PopRPtr
+    //   181  RDR4           wW0:25
+    //   182  PshV4          rW0:25
+    //   183  PshVPtr        rW0:40
+    //   184  CALLINTF       d:84100                 ; void UBarracudaLaneComponent::SetLaneIndex(const int)
+    //   186  FreeNullV8     wW0:40
+    //   187  PshV4          rW0:8
+    //   188  PshVPtr        rW0:38
+    //   189  CALLSYS        q:0x26e7a410240         ; bool LokiTeam::SetTeamForActor(AActor@, const int)
+    //   192  PshVPtr        rW0:38
+    //   193  CALLSYS        q:0x26e7b1a21c0         ; void FinishSpawningActor(AActor@)
+    //   196  SetV4          wW0:49 d:0
+    //   198  JMP            ->240
+    //   200  SUSPEND
+    //   201  PshVPtr        rW0:38
+    //   202  CALLSYS        q:0x26e7a188740         ; ULokiAbilitySystemComponent@ ALokiCharacter::GetLokiAbilitySystem_BP() const
+    //   205  STOREOBJ       wW0:52
+    //   206  PSF            rW0:66
+    //   207  PshVPtr        rW0:52
+    //   208  CALLSYS        q:0x26e79e79fc0         ; FGameplayEffectContextHandle UAbilitySystemComponent::MakeEffectContext() const
+    //   211  SetV1          wW0:5 d:0
+    //   213  PshV4          rW0:5
+    //   214  PSF            rW0:66
+    //   215  PshC4          d:0
+    //   217  PshV4          rW0:27
+    //   218  PshVPtr        rW0:0
+    //   219  ADDSi          W0:1112 d:134230793     ; ABarracudaMinionSpawner::StartingEffects  (+1112)
+    //   221  Thiscall1      q:0x26e6ee82e00         ; TSubclassOf<UGameplayEffect@>& TArray<TSubclassOf<UGameplayEffect@>>::opIndex(int)
+    //   224  PshRPtr
+    //   225  PSF            rW0:68
+    //   226  PshVPtr        rW0:52
+    //   227  CALLSYS        q:0x26e79e721c0         ; FActiveGameplayEffectHandle UAbilitySystemComponent::ApplyGameplayEffectToSelf(TSubclassOf<UGameplayEffect@>, float, FGameplayEffectContextHandle, bool)   [UFunction BP_ApplyGameplayEffectToSelf]
+    //   230  PSF            rW0:68
+    //   231  CALLSYS        q:0x26e78f7e940         ; void FActiveGameplayEffectHandle::$beh2()
+    //   234  PSF            rW0:66
+    //   235  CALLSYS        q:0x26e78f7c2c0         ; void FGameplayEffectContextHandle::$beh2()
+    //   238  FreeNullV8     wW0:52
+    //   239  IncVi          rW0:49
+    //   240  PshVPtr        rW0:0
+    //   241  ADDSi          W0:1112 d:134230793     ; ABarracudaMinionSpawner::StartingEffects  (+1112)
+    //   243  CALLSYS        q:0x26e6ee8fac0         ; int TArray<TSubclassOf<UGameplayEffect@>>::Num() const
+    //   246  CpyRtoV4       wW0:50
+    //   247  CMPi           rW0:49 rW1:50
+    //   249  JS             ->200
+    //   251  PshV4          rW0:8
+    //   252  PshVPtr        rW0:38
+    //   253  CALLSYS        q:0x26e7a410240         ; bool LokiTeam::SetTeamForActor(AActor@, const int)
+    //   256  PshVPtr        rW0:38
+    //   257  PshVPtr        rW0:0
+    //   258  CALLINTF       d:84442                 ; void ABarracudaMinionSpawner::SetMinionLevel(ALokiCharacter@)
+    //   260  PSF            rW0:38
+    //   261  PshVPtr        rW0:0
+    //   262  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //   264  CALLSYS        q:0x26e6ef0b4c0         ; void TArray<ALokiMinionCharacter@>::Add(const ALokiMinionCharacter@ const&)
+    //   267  SetV1          wW0:5 d:1
+    //   269  LoadThisR      W0:1064 d:134230793     ; ABarracudaMinionSpawner::bHasLivingMinion  (+1064)
+    //   271  WRTV1          rW0:5
+    //   272  FreeNullV8     wW0:38
+    //   273  IncVi          rW0:27
+    //   274  LoadRObjR      rW0:22 W1:8 DW2:134230820; FMinionWaveEntry::Count  (+8)
+    //   277  RDR4           wW0:25
+    //   278  CMPi           rW0:27 rW1:25
+    //   280  JS             ->91
+    //   282  LoadVObjR      rW0:14 W1:16 DW2:268448550; TArrayIterator::CanProceed  (+16)
+    //   285  RDR1           wW0:5
+    //   286  CpyVtoR1       rW0:5
+    //   287  JLowNZ         ->43
+    //   289  CpyVtoR1       rW0:6
+    //   290  JLowZ          ->295
+    //   292  PshVPtr        rW0:0
+    //   293  CALLINTF       d:84454                 ; void ABarracudaMinionSpawner::PlaySpawnAudioEvent()
+    //   295  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetMinionLevel(ALokiCharacter@ Minion)
+// 102 instr, 712 B bytecode, id=0x4DAA2D90, varspace=53
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+    float64 v6;
+    auto v7;
+    int v9;
+    int v10;
+    TArray<ALokiPlayerState@> v14;
+    TArrayConstIterator<ALokiPlayerState@> v20;
+    ALokiGameState v32;
+    TArrayIterator<FGametimeToLevel> v44;
+    auto v52;
+
+    v1 = this.bSpawnAtAveragePlayerLevel;
+    if (!v1) {
+        v32 = Loki::GetLokiGameState(__WorldContext);
+        if (v32 != null) {
+            v6 = v32.GetServerWorldTimeSeconds();
+            v6 = v6 - float64(v32.GameStartWorldTime);
+            v9 = -1;
+            v44 = this.LevelThresholdsByGametime.Iterator();
+            while (true) {
+                v1 = v44.CanProceed;
+                if (!v1) break;
+                v52 = v44.Proceed();
+                v4 = v52.Gametime;
+                if (v6 > v4) {
+                    v1 = v52.Level > v9;
+                } else {
+                    v1 = 0;
+                }
+                if (v1) {
+                    v10 = v52.Level;
+                    v9 = v10;
+                }
+            }
+            if (v9 > 0) {
+                Minion.AuthGrantLevel(v9);
+            }
+        }
+    } else {
+        v4 = 0;
+        v7 = 0;
+        v9 = 0;
+        while (v9 <= 1) {
+            v14 = LokiGameplay::GetPlayerStatesOnTeam(__WorldContext, v9);
+            v20 = v14.Iterator();
+            L50:
+            v1 = v20.CanProceed;
+            if (v1) {
+                while (true) {
+                    v10 = v20.Proceed().GetPlayerLevel();
+                    v6 = float64(v10);
+                    v4 = v4 + v6;
+                    v7++;
+                    goto L50;
+                }
+            }
+            v9++;
+        }
+        v6 = float64(v7);
+        v6 = v4 / v6;
+        v10 = Math::RoundToInt(v6);
+        Minion.AuthGrantLevel(Math::Max(1, v10));
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:985 d:134230793      ; ABarracudaMinionSpawner::bSpawnAtAveragePlayerLevel  (+985)
+    //     2  RDR1           wW0:1
+    //     3  CpyVtoR1       rW0:1
+    //     4  JLowZ          ->89
+    //     6  SetV8          wW0:4 q:0x0
+    //     9  SetV4          wW0:7 d:0
+    //    11  SetV4          wW0:9 d:0
+    //    13  JMP            ->62
+    //    15  SUSPEND
+    //    16  PSF            rW0:20
+    //    17  PshV4          rW0:9
+    //    18  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    21  PSF            rW0:14
+    //    22  CALLSYS        q:0x26e7a250400         ; TArray<ALokiPlayerState@> LokiGameplay::GetPlayerStatesOnTeam(const UObject@, int)
+    //    25  PSF            rW0:14
+    //    26  CALLSYS        q:0x26e6ee8cd40         ; TArrayConstIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator() const
+    //    29  JMP            ->50
+    //    31  SUSPEND
+    //    32  PSF            rW0:20
+    //    33  CALLSYS        q:0x26e6ee8f900         ; ALokiPlayerState@ const& TArrayConstIterator<ALokiPlayerState@>::Proceed()
+    //    36  PshRPtr
+    //    37  RDSPtr
+    //    38  RefCpyV        wW0:28
+    //    39  PshVPtr        rW0:28
+    //    40  CALLSYS        q:0x26e7a3905c0         ; int ALokiPlayerState::GetPlayerLevel()
+    //    43  CpyRtoV4       wW0:10
+    //    44  iTOd           wW0:6 rW1:10
+    //    46  ADDd           wW0:4 rW1:4 rW2:6
+    //    48  IncVi          rW0:7
+    //    49  FreeNullV8     wW0:28
+    //    50  LoadVObjR      rW0:20 W1:16 DW2:268448511; TArrayConstIterator::CanProceed  (+16)
+    //    53  RDR1           wW0:1
+    //    54  CpyVtoR1       rW0:1
+    //    55  JLowNZ         ->31
+    //    57  PSF            rW0:14
+    //    58  CALLSYS        q:0x26e79348040         ; void TArray<ALokiPlayerState@>::$beh2()
+    //    61  IncVi          rW0:9
+    //    62  CMPIi          rW0:9 d:1
+    //    64  JNP            ->15
+    //    66  iTOd           wW0:6 rW1:7
+    //    68  DIVd           wW0:6 rW1:4 rW2:6
+    //    70  PshV8          rW0:6
+    //    71  CALLSYS        q:0x26e70358ac0         ; int Math::RoundToInt(float64)
+    //    74  CpyRtoV4       wW0:10
+    //    75  PshV4          rW0:10
+    //    76  PshC4          d:1
+    //    78  CALLSYS        q:0x26e70381c80         ; int Math::Max(int, int)
+    //    81  CpyRtoV4       wW0:29
+    //    82  PshV4          rW0:29
+    //    83  PshVPtr        rW0:-2
+    //    84  CALLSYS        q:0x26e7a181200         ; void ALokiCharacter::AuthGrantLevel(int)
+    //    87  JMP            ->177
+    //    89  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    92  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    95  STOREOBJ       wW0:32
+    //    96  CmpPtrNull     rW0:32
+    //    97  JZ             ->176
+    //    99  PshVPtr        rW0:32
+    //   100  CALLSYS        q:0x26e79abac00         ; float64 AGameStateBase::GetServerWorldTimeSeconds() const
+    //   103  CpyRtoV8       wW0:6
+    //   104  LoadRObjR      rW0:32 W1:1720 DW2:67115161; ALokiGameState::GameStartWorldTime  (+1720)
+    //   107  RDR4           wW0:35
+    //   108  fTOd           wW0:38 rW1:35
+    //   110  SUBd           wW0:6 rW1:6 rW2:38
+    //   112  SetV4          wW0:9 d:-1
+    //   114  PSF            rW0:44
+    //   115  PshVPtr        rW0:0
+    //   116  ADDSi          W0:992 d:134230793      ; ABarracudaMinionSpawner::LevelThresholdsByGametime  (+992)
+    //   118  CALLSYS        q:0x26e6ef0af80         ; TArrayIterator<FGametimeToLevel> TArray<FGametimeToLevel>::Iterator()
+    //   121  JMP            ->160
+    //   123  SUSPEND
+    //   124  PSF            rW0:44
+    //   125  CALLSYS        q:0x26e6ef0fe40         ; FGametimeToLevel& TArrayIterator<FGametimeToLevel>::Proceed()
+    //   128  CpyRtoV8       wW0:52
+    //   129  LoadRObjR      rW0:52 W1:0 DW2:134230819; FGametimeToLevel::Gametime  (+0)
+    //   132  RDR8           wW0:4
+    //   133  CMPd           rW0:6 rW1:4
+    //   135  JP             ->141
+    //   137  SetV4          wW0:1 d:0
+    //   139  JMP            ->151
+    //   141  LoadRObjR      rW0:52 W1:8 DW2:134230819; FGametimeToLevel::Level  (+8)
+    //   144  RDR4           wW0:8
+    //   145  CMPi           rW0:8 rW1:9
+    //   147  TP
+    //   148  CpyRtoV4       wW0:53
+    //   149  CpyVtoV4       wW0:1 rW1:53
+    //   151  CpyVtoR1       rW0:1
+    //   152  JLowZ          ->160
+    //   154  LoadRObjR      rW0:52 W1:8 DW2:134230819; FGametimeToLevel::Level  (+8)
+    //   157  RDR4           wW0:10
+    //   158  CpyVtoV4       wW0:9 rW1:10
+    //   160  LoadVObjR      rW0:44 W1:16 DW2:268448551; TArrayIterator::CanProceed  (+16)
+    //   163  RDR1           wW0:1
+    //   164  CpyVtoR1       rW0:1
+    //   165  JLowNZ         ->123
+    //   167  CMPIi          rW0:9 d:0
+    //   169  JNP            ->176
+    //   171  PshV4          rW0:9
+    //   172  PshVPtr        rW0:-2
+    //   173  CALLSYS        q:0x26e7a181200         ; void ALokiCharacter::AuthGrantLevel(int)
+    //   176  FreeNullV8     wW0:32
+    //   177  RET            W0:4
+
+------------------------------------------------------------------------------
+void BeginStaggerSpawn()
+// 74 instr, 524 B bytecode, id=0x39D1C738, varspace=33
+------------------------------------------------------------------------------
+{
+    TArray<TSubclassOf<ALokiMinionCharacter@>> v6;
+    auto v8;
+    auto v12;
+    TArrayIterator<FMinionWaveEntry> v18;
+    auto v25;
+    auto v28;
+    TSubclassOf<ALokiMinionCharacter@> v30;
+    auto v31;
+    auto v33;
+
+    this.WaveBuffer.Empty(0);
+    v6 = TArray<TSubclassOf<ALokiMinionCharacter@>>();
+    v12 = float64(Gameplay::GetServerTime(__WorldContext));
+    v8 = v12;
+    v18 = this.Wave.Entries.Iterator();
+    while (true) {
+        v25 = v18.CanProceed;
+        if (!v25) break;
+        v28 = v18.Proceed();
+        v30 = TSubclassOf<ALokiMinionCharacter@>();
+        v30 = v28.MinionClass;
+        v25 = v30 == null;
+        v25 = !v25;
+        if (v25) {
+            v25 = v28.Count > 0;
+        } else {
+            v25 = 0;
+        }
+        if (v25) {
+            v33 = 0;
+            while (true) {
+                v31 = v28.Count;
+                if (v33 >= v31) break;
+                v31 = v28.MinimumMatchTime;
+                v12 = float64(v31);
+                if (v8 >= v12) {
+                    this.WaveBuffer.Add(v28.MinionClass);
+                }
+                v33++;
+            }
+        }
+    }
+    v31 = 0;
+    this.CurrentWaveBufferIndex = 0;
+    this.StaggerSpawn();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:0
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:1152 d:134230793     ; ABarracudaMinionSpawner::WaveBuffer  (+1152)
+    //     5  CALLSYS        q:0x26e6ef0fc80         ; void TArray<TSubclassOf<ALokiMinionCharacter@>>::Empty(int)
+    //     8  PSF            rW0:6
+    //     9  CALLSYS        q:0x26e6ef0fac0         ; void TArray<TSubclassOf<ALokiMinionCharacter@>>::$beh0()
+    //    12  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    15  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    18  CpyRtoV4       wW0:9
+    //    19  fTOd           wW0:12 rW1:9
+    //    21  CpyVtoV8       wW0:8 rW1:12
+    //    23  PSF            rW0:18
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:1016 d:134230793     ; ABarracudaMinionSpawner::Wave  (+1016)
+    //    27  ADDSi          W0:0 d:134230821        ; FMinionWave::Entries  (+0)
+    //    29  CALLSYS        q:0x26e6ef0bf40         ; TArrayIterator<FMinionWaveEntry> TArray<FMinionWaveEntry>::Iterator()
+    //    32  JMP            ->111
+    //    34  SUSPEND
+    //    35  PSF            rW0:18
+    //    36  CALLSYS        q:0x26e6ef0bbc0         ; FMinionWaveEntry& TArrayIterator<FMinionWaveEntry>::Proceed()
+    //    39  CpyRtoV8       wW0:28
+    //    40  PSF            rW0:30
+    //    41  CALLSYS        q:0x26e6ef0c800         ; void TSubclassOf<ALokiMinionCharacter@>::$beh0()
+    //    44  PshVPtr        rW0:28
+    //    45  ADDSi          W0:0 d:134230820        ; FMinionWaveEntry::MinionClass  (+0)
+    //    47  PSF            rW0:30
+    //    48  CALLSYS        q:0x26e793ab140         ; TSubclassOf<ALokiMinionCharacter@>& TSubclassOf<ALokiMinionCharacter@>::opAssign(const TSubclassOf<ALokiMinionCharacter@>&)
+    //    51  PshNull
+    //    52  PSF            rW0:30
+    //    53  CALLSYS        q:0x26e6ef0ba00         ; bool TSubclassOf<ALokiMinionCharacter@>::opEquals(UClass@) const
+    //    56  CpyRtoV4       wW0:25
+    //    57  NOT            rW0:25
+    //    58  CpyVtoR1       rW0:25
+    //    59  JLowNZ         ->65
+    //    61  SetV4          wW0:25 d:0
+    //    63  JMP            ->75
+    //    65  LoadRObjR      rW0:28 W1:8 DW2:134230820; FMinionWaveEntry::Count  (+8)
+    //    68  RDR4           wW0:1
+    //    69  CMPIi          rW0:1 d:0
+    //    71  TP
+    //    72  CpyRtoV4       wW0:32
+    //    73  CpyVtoV4       wW0:25 rW1:32
+    //    75  CpyVtoR1       rW0:25
+    //    76  JLowZ          ->111
+    //    78  SetV4          wW0:33 d:0
+    //    80  JMP            ->103
+    //    82  SUSPEND
+    //    83  LoadRObjR      rW0:28 W1:12 DW2:134230820; FMinionWaveEntry::MinimumMatchTime  (+12)
+    //    86  RDR4           wW0:31
+    //    87  iTOd           wW0:12 rW1:31
+    //    89  CMPd           rW0:8 rW1:12
+    //    91  JS             ->102
+    //    93  PshVPtr        rW0:28
+    //    94  ADDSi          W0:0 d:134230820        ; FMinionWaveEntry::MinionClass  (+0)
+    //    96  PshVPtr        rW0:0
+    //    97  ADDSi          W0:1152 d:134230793     ; ABarracudaMinionSpawner::WaveBuffer  (+1152)
+    //    99  CALLSYS        q:0x26e6ef0f900         ; void TArray<TSubclassOf<ALokiMinionCharacter@>>::Add(const TSubclassOf<ALokiMinionCharacter@>&)
+    //   102  IncVi          rW0:33
+    //   103  LoadRObjR      rW0:28 W1:8 DW2:134230820; FMinionWaveEntry::Count  (+8)
+    //   106  RDR4           wW0:31
+    //   107  CMPi           rW0:33 rW1:31
+    //   109  JS             ->82
+    //   111  LoadVObjR      rW0:18 W1:16 DW2:268448550; TArrayIterator::CanProceed  (+16)
+    //   114  RDR1           wW0:25
+    //   115  CpyVtoR1       rW0:25
+    //   116  JLowNZ         ->34
+    //   118  SetV4          wW0:31 d:0
+    //   120  LoadThisR      W0:1144 d:134230793     ; ABarracudaMinionSpawner::CurrentWaveBufferIndex  (+1144)
+    //   122  WRTV4          rW0:31
+    //   123  PshVPtr        rW0:0
+    //   124  CALLINTF       d:84444                 ; void ABarracudaMinionSpawner::StaggerSpawn()
+    //   126  PSF            rW0:6
+    //   127  CALLSYS        q:0x26e6ed86ec0         ; void TArray<TSubclassOf<ALokiMinionCharacter@>>::$beh2()
+    //   130  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void StaggerSpawn()
+// 265 instr, 1728 B bytecode, id=0xC79493A1, varspace=76
+------------------------------------------------------------------------------
+{
+    auto v1;
+    int v2;
+    int v3;
+    auto v4;
+    FVector v10;
+    ALokiMinionCharacter v14;
+    UBarracudaLaneComponent v16;
+    UBarracudaLaneComponent v18;
+    UClass v20;
+    TSubclassOf<UActorComponent@> v22;
+    UActorComponent v24;
+    int v25;
+    ULokiAbilitySystemComponent v28;
+    FGameplayEffectContextHandle v36;
+    FGameplayEffectContextHandle v42;
+    FActiveGameplayEffectHandle v45;
+    TSubclassOf<UGameplayEffect@> v48;
+    TSubclassOf<AActor@> v50;
+    auto v51;
+    TArray<AActor@> v56;
+    auto v57;
+    TArrayIterator<AActor@> v64;
+    AActor v72;
+    FTimerHandle v76;
+
+    v2 = LokiTeam::GetTeamFromActor(this);
+    v3 = this.CurrentWaveBufferIndex;
+    v1 = this.WaveBuffer.Num();
+    if (v3 < v1) {
+        v4 = true;
+        v10 = this.GetActorLocation();
+        v3 = this.CurrentWaveBufferIndex;
+        v14 = SpawnActor(this.WaveBuffer[v3], v10, FRotator::ZeroRotator, NAME_None, true, null);
+        if (v14 != null) {
+            if (this.LaneComponent.HasLaneIndex()) {
+                v16 = UBarracudaLaneComponent::Get(v14, NAME_None);
+                if (v16 == null) {
+                    v20 = UBarracudaLaneComponent::StaticClass();
+                    v22 = TSubclassOf<UActorComponent@>(v20);
+                    v24 = v14.CreateComponent(v22, NAME_None);
+                    if (v24 == null) {
+                        v18 = null;
+                    } else {
+                        v18 = cast<UBarracudaLaneComponent>(v24);
+                    }
+                    v16 = v18;
+                }
+                v3 = this.LaneComponent.LaneIndex;
+                v16.SetLaneIndex(v3);
+            }
+            FinishSpawningActor(v14);
+            v25 = 0;
+            LokiTeam::SetTeamForActor(v14, v2);
+            while (true) {
+                v3 = this.StartingEffects.Num();
+                if (v25 >= v3) break;
+                v28 = v14.GetLokiAbilitySystem_BP();
+                v42 = v28.MakeEffectContext();
+                v4 = false;
+                v45 = v28.ApplyGameplayEffectToSelf(this.StartingEffects[v25], 0, v42, false);
+                v25++;
+            }
+            v48 = TSubclassOf<UGameplayEffect@>();
+            v48 = this.BarracksDownEffect;
+            v4 = v48 == null;
+            v4 = !v4;
+            if (v4) {
+                v50 = TSubclassOf<AActor@>();
+                v50 = this.BarracksClass;
+                v51 = v50 == null;
+                v51 = !v51;
+                v4 = v51;
+            } else {
+                v4 = 0;
+            }
+            if (v4) {
+                v56 = TArray<AActor@>();
+                v20 = cast<UClass@>(this.BarracksClass);
+                GetAllActorsOfClass(v20, v56);
+                v4 = false;
+                v57 = false;
+                v64 = v56.Iterator();
+                while (true) {
+                    v51 = v64.CanProceed;
+                    if (!v51) break;
+                    v72 = v64.Proceed();
+                    v20 = UBarracudaLaneComponent::StaticClass();
+                    v22 = TSubclassOf<UActorComponent@>(v20);
+                    v24 = v72.GetComponentByClass(v22);
+                    if (v24 == null) {
+                        v18 = null;
+                    } else {
+                        v18 = cast<UBarracudaLaneComponent>(v24);
+                    }
+                    v16 = v18;
+                    if (v18 != null) {
+                        v3 = v16.LaneIndex;
+                        v1 = this.LaneComponent.LaneIndex;
+                        if (v3 == v1) {
+                            v4 = true;
+                            v57 = true;
+                            break;
+                        }
+                    }
+                }
+                v51 = v57;
+                v51 = !v57;
+                v4 = false;
+                v4 = !false;
+                if (v51 == v4) {
+                    v28 = v14.GetLokiAbilitySystem_BP();
+                    v36 = v28.MakeEffectContext();
+                    v4 = false;
+                    v45 = v28.ApplyGameplayEffectToSelf(this.BarracksDownEffect, 0, v36, false);
+                }
+            }
+            this.SetMinionLevel(v14);
+            this.MinionInstances.Add(v14);
+            v4 = true;
+            this.bHasLivingMinion = true;
+        }
+        this.CurrentWaveBufferIndex++;
+        v4 = false;
+        v51 = false;
+        v76 = System::SetTimer(this, __STATIC_NAME(27), 0.5, false, false, 0, 0);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e7a4113c0         ; int LokiTeam::GetTeamFromActor(const AActor@)
+    //     4  CpyRtoV4       wW0:2
+    //     5  LoadThisR      W0:1144 d:134230793     ; ABarracudaMinionSpawner::CurrentWaveBufferIndex  (+1144)
+    //     7  RDR4           wW0:3
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:1152 d:134230793     ; ABarracudaMinionSpawner::WaveBuffer  (+1152)
+    //    11  CALLSYS        q:0x26e6ef0f740         ; int TArray<TSubclassOf<ALokiMinionCharacter@>>::Num() const
+    //    14  CpyRtoV4       wW0:1
+    //    15  CMPi           rW0:3 rW1:1
+    //    17  JNS            ->431
+    //    19  PshNull
+    //    20  SetV1          wW0:4 d:1
+    //    22  PshV4          rW0:4
+    //    23  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    26  PshGPtr        q:0x26e76817c48         ; FRotator::ZeroRotator
+    //    29  PSF            rW0:10
+    //    30  PshVPtr        rW0:0
+    //    31  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    34  PSF            rW0:10
+    //    35  LoadThisR      W0:1144 d:134230793     ; ABarracudaMinionSpawner::CurrentWaveBufferIndex  (+1144)
+    //    37  RDR4           wW0:3
+    //    38  PshV4          rW0:3
+    //    39  PshVPtr        rW0:0
+    //    40  ADDSi          W0:1152 d:134230793     ; ABarracudaMinionSpawner::WaveBuffer  (+1152)
+    //    42  Thiscall1      q:0x26e6ef0f3c0         ; TSubclassOf<ALokiMinionCharacter@>& TArray<TSubclassOf<ALokiMinionCharacter@>>::opIndex(int)
+    //    45  PshRPtr
+    //    46  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    49  STOREOBJ       wW0:12
+    //    50  PshVPtr        rW0:12
+    //    51  RefCpyV        wW0:14
+    //    52  CmpPtrNull     rW0:14
+    //    53  JZ             ->400
+    //    55  PshVPtr        rW0:0
+    //    56  ADDSi          W0:1088 d:134230793     ; ABarracudaMinionSpawner::LaneComponent  (+1088)
+    //    58  RDSPtr
+    //    59  CALLINTF       d:84099                 ; bool UBarracudaLaneComponent::HasLaneIndex()
+    //    61  JLowZ          ->118
+    //    63  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    66  PshVPtr        rW0:14
+    //    67  CALL           d:84114                 ; UBarracudaLaneComponent@ UBarracudaLaneComponent::Get(const AActor@, const FName&)
+    //    69  STOREOBJ       wW0:16
+    //    70  CmpPtrNull     rW0:16
+    //    71  JNZ            ->105
+    //    73  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    76  CALL           d:84113                 ; UClass@ UBarracudaLaneComponent::StaticClass()
+    //    78  STOREOBJ       wW0:20
+    //    79  PshVPtr        rW0:20
+    //    80  PSF            rW0:22
+    //    81  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //    84  PSF            rW0:22
+    //    85  PshVPtr        rW0:14
+    //    86  CALLSYS        q:0x26e7b0783c0         ; UActorComponent@ AActor::CreateComponent(const TSubclassOf<UActorComponent@>&, const FName&)
+    //    89  STOREOBJ       wW0:24
+    //    90  CmpPtrNull     rW0:24
+    //    91  JZ             ->102
+    //    93  TYPEID         d:1207972595            ; UBarracudaLaneComponent@
+    //    95  PSF            rW0:18
+    //    96  PshVPtr        rW0:24
+    //    97  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   100  JMP            ->103
+    //   102  ClrVPtr        wW0:18
+    //   103  PshVPtr        rW0:18
+    //   104  RefCpyV        wW0:16
+    //   105  PshVPtr        rW0:0
+    //   106  ADDSi          W0:1088 d:134230793     ; ABarracudaMinionSpawner::LaneComponent  (+1088)
+    //   108  RDSPtr
+    //   109  ADDSi          W0:208 d:134230771      ; UBarracudaLaneComponent::LaneIndex  (+208)
+    //   111  PopRPtr
+    //   112  RDR4           wW0:3
+    //   113  PshV4          rW0:3
+    //   114  PshVPtr        rW0:16
+    //   115  CALLINTF       d:84100                 ; void UBarracudaLaneComponent::SetLaneIndex(const int)
+    //   117  FreeNullV8     wW0:16
+    //   118  PshV4          rW0:2
+    //   119  PshVPtr        rW0:14
+    //   120  CALLSYS        q:0x26e7a410240         ; bool LokiTeam::SetTeamForActor(AActor@, const int)
+    //   123  PshVPtr        rW0:14
+    //   124  CALLSYS        q:0x26e7b1a21c0         ; void FinishSpawningActor(AActor@)
+    //   127  SetV4          wW0:25 d:0
+    //   129  JMP            ->171
+    //   131  SUSPEND
+    //   132  PshVPtr        rW0:14
+    //   133  CALLSYS        q:0x26e7a188740         ; ULokiAbilitySystemComponent@ ALokiCharacter::GetLokiAbilitySystem_BP() const
+    //   136  STOREOBJ       wW0:28
+    //   137  PSF            rW0:42
+    //   138  PshVPtr        rW0:28
+    //   139  CALLSYS        q:0x26e79e79fc0         ; FGameplayEffectContextHandle UAbilitySystemComponent::MakeEffectContext() const
+    //   142  SetV1          wW0:4 d:0
+    //   144  PshV4          rW0:4
+    //   145  PSF            rW0:42
+    //   146  PshC4          d:0
+    //   148  PshV4          rW0:25
+    //   149  PshVPtr        rW0:0
+    //   150  ADDSi          W0:1112 d:134230793     ; ABarracudaMinionSpawner::StartingEffects  (+1112)
+    //   152  Thiscall1      q:0x26e6ee82e00         ; TSubclassOf<UGameplayEffect@>& TArray<TSubclassOf<UGameplayEffect@>>::opIndex(int)
+    //   155  PshRPtr
+    //   156  PSF            rW0:45
+    //   157  PshVPtr        rW0:28
+    //   158  CALLSYS        q:0x26e79e721c0         ; FActiveGameplayEffectHandle UAbilitySystemComponent::ApplyGameplayEffectToSelf(TSubclassOf<UGameplayEffect@>, float, FGameplayEffectContextHandle, bool)   [UFunction BP_ApplyGameplayEffectToSelf]
+    //   161  PSF            rW0:45
+    //   162  CALLSYS        q:0x26e78f7e940         ; void FActiveGameplayEffectHandle::$beh2()
+    //   165  PSF            rW0:42
+    //   166  CALLSYS        q:0x26e78f7c2c0         ; void FGameplayEffectContextHandle::$beh2()
+    //   169  FreeNullV8     wW0:28
+    //   170  IncVi          rW0:25
+    //   171  PshVPtr        rW0:0
+    //   172  ADDSi          W0:1112 d:134230793     ; ABarracudaMinionSpawner::StartingEffects  (+1112)
+    //   174  CALLSYS        q:0x26e6ee8fac0         ; int TArray<TSubclassOf<UGameplayEffect@>>::Num() const
+    //   177  CpyRtoV4       wW0:3
+    //   178  CMPi           rW0:25 rW1:3
+    //   180  JS             ->131
+    //   182  PSF            rW0:48
+    //   183  CALLSYS        q:0x26e6ee82700         ; void TSubclassOf<UGameplayEffect@>::$beh0()
+    //   186  PshVPtr        rW0:0
+    //   187  ADDSi          W0:1184 d:134230793     ; ABarracudaMinionSpawner::BarracksDownEffect  (+1184)
+    //   189  PSF            rW0:48
+    //   190  CALLSYS        q:0x26e78f90240         ; TSubclassOf<UGameplayEffect@>& TSubclassOf<UGameplayEffect@>::opAssign(const TSubclassOf<UGameplayEffect@>&)
+    //   193  PshNull
+    //   194  PSF            rW0:48
+    //   195  CALLSYS        q:0x26e6ee82c40         ; bool TSubclassOf<UGameplayEffect@>::opEquals(UClass@) const
+    //   198  CpyRtoV4       wW0:4
+    //   199  NOT            rW0:4
+    //   200  CpyVtoR1       rW0:4
+    //   201  JLowNZ         ->207
+    //   203  SetV4          wW0:4 d:0
+    //   205  JMP            ->227
+    //   207  PSF            rW0:50
+    //   208  CALLSYS        q:0x26e6ef0ee80         ; void TSubclassOf<AActor@>::$beh0()
+    //   211  PshVPtr        rW0:0
+    //   212  ADDSi          W0:1192 d:134230793     ; ABarracudaMinionSpawner::BarracksClass  (+1192)
+    //   214  PSF            rW0:50
+    //   215  CALLSYS        q:0x26e78a17780         ; TSubclassOf<AActor@>& TSubclassOf<AActor@>::opAssign(const TSubclassOf<AActor@>&)
+    //   218  PshNull
+    //   219  PSF            rW0:50
+    //   220  CALLSYS        q:0x26e6ef0f200         ; bool TSubclassOf<AActor@>::opEquals(UClass@) const
+    //   223  CpyRtoV4       wW0:51
+    //   224  NOT            rW0:51
+    //   225  CpyVtoV4       wW0:4 rW1:51
+    //   227  CpyVtoR1       rW0:4
+    //   228  JLowZ          ->379
+    //   230  PSF            rW0:56
+    //   231  CALLSYS        q:0x26e6ee8b680         ; void TArray<AActor@>::$beh0()
+    //   234  TYPEID         d:268448552             ; TArray<AActor@>
+    //   236  PSF            rW0:56
+    //   237  PshVPtr        rW0:0
+    //   238  ADDSi          W0:1192 d:134230793     ; ABarracudaMinionSpawner::BarracksClass  (+1192)
+    //   240  CALLSYS        q:0x26e6ef0eb00         ; UClass@ TSubclassOf<AActor@>::opImplConv() const
+    //   243  STOREOBJ       wW0:20
+    //   244  PshVPtr        rW0:20
+    //   245  CALLSYS        q:0x26e7b1a28c0         ; void GetAllActorsOfClass(UClass@, ?&)
+    //   248  SetV1          wW0:4 d:0
+    //   250  CpyVtoV4       wW0:57 rW1:4
+    //   252  PSF            rW0:64
+    //   253  PSF            rW0:56
+    //   254  CALLSYS        q:0x26e6ef23880         ; TArrayIterator<AActor@> TArray<AActor@>::Iterator()
+    //   257  JMP            ->325
+    //   259  SUSPEND
+    //   260  PSF            rW0:64
+    //   261  CALLSYS        q:0x26e6ef23500         ; AActor@& TArrayIterator<AActor@>::Proceed()
+    //   264  PshRPtr
+    //   265  RDSPtr
+    //   266  RefCpyV        wW0:72
+    //   267  CALL           d:84113                 ; UClass@ UBarracudaLaneComponent::StaticClass()
+    //   269  STOREOBJ       wW0:20
+    //   270  PshVPtr        rW0:20
+    //   271  PSF            rW0:22
+    //   272  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //   275  PSF            rW0:22
+    //   276  PshVPtr        rW0:72
+    //   277  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //   280  STOREOBJ       wW0:24
+    //   281  CmpPtrNull     rW0:24
+    //   282  JZ             ->293
+    //   284  TYPEID         d:1207972595            ; UBarracudaLaneComponent@
+    //   286  PSF            rW0:18
+    //   287  PshVPtr        rW0:24
+    //   288  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   291  JMP            ->294
+    //   293  ClrVPtr        wW0:18
+    //   294  PshVPtr        rW0:18
+    //   295  RefCpyV        wW0:16
+    //   296  CmpPtrNull     rW0:16
+    //   297  JZ             ->323
+    //   299  LoadRObjR      rW0:16 W1:208 DW2:134230771; UBarracudaLaneComponent::LaneIndex  (+208)
+    //   302  RDR4           wW0:3
+    //   303  PshVPtr        rW0:0
+    //   304  ADDSi          W0:1088 d:134230793     ; ABarracudaMinionSpawner::LaneComponent  (+1088)
+    //   306  RDSPtr
+    //   307  ADDSi          W0:208 d:134230771      ; UBarracudaLaneComponent::LaneIndex  (+208)
+    //   309  PopRPtr
+    //   310  RDR4           wW0:1
+    //   311  CMPi           rW0:3 rW1:1
+    //   313  JNZ            ->323
+    //   315  SetV1          wW0:4 d:1
+    //   317  CpyVtoV4       wW0:57 rW1:4
+    //   319  FreeNullV8     wW0:16
+    //   320  FreeNullV8     wW0:72
+    //   321  JMP            ->332
+    //   323  FreeNullV8     wW0:16
+    //   324  FreeNullV8     wW0:72
+    //   325  LoadVObjR      rW0:64 W1:16 DW2:268448553; TArrayIterator::CanProceed  (+16)
+    //   328  RDR1           wW0:51
+    //   329  CpyVtoR1       rW0:51
+    //   330  JLowNZ         ->259
+    //   332  CpyVtoV4       wW0:51 rW1:57
+    //   334  NOT            rW0:51
+    //   335  SetV1          wW0:4 d:0
+    //   337  NOT            rW0:4
+    //   338  CMPi           rW0:51 rW1:4
+    //   340  JNZ            ->375
+    //   342  PshVPtr        rW0:14
+    //   343  CALLSYS        q:0x26e7a188740         ; ULokiAbilitySystemComponent@ ALokiCharacter::GetLokiAbilitySystem_BP() const
+    //   346  STOREOBJ       wW0:28
+    //   347  PSF            rW0:36
+    //   348  PshVPtr        rW0:28
+    //   349  CALLSYS        q:0x26e79e79fc0         ; FGameplayEffectContextHandle UAbilitySystemComponent::MakeEffectContext() const
+    //   352  SetV1          wW0:4 d:0
+    //   354  PshV4          rW0:4
+    //   355  PSF            rW0:36
+    //   356  PshC4          d:0
+    //   358  PshVPtr        rW0:0
+    //   359  ADDSi          W0:1184 d:134230793     ; ABarracudaMinionSpawner::BarracksDownEffect  (+1184)
+    //   361  PSF            rW0:45
+    //   362  PshVPtr        rW0:28
+    //   363  CALLSYS        q:0x26e79e721c0         ; FActiveGameplayEffectHandle UAbilitySystemComponent::ApplyGameplayEffectToSelf(TSubclassOf<UGameplayEffect@>, float, FGameplayEffectContextHandle, bool)   [UFunction BP_ApplyGameplayEffectToSelf]
+    //   366  PSF            rW0:45
+    //   367  CALLSYS        q:0x26e78f7e940         ; void FActiveGameplayEffectHandle::$beh2()
+    //   370  PSF            rW0:36
+    //   371  CALLSYS        q:0x26e78f7c2c0         ; void FGameplayEffectContextHandle::$beh2()
+    //   374  FreeNullV8     wW0:28
+    //   375  PSF            rW0:56
+    //   376  CALLSYS        q:0x26e70663f80         ; void TArray<AActor@>::$beh2()
+    //   379  PshV4          rW0:2
+    //   380  PshVPtr        rW0:14
+    //   381  CALLSYS        q:0x26e7a410240         ; bool LokiTeam::SetTeamForActor(AActor@, const int)
+    //   384  PshVPtr        rW0:14
+    //   385  PshVPtr        rW0:0
+    //   386  CALLINTF       d:84442                 ; void ABarracudaMinionSpawner::SetMinionLevel(ALokiCharacter@)
+    //   388  PSF            rW0:14
+    //   389  PshVPtr        rW0:0
+    //   390  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //   392  CALLSYS        q:0x26e6ef0b4c0         ; void TArray<ALokiMinionCharacter@>::Add(const ALokiMinionCharacter@ const&)
+    //   395  SetV1          wW0:4 d:1
+    //   397  LoadThisR      W0:1064 d:134230793     ; ABarracudaMinionSpawner::bHasLivingMinion  (+1064)
+    //   399  WRTV1          rW0:4
+    //   400  LoadThisR      W0:1144 d:134230793     ; ABarracudaMinionSpawner::CurrentWaveBufferIndex  (+1144)
+    //   402  INCi
+    //   403  PshC4          d:0
+    //   405  PshC4          d:0
+    //   407  SetV1          wW0:4 d:0
+    //   409  PshV4          rW0:4
+    //   410  SetV1          wW0:51 d:0
+    //   412  PshV4          rW0:51
+    //   413  PshC4          d:1056964608
+    //   415  PshC4          d:27
+    //   417  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   420  PshRPtr
+    //   421  PshVPtr        rW0:0
+    //   422  PSF            rW0:76
+    //   423  CALLSYS        q:0x26e79b1c480         ; FTimerHandle System::SetTimer(UObject@, FName, float, bool, bool, float, float)
+    //   426  PSF            rW0:76
+    //   427  CALLSYS        q:0x26e786b8c80         ; void FTimerHandle::$beh2()
+    //   430  FreeNullV8     wW0:14
+    //   431  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthCleanupMinions()
+// 43 instr, 284 B bytecode, id=0x54F838A0, varspace=12
+------------------------------------------------------------------------------
+{
+    int v4;
+    ALokiMinionCharacter v8;
+    UBarracudaMinionRewardComponent v12;
+
+    v4 = this.MinionInstances.Num() - 1;
+    while (v4 >= 0) {
+        v8 = this.MinionInstances[v4];
+        if (v8 != null) {
+            v12 = UBarracudaMinionRewardComponent::Get(v8, NAME_None);
+            if (v12 != null) {
+                v12.DisableAllRewards();
+            }
+            v8.DestroyActor();
+        }
+        this.MinionInstances.RemoveAt(v4);
+        v4--;
+    }
+    this.MinionInstances.Empty(0);
+    this.bHasLivingMinion = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //     3  CALLSYS        q:0x26e6ef23340         ; int TArray<ALokiMinionCharacter@>::Num() const
+    //     6  CpyRtoV4       wW0:2
+    //     7  SUBIi          wW0:4 rW1:2 DW2:1
+    //    10  JMP            ->53
+    //    12  SUSPEND
+    //    13  PshV4          rW0:4
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //    17  Thiscall1      q:0x26e6ef22fc0         ; ALokiMinionCharacter@& TArray<ALokiMinionCharacter@>::opIndex(int)
+    //    20  PshRPtr
+    //    21  RDSPtr
+    //    22  RefCpyV        wW0:8
+    //    23  CmpPtrNull     rW0:8
+    //    24  JZ             ->44
+    //    26  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    29  PshVPtr        rW0:8
+    //    30  CALL           d:84293                 ; UBarracudaMinionRewardComponent@ UBarracudaMinionRewardComponent::Get(const AActor@, const FName&)
+    //    32  STOREOBJ       wW0:12
+    //    33  CmpPtrNull     rW0:12
+    //    34  JZ             ->39
+    //    36  PshVPtr        rW0:12
+    //    37  CALLINTF       d:84285                 ; void UBarracudaMinionRewardComponent::DisableAllRewards()
+    //    39  PshVPtr        rW0:8
+    //    40  CALLSYS        q:0x26e79712fc0         ; void AActor::DestroyActor()   [UFunction K2_DestroyActor]
+    //    43  FreeNullV8     wW0:12
+    //    44  PshV4          rW0:4
+    //    45  PshVPtr        rW0:0
+    //    46  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //    48  CALLSYS        q:0x26e6ef22e00         ; void TArray<ALokiMinionCharacter@>::RemoveAt(int)
+    //    51  FreeNullV8     wW0:8
+    //    52  DecVi          rW0:4
+    //    53  CMPIi          rW0:4 d:0
+    //    55  JNS            ->12
+    //    57  PshC4          d:0
+    //    59  PshVPtr        rW0:0
+    //    60  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //    62  CALLSYS        q:0x26e6ef22c40         ; void TArray<ALokiMinionCharacter@>::Empty(int)
+    //    65  SetV1          wW0:5 d:0
+    //    67  LoadThisR      W0:1064 d:134230793     ; ABarracudaMinionSpawner::bHasLivingMinion  (+1064)
+    //    69  WRTV1          rW0:5
+    //    70  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthCleanMinionReferences()
+// 36 instr, 236 B bytecode, id=0xA6B1E46C, varspace=8
+------------------------------------------------------------------------------
+{
+    int v4;
+    auto v5;
+
+    v4 = this.MinionInstances.Num() - 1;
+    while (v4 >= 0) {
+        v5 = LokiGameplay::IsAlive(this.MinionInstances[v4]);
+        v5 = !v5;
+        if (v5) {
+            this.MinionInstances.RemoveAt(v4);
+        }
+        v4--;
+    }
+    if (this.MinionInstances.IsEmpty()) {
+        v5 = false;
+        this.bHasLivingMinion = false;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //     3  CALLSYS        q:0x26e6ef23340         ; int TArray<ALokiMinionCharacter@>::Num() const
+    //     6  CpyRtoV4       wW0:2
+    //     7  SUBIi          wW0:4 rW1:2 DW2:1
+    //    10  JMP            ->41
+    //    12  SUSPEND
+    //    13  PshV4          rW0:4
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //    17  Thiscall1      q:0x26e6ef22fc0         ; ALokiMinionCharacter@& TArray<ALokiMinionCharacter@>::opIndex(int)
+    //    20  PshRPtr
+    //    21  RDSPtr
+    //    22  RefCpyV        wW0:8
+    //    23  PshVPtr        rW0:8
+    //    24  CALLSYS        q:0x26e7a254d80         ; bool LokiGameplay::IsAlive(const AActor@)
+    //    27  CpyRtoV4       wW0:5
+    //    28  NOT            rW0:5
+    //    29  CpyVtoR1       rW0:5
+    //    30  JLowZ          ->39
+    //    32  PshV4          rW0:4
+    //    33  PshVPtr        rW0:0
+    //    34  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //    36  CALLSYS        q:0x26e6ef22e00         ; void TArray<ALokiMinionCharacter@>::RemoveAt(int)
+    //    39  FreeNullV8     wW0:8
+    //    40  DecVi          rW0:4
+    //    41  CMPIi          rW0:4 d:0
+    //    43  JNS            ->12
+    //    45  PshVPtr        rW0:0
+    //    46  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //    48  CALLSYS        q:0x26e6ef22a80         ; bool TArray<ALokiMinionCharacter@>::IsEmpty() const
+    //    51  JLowZ          ->58
+    //    53  SetV1          wW0:5 d:0
+    //    55  LoadThisR      W0:1064 d:134230793     ; ABarracudaMinionSpawner::bHasLivingMinion  (+1064)
+    //    57  WRTV1          rW0:5
+    //    58  RET            W0:2
+
+------------------------------------------------------------------------------
+bool AuthShouldSpawnWave()
+// 42 instr, 284 B bytecode, id=0xA4051818, varspace=12
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+    auto v8;
+    auto v12;
+
+    v1 = this.HasNextRespawnTime();
+    v1 = !v1;
+    if (!v1) {
+        v8 = float64(Gameplay::GetServerTime(__WorldContext));
+        v4 = v8;
+        v8 = this.NextSpawnTime;
+        if (v8 >= v8) {
+            if (int(this.RespawnType) == 2) {
+                v12 = this.MinionInstances.IsEmpty();
+                v12 = !v12;
+                v1 = v12;
+            } else {
+                v1 = 0;
+            }
+            if (!v1) {
+                v1 = true;
+            } else {
+                v12 = false;
+            }
+        } else {
+            v1 = false;
+        }
+    } else {
+        v1 = false;
+    }
+    return !v1 ? v1 : v12;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84440                 ; bool ABarracudaMinionSpawner::HasNextRespawnTime() const
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->13
+    //     8  SetV1          wW0:1 d:0
+    //    10  CpyVtoR4       rW0:1
+    //    11  JMP            ->70
+    //    13  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    16  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    19  CpyRtoV4       wW0:5
+    //    20  fTOd           wW0:8 rW1:5
+    //    22  CpyVtoV8       wW0:4 rW1:8
+    //    24  LoadThisR      W0:1056 d:134230793     ; ABarracudaMinionSpawner::NextSpawnTime  (+1056)
+    //    26  RDR8           wW0:8
+    //    27  CMPd           rW0:4 rW1:8
+    //    29  JNS            ->36
+    //    31  SetV1          wW0:1 d:0
+    //    33  CpyVtoR4       rW0:1
+    //    34  JMP            ->70
+    //    36  LoadThisR      W0:1008 d:134230793     ; ABarracudaMinionSpawner::RespawnType  (+1008)
+    //    38  RDR1           wW0:9
+    //    39  sbTOi          wW0:10 rW1:9
+    //    41  CMPIi          rW0:10 d:2
+    //    43  JZ             ->49
+    //    45  SetV4          wW0:1 d:0
+    //    47  JMP            ->59
+    //    49  PshVPtr        rW0:0
+    //    50  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //    52  CALLSYS        q:0x26e6ef22a80         ; bool TArray<ALokiMinionCharacter@>::IsEmpty() const
+    //    55  CpyRtoV4       wW0:12
+    //    56  NOT            rW0:12
+    //    57  CpyVtoV4       wW0:1 rW1:12
+    //    59  CpyVtoR1       rW0:1
+    //    60  JLowZ          ->67
+    //    62  SetV1          wW0:12 d:0
+    //    64  CpyVtoR4       rW0:12
+    //    65  JMP            ->70
+    //    67  SetV1          wW0:1 d:1
+    //    69  CpyVtoR4       rW0:1
+    //    70  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthTryUpdatingNextSpawnTime()
+// 30 instr, 212 B bytecode, id=0xB69C2394, varspace=12
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+    float64 v8;
+
+    if (!this.HasNextRespawnTime()) {
+        v8 = float64(Gameplay::GetServerTime(__WorldContext));
+        v4 = v8;
+        if (int(this.RespawnType) == 3) {
+            v1 = this.MinionInstances.IsEmpty();
+        } else {
+            v1 = 0;
+        }
+        if (v1) {
+            v8 = this.SpawnPeriod;
+            v8 = v4 + v8;
+            this.AuthSetNextSpawnTime(v8);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84440                 ; bool ABarracudaMinionSpawner::HasNextRespawnTime() const
+    //     3  JLowZ          ->7
+    //     5  JMP            ->52
+    //     7  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    10  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    13  CpyRtoV4       wW0:5
+    //    14  fTOd           wW0:8 rW1:5
+    //    16  CpyVtoV8       wW0:4 rW1:8
+    //    18  LoadThisR      W0:1008 d:134230793     ; ABarracudaMinionSpawner::RespawnType  (+1008)
+    //    20  RDR1           wW0:9
+    //    21  sbTOi          wW0:10 rW1:9
+    //    23  CMPIi          rW0:10 d:3
+    //    25  JZ             ->31
+    //    27  SetV4          wW0:1 d:0
+    //    29  JMP            ->40
+    //    31  PshVPtr        rW0:0
+    //    32  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //    34  CALLSYS        q:0x26e6ef22a80         ; bool TArray<ALokiMinionCharacter@>::IsEmpty() const
+    //    37  CpyRtoV4       wW0:12
+    //    38  CpyVtoV4       wW0:1 rW1:12
+    //    40  CpyVtoR1       rW0:1
+    //    41  JLowZ          ->52
+    //    43  LoadThisR      W0:960 d:134230793      ; ABarracudaMinionSpawner::SpawnPeriod  (+960)
+    //    45  RDR8           wW0:8
+    //    46  ADDd           wW0:8 rW1:4 rW2:8
+    //    48  PshV8          rW0:8
+    //    49  PshVPtr        rW0:0
+    //    50  CALLINTF       d:84433                 ; void ABarracudaMinionSpawner::AuthSetNextSpawnTime(const float64)
+    //    52  RET            W0:2
+
+------------------------------------------------------------------------------
+bool IsClockBasedSpawning()
+// 16 instr, 104 B bytecode, id=0x9214EE4F, varspace=5
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+
+    v1 = this.RespawnType;
+    if (int(v1) != 4) {
+        v1 = this.RespawnType;
+        v4 = int(v1) != 5;
+    } else {
+        v4 = 0;
+    }
+    return v4;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1008 d:134230793     ; ABarracudaMinionSpawner::RespawnType  (+1008)
+    //     2  RDR1           wW0:1
+    //     3  sbTOi          wW0:2 rW1:1
+    //     5  CMPIi          rW0:2 d:4
+    //     7  JNZ            ->13
+    //     9  SetV4          wW0:4 d:0
+    //    11  JMP            ->24
+    //    13  LoadThisR      W0:1008 d:134230793     ; ABarracudaMinionSpawner::RespawnType  (+1008)
+    //    15  RDR1           wW0:1
+    //    16  sbTOi          wW0:3 rW1:1
+    //    18  CMPIi          rW0:3 d:5
+    //    20  TNZ
+    //    21  CpyRtoV4       wW0:5
+    //    22  CpyVtoV4       wW0:4 rW1:5
+    //    24  CpyVtoR4       rW0:4
+    //    25  RET            W0:2
+
+------------------------------------------------------------------------------
+void AuthCheckDayNightSpawn()
+// 43 instr, 304 B bytecode, id=0x35B030FB, varspace=11
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiGameState v4;
+    auto v7;
+    auto v9;
+    auto v10;
+    auto v11;
+
+    v1 = this.bSpawnLoopHasStarted;
+    v1 = !v1;
+    if (!v1) {
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 != null) {
+            v7 = v4.DayNightState;
+            v9 = this.RespawnType;
+            v10 = int(v9);
+            if (v10 != 4) {
+                v9 = this.RespawnType;
+                v10 = int(v9);
+                if (v10 == 5) {
+                    v11 = int(v7);
+                    if (v11 != 0) {
+                        this.AuthCleanupMinions();
+                    } else {
+                        this.AuthSpawnWave();
+                    }
+                }
+            } else {
+                v11 = int(v7);
+                if (v11 != 1) {
+                    this.AuthCleanupMinions();
+                } else {
+                    this.AuthSpawnWave();
+                }
+            }
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:1034 d:134230793     ; ABarracudaMinionSpawner::bSpawnLoopHasStarted  (+1034)
+    //     2  RDR1           wW0:1
+    //     3  NOT            rW0:1
+    //     4  CpyVtoR1       rW0:1
+    //     5  JLowZ          ->9
+    //     7  JMP            ->75
+    //     9  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    12  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    15  STOREOBJ       wW0:4
+    //    16  CmpPtrNull     rW0:4
+    //    17  JNZ            ->21
+    //    19  JMP            ->75
+    //    21  LoadRObjR      rW0:4 W1:1726 DW2:67115161; ALokiGameState::DayNightState  (+1726)
+    //    24  RDR1           wW0:8
+    //    25  CpyVtoV4       wW0:7 rW1:8
+    //    27  LoadThisR      W0:1008 d:134230793     ; ABarracudaMinionSpawner::RespawnType  (+1008)
+    //    29  RDR1           wW0:9
+    //    30  sbTOi          wW0:10 rW1:9
+    //    32  CMPIi          rW0:10 d:4
+    //    34  JNZ            ->52
+    //    36  sbTOi          wW0:11 rW1:7
+    //    38  CMPIi          rW0:11 d:1
+    //    40  JNZ            ->47
+    //    42  PshVPtr        rW0:0
+    //    43  CALLINTF       d:84441                 ; void ABarracudaMinionSpawner::AuthSpawnWave()
+    //    45  JMP            ->50
+    //    47  PshVPtr        rW0:0
+    //    48  CALLINTF       d:84445                 ; void ABarracudaMinionSpawner::AuthCleanupMinions()
+    //    50  JMP            ->75
+    //    52  LoadThisR      W0:1008 d:134230793     ; ABarracudaMinionSpawner::RespawnType  (+1008)
+    //    54  RDR1           wW0:9
+    //    55  sbTOi          wW0:10 rW1:9
+    //    57  CMPIi          rW0:10 d:5
+    //    59  JNZ            ->75
+    //    61  sbTOi          wW0:11 rW1:7
+    //    63  CMPIi          rW0:11 d:0
+    //    65  JNZ            ->72
+    //    67  PshVPtr        rW0:0
+    //    68  CALLINTF       d:84441                 ; void ABarracudaMinionSpawner::AuthSpawnWave()
+    //    70  JMP            ->75
+    //    72  PshVPtr        rW0:0
+    //    73  CALLINTF       d:84445                 ; void ABarracudaMinionSpawner::AuthCleanupMinions()
+    //    75  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void HandleVisibilityEvaluated(UVisibilityReceiver@ EvaluatedVisibilityReceiver, const TArray<int>&in TeamsIndicesWithVision)
+// 17 instr, 108 B bytecode, id=0xA425225E, varspace=15
+------------------------------------------------------------------------------
+{
+    TArrayConstIterator<int> v6;
+    auto v13;
+
+    v6 = TeamsIndicesWithVision.Iterator();
+    while (true) {
+        v13 = v6.CanProceed;
+        if (!v13) break;
+        this.GrantTimerToTeam(v6.Proceed());
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:6
+    //     1  PshVPtr        rW0:-4
+    //     2  CALLSYS        q:0x26e6ef228c0         ; TArrayConstIterator<int> TArray<int>::Iterator() const
+    //     5  JMP            ->19
+    //     7  SUSPEND
+    //     8  PSF            rW0:6
+    //     9  CALLSYS        q:0x26e6ef22540         ; const int& TArrayConstIterator<int>::Proceed()
+    //    12  RDR4           wW0:15
+    //    13  CpyVtoV4       wW0:14 rW1:15
+    //    15  PshV4          rW0:14
+    //    16  PshVPtr        rW0:0
+    //    17  CALLINTF       d:84452                 ; void ABarracudaMinionSpawner::GrantTimerToTeam(const int)
+    //    19  LoadVObjR      rW0:6 W1:16 DW2:268448554; TArrayConstIterator::CanProceed  (+16)
+    //    22  RDR1           wW0:13
+    //    23  CpyVtoR1       rW0:13
+    //    24  JLowNZ         ->7
+    //    26  RET            W0:6
+
+------------------------------------------------------------------------------
+void GrantTimerToTeam(const int TeamIndex)
+// 18 instr, 112 B bytecode, id=0x36FE444B, varspace=10
+------------------------------------------------------------------------------
+{
+    ABarracudaTeamState_TeamOnly v4;
+    float64 v8;
+
+    v4 = GetBarracudaTeamStateTeamOnly(TeamIndex);
+    if (v4 != null) {
+        v8 = 0;
+        if (this.HasNextRespawnTime()) {
+            v8 = this.NextSpawnTime;
+        }
+        v4.SetSpawnerSpawnTime(this, v8);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshV4          rW0:-2
+    //     1  CALL           d:84279                 ; ABarracudaTeamState_TeamOnly@ GetBarracudaTeamStateTeamOnly(const int)
+    //     3  STOREOBJ       wW0:4
+    //     4  CmpPtrNull     rW0:4
+    //     5  JNZ            ->9
+    //     7  JMP            ->27
+    //     9  SetV8          wW0:8 q:0x0
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84440                 ; bool ABarracudaMinionSpawner::HasNextRespawnTime() const
+    //    15  JLowZ          ->22
+    //    17  LoadThisR      W0:1056 d:134230793     ; ABarracudaMinionSpawner::NextSpawnTime  (+1056)
+    //    19  RDR8           wW0:10
+    //    20  CpyVtoV8       wW0:8 rW1:10
+    //    22  PshV8          rW0:8
+    //    23  PshVPtr        rW0:0
+    //    24  PshVPtr        rW0:4
+    //    25  CALLINTF       d:84274                 ; void ABarracudaTeamState_TeamOnly::SetSpawnerSpawnTime(ABarracudaMinionSpawner@, const float64)
+    //    27  RET            W0:3
+
+------------------------------------------------------------------------------
+void GrantTimerToAllTeams()
+// 37 instr, 240 B bytecode, id=0x8CD0DD24, varspace=29
+------------------------------------------------------------------------------
+{
+    ALokiGameState v4;
+    auto v5;
+    TArray<ALokiTeamState@> v10;
+    TArrayIterator<ALokiTeamState@> v20;
+
+    v4 = Loki::GetLokiGameState(__WorldContext);
+    if (v4 != null) {
+        v5 = true;
+        v10 = v4.GetTeamStates(true, true);
+        v20 = v10.Iterator();
+        while (true) {
+            v5 = v20.CanProceed;
+            if (!v5) break;
+            this.GrantTimerToTeam(v20.Proceed().GetIndex());
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //     6  STOREOBJ       wW0:4
+    //     7  CmpPtrNull     rW0:4
+    //     8  JNZ            ->12
+    //    10  JMP            ->59
+    //    12  SetV1          wW0:5 d:1
+    //    14  PshV4          rW0:5
+    //    15  SetV1          wW0:6 d:1
+    //    17  PshV4          rW0:6
+    //    18  PSF            rW0:10
+    //    19  PshVPtr        rW0:4
+    //    20  CALLSYS        q:0x26e7a2713c0         ; TArray<ALokiTeamState@> ALokiGameState::GetTeamStates(bool, bool) const
+    //    23  PSF            rW0:20
+    //    24  PSF            rW0:10
+    //    25  CALLSYS        q:0x26e6ef22000         ; TArrayIterator<ALokiTeamState@> TArray<ALokiTeamState@>::Iterator()
+    //    28  JMP            ->48
+    //    30  SUSPEND
+    //    31  PSF            rW0:20
+    //    32  CALLSYS        q:0x26e6ef21c80         ; ALokiTeamState@& TArrayIterator<ALokiTeamState@>::Proceed()
+    //    35  PshRPtr
+    //    36  RDSPtr
+    //    37  RefCpyV        wW0:28
+    //    38  PshVPtr        rW0:28
+    //    39  CALLSYS        q:0x26e7a3df740         ; int ALokiTeamState::GetIndex() const
+    //    42  CpyRtoV4       wW0:29
+    //    43  PshV4          rW0:29
+    //    44  PshVPtr        rW0:0
+    //    45  CALLINTF       d:84452                 ; void ABarracudaMinionSpawner::GrantTimerToTeam(const int)
+    //    47  FreeNullV8     wW0:28
+    //    48  LoadVObjR      rW0:20 W1:16 DW2:268448555; TArrayIterator::CanProceed  (+16)
+    //    51  RDR1           wW0:5
+    //    52  CpyVtoR1       rW0:5
+    //    53  JLowNZ         ->30
+    //    55  PSF            rW0:10
+    //    56  CALLSYS        q:0x26e7a271200         ; void TArray<ALokiTeamState@>::$beh2()
+    //    59  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void PlaySpawnAudioEvent()
+// 26 instr, 184 B bytecode, id=0x6F21440C, varspace=8
+------------------------------------------------------------------------------
+{
+    FString v8;
+
+    if (this.SpawnAudioEvent != null) {
+        LokiAudio::PostEventActor(__WorldContext, this.SpawnAudioEvent, this);
+    }
+    if (this.SpawnPilotVO.IsValid()) {
+        v8 = FString();
+        ULokiBarkUtilities::RequestVOPilot(__WorldContext, this.SpawnPilotVO, v8);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:1168 d:134230793     ; ABarracudaMinionSpawner::SpawnAudioEvent  (+1168)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->19
+    //     8  PshVPtr        rW0:0
+    //     9  PshVPtr        rW0:0
+    //    10  ADDSi          W0:1168 d:134230793     ; ABarracudaMinionSpawner::SpawnAudioEvent  (+1168)
+    //    12  RDSPtr
+    //    13  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    16  CALLSYS        q:0x26e7a0aeb00         ; int LokiAudio::PostEventActor(UObject@, UAkAudioEvent@, AActor@)
+    //    19  PshVPtr        rW0:0
+    //    20  ADDSi          W0:1176 d:134230793     ; ABarracudaMinionSpawner::SpawnPilotVO  (+1176)
+    //    22  CALLSYS        q:0x26e79f81580         ; bool FGameplayTag::IsValid() const
+    //    25  JLowZ          ->45
+    //    27  PSF            rW0:8
+    //    28  CALLSYS        q:0x26e628a8c80         ; void FString::$beh0()
+    //    31  PSF            rW0:8
+    //    32  PshVPtr        rW0:0
+    //    33  ADDSi          W0:1176 d:134230793     ; ABarracudaMinionSpawner::SpawnPilotVO  (+1176)
+    //    35  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    38  CALLSYS        q:0x26e7a0e05c0         ; bool ULokiBarkUtilities::RequestVOPilot(UObject@, const FGameplayTag, FString&)
+    //    41  PSF            rW0:8
+    //    42  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //    45  RET            W0:2
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 107 instr, 716 B bytecode, id=0x99FB5432, varspace=9
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v6;
+
+    v1 = true;
+    this.SetbReplicates(true);
+    v1 = true;
+    this.SetbAlwaysRelevant(true);
+    this.SetNetDormancy(true);
+    this.LokiReplicationStrategy.CustomReplicationStrategy = true;
+    v1 = false;
+    this.LokiReplicationStrategy.bDistanceBased = false;
+    this.InitialTeam = 0;
+    v6 = 30;
+    this.SpawnPeriod = 30;
+    this.MinimumBarracudaPhaseType = false;
+    v6 = 0;
+    this.InitialSpawnDelay = 0;
+    this.RespawnType = false;
+    v1 = false;
+    this.bSpawnLoopHasStarted = false;
+    v6 = 0;
+    this.LastSpawnTime = 0;
+    v1 = false;
+    this.bStaggerSpawn = false;
+    v1 = true;
+    this.bShowTimer = true;
+    v1 = true;
+    this.bTimerRequiresVision = true;
+    v6 = -1;
+    this.NextSpawnTime = -1;
+    v1 = false;
+    this.bHasLivingMinion = false;
+    v1 = true;
+    this.CapsuleCollision.SetCapsuleHalfHeight(145, true);
+    v1 = true;
+    this.CapsuleCollision.SetCapsuleRadius(50, true);
+    v1 = true;
+    this.CapsuleCollision.SetCollisionProfileName(__STATIC_NAME(12), true);
+    v1 = true;
+    this.CapsuleCollision.SetNotifyRigidBodyCollision(true);
+    v1 = true;
+    this.VisibilityReceiver.bVisibilityNotificationsEnabled = true;
+    v1 = true;
+    this.VisibilityReceiver.bUsedOutsideOfReplication = true;
+    v1 = false;
+    this.bSpawnAtAveragePlayerLevel = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a6291c0         ; void AActor::SetbReplicates(bool)
+    //     7  SetV1          wW0:1 d:1
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7a624a00         ; void AActor::SetbAlwaysRelevant(bool)
+    //    14  SetV1          wW0:2 d:1
+    //    16  PshV4          rW0:2
+    //    17  PshVPtr        rW0:0
+    //    18  CALLSYS        q:0x26e79714840         ; void AActor::SetNetDormancy(ENetDormancy)
+    //    21  SetV1          wW0:3 d:1
+    //    23  PshVPtr        rW0:0
+    //    24  ADDSi          W0:904 d:67111343       ; AActor::LokiReplicationStrategy  (+904)
+    //    26  ADDSi          W0:0 d:67118017         ; FLokiReplicationStrategy::CustomReplicationStrategy  (+0)
+    //    28  PopRPtr
+    //    29  WRTV1          rW0:3
+    //    30  SetV1          wW0:1 d:0
+    //    32  PshVPtr        rW0:0
+    //    33  ADDSi          W0:904 d:67111343       ; AActor::LokiReplicationStrategy  (+904)
+    //    35  ADDSi          W0:2 d:67118017         ; FLokiReplicationStrategy::bDistanceBased  (+2)
+    //    37  PopRPtr
+    //    38  WRTV1          rW0:1
+    //    39  SetV4          wW0:4 d:0
+    //    41  LoadThisR      W0:952 d:134230793      ; ABarracudaMinionSpawner::InitialTeam  (+952)
+    //    43  WRTV4          rW0:4
+    //    44  SetV8          wW0:6 q:0x403e000000000000
+    //    47  LoadThisR      W0:960 d:134230793      ; ABarracudaMinionSpawner::SpawnPeriod  (+960)
+    //    49  WRTV8          rW0:6
+    //    50  SetV1          wW0:7 d:0
+    //    52  LoadThisR      W0:968 d:134230793      ; ABarracudaMinionSpawner::MinimumBarracudaPhaseType  (+968)
+    //    54  WRTV1          rW0:7
+    //    55  SetV8          wW0:6 q:0x0
+    //    58  LoadThisR      W0:976 d:134230793      ; ABarracudaMinionSpawner::InitialSpawnDelay  (+976)
+    //    60  WRTV8          rW0:6
+    //    61  SetV1          wW0:8 d:0
+    //    63  LoadThisR      W0:1008 d:134230793     ; ABarracudaMinionSpawner::RespawnType  (+1008)
+    //    65  WRTV1          rW0:8
+    //    66  SetV1          wW0:1 d:0
+    //    68  LoadThisR      W0:1034 d:134230793     ; ABarracudaMinionSpawner::bSpawnLoopHasStarted  (+1034)
+    //    70  WRTV1          rW0:1
+    //    71  SetV8          wW0:6 q:0x0
+    //    74  LoadThisR      W0:1040 d:134230793     ; ABarracudaMinionSpawner::LastSpawnTime  (+1040)
+    //    76  WRTV8          rW0:6
+    //    77  SetV1          wW0:1 d:0
+    //    79  LoadThisR      W0:984 d:134230793      ; ABarracudaMinionSpawner::bStaggerSpawn  (+984)
+    //    81  WRTV1          rW0:1
+    //    82  SetV1          wW0:1 d:1
+    //    84  LoadThisR      W0:1032 d:134230793     ; ABarracudaMinionSpawner::bShowTimer  (+1032)
+    //    86  WRTV1          rW0:1
+    //    87  SetV1          wW0:1 d:1
+    //    89  LoadThisR      W0:1033 d:134230793     ; ABarracudaMinionSpawner::bTimerRequiresVision  (+1033)
+    //    91  WRTV1          rW0:1
+    //    92  SetV8          wW0:6 q:0xbff0000000000000
+    //    95  LoadThisR      W0:1056 d:134230793     ; ABarracudaMinionSpawner::NextSpawnTime  (+1056)
+    //    97  WRTV8          rW0:6
+    //    98  SetV1          wW0:1 d:0
+    //   100  LoadThisR      W0:1064 d:134230793     ; ABarracudaMinionSpawner::bHasLivingMinion  (+1064)
+    //   102  WRTV1          rW0:1
+    //   103  SetV1          wW0:1 d:1
+    //   105  PshV4          rW0:1
+    //   106  PshC4          d:1125187584
+    //   108  PshVPtr        rW0:0
+    //   109  ADDSi          W0:1072 d:134230793     ; ABarracudaMinionSpawner::CapsuleCollision  (+1072)
+    //   111  RDSPtr
+    //   112  CALLSYS        q:0x26e799ffe40         ; void UCapsuleComponent::SetCapsuleHalfHeight(float, bool)
+    //   115  SetV1          wW0:1 d:1
+    //   117  PshV4          rW0:1
+    //   118  PshC4          d:1112014848
+    //   120  PshVPtr        rW0:0
+    //   121  ADDSi          W0:1072 d:134230793     ; ABarracudaMinionSpawner::CapsuleCollision  (+1072)
+    //   123  RDSPtr
+    //   124  CALLSYS        q:0x26e799ffc80         ; void UCapsuleComponent::SetCapsuleRadius(float, bool)
+    //   127  SetV1          wW0:1 d:1
+    //   129  PshV4          rW0:1
+    //   130  PshC4          d:12
+    //   132  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   135  PshRPtr
+    //   136  PshVPtr        rW0:0
+    //   137  ADDSi          W0:1072 d:134230793     ; ABarracudaMinionSpawner::CapsuleCollision  (+1072)
+    //   139  RDSPtr
+    //   140  CALLSYS        q:0x26e7975c800         ; void UPrimitiveComponent::SetCollisionProfileName(FName, bool)
+    //   143  SetV1          wW0:1 d:1
+    //   145  PshV4          rW0:1
+    //   146  PshVPtr        rW0:0
+    //   147  ADDSi          W0:1072 d:134230793     ; ABarracudaMinionSpawner::CapsuleCollision  (+1072)
+    //   149  RDSPtr
+    //   150  CALLSYS        q:0x26e797736c0         ; void UPrimitiveComponent::SetNotifyRigidBodyCollision(bool)
+    //   153  SetV1          wW0:1 d:1
+    //   155  PshVPtr        rW0:0
+    //   156  ADDSi          W0:1104 d:134230793     ; ABarracudaMinionSpawner::VisibilityReceiver  (+1104)
+    //   158  RDSPtr
+    //   159  ADDSi          W0:260 d:67115573       ; UVisibilityReceiver::bVisibilityNotificationsEnabled  (+260)
+    //   161  PopRPtr
+    //   162  WRTV1          rW0:1
+    //   163  SetV1          wW0:1 d:1
+    //   165  PshVPtr        rW0:0
+    //   166  ADDSi          W0:1104 d:134230793     ; ABarracudaMinionSpawner::VisibilityReceiver  (+1104)
+    //   168  RDSPtr
+    //   169  ADDSi          W0:259 d:67115573       ; UVisibilityReceiver::bUsedOutsideOfReplication  (+259)
+    //   171  PopRPtr
+    //   172  WRTV1          rW0:1
+    //   173  SetV1          wW0:1 d:0
+    //   175  LoadThisR      W0:985 d:134230793      ; ABarracudaMinionSpawner::bSpawnAtAveragePlayerLevel  (+985)
+    //   177  WRTV1          rW0:1
+    //   178  RET            W0:2
+
+------------------------------------------------------------------------------
+~ABarracudaMinionSpawner()
+// 19 instr, 144 B bytecode, id=0x56B109D4, varspace=0
+------------------------------------------------------------------------------
+{
+    this.Wave.~FMinionWave();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:992 d:134230793      ; ABarracudaMinionSpawner::LevelThresholdsByGametime  (+992)
+    //     3  CALLSYS        q:0x26e6ed87240         ; void TArray<FGametimeToLevel>::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:1016 d:134230793     ; ABarracudaMinionSpawner::Wave  (+1016)
+    //     9  CALL           d:85475                 ; void FMinionWave::~FMinionWave()
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:1112 d:134230793     ; ABarracudaMinionSpawner::StartingEffects  (+1112)
+    //    14  CALLSYS        q:0x26e78fb91c0         ; void TArray<TSubclassOf<UGameplayEffect@>>::$beh2()
+    //    17  PshVPtr        rW0:0
+    //    18  ADDSi          W0:1128 d:134230793     ; ABarracudaMinionSpawner::MinionInstances  (+1128)
+    //    20  CALLSYS        q:0x26e7a112e00         ; void TArray<ALokiMinionCharacter@>::$beh2()
+    //    23  PshVPtr        rW0:0
+    //    24  ADDSi          W0:1152 d:134230793     ; ABarracudaMinionSpawner::WaveBuffer  (+1152)
+    //    26  CALLSYS        q:0x26e6ed86ec0         ; void TArray<TSubclassOf<ALokiMinionCharacter@>>::$beh2()
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:1176 d:134230793     ; ABarracudaMinionSpawner::SpawnPilotVO  (+1176)
+    //    32  CALLSYS        q:0x26e787621c0         ; void FGameplayTag::$beh2()
+    //    35  RET            W0:2
+

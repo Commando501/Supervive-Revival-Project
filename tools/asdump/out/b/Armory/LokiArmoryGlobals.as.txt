@@ -1,0 +1,952 @@
+// ============================================================================
+//  MODULE   Armory.LokiArmoryGlobals
+//  SOURCE   Armory/LokiArmoryGlobals.as
+//  CONTENT  0 class(es), 6 function(s), 0 enum(s), 0 global(s), 4000 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Armory_LokiArmoryGlobalsStatics
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+TArray<FString> GetPerTierPowerDescription(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+{
+    v4 = TArray();
+    v5 = arg_m2.IsValid();
+    v5 = !v5;
+    if (v5) {
+        ItemClass = TArray();
+        ItemClass = v4;
+        return;
+    } else {
+        v8 = arg_m2.GetDefaultObject();
+        v5 = IsValid(v8);
+        v5 = !v5;
+        if (v5) {
+            ItemClass = TArray();
+            ItemClass = v4;
+            return;
+        } else {
+            v18 = FText();
+            v19 = 0;
+            while (true) {
+                if (v19 >= 6) break;
+                v26 = FString();
+                v4.Add(v26);
+                v19++;
+            }
+            v19 = 0;
+            while (true) {
+                v20 = v8.ArmoryUniqueEffects.Num();
+                if (v19 >= v20) break;
+                v32 = FLokiArmoryUniqueEffect(v8.ArmoryUniqueEffects[v19]);
+                v33 = v32.StarRequirement;
+                v20 = v4.Num();
+                if (v33 >= v20) {
+                    v5 = true;
+                } else {
+                    v20 = v32.StarRequirement;
+                    v34 = v20 < 0;
+                    v5 = v34;
+                }
+                if (!v5) {
+                    v14 = v8.GetArmoryUniqueEffectDescriptionAtIndex(v19);
+                    v26 = v14.ToString();
+                    v20 = v32.StarRequirement;
+                    v4[v20] = v26;
+                }
+                v19++;
+            }
+            ItemClass = TArray();
+            ItemClass = v4;
+        }
+    }
+    return;
+}
+/* ---- GetPerTierPowerDescription: 204 dwords / 116 instructions (cache offset 0x5c93) ----
+    0000  PSF           v4                                          
+    0004  CALLSYS       TArray::$beh0                               
+    0010  PshVPtr       arg_m2                                      
+    0014  CALLSYS       TSubclassOf::IsValid                        
+    0020  CpyRtoV4      v5                                          
+    0024  NOT           v5                                          
+    0028  CpyVtoR1      v5                                          
+    002C  JLowZ         15                                            -> L0070
+    0034  PshVPtr       ItemClass                                   
+    0038  CALLSYS       TArray::$beh0                               
+    0044  PSF           v4                                          
+    0048  PshVPtr       ItemClass                                   
+    004C  CALLSYS       TArray::opAssign                            
+    0058  PSF           v4                                          
+    005C  CALLSYS       TArray::$beh2                               
+    0068  JMP           175                                           -> L032C
+  L0070:
+    0070  PshVPtr       arg_m2                                      
+    0074  CALLSYS       TSubclassOf::GetDefaultObject               
+    0080  STOREOBJ      v8                                          
+    0084  PshVPtr       v8                                          
+    0088  CALLSYS       IsValid                                     
+    0094  CpyRtoV4      v5                                          
+    0098  NOT           v5                                          
+    009C  CpyVtoR1      v5                                          
+    00A0  JLowZ         15                                            -> L00E4
+    00A8  PshVPtr       ItemClass                                   
+    00AC  CALLSYS       TArray::$beh0                               
+    00B8  PSF           v4                                          
+    00BC  PshVPtr       ItemClass                                   
+    00C0  CALLSYS       TArray::opAssign                            
+    00CC  PSF           v4                                          
+    00D0  CALLSYS       TArray::$beh2                               
+    00DC  JMP           146                                           -> L032C
+  L00E4:
+    00E4  PSF           v18                                         
+    00E8  CALLSYS       FText::$beh0                                
+    00F4  SetV4         v19 0                                       
+    00FC  JMP           15                                            -> L0140
+  L0104:
+    0104  SUSPEND                                                   
+    0108  PSF           v26                                         
+    010C  CALLSYS       FString::$beh0                              
+    0118  PSF           v26                                         
+    011C  PSF           v4                                          
+    0120  CALLSYS       TArray::Add                                 
+    012C  PSF           v26                                         
+    0130  CALLSYS       FString::$beh2                              
+    013C  IncVi         v19                                         
+  L0140:
+    0140  CMPIi         v19 6                                       
+    0148  JS            -19                                           -> L0104
+    0150  SetV4         v19 0                                       
+    0158  JMP           87                                            -> L02BC
+  L0160:
+    0160  SUSPEND                                                   
+    0164  PshV4         v19                                         
+    0168  PshVPtr       v8                                          
+    016C  ADDSi         1496 67114958                                 ; .ArmoryUniqueEffects
+    0174  Thiscall1     TArray::opIndex                             
+    0180  PshRPtr                                                   
+    0184  PSF           v32                                         
+    0188  CALLSYS       FLokiArmoryUniqueEffect::$beh0              
+    0194  LoadVObjR     v32 0 67121024                                ; .StarRequirement
+    01A0  RDR4          v33                                         
+    01A4  PSF           v4                                          
+    01A8  CALLSYS       TArray::Num                                 
+    01B4  CpyRtoV4      v20                                         
+    01B8  CMPi          v33 v20                                     
+    01C0  JS            4                                             -> L01D8
+    01C8  SetV1         v5 1                                        
+    01D0  JMP           10                                            -> L0200
+  L01D8:
+    01D8  LoadVObjR     v32 0 67121024                                ; .StarRequirement
+    01E4  RDR4          v20                                         
+    01E8  CMPIi         v20 0                                       
+    01F0  TS                                                        
+    01F4  CpyRtoV4      v34                                         
+    01F8  CpyVtoV4      v5 v34                                      
+  L0200:
+    0200  CpyVtoR1      v5                                          
+    0204  JLowZ         6                                             -> L0224
+    020C  PSF           v32                                         
+    0210  CALLSYS       FLokiArmoryUniqueEffect::$beh2              
+    021C  JMP           37                                            -> L02B8
+  L0224:
+    0224  PSF           v26                                         
+    0228  PshV4         v19                                         
+    022C  PSF           v14                                         
+    0230  PshVPtr       v8                                          
+    0234  CALLSYS       ALokiBaseItem::GetArmoryUniqueEffectDescriptionAtIndex
+    0240  PSF           v14                                         
+    0244  CALLSYS       FText::ToString                             
+    0250  PSF           v14                                         
+    0254  CALLSYS       FText::$beh2                                
+    0260  PSF           v26                                         
+    0264  LoadVObjR     v32 0 67121024                                ; .StarRequirement
+    0270  RDR4          v20                                         
+    0274  PshV4         v20                                         
+    0278  PSF           v4                                          
+    027C  Thiscall1     TArray::opIndex                             
+    0288  PshRPtr                                                   
+    028C  CALLSYS       FString::opAssign                           
+    0298  PSF           v26                                         
+    029C  CALLSYS       FString::$beh2                              
+    02A8  PSF           v32                                         
+    02AC  CALLSYS       FLokiArmoryUniqueEffect::$beh2              
+  L02B8:
+    02B8  IncVi         v19                                         
+  L02BC:
+    02BC  PshVPtr       v8                                          
+    02C0  ADDSi         1496 67114958                                 ; .ArmoryUniqueEffects
+    02C8  CALLSYS       TArray::Num                                 
+    02D4  CpyRtoV4      v20                                         
+    02D8  CMPi          v19 v20                                     
+    02E0  JS            -98                                           -> L0160
+    02E8  PshVPtr       ItemClass                                   
+    02EC  CALLSYS       TArray::$beh0                               
+    02F8  PSF           v4                                          
+    02FC  PshVPtr       ItemClass                                   
+    0300  CALLSYS       TArray::opAssign                            
+    030C  PSF           v18                                         
+    0310  CALLSYS       FText::$beh2                                
+    031C  PSF           v4                                          
+    0320  CALLSYS       TArray::$beh2                               
+  L032C:
+    032C  RET           4                                           
+*/
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+bool IsItemSpellDescription(ALokiBaseItem@ Item, const int StarCount)   // traits=0x20
+{
+    v1 = IsValid(Item);
+    v1 = !v1;
+    if (v1) {
+        v1 = false;
+        return v1;
+    } else {
+        v8 = Item.ArmoryUniqueEffects.Iterator();
+        while (true) {
+            v1 = v8.CanProceed;
+            if (!v1) break;
+            v16 = v8.Proceed();
+            v17 = v16.StarRequirement;
+            if (v17 == StarCount) {
+                v1 = v16.bIsItemSpell;
+                return v1;
+            }
+        }
+        v1 = false;
+    }
+    return v1;
+}
+/* ---- IsItemSpellDescription: 55 dwords / 33 instructions (cache offset 0x6310) ----
+    0000  PshVPtr       Item                                        
+    0004  CALLSYS       IsValid                                     
+    0010  CpyRtoV4      v1                                          
+    0014  NOT           v1                                          
+    0018  CpyVtoR1      v1                                          
+    001C  JLowZ         5                                             -> L0038
+    0024  SetV1         v1 0                                        
+    002C  CpyVtoR4      v1                                          
+    0030  JMP           40                                            -> L00D8
+  L0038:
+    0038  PSF           v8                                          
+    003C  PshVPtr       Item                                        
+    0040  ADDSi         1496 67114958                                 ; .ArmoryUniqueEffects
+    0048  CALLSYS       TArray::Iterator                            
+    0054  JMP           21                                            -> L00B0
+  L005C:
+    005C  SUSPEND                                                   
+    0060  PSF           v8                                          
+    0064  CALLSYS       TArrayIterator::Proceed                     
+    0070  CpyRtoV8      v16                                         
+    0074  LoadRObjR     v16 0 67121024                                ; .StarRequirement
+    0080  RDR4          v17                                         
+    0084  CMPi          v17 StarCount                               
+    008C  JNZ           7                                             -> L00B0
+    0094  LoadRObjR     v16 16 67121024                               ; .bIsItemSpell
+    00A0  RDR1          v1                                          
+    00A4  CpyVtoR4      v1                                          
+    00A8  JMP           10                                            -> L00D8
+  L00B0:
+    00B0  LoadVObjR     v8 16 268448491                               ; .CanProceed
+    00BC  RDR1          v1                                          
+    00C0  CpyVtoR1      v1                                          
+    00C4  JLowNZ        -28                                           -> L005C
+    00CC  SetV1         v1 0                                        
+    00D4  CpyVtoR4      v1                                          
+  L00D8:
+    00D8  RET           3                                           
+*/
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+TSubclassOf<UGameplayEffect@> GetUniqueEffectForStar(const TSubclassOf<ALokiBaseItem@>& ItemClass, const int StarCount)   // traits=0x20
+{
+    v1 = StarCount.IsValid();
+    v1 = !v1;
+    if (v1) {
+        ItemClass = TSubclassOf();
+        v4 = TSubclassOf(nullptr);
+        ItemClass = v4;
+        return;
+    } else {
+        v6 = StarCount.GetDefaultObject();
+        v1 = IsValid(v6);
+        v1 = !v1;
+        if (v1) {
+            ItemClass = TSubclassOf();
+            v4 = TSubclassOf(nullptr);
+            ItemClass = v4;
+            return;
+        } else {
+            v14 = v6.ArmoryUniqueEffects.Iterator();
+            while (true) {
+                v1 = v14.CanProceed;
+                if (!v1) break;
+                v22 = v14.Proceed();
+                v23 = v22.StarRequirement;
+                if (v23 == arg_m4) {
+                    ItemClass = TSubclassOf();
+                    ItemClass = v22.EffectClass;
+                    return;
+                }
+            }
+            ItemClass = TSubclassOf();
+            v4 = TSubclassOf(nullptr);
+            ItemClass = v4;
+        }
+    }
+    return;
+}
+/* ---- GetUniqueEffectForStar: 113 dwords / 66 instructions (cache offset 0x65f6) ----
+    0000  PshVPtr       StarCount                                   
+    0004  CALLSYS       TSubclassOf::IsValid                        
+    0010  CpyRtoV4      v1                                          
+    0014  NOT           v1                                          
+    0018  CpyVtoR1      v1                                          
+    001C  JLowZ         16                                            -> L0064
+    0024  PshVPtr       ItemClass                                   
+    0028  CALLSYS       TSubclassOf::$beh0                          
+    0034  PshNull                                                   
+    0038  PSF           v4                                          
+    003C  CALLSYS       TSubclassOf::$beh0                          
+    0048  PSF           v4                                          
+    004C  PshVPtr       ItemClass                                   
+    0050  CALLSYS       TSubclassOf::opAssign                       
+    005C  JMP           87                                            -> L01C0
+  L0064:
+    0064  PshVPtr       StarCount                                   
+    0068  CALLSYS       TSubclassOf::GetDefaultObject               
+    0074  STOREOBJ      v6                                          
+    0078  PshVPtr       v6                                          
+    007C  CALLSYS       IsValid                                     
+    0088  CpyRtoV4      v1                                          
+    008C  NOT           v1                                          
+    0090  CpyVtoR1      v1                                          
+    0094  JLowZ         16                                            -> L00DC
+    009C  PshVPtr       ItemClass                                   
+    00A0  CALLSYS       TSubclassOf::$beh0                          
+    00AC  PshNull                                                   
+    00B0  PSF           v4                                          
+    00B4  CALLSYS       TSubclassOf::$beh0                          
+    00C0  PSF           v4                                          
+    00C4  PshVPtr       ItemClass                                   
+    00C8  CALLSYS       TSubclassOf::opAssign                       
+    00D4  JMP           57                                            -> L01C0
+  L00DC:
+    00DC  PSF           v14                                         
+    00E0  PshVPtr       v6                                          
+    00E4  ADDSi         1496 67114958                                 ; .ArmoryUniqueEffects
+    00EC  CALLSYS       TArray::Iterator                            
+    00F8  JMP           27                                            -> L016C
+  L0100:
+    0100  SUSPEND                                                   
+    0104  PSF           v14                                         
+    0108  CALLSYS       TArrayIterator::Proceed                     
+    0114  CpyRtoV8      v22                                         
+    0118  LoadRObjR     v22 0 67121024                                ; .StarRequirement
+    0124  RDR4          v23                                         
+    0128  CMPi          v23 arg_m4                                  
+    0130  JNZ           13                                            -> L016C
+    0138  PshVPtr       ItemClass                                   
+    013C  CALLSYS       TSubclassOf::$beh0                          
+    0148  PshVPtr       v22                                         
+    014C  ADDSi         8 67121024                                    ; .EffectClass
+    0154  PshVPtr       ItemClass                                   
+    0158  CALLSYS       TSubclassOf::opAssign                       
+    0164  JMP           21                                            -> L01C0
+  L016C:
+    016C  LoadVObjR     v14 16 268448491                              ; .CanProceed
+    0178  RDR1          v1                                          
+    017C  CpyVtoR1      v1                                          
+    0180  JLowNZ        -34                                           -> L0100
+    0188  PshVPtr       ItemClass                                   
+    018C  CALLSYS       TSubclassOf::$beh0                          
+    0198  PshNull                                                   
+    019C  PSF           v4                                          
+    01A0  CALLSYS       TSubclassOf::$beh0                          
+    01AC  PSF           v4                                          
+    01B0  PshVPtr       ItemClass                                   
+    01B4  CALLSYS       TSubclassOf::opAssign                       
+  L01C0:
+    01C0  RET           5                                           
+*/
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+FText GetArmoryUniqueEffectTextForItem(ALokiBaseItem@ Item, const FText& InactiveWarningFmt, const FText& LevelUpText)   // traits=0x20
+{
+    v1 = IsValid(InactiveWarningFmt);
+    v1 = !v1;
+    if (v1) {
+        v6 = FText();
+        Item = FText(v6);
+        return;
+    } else {
+        v8 = InactiveWarningFmt.GetClass();
+        v10 = v8.GetDefaultObject();
+        if (v10 != nullptr) {
+            v12 = cast<ALokiBaseItem@>(v10);
+        } else {
+            v12 = nullptr;
+        }
+        v14 = v12;
+        v16 = InactiveWarningFmt;
+        if (v14 == v16) {
+            v8 = InactiveWarningFmt.GetClass();
+            v18 = TSubclassOf(v8);
+            v6 = GetArmoryUniqueEffectTextForItemClass(v18, LevelUpText, arg_m6);
+            Item = FText(v6);
+            return;
+        } else {
+            v1 = InactiveWarningFmt.CanHaveAnyArmoryUniqueEffects();
+            v1 = !v1;
+            if (v1) {
+                v6 = FText();
+                Item = FText(v6);
+                return;
+            } else {
+                v6 = InactiveWarningFmt.GetArmoryUniqueEffectDescriptionAtIndex(0);
+                if (InactiveWarningFmt.MeetsRequirementsForUniqueEffectAtIndex(0)) {
+                    v22 = FText();
+                    Item = FText(v22);
+                    return;
+                } else {
+                    if (InactiveWarningFmt.HasArmoryStarsForUniqueEffectAtIndex(0)) {
+                        v22 = FText::Format(LevelUpText, v6, typeid(FText));
+                        Item = FText(v22);
+                        return;
+                    } else {
+                        Item = FText(arg_m6);
+                    }
+                }
+            }
+        }
+    }
+    return;
+}
+/* ---- GetArmoryUniqueEffectTextForItem: 181 dwords / 106 instructions (cache offset 0x6a92) ----
+    0000  PshVPtr       InactiveWarningFmt                          
+    0004  CALLSYS       IsValid                                     
+    0010  CpyRtoV4      v1                                          
+    0014  NOT           v1                                          
+    0018  CpyVtoR1      v1                                          
+    001C  JLowZ         15                                            -> L0060
+    0024  PSF           v6                                          
+    0028  CALLSYS       FText::$beh0                                
+    0034  PSF           v6                                          
+    0038  PshVPtr       Item                                        
+    003C  CALLSYS       FText::$beh0                                
+    0048  PSF           v6                                          
+    004C  CALLSYS       FText::$beh2                                
+    0058  JMP           156                                           -> L02D0
+  L0060:
+    0060  PshVPtr       InactiveWarningFmt                          
+    0064  CALLSYS       UObject::GetClass                           
+    0070  STOREOBJ      v8                                          
+    0074  PshVPtr       v8                                          
+    0078  CALLSYS       UClass::GetDefaultObject                    
+    0084  STOREOBJ      v10                                         
+    0088  CmpPtrNull    v10                                         
+    008C  JZ            9                                             -> L00B8
+    0094  TYPEID        1140856782                                    ; ALokiBaseItem@
+    009C  PSF           v12                                         
+    00A0  PshVPtr       v10                                         
+    00A4  CALLSYS       UObject::opCast                             
+    00B0  JMP           1                                             -> L00BC
+  L00B8:
+    00B8  ClrVPtr       v12                                         
+  L00BC:
+    00BC  PshVPtr       v12                                         
+    00C0  RefCpyV       v14                                         
+    00C4  PshVPtr       InactiveWarningFmt                          
+    00C8  RefCpyV       v16                                         
+    00CC  CmpPtr        v14 v16                                     
+    00D4  JNZ           27                                            -> L0148
+    00DC  PshVPtr       arg_m6                                      
+    00E0  PshVPtr       LevelUpText                                 
+    00E4  PshVPtr       InactiveWarningFmt                          
+    00E8  CALLSYS       UObject::GetClass                           
+    00F4  STOREOBJ      v8                                          
+    00F8  PshVPtr       v8                                          
+    00FC  PSF           v18                                         
+    0100  CALLSYS       TSubclassOf::$beh0                          
+    010C  PSF           v18                                         
+    0110  PSF           v6                                          
+    0114  CALL          84014                                         ; GetArmoryUniqueEffectTextForItemClass
+    011C  PSF           v6                                          
+    0120  PshVPtr       Item                                        
+    0124  CALLSYS       FText::$beh0                                
+    0130  PSF           v6                                          
+    0134  CALLSYS       FText::$beh2                                
+    0140  JMP           98                                            -> L02D0
+  L0148:
+    0148  PshVPtr       InactiveWarningFmt                          
+    014C  CALLSYS       ALokiBaseItem::CanHaveAnyArmoryUniqueEffects
+    0158  CpyRtoV4      v1                                          
+    015C  NOT           v1                                          
+    0160  CpyVtoR1      v1                                          
+    0164  JLowZ         15                                            -> L01A8
+    016C  PSF           v6                                          
+    0170  CALLSYS       FText::$beh0                                
+    017C  PSF           v6                                          
+    0180  PshVPtr       Item                                        
+    0184  CALLSYS       FText::$beh0                                
+    0190  PSF           v6                                          
+    0194  CALLSYS       FText::$beh2                                
+    01A0  JMP           74                                            -> L02D0
+  L01A8:
+    01A8  PshC4         0                                           
+    01B0  PSF           v6                                          
+    01B4  PshVPtr       InactiveWarningFmt                          
+    01B8  CALLSYS       ALokiBaseItem::GetArmoryUniqueEffectDescriptionAtIndex
+    01C4  PshC4         0                                           
+    01CC  PshVPtr       InactiveWarningFmt                          
+    01D0  CALLSYS       ALokiBaseItem::MeetsRequirementsForUniqueEffectAtIndex
+    01DC  JLowZ         19                                            -> L0230
+    01E4  PSF           v22                                         
+    01E8  CALLSYS       FText::$beh0                                
+    01F4  PSF           v22                                         
+    01F8  PshVPtr       Item                                        
+    01FC  CALLSYS       FText::$beh0                                
+    0208  PSF           v22                                         
+    020C  CALLSYS       FText::$beh2                                
+    0218  PSF           v6                                          
+    021C  CALLSYS       FText::$beh2                                
+    0228  JMP           40                                            -> L02D0
+  L0230:
+    0230  PshC4         0                                           
+    0238  PshVPtr       InactiveWarningFmt                          
+    023C  CALLSYS       ALokiBaseItem::HasArmoryStarsForUniqueEffectAtIndex
+    0248  JLowZ         23                                            -> L02AC
+    0250  TYPEID        67117450                                      ; FText
+    0258  PSF           v6                                          
+    025C  PshVPtr       LevelUpText                                 
+    0260  PSF           v22                                         
+    0264  CALLSYS       Format                                      
+    0270  PSF           v22                                         
+    0274  PshVPtr       Item                                        
+    0278  CALLSYS       FText::$beh0                                
+    0284  PSF           v22                                         
+    0288  CALLSYS       FText::$beh2                                
+    0294  PSF           v6                                          
+    0298  CALLSYS       FText::$beh2                                
+    02A4  JMP           9                                             -> L02D0
+  L02AC:
+    02AC  PshVPtr       arg_m6                                      
+    02B0  PshVPtr       Item                                        
+    02B4  CALLSYS       FText::$beh0                                
+    02C0  PSF           v6                                          
+    02C4  CALLSYS       FText::$beh2                                
+  L02D0:
+    02D0  RET           8                                           
+*/
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+FText GetArmoryUniqueEffectTextForItemClass(const TSubclassOf<ALokiBaseItem@>& ItemClass, const FText& InactiveWarningFmt, const FText& LevelUpText)   // traits=0x20
+{
+    v2 = UObject@(InactiveWarningFmt);
+    v3 = IsValid(v2);
+    v3 = !v3;
+    if (v3) {
+        v8 = FText();
+        ItemClass = FText(v8);
+        return;
+    } else {
+        v12 = InactiveWarningFmt.GetDefaultObject();
+        v3 = IsValid(v12);
+        v3 = !v3;
+        if (v3) {
+            v8 = FText();
+            ItemClass = FText(v8);
+            return;
+        } else {
+            if (v12.ArmoryUniqueEffects.IsEmpty()) {
+                v8 = FText();
+                ItemClass = FText(v8);
+                return;
+            } else {
+                v20 = FLokiArmoryUniqueEffect(v12.ArmoryUniqueEffects[0]);
+                if (Loki::IsInGameWorld(__WorldContext)) {
+                    v24 = Loki::GetLocalLokiController(__WorldContext);
+                    if (IsValid(v24)) {
+                        v26 = ULokiPlayerControllerArmoryComponent::StaticClass();
+                        v28 = TSubclassOf(v26);
+                        v30 = v24.GetComponentByClass(v28);
+                        if (v30 != nullptr) {
+                            v32 = cast<ULokiPlayerControllerArmoryComponent@>(v30);
+                        } else {
+                            v32 = nullptr;
+                        }
+                        v34 = v32;
+                        v3 = IsValid(v34);
+                        v3 = !v3;
+                        if (v3) {
+                            v8 = FText();
+                            ItemClass = FText(v8);
+                            return;
+                        }
+                        v3 = false;
+                        v35 = v3;
+                        v36 = -1;
+                        v13 = v20.StarRequirement;
+                        if (v13 <= v36) {
+                            if (v12.HasArmoryTierForUniqueEffectAtIndex(0)) {
+                                v8 = v12.GetArmoryUniqueEffectDescriptionAtIndex(0);
+                                ItemClass = FText(v8);
+                                return;
+                            }
+                            v8 = v12.GetArmoryUniqueEffectDescriptionAtIndex(0);
+                            v40 = FText::Format(LevelUpText, v8, typeid(FText));
+                            ItemClass = FText(v40);
+                            return;
+                        }
+                    }
+                    ItemClass = FText(arg_m6);
+                    return;
+                } else {
+                    v44 = UArmoryManager::GetArmoryManager(__WorldContext);
+                    v48 = v44.GetPlayerArmoryModel();
+                    v3 = false;
+                    v35 = v3;
+                    v36 = -1;
+                    v54 = v48.InventoryEquipment.Iterator();
+                    while (true) {
+                        v3 = v54.CanProceed;
+                        if (!v3) break;
+                        v62 = v54.Proceed();
+                        v54.Proceed();
+                        if (v62.EquipmentAsset.Equipment.IsValid()) {
+                            v66 = v62.EquipmentAsset.Equipment.Get();
+                            if (v66 == InactiveWarningFmt) {
+                                v3 = true;
+                                v35 = v3;
+                                v13 = v62.XP;
+                                if (v13 < 2) {
+                                    v36 = 0;
+                                } else {
+                                    v13 = v62.XP;
+                                    if (v13 < 5) {
+                                        v36 = 1;
+                                    } else {
+                                        v36 = 2;
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    v67 = v20.StarRequirement;
+                    if (v67 <= v36) {
+                        v8 = v12.GetArmoryUniqueEffectDescriptionAtIndex(0);
+                        ItemClass = FText(v8);
+                        return;
+                    } else {
+                        ItemClass = FText(arg_m6);
+                    }
+                }
+            }
+        }
+    }
+    return;
+}
+/* ---- GetArmoryUniqueEffectTextForItemClass: 406 dwords / 226 instructions (cache offset 0x7112) ----
+    0000  PshVPtr       InactiveWarningFmt                          
+    0004  CALLSYS       TSubclassOf::opImplConv                     
+    0010  STOREOBJ      v2                                          
+    0014  PshVPtr       v2                                          
+    0018  CALLSYS       IsValid                                     
+    0024  CpyRtoV4      v3                                          
+    0028  NOT           v3                                          
+    002C  CpyVtoR1      v3                                          
+    0030  JLowZ         15                                            -> L0074
+    0038  PSF           v8                                          
+    003C  CALLSYS       FText::$beh0                                
+    0048  PSF           v8                                          
+    004C  PshVPtr       ItemClass                                   
+    0050  CALLSYS       FText::$beh0                                
+    005C  PSF           v8                                          
+    0060  CALLSYS       FText::$beh2                                
+    006C  JMP           376                                           -> L0654
+  L0074:
+    0074  PshVPtr       InactiveWarningFmt                          
+    0078  CALLSYS       TSubclassOf::GetDefaultObject               
+    0084  STOREOBJ      v12                                         
+    0088  PshVPtr       v12                                         
+    008C  CALLSYS       IsValid                                     
+    0098  CpyRtoV4      v3                                          
+    009C  NOT           v3                                          
+    00A0  CpyVtoR1      v3                                          
+    00A4  JLowZ         15                                            -> L00E8
+    00AC  PSF           v8                                          
+    00B0  CALLSYS       FText::$beh0                                
+    00BC  PSF           v8                                          
+    00C0  PshVPtr       ItemClass                                   
+    00C4  CALLSYS       FText::$beh0                                
+    00D0  PSF           v8                                          
+    00D4  CALLSYS       FText::$beh2                                
+    00E0  JMP           347                                           -> L0654
+  L00E8:
+    00E8  PshVPtr       v12                                         
+    00EC  ADDSi         1496 67114958                                 ; .ArmoryUniqueEffects
+    00F4  CALLSYS       TArray::IsEmpty                             
+    0100  JLowZ         15                                            -> L0144
+    0108  PSF           v8                                          
+    010C  CALLSYS       FText::$beh0                                
+    0118  PSF           v8                                          
+    011C  PshVPtr       ItemClass                                   
+    0120  CALLSYS       FText::$beh0                                
+    012C  PSF           v8                                          
+    0130  CALLSYS       FText::$beh2                                
+    013C  JMP           324                                           -> L0654
+  L0144:
+    0144  PshC4         0                                           
+    014C  PshVPtr       v12                                         
+    0150  ADDSi         1496 67114958                                 ; .ArmoryUniqueEffects
+    0158  Thiscall1     TArray::opIndex                             
+    0164  PshRPtr                                                   
+    0168  PSF           v20                                         
+    016C  CALLSYS       FLokiArmoryUniqueEffect::$beh0              
+    0178  PshGPtr       __WorldContext                              
+    0184  CALLSYS       IsInGameWorld                               
+    0190  JLowZ         160                                           -> L0418
+    0198  PshGPtr       __WorldContext                              
+    01A4  CALLSYS       GetLocalLokiController                      
+    01B0  STOREOBJ      v24                                         
+    01B4  PshVPtr       v24                                         
+    01B8  CALLSYS       IsValid                                     
+    01C4  JLowZ         136                                           -> L03EC
+    01CC  CALL          84049                                         ; StaticClass
+    01D4  STOREOBJ      v26                                         
+    01D8  PshVPtr       v26                                         
+    01DC  PSF           v28                                         
+    01E0  CALLSYS       TSubclassOf::$beh0                          
+    01EC  PSF           v28                                         
+    01F0  PshVPtr       v24                                         
+    01F4  CALLSYS       AActor::GetComponentByClass                 
+    0200  STOREOBJ      v30                                         
+    0204  CmpPtrNull    v30                                         
+    0208  JZ            9                                             -> L0234
+    0210  TYPEID        1207972588                                    ; ULokiPlayerControllerArmoryComponent@
+    0218  PSF           v32                                         
+    021C  PshVPtr       v30                                         
+    0220  CALLSYS       UObject::opCast                             
+    022C  JMP           1                                             -> L0238
+  L0234:
+    0234  ClrVPtr       v32                                         
+  L0238:
+    0238  PshVPtr       v32                                         
+    023C  RefCpyV       v34                                         
+    0240  PshVPtr       v34                                         
+    0244  CALLSYS       IsValid                                     
+    0250  CpyRtoV4      v3                                          
+    0254  NOT           v3                                          
+    0258  CpyVtoR1      v3                                          
+    025C  JLowZ         19                                            -> L02B0
+    0264  PSF           v8                                          
+    0268  CALLSYS       FText::$beh0                                
+    0274  PSF           v8                                          
+    0278  PshVPtr       ItemClass                                   
+    027C  CALLSYS       FText::$beh0                                
+    0288  PSF           v8                                          
+    028C  CALLSYS       FText::$beh2                                
+    0298  PSF           v20                                         
+    029C  CALLSYS       FLokiArmoryUniqueEffect::$beh2              
+    02A8  JMP           233                                           -> L0654
+  L02B0:
+    02B0  SetV1         v3 0                                        
+    02B8  CpyVtoV4      v35 v3                                      
+    02C0  SetV4         v36 -1                                      
+    02C8  LoadVObjR     v20 0 67121024                                ; .StarRequirement
+    02D4  RDR4          v13                                         
+    02D8  CMPi          v13 v36                                     
+    02E0  JP            64                                            -> L03E8
+    02E8  PshC4         0                                           
+    02F0  PshVPtr       v12                                         
+    02F4  CALLSYS       ALokiBaseItem::HasArmoryTierForUniqueEffectAtIndex
+    0300  JLowZ         22                                            -> L0360
+    0308  PshC4         0                                           
+    0310  PSF           v8                                          
+    0314  PshVPtr       v12                                         
+    0318  CALLSYS       ALokiBaseItem::GetArmoryUniqueEffectDescriptionAtIndex
+    0324  PSF           v8                                          
+    0328  PshVPtr       ItemClass                                   
+    032C  CALLSYS       FText::$beh0                                
+    0338  PSF           v8                                          
+    033C  CALLSYS       FText::$beh2                                
+    0348  PSF           v20                                         
+    034C  CALLSYS       FLokiArmoryUniqueEffect::$beh2              
+    0358  JMP           189                                           -> L0654
+  L0360:
+    0360  TYPEID        67117450                                      ; FText
+    0368  PshC4         0                                           
+    0370  PSF           v8                                          
+    0374  PshVPtr       v12                                         
+    0378  CALLSYS       ALokiBaseItem::GetArmoryUniqueEffectDescriptionAtIndex
+    0384  PSF           v8                                          
+    0388  PshVPtr       LevelUpText                                 
+    038C  PSF           v40                                         
+    0390  CALLSYS       Format                                      
+    039C  PSF           v8                                          
+    03A0  CALLSYS       FText::$beh2                                
+    03AC  PSF           v40                                         
+    03B0  PshVPtr       ItemClass                                   
+    03B4  CALLSYS       FText::$beh0                                
+    03C0  PSF           v40                                         
+    03C4  CALLSYS       FText::$beh2                                
+    03D0  PSF           v20                                         
+    03D4  CALLSYS       FLokiArmoryUniqueEffect::$beh2              
+    03E0  JMP           155                                           -> L0654
+  L03E8:
+    03E8  FreeNullV8    v34                                         
+  L03EC:
+    03EC  PshVPtr       arg_m6                                      
+    03F0  PshVPtr       ItemClass                                   
+    03F4  CALLSYS       FText::$beh0                                
+    0400  PSF           v20                                         
+    0404  CALLSYS       FLokiArmoryUniqueEffect::$beh2              
+    0410  JMP           143                                           -> L0654
+  L0418:
+    0418  PshGPtr       __WorldContext                              
+    0424  CALLSYS       GetArmoryManager                            
+    0430  STOREOBJ      v44                                         
+    0434  PshVPtr       v44                                         
+    0438  CALLSYS       UArmoryManager::GetPlayerArmoryModel        
+    0444  STOREOBJ      v48                                         
+    0448  SetV1         v3 0                                        
+    0450  CpyVtoV4      v35 v3                                      
+    0458  SetV4         v36 -1                                      
+    0460  PSF           v54                                         
+    0464  PshVPtr       v48                                         
+    0468  ADDSi         80 67115528                                   ; .InventoryEquipment
+    0470  CALLSYS       TArray::Iterator                            
+    047C  JMP           70                                            -> L059C
+  L0484:
+    0484  SUSPEND                                                   
+    0488  PSF           v54                                         
+    048C  CALLSYS       TArrayIterator::Proceed                     
+    0498  PshRPtr                                                   
+    049C  RDSPtr                                                    
+    04A0  RefCpyV       v62                                         
+    04A4  PshVPtr       v62                                         
+    04A8  ADDSi         176 67115527                                  ; .EquipmentAsset
+    04B0  RDSPtr                                                    
+    04B4  ADDSi         112 67115059                                  ; .Equipment
+    04BC  CALLSYS       TSoftClassPtr::IsValid                      
+    04C8  JLowZ         50                                            -> L0598
+    04D0  PSF           v66                                         
+    04D4  PshVPtr       v62                                         
+    04D8  ADDSi         176 67115527                                  ; .EquipmentAsset
+    04E0  RDSPtr                                                    
+    04E4  ADDSi         112 67115059                                  ; .Equipment
+    04EC  CALLSYS       TSoftClassPtr::Get                          
+    04F8  PshVPtr       InactiveWarningFmt                          
+    04FC  PSF           v66                                         
+    0500  CALLSYS       TSubclassOf::opEquals                       
+    050C  JLowZ         33                                            -> L0598
+    0514  SetV1         v3 1                                        
+    051C  CpyVtoV4      v35 v3                                      
+    0524  LoadRObjR     v62 68 67115525                               ; .XP
+    0530  RDR4          v13                                         
+    0534  CMPIi         v13 2                                       
+    053C  JNS           4                                             -> L0554
+    0544  SetV4         v36 0                                       
+    054C  JMP           14                                            -> L058C
+  L0554:
+    0554  LoadRObjR     v62 68 67115525                               ; .XP
+    0560  RDR4          v13                                         
+    0564  CMPIi         v13 5                                       
+    056C  JNS           4                                             -> L0584
+    0574  SetV4         v36 1                                       
+    057C  JMP           2                                             -> L058C
+  L0584:
+    0584  SetV4         v36 2                                       
+  L058C:
+    058C  FreeNullV8    v62                                         
+    0590  JMP           8                                             -> L05B8
+  L0598:
+    0598  FreeNullV8    v62                                         
+  L059C:
+    059C  LoadVObjR     v54 16 268448493                              ; .CanProceed
+    05A8  RDR1          v3                                          
+    05AC  CpyVtoR1      v3                                          
+    05B0  JLowNZ        -77                                           -> L0484
+  L05B8:
+    05B8  LoadVObjR     v20 0 67121024                                ; .StarRequirement
+    05C4  RDR4          v67                                         
+    05C8  CMPi          v67 v36                                     
+    05D0  JP            22                                            -> L0630
+    05D8  PshC4         0                                           
+    05E0  PSF           v8                                          
+    05E4  PshVPtr       v12                                         
+    05E8  CALLSYS       ALokiBaseItem::GetArmoryUniqueEffectDescriptionAtIndex
+    05F4  PSF           v8                                          
+    05F8  PshVPtr       ItemClass                                   
+    05FC  CALLSYS       FText::$beh0                                
+    0608  PSF           v8                                          
+    060C  CALLSYS       FText::$beh2                                
+    0618  PSF           v20                                         
+    061C  CALLSYS       FLokiArmoryUniqueEffect::$beh2              
+    0628  JMP           9                                             -> L0654
+  L0630:
+    0630  PshVPtr       arg_m6                                      
+    0634  PshVPtr       ItemClass                                   
+    0638  CALLSYS       FText::$beh0                                
+    0644  PSF           v20                                         
+    0648  CALLSYS       FLokiArmoryUniqueEffect::$beh2              
+  L0654:
+    0654  RET           8                                           
+*/
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+bool HasEffectsIgnoredInConciseTooltip(const TArray<FLokiArmoryUniqueEffect>& UniqueEffects)   // traits=0x20
+{
+    v6 = UniqueEffects.Iterator();
+    while (true) {
+        v13 = v6.CanProceed;
+        if (!v13) break;
+        v16 = v6.Proceed();
+        v13 = v16.bIncludeInConciseTooltip;
+        v13 = !v13;
+        v17 = false;
+        v17 = !v17;
+        if (v13 == v17) {
+            v17 = true;
+            return v17;
+        }
+    }
+    v13 = false;
+    return v13;
+}
+/* ---- HasEffectsIgnoredInConciseTooltip: 41 dwords / 25 instructions (cache offset 0x7d54) ----
+    0000  PSF           v6                                          
+    0004  PshVPtr       UniqueEffects                               
+    0008  CALLSYS       TArray::Iterator                            
+    0014  JMP           23                                            -> L0078
+  L001C:
+    001C  SUSPEND                                                   
+    0020  PSF           v6                                          
+    0024  CALLSYS       TArrayConstIterator::Proceed                
+    0030  CpyRtoV8      v16                                         
+    0034  LoadRObjR     v16 17 67121024                               ; .bIncludeInConciseTooltip
+    0040  RDR1          v13                                         
+    0044  NOT           v13                                         
+    0048  SetV1         v17 0                                       
+    0050  NOT           v17                                         
+    0054  CMPi          v13 v17                                     
+    005C  JNZ           5                                             -> L0078
+    0064  SetV1         v17 1                                       
+    006C  CpyVtoR4      v17                                         
+    0070  JMP           10                                            -> L00A0
+  L0078:
+    0078  LoadVObjR     v6 16 268448494                               ; .CanProceed
+    0084  RDR1          v13                                         
+    0088  CpyVtoR1      v13                                         
+    008C  JLowNZ        -30                                           -> L001C
+    0094  SetV1         v13 0                                       
+    009C  CpyVtoR4      v13                                         
+  L00A0:
+    00A0  RET           2                                           
+*/
+

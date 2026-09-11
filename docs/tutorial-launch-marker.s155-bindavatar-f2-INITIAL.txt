@@ -1,0 +1,14 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[S148] RM_BOTFIGHT isolated self-damage calibration: require the unique local possessed hero's existing live ASC; no wiring, bot, team, grant, activation, or legacy damage arm.
+[BF] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7C2A754A0 stub=0x2CC874E2440 funcCls=0x2CB77DCB000 gameTid=28652
+[S148] ===== isolated self-owned ASC damage calibration =====
+[S148] policy KBFARMS=0 seedBits=447A0000/447A0000 delta=-250 expectedCurrent=443B8000 laterMin=250ms laterTimeoutGrace=5000ms
+[S148] owner-census class-chain mode=CLASSIFY_ONLY directChecks=5
+[S155] ===== bind-avatar preflight (KBFBINDAVATAR=1) =====
+[FS] arm: swapped=17563 BP UFunctions  (scan 5765 ms over 155066 objects, 34253 UFunctions total) -- NO .text WRITE
+[S155] BIND_AVATAR result=ok pc=0x2CC2EBF2770 hero=0x2CC22960040 ps=0x2CB0CB84450 asc=0x2CBCECAB380 carrier=0x2CC924F3BD0 owner=0x2CC924F3BD0
+[S155] AvatarActor@0x410 pre=0x0 post=0x2CC22960040 avatarBound=1
+[S155] proceed=yes preflight_reached=1 handing off to S148 PREFLIGHT
+[S148] local-owner candidate[0] GI=0x2CBF65DB300 LocalPlayers[0]=0x2CB49F368C0 PC=0x2CC2EBF2770

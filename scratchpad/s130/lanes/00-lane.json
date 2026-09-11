@@ -1,0 +1,154 @@
+{
+ "lane": "Full disassembly + safety/sufficiency grading of UActorPoolManager::PrimePools (rva 0x3356000), offline, s129-poolgate / merged2 / tutorial-hero images",
+ "headline": "PrimePools is a clean, game-thread, no-.text-write, non-reflected native function reachable only by raw direct call — but calling it is NOT sufficient, because the enable gate is INSIDE it: vtable slot 90 resolves to the Loki override, which returns the single byte ALokiGameState+0x898 = bSupportsActorPoolPriming (measured two independent ways), so the real lever is a one-byte DATA poke on the GameState, not a call.",
+ "claims": [
+  {
+   "claim": "UActorPoolManager::PrimePools occupies rva 0x3356000..0x3356503 (1284 B), has exactly one ret, and every one of its 38 branches targets an address inside that range - fully accounted for, no jump-outs.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "`python fkdis.py d 0x3356000 1284 --dump s129` decodes cleanly; last instruction `0x03356503  c3  ret`, next byte at 0x3356504 is `ad` (unrelated). Capstone branch enumeration over [0x3356000,0x3356504): all 38 branches tagged IN, printed `total branches: 38 out-of-range: 0`. Matches the .pdata extent of 1284 B."
+  },
+  {
+   "claim": "The gate site is byte-exact `ff 90 d0 02 00 00` = `call qword ptr [rax+0x2d0]` at 0x33560C5 (virtual slot 0x2D0/8 = 90, bool(this)), byte-identical in all three images.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "`fkdis.py x 0x33560C5 6` -> `ff 90 d0 02 00 00` in s129, merged2 AND tuthero (three runs, identical). Disasm: `0x033560BF 498b06 mov rax,[r14]` / `0x033560C2 498bce mov rcx,r14` / `0x033560C5 ff90d0020000 call qword ptr [rax + 0x2d0]` / `0x033560CB 84c0 test al,al` / `0x033560CD 7525 jne 0x33560f4`."
+  },
+  {
+   "claim": "The FALSE-branch log chain is confirmed end to end: lea at 0x33560DC (`48 8d 15 3d ea bb 04`) -> .rdata record 0x7F14B20 -> +0x00 = VA 0x7FF7C05E4B40 = rva 0x7F14B40 = UTF-16 'UActorPoolManager::PrimePools : Feature is not enabled, skipping.'; +0x08 = rva 0x7F14A40 = ANSI 'C:\\TheoryCraft\\build-staging\\Engine\\Source\\Runtime\\Engine\\Classes\\ActorPooling\\ActorPoolManager.cpp'; +0x10 = line 159; +0x14 = verbosity 4 (Display).",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "Capstone rip-rel resolution (machine-computed): `0x33560dc lea 0x7f14b20 ('.rdata')`. Hexdump 0x7F14B20: `40 4b 5e c0 f7 7f 00 00 | 40 4a 5e c0 f7 7f 00 00 | 9f 00 00 00 | 04 00 00 00`. Decode script printed `0x7f14b20 fmt_rva 0x7f14b40 file_rva 0x7f14a40 line 159 verb 4` and `FMT: 'UActorPoolManager::PrimePools : Feature is not enabled, skipping.'`."
+  },
+  {
+   "claim": "The log category passed in rcx is the FLogCategoryBase at .data 0x9F7EDB8 (LogActorPooling), live bytes Verbosity=0x04, DebugBreakOnLog=0x00, DefaultVerbosity=0x04, CompileTimeVerbosity=0x04 - capped at Display, so no [Core.Log] setting can make this category emit Verbose.",
+   "grade": "M",
+   "load_bearing": false,
+   "evidence": "Machine-resolved rip targets `0x33560cf cmp 0x9f7edb8` and `0x33560e3 lea 0x9f7edb8` (same address => the cmp is that category's Verbosity byte). Hexdump 0x9F7EDB8 = `04 00 04 04 ef 77 00 00 ...` under this build's layout Verbosity@0/DebugBreakOnLog@1/DefaultVerbosity@2/CompileTimeVerbosity@3/FName@4. My first HAND-computed address 0x9F7FDB8 was wrong and read as all zeros."
+  },
+  {
+   "claim": "Vtable slot 90 on the base class is the universal fold `mov al,1; ret` at 0x0B9E1F0 - NON-IDENTIFYING, 26,444 occurrences of its VA image-wide. The Loki override at .rdata 0x08877A80[90] = 0x56363F0 has fold multiplicity 1.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "`vtables.py name UActorPoolManager --slots 96` -> `[ 90] 0x0B9E1F0`; `vtables.py name ULokiActorPoolManager --slots 96` -> `[ 90] 0x56363F0`. Raw whole-image counts of the 8-byte LE VA (unit: occurrences anywhere in the 178 MB file, any alignment): 0xB9E1F0 -> 26444; 0xF7EC20 -> 165789; 0xF7EB50 -> 27217; 0x56363F0 -> 1; 0x3356000 -> 0. NOTE `fkdis findptr` caps at 200 and must not be used to count folds."
+  },
+  {
+   "claim": "The Loki gate override 0x56363F0 is byte-identical across all three images and decodes as: Super::(the mov al,1 fold) -> GetOuter()->GetWorld() -> World+0x258 non-null -> IsA(ALokiGameState) -> `movzx eax, byte ptr [rax+0x898]`; every failure path is `xor al,al; ret`.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "`fkdis.py x 0x56363F0 16` returns `40 53 48 83 ec 20 48 8b d9 e8 f2 7d 56 fb 84 c0` in s129, merged2 AND tuthero. Disasm: `0x056363F9 e8f27d56fb call 0xb9e1f0` (Super = the mov al,1 fold), `0x05636402 call 0x12c7260` = `mov rcx,[rcx+0x28]; jmp qword [[rcx]+0x188]` (GetOuter()->GetWorld()), `0x0563640F lea rbx,[rax+0x258]`, `0x0563641C call 0x5380690` (references U'ALokiGameState', U'/Script/Loki', U'Game'), `0x05636427 call 0x12c7dd0` (IsA: reads [rcx], then +0x18 = this build's classOff), `0x05636438 0fb68098080000 movzx eax, byte ptr [rax + 0x898]`, `0x05636445 32c0 xor al,al`."
+  },
+  {
+   "claim": "ALokiGameState+0x898 is the UPROPERTY `bSupportsActorPoolPriming`. Two independent routes agree.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "(a) ASCII name at .rdata 0x8986178 is pointed to by exactly one qword, .rdata 0x8983A50, the head of a 0x40-byte UHT bool-property record: +0x1C ObjectFlags=0x45 (RF_Public|RF_Transient|RF_MarkAsNative), +0x30 ArrayDim=1/ElementSize=1/SizeOfOuter=0x0B20, +0x38 SetBitFunc = VA 0x7FF7BDA500D0 = rva 0x53800D0. (b) Independent whole-image byte search for `C6 81 98 08 00 00 01 C3` (`mov byte ptr [rcx+0x898],1; ret`) returns EXACTLY ONE hit: 0x53800D0 - the same address. 0x898 < SizeOfOuter 0xB20."
+  },
+  {
+   "claim": "bSupportsActorPoolPriming is NOT replicated and NOT config, so the live instance value is inherited from the GameState class CDO/archetype at construction.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "Params record at 0x8983A60: `01 00 01 00 00 04 10 00` = PropertyFlags u64 0x0010040000010001. CPF_Net (0x20) clear; CPF_Config (0x4000) clear; low word 0x0001 = CPF_Edit. Full upper-bit flag naming is [I] and nothing here depends on it."
+  },
+  {
+   "claim": "PrimePools is NOT a reflected UFUNCTION and is NOT in any vtable or function-pointer table - the only invocation route is a raw direct call to rva 0x3356000 with a valid `this`.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "`strxref.py native \"PrimePools\"` -> 'no ASCII reflection name matching PrimePools'. `strxref.py find \"PrimePools\"` -> 3 matches, ALL UTF-16 log text (0x7F14B40 / 0x7F14BF0 / 0x7F14CB0); no standalone ASCII reflection name exists. Whole-image count of PrimePools' VA (0x7FF7BBA26000) = 0 occurrences. `fkdis.py callxref 0x3356000` = 1 site, in both s129 and merged2."
+  },
+  {
+   "claim": "The single caller is 0x567AA50, inside fn 0x567A1B0 (3919 B, .pdata EXACT) which carries the ASCII literal 'ALokiGameState::BeginPlay'. Priming is designed to run once, from the GameState's BeginPlay, on a manager fetched from [GameState+0x428].",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "`strxref.py func 0x0567AA50` -> entry 0x567A1B0, extent 3919 B EXACT, string refs include `+0xAB1 lea 0x08B2DCF8 A 'ALokiGameState::BeginPlay'` and U'Entering game state %s'. Call site: `0x0567AA41 mov rcx,rsi` / `0x0567AA44 call 0x3840490` / `0x0567AA49 lea rdx,[rbp-0x40]` / `0x0567AA4D mov rcx,rax` / `0x0567AA50 call 0x3356000`. 0x3840490 (48 B) begins `mov rax,[rcx+0x428]; test rax,rax; jne ...` - a cached-subsystem getter."
+  },
+  {
+   "claim": "PrimePools runs a PRE-GATE block that re-seeds this->PoolableActorClasses (+0x88) from the class default object, and this executes even when the gate returns false.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "0x3356014 `mov rbx,[rcx+0x18]` (classOff=0x18 in this build); 0x335601E `cmp qword [rbx+0x178],0` / jne / 0x335602B `call 0x1225f20` which is `mov rax,[rcx]; jmp qword [rax+0x428]` (a virtual on UClass = CreateDefaultObject); 0x3356030 `mov rbx,[rbx+0x178]` (ClassDefaultObject); 0x3356037 `lea rdi,[r14+0x88]`; 0x335603E `add rbx,0x88`; then a container copy via 0xFAF960 / 0x752A658 / 0x3352E10 over fields +0x38 (inline), +0x40 (heap ptr), +0x48 (int32 count). The gate call is at 0x33560BF, AFTER all of this."
+  },
+  {
+   "claim": "The TRUE path is: re-entrancy flag -> optional slow AssetRegistry scan -> analytics virtual (slot 91) -> per-class filter loop (slot 93) -> UAssetManager::LoadAssetList async load. It needs only a CDO, a UWorld and a live UAssetManager; it allocates; it takes no locks.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "0x33560F4 `cmp byte [r14+0xe9],0` -> Warning record 0x7F14BC8 'Called while priming is already in progress.' (line 165); 0x3356123 `mov byte [r14+0xe9],1`. 0x335612B `cmp [r14+0x90],[r14+0xbc]`; equal -> Error record 0x7F14C90 (line 174) + `call 0x3359d20`, which strxref shows references A'AssetRegistry', U'/Game/Loki', U'/Game/Skunkworks', U'True', U'bEnablePooling', U'GeneratedClass', U'Adding %s to list of poolable actors.'. 0x33561C7 `call qword [rax+0x2d8]` with rdx=param2, r8d=count. Loop 0x33562D6..0x3356371 calls `qword [rax+0x2e8]` per element (stride 0x30 via `lea rsi,[rax+rax*2]; shl rsi,4`). 0x3356399 `call 0x34baef0` = UAssetManager::Get (identified by U'Cannot use AssetManager if no AssetManagerClassName is defined!'), then `call rdi` where rdi=[[rax]+0x3d0], args (sret, &array, &delegate, 0x64 priority, FString U'Classes for actor pool priming' @0x7F14ED0). Result -> this+0xD8; if null -> `mov byte [r14+0xe8],1`. The only atomics are `lock xadd [rbx+8]/[rbx+0xc]` = TSharedPtr refcounts."
+  },
+  {
+   "claim": "PrimePools performs ZERO module-image writes and reads no authority/role/NetMode state; its only non-stack writes are heap UObject fields this+0x88, +0xD8, +0xE8, +0xE9 - the safe DATA class on this project's hazard ladder.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "Full 1284-byte disassembly reviewed instruction by instruction: non-local write destinations are `mov dword [rdi+0x48], esi` (rdi = this+0x88), `mov byte [r14+0xe9],1` (0x3356123), `mov byte [r14+0xe8],1` (0x33564A0), and the TSharedPtr store into this+0xD8 at 0x3356434-0x3356451. No write to any rip-relative .text/.rdata target, no VirtualProtect-shaped pattern, and no HasAuthority / GetNetMode / role read anywhere in the body. The only world-state read is inside the slot-90 override."
+  },
+  {
+   "claim": "A direct call to PrimePools alone is NOT SUFFICIENT - the gate is inside the callee, so the call still early-returns. The prerequisite is opening the gate first, i.e. GameState+0x898 = 1.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "Control flow: the gate call at 0x33560C5 precedes every functional block and its false arm jumps to the epilogue at 0x33564E5 (`jmp 0x33564e5` at 0x33560EF). Nothing in PrimePools' arguments or its pre-gate block can change the gate's answer, because the gate reads World->GameState->+0x898, not `this`."
+  },
+  {
+   "claim": "Param2 (rdx) is dereferenced and must be a valid readable buffer of at least ~0xA8 bytes - nullptr will fault. It is consumed ONLY by vtable slot 91 (analytics).",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "rdx is moved to r12 at 0x3356018 and consumed only at 0x33561C1 `mov rdx,r12` before `call qword [rax+0x2d8]`; r12 is then zeroed at 0x33561CD. Loki slot-91 override 0x563B170: `add rcx,0xf0; call 0x12a54a0` with rdx=param2, then `lea rdx,[rdi+0x50]; lea rcx,[rbp+0x140]; call 0x12a54a0`, then `movzx eax,[rdi+0xa0]`, `movzx eax,[rdi+0xa1]`, `mov [rbp+0x198],esi` (the count), and a timestamp double to [rbp+0x1a0]. 0x12A54A0 does `movsxd rsi,[rdx+0x48]` - an unconditional source dereference. Related shipped name A'AnalyticsActorPoolPrimingStatsEvent' at 0x887AB98."
+  },
+  {
+   "claim": "PrimePools must run on the game thread.",
+   "grade": "I",
+   "load_bearing": true,
+   "evidence": "Inferred from what it touches, NOT from a thread-affinity check in the code: UClass::CreateDefaultObject via virtual slot 0x428, UE_LOG BasicLog (0x106B650), UAssetManager::Get + LoadAssetList (streamable manager), TSharedPtr construction. No `check(IsInGameThread())` was located, and DO_CHECK is 0 in shipping so its absence proves nothing."
+  },
+  {
+   "claim": "ULokiBlueprintLibrary::SpawnPoolableActorFromClass IS reflected (exec thunk 0x537EEE0, Z_Construct 0x5364170, entry [150] of the 159-entry FClassFunctionLinkInfo table 0x08978D98..0x08979787), impl 0x566FF50 - and that impl does NOT read +0x898, so the spawn path is not gated by bSupportsActorPoolPriming.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "`strxref.py native \"SpawnPoolableActorFromClass\"` -> name 0x0897D650, link slot 0x089796F8, exec thunk 0x537EEE0. `nattable 0x089796F8` shows [147] SpawnActorFromClass / [150] SpawnPoolableActorFromClass / [151] SpawnPoolableActorFromClassDeferred beside ApplyEffectsToActors, BranchOnFeatureToggle, GetFeatureToggleValue = ULokiBlueprintLibrary. Last rel32 call inside the thunk extent (0x537EEE0..0x537F19C) is `0x537f16b -> 0x566ff50`. Disassembling 0x566FF50..0x5670080: it repeats the GameState+0x258 / IsA(ALokiGameState) validation (calls 0x5380690 then 0x12c7dd0) but then goes `mov rcx,[rbx]; call 0x3840490` and `call 0x5647f00`; there is no `movzx ...[rax+0x898]` anywhere in it."
+  },
+  {
+   "claim": "The actual pooled-actor acquire is 0x5648050, called from 0x5647F00; a NULL from it sends 0x5647F00 down a Warning-verbosity logging branch instead of spawning.",
+   "grade": "M",
+   "load_bearing": false,
+   "evidence": "0x5647F41 `call 0x5648050` / 0x5647F46 `mov rbx,rax` / 0x5647F49 `test rax,rax` / 0x5647F4C `je 0x5647f79`; success arm calls `qword [r10+0x578]` on the returned object; failure arm at 0x5647F79 starts `cmp byte ptr [rip+0x4936e38],3` (Warning-level verbosity guard)."
+  },
+  {
+   "claim": "The ActorPoolManager.cpp translation unit is fully enumerated by its string band, and it contains no 'spawn one pooled actor without priming' entry point - pool-FILL and pool-ACQUIRE are different code, and PrimePools only drives the fill.",
+   "grade": "M",
+   "load_bearing": false,
+   "evidence": "`strxref.py near 0x07F14A40` lists the band. Function attribution by xref: 0x33585C1 (606 B) owns U'Priming pool with %d %s instances.' + U'PrimedActor%s%d' (the instance creator); 0x3360395 (430 B) owns U'Reached primed actor creation time budget (%f)...'; 0x3360587 (83 B) owns U'Creation of primed actors is complete.'; 0x335E241 (413 B) and 0x3360F30 (383 B) both own U\"Can't return actor of type %s to the pool because the pool is full...\"; 0x3359D20 (3737 B) and 0x335ABCF (703 B) both own U'Adding %s to list of poolable actors.'. Base vtable slot 93 = 0x335F890 = `cmp qword [rdx+8],0; setne al; ret` (the per-element filter); Loki override 0x5640390."
+  },
+  {
+   "claim": "A shim-free pacing lever exists: cvar `Pooling.PrimingFrameBudget` (UTF-16 .rdata 0x7F0B108, help 'The time in seconds we give for the creation of primed actors per frame.' at 0x7F0B070). It controls pacing only, not enablement.",
+   "grade": "M",
+   "load_bearing": false,
+   "evidence": "`strxref.py near 0x07F0B070` prints both strings adjacent; the help string sits with the frame-budget function 0x3360395."
+  },
+  {
+   "claim": "The per-class priming filter vocabulary is bCanPrimeOnClient / bCanPrimeOnServer / bCanPrimeInArena / bCanPrimeInBattleRoyale - so the slot-93 filter discriminates client vs server and Arena vs BR.",
+   "grade": "M",
+   "load_bearing": false,
+   "evidence": "ASCII names .rdata 0x7F237F8 'bCanPrimeOnClient', 0x7F237E0 'bCanPrimeOnServer', 0x7F23810 'bCanPrimeInArena', 0x7F23828 'bCanPrimeInBattleRoyale', each with exactly 1 code ref into the tiny UHT name-accessor band 0x0F124E0..0x0F12546. Related: A'ActorPoolManagerPrimingConfig' 0x7DDD098, A'PoolableActorClasses' 0x7DDDE38, A'DeferActorPoolClassLoading' 0x887AB78, A'PoolPrimeSize' 0x7EABD00, U'LogActorPooling' 0x7F10720."
+  },
+  {
+   "claim": "The cleanest lever is not a call at all: poke bSupportsActorPoolPriming=1 on the GameState class CDO/archetype before the world loads, so the spawned ALokiGameState carries it and ALokiGameState::BeginPlay primes naturally with the correct analytics struct.",
+   "grade": "I",
+   "load_bearing": false,
+   "evidence": "Follows from three measured facts (the property is neither CPF_Net nor CPF_Config so the instance value comes from the archetype; the gate reads the live GameState's byte; the sole caller is BeginPlay). NOT measured: that BP_LokiGameState_Tutorial_C's CDO is the archetype actually used, nor that a poke can land before construction."
+  },
+  {
+   "claim": "Every page underlying these findings is decrypted in all three images, so none of it is a coverage artifact.",
+   "grade": "M",
+   "load_bearing": true,
+   "evidence": "`fkdis.py cov 0x3356000 2` -> `page 0x03356000 present` in s129, merged2 AND tuthero; same three-way check passed for the byte reads at 0x33560C5 and 0x56363F0, and `cov 0x5647000 2` -> present."
+  }
+ ],
+ "open_questions": [
+  "Does opening the gate actually make SpawnPoolableActorFromClass return non-NULL? 0x566FF50 does NOT read +0x898, so 'priming is the cause of the NULL' is [I]. The bail must be inside 0x5648050 (the acquire), which I did not grade - that is the next disassembly target and it is free.",
+  "What exactly is param2 (the analytics struct)? Slot 91 reads two container/FString-shaped members at +0x0 and +0x50 (via 0x12A54A0), bytes at +0xA0/+0xA1, stores the count at this+0x198 and a timestamp at this+0x1A0. Whether a fully ZEROED ~0xA8-byte buffer is safe depends on 0x12A54A0's zero-count path, which I did not trace to its end. Untraced means unsafe to assume.",
+  "Which GameState class does the tutorial world actually use, and is its CDO byte at +0x898 zero (feature off by DATA rather than by code)? One read-only RPM on Default__BP_LokiGameState_Tutorial_C confirms the whole chain before anything is written.",
+  "Does the slot-93 filter (Loki override 0x5640390, which chains well past its 44-byte first .pdata row) reject everything on a client via bCanPrimeOnClient? If so, opening the gate yields '0 actor classes passed filtering' and priming is still a no-op. The two Display logs are free receipts that separate these outcomes, and the category's runtime Verbosity is already 4, so they WILL print.",
+  "Is [GameState+0x428] the pool-manager cache used by both call sites? 0x3840490 reads it directly and both callers pass a GameState-shaped pointer, but I only read its first 0x2A bytes (it chains past 0x38404BA).",
+  "Can PrimePools be called twice? this+0xE9 is set on first successful entry and is never cleared anywhere in the 1284 bytes, so priming is one-shot per manager instance per session."
+ ],
+ "next_experiment": "Two read-only RPM reads first, zero writes: (1) read the live ALokiGameState's byte at +0x898 AND its CDO's byte at +0x898 - this confirms the gate is data-off rather than code-off and gives the reversal control; (2) read the live ULokiActorPoolManager's dwords at +0x90 and +0xBC and its byte at +0xE9 - unequal counts mean the cooked PoolableActorClasses list is present so the slow AssetRegistry scan will be skipped, and +0xE9 == 0 confirms the re-entrancy flag was never set (which the gate-false path guarantees). Only then fly the one-byte DATA poke GameState+0x898 = 1 followed by a raw direct call to 0x3356000 with a real >=0xA8-byte analytics buffer, and read the two free Display receipts ('%d actor classes found for priming.' / '%d actor classes passed filtering for this match and will be loaded.') to separate 'gate opened but filter rejected everything' from 'primed'. PRE-REGISTER: 'Feature is not enabled, skipping.' must be PRESENT at baseline and ABSENT from the post-poke call; if it reappears the poke did not land and the sitting is void.",
+ "traps_hit": "Two hand-arithmetic errors, both caught, both exactly the class CLAUDE.md warns about ('recompute with a machine'). (a) I hand-added the rip-relative displacement at 0x33560CF and got .data 0x9F7FDB8, which reads ALL ZEROS and would have been written up as 'the log category is uninitialised, contradicting the observed live log'; machine recomputation gives 0x9F7EDB8, which reads `04 00 04 04` - a correctly constructed category consistent with the observation. (b) I hand-subtracted the image base from the UHT SetBitFunc VA and got 0x53500D0, which disassembles as mid-instruction garbage and would have read as 'the property record is bogus'; the correct rva is 0x53800D0, independently confirmed by a whole-image byte-pattern search for `C6 81 98 08 00 00 01 C3` returning exactly ONE hit at that address. Two further traps avoided rather than hit: `fkdis.py findptr` silently caps at 200 results so I did NOT use it for fold multiplicity (re-counted with a raw whole-file byte scan, unit stated); and the address range 0x3352000-0x3362000 contains 401 .pdata functions and is NOT one translation unit, so I enumerated the TU via its string band (`strxref near 0x07F14A40`) instead of by address range."
+}

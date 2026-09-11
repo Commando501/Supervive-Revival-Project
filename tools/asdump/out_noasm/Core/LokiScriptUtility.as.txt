@@ -1,0 +1,128 @@
+// ============================================================================
+//  MODULE   Core.LokiScriptUtility
+//  SOURCE   Core/LokiScriptUtility.as
+//  CONTENT  0 class(es), 4 function(s), 0 enum(s), 0 global(s), 812 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Core_LokiScriptUtilityStatics
+
+FVector LinearColorToVector(const FLinearColor& Color)   // traits=0x20
+{
+    FVector v6;
+    auto v7;
+    float64 v10;
+    float64 v12;
+    float64 v14;
+
+    v7 = Color.B;
+    v10 = float64(v7);
+    v7 = Color.G;
+    v12 = float64(v7);
+    v7 = Color.R;
+    v14 = float64(v7);
+    v6 = FVector(v14, v12, v10);
+    __ret = FVector(v6);
+    return;
+}
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+ULokiAimingVisComponentScript@ GetOwnerAimingVisComponent(ULokiDisplayableAbility@ Ability)   // traits=0x20
+{
+    ALokiCharacter v6;
+    ALokiHeroCharacter v8;
+    ALokiHeroCharacter v10;
+    ULokiAimingVisComponentScript v12;
+
+    if (IsValid(Ability)) {
+        v6 = Ability.GetAvatarLokiCharacterFromActorInfo();
+        if (IsValid(Ability)) {
+            if (v6 != nullptr) {
+                v8 = cast<ALokiHeroCharacter@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v10 = v8;
+            if (IsValid(v10)) {
+                v12 = ULokiAimingVisComponentScript::Get(v10, NAME_None);
+                return v12;
+            }
+        }
+    }
+    return v12;
+}
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+float64 GetRelicCountForPlayer(ALokiCharacter@ Character)   // traits=0x20
+{
+    ALokiCharacter v2;
+    float64 v6;
+    ULokiInventoryComponentComboItems v10;
+    TArray<ALokiBaseItem@> v14;
+    auto v15;
+    ALokiBaseItem v20;
+    ALokiBaseItem v22;
+
+    v2 = Character;
+    if (v2 == nullptr) {
+        v6 = 0;
+        return v6;
+    } else {
+        v10 = Character.GetInventoryComboItems();
+        if (v10 == nullptr) {
+            v6 = 0;
+            return v6;
+        } else {
+            v14 = TArray<ALokiBaseItem@>();
+            v20 = v10.GetPowerItem(0);
+            if (v20 != nullptr) {
+                v14.Add(v20);
+            }
+            v22 = v10.GetPowerItem(1);
+            if (v22 != nullptr) {
+                v14.Add(v22);
+            }
+            v15 = v14.Num();
+            v6 = float64(v15);
+        }
+    }
+    return v6;
+}
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+float64 GetArmorLevelForPlayer(ALokiCharacter@ Character)   // traits=0x20
+{
+    ALokiCharacter v2;
+    float64 v6;
+    ULokiInventoryComponentComboItems v10;
+    ALokiBaseItem v14;
+    auto v15;
+
+    v2 = Character;
+    if (v2 == nullptr) {
+        v6 = 0;
+        return v6;
+    } else {
+        v10 = Character.GetInventoryComboItems();
+        if (v10 == nullptr) {
+            v6 = 0;
+            return v6;
+        } else {
+            v14 = v10.GetArmorItem();
+            if (v14 == nullptr) {
+                v6 = 0;
+                return v6;
+            } else {
+                v15 = v14.TierNumber;
+                v6 = float64(v15);
+            }
+        }
+    }
+    return v6;
+}
+

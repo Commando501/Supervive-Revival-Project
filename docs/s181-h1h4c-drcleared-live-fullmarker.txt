@@ -1,0 +1,17 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[0v] module OK; installing AVEH
+[0v] AVEH installed handle=0x0 modBase=0x7FF6D71C0000; entering WaitTid budget=120s
+[0v] WaitTid ok gameTid=43780; skipping RM_X branches for kRunMode=0 (0=RM_FORCEOPEN)
+[0v] entering Resolve polling loop budget=120s
+[0v] Resolve iter=0 worldCtx=0x25CC5D27A20 kslCDO=0x25CD517D050 eccThunk=0x7FF6DAB1D790 eccChild=0x25D15619B00 offCmd=0x8 offWCO=0x0 offSP=0x18
+[0v] Resolve loop exited after iter=1 totalMs=2797 (worldCtx=0x25CC5D27A20 eccThunk=0x7FF6DAB1D790 eccChild=0x25D15619B00 offCmd=0x8)
+[2] worldCtx=0x25CC5D27A20 kslCDO=0x25CD517D050 eccThunk=0x7FF6DAB1D790(rva 0x395D790) child=0x25D15619B00 offWCO=0x0 offCmd=0x8 offSP=0x18 gameTid=43780 cmd='open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[3] hook built; issuing ExecuteConsoleCommand('open LVL_Tutorial') on the game thread...
+[VT] custom-login INSTALL: 5 vtables slot285, stockLogin=0x7FF6DA9A0C50 tramp=0x25D81402820
+[PIM] PI hook mutex acquired (clean)
+[PIM] PI hook mutex released
+[4] TIMEOUT no game-thread PI in 60s (hitsGT=0)
+[VT] custom-login restore: 5 vtables slot285, stockLogin=0x7FF6DA9A0C50 tramp=0x25D81402820
+[5] done (vtable restored)
+[6] NearAlloc region freed at 00007FF6D71B0000 (vf=1)

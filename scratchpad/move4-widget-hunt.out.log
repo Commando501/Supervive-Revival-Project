@@ -1,0 +1,20 @@
+﻿base=0x7FF632800000
+num objects = 197988
+
+scanned 2143 widget-family objects
+health/HP/vital hits: 15
+  0x16034002E20  name='ProgressBar_Health'  class=ProgressBar
+  0x15FF26D8200  name='WBP_HUD6_Healthbar'  class=WBP_HUD6_Healthbar_C
+  0x15FF4498040  name='BAR_Health'  class=ProgressBar
+  0x15E490AD260  name='WBP_UI_InventoryButton_Health_C'  class=WidgetBlueprintGeneratedClass
+  0x15F1E4EC5E0  name='OnHealthbarChunk_INST'  class=WidgetAnimation
+  0x15F1E4EC540  name='OnHealthbarChunk_Heal2_INST'  class=WidgetAnimation
+  0x15F17FD64E0  name='WBP_HUD6_Healthbar_C'  class=WidgetBlueprintGeneratedClass
+  0x15F883C2500  name='WBP_UI_AIHealthBar_C'  class=WidgetBlueprintGeneratedClass
+  0x15F0C3B3BD0  name='WBP_UI_AirdooHealthBar_C'  class=WidgetBlueprintGeneratedClass
+  0x15F11E344F0  name='WBP_OffscreenIndicator_Resource_Health_C'  class=WidgetBlueprintGeneratedClass
+  0x15E09DEE500  name='Sniper_ExposedVitals'  class=NiagaraSystemWidget
+  0x15F97919280  name='WBP_Healthbar_Symbol_UAVMarked_C'  class=WidgetBlueprintGeneratedClass
+  0x15F9791A950  name='WBP_UI_Character_Resource_Health_C'  class=WidgetBlueprintGeneratedClass
+  0x15E0E117290  name='WBP_Niagara_Symbol_Sniper_ExposedVitals_C'  class=WidgetBlueprintGeneratedClass
+  0x15F8C6152A0  name='HealthBarWidget'  class=LokiWidgetComponet

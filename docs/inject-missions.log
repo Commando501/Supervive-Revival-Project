@@ -1,0 +1,11 @@
+
+19:19:42  missions injector started (repo=G:\git\Supervive Revival Project)
+19:19:42  game process is up
+19:20:00  primary catalog_store_fix installed+unhooked - safe to inject missions_fix
+19:20:00  injecting tools\sigbypass-mod\mainmenu_refresh_pi8.dll ...
+19:20:01  Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\mainmenu_refresh_pi8.dll into PID 15784 |   remote image base: 0x2469E260000 (size 0x2E000) |   relocations applied (delta 0x2451E260000) |   import: KERNEL32.dll |   exception table: 0x191 entries at 0x2469E28B000 (will RtlAddFunctionTable) |   DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK) |   verify: MZ at 0x2469E260000 ??? | OK: manual-map complete (DllMain returned).
+19:20:04  injecting tools\sigbypass-mod\catalog_pick_fix.dll ...
+19:20:04  Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\catalog_pick_fix.dll into PID 15784 |   remote image base: 0x246FCE90000 (size 0x26000) |   relocations applied (delta 0x2457CE90000) |   import: KERNEL32.dll |   exception table: 0x181 entries at 0x246FCEB3000 (will RtlAddFunctionTable) |   DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK) |   verify: MZ at 0x246FCE90000 ??? | OK: manual-map complete (DllMain returned).
+19:20:07  injecting tools\sigbypass-mod\missions_fix.dll ...
+19:20:08  Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\missions_fix.dll into PID 15784 |   remote image base: 0x2470CC00000 (size 0xD4000) |   relocations applied (delta 0x2458CC00000) |   import: KERNEL32.dll |   import: WININET.dll |   exception table: 0x1B9 entries at 0x2470CCD1000 (will RtlAddFunctionTable) |   DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK) |   verify: MZ at 0x2470CC00000 ??? | OK: manual-map complete (DllMain returned).
+19:20:11  injection complete (missions_fix polls ags; pi8 pick/refresh + catalog_pick_fix active)

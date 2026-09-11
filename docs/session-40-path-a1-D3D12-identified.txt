@@ -1,0 +1,191 @@
+=== SESSION 40 PATH A1 — CRASH CLASS IDENTIFIED: UE 5.4 D3D12 RHI ===
+
+Session 40 Path A hit its ceiling using usmapdump alone (couldn't get the
+class name). Path A1 used Ghidra 12.1.2 + JDK 21 (freshly installed to
+E:\Tools this session). Two obstacles surfaced and were resolved:
+
+1. **SUPERVIVE has a packer**: On-disk .text bytes are ENCRYPTED. Ghidra's
+   initial analysis read encrypted bytes at the target RVAs (0x2976F70 etc.)
+   and got garbage. Only the low-address region (imports, EAT, .rdata,
+   AK::TempAlloc symbols) survived intact. The bytes at crash-site RVAs
+   don't match usmapdump's live-process read because usmapdump reads
+   runtime-decrypted memory via ReadProcessMemory.
+
+2. **Runtime-dump-and-overlay strategy**: wrote a PowerShell memory dumper
+   (`dump-runtime.ps1`) using Win32 OpenProcess + ReadProcessMemory. Launched
+   SUPERVIVE (waited ~60s for the packer to decrypt more pages), then
+   dumped a 2MB code region around the crash cluster + a 128KB .rdata
+   region around the vtable. Wrote a Ghidra script
+   (`OverlayRuntimeBytes.java`) that clears any existing junk instructions
+   at each 4KB page in the target region and rewrites Ghidra's memory
+   image with the runtime-dumped bytes. 4KB chunk size (down from 64KB in
+   the first pass) was critical — the packer decrypts page-by-page and
+   partial-fail chunks kept whole regions blank.
+
+--- Result: all 8 target functions decompiled cleanly ---
+
+After overlay iteration 3, all 8 crash-chain target functions decompiled
+with real C code. Key finding from the CONSTRUCTOR at RVA 0x29676C0:
+
+    param_1[1] = param_2;          // this->0x8 = arg0
+    *param_1 = &UNK_147b9de88;     // this->vtable = PARENT vtable @ 0x7B9DE88
+    ...                             // ~15KB of member zero-init
+    func_0x000142967ab0(param_1 + 0x1d, ...);  // parent-parent ctor call
+    *param_1 = &UNK_147b9e188;     // this->vtable = OUR vtable @ 0x7B9E188
+    param_1[0x1d] = &UNK_147b9e1e8; // SECONDARY vtable at 0xE8 (multi-inheritance)
+
+Constructor sequence identifies THREE vtables:
+- PARENT vtable at RVA 0x7B9DE88 (written first, later overwritten)
+- OUR vtable at RVA 0x7B9E188 (final)
+- OUR SECONDARY vtable at RVA 0x7B9E1E8 (multi-inheritance secondary)
+
+Parent class DESTRUCTOR at RVA 0x296BE80:
+
+    undefined8 FUN_14296be80(undefined8 param_1, ulonglong param_2) {
+        func_0x00014296a010();
+        if ((param_2 & 1) != 0) {
+            func_0x000140fab490(param_1, 0xe8);  // free 0xE8 = 232 bytes
+        }
+        return param_1;
+    }
+
+**Parent class object size: 0xE8 = 232 bytes.**
+Our class object size: 0x3C90 = 15,504 bytes (from factory malloc + dtor free).
+
+--- The identifying evidence: log strings ---
+
+Parent's slot 2 method emits assertion logs. Log-call args reference .rdata
+strings that survived the packer. Dumping them (`DumpStrings.java`) yielded
+the SMOKING GUN:
+
+    +0x7BA19B0: "C:\TheoryCraft\build-staging\Engine\Source\Runtime\
+                D3D12RHI\Private\D3D12CommandList.cpp"
+    +0x7BA1DD0: "Interfaces.GraphicsCommandList->Close()"
+    +0x7BA1DA8: "Interfaces.CopyCommandList->Close()"
+    +0x7B9DC60: "C:\TheoryCraft\build-staging\Engine\Source\Runtime\
+                D3D12RHI\Private\D3D12Residency.h"
+    +0x7B9DCC8: "pSet->Close()"
+    +0x7B9DCB8: "pSet->Open()"
+    +0x7BA17D0: "D3D12CommandContext.cpp"
+
+50+ D3D12-related strings clustered in the same .rdata region as our
+target vtable. This is UE 5.4's D3D12RHI module code.
+
+--- Class identification ---
+
+Parent class = **`FD3D12CommandList`** (232 bytes, D3D12CommandList.cpp).
+- The `Interfaces` structure (with GraphicsCommandList + CopyCommandList
+  fields) is a distinguishing member of FD3D12CommandList in UE 5.4.
+- The 232-byte size matches stock UE's FD3D12CommandList closely.
+
+Our class = **`FD3D12CommandContext`** (15,504 bytes, D3D12CommandContext.cpp).
+- Size match: FD3D12CommandContext holds render state, allocators, staging
+  buffer, subscriber lists — 12-16KB is typical.
+- Multiple inheritance (two vtables) matches FD3D12CommandContext's
+  inheritance from FD3D12DeviceChild + IRHICommandContext (or similar).
+
+--- The crash mechanism, re-interpreted ---
+
+The crash is at vtable slot 1 of FD3D12CommandContext (RVA 0x2976F70), which
+is a `Register subscriber` pattern:
+
+    void FD3D12CommandContext::slot1(void* arg) {
+        auto* allocator = this->allocator_at_0xb0;
+        if (allocator == null) allocator = alloc_helper(this->0x8, this->0x10);
+        auto* item = compute_helper(this->0x8, allocator, this->0x38, this->0x78);
+        this->last_added = item;
+        auto* subarray = get_subarray(this, INDEX=2);
+        int idx = subarray->count++;
+        if (idx+1 > subarray->capacity) grow(&subarray->data, idx);
+        subarray->data[idx] = this->last_added;   // <-- CRASH
+    }
+
+`get_subarray(this, 2)` retrieves the "subarray of type 2" — the 3 groups
+of 0x20-byte structures initialized in the ctor at offsets 0x38, 0x48, 0x68
+(count=2, 3 configurations). The crash occurs when the returned subarray's
+`data` pointer is stale (still pointing at .rdata's const default zero-size
+array).
+
+Parent's slot 1 (RVA 0x2977010) is IDENTICAL to our slot 1 — our class
+does NOT override slot 1's core logic; both parent and child have the same
+"add subscriber to array" pattern. The pattern lives in FD3D12CommandList's
+inherited method chain.
+
+--- What this means for SUPERVIVE Revival ---
+
+**The crash is in UE 5.4 D3D12 renderer code, not game-specific or
+replication-specific code.**
+
+Implications:
+1. **Path B-lite (schema-inject replicated fields) probably WON'T fix this.**
+   The crash isn't related to `AActor::ClassNetCache` divergence — it's
+   in a D3D12 command-list subscriber array that's uninitialized when
+   the client tries to record menu-render commands (25 hero cards +
+   inventory + wallet UI).
+2. **The root cause is likely indirect**: our full server-side suppression
+   (PC, GameState, PS, HUD, DefaultPawn, SpectatorPawn, WorldSettings,
+   GameplayDebuggerCategoryReplicator) causes some client-side subsystem
+   to skip initialization it would normally do while receiving replicated
+   state. When menu-load code later touches an FD3D12CommandContext
+   subscriber array that was supposed to be populated by that skipped
+   initialization, we hit the stale default-array pointer.
+3. **A workaround might exist at the RHI level**: forcing DX11 mode
+   (`-DX11` cmdline) or a different renderer might bypass this specific
+   path.
+
+--- What to try next (session 41+) ---
+
+Given this identification:
+
+- **A2 (fast test)**: try `-DX11` or `-vulkan` cmdline flags on the client
+  to see if the crash goes away by switching renderers. If yes: crash is
+  D3D12-specific, and the workaround for the SUPERVIVE Revival goal is
+  "use DX11 for client".
+- **B-lite-full (medium)**: still worth trying to schema-inject PC+GameState
+  in case the "skipped init" that leaves the D3D12 context in a bad state
+  is triggered by AActor replication. Low probability of fix but useful
+  data point.
+- **A3 (deep RE)**: identify WHICH FD3D12CommandContext method call
+  triggers the crash — trace from a menu-load stack frame downward.
+  Requires stepping through the debug run in Ghidra Debugger. Deep
+  engineering.
+
+Recommendation: **A2 first (10 minutes)**. If DX11 mode avoids the crash,
+we have a working workaround AND a strong signal that Path B-lite is
+still worth investing in for a proper fix.
+
+--- Chapter state (end of session 40 with Path A1 CONCLUDED) ---
+
+- Route-around fires cleanly against live bunches: DONE (session 35)
+- Full session-20 + WorldSettings + GameplayDebuggerCategoryReplicator
+  suppression keeps connection stable through Join: DONE (session 39)
+- Client reaches menu, fetches 25 heroes + inventory + wallet: DONE
+- Client crashes at deterministic call chain during menu load: DONE
+- **Crash class identified as UE 5.4 FD3D12CommandContext** (session 40 A1)
+- Parent class identified as FD3D12CommandList (session 40 A1)
+- Menu-data replication: TODO (contingent on unwedging the crash)
+
+--- Tooling artifacts (session 40 A1) ---
+
+- `docs/session-40-path-a1-D3D12-identified.txt` — this analysis
+- `scratchpad/dump-runtime.ps1` — Win32 memory dumper
+- `scratchpad/ghidra-scripts/OverlayRuntimeBytes.java` — Ghidra overlay
+- `scratchpad/ghidra-scripts/DumpCrashSite.java`,
+  `ForceCrashSite.java`, `ChaseRtti.java`,
+  `IdentifyHelpers.java`, `ParentVtableDump.java`, `DumpStrings.java` —
+  the chain of investigation Ghidra scripts
+- `scratchpad/runtime-dumps/` — the 2MB code + 128KB .rdata runtime dumps
+- Ghidra project at `C:\Users\eastr\Documents\GhidraProjects\SUPERVIVE`
+
+--- DO NOT for session 41+ ---
+
+- Don't try to identify the class via `usmapdump` alone — it can only
+  see runtime bytes. Ghidra with runtime-overlay is the only combo that
+  gives us both decompilation AND cross-references.
+- Don't attempt further static analysis of the crash class via Ghidra
+  without the runtime overlay in place. The overlay is already applied
+  in the Ghidra project.
+- Don't assume the crash is caused by our AActor / PC / GameState
+  suppression directly — it's in the D3D12 renderer, downstream of
+  whatever init path our suppression skips. Test via alternative
+  renderer first (-DX11) before investing in B-lite.

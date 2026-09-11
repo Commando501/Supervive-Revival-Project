@@ -1,0 +1,183 @@
+=== SESSION 40 MINIDUMP ANALYSIS — CORRECTION TO nullrhi TEST INTERPRETATION ===
+
+Session 40 nullrhi test was documented as "conclusive: crash is definitively
+NOT renderer-related". That conclusion was based on the assumption that
+the client crashed at the SAME instruction under nullrhi as under D3D12.
+
+**That assumption was WRONG. Minidump analysis reveals the nullrhi crash
+is a completely DIFFERENT crash from the D3D12 crash.**
+
+--- Method ---
+
+Installed Python's `minidump` package (already at 0.0.24). Wrote
+`parse-any-dump.py` to extract registers, thread context, and stack
+from a `.dmp` file.
+
+Analyzed two crash dumps:
+1. `UECC-Windows-D06CC55E4D5F89435DB8F6BFC05647E4_0000/UEMinidump.dmp`
+   — D3D12 mode crash (from earlier session 40 iter 4 run)
+2. `.sentry-native/reports/91ac7f82-cd4c-498c-b0a5-1467ac6cd59f.dmp`
+   — nullrhi mode crash (from this cold-start's -nullrhi test)
+
+--- D3D12 crash: CONFIRMED at our target class ---
+
+Registers at crash:
+    Rip = 0x00007FF6853F6FF0  (SUPERVIVE base + 0x2976FF0 — expected crash instr)
+    Rcx = 0x00007FF68A55B368  (SUPERVIVE base + 0x7ADB368 — .rdata read-only, why write failed)
+    Rbx = 0x0000022424310040  (`this` pointer)
+    Rsi = 0                   (index — writing to slot 0, the FIRST subscriber)
+    Rax = 0x000002241D946A00  (value being written)
+    Rdi = 0x000002256934B550  (`this->0x50` = &subarray, points inside a slot-parent object)
+
+Reading `this` memory:
+    [+0x00] 0x00007FF68A61E188 = **RVA +0x7B9E188** = OUR TARGET CLASS'S VTABLE ✓
+    [+0x08] 0x22415E95D40 (shared metadata pointer, matches session 40 A3 findings)
+    ...
+
+**Class identification: CONFIRMED — the D3D12 mode crash IS in the class
+we identified via vtable at +0x7B9E188.**
+
+Reading the SLOT PARENT object at `Rdi - 0x50 = 0x2256934B500`:
+    [+0x000] 0x00007FF68A61DC48 = RVA +0x7B9DC48  (vtable of slot-parent — DIFFERENT class!)
+    [+0x050] 0x00007FF68A55B368 = RVA +0x7ADB368  (Data pointer = .rdata const default)
+    [+0x058] 0x0000000400000001 (count=1, capacity=4 — partial-init state!)
+
+**This confirms the "TArray with capacity=4 but Data=const_default" scenario
+we hypothesized in session 40.**
+
+The slot-parent's vtable at RVA +0x7B9DC48 matches session 40 A3's finding:
+parent slot 5 allocates a 0x160-byte object and sets `*puVar6 = &UNK_147b9dc48`.
+So the slot parents are 0x160-byte instances of ANOTHER class (0x7B9DC48).
+
+--- D3D12 crash: call stack (from `parse-dump-2.py`) ---
+
+Stack frames that resolve to modules:
+
+    [rsp+0x028]  SUPERVIVE.exe + 0x2984F45   (caller 1)
+    [rsp+0x048]  **D3D12Core.dll + 0x24E3DC**
+    [rsp+0x058]  SUPERVIVE.exe + 0x2983C27   (caller 2)
+    [rsp+0x078]  **D3D12Core.dll + 0x38BE7**
+    [rsp+0x0C8]  SUPERVIVE.exe + 0x29838BE   (caller 3)
+    [rsp+0x108]  SUPERVIVE.exe + 0x29CCD3E   (caller 4)
+    [rsp+0x138]  SUPERVIVE.exe + 0x2980F07
+    [rsp+0x238]  SUPERVIVE.exe + 0x2981434
+    [rsp+0x258]  **D3D12Core.dll + 0x161BF3**
+    [rsp+0x270]  **D3D12Core.dll + 0x39E088**
+    [rsp+0x278]  **D3D12Core.dll + 0x3AF0D8**
+    [rsp+0x2D8]  **D3D12Core.dll + 0x2841D**
+    [rsp+0x2F8]  **D3D12Core.dll + 0x24E3DC**
+    [rsp+0x318]  **D3D12Core.dll + 0x1E6C48**
+    [rsp+0x328]  **D3D12Core.dll + 0x168CD4**
+    [rsp+0x388]  **D3D12Core.dll + 0x1E7AC5**
+
+**MULTIPLE D3D12Core.dll frames interleaved with SUPERVIVE frames** — this
+class IS interacting heavily with Microsoft's D3D12 runtime. Combined with
+the .rdata string neighborhood pointing at D3D12CommandList.cpp, the
+**FD3D12CommandContext (or a related D3D12 command / device-child class)
+identification IS PLAUSIBLE AGAIN**, contrary to the retraction I made
+after the DX11/nullrhi tests.
+
+--- nullrhi crash: DIFFERENT CRASH IN NTDLL ---
+
+The nullrhi test crash dump at `.sentry-native/reports/91ac7f82...dmp`:
+
+    Rip = 0x00007FF8F0400001  (ntdll.dll + 0x230001 — NOT in SUPERVIVE.exe)
+    Rax = 0, Rcx = 0, Rsi = 0  (many null registers)
+    Rbx = 0x3F57AC30FA773E4C   (garbage/uninitialized value)
+
+This is a **DIFFERENT crash entirely** from the D3D12 mode crash. The RIP
+is in `ntdll.dll`. Rbx / Rdx / R8 / R9 / R10 contain garbage values
+consistent with corrupted stack or a fatal API failure.
+
+Modules loaded during nullrhi crash notably lack `D3D12Core.dll` — only
+`d3dcompiler_47.dll`, `d3d9.dll`, `dxgi.dll` are present. **D3D12Core is
+NOT loaded in nullrhi mode.**
+
+--- Corrected interpretation of the renderer matrix ---
+
+| Renderer  | Crash Location                             | Time to crash  |
+|-----------|--------------------------------------------|----------------|
+| D3D12     | SUPERVIVE +0x2976FF0 (our target class)    | 64 s post-Join |
+| DX11      | ??? (no dump written for that run)         | 24 s post-Join |
+| **nullrhi** | **ntdll.dll +0x230001 (a DIFFERENT crash)** | 32 s post-Join |
+| Vulkan    | hang in RHI init, no crash                 | N/A            |
+
+**The nullrhi test doesn't invalidate the D3D12 class identification.**
+nullrhi crashes for a different reason — likely a null-pointer deref or
+Windows API failure caused by trying to run a shipping-config UE game
+without a real renderer.
+
+**The DX11 test result is now inconclusive** — we don't have the actual
+dump so we can't verify whether the DX11 crash is at the same address
+(same class) or somewhere else.
+
+--- Current state of class identification ---
+
+The class at vtable RVA +0x7B9E188 is:
+- ✓ In .rdata region adjacent to D3D12RHI source code strings
+- ✓ Parent class (RVA +0x7B9DE88) has slot 2 method that emits assertion
+  logs referencing D3D12CommandList.cpp
+- ✓ CALLED HEAVILY BY D3D12Core.dll (confirmed by minidump stack walk)
+- ✓ Object size 15,504 bytes (matches FD3D12CommandContext-scale classes)
+- ✓ Multi-inheritance (matches UE's D3D12 command classes)
+- ? Whether it's specifically FD3D12CommandContext or a sibling
+  (FD3D12CommandListManager, FD3D12CommandAllocator, FD3D12Queue etc.)
+
+Given the D3D12Core.dll call-stack presence, this class is **almost
+certainly** a UE 5.4 D3D12 device-child wrapper. The Path A1 hypothesis
+is BACK ON THE TABLE (revised).
+
+--- Cheap next test to confirm ---
+
+Get a DX11-mode minidump. Since the last DX11 test didn't write one, run
+the DX11 test again but this time preserve Sentry's local dump directory
+before it uploads. Alternative: add `-nocrashreport` to the client to
+prevent Sentry from uploading, keeping the local .dmp intact.
+
+If DX11 dump shows the same crash at +0x2976FF0 with the same call stack
+(minus or plus D3D12Core frames), then the class IS renderer-mode-shared
+D3D12 subsystem code that runs even in DX11. If DX11 dump shows a
+different crash, then the DX11 crash may be an entirely separate issue
+and the D3D12 hypothesis is fully confirmed.
+
+--- Also worth reading ---
+
+The subarray struct at RDI-0x50 = 0x2256934B500:
+    [+0x000] vtable = RVA +0x7B9DC48
+    [+0x010] 0x22415E968C0 (another heap ptr)
+    [+0x028] 0xFFFFFFFF00000000 (int32 pair: 0, -1)
+    [+0x050] Data = RVA +0x7ADB368 (.rdata const default)
+    [+0x058] count=1, cap=4 (post-partial-init)
+    [+0x070] 0x224C0785900 (heap ptr)
+    [+0x0A0] 0x2CFE7C971F5 (small heap ptr — might be an ID)
+    [+0x0B0] 0x224C0784B00 (heap ptr)
+
+The 0x160-byte slot-parent class (vtable +0x7B9DC48) is what actually holds
+the crashing TArray. Its identity is a related question — it's created by
+our target class's parent (vtable +0x7B9DE88) slot 5 method.
+
+--- Chapter state (end of session 40, minidump correction) ---
+
+- Route-around fires cleanly against live bunches: DONE (S35)
+- Full suppression keeps connection stable through Join: DONE (S39)
+- Client reaches menu, fetches 25 heroes + inventory + wallet: DONE (S39)
+- Crash class D3D12-related identification: PLAUSIBLE AGAIN (this doc,
+  revising session-40-nullrhi-conclusive.txt)
+- nullrhi crash is DIFFERENT (ntdll.dll) — nullrhi test cannot be used
+  to rule out D3D12 hypothesis
+- DX11 crash location: UNKNOWN (no dump saved for that run)
+- Menu-data replication: TODO
+
+--- DO NOT for session 41+ (updated) ---
+
+- Don't rely on `session-40-nullrhi-conclusive.txt`'s conclusion that
+  the crash is renderer-independent. That was based on a wrong
+  assumption about crash address consistency.
+- Don't discard the D3D12 class hypothesis — it's supported by the
+  minidump call stack.
+- If the class matters for path forward, first get a fresh DX11 dump
+  and confirm whether DX11 crashes at the same site.
+- Consider that Path B-lite might still be worth trying — if the class
+  is FD3D12CommandContext or similar, and it subscribes to UE Actor
+  render callbacks, replicating actor state properly might fix the
+  init sequence.

@@ -1,0 +1,137 @@
+SESSION 64 — the post-"ready to play" revert: characterized, hypotheses ruled out; it's a server-side/flow gate
+================================================================================================================
+Date: 2026-07-11 (same day as S63, continued). Goal: make BP_LokiGameMode_Tutorial STAY in the match after
+"Client is ready to play" instead of reverting to the lobby. Live + autonomous (elevated shell + a menu game).
+Outcome: did NOT get it to stay, but RULED OUT several hypotheses, CONFIRMED the packer defeats static RE, and
+sharpened the frontier + the strategic fork for the next session.
+
+WHAT THE REVERT IS (re-confirmed, deterministic across runs)
+------------------------------------------------------------
+With the S63 PlayerState fix (Loki PC login approved), every force-open of BP_LokiGameMode_Tutorial does:
+  Browse LVL_Tutorial -> LoadMap -> LokiGameModeInitializer Stage 0 -> Priming -> LogLokiRoundGameMode
+  EGP_ServerStartup->EGP_BeginInit -> "LogLokiGameMode: Display: Client is ready to play." -> (~200-300ms,
+  SILENT — no log) -> "UEngine::Browse Started Browse: LVL_LobbyV2_Persistent" (raw Browse back to the lobby)
+  + "LogLokiGameMode: Error: failed to get ULokiServerPlatformInstance".
+The revert is a RAW UEngine::Browse to the lobby (NOT ClientTravel / ReturnToMainMenu / TravelFailure — none of
+those log), which points at the CLIENT-SIDE FRONT-END FLOW MANAGER browsing home, not a standard gamemode travel.
+It is SPECIFIC to the Loki-PC "ready to play" path: the S63 A2 run (stock PC) never reported ready and PARKED at
+WaitingForClientsReady forever (no revert). So the trigger is a POST-READY match-advance step that bails.
+
+HYPOTHESES RULED OUT THIS SESSION
+---------------------------------
+1. BACKEND-DRIVEN (S63): the ags HTTP capture during the tutorial shows the client polled ONLY
+   /storefront/battlepass/progressiontracks + /mmr/leaderboard?queueId=tutorialNew, NEVER /core-game/players.
+   The revert is not driven by a backend match-state response.
+2. ?listen / NET-HOST CONTEXT (S64): force-open as a listen server (open ...?listen) -> "LogNet: Error:
+   LoadMap: failed to Listen(...)" (the listen server can't bind, as S60 saw) -> fell back to standalone ->
+   reverted IDENTICALLY (Client ready to play -> ~300ms -> Browse LVL_LobbyV2 + failed to get
+   ULokiServerPlatformInstance). So a net/host context does not change the revert. (The listen bind itself
+   failed, so this doesn't test a *working* server platform — see the fork below.)
+3. FEATURE-TOGGLES (incidental): "ULokiGameFeatureToggles::Get <X> called when feature toggles were not ready"
+   spams throughout init in BOTH the A2 and targeted runs (WinterEvent/DeadSpectatorCameraLock/CursorCharacterAim/
+   BonfireUAVs/AttachAudioListenerToHero). The A2 run tolerated them without reverting => the toggles-not-ready
+   errors are a parallel symptom, not the revert trigger.
+
+STATIC RE IS DEAD ON THIS BINARY (calibrated, decisive)
+-------------------------------------------------------
+Tried to locate UEngine::Browse (and the revert caller) via usmapdump `wstrings` + `xrefstr` on the log format
+string "%s Started Browse: \"%s\"" (in-module @0x7FF6BD738940): 0 LEA xrefs. CALIBRATION: xrefstr on a string
+from LIVE, currently-running menu UI code ("Applying input config for leaf-most node", in-module @0x7FF6BDB7DB90)
+ALSO returned 0 hits. => this packer does NOT reference .rdata strings via plain rip-rel LEA (mutated/virtualized
+memory access), so `xrefstr` cannot find function bodies from their strings — for ANY string, committed or not.
+This matches S61 ("xrefstr AND findptr = 0 hits" on the Login strings). CONCLUSION: static string->code xref is
+not viable here; the revert code cannot be found this way. Future RE must be RUNTIME (in-shim, during travel) or
+behavioral, which is how every prior win (roster/store/missions/login/PlayerState) was achieved.
+
+THE STRATEGIC FORK (for S65) — force-open may be fundamentally server-gated here
+--------------------------------------------------------------------------------
+"failed to get ULokiServerPlatformInstance" is logged right at the revert (and sometimes at match-init). It is a
+SERVER-SIDE platform singleton (dedicated-server backend integration). BP_LokiGameMode_Tutorial is server-
+authoritative; on a client-only force-open the client is the authority but has NO server platform, so once the
+client is ready the server-side match-advance can't proceed. This may be a FUNDAMENTAL limit of the force-open
+(client-only) route for the FULL tutorial gamemode. Two candidate paths remain, weigh them next session:
+
+  PATH 1 — force-open + satisfy the client-side flow/match gate (runtime state, missions-style).
+    The revert is a RAW Browse to the lobby = the FRONT-END FLOW MANAGER browsing home, likely because the
+    client has no valid match context (CoreGameManager.CoreGameMatchModel is null — we bypassed the menu match
+    flow). Test/fix via the ProcessInternal native-call primitive: find the live CoreGameManager, inspect its
+    match-model pointer, and POPULATE a valid CoreGameMatchModel (the way missions populated MissionsModel), so
+    the flow manager believes the match is ongoing and does not browse home. This is CLIENT-SIDE and may be
+    sufficient IF the flow manager (not the gamemode's server-platform need) is the actual browse trigger.
+    OPEN QUESTION: even if the flow stays, does the gamemode still stall on the missing ServerPlatformInstance
+    (no drop-in/bots)? Determine whether the revert is the FLOW MANAGER (client-side, fixable by match-model
+    state) or the GAMEMODE (needs the server platform).
+
+  PATH 2 — the DEDICATED-SERVER route (dedicated-server-stub.md), now much more attractive.
+    S62 proved the MENU route delivers the client to a real UE NetConnection at 127.0.0.1:7777 CLEANLY (no
+    force-open, no native patches). A dedicated server HAS the ServerPlatformInstance server-side and runs the
+    match-advance properly; the client connects + plays. The old DS blockers (menu-load crash) were solved in
+    S53; the browse_hook crash is now irrelevant (menu triggers the connect natively). So: stand up the UE5.4
+    DS (unreal-stub) hosting LVL_Tutorial + BP_LokiGameMode_Tutorial answering the S62 handshake (EngineNetVer
+    34, GameNetVer 0, checksum 3716198887). This is heavier but may be the ONLY route that actually runs the
+    server-authoritative tutorial to playable. NOTE the DS stub lacks SUPERVIVE content/BP (S62 ceiling) — the
+    real lift is getting a DS that can RUN BP_LokiGameMode_Tutorial, which is the same server-platform problem
+    from the other side.
+
+GATE LADDER (updated)
+---------------------
+  [DONE] travel+load; Login (slot-285); PlayerState (InitPlayerState 260+273, Loki PC login approved);
+         WaitingForClientsReady ("Client is ready to play").
+  [NEXT] post-ready match-advance revert -> the FLOW/SERVER-PLATFORM gate (this session's frontier; PATH 1 or 2).
+  [LATER] drop-in (Comp_GameMode_DropPlane_Tutorial) + hero + controllable pawn = PLAYABLE.
+
+STATE / TOOLING AT END
+----------------------
+- tutorial_launch.dll on disk = the durable FIX_TARGETED_INITPS build (plain full-mode command; ?listen reverted).
+- Static-xref (usmapdump xrefstr) is NOT usable on this packer — don't retry it to find functions.
+- Game: last run reverted to the lobby WITHOUT crashing this time (S63's crash was timing-dependent) — it may be
+  alive at a lobby/menu state; relaunch fresh for a clean pass.
+- Preserved in scratchpad: marker-A2-success.txt, marker-targeted-loki-pc.txt, Loki-S63-both-runs.log,
+  marker-s64-listen.txt, Loki-S64-listen-run.log.
+- Handoff: docs/next-session-prompt-s65.md.
+
+================================================================================================================
+S64 DEEP DIVE (same session, continued) — the revert IS the CoreGameMatchModel-invalid path; PATH 1 needs a
+COMPLETE model, not a poke. Live/autonomous (in-shim runtime probes via the object-walk, since static RE is dead).
+================================================================================================================
+Built a runtime DETERMINATION PROBE into the shim (DumpCoreGameState): walk GUObjectArray for the live
+CoreGameManager, dump its match/model/session/server props + the CoreGameMatchModel's own state. Findings:
+
+1. CoreGameManager (cls=CoreGameManager) PERSISTS from the menu. Its CoreGameMatchModel @0x6E0 is NON-NULL
+   (a real CoreGameMatchModel) during the tutorial => the flow manager is NOT missing the model. HeroSelectModel
+   @0x6E8 also non-null. (So the naive "populate a null model" idea is wrong — the model object already exists.)
+2. The CoreGameMatchModel is marked INVALID during the force-open tutorial:
+     bIsValid @0x30 = 0        (false)
+     MatchState @0x48 = 0      (ECoreGameMatchState::PreHeroSelect0 — i.e., no active match)
+     MatchInfo @0xB0 = 0       (null)
+     SelfModel @0x60, TeamMembers @0x68 = non-null (CoreGameParticipantModel); TeamSize @0x78 = 1;
+     ChampionTeamDetails @0x80 = 0xFFFFFFFFFFFFFFFF; OnUpdated* delegates present.
+   (Model field offsets recovered via reflection — reusable for PATH 1.)
+3. POKE EXPERIMENTS (tight-loop write to the live model across the tutorial):
+   - Poke bIsValid=1 + MatchState=5 (InProgress): the game CRASHED ~2.4s after world-up, BEFORE "Client is ready
+     to play" (earlier than the normal revert). => the match model IS read by tutorial-init code (poking it
+     changed behavior). Forcing InProgress with a null MatchInfo is inconsistent -> init derefs null -> crash.
+   - Poke bIsValid=1 ONLY (MatchState left 0): SAME crash ~1.8s after world-up, before "ready".
+   DECISIVE INTERPRETATION: the revert we normally see is the tutorial-init GRACEFULLY handling
+   "CoreGameMatchModel invalid" by browsing to the lobby. When bIsValid is forced true, init takes the
+   "valid match -> proceed" branch, which reads the INCOMPLETE model (null MatchInfo + PreHeroSelect state)
+   and crashes. So the model is load-bearing, and the two branches are: invalid -> lobby (graceful);
+   valid-but-incomplete -> crash.
+
+REFINED PATH 1 (the concrete next-session task): build a COMPLETE, CONSISTENT CoreGameMatchModel and install it,
+the way missions built + swapped MissionsModel. Not a byte-poke — populate bIsValid=true, MatchState=InProgress(5),
+AND a valid MatchInfo (19 props: ID/Version/Created/GameConfig/State/StateEnum/GameVersion/PlayerInfo/QueueID/
+Region/ConnectionDetails/TeamInfo/HeroSelect*Seconds/ChampionTeamDetails/OwnerID/CustomGameDetails — shapes in
+docs/session-62-coregame-match-shape.txt) + whatever else the "proceed" path reads, so init takes the valid
+branch WITHOUT the null-deref. Use the ProcessInternal native-call primitive to construct/populate (missions
+recipe). CoreGameManager.CoreGameMatchModel @0x6E0; model offsets above.
+CAVEAT (the ServerPlatformInstance may still block ACTUAL gameplay): even with the flow satisfied, the gamemode
+logs "failed to get ULokiServerPlatformInstance" (server-side). PATH 1 may beat the revert but then stall on the
+server platform for drop-in/bots => PATH 2 (DS route) may still be required for real gameplay. The two converge
+on "the tutorial wants a server." Weigh building the full model (PATH 1) vs the DS (PATH 2) with this in mind.
+
+S64-DEEP TOOLING/STATE: shim has DumpCoreGameState (CoreGameManager + match-model state dump) + FindCoreGameManager
++ a PokeMatchModelLoop (DISABLED by default, kPokeMatchModel=false — poking crashes init; kept for reference).
+tutorial_launch.dll = durable FIX_TARGETED_INITPS build, poke OFF, DumpCoreGameState sampling ON. Static xref
+stays dead — all this was done via in-shim runtime object-walk, the viable method. Game crashed at end (poke run)
+-> relaunch fresh. Preserved: scratchpad marker-s65-cgm-probe.txt, Loki-S65-cgm-poke.log.

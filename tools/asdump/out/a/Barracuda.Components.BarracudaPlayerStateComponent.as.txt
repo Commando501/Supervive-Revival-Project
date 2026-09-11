@@ -1,0 +1,643 @@
+==============================================================================
+MODULE   Barracuda.Components.BarracudaPlayerStateComponent
+SOURCE   Barracuda/Components/BarracudaPlayerStateComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+event FNextRespawnTimeChanged;
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaPlayerStateComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaPlayerStateComponent@ UBarracudaPlayerStateComponent()
+// 4 instr, 28 B bytecode, id=0xDF561BBA, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaPlayerStateComponent v2;
+
+    v2 = UBarracudaPlayerStateComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84132 q:0x26e6e874000; new UBarracudaPlayerStateComponent   ctor=UBarracudaPlayerStateComponent::UBarracudaPlayerStateComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x8863402C, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaPlayerStateComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b7ad8         ; __StaticType_UBarracudaPlayerStateComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UBarracudaPlayerStateComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xECA3254A, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaPlayerStateComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaPlayerStateComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972600            ; UBarracudaPlayerStateComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7ad8         ; __StaticType_UBarracudaPlayerStateComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaPlayerStateComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xB364E506, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaPlayerStateComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaPlayerStateComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972600            ; UBarracudaPlayerStateComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7ad8         ; __StaticType_UBarracudaPlayerStateComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaPlayerStateComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x995BF009, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaPlayerStateComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaPlayerStateComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972600            ; UBarracudaPlayerStateComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7ad8         ; __StaticType_UBarracudaPlayerStateComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class UBarracudaPlayerStateComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, RepNotify, RepCond=0, meta=(ReplicatedUsing=OnRep_NextRespawnTime)) private float64 InternalNextRespawnTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) FNextRespawnTimeChanged OnNextRespawnTimeChanged;
+
+}
+
+------------------------------------------------------------------------------
+UBarracudaPlayerStateComponent() const
+// 9 instr, 64 B bytecode, id=0xB86C6403, varspace=2
+------------------------------------------------------------------------------
+{
+    this.OnNextRespawnTimeChanged.FNextRespawnTimeChanged();
+    this.InternalNextRespawnTime = -1;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:216 d:134230776      ; UBarracudaPlayerStateComponent::OnNextRespawnTimeChanged  (+216)
+    //     3  CALL           d:84135                 ; void FNextRespawnTimeChanged::FNextRespawnTimeChanged()
+    //     5  SetV8          wW0:2 q:0xbff0000000000000
+    //     8  LoadThisR      W0:208 d:134230776      ; UBarracudaPlayerStateComponent::InternalNextRespawnTime  (+208)
+    //    10  WRTV8          rW0:2
+    //    11  PshVPtr        rW0:0
+    //    12  FinConstruct   q:0x26e6e874000         ; UBarracudaPlayerStateComponent
+    //    15  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Const, meta=(Category=Barracuda|PlayerState))
+bool HasNextRespawnTime()
+// 8 instr, 48 B bytecode, id=0x21CB8180, varspace=5
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v5;
+
+    v2 = this.InternalNextRespawnTime;
+    v5 = v2 > 0;
+    return v5;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:208 d:134230776      ; UBarracudaPlayerStateComponent::InternalNextRespawnTime  (+208)
+    //     2  RDR8           wW0:2
+    //     3  SetV8          wW0:4 q:0x0
+    //     6  CMPd           rW0:2 rW1:4
+    //     8  TP
+    //     9  CpyRtoV4       wW0:5
+    //    10  CpyVtoR4       rW0:5
+    //    11  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, meta=(Category=Barracuda|PlayerState))
+void ClearNextRespawnTime()
+// 4 instr, 28 B bytecode, id=0x6E8D9912, varspace=2
+------------------------------------------------------------------------------
+{
+    this.InternalNextRespawnTime = -1;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0xbff0000000000000
+    //     3  LoadThisR      W0:208 d:134230776      ; UBarracudaPlayerStateComponent::InternalNextRespawnTime  (+208)
+    //     5  WRTV8          rW0:2
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+void SetNextRespawnTime(const float64 InNextRespawnTime)
+// 5 instr, 28 B bytecode, id=0xE85631F5, varspace=0
+------------------------------------------------------------------------------
+{
+    this.InternalNextRespawnTime = InNextRespawnTime;
+    this.NextRespawnTimeChanged();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:208 d:134230776      ; UBarracudaPlayerStateComponent::InternalNextRespawnTime  (+208)
+    //     2  WRTV8          rW0:-2
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:84130                 ; void UBarracudaPlayerStateComponent::NextRespawnTimeChanged()
+    //     6  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, meta=(Category=Barracuda|PlayerState))
+float64 GetNextRespawnTime()
+// 4 instr, 20 B bytecode, id=0x213EE035, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.InternalNextRespawnTime;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:208 d:134230776      ; UBarracudaPlayerStateComponent::InternalNextRespawnTime  (+208)
+    //     2  RDR8           wW0:2
+    //     3  CpyVtoR8       rW0:2
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, meta=(Category=Barracuda|PlayerState))
+float64 GetRespawnTimeRemaining()
+// 22 instr, 168 B bytecode, id=0xB5631623, varspace=14
+------------------------------------------------------------------------------
+{
+    auto v2;
+    float64 v4;
+    auto v8;
+
+    v2 = this.InternalNextRespawnTime;
+    v4 = 0;
+    if (v2 > 0) {
+        v4 = float64(Gameplay::GetServerTime(__WorldContext));
+        v8 = v4;
+        v2 = this.InternalNextRespawnTime;
+        v4 = v2 - v4;
+        v2 = Math::Max(v4, 1);
+    } else {
+        v2 = -1;
+    }
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:208 d:134230776      ; UBarracudaPlayerStateComponent::InternalNextRespawnTime  (+208)
+    //     2  RDR8           wW0:2
+    //     3  SetV8          wW0:4 q:0x0
+    //     6  CMPd           rW0:2 rW1:4
+    //     8  JP             ->16
+    //    10  SetV8          wW0:2 q:0xbff0000000000000
+    //    13  CpyVtoR8       rW0:2
+    //    14  JMP            ->41
+    //    16  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    19  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    22  CpyRtoV4       wW0:9
+    //    23  fTOd           wW0:4 rW1:9
+    //    25  CpyVtoV8       wW0:8 rW1:4
+    //    27  PshC8          q:0x3ff0000000000000
+    //    30  LoadThisR      W0:208 d:134230776      ; UBarracudaPlayerStateComponent::InternalNextRespawnTime  (+208)
+    //    32  RDR8           wW0:2
+    //    33  SUBd           wW0:4 rW1:2 rW2:8
+    //    35  PshV8          rW0:4
+    //    36  CALLSYS        q:0x26e70382000         ; float64 Math::Max(float64, float64)
+    //    39  CpyRtoV8       wW0:2
+    //    40  CpyVtoR8       rW0:2
+    //    41  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, meta=(Category=Barracuda|PlayerState))
+int GetRespawnTimeRemainingForDisplay()
+// 26 instr, 172 B bytecode, id=0xE5B50DF3, varspace=11
+------------------------------------------------------------------------------
+{
+    auto v1;
+    int v2;
+    auto v4;
+    float64 v8;
+    auto v11;
+
+    v1 = this.HasNextRespawnTime();
+    v1 = !v1;
+    if (!v1) {
+        v8 = float64(Gameplay::GetServerTime(__WorldContext));
+        v4 = v8;
+        v8 = this.InternalNextRespawnTime;
+        v8 = v8 - v8;
+        v2 = Math::RoundToInt(v8);
+        v11 = Math::Max(v2, 1);
+    } else {
+        v2 = 0;
+    }
+    return v11;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84124                 ; bool UBarracudaPlayerStateComponent::HasNextRespawnTime() const
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->13
+    //     8  SetV4          wW0:2 d:0
+    //    10  CpyVtoR4       rW0:2
+    //    11  JMP            ->42
+    //    13  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    16  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    19  CpyRtoV4       wW0:5
+    //    20  fTOd           wW0:8 rW1:5
+    //    22  CpyVtoV8       wW0:4 rW1:8
+    //    24  PshC4          d:1
+    //    26  LoadThisR      W0:208 d:134230776      ; UBarracudaPlayerStateComponent::InternalNextRespawnTime  (+208)
+    //    28  RDR8           wW0:8
+    //    29  SUBd           wW0:8 rW1:8 rW2:4
+    //    31  PshV8          rW0:8
+    //    32  CALLSYS        q:0x26e70358ac0         ; int Math::RoundToInt(float64)
+    //    35  CpyRtoV4       wW0:2
+    //    36  PshV4          rW0:2
+    //    37  CALLSYS        q:0x26e70381c80         ; int Math::Max(int, int)
+    //    40  CpyRtoV4       wW0:11
+    //    41  CpyVtoR4       rW0:11
+    //    42  RET            W0:2
+
+------------------------------------------------------------------------------
+void NextRespawnTimeChanged()
+// 39 instr, 252 B bytecode, id=0x94B2B251, varspace=20
+------------------------------------------------------------------------------
+{
+    AActor v2;
+    ALokiPlayerState v4;
+    ALokiPlayerState v6;
+    UGameEventRouterComponent v10;
+    FGameEvent_BarracudaRespawnTimeChanged_PlayerState v20;
+
+    v2 = this.GetOwner();
+    if (v2 == null) {
+        v4 = null;
+    } else {
+        v4 = cast<ALokiPlayerState>(v2);
+    }
+    v6 = v4;
+    if (v4 != null) {
+        this.OnNextRespawnTimeChanged.Broadcast();
+        v10 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v10 != null) {
+            v20 = FGameEvent_BarracudaRespawnTimeChanged_PlayerState();
+            v20.PlayerState = v6;
+            v10.BroadcastEvent(v20, v6);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //    10  PSF            rW0:4
+    //    11  PshVPtr        rW0:2
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:4
+    //    18  PshVPtr        rW0:4
+    //    19  RefCpyV        wW0:6
+    //    20  CmpPtrNull     rW0:6
+    //    21  JNZ            ->25
+    //    23  JMP            ->62
+    //    25  PshVPtr        rW0:0
+    //    26  ADDSi          W0:216 d:134230776      ; UBarracudaPlayerStateComponent::OnNextRespawnTimeChanged  (+216)
+    //    28  CALL           d:84138                 ; void FNextRespawnTimeChanged::Broadcast() const
+    //    30  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    33  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //    36  STOREOBJ       wW0:10
+    //    37  CmpPtrNull     rW0:10
+    //    38  JZ             ->62
+    //    40  PSF            rW0:20
+    //    41  CALLSYS        q:0x26e79396600         ; void FGameEvent_BarracudaRespawnTimeChanged_PlayerState::$beh0()
+    //    44  PshVPtr        rW0:6
+    //    45  PSF            rW0:20
+    //    46  ADDSi          W0:8 d:67120881         ; FGameEvent_BarracudaRespawnTimeChanged_PlayerState::PlayerState  (+8)
+    //    48  REFCPY
+    //    49  PopPtr
+    //    50  PshVPtr        rW0:6
+    //    51  TYPEID         d:67120881              ; FGameEvent_BarracudaRespawnTimeChanged_PlayerState
+    //    53  PSF            rW0:20
+    //    54  PshVPtr        rW0:10
+    //    55  CALLSYS        q:0x26e7968b4c0         ; void UGameEventRouterComponent::BroadcastEvent(const ?&, UObject@)
+    //    58  PSF            rW0:20
+    //    59  CALLSYS        q:0x26e79396440         ; void FGameEvent_BarracudaRespawnTimeChanged_PlayerState::$beh2()
+    //    62  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnRep_NextRespawnTime()
+// 3 instr, 16 B bytecode, id=0x6F8A9E12, varspace=0
+------------------------------------------------------------------------------
+{
+    this.NextRespawnTimeChanged();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84130                 ; void UBarracudaPlayerStateComponent::NextRespawnTimeChanged()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 5 instr, 32 B bytecode, id=0xFAD6E838, varspace=1
+------------------------------------------------------------------------------
+{
+    this.SetbReplicates(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a62c640         ; void UActorComponent::SetbReplicates(bool)
+    //     7  RET            W0:2
+
+------------------------------------------------------------------------------
+~UBarracudaPlayerStateComponent()
+// 4 instr, 24 B bytecode, id=0x202EB8A2, varspace=0
+------------------------------------------------------------------------------
+{
+    this.OnNextRespawnTimeChanged.~FNextRespawnTimeChanged();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:216 d:134230776      ; UBarracudaPlayerStateComponent::OnNextRespawnTimeChanged  (+216)
+    //     3  CALL           d:85460                 ; void FNextRespawnTimeChanged::~FNextRespawnTimeChanged()
+    //     5  RET            W0:2
+
+==============================================================================
+class FNextRespawnTimeChanged
+==============================================================================
+{
+    _FMulticastScriptDelegate _Inner;
+
+}
+
+------------------------------------------------------------------------------
+FNextRespawnTimeChanged() const
+// 4 instr, 28 B bytecode, id=0x5100648E, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230777        ; FNextRespawnTimeChanged::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+FNextRespawnTimeChanged(const FNextRespawnTimeChanged&inout Other) const
+// 7 instr, 44 B bytecode, id=0x48CF2A1F, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = _FMulticastScriptDelegate();
+    this = Other;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230777        ; FNextRespawnTimeChanged::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a500         ; void _FMulticastScriptDelegate::$beh0()
+    //     6  PshVPtr        rW0:-2
+    //     7  PshVPtr        rW0:0
+    //     8  CALL           d:84137                 ; FNextRespawnTimeChanged& FNextRespawnTimeChanged::opAssign(const FNextRespawnTimeChanged&)
+    //    10  RET            W0:4
+
+------------------------------------------------------------------------------
+FNextRespawnTimeChanged& opAssign(const FNextRespawnTimeChanged&inout Other)
+// 8 instr, 48 B bytecode, id=0x1C995303, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner = Other._Inner;
+    return this;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:0 d:134230777        ; FNextRespawnTimeChanged::_Inner  (+0)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:0 d:134230777        ; FNextRespawnTimeChanged::_Inner  (+0)
+    //     6  CALLSYS        q:0x26e69559fc0         ; _FMulticastScriptDelegate& _FMulticastScriptDelegate::opAssign(const _FMulticastScriptDelegate&)
+    //     9  PshVPtr        rW0:0
+    //    10  PopRPtr
+    //    11  RET            W0:4
+
+------------------------------------------------------------------------------
+void Broadcast()
+// 12 instr, 80 B bytecode, id=0x7F8BD8CB, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    v1 = !v1;
+    if (!v1) {
+        __Evt_ExecuteDelegate(this._Inner);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230777        ; FNextRespawnTimeChanged::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->13
+    //    11  JMP            ->19
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:0 d:134230777        ; FNextRespawnTimeChanged::_Inner  (+0)
+    //    16  CALLSYS        q:0x26e7861bf40         ; void __Evt_ExecuteDelegate(const _FMulticastScriptDelegate&)
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+void AddUFunction(const UObject@ Object, const FName&inout FunctionName)
+// 11 instr, 68 B bytecode, id=0xBFD4069F, varspace=2
+------------------------------------------------------------------------------
+{
+    this._Inner.AddUFunction(Object, FunctionName, __DelegateSignature(this));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:134230777             ; FNextRespawnTimeChanged
+    //     2  PshVPtr        rW0:0
+    //     3  CALLSYS        q:0x26e77242540         ; UDelegateFunction@ __DelegateSignature(?&)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:2
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:0 d:134230777        ; FNextRespawnTimeChanged::_Inner  (+0)
+    //    13  CALLSYS        q:0x26e77242380         ; void _FMulticastScriptDelegate::AddUFunction(const UObject@, const FName&, UDelegateFunction@)
+    //    16  RET            W0:6
+
+------------------------------------------------------------------------------
+void Unbind(UObject@ Object, const FName&inout FunctionName)
+// 6 instr, 36 B bytecode, id=0xAAFBEE00, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Unbind(Object, FunctionName);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:0 d:134230777        ; FNextRespawnTimeChanged::_Inner  (+0)
+    //     5  CALLSYS        q:0x26e772421c0         ; void _FMulticastScriptDelegate::Unbind(UObject@, const FName&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+void UnbindObject(UObject@ Object)
+// 5 instr, 32 B bytecode, id=0xE4E9265E, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.UnbindObject(Object);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:0 d:134230777        ; FNextRespawnTimeChanged::_Inner  (+0)
+    //     4  CALLSYS        q:0x26e77242000         ; void _FMulticastScriptDelegate::UnbindObject(UObject@)
+    //     7  RET            W0:4
+
+------------------------------------------------------------------------------
+bool IsBound()
+// 6 instr, 36 B bytecode, id=0x4DA9C119, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this._Inner.IsBound();
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230777        ; FNextRespawnTimeChanged::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559e00         ; bool _FMulticastScriptDelegate::IsBound() const
+    //     6  CpyRtoV4       wW0:1
+    //     7  CpyVtoR4       rW0:1
+    //     8  RET            W0:2
+
+------------------------------------------------------------------------------
+void Clear()
+// 4 instr, 28 B bytecode, id=0x080D6230, varspace=0
+------------------------------------------------------------------------------
+{
+    this._Inner.Clear();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230777        ; FNextRespawnTimeChanged::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e69559c40         ; void _FMulticastScriptDelegate::Clear()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FNextRespawnTimeChanged()
+// 4 instr, 28 B bytecode, id=0x4ABA884C, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230777        ; FNextRespawnTimeChanged::_Inner  (+0)
+    //     3  CALLSYS        q:0x26e6955a340         ; void _FMulticastScriptDelegate::$beh2()
+    //     6  RET            W0:2
+

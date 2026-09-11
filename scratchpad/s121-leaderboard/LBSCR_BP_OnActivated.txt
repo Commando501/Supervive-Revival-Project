@@ -1,0 +1,22 @@
+# Asset:         Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardScreen.uasset
+# UFunction:     BP_OnActivated
+# FunctionFlags: FUNC_Event, FUNC_Protected, FUNC_BlueprintEvent
+# Outer class:   WBP_UI_LeaderboardScreen_C
+# ScriptBytecode entries: 3
+# ChildProperties: 0
+
+# --- ScriptBytecode tree ---
+[  0] EX_LocalFinalFunction
+  StackNode: ExecuteUbergraph_WBP_UI_LeaderboardScreen
+  Parameters: [1]
+    [  0] EX_IntConst
+      Value: 1304
+      StatementIndex: 9
+  StatementIndex: 0
+[  1] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 16
+  StatementIndex: 15
+[  2] EX_EndOfScript
+  StatementIndex: 17

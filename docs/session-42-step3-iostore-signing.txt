@@ -1,0 +1,93 @@
+SESSION 42 — STEP 3 (IoStore pivot, deployment recon): IoStore containers ARE
+signed. The signing wall applies to IoStore too, not just legacy paks. The pivot
+does NOT get a free pass on signing. One real open question remains.
+==============================================================================
+Date: 2026-07-02
+Branch: dedicated-server-stub
+Context: user chose to pivot from the (confirmed-intractable) D3D12 crash to the
+IoStore mod-pak overlay route for the ORIGINAL enumeration blocker. This is the
+deployment recon.
+
+*** SELF-CORRECTION ***
+Mid-session I briefly read ContainerFlags at the WRONG offset (0x4C) and reported
+"flags=0x00, IoStore is UNSIGNED, deployment unblocked." THAT WAS WRONG. The
+FIoStoreTocHeader has 4 bytes of alignment padding before FIoContainerId (uint64,
+needs 8-byte alignment), so EncryptionKeyGuid sits at 0x40 and ContainerFlags at
+0x50 — matching the EXISTING docs/findings.md reading. Corrected below.
+
+DEPLOYMENT LANDSCAPE (Loki/Content/Paks/)
+-----------------------------------------
+- 17 IoStore containers: 16 pakchunkN-WindowsClient.{utoc,ucas} + 1 global.{utoc,ucas}.
+- 16 legacy .pak files, each with a paired .sig. Most .pak are 339-byte stubs
+  (mount-point only); only pakchunk0.pak (55 MB, holds AssetRegistry.bin) and
+  pakchunk0_s11.pak (28 MB) carry real legacy data.
+- All .utoc are TOC version 6 (UE 5.4), header size 0x90.
+
+CONTAINER FLAGS (correct offset 0x50), verified by raw hex dump:
+  global.utoc            0x04  = Signed
+  pakchunk0.utoc         0x0D  = Compressed | Signed | Indexed
+  pakchunk0_s15.utoc     0x0D  = Compressed | Signed | Indexed
+  (spot-checked; the pakchunkN set is uniformly 0x0D.)
+EncryptionKeyGuid (0x40..0x4F) = all zeros on every container => NOT encrypted
+(consistent with findings.md "mounts keyless, no AES key"). So EXTRACTION stays
+keyless; DEPLOYMENT faces signing.
+
+KEY STRUCTURAL FACTS
+--------------------
+1. IoStore containers ARE signed (Signed bit set). The signing infrastructure
+   covers IoStore, not only legacy paks.
+2. IoStore signatures are EMBEDDED IN THE .utoc (the TOC signature section) — NOT
+   in a separate .sig file. Proof: global.utoc is Signed (0x04) yet has NO .sig
+   file. The separate pakchunkN.sig files are the LEGACY-.pak signatures only.
+3. Consequence: to ship a *signed* IoStore mod container we'd need the developer's
+   private key (to sign the TOC) — same wall as the legacy .pak route
+   (docs/trackb-assetregistry-route.md route 2). We don't have it.
+
+THE ONE REAL OPEN QUESTION (crux of the whole pivot)
+----------------------------------------------------
+Does this build's IoStore mount path REJECT an UNSIGNED mod container, or mount
+it WITHOUT verification?
+- In stock UE, FIoStoreReader only runs the signature check inside
+  `if (EnumHasAnyFlags(ContainerFlags, EIoContainerFlags::Signed))`. A mod
+  container we author WITHOUT the Signed flag would skip that block => could
+  mount unverified, even in a signing-enabled build.
+- BUT the legacy .pak path DOES enforce "signing on => every .pak needs a valid
+  .sig" (verified: route 2 died with "Couldn't find pak signature file"). Whether
+  an equivalent "reject unsigned container" gate exists for IoStore in THIS build
+  is UNVERIFIED. That gate (or its absence) decides the route.
+- Sub-question: can a mod IoStore container be DISCOVERED/mounted standalone, or
+  does it need a paired .pak (which would re-introduce the .sig wall)? global.utoc
+  mounts with no .pak, but it's the special IoStore GLOBAL container loaded by
+  name at FIoDispatcher init — not proof that a regular mod .utoc auto-mounts
+  from the Paks folder without a .pak sibling.
+
+HOW TO RESOLVE NEXT SESSION (before building anything)
+------------------------------------------------------
+A. Static RE (cheap, no game): find this build's IoStore mount/verify path via the
+   live-process usmapdump strings tooling. Anchor on IoStore signing strings
+   ("Signature check failed", "FIoStoreReader", "invalid container signature",
+   "signing key", "Missing global container") and disasm the mount function to see
+   whether it rejects unsigned containers or only verifies signed ones. Mirrors the
+   session-40/trackb FPakSignatureFile RE method.
+B. Empirical (needs the live cycle): author a minimal UNSIGNED IoStore mod
+   container (one trivial cooked asset) with UnrealPak -Create -iostore (UE 5.4 at
+   H:\Unreal Engine\UE_5.4) or a retoc/ZenTools equivalent, drop it in Paks/ with a
+   `_P` name, launch, and read the log for whether it mounts or is rejected. This
+   answers both the enforcement AND the discovery question at once.
+
+HONEST BOTTOM LINE
+------------------
+The pivot is NOT the clean opening my (retracted) unsigned reading suggested. The
+IoStore route faces signing just like the legacy-pak route. Its viability hinges
+entirely on the open question above: if IoStore mount enforces signing, the route
+is as blocked as the legacy path; if it only verifies *flagged-signed* containers,
+an unsigned mod overlay is viable and the route genuinely opens. Resolve that
+FIRST (route A is cheap) before investing in container-build tooling. And note the
+route's own downstream kill criterion still stands: even a perfectly mounted AR
+patch may not change behavior if LokiAssetManager never consults the AR for
+primary-asset registration (docs/trackb-assetregistry-route.md).
+
+ARTIFACTS
+---------
+- /tmp/utoc-flags.py, /tmp/utoc-hex.py (trivial; read the .utoc headers).
+- Container header raw bytes captured in this session's transcript.

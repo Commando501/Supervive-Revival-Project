@@ -1,0 +1,16 @@
+﻿=== class LokiCharacter @0x29608761A00 � OWN net functions (FUNC_Net, non-override) ===
+  own net functions (in NetFields, name-sorted): 14
+   [  0] ClientDebugMessage                           flags=0x01020CC0  [Client,Reliable,Native]
+   [  1] ClientDisengageYawLock                       flags=0x01020C40  [Client,Native]
+   [  2] ClientEngageYawLock                          flags=0x01020C40  [Client,Native]
+   [  3] ClientPlayHitReact                           flags=0x01824C40  [Client,Multicast,Native]
+   [  4] ClientPlayJumpCue                            flags=0x01024C40  [Client,Multicast,Native]
+   [  5] ClientSetJumpZ                               flags=0x01024CC0  [Client,Multicast,Reliable,Native]
+   [  6] ClientUpdateDebugString                      flags=0x01080CC0  [Client,Reliable,Native]
+   [  7] ServerCheatExperience                        flags=0x00220CC0  [Server,Reliable,Native]
+   [  8] ServerCheatInfinite                          flags=0x00220CC0  [Server,Reliable,Native]
+   [  9] ServerCheatResetCooldowns                    flags=0x00220CC0  [Server,Reliable,Native]
+   [ 10] ServerCheatTeleportNear                      flags=0x00220CC0  [Server,Reliable,Native]
+   [ 11] ServerGetDebugStatString                     flags=0x00220CC0  [Server,Reliable,Native]
+   [ 12] ServerSetCharacterDebugMode                  flags=0x00220CC0  [Server,Reliable,Native]
+   [ 13] ServerSuicide                                flags=0x00220CC0  [Server,Reliable,Native]

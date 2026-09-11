@@ -1,0 +1,25 @@
+S138 flight 2 -- PRE-REGISTERED PREDICTION, written BEFORE injecting botspawn.
+pid=50272 base=0x7FF7A8B30000  staged tutorial world, baseline in s138-f2-pageprobe-BASELINE.txt
+
+HYPOTHESIS: ARM E's G6 refused because SpawnBot 0x556D910 has never EXECUTED in the process, and
+the protector demand-decrypts .text on EXECUTE only. Running the BP wrapper
+Comp_BP_BotSpawner_C::SpawnClassBotAtLoc executes SpawnBot and should decrypt its page.
+
+BASELINE (measured): SpawnBot NOACCESS, MakeNewBotController NOACCESS, OnPossess NOACCESS,
+0x5556D50 NOACCESS, OnUnPossess NOACCESS; SpawnAIFromClass + AController::Possess EXECUTE_READ.
+
+PREDICTIONS after injecting tutorial_launch_botspawn.dll (BP route, premade = EX_NoObject):
+  P1  SpawnBot 0x556D910            NOACCESS -> READABLE, prologue == 40555356574154415541564157488dac
+  P2  MakeNewBotController 0x5563660 NOACCESS -> READABLE   (SpawnBot calls it when premade is null)
+  P3  0x5556D50                      STAYS DARK  (sits past the PlayerState gate; a null controller
+                                                  never gets a PlayerState, so it is never reached)
+  P4  OnUnPossess 0x55667F0          STAYS DARK  (nothing is ever possessed on this route)
+  P5  OnPossess 0x5565470            STAYS DARK  (no LokiBotController is created on this route)
+  P6  the two lit controls stay lit  (instrument stability)
+
+P3/P4/P5 are the two-sided half: if EVERYTHING goes readable, the probe or the mechanism is not
+what I think it is, and P1 alone would not discriminate.
+
+IF P1 HOLDS: inject spawnbot_premade next; G6 should now pass and ARM E can fire.
+IF P1 FAILS: the decryption hypothesis is wrong and ARM E needs a different route entirely
+             (G6 relaxed to non-blocking, or the call attempted without a read-validation).

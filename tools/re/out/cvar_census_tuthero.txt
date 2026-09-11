@@ -1,0 +1,95 @@
+image  : dumps/tutorial-hero/SUPERVIVE-Win64-Shipping.dump.exe (178,130,944 bytes)
+scanned: .rdata 0x764A000-0x99C7000 (100% readable per manifest)
+
+wide ASCII-range strings harvested: 74,126
+dotted-identifier shaped (cvar/ccmd candidates): 7,969
+
+=== CONTROLS (must all be present, else output is VOID) ===
+  [PRESENT] console.position.enable
+  [PRESENT] con.MinLogVerbosity
+  [PRESENT] p.NetPackedMovementMaxBits
+  [PRESENT] net.AllowAsyncLoading
+  [PRESENT] net.MaxRPCPerNetUpdate
+  [PRESENT] net.DelayUnmappedRPCs
+  [PRESENT] net.IpConnectionUseSendTasks
+  -> 7/7
+
+=== top 30 prefixes by count ===
+   3011  r
+    658  p
+    276  fx
+    259  net
+    253  lumen
+    155  au
+    125  hair
+     85  nanite
+     83  s
+     83  shadow
+     81  errors
+     72  slate
+     63  np2
+     60  actor
+     58  wp
+     54  d3d12
+     52  engine
+     52  particles
+     48  gc
+     47  scenecomponent
+     47  demo
+     45  rhi
+     44  loki
+     43  a
+     37  taskgraph
+     37  pcg
+     36  globaldistancefield
+     35  grass
+     35  settings
+     34  kismetmathlibrary
+
+=== LOKI / TITLE-OWNED candidates ===
+
+  --- loki.* (44) ---
+    0x08B17CB8  Loki.CollisionProfile.debug
+    0x08B03750  Loki.DestructibleDamageMultiplier
+    0x08B25E00  Loki.Destructibles.ForceASCReplicationOn
+    0x08B29980  Loki.log
+    0x08B012C0  loki.BonusManaRegenOnly
+    0x08B13E30  loki.LaneMinionManager.ClaimLockDuration
+    0x08B13CE0  loki.LaneMinionManager.ClaimRadiusMultiplier
+    0x08B32F18  loki.airship.enabled
+    0x08B137D0  loki.analytics.client.LocalBuild
+    0x08B32EA0  loki.armory.enabled
+    0x08B13568  loki.audioinfog.debug.client
+    0x08B135A8  loki.audioinfog.debug.server
+    0x08B13650  loki.audioinfog.disable
+    0x08B10C60  loki.bots.maxTitles
+    0x08B10D68  loki.bots.spawn.minDistance
+    0x08B25FD0  loki.characterAbilityHistory.bufferSize
+    0x08B25EB0  loki.characterImpulseHistory.bufferSize
+    0x08B25A18  loki.cursorCharacterAim.debug
+    0x08B25770  loki.cursorCharacterAim.enabled
+    0x08B25860  loki.cursorCharacterAim.maxDistance
+    0x08B25950  loki.cursorCharacterAim.requireAbyss
+    0x08B22928  loki.debug.UIReady
+    0x08B25668  loki.explosion.debug
+    0x08B2CD90  loki.gc.manage
+    0x08B2CEA0  loki.gc.safe.quantity
+    0x08B2CE78  loki.gc.safe.timems
+    0x08B32F90  loki.gliderv2.enabled
+    0x08B330A0  loki.heightMap.cellEvaluationsPerTick
+    0x08B32D00  loki.heightMap.jitBackgroundEvaluationDistance
+    0x08B2C1D8  loki.heightMap.type
+    0x08B1D8A0  loki.maxtimetowaitforclientsreadytoplay
+    0x08B10E58  loki.meleeHitBox.short.height
+    0x08B10F08  loki.meleeHitBox.tall.min
+    0x08B17480  loki.movement.InterpolatedCorrectionSpeed
+    0x08B173B0  loki.movement.InterpolatedCorrectionThreshold
+    0x08007100  loki.profiling.OccluderSize
+    0x08B30330  loki.profiling.repGraphDebug
+    0x08B37550  loki.projectile.enablefiringcamerashakes
+    0x08B06670  loki.spells.clientphasetimeoutwindow
+    0x08B1A828  loki.springArm.debug.period
+    0x08B1A910  loki.springArm.unglueOnCorrection
+    0x08B1AAD0  loki.springArm.unglueOnCorrectionMaxDist
+    0x08B1A9E0  loki.springArm.unglueOnCorrectionMinDist
+    0x08B255C0  loki.xp.drawradialgrants

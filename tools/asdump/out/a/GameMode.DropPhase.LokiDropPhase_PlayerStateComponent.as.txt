@@ -1,0 +1,2080 @@
+==============================================================================
+MODULE   GameMode.DropPhase.LokiDropPhase_PlayerStateComponent
+SOURCE   GameMode/DropPhase/LokiDropPhase_PlayerStateComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiDropPhase_PlayerStateComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiDropPhase_PlayerStateComponent@ ULokiDropPhase_PlayerStateComponent()
+// 4 instr, 28 B bytecode, id=0xE2E78F5F, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiDropPhase_PlayerStateComponent v2;
+
+    v2 = ULokiDropPhase_PlayerStateComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84957 q:0x26e6ed70400; new ULokiDropPhase_PlayerStateComponent   ctor=ULokiDropPhase_PlayerStateComponent::ULokiDropPhase_PlayerStateComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xE8862AD4, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiDropPhase_PlayerStateComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057e9d8         ; __StaticType_ULokiDropPhase_PlayerStateComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ULokiDropPhase_PlayerStateComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x8121AA63, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiDropPhase_PlayerStateComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiDropPhase_PlayerStateComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972695            ; ULokiDropPhase_PlayerStateComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057e9d8         ; __StaticType_ULokiDropPhase_PlayerStateComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiDropPhase_PlayerStateComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x5E1745C0, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiDropPhase_PlayerStateComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiDropPhase_PlayerStateComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972695            ; ULokiDropPhase_PlayerStateComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057e9d8         ; __StaticType_ULokiDropPhase_PlayerStateComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiDropPhase_PlayerStateComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x58565C03, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiDropPhase_PlayerStateComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiDropPhase_PlayerStateComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972695            ; ULokiDropPhase_PlayerStateComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057e9d8         ; __StaticType_ULokiDropPhase_PlayerStateComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class ULokiDropPhase_PlayerStateComponent : ULokiPlayerDropPlaneComponent
+// base /Script/Loki.LokiPlayerDropPlaneComponent  ->  ../../../Loki/Source/Loki/Player/LokiPlayerDropPlaneComponent.h
+==============================================================================
+{
+    protected float64 MaxHeightRange;
+    protected float64 MinimumTargetLocationMovementSpeed;
+    protected float64 MaximumTargetLocationMovementSpeed;
+    protected float64 PodDetachFromLeaderMinTime;
+    protected float64 PodDetachFromLeaderMaxTime;
+    protected bool bDropPhaseControlsDisabled;
+    protected bool bCanSelectDropLocation;
+    protected float64 TargetMovespeedDelta;
+    protected float64 NetworkUpdateFrequencey;
+    protected FVector BufferedDestinationDelta;
+    protected ALokiDropPod@ DropPodActor;
+    protected FGameEventListenerHandle PodSteeringEventListenerHanddle;
+    protected bool bPodSteeringEnabled;
+    protected bool bPodDetachingEnabled;
+    protected bool bIgnoreInput;
+    private bool bAlwaysUpdateNetwork;
+    private FTimerHandle NetworkUpdateFrequencyTimer;
+    protected const float64 INVALID_MOVEMENT_VALUE;
+    private float64 MovementForwardValue;
+    private float64 MovementRightValue;
+    protected ELokiMovementInputDirection CurrMoveDirection;
+    protected float64 CrewPodDetachStartTime;
+    protected bool bPodIsAttachedToLeader;
+    protected float64 DetachInputStartTime;
+    protected float64 CurrTotalTimeForDetach;
+
+}
+
+------------------------------------------------------------------------------
+ULokiDropPhase_PlayerStateComponent() const
+// 74 instr, 540 B bytecode, id=0xD435AEE5, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v3;
+
+    this.BufferedDestinationDelta = FVector();
+    this.PodSteeringEventListenerHanddle = FGameEventListenerHandle();
+    this.NetworkUpdateFrequencyTimer = FTimerHandle();
+    v2 = 20000;
+    this.MaxHeightRange = 20000;
+    v2 = 300;
+    this.MinimumTargetLocationMovementSpeed = 300;
+    v2 = 900;
+    this.MaximumTargetLocationMovementSpeed = 900;
+    v2 = 0.5;
+    this.PodDetachFromLeaderMinTime = 0.5;
+    v2 = 2;
+    this.PodDetachFromLeaderMaxTime = 2;
+    v3 = false;
+    this.bDropPhaseControlsDisabled = false;
+    v3 = false;
+    this.bCanSelectDropLocation = false;
+    v2 = 0.05;
+    this.NetworkUpdateFrequencey = 0.05;
+    v3 = false;
+    this.bPodSteeringEnabled = false;
+    v3 = false;
+    this.bPodDetachingEnabled = false;
+    v3 = true;
+    this.bIgnoreInput = true;
+    v3 = true;
+    this.bAlwaysUpdateNetwork = true;
+    v2 = -1000;
+    this.INVALID_MOVEMENT_VALUE = -1000;
+    v2 = this.INVALID_MOVEMENT_VALUE;
+    this.MovementForwardValue = v2;
+    v2 = this.INVALID_MOVEMENT_VALUE;
+    this.MovementRightValue = v2;
+    this.CurrMoveDirection = false;
+    v2 = 0;
+    this.CrewPodDetachStartTime = 0;
+    v3 = true;
+    this.bPodIsAttachedToLeader = true;
+    v2 = -1;
+    this.DetachInputStartTime = -1;
+    v2 = -1;
+    this.CurrTotalTimeForDetach = -1;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:512 d:134230871      ; ULokiDropPhase_PlayerStateComponent::BufferedDestinationDelta  (+512)
+    //     3  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:544 d:134230871      ; ULokiDropPhase_PlayerStateComponent::PodSteeringEventListenerHanddle  (+544)
+    //     9  CALLSYS        q:0x26e7934f200         ; void FGameEventListenerHandle::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:600 d:134230871      ; ULokiDropPhase_PlayerStateComponent::NetworkUpdateFrequencyTimer  (+600)
+    //    15  CALLSYS        q:0x26e786b8e40         ; void FTimerHandle::$beh0()
+    //    18  SetV8          wW0:2 q:0x40d3880000000000
+    //    21  LoadThisR      W0:448 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MaxHeightRange  (+448)
+    //    23  WRTV8          rW0:2
+    //    24  SetV8          wW0:2 q:0x4072c00000000000
+    //    27  LoadThisR      W0:456 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MinimumTargetLocationMovementSpeed  (+456)
+    //    29  WRTV8          rW0:2
+    //    30  SetV8          wW0:2 q:0x408c200000000000
+    //    33  LoadThisR      W0:464 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MaximumTargetLocationMovementSpeed  (+464)
+    //    35  WRTV8          rW0:2
+    //    36  SetV8          wW0:2 q:0x3fe0000000000000
+    //    39  LoadThisR      W0:472 d:134230871      ; ULokiDropPhase_PlayerStateComponent::PodDetachFromLeaderMinTime  (+472)
+    //    41  WRTV8          rW0:2
+    //    42  SetV8          wW0:2 q:0x4000000000000000
+    //    45  LoadThisR      W0:480 d:134230871      ; ULokiDropPhase_PlayerStateComponent::PodDetachFromLeaderMaxTime  (+480)
+    //    47  WRTV8          rW0:2
+    //    48  SetV1          wW0:3 d:0
+    //    50  LoadThisR      W0:488 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bDropPhaseControlsDisabled  (+488)
+    //    52  WRTV1          rW0:3
+    //    53  SetV1          wW0:3 d:0
+    //    55  LoadThisR      W0:489 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bCanSelectDropLocation  (+489)
+    //    57  WRTV1          rW0:3
+    //    58  SetV8          wW0:2 q:0x3fa999999999999a
+    //    61  LoadThisR      W0:504 d:134230871      ; ULokiDropPhase_PlayerStateComponent::NetworkUpdateFrequencey  (+504)
+    //    63  WRTV8          rW0:2
+    //    64  SetV1          wW0:3 d:0
+    //    66  LoadThisR      W0:592 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodSteeringEnabled  (+592)
+    //    68  WRTV1          rW0:3
+    //    69  SetV1          wW0:3 d:0
+    //    71  LoadThisR      W0:593 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodDetachingEnabled  (+593)
+    //    73  WRTV1          rW0:3
+    //    74  SetV1          wW0:3 d:1
+    //    76  LoadThisR      W0:594 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bIgnoreInput  (+594)
+    //    78  WRTV1          rW0:3
+    //    79  SetV1          wW0:3 d:1
+    //    81  LoadThisR      W0:595 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bAlwaysUpdateNetwork  (+595)
+    //    83  WRTV1          rW0:3
+    //    84  SetV8          wW0:2 q:0xc08f400000000000
+    //    87  LoadThisR      W0:608 d:134230871      ; ULokiDropPhase_PlayerStateComponent::INVALID_MOVEMENT_VALUE  (+608)
+    //    89  WRTV8          rW0:2
+    //    90  LoadThisR      W0:608 d:134230871      ; ULokiDropPhase_PlayerStateComponent::INVALID_MOVEMENT_VALUE  (+608)
+    //    92  RDR8           wW0:2
+    //    93  LoadThisR      W0:616 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MovementForwardValue  (+616)
+    //    95  WRTV8          rW0:2
+    //    96  LoadThisR      W0:608 d:134230871      ; ULokiDropPhase_PlayerStateComponent::INVALID_MOVEMENT_VALUE  (+608)
+    //    98  RDR8           wW0:2
+    //    99  LoadThisR      W0:624 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MovementRightValue  (+624)
+    //   101  WRTV8          rW0:2
+    //   102  SetV1          wW0:4 d:0
+    //   104  LoadThisR      W0:632 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CurrMoveDirection  (+632)
+    //   106  WRTV1          rW0:4
+    //   107  SetV8          wW0:2 q:0x0
+    //   110  LoadThisR      W0:640 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CrewPodDetachStartTime  (+640)
+    //   112  WRTV8          rW0:2
+    //   113  SetV1          wW0:3 d:1
+    //   115  LoadThisR      W0:648 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodIsAttachedToLeader  (+648)
+    //   117  WRTV1          rW0:3
+    //   118  SetV8          wW0:2 q:0xbff0000000000000
+    //   121  LoadThisR      W0:656 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DetachInputStartTime  (+656)
+    //   123  WRTV8          rW0:2
+    //   124  SetV8          wW0:2 q:0xbff0000000000000
+    //   127  LoadThisR      W0:664 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CurrTotalTimeForDetach  (+664)
+    //   129  WRTV8          rW0:2
+    //   130  PshVPtr        rW0:0
+    //   131  FinConstruct   q:0x26e6ed70400         ; ULokiDropPhase_PlayerStateComponent
+    //   134  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnSelectDropLocationStarted
+void OnSelectDropLocationStarted_Implementation()
+// 15 instr, 92 B bytecode, id=0x09A179A2, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.IsLocalClient();
+    v1 = !v1;
+    if (!v1) {
+        v1 = true;
+        this.bCanSelectDropLocation = true;
+        v1 = true;
+        this.SetComponentTickEnabled(true);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84945                 ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->10
+    //     8  JMP            ->22
+    //    10  SetV1          wW0:1 d:1
+    //    12  LoadThisR      W0:489 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bCanSelectDropLocation  (+489)
+    //    14  WRTV1          rW0:1
+    //    15  SetV1          wW0:1 d:1
+    //    17  PshV4          rW0:1
+    //    18  PshVPtr        rW0:0
+    //    19  CALLSYS        q:0x26e7973d440         ; void UActorComponent::SetComponentTickEnabled(bool)
+    //    22  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnEventRouterReady
+void OnEventRouterReady_Implementation(UGameEventRouterComponent@ Router)
+// 44 instr, 312 B bytecode, id=0x658D835B, varspace=24
+------------------------------------------------------------------------------
+{
+    FGameEvent_GameAugmentSet v6;
+    auto v7;
+    FGameEventListenerHandle v20;
+    FGameEvent_PodSteeringEnabled v24;
+
+    v7 = false;
+    v6 = FGameEvent_GameAugmentSet();
+    v20 = Router.RegisterForEvent(this, v6, null, __STATIC_NAME(62), false);
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v7 = false;
+        v24 = FGameEvent_PodSteeringEnabled();
+        v20 = Router.RegisterForEvent(this, v24, null, __STATIC_NAME(63), false);
+        this.PodSteeringEventListenerHanddle = v20;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:7 d:0
+    //     2  PshV4          rW0:7
+    //     3  PshC4          d:62
+    //     5  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     8  PshRPtr
+    //     9  PshNull
+    //    10  TYPEID         d:67120897              ; FGameEvent_GameAugmentSet
+    //    12  PSF            rW0:6
+    //    13  CALLSYS        q:0x26e7939d600         ; void FGameEvent_GameAugmentSet::$beh0()
+    //    16  PSF            rW0:6
+    //    17  PshVPtr        rW0:0
+    //    18  PSF            rW0:20
+    //    19  PshVPtr        rW0:-2
+    //    20  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    23  PSF            rW0:6
+    //    24  CALLSYS        q:0x26e7939d440         ; void FGameEvent_GameAugmentSet::$beh2()
+    //    27  PSF            rW0:20
+    //    28  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    31  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    34  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //    37  JLowZ          ->77
+    //    39  SetV1          wW0:7 d:0
+    //    41  PshV4          rW0:7
+    //    42  PshC4          d:63
+    //    44  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    47  PshRPtr
+    //    48  PshNull
+    //    49  TYPEID         d:67120951              ; FGameEvent_PodSteeringEnabled
+    //    51  PSF            rW0:24
+    //    52  CALLSYS        q:0x26e793c6980         ; void FGameEvent_PodSteeringEnabled::$beh0()
+    //    55  PSF            rW0:24
+    //    56  PshVPtr        rW0:0
+    //    57  PSF            rW0:20
+    //    58  PshVPtr        rW0:-2
+    //    59  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    62  PSF            rW0:24
+    //    63  CALLSYS        q:0x26e793c67c0         ; void FGameEvent_PodSteeringEnabled::$beh2()
+    //    66  PSF            rW0:20
+    //    67  PshVPtr        rW0:0
+    //    68  ADDSi          W0:544 d:134230871      ; ULokiDropPhase_PlayerStateComponent::PodSteeringEventListenerHanddle  (+544)
+    //    70  CALLSYS        q:0x26e7934ecc0         ; FGameEventListenerHandle& FGameEventListenerHandle::opAssign(const FGameEventListenerHandle&)
+    //    73  PSF            rW0:20
+    //    74  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    77  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnSelectDropLocationEnded
+void OnSelectDropLocationEnded_Implementation()
+// 15 instr, 92 B bytecode, id=0x4E3C0D31, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.IsLocalClient();
+    v1 = !v1;
+    if (!v1) {
+        v1 = false;
+        this.bCanSelectDropLocation = false;
+        v1 = false;
+        this.SetComponentTickEnabled(false);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84945                 ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->10
+    //     8  JMP            ->22
+    //    10  SetV1          wW0:1 d:0
+    //    12  LoadThisR      W0:489 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bCanSelectDropLocation  (+489)
+    //    14  WRTV1          rW0:1
+    //    15  SetV1          wW0:1 d:0
+    //    17  PshV4          rW0:1
+    //    18  PshVPtr        rW0:0
+    //    19  CALLSYS        q:0x26e7973d440         ; void UActorComponent::SetComponentTickEnabled(bool)
+    //    22  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnDropPodStarted
+void OnDropPodStarted_Implementation(AActor@ PodActor)
+// 37 instr, 232 B bytecode, id=0x9846DF72, varspace=8
+------------------------------------------------------------------------------
+{
+    ALokiDropPod v2;
+    auto v3;
+    FTimerHandle v8;
+
+    if (PodActor == null) {
+        v2 = null;
+    } else {
+        v2 = cast<ALokiDropPod>(PodActor);
+    }
+    this.DropPodActor = v2;
+    v3 = this.IsLocalClient();
+    v3 = !v3;
+    if (!v3) {
+        if (this.DropPodActor.GetPilotPlayerState() != null) {
+            this.OnDropPodStartedWithPilot();
+        } else {
+            v8 = System::SetTimerForNextTick(this, "OnDropPodStartedWithPilot");
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CmpPtrNull     rW0:-2
+    //     1  JZ             ->12
+    //     3  TYPEID         d:1207972696            ; ALokiDropPod@
+    //     5  PSF            rW0:2
+    //     6  PshVPtr        rW0:-2
+    //     7  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    10  JMP            ->13
+    //    12  ClrVPtr        wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //    17  REFCPY
+    //    18  PopPtr
+    //    19  PshVPtr        rW0:0
+    //    20  CALLINTF       d:84945                 ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+    //    22  CpyRtoV4       wW0:3
+    //    23  NOT            rW0:3
+    //    24  CpyVtoR1       rW0:3
+    //    25  JLowZ          ->29
+    //    27  JMP            ->57
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //    32  RDSPtr
+    //    33  CALLSYS        q:0x26e7addd600         ; ALokiPlayerState@ ALokiDropPodBase::GetPilotPlayerState() const
+    //    36  STOREOBJ       wW0:6
+    //    37  CmpPtrNull     rW0:6
+    //    38  JNZ            ->54
+    //    40  PGA            q:0x26e6f114bd0         ; "OnDropPodStartedWithPilot"
+    //    43  PshVPtr        rW0:0
+    //    44  PSF            rW0:8
+    //    45  CALLSYS        q:0x26e79b1c800         ; FTimerHandle System::SetTimerForNextTick(UObject@, FString)
+    //    48  PSF            rW0:8
+    //    49  CALLSYS        q:0x26e786b8c80         ; void FTimerHandle::$beh2()
+    //    52  JMP            ->57
+    //    54  PshVPtr        rW0:0
+    //    55  CALLINTF       d:84935                 ; void ULokiDropPhase_PlayerStateComponent::OnDropPodStartedWithPilot()
+    //    57  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnDropPodStartedWithPilot()
+// 57 instr, 352 B bytecode, id=0xCC939A07, varspace=16
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    auto v6;
+    auto v8;
+    FTimerHandle v16;
+
+    v1 = this.DropPodActor.bIsTeamLeaderPod;
+    v1 = !v1;
+    if (v1) {
+        v2 = this.DropPodActor.bIsLocalPlayerPilot;
+        v1 = v2;
+    } else {
+        v1 = 0;
+    }
+    if (!v1) {
+        v2 = false;
+        this.bIgnoreInput = false;
+    } else {
+        v6 = this.DropPodActor.IntroSequenceTotalTime;
+        v8 = this.DropPodActor.PodDetachTotalTime;
+        v6 = v6 - v8;
+        v8 = v6 - this.PodDetachFromLeaderMaxTime;
+        v2 = false;
+        v1 = false;
+        v16 = System::SetTimer(this, __STATIC_NAME(64), float(v8), false, false, 0, 0);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //     3  RDSPtr
+    //     4  ADDSi          W0:1117 d:134230872     ; ALokiDropPod::bIsTeamLeaderPod  (+1117)
+    //     6  PopRPtr
+    //     7  RDR1           wW0:1
+    //     8  NOT            rW0:1
+    //     9  CpyVtoR1       rW0:1
+    //    10  JLowNZ         ->16
+    //    12  SetV4          wW0:1 d:0
+    //    14  JMP            ->26
+    //    16  PshVPtr        rW0:0
+    //    17  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //    19  RDSPtr
+    //    20  ADDSi          W0:1124 d:134230872     ; ALokiDropPod::bIsLocalPlayerPilot  (+1124)
+    //    22  PopRPtr
+    //    23  RDR1           wW0:2
+    //    24  CpyVtoV4       wW0:1 rW1:2
+    //    26  CpyVtoR1       rW0:1
+    //    27  JLowZ          ->82
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //    32  RDSPtr
+    //    33  ADDSi          W0:1000 d:134230872     ; ALokiDropPod::IntroSequenceTotalTime  (+1000)
+    //    35  PopRPtr
+    //    36  RDR8           wW0:6
+    //    37  PshVPtr        rW0:0
+    //    38  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //    40  RDSPtr
+    //    41  ADDSi          W0:1040 d:134230872     ; ALokiDropPod::PodDetachTotalTime  (+1040)
+    //    43  PopRPtr
+    //    44  RDR8           wW0:8
+    //    45  SUBd           wW0:6 rW1:6 rW2:8
+    //    47  LoadThisR      W0:480 d:134230871      ; ULokiDropPhase_PlayerStateComponent::PodDetachFromLeaderMaxTime  (+480)
+    //    49  RDR8           wW0:10
+    //    50  SUBd           wW0:8 rW1:6 rW2:10
+    //    52  PshC4          d:0
+    //    54  PshC4          d:0
+    //    56  SetV1          wW0:2 d:0
+    //    58  PshV4          rW0:2
+    //    59  SetV1          wW0:1 d:0
+    //    61  PshV4          rW0:1
+    //    62  dTOf           wW0:14 rW1:8
+    //    64  PshV4          rW0:14
+    //    65  PshC4          d:64
+    //    67  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    70  PshRPtr
+    //    71  PshVPtr        rW0:0
+    //    72  PSF            rW0:16
+    //    73  CALLSYS        q:0x26e79b1c480         ; FTimerHandle System::SetTimer(UObject@, FName, float, bool, bool, float, float)
+    //    76  PSF            rW0:16
+    //    77  CALLSYS        q:0x26e786b8c80         ; void FTimerHandle::$beh2()
+    //    80  JMP            ->87
+    //    82  SetV1          wW0:2 d:0
+    //    84  LoadThisR      W0:594 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bIgnoreInput  (+594)
+    //    86  WRTV1          rW0:2
+    //    87  RET            W0:2
+
+------------------------------------------------------------------------------
+float64 GetInputTimeForDetach()
+// 29 instr, 184 B bytecode, id=0xDCB1F8FB, varspace=12
+------------------------------------------------------------------------------
+{
+    float64 v2;
+    auto v6;
+    auto v8;
+
+    v6 = this.GetWorld().GetTimeSeconds();
+    v8 = this.DetachInputStartTime;
+    v6 = v6 - v8;
+    v8 = this.PodDetachFromLeaderMaxTime;
+    if (v6 < v8) {
+        v8 = this.PodDetachFromLeaderMaxTime;
+        v2 = v8 - v6;
+        v8 = Math::Max(v2, this.PodDetachFromLeaderMinTime);
+    } else {
+        v2 = this.PodDetachFromLeaderMinTime;
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e70393f80         ; UWorld@ UObject::GetWorld() const
+    //     4  STOREOBJ       wW0:4
+    //     5  PshVPtr        rW0:4
+    //     6  CALLSYS        q:0x26e78650780         ; float64 UWorld::GetTimeSeconds() const
+    //     9  CpyRtoV8       wW0:6
+    //    10  LoadThisR      W0:656 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DetachInputStartTime  (+656)
+    //    12  RDR8           wW0:8
+    //    13  SUBd           wW0:6 rW1:6 rW2:8
+    //    15  LoadThisR      W0:480 d:134230871      ; ULokiDropPhase_PlayerStateComponent::PodDetachFromLeaderMaxTime  (+480)
+    //    17  RDR8           wW0:8
+    //    18  CMPd           rW0:6 rW1:8
+    //    20  JS             ->28
+    //    22  LoadThisR      W0:472 d:134230871      ; ULokiDropPhase_PlayerStateComponent::PodDetachFromLeaderMinTime  (+472)
+    //    24  RDR8           wW0:2
+    //    25  CpyVtoR8       rW0:2
+    //    26  JMP            ->45
+    //    28  LoadThisR      W0:472 d:134230871      ; ULokiDropPhase_PlayerStateComponent::PodDetachFromLeaderMinTime  (+472)
+    //    30  RDR8           wW0:12
+    //    31  PshV8          rW0:12
+    //    32  LoadThisR      W0:480 d:134230871      ; ULokiDropPhase_PlayerStateComponent::PodDetachFromLeaderMaxTime  (+480)
+    //    34  RDR8           wW0:8
+    //    35  SUBd           wW0:2 rW1:8 rW2:6
+    //    37  PshV8          rW0:2
+    //    38  CALLSYS        q:0x26e70382000         ; float64 Math::Max(float64, float64)
+    //    41  CpyRtoV8       wW0:8
+    //    42  CpyVtoR8       rW0:8
+    //    43  JMP            ->45
+    //    45  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnAllowPodDetach()
+// 40 instr, 256 B bytecode, id=0x32CA2C26, varspace=14
+------------------------------------------------------------------------------
+{
+    ALokiDropPod v2;
+    AActor v4;
+    ALokiDropPod v6;
+    auto v7;
+
+    v4 = this.DropPod;
+    if (v4 == null) {
+        v6 = null;
+    } else {
+        v6 = cast<ALokiDropPod>(v4);
+    }
+    v2 = v6;
+    if (v6 != null) {
+        v7 = true;
+        this.bPodDetachingEnabled = true;
+        v7 = false;
+        this.bIgnoreInput = false;
+        this.DetachInputStartTime = this.GetWorld().GetTimeSeconds();
+        v2.SetCrewPodDetachState(2, 0, false, FVector::ZeroVector);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:272 d:67115317       ; ULokiPlayerDropPlaneComponent::DropPod  (+272)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1207972696            ; ALokiDropPod@
+    //    10  PSF            rW0:6
+    //    11  PshVPtr        rW0:4
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:6
+    //    18  PshVPtr        rW0:6
+    //    19  RefCpyV        wW0:2
+    //    20  CmpPtrNull     rW0:2
+    //    21  JNZ            ->25
+    //    23  JMP            ->63
+    //    25  SetV1          wW0:7 d:1
+    //    27  LoadThisR      W0:593 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodDetachingEnabled  (+593)
+    //    29  WRTV1          rW0:7
+    //    30  SetV1          wW0:7 d:0
+    //    32  LoadThisR      W0:594 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bIgnoreInput  (+594)
+    //    34  WRTV1          rW0:7
+    //    35  PshVPtr        rW0:0
+    //    36  CALLSYS        q:0x26e70393f80         ; UWorld@ UObject::GetWorld() const
+    //    39  STOREOBJ       wW0:10
+    //    40  PshVPtr        rW0:10
+    //    41  CALLSYS        q:0x26e78650780         ; float64 UWorld::GetTimeSeconds() const
+    //    44  CpyRtoV8       wW0:12
+    //    45  LoadThisR      W0:656 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DetachInputStartTime  (+656)
+    //    47  WRTV8          rW0:12
+    //    48  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    51  SetV1          wW0:13 d:0
+    //    53  PshV4          rW0:13
+    //    54  PshC8          q:0x0
+    //    57  SetV1          wW0:14 d:2
+    //    59  PshV4          rW0:14
+    //    60  PshVPtr        rW0:2
+    //    61  CALLINTF       d:84990                 ; void ALokiDropPod::SetCrewPodDetachState(const ELokiCrewPodDetachState, const float64, const ELokiMovementInputDirection, const FVector&)
+    //    63  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnDropPodEnded
+void OnDropPodEnded_Implementation()
+// 32 instr, 208 B bytecode, id=0xF6EBF840, varspace=6
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    this.DropPodActor = null;
+    v1 = this.IsLocalClient();
+    v1 = !v1;
+    if (!v1) {
+        v1 = this.bAlwaysUpdateNetwork;
+        v1 = !v1;
+        if (v1) {
+            System::ClearAndInvalidateTimerHandle(__WorldContext, this.NetworkUpdateFrequencyTimer);
+        }
+        UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext).StopListeningToEvent(this.PodSteeringEventListenerHanddle);
+        v1 = false;
+        this.bPodSteeringEnabled = false;
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshNull
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //     4  REFCPY
+    //     5  PopPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLINTF       d:84945                 ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+    //     9  CpyRtoV4       wW0:1
+    //    10  NOT            rW0:1
+    //    11  CpyVtoR1       rW0:1
+    //    12  JLowZ          ->16
+    //    14  JMP            ->51
+    //    16  LoadThisR      W0:595 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bAlwaysUpdateNetwork  (+595)
+    //    18  RDR1           wW0:1
+    //    19  NOT            rW0:1
+    //    20  CpyVtoR1       rW0:1
+    //    21  JLowZ          ->32
+    //    23  PshVPtr        rW0:0
+    //    24  ADDSi          W0:600 d:134230871      ; ULokiDropPhase_PlayerStateComponent::NetworkUpdateFrequencyTimer  (+600)
+    //    26  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    29  CALLSYS        q:0x26e79b17940         ; void System::ClearAndInvalidateTimerHandle(const UObject@, FTimerHandle&)
+    //    32  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    35  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //    38  STOREOBJ       wW0:4
+    //    39  PshVPtr        rW0:0
+    //    40  ADDSi          W0:544 d:134230871      ; ULokiDropPhase_PlayerStateComponent::PodSteeringEventListenerHanddle  (+544)
+    //    42  PshVPtr        rW0:4
+    //    43  CALLSYS        q:0x26e79fa21c0         ; void UGameEventRouterComponent::StopListeningToEvent(FGameEventListenerHandle&)
+    //    46  SetV1          wW0:1 d:0
+    //    48  LoadThisR      W0:592 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodSteeringEnabled  (+592)
+    //    50  WRTV1          rW0:1
+    //    51  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnPodSteeringEnabled(const FGameEvent_PodSteeringEnabled&inout Event, const EGameEventStatefulEventType EventType)
+// 66 instr, 428 B bytecode, id=0x72E90477, varspace=12
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    ALokiPlayerState v6;
+    AActor v8;
+    ALokiPlayerState v10;
+    auto v11;
+    auto v12;
+
+    v1 = this.IsLocalClient();
+    v1 = !v1;
+    if (!v1) {
+        v2 = this.bDropPhaseControlsDisabled;
+        v1 = v2;
+    } else {
+        v1 = true;
+    }
+    if (!v1) {
+        if (int(EventType) != 2) {
+            v1 = true;
+            this.bPodSteeringEnabled = true;
+            v2 = true;
+            this.bPodDetachingEnabled = true;
+            v8 = this.GetOwner();
+            if (v8 == null) {
+                v10 = null;
+            } else {
+                v10 = cast<ALokiPlayerState>(v8);
+            }
+            v6 = v10;
+            v1 = this.bPodIsAttachedToLeader;
+            if (!v1) {
+                v11 = false;
+                v12 = false;
+            } else {
+                if (v6 != null) {
+                    v11 = v6.IsSpawnTeamLeader();
+                    v11 = !v11;
+                    v2 = v11;
+                } else {
+                    v2 = 0;
+                }
+                v12 = v2;
+            }
+            this.bPodIsAttachedToLeader = v12;
+            this.TryStartSteering();
+        } else {
+            v1 = false;
+            this.bPodSteeringEnabled = false;
+            v2 = false;
+            this.bPodDetachingEnabled = false;
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84945                 ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->12
+    //     8  SetV1          wW0:1 d:1
+    //    10  JMP            ->17
+    //    12  LoadThisR      W0:488 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bDropPhaseControlsDisabled  (+488)
+    //    14  RDR1           wW0:2
+    //    15  CpyVtoV4       wW0:1 rW1:2
+    //    17  CpyVtoR1       rW0:1
+    //    18  JLowZ          ->22
+    //    20  JMP            ->106
+    //    22  sbTOi          wW0:3 rW1:-4
+    //    24  CMPIi          rW0:3 d:2
+    //    26  JNZ            ->40
+    //    28  SetV1          wW0:1 d:0
+    //    30  LoadThisR      W0:592 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodSteeringEnabled  (+592)
+    //    32  WRTV1          rW0:1
+    //    33  SetV1          wW0:2 d:0
+    //    35  LoadThisR      W0:593 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodDetachingEnabled  (+593)
+    //    37  WRTV1          rW0:2
+    //    38  JMP            ->106
+    //    40  SetV1          wW0:1 d:1
+    //    42  LoadThisR      W0:592 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodSteeringEnabled  (+592)
+    //    44  WRTV1          rW0:1
+    //    45  SetV1          wW0:2 d:1
+    //    47  LoadThisR      W0:593 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodDetachingEnabled  (+593)
+    //    49  WRTV1          rW0:2
+    //    50  PshVPtr        rW0:0
+    //    51  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    54  STOREOBJ       wW0:8
+    //    55  CmpPtrNull     rW0:8
+    //    56  JZ             ->67
+    //    58  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //    60  PSF            rW0:10
+    //    61  PshVPtr        rW0:8
+    //    62  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    65  JMP            ->68
+    //    67  ClrVPtr        wW0:10
+    //    68  PshVPtr        rW0:10
+    //    69  RefCpyV        wW0:6
+    //    70  LoadThisR      W0:648 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodIsAttachedToLeader  (+648)
+    //    72  RDR1           wW0:1
+    //    73  CpyVtoR1       rW0:1
+    //    74  JLowZ          ->95
+    //    76  CmpPtrNull     rW0:6
+    //    77  JNZ            ->83
+    //    79  SetV4          wW0:2 d:0
+    //    81  JMP            ->91
+    //    83  PshVPtr        rW0:6
+    //    84  CALLSYS        q:0x26e7a394bc0         ; bool ALokiPlayerState::IsSpawnTeamLeader() const
+    //    87  CpyRtoV4       wW0:11
+    //    88  NOT            rW0:11
+    //    89  CpyVtoV4       wW0:2 rW1:11
+    //    91  CpyVtoV4       wW0:12 rW1:2
+    //    93  JMP            ->99
+    //    95  SetV1          wW0:11 d:0
+    //    97  CpyVtoV4       wW0:12 rW1:11
+    //    99  LoadThisR      W0:648 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodIsAttachedToLeader  (+648)
+    //   101  WRTV1          rW0:12
+    //   102  PshVPtr        rW0:0
+    //   103  CALLINTF       d:84940                 ; void ULokiDropPhase_PlayerStateComponent::TryStartSteering()
+    //   105  FreeNullV8     wW0:6
+    //   106  RET            W0:5
+
+------------------------------------------------------------------------------
+void TryStartSteering()
+// 16 instr, 92 B bytecode, id=0x3B4695A7, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.IsLocalClient();
+    v1 = !v1;
+    if (!v1) {
+        if (this.HasDropPodControl()) {
+            this.UpdatePodMovement(this.CurrMoveDirection);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84945                 ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->10
+    //     8  JMP            ->22
+    //    10  PshVPtr        rW0:0
+    //    11  CALLINTF       d:84953                 ; bool ULokiDropPhase_PlayerStateComponent::HasDropPodControl() const
+    //    13  JLowZ          ->22
+    //    15  LoadThisR      W0:632 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CurrMoveDirection  (+632)
+    //    17  RDR1           wW0:2
+    //    18  PshV4          rW0:2
+    //    19  PshVPtr        rW0:0
+    //    20  CALLINTF       d:84954                 ; void ULokiDropPhase_PlayerStateComponent::UpdatePodMovement(const ELokiMovementInputDirection)
+    //    22  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 10 instr, 56 B bytecode, id=0xBEF93018, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.IsLocalClient();
+    v1 = !v1;
+    if (!v1) {
+        this.UpdateDropLocationCursor();
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84945                 ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->10
+    //     8  JMP            ->13
+    //    10  PshVPtr        rW0:0
+    //    11  CALLINTF       d:84946                 ; void ULokiDropPhase_PlayerStateComponent::UpdateDropLocationCursor()
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnForwardMovementInput
+void OnForwardMovementInput_Implementation(const float64 ForwardValue)
+// 12 instr, 68 B bytecode, id=0x3B5F0667, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.IsLocalClient();
+    v1 = !v1;
+    if (!v1) {
+        this.MovementForwardValue = ForwardValue;
+        this.ProcessMovement();
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84945                 ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->10
+    //     8  JMP            ->16
+    //    10  LoadThisR      W0:616 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MovementForwardValue  (+616)
+    //    12  WRTV8          rW0:-2
+    //    13  PshVPtr        rW0:0
+    //    14  CALLINTF       d:84947                 ; void ULokiDropPhase_PlayerStateComponent::ProcessMovement()
+    //    16  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnRightMovementInput
+void OnRightMovementInput_Implementation(const float64 RightValue)
+// 12 instr, 68 B bytecode, id=0x4893E839, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.IsLocalClient();
+    v1 = !v1;
+    if (!v1) {
+        this.MovementRightValue = RightValue;
+        this.ProcessMovement();
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84945                 ; bool ULokiDropPhase_PlayerStateComponent::IsLocalClient()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->10
+    //     8  JMP            ->16
+    //    10  LoadThisR      W0:624 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MovementRightValue  (+624)
+    //    12  WRTV8          rW0:-2
+    //    13  PshVPtr        rW0:0
+    //    14  CALLINTF       d:84947                 ; void ULokiDropPhase_PlayerStateComponent::ProcessMovement()
+    //    16  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnGameAugmentSet(const FGameEvent_GameAugmentSet&inout Event, const EGameEventStatefulEventType EventType)
+// 25 instr, 168 B bytecode, id=0xBFA335F1, varspace=8
+------------------------------------------------------------------------------
+{
+    auto v3;
+    TSubclassOf<ALokiGameAugment@> v6;
+
+    if (int(EventType) != 2) {
+        v6 = TSubclassOf<ALokiGameAugment@>();
+        v6 = Event.GameAugmentClass;
+        v3 = v6 == null;
+        v3 = !v3;
+        if (v3) {
+            v3 = Event.GameAugmentClass.GetDefaultObject().bDropPhaseControlsDisabled;
+            this.bDropPhaseControlsDisabled = v3;
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  sbTOi          wW0:1 rW1:-4
+    //     2  CMPIi          rW0:1 d:2
+    //     4  JZ             ->41
+    //     6  PSF            rW0:6
+    //     7  CALLSYS        q:0x26e6ef51e40         ; void TSubclassOf<ALokiGameAugment@>::$beh0()
+    //    10  PshVPtr        rW0:-2
+    //    11  ADDSi          W0:8 d:67120897         ; FGameEvent_GameAugmentSet::GameAugmentClass  (+8)
+    //    13  PSF            rW0:6
+    //    14  CALLSYS        q:0x26e7939cf00         ; TSubclassOf<ALokiGameAugment@>& TSubclassOf<ALokiGameAugment@>::opAssign(const TSubclassOf<ALokiGameAugment@>&)
+    //    17  PshNull
+    //    18  PSF            rW0:6
+    //    19  CALLSYS        q:0x26e6ef52380         ; bool TSubclassOf<ALokiGameAugment@>::opEquals(UClass@) const
+    //    22  CpyRtoV4       wW0:3
+    //    23  NOT            rW0:3
+    //    24  CpyVtoR1       rW0:3
+    //    25  JLowZ          ->41
+    //    27  PshVPtr        rW0:-2
+    //    28  ADDSi          W0:8 d:67120897         ; FGameEvent_GameAugmentSet::GameAugmentClass  (+8)
+    //    30  CALLSYS        q:0x26e6ef51c80         ; ALokiGameAugment@ TSubclassOf<ALokiGameAugment@>::GetDefaultObject() const
+    //    33  STOREOBJ       wW0:8
+    //    34  LoadRObjR      rW0:8 W1:912 DW2:67115120; ALokiGameAugment::bDropPhaseControlsDisabled  (+912)
+    //    37  RDR1           wW0:3
+    //    38  LoadThisR      W0:488 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bDropPhaseControlsDisabled  (+488)
+    //    40  WRTV1          rW0:3
+    //    41  RET            W0:5
+
+------------------------------------------------------------------------------
+bool IsLocalClient()
+// 27 instr, 172 B bytecode, id=0x541E912A, varspace=10
+------------------------------------------------------------------------------
+{
+    auto v1;
+    AActor v6;
+    APlayerState v8;
+
+    if (!Loki::LokiIsClient(__WorldContext)) {
+        v1 = false;
+    } else {
+        v6 = this.GetOwner();
+        if (v6 == null) {
+            v8 = null;
+        } else {
+            v8 = cast<APlayerState>(v6);
+        }
+        v1 = v8.GetPlayerController() != null;
+    }
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //     6  JLowZ          ->39
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    12  STOREOBJ       wW0:6
+    //    13  CmpPtrNull     rW0:6
+    //    14  JZ             ->25
+    //    16  TYPEID         d:1140855230            ; APlayerState@
+    //    18  PSF            rW0:8
+    //    19  PshVPtr        rW0:6
+    //    20  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    23  JMP            ->26
+    //    25  ClrVPtr        wW0:8
+    //    26  PshVPtr        rW0:8
+    //    27  RefCpyV        wW0:4
+    //    28  PshVPtr        rW0:4
+    //    29  CALLSYS        q:0x26e79b505c0         ; APlayerController@ APlayerState::GetPlayerController() const
+    //    32  STOREOBJ       wW0:10
+    //    33  CmpPtrNull     rW0:10
+    //    34  TNZ
+    //    35  CpyRtoV4       wW0:1
+    //    36  CpyVtoR4       rW0:1
+    //    37  JMP            ->42
+    //    39  SetV1          wW0:1 d:0
+    //    41  CpyVtoR4       rW0:1
+    //    42  RET            W0:2
+
+------------------------------------------------------------------------------
+void UpdateDropLocationCursor()
+// 82 instr, 536 B bytecode, id=0xC972B82C, varspace=64
+------------------------------------------------------------------------------
+{
+    ALokiPlayerState v2;
+    AActor v4;
+    ALokiPlayerState v6;
+    ALokiPlayerController v8;
+    auto v9;
+    APlayerController v12;
+    ALokiPlayerController v14;
+    ALokiPlayerController v16;
+    ALokiHeightMap v18;
+    FVector v36;
+    FVector2D v44;
+    float64 v48;
+    FVector v54;
+    FVector v60;
+    float64 v62;
+
+    v4 = this.GetOwner();
+    if (v4 == null) {
+        v6 = null;
+    } else {
+        v6 = cast<ALokiPlayerState>(v4);
+    }
+    v2 = v6;
+    if (v6 == null) {
+    } else {
+        v12 = v2.GetPlayerController();
+        if (v12 == null) {
+            v14 = null;
+        } else {
+            v14 = cast<ALokiPlayerController>(v12);
+        }
+        v16 = v14;
+    }
+    v8 = v16;
+    v18 = ALokiHeightMap::GetInstance(__WorldContext);
+    if (v16 != null) {
+        v9 = v18 != null;
+    } else {
+        v9 = 0;
+    }
+    if (v9) {
+        v36 = v8.GetCursorLocation(false);
+        v48 = v36.X;
+        v44 = FVector2D(v48, v36.Y);
+        v54 = FVector();
+        v60 = FVector();
+        if (Gameplay::DeprojectScreenToWorld(v8, v44, v54, v60)) {
+            v48 = float64(v18.GetTerrainPercentInRadius(v54, 1000));
+            v62 = v48;
+            v9 = v18.IsTerrainInRadius(v54, 1000, 0.5);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //    10  PSF            rW0:6
+    //    11  PshVPtr        rW0:4
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:6
+    //    18  PshVPtr        rW0:6
+    //    19  RefCpyV        wW0:2
+    //    20  CmpPtrNull     rW0:2
+    //    21  JZ             ->45
+    //    23  PshVPtr        rW0:2
+    //    24  CALLSYS        q:0x26e79b505c0         ; APlayerController@ APlayerState::GetPlayerController() const
+    //    27  STOREOBJ       wW0:12
+    //    28  CmpPtrNull     rW0:12
+    //    29  JZ             ->40
+    //    31  TYPEID         d:1140857134            ; ALokiPlayerController@
+    //    33  PSF            rW0:14
+    //    34  PshVPtr        rW0:12
+    //    35  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    38  JMP            ->41
+    //    40  ClrVPtr        wW0:14
+    //    41  PshVPtr        rW0:14
+    //    42  RefCpyV        wW0:16
+    //    43  JMP            ->46
+    //    45  FreeNullV8     wW0:16
+    //    46  PshVPtr        rW0:16
+    //    47  RefCpyV        wW0:8
+    //    48  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    51  CALLSYS        q:0x26e7a13d600         ; ALokiHeightMap@ ALokiHeightMap::GetInstance(const UObject@)
+    //    54  STOREOBJ       wW0:18
+    //    55  CmpPtrNull     rW0:8
+    //    56  JNZ            ->62
+    //    58  SetV4          wW0:9 d:0
+    //    60  JMP            ->67
+    //    62  CmpPtrNull     rW0:18
+    //    63  TNZ
+    //    64  CpyRtoV4       wW0:21
+    //    65  CpyVtoV4       wW0:9 rW1:21
+    //    67  CpyVtoR1       rW0:9
+    //    68  JLowZ          ->133
+    //    70  SetV1          wW0:29 d:0
+    //    72  PshV4          rW0:29
+    //    73  PSF            rW0:36
+    //    74  PshVPtr        rW0:8
+    //    75  CALLSYS        q:0x26e7a32fac0         ; FVector ALokiPlayerController::GetCursorLocation(ELokiProjectionDistanceType) const
+    //    78  LoadVObjR      rW0:36 W1:8 DW2:67117444; FVector::Y  (+8)
+    //    81  RDR8           wW0:46
+    //    82  PshV8          rW0:46
+    //    83  LoadVObjR      rW0:36 W1:0 DW2:67117444; FVector::X  (+0)
+    //    86  RDR8           wW0:48
+    //    87  PshV8          rW0:48
+    //    88  PSF            rW0:44
+    //    89  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //    92  PSF            rW0:54
+    //    93  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //    96  PSF            rW0:60
+    //    97  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //   100  PSF            rW0:60
+    //   101  PSF            rW0:54
+    //   102  PSF            rW0:44
+    //   103  PshVPtr        rW0:8
+    //   104  CALLSYS        q:0x26e79aa8200         ; bool Gameplay::DeprojectScreenToWorld(const APlayerController@, const FVector2D&, FVector&, FVector&)
+    //   107  JLowZ          ->133
+    //   109  PshC8          q:0x408f400000000000
+    //   112  PSF            rW0:54
+    //   113  PshVPtr        rW0:18
+    //   114  CALLSYS        q:0x26e7a13d440         ; float ALokiHeightMap::GetTerrainPercentInRadius(const FVector, const float64)
+    //   117  CpyRtoV4       wW0:63
+    //   118  fTOd           wW0:48 rW1:63
+    //   120  CpyVtoV8       wW0:62 rW1:48
+    //   122  PshC4          d:1056964608
+    //   124  PshC8          q:0x408f400000000000
+    //   127  PSF            rW0:54
+    //   128  PshVPtr        rW0:18
+    //   129  CALLSYS        q:0x26e7a13cf00         ; bool ALokiHeightMap::IsTerrainInRadius(const FVector, const float64, const float)
+    //   132  CpyRtoV4       wW0:9
+    //   133  RET            W0:2
+
+------------------------------------------------------------------------------
+void ProcessMovement()
+// 66 instr, 400 B bytecode, id=0xFA60D472, varspace=8
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    float64 v4;
+    float64 v6;
+    ELokiMovementInputDirection v8;
+
+    v1 = this.bDropPhaseControlsDisabled;
+    if (!v1) {
+        v2 = this.bIgnoreInput;
+        v1 = v2;
+    } else {
+        v1 = true;
+    }
+    if (!v1) {
+        v4 = this.MovementForwardValue;
+        v6 = this.INVALID_MOVEMENT_VALUE;
+        v2 = v4 == v6;
+        v1 = v2;
+    } else {
+        v1 = true;
+    }
+    if (!v1) {
+        v6 = this.MovementRightValue;
+        v4 = this.INVALID_MOVEMENT_VALUE;
+        v2 = v6 == v4;
+        v1 = v2;
+    } else {
+        v1 = true;
+    }
+    if (!v1) {
+        v4 = this.MovementRightValue;
+        v6 = this.MovementForwardValue;
+        v8 = this.CalculateDetachDirection(v6, v4);
+        if (this.UpdatePodControl(v8)) {
+            v2 = this.bPodIsAttachedToLeader;
+            v2 = !v2;
+            if (v2) {
+                this.UpdatePodMovement(v8);
+            }
+        }
+        v4 = this.INVALID_MOVEMENT_VALUE;
+        this.MovementForwardValue = v4;
+        v6 = this.INVALID_MOVEMENT_VALUE;
+        this.MovementRightValue = v6;
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:488 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bDropPhaseControlsDisabled  (+488)
+    //     2  RDR1           wW0:1
+    //     3  CpyVtoR1       rW0:1
+    //     4  JLowZ          ->10
+    //     6  SetV1          wW0:1 d:1
+    //     8  JMP            ->15
+    //    10  LoadThisR      W0:594 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bIgnoreInput  (+594)
+    //    12  RDR1           wW0:2
+    //    13  CpyVtoV4       wW0:1 rW1:2
+    //    15  CpyVtoR1       rW0:1
+    //    16  JLowZ          ->22
+    //    18  SetV1          wW0:1 d:1
+    //    20  JMP            ->34
+    //    22  LoadThisR      W0:616 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MovementForwardValue  (+616)
+    //    24  RDR8           wW0:4
+    //    25  LoadThisR      W0:608 d:134230871      ; ULokiDropPhase_PlayerStateComponent::INVALID_MOVEMENT_VALUE  (+608)
+    //    27  RDR8           wW0:6
+    //    28  CMPd           rW0:4 rW1:6
+    //    30  TZ
+    //    31  CpyRtoV4       wW0:2
+    //    32  CpyVtoV4       wW0:1 rW1:2
+    //    34  CpyVtoR1       rW0:1
+    //    35  JLowZ          ->41
+    //    37  SetV1          wW0:1 d:1
+    //    39  JMP            ->53
+    //    41  LoadThisR      W0:624 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MovementRightValue  (+624)
+    //    43  RDR8           wW0:6
+    //    44  LoadThisR      W0:608 d:134230871      ; ULokiDropPhase_PlayerStateComponent::INVALID_MOVEMENT_VALUE  (+608)
+    //    46  RDR8           wW0:4
+    //    47  CMPd           rW0:6 rW1:4
+    //    49  TZ
+    //    50  CpyRtoV4       wW0:2
+    //    51  CpyVtoV4       wW0:1 rW1:2
+    //    53  CpyVtoR1       rW0:1
+    //    54  JLowZ          ->58
+    //    56  JMP            ->99
+    //    58  LoadThisR      W0:624 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MovementRightValue  (+624)
+    //    60  RDR8           wW0:4
+    //    61  PshV8          rW0:4
+    //    62  LoadThisR      W0:616 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MovementForwardValue  (+616)
+    //    64  RDR8           wW0:6
+    //    65  PshV8          rW0:6
+    //    66  PshVPtr        rW0:0
+    //    67  CALLINTF       d:84949                 ; ELokiMovementInputDirection ULokiDropPhase_PlayerStateComponent::CalculateDetachDirection(const float64, const float64)
+    //    69  CpyRtoV4       wW0:8
+    //    70  PshV4          rW0:8
+    //    71  PshVPtr        rW0:0
+    //    72  CALLINTF       d:84948                 ; bool ULokiDropPhase_PlayerStateComponent::UpdatePodControl(const ELokiMovementInputDirection)
+    //    74  JLowZ          ->87
+    //    76  LoadThisR      W0:648 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodIsAttachedToLeader  (+648)
+    //    78  RDR1           wW0:2
+    //    79  NOT            rW0:2
+    //    80  CpyVtoR1       rW0:2
+    //    81  JLowZ          ->87
+    //    83  PshV4          rW0:8
+    //    84  PshVPtr        rW0:0
+    //    85  CALLINTF       d:84954                 ; void ULokiDropPhase_PlayerStateComponent::UpdatePodMovement(const ELokiMovementInputDirection)
+    //    87  LoadThisR      W0:608 d:134230871      ; ULokiDropPhase_PlayerStateComponent::INVALID_MOVEMENT_VALUE  (+608)
+    //    89  RDR8           wW0:4
+    //    90  LoadThisR      W0:616 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MovementForwardValue  (+616)
+    //    92  WRTV8          rW0:4
+    //    93  LoadThisR      W0:608 d:134230871      ; ULokiDropPhase_PlayerStateComponent::INVALID_MOVEMENT_VALUE  (+608)
+    //    95  RDR8           wW0:6
+    //    96  LoadThisR      W0:624 d:134230871      ; ULokiDropPhase_PlayerStateComponent::MovementRightValue  (+624)
+    //    98  WRTV8          rW0:6
+    //    99  RET            W0:2
+
+------------------------------------------------------------------------------
+bool UpdatePodControl(const ELokiMovementInputDirection MoveDirection)
+// 112 instr, 740 B bytecode, id=0xC84EF1DA, varspace=22
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiDropPod v4;
+    AActor v6;
+    ALokiDropPod v8;
+    float64 v12;
+    auto v14;
+    auto v15;
+    auto v16;
+    UWorld v18;
+    auto v22;
+
+    v1 = this.bPodIsAttachedToLeader;
+    v1 = !v1;
+    if (!v1) {
+        v6 = this.DropPod;
+        if (v6 == null) {
+            v8 = null;
+        } else {
+            v8 = cast<ALokiDropPod>(v6);
+        }
+        v4 = v8;
+        if (v8 != null) {
+            if (int(MoveDirection) != 0) {
+                v14 = this.CrewPodDetachStartTime;
+                v12 = 0;
+                if (v14 <= 0) {
+                    v18 = this.GetWorld();
+                    v12 = v18.GetTimeSeconds();
+                    this.CrewPodDetachStartTime = v12;
+                    v15 = false;
+                    v16 = 3;
+                    v4.SetCrewPodDetachState(3, 0, false, FVector::ZeroVector);
+                    v14 = this.GetInputTimeForDetach();
+                    this.CurrTotalTimeForDetach = v14;
+                }
+                v18 = this.GetWorld();
+                v14 = v18.GetTimeSeconds();
+                v12 = this.CrewPodDetachStartTime;
+                v14 = v14 - v12;
+                v22 = this.CurrTotalTimeForDetach;
+                v12 = v14 / v22;
+                v22 = 1;
+                if (v12 < 1) {
+                    v16 = 5;
+                    v4.SetCrewPodDetachState(5, v12, MoveDirection, FVector::ZeroVector);
+                    v1 = false;
+                } else {
+                    this.DetachPodFromLeader(MoveDirection);
+                    this.TryStartSteering();
+                    v1 = this.HasDropPodControl();
+                }
+            } else {
+                v12 = this.CrewPodDetachStartTime;
+                v14 = 0;
+                if (v12 > 0) {
+                    v14 = 0;
+                    this.CrewPodDetachStartTime = 0;
+                    v15 = false;
+                    v16 = 4;
+                    v4.SetCrewPodDetachState(4, 0, false, FVector::ZeroVector);
+                }
+                v1 = false;
+            }
+        } else {
+            v1 = false;
+        }
+    } else {
+        v1 = this.HasDropPodControl();
+    }
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:648 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodIsAttachedToLeader  (+648)
+    //     2  RDR1           wW0:1
+    //     3  NOT            rW0:1
+    //     4  CpyVtoR1       rW0:1
+    //     5  JLowZ          ->14
+    //     7  PshVPtr        rW0:0
+    //     8  CALLINTF       d:84953                 ; bool ULokiDropPhase_PlayerStateComponent::HasDropPodControl() const
+    //    10  CpyRtoV4       wW0:1
+    //    11  CpyVtoR4       rW0:1
+    //    12  JMP            ->184
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:272 d:67115317       ; ULokiPlayerDropPlaneComponent::DropPod  (+272)
+    //    17  RDSPtr
+    //    18  RefCpyV        wW0:6
+    //    19  CmpPtrNull     rW0:6
+    //    20  JZ             ->31
+    //    22  TYPEID         d:1207972696            ; ALokiDropPod@
+    //    24  PSF            rW0:8
+    //    25  PshVPtr        rW0:6
+    //    26  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    29  JMP            ->32
+    //    31  ClrVPtr        wW0:8
+    //    32  PshVPtr        rW0:8
+    //    33  RefCpyV        wW0:4
+    //    34  CmpPtrNull     rW0:4
+    //    35  JNZ            ->42
+    //    37  SetV1          wW0:1 d:0
+    //    39  CpyVtoR4       rW0:1
+    //    40  JMP            ->184
+    //    42  sbTOi          wW0:9 rW1:-2
+    //    44  CMPIi          rW0:9 d:0
+    //    46  JNZ            ->84
+    //    48  LoadThisR      W0:640 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CrewPodDetachStartTime  (+640)
+    //    50  RDR8           wW0:12
+    //    51  SetV8          wW0:14 q:0x0
+    //    54  CMPd           rW0:12 rW1:14
+    //    56  JNP            ->79
+    //    58  SetV8          wW0:14 q:0x0
+    //    61  LoadThisR      W0:640 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CrewPodDetachStartTime  (+640)
+    //    63  WRTV8          rW0:14
+    //    64  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    67  SetV1          wW0:15 d:0
+    //    69  PshV4          rW0:15
+    //    70  PshC8          q:0x0
+    //    73  SetV1          wW0:16 d:4
+    //    75  PshV4          rW0:16
+    //    76  PshVPtr        rW0:4
+    //    77  CALLINTF       d:84990                 ; void ALokiDropPod::SetCrewPodDetachState(const ELokiCrewPodDetachState, const float64, const ELokiMovementInputDirection, const FVector&)
+    //    79  SetV1          wW0:1 d:0
+    //    81  CpyVtoR4       rW0:1
+    //    82  JMP            ->184
+    //    84  LoadThisR      W0:640 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CrewPodDetachStartTime  (+640)
+    //    86  RDR8           wW0:14
+    //    87  SetV8          wW0:12 q:0x0
+    //    90  CMPd           rW0:14 rW1:12
+    //    92  JP             ->129
+    //    94  PshVPtr        rW0:0
+    //    95  CALLSYS        q:0x26e70393f80         ; UWorld@ UObject::GetWorld() const
+    //    98  STOREOBJ       wW0:18
+    //    99  PshVPtr        rW0:18
+    //   100  CALLSYS        q:0x26e78650780         ; float64 UWorld::GetTimeSeconds() const
+    //   103  CpyRtoV8       wW0:12
+    //   104  LoadThisR      W0:640 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CrewPodDetachStartTime  (+640)
+    //   106  WRTV8          rW0:12
+    //   107  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //   110  SetV1          wW0:15 d:0
+    //   112  PshV4          rW0:15
+    //   113  PshC8          q:0x0
+    //   116  SetV1          wW0:16 d:3
+    //   118  PshV4          rW0:16
+    //   119  PshVPtr        rW0:4
+    //   120  CALLINTF       d:84990                 ; void ALokiDropPod::SetCrewPodDetachState(const ELokiCrewPodDetachState, const float64, const ELokiMovementInputDirection, const FVector&)
+    //   122  PshVPtr        rW0:0
+    //   123  CALLINTF       d:84936                 ; float64 ULokiDropPhase_PlayerStateComponent::GetInputTimeForDetach()
+    //   125  CpyRtoV8       wW0:14
+    //   126  LoadThisR      W0:664 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CurrTotalTimeForDetach  (+664)
+    //   128  WRTV8          rW0:14
+    //   129  PshVPtr        rW0:0
+    //   130  CALLSYS        q:0x26e70393f80         ; UWorld@ UObject::GetWorld() const
+    //   133  STOREOBJ       wW0:18
+    //   134  PshVPtr        rW0:18
+    //   135  CALLSYS        q:0x26e78650780         ; float64 UWorld::GetTimeSeconds() const
+    //   138  CpyRtoV8       wW0:14
+    //   139  LoadThisR      W0:640 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CrewPodDetachStartTime  (+640)
+    //   141  RDR8           wW0:12
+    //   142  SUBd           wW0:14 rW1:14 rW2:12
+    //   144  LoadThisR      W0:664 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CurrTotalTimeForDetach  (+664)
+    //   146  RDR8           wW0:22
+    //   147  DIVd           wW0:12 rW1:14 rW2:22
+    //   149  SetV8          wW0:22 q:0x3ff0000000000000
+    //   152  CMPd           rW0:12 rW1:22
+    //   154  JS             ->170
+    //   156  PshV4          rW0:-2
+    //   157  PshVPtr        rW0:0
+    //   158  CALLINTF       d:84950                 ; void ULokiDropPhase_PlayerStateComponent::DetachPodFromLeader(const ELokiMovementInputDirection)
+    //   160  PshVPtr        rW0:0
+    //   161  CALLINTF       d:84940                 ; void ULokiDropPhase_PlayerStateComponent::TryStartSteering()
+    //   163  PshVPtr        rW0:0
+    //   164  CALLINTF       d:84953                 ; bool ULokiDropPhase_PlayerStateComponent::HasDropPodControl() const
+    //   166  CpyRtoV4       wW0:1
+    //   167  CpyVtoR4       rW0:1
+    //   168  JMP            ->184
+    //   170  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //   173  PshV4          rW0:-2
+    //   174  PshV8          rW0:12
+    //   175  SetV1          wW0:16 d:5
+    //   177  PshV4          rW0:16
+    //   178  PshVPtr        rW0:4
+    //   179  CALLINTF       d:84990                 ; void ALokiDropPod::SetCrewPodDetachState(const ELokiCrewPodDetachState, const float64, const ELokiMovementInputDirection, const FVector&)
+    //   181  SetV1          wW0:1 d:0
+    //   183  CpyVtoR4       rW0:1
+    //   184  RET            W0:3
+
+------------------------------------------------------------------------------
+ELokiMovementInputDirection CalculateDetachDirection(const float64 ForwardMovementValue, const float64 RightMovementValue)
+// 64 instr, 508 B bytecode, id=0x054113A4, varspace=6
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v3;
+    auto v5;
+    auto v6;
+
+    v2 = 0;
+    if (ForwardMovementValue == 0) {
+        v2 = 0;
+        v3 = RightMovementValue == 0;
+    } else {
+        v3 = 0;
+    }
+    if (!v3) {
+        v2 = 0;
+        if (ForwardMovementValue <= 0) {
+            v2 = 0;
+            if (ForwardMovementValue >= 0) {
+                v2 = 0;
+                if (RightMovementValue <= 0) {
+                    v6 = 7;
+                    v5 = 7;
+                } else {
+                    v6 = 3;
+                    v5 = 3;
+                }
+            } else {
+                v2 = 0;
+                if (RightMovementValue != 0) {
+                    v2 = 0;
+                    if (RightMovementValue <= 0) {
+                        v6 = 6;
+                        v5 = 6;
+                    } else {
+                        v6 = 4;
+                        v5 = 4;
+                    }
+                } else {
+                    v5 = 5;
+                }
+            }
+        } else {
+            v2 = 0;
+            if (RightMovementValue != 0) {
+                v2 = 0;
+                if (RightMovementValue <= 0) {
+                    v6 = 8;
+                    v5 = 8;
+                } else {
+                    v6 = 2;
+                    v5 = 2;
+                }
+            } else {
+                v5 = true;
+            }
+        }
+    } else {
+        v5 = false;
+    }
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x0
+    //     3  CMPd           rW0:-2 rW1:2
+    //     5  JZ             ->11
+    //     7  SetV4          wW0:3 d:0
+    //     9  JMP            ->20
+    //    11  SetV8          wW0:2 q:0x0
+    //    14  CMPd           rW0:-4 rW1:2
+    //    16  TZ
+    //    17  CpyRtoV4       wW0:4
+    //    18  CpyVtoV4       wW0:3 rW1:4
+    //    20  CpyVtoR1       rW0:3
+    //    21  JLowZ          ->28
+    //    23  SetV1          wW0:5 d:0
+    //    25  CpyVtoR4       rW0:5
+    //    26  JMP            ->126
+    //    28  SetV8          wW0:2 q:0x0
+    //    31  CMPd           rW0:-2 rW1:2
+    //    33  JNP            ->67
+    //    35  SetV8          wW0:2 q:0x0
+    //    38  CMPd           rW0:-4 rW1:2
+    //    40  JNZ            ->47
+    //    42  SetV1          wW0:5 d:1
+    //    44  CpyVtoR4       rW0:5
+    //    45  JMP            ->126
+    //    47  SetV8          wW0:2 q:0x0
+    //    50  CMPd           rW0:-4 rW1:2
+    //    52  JNP            ->60
+    //    54  SetV1          wW0:6 d:2
+    //    56  CpyVtoV4       wW0:5 rW1:6
+    //    58  JMP            ->64
+    //    60  SetV1          wW0:6 d:8
+    //    62  CpyVtoV4       wW0:5 rW1:6
+    //    64  CpyVtoR4       rW0:5
+    //    65  JMP            ->126
+    //    67  SetV8          wW0:2 q:0x0
+    //    70  CMPd           rW0:-2 rW1:2
+    //    72  JNS            ->106
+    //    74  SetV8          wW0:2 q:0x0
+    //    77  CMPd           rW0:-4 rW1:2
+    //    79  JNZ            ->86
+    //    81  SetV1          wW0:5 d:5
+    //    83  CpyVtoR4       rW0:5
+    //    84  JMP            ->126
+    //    86  SetV8          wW0:2 q:0x0
+    //    89  CMPd           rW0:-4 rW1:2
+    //    91  JNP            ->99
+    //    93  SetV1          wW0:6 d:4
+    //    95  CpyVtoV4       wW0:5 rW1:6
+    //    97  JMP            ->103
+    //    99  SetV1          wW0:6 d:6
+    //   101  CpyVtoV4       wW0:5 rW1:6
+    //   103  CpyVtoR4       rW0:5
+    //   104  JMP            ->126
+    //   106  SetV8          wW0:2 q:0x0
+    //   109  CMPd           rW0:-4 rW1:2
+    //   111  JNP            ->119
+    //   113  SetV1          wW0:6 d:3
+    //   115  CpyVtoV4       wW0:5 rW1:6
+    //   117  JMP            ->123
+    //   119  SetV1          wW0:6 d:7
+    //   121  CpyVtoV4       wW0:5 rW1:6
+    //   123  CpyVtoR4       rW0:5
+    //   124  JMP            ->126
+    //   126  RET            W0:6
+
+------------------------------------------------------------------------------
+void DetachPodFromLeader(const ELokiMovementInputDirection MoveDirection)
+// 32 instr, 184 B bytecode, id=0x201AD522, varspace=8
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiDropPod v4;
+    AActor v6;
+    ALokiDropPod v8;
+
+    v1 = this.bPodDetachingEnabled;
+    v1 = !v1;
+    if (!v1) {
+        v6 = this.DropPod;
+        if (v6 == null) {
+            v8 = null;
+        } else {
+            v8 = cast<ALokiDropPod>(v6);
+        }
+        v4 = v8;
+        if (v8 != null) {
+            v1 = false;
+            this.bPodIsAttachedToLeader = false;
+            v4.DetachPodFromLeader(MoveDirection);
+            this.ServerDetachPodFromLeader(MoveDirection);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:593 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodDetachingEnabled  (+593)
+    //     2  RDR1           wW0:1
+    //     3  NOT            rW0:1
+    //     4  CpyVtoR1       rW0:1
+    //     5  JLowZ          ->9
+    //     7  JMP            ->45
+    //     9  PshVPtr        rW0:0
+    //    10  ADDSi          W0:272 d:67115317       ; ULokiPlayerDropPlaneComponent::DropPod  (+272)
+    //    12  RDSPtr
+    //    13  RefCpyV        wW0:6
+    //    14  CmpPtrNull     rW0:6
+    //    15  JZ             ->26
+    //    17  TYPEID         d:1207972696            ; ALokiDropPod@
+    //    19  PSF            rW0:8
+    //    20  PshVPtr        rW0:6
+    //    21  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    24  JMP            ->27
+    //    26  ClrVPtr        wW0:8
+    //    27  PshVPtr        rW0:8
+    //    28  RefCpyV        wW0:4
+    //    29  CmpPtrNull     rW0:4
+    //    30  JZ             ->45
+    //    32  SetV1          wW0:1 d:0
+    //    34  LoadThisR      W0:648 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodIsAttachedToLeader  (+648)
+    //    36  WRTV1          rW0:1
+    //    37  PshV4          rW0:-2
+    //    38  PshVPtr        rW0:4
+    //    39  CALLINTF       d:84995                 ; void ALokiDropPod::DetachPodFromLeader(const ELokiMovementInputDirection)
+    //    41  PshV4          rW0:-2
+    //    42  PshVPtr        rW0:0
+    //    43  CALLINTF       d:84951                 ; void ULokiDropPhase_PlayerStateComponent::ServerDetachPodFromLeader(const ELokiMovementInputDirection)
+    //    45  RET            W0:3
+
+------------------------------------------------------------------------------
+void ServerDetachPodFromLeader(const ELokiMovementInputDirection MoveDirection)
+// 8 instr, 60 B bytecode, id=0x10B91EC1, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__ELokiMovementInputDirection(MoveDirection);
+    __Evt_Execute(this, __STATIC_NAME(179));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e774f7cc0         ; void __Evt_PushArgument__ELokiMovementInputDirection(const ELokiMovementInputDirection&)
+    //     4  PshC4          d:179
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: ServerDetachPodFromLeader
+void ServerDetachPodFromLeader_Implementation(const ELokiMovementInputDirection MoveDirection)
+// 23 instr, 132 B bytecode, id=0xF3FA8D72, varspace=7
+------------------------------------------------------------------------------
+{
+    ALokiDropPod v2;
+    AActor v4;
+    ALokiDropPod v6;
+
+    v4 = this.DropPod;
+    if (v4 == null) {
+        v6 = null;
+    } else {
+        v6 = cast<ALokiDropPod>(v4);
+    }
+    v2 = v6;
+    if (v6 != null) {
+        this.bPodIsAttachedToLeader = false;
+        v2.DetachPodFromLeader(MoveDirection);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:272 d:67115317       ; ULokiPlayerDropPlaneComponent::DropPod  (+272)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1207972696            ; ALokiDropPod@
+    //    10  PSF            rW0:6
+    //    11  PshVPtr        rW0:4
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:6
+    //    18  PshVPtr        rW0:6
+    //    19  RefCpyV        wW0:2
+    //    20  CmpPtrNull     rW0:2
+    //    21  JZ             ->32
+    //    23  SetV1          wW0:7 d:0
+    //    25  LoadThisR      W0:648 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodIsAttachedToLeader  (+648)
+    //    27  WRTV1          rW0:7
+    //    28  PshV4          rW0:-2
+    //    29  PshVPtr        rW0:2
+    //    30  CALLINTF       d:84995                 ; void ALokiDropPod::DetachPodFromLeader(const ELokiMovementInputDirection)
+    //    32  RET            W0:3
+
+------------------------------------------------------------------------------
+bool HasDropPodControl()
+// 45 instr, 272 B bytecode, id=0x2208B054, varspace=10
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    ALokiPlayerState v4;
+    AActor v6;
+    ALokiPlayerState v8;
+
+    v1 = this.bPodSteeringEnabled;
+    v1 = !v1;
+    if (!v1) {
+        v2 = this.bPodIsAttachedToLeader;
+        v1 = v2;
+    } else {
+        v1 = true;
+    }
+    if (!v1) {
+        v6 = this.GetOwner();
+        if (v6 == null) {
+            v8 = null;
+        } else {
+            v8 = cast<ALokiPlayerState>(v6);
+        }
+        v4 = v8;
+        if (this.DropPodActor != null) {
+            v2 = this.DropPodActor.IsPlayerStatePilot(v4);
+            v1 = v2;
+        } else {
+            v1 = 0;
+        }
+    } else {
+        v2 = false;
+    }
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:592 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodSteeringEnabled  (+592)
+    //     2  RDR1           wW0:1
+    //     3  NOT            rW0:1
+    //     4  CpyVtoR1       rW0:1
+    //     5  JLowZ          ->11
+    //     7  SetV1          wW0:1 d:1
+    //     9  JMP            ->16
+    //    11  LoadThisR      W0:648 d:134230871      ; ULokiDropPhase_PlayerStateComponent::bPodIsAttachedToLeader  (+648)
+    //    13  RDR1           wW0:2
+    //    14  CpyVtoV4       wW0:1 rW1:2
+    //    16  CpyVtoR1       rW0:1
+    //    17  JLowZ          ->24
+    //    19  SetV1          wW0:2 d:0
+    //    21  CpyVtoR4       rW0:2
+    //    22  JMP            ->67
+    //    24  PshVPtr        rW0:0
+    //    25  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    28  STOREOBJ       wW0:6
+    //    29  CmpPtrNull     rW0:6
+    //    30  JZ             ->41
+    //    32  TYPEID         d:1140857146            ; ALokiPlayerState@
+    //    34  PSF            rW0:8
+    //    35  PshVPtr        rW0:6
+    //    36  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    39  JMP            ->42
+    //    41  ClrVPtr        wW0:8
+    //    42  PshVPtr        rW0:8
+    //    43  RefCpyV        wW0:4
+    //    44  PshVPtr        rW0:0
+    //    45  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //    47  RDSPtr
+    //    48  RefCpyV        wW0:10
+    //    49  CmpPtrNull     rW0:10
+    //    50  JNZ            ->56
+    //    52  SetV4          wW0:1 d:0
+    //    54  JMP            ->66
+    //    56  PshVPtr        rW0:4
+    //    57  PshVPtr        rW0:0
+    //    58  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //    60  RDSPtr
+    //    61  CALLINTF       d:85002                 ; bool ALokiDropPod::IsPlayerStatePilot(ALokiPlayerState@)
+    //    63  CpyRtoV4       wW0:2
+    //    64  CpyVtoV4       wW0:1 rW1:2
+    //    66  CpyVtoR4       rW0:1
+    //    67  RET            W0:2
+
+------------------------------------------------------------------------------
+void UpdatePodMovement(const ELokiMovementInputDirection MoveDirection)
+// 24 instr, 140 B bytecode, id=0xBEF138F2, varspace=6
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = int(MoveDirection);
+    if (v2 != int(this.CurrMoveDirection)) {
+        if (this.DropPodActor != null) {
+            this.DropPodActor.CurrentInputDirection = MoveDirection;
+            this.ServerUpdatePodMovement(MoveDirection);
+        }
+        this.CurrMoveDirection = MoveDirection;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  sbTOi          wW0:2 rW1:-2
+    //     2  LoadThisR      W0:632 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CurrMoveDirection  (+632)
+    //     4  RDR1           wW0:1
+    //     5  sbTOi          wW0:3 rW1:1
+    //     7  CMPi           rW0:2 rW1:3
+    //     9  JZ             ->34
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //    14  RDSPtr
+    //    15  RefCpyV        wW0:6
+    //    16  CmpPtrNull     rW0:6
+    //    17  JZ             ->31
+    //    19  PshVPtr        rW0:0
+    //    20  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //    22  RDSPtr
+    //    23  ADDSi          W0:1522 d:134230872     ; ALokiDropPod::CurrentInputDirection  (+1522)
+    //    25  PopRPtr
+    //    26  WRTV1          rW0:-2
+    //    27  PshV4          rW0:-2
+    //    28  PshVPtr        rW0:0
+    //    29  CALLINTF       d:84955                 ; void ULokiDropPhase_PlayerStateComponent::ServerUpdatePodMovement(const ELokiMovementInputDirection)
+    //    31  LoadThisR      W0:632 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CurrMoveDirection  (+632)
+    //    33  WRTV1          rW0:-2
+    //    34  RET            W0:3
+
+------------------------------------------------------------------------------
+void ServerUpdatePodMovement(const ELokiMovementInputDirection MoveDirection)
+// 8 instr, 60 B bytecode, id=0x78EDA31E, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__ELokiMovementInputDirection(MoveDirection);
+    __Evt_Execute(this, __STATIC_NAME(180));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e774f7cc0         ; void __Evt_PushArgument__ELokiMovementInputDirection(const ELokiMovementInputDirection&)
+    //     4  PshC4          d:180
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: ServerUpdatePodMovement
+void ServerUpdatePodMovement_Implementation(const ELokiMovementInputDirection MoveDirection)
+// 15 instr, 80 B bytecode, id=0x2BD0304A, varspace=3
+------------------------------------------------------------------------------
+{
+    this.CurrMoveDirection = MoveDirection;
+    if (this.DropPodActor != null) {
+        this.DropPodActor.CurrentInputDirection = MoveDirection;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:632 d:134230871      ; ULokiDropPhase_PlayerStateComponent::CurrMoveDirection  (+632)
+    //     2  WRTV1          rW0:-2
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //     6  RDSPtr
+    //     7  RefCpyV        wW0:2
+    //     8  CmpPtrNull     rW0:2
+    //     9  JZ             ->19
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:536 d:134230871      ; ULokiDropPhase_PlayerStateComponent::DropPodActor  (+536)
+    //    14  RDSPtr
+    //    15  ADDSi          W0:1522 d:134230872     ; ALokiDropPod::CurrentInputDirection  (+1522)
+    //    17  PopRPtr
+    //    18  WRTV1          rW0:-2
+    //    19  RET            W0:3
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 6 instr, 40 B bytecode, id=0x2F30747E, varspace=1
+------------------------------------------------------------------------------
+{
+    this.PrimaryComponentTick.SetbStartWithTickEnabled(false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:64 d:67111352        ; UActorComponent::PrimaryComponentTick  (+64)
+    //     6  CALLSYS        q:0x26e786b4d80         ; void FActorComponentTickFunction::SetbStartWithTickEnabled(bool)
+    //     9  RET            W0:2
+
+------------------------------------------------------------------------------
+~ULokiDropPhase_PlayerStateComponent()
+// 7 instr, 52 B bytecode, id=0xD4E48589, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:544 d:134230871      ; ULokiDropPhase_PlayerStateComponent::PodSteeringEventListenerHanddle  (+544)
+    //     3  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:600 d:134230871      ; ULokiDropPhase_PlayerStateComponent::NetworkUpdateFrequencyTimer  (+600)
+    //     9  CALLSYS        q:0x26e786b8c80         ; void FTimerHandle::$beh2()
+    //    12  RET            W0:2
+

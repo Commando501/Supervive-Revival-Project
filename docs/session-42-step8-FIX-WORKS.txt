@@ -1,0 +1,84 @@
+SESSION 42 — STEP 8 *** THE FIX WORKS *** the hero roster blocker is SOLVED at the
+data layer: a runtime scan_shim injection registered all 25 heroes (and every other
+type) into LokiAssetManager, with no crash.
+==============================================================================
+Date: 2026-07-02
+Branch: dedicated-server-stub
+
+WHAT HAPPENED
+-------------
+Built tools/sigbypass-mod/scan_shim.cpp (no-throw DLL, adapted from mount_shim's
+worker+game-thread-APC framework). It:
+  1. finds the LokiAssetManager singleton (scan MEM_PRIVATE for the vtable
+     RVA +0x888CB78, pick the instance whose AssetTypeMap (mgr+0x478) Num>0),
+  2. queues an APC on the game thread (GGameThreadId slot RVA +0x9D49158),
+  3. on the game thread, iterates the 30-entry AssetTypeMap and, per type, calls
+     UAssetManager::ScanPathsForPrimaryAssets (RVA +0x34CF9F0) with args read
+     straight from each type's Info block: Type FName @Info+0x00, BaseClass UClass*
+     @Info+0x30, scan-paths TArray<FString> @Info+0x70; bHasBP=1,bEditorOnly=0,
+     bForceSync=1.
+Injected into the LIVE game (PID 70960) with `inject mmap` — NON-elevated,
+manual-map, no UAC needed, no anti-cheat interaction. DllMain ran, worker found the
+singleton (typemap num=30), APC fired on the game thread.
+
+RESULT (from docs/scan-shim-marker.txt) — ALL 30 TYPES SCANNED, NO CRASH:
+  Hero(0x1A568)               -> added=25   <-- ALL 25 HEROES
+  Item(0x1A56B)               -> added=510
+  Emote(0x1A56E)              -> added=331
+  PlayerTitle(0x1A585)        -> added=680
+  Mission(0x162B8)            -> added=330
+  HeroCosmeticsBundle(0x1A572)-> added=391
+  SlotCosmetics(0x1A58C)      -> added=536
+  StoreOffer(0x16257)         -> added=56
+  LobbyPlatform(0x1A5A1)      -> added=4
+  MissionPool(0x16F06)        -> added=16
+  Equipment(0x1A5D1)          -> added=110
+  Power(0x1A5BA)              -> added=35
+  Minion(0x4E906D)            -> added=100
+  ... (30 types total; CueNotifyActor=961, CueNotifyStatic=2296, etc.)
+  [apc] DONE: called scan for 30 types
+Game stayed ALIVE (no crash) — ScanPathsForPrimaryAssets is safe to call this way,
+unlike ScanPrimaryAssetTypesFromConfig.
+
+DATA-LEVEL CONFIRMATION (RPM, no UI needed):
+  Hero FPrimaryAssetTypeData (td 0x1c6e78b5200), AssetMap at **td+0x178** (NOT +0x88 —
+  that earlier guess was wrong; +0x88 is an unrelated empty field). Before scan the
+  Hero AssetMap was Num=0; AFTER scan it is **Num=25 (Max=26)**. The per-type asset
+  lists are now populated. GetPrimaryAssetIdList(Hero) will return 25 -> the grid can
+  enumerate.
+
+THIS CLOSES THE SESSION-42 DIAGNOSIS LOOP
+-----------------------------------------
+Root cause (proven): the in-game AssetRegistry was FULL (103,841 entries, heroes
+correctly tagged), but LokiAssetManager registered each type's Info from config and
+NEVER ran the directory-scan that fills the per-type AssetMap. Forcing
+ScanPathsForPrimaryAssets against the already-full registry populates them. Confirmed
+end-to-end: 25 heroes registered, live, no crash.
+
+REMAINING / CAVEATS
+-------------------
+- UI RE-RENDER: the ALL HUNTERS grid was BUILT (empty) before the scan, so it needs
+  to re-enumerate to display the 25 heroes — re-open the HUNTERS screen (navigate away
+  and back). Could NOT verify visually this run: a transient Windows "Textinputhost"
+  overlay kept stealing frontmost and blocking computer-use clicks, and the user was
+  away (request_access timed out). The data is present; a UI refresh will show it.
+  (Optional hardening: have the shim also poke the UI refresh / broadcast a delegate.)
+- PERSISTENCE: this was a RUNTIME injection into the current session; it does NOT
+  persist across relaunches. For a permanent fix, inject scan_shim at every launch
+  (tools/inject watch-now SUPERVIVE-Win64-Shipping.exe scan_shim.dll after the menu
+  loads), or fold the scan into the browse_hook DLL used for the dedicated-server path.
+- OFFSETS (this build, stable across launches; ASLR moves base only):
+    ScanPathsForPrimaryAssets = RVA +0x34CF9F0
+    LokiAssetManager vtable    = RVA +0x888CB78   (NOTE: docs elsewhere wrote +0x88CB78
+                                                   by a digit-drop typo; the correct
+                                                   value is +0x888CB78 = 0x7FF68B30CB78-base)
+    GGameThreadId slot         = RVA +0x9D49158
+    AssetTypeMap               = manager +0x478 (TMap, stride 0x20, val.obj @+0x08)
+    FPrimaryAssetTypeData      = Type @+0x00, BaseClass @+0x30, scan-paths @+0x70,
+                                 AssetMap (populated) @+0x178
+
+FILES
+-----
+- tools/sigbypass-mod/scan_shim.cpp (+ scan_shim.dll) — the working payload.
+- docs/scan-shim-marker.txt — the injection run log (evidence).
+- scratchpad Python RPM verifiers (verify-fix.py, find-populated.py).

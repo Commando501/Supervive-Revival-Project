@@ -1,0 +1,287 @@
+==============================================================================
+MODULE   UI.Character.LokiOffscreenTeamIndicatorWidget
+SOURCE   UI/Character/LokiOffscreenTeamIndicatorWidget.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiOffscreenTeamIndicatorWidget_AS;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiOffscreenTeamIndicatorWidget_AS@ ULokiOffscreenTeamIndicatorWidget_AS()
+// 4 instr, 28 B bytecode, id=0xDE88A024, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiOffscreenTeamIndicatorWidget_AS v2;
+
+    v2 = ULokiOffscreenTeamIndicatorWidget_AS();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85444 q:0x26e6ed7fa00; new ULokiOffscreenTeamIndicatorWidget_AS   ctor=ULokiOffscreenTeamIndicatorWidget_AS::ULokiOffscreenTeamIndicatorWidget_AS
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x848C07C5, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiOffscreenTeamIndicatorWidget_AS);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e7b045158         ; __StaticType_ULokiOffscreenTeamIndicatorWidget_AS
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+==============================================================================
+UCLASS()
+class ULokiOffscreenTeamIndicatorWidget_AS : ULokiOffscreenTeamIndicatorWidget
+// base /Script/Loki.LokiOffscreenTeamIndicatorWidget  ->  ../../../Loki/Source/Loki/UI/Character/LokiOffscreenTeamIndicatorWidget.h
+==============================================================================
+{
+    private const FText Meters;
+    private const FText Kilometers;
+
+}
+
+------------------------------------------------------------------------------
+ULokiOffscreenTeamIndicatorWidget_AS() const
+// 21 instr, 164 B bytecode, id=0xE1CCC203, varspace=4
+------------------------------------------------------------------------------
+{
+    FText v4;
+
+    v4 = FText::FromString("m");
+    this.Meters = FText(v4);
+    v4 = FText::FromString("km");
+    this.Kilometers = FText(v4);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PGA            q:0x26e6f112f70         ; "m"
+    //     3  PSF            rW0:4
+    //     4  CALLSYS        q:0x26e703adb40         ; FText FText::FromString(const FString&)
+    //     7  PSF            rW0:4
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:840 d:134230924      ; ULokiOffscreenTeamIndicatorWidget_AS::Meters  (+840)
+    //    11  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //    18  PGA            q:0x26e6f112680         ; "km"
+    //    21  PSF            rW0:4
+    //    22  CALLSYS        q:0x26e703adb40         ; FText FText::FromString(const FString&)
+    //    25  PSF            rW0:4
+    //    26  PshVPtr        rW0:0
+    //    27  ADDSi          W0:856 d:134230924      ; ULokiOffscreenTeamIndicatorWidget_AS::Kilometers  (+856)
+    //    29  CALLSYS        q:0x26e69d0d0c0         ; void FText::$beh0(const FText&)
+    //    32  PSF            rW0:4
+    //    33  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //    36  PshVPtr        rW0:0
+    //    37  FinConstruct   q:0x26e6ed7fa00         ; ULokiOffscreenTeamIndicatorWidget_AS
+    //    40  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, meta=(BlueprintProtected))
+void GetHeroLocations(FVector&out LocalPlayerLocation, FVector&out AllyLocation, bool&out bLocationsValid)
+// 41 instr, 272 B bytecode, id=0xFD027FC1, varspace=14
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiCharacter v4;
+    FVector v12;
+    ALokiCharacter v14;
+
+    v1 = false;
+    bLocationsValid = false;
+    v4 = Loki::GetLocalLokiCharacter(__WorldContext);
+    if (IsValid(v4)) {
+        v12 = v4.GetActorLocation();
+        LocalPlayerLocation = v12;
+    }
+    if (IsValid(this.AllyPlayerState)) {
+        v14 = this.AllyPlayerState.GetLokiCharacter();
+        if (IsValid(v14)) {
+            v12 = v14.GetActorLocation();
+            AllyLocation = v12;
+        }
+    }
+    v1 = true;
+    bLocationsValid = true;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshVPtr        rW0:-6
+    //     3  PopRPtr
+    //     4  WRTV1          rW0:1
+    //     5  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     8  CALLSYS        q:0x26e7a11e240         ; ALokiCharacter@ Loki::GetLocalLokiCharacter(UObject@)
+    //    11  STOREOBJ       wW0:4
+    //    12  PshVPtr        rW0:4
+    //    13  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    16  JLowZ          ->28
+    //    18  PSF            rW0:12
+    //    19  PshVPtr        rW0:4
+    //    20  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    23  PSF            rW0:12
+    //    24  PshVPtr        rW0:-2
+    //    25  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    28  PshVPtr        rW0:0
+    //    29  ADDSi          W0:808 d:67115294       ; ULokiOffscreenIndicatorWidget::AllyPlayerState  (+808)
+    //    31  RDSPtr
+    //    32  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    35  JLowZ          ->62
+    //    37  PshVPtr        rW0:0
+    //    38  ADDSi          W0:808 d:67115294       ; ULokiOffscreenIndicatorWidget::AllyPlayerState  (+808)
+    //    40  RDSPtr
+    //    41  CALLSYS        q:0x26e7a390b00         ; ALokiCharacter@ ALokiPlayerState::GetLokiCharacter() const
+    //    44  STOREOBJ       wW0:14
+    //    45  PshVPtr        rW0:14
+    //    46  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    49  JLowZ          ->61
+    //    51  PSF            rW0:12
+    //    52  PshVPtr        rW0:14
+    //    53  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    56  PSF            rW0:12
+    //    57  PshVPtr        rW0:-4
+    //    58  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    61  FreeNullV8     wW0:14
+    //    62  SetV1          wW0:1 d:1
+    //    64  PshVPtr        rW0:-6
+    //    65  PopRPtr
+    //    66  WRTV1          rW0:1
+    //    67  RET            W0:8
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Const, meta=(BlueprintProtected))
+void CalculateImageAngle(const FVector&inout LocalPlayerLocation, const FVector&inout AllyLocation, float&out ImageAngle)
+// 14 instr, 84 B bytecode, id=0x2E484E86, varspace=15
+------------------------------------------------------------------------------
+{
+    FVector v6;
+    FRotator v12;
+
+    v12 = FRotator::MakeFromX(v6);
+    ImageAngle = float(v12.Yaw);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PSF            rW0:6
+    //     2  PshVPtr        rW0:-4
+    //     3  CALLSYS        q:0x26e69d00cc0         ; FVector FVector::opSub(const FVector&) const
+    //     6  PSF            rW0:6
+    //     7  PSF            rW0:12
+    //     8  CALLSYS        q:0x26e78653500         ; FRotator FRotator::MakeFromX(const FVector&)
+    //    11  LoadVObjR      rW0:12 W1:8 DW2:67117423; FRotator::Yaw  (+8)
+    //    14  RDR8           wW0:14
+    //    15  dTOf           wW0:15 rW1:14
+    //    17  PshVPtr        rW0:-6
+    //    18  PopRPtr
+    //    19  WRTV4          rW0:15
+    //    20  RET            W0:8
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Const, meta=(BlueprintProtected))
+void CalculateAnchors(const FVector&inout LocalPlayerLocation, const FVector&inout AllyLocation, const float64 InsetMultiplier, FVector2D&out Anchors)
+// 35 instr, 264 B bytecode, id=0x0D605D4B, varspace=14
+------------------------------------------------------------------------------
+{
+    float64 v2;
+    float64 v4;
+    float64 v6;
+    FVector2D v10;
+
+    v2 = LocalPlayerLocation.Y;
+    v4 = AllyLocation.Y;
+    v2 = v2 - v4;
+    v4 = LocalPlayerLocation.X;
+    v6 = AllyLocation.X;
+    v4 = v4 - v6;
+    v10 = FVector2D(v4, v2);
+    Anchors = v10;
+    Anchors.Normalize(0);
+    v2 = -0.5;
+    v6 = InsetMultiplier * -0.5;
+    Anchors *= v6;
+    v10 = FVector2D(0.5, 0.5);
+    Anchors += v10;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadRObjR      rW0:-2 W1:8 DW2:67117444; FVector::Y  (+8)
+    //     3  RDR8           wW0:2
+    //     4  LoadRObjR      rW0:-4 W1:8 DW2:67117444; FVector::Y  (+8)
+    //     7  RDR8           wW0:4
+    //     8  SUBd           wW0:2 rW1:2 rW2:4
+    //    10  PshV8          rW0:2
+    //    11  LoadRObjR      rW0:-2 W1:0 DW2:67117444; FVector::X  (+0)
+    //    14  RDR8           wW0:4
+    //    15  LoadRObjR      rW0:-4 W1:0 DW2:67117444; FVector::X  (+0)
+    //    18  RDR8           wW0:6
+    //    19  SUBd           wW0:4 rW1:4 rW2:6
+    //    21  PshV8          rW0:4
+    //    22  PSF            rW0:10
+    //    23  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //    26  PSF            rW0:10
+    //    27  PshVPtr        rW0:-8
+    //    28  CALLSYS        q:0x26e69c5b300         ; FVector2D& FVector2D::opAssign(const FVector2D&)
+    //    31  PshC8          q:0x3e45798ee0000000
+    //    34  PshVPtr        rW0:-8
+    //    35  CALLSYS        q:0x26e69d02380         ; void FVector2D::Normalize(float64)
+    //    38  SetV8          wW0:2 q:0xbfe0000000000000
+    //    41  MULd           wW0:6 rW1:-6 rW2:2
+    //    43  PshV8          rW0:6
+    //    44  PSF            rW0:10
+    //    45  PshVPtr        rW0:-8
+    //    46  CALLSYS        q:0x26e69c5f3c0         ; FVector2D FVector2D::opMulAssign(float64)
+    //    49  PshC8          q:0x3fe0000000000000
+    //    52  PshC8          q:0x3fe0000000000000
+    //    55  PSF            rW0:10
+    //    56  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //    59  PSF            rW0:10
+    //    60  PSF            rW0:14
+    //    61  PshVPtr        rW0:-8
+    //    62  CALLSYS        q:0x26e69c5ecc0         ; FVector2D FVector2D::opAddAssign(const FVector2D&)
+    //    65  RET            W0:10
+
+------------------------------------------------------------------------------
+~ULokiOffscreenTeamIndicatorWidget_AS()
+// 7 instr, 52 B bytecode, id=0x48264AA1, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:840 d:134230924      ; ULokiOffscreenTeamIndicatorWidget_AS::Meters  (+840)
+    //     3  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:856 d:134230924      ; ULokiOffscreenTeamIndicatorWidget_AS::Kilometers  (+856)
+    //     9  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //    12  RET            W0:2
+

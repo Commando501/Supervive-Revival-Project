@@ -1,0 +1,45 @@
+========================================================================================================
+Q1d  THE SHADOW GAME IMAGE  (MEM_IMAGE, span 0xA9E1000, not in ModuleList)
+========================================================================================================
+
+HIDDEN (not in ModuleList) shapes -> reports:
+   hidden=True regions=1 states/prots=(('COMMIT', 'READONLY'),)  -> 124 reports
+
+CONTROL - the REAL game image (IS in ModuleList) shapes -> reports:
+
+low-32-bit alignment of the shadow base (unit: reports):
+   ...0x80000000  5
+   ...0x00000000  5
+   ...0x81290000  2
+   ...0x1BED0000  1
+   ...0x3D870000  1
+   ...0x8CB50000  1
+   ...0xA7BD0000  1
+   ...0x14E10000  1
+   ...0x5B230000  1
+   ...0x554B0000  1
+
+--- sample shadow allocations, full region rows ---
+
+  2026-08-04T14:02:13 41cdafa3  shadow base 0x1F71BED0000   game_base 0x7FF6EAA10000   delta 0x-7DFFCEB40000
+     +0x00000000 size 0x0A9E1000  state=COMMIT   prot=READONLY       aprot=READONLY         type=IMAGE
+
+  2026-08-04T18:18:36 3e17e732  shadow base 0x25D80000000   game_base 0x7FF6A6EF0000   delta 0x-7D9926EF0000
+     +0x00000000 size 0x0A9E1000  state=COMMIT   prot=READONLY       aprot=READONLY         type=IMAGE
+
+  2026-08-04T18:19:15 590cfd83  shadow base 0x1C83D870000   game_base 0x7FF6A6EF0000   delta 0x-7E2E69680000
+     +0x00000000 size 0x0A9E1000  state=COMMIT   prot=READONLY       aprot=READONLY         type=IMAGE
+
+  2026-08-04T21:03:56 673de738  shadow base 0x2308CB50000   game_base 0x7FF7E3CB0000   delta 0x-7DC757160000
+     +0x00000000 size 0x0A9E1000  state=COMMIT   prot=READONLY       aprot=READONLY         type=IMAGE
+
+  2026-08-04T23:02:45 e7d14df5  shadow base 0x14BA7BD0000   game_base 0x7FF7E3CB0000   delta 0x-7EAC3C0E0000
+     +0x00000000 size 0x0A9E1000  state=COMMIT   prot=READONLY       aprot=READONLY         type=IMAGE
+
+  2026-08-04T23:03:34 5e4cce11  shadow base 0x18314E10000   game_base 0x7FF7E3CB0000   delta 0x-7E74CEEA0000
+     +0x00000000 size 0x0A9E1000  state=COMMIT   prot=READONLY       aprot=READONLY         type=IMAGE
+
+--- does MemoryList carry any shadow bytes? ---
+   41cdafa3  MemoryList ranges=723  overlapping the shadow: 0 []
+   3e17e732  MemoryList ranges=633  overlapping the shadow: 0 []
+   590cfd83  MemoryList ranges=751  overlapping the shadow: 0 []

@@ -1,0 +1,1261 @@
+# section D constant pool: ptr -> (constant, owning type)
+# 1258 entries
+
+0x26e70449948  0x115ee0  Effect_Airdoo_Damaged_Smoking                                GameplayTags
+0x26e70449bc8  0x115f23  Effect_Airdoo_Damaged_onFire                                 GameplayTags
+0x00000000000  0x115f65  __WorldContext                                               
+0x26e705aa548  0x115f8c  Generic_Scale                                                GameplayTags
+0x26e7ac9e3c8  0x115fbf  __StaticType_ALokiAirship                                    
+0x26e7ad8ba48  0x115ff1  __StaticType_ALokiMinionCharacter                            
+0x26e7ad842c8  0x11602b  __StaticType_ALokiDestructible                               
+0x26e768184c8  0x116062  ZeroVector                                                   FVector
+0x26e6f112dd0  0x11608d  Forced during all-passenger impulse                          
+0x26e6f1b6ed8  0x1160c9  __StaticType_ALokiAirship_AS                                 Airship.LokiAirship
+0x26e705b3ec8  0x116112  Item_ShopDiscount_DiscountApplied                            GameplayTags
+0x26e7681cfc8  0x116159  NAME_None                                                    
+0x26e76817c48  0x11617b  ZeroRotator                                                  FRotator
+0x26e6f112df0  0x1161a8  Gold                                                         
+0x26e6f112a50  0x1161c5  AuthBuyItem - Sent Purchase Event                            
+0x26e6f112a80  0x1161ff  Gold                                                         
+0x26e6f1b7158  0x11621c  __StaticType_ULokiPlayerControllerArmoryComponent            Armory.LokiPlayerControllerArmoryComponent
+0x26e5dc74560  0x116291  Gold                                                         
+0x26e5dc74570  0x1162ae  Gold                                                         
+0x26e6f1b72d8  0x1162cb  __StaticType_ULokiPlayerControllerShopSkylandsComponent      Armory.LokiPlayerControllerShopSkylandsComponent
+0x26e6f1b7358  0x11634c  __StaticType_UBarracudaJungleCreepComponent                  Barracuda.Components.BarracudaJungleCreepComponent
+0x26e6f1b3258  0x1163c3  __StaticType_UBarracudaJungleCreepTargetingComponent         Barracuda.Components.BarracudaJungleCreepTargetingComponent
+0x26e6f1b3358  0x11644c  __StaticType_UBarracudaLaneComponent                         Barracuda.Components.BarracudaLaneComponent
+0x26e6f1b3558  0x1164b5  __StaticType_UBarracudaLaneCreepTargetingComponent           Barracuda.Components.BarracudaLaneCreepTargetingComponent
+0x26e7065a748  0x11653a  Red                                                          FColor
+0x26e6f1b7958  0x11655d  __StaticType_UBarracudaMinionTargetingComponent              Barracuda.Components.BarracudaMinionTargetingComponent
+0x26e6f1b7ad8  0x1165dc  __StaticType_UBarracudaPlayerStateComponent                  Barracuda.Components.BarracudaPlayerStateComponent
+0x26e6f1b7cd8  0x116653  __StaticType_UBarracudaStructureComponent                    Barracuda.Components.BarracudaStructureComponent
+0x26e6f1b7ed8  0x1166c6  __StaticType_UBarracudaTowerTargetingComponent               Barracuda.Components.BarracudaTowerTargetingComponent
+0x26e7af06b90  0x116743  Gold                                                         
+0x26e5dc744d0  0x116760  Gold                                                         
+0x26e6e67ffa0  0x11677d  Gold                                                         
+0x26e703fbac8  0x11679a  Attribute_MinionGoldMultiplier                               GameplayTags
+0x26e5dc745e0  0x1167de  Gold                                                         
+0x26e703fcac8  0x1167fb  Barracuda_Minion_GrantsDragonBuff                            GameplayTags
+0x26e703fc9c8  0x116842  Barracuda_Minion_GrantsMomentumBuff                          GameplayTags
+0x26e6f1b80d8  0x11688b  __StaticType_ABarracudaGameMode                              Barracuda.GameMode.BarracudaGameMode
+0x26e6f1b4458  0x1168e8  __StaticType_UBarracudaPlayerSpawnerComponent                Barracuda.GameMode.BarracudaPlayerSpawnerComponent
+0x26e6f1b45d8  0x116961  __StaticType_UBarracudaRallyMinionsComponent                 Barracuda.GameMode.BarracudaRallyMinionsComponent
+0x26e6f1b48d8  0x1169d8  __StaticType_UBarracudaGameStateComponent                    Barracuda.GameState.BarracudaGameStateComponent
+0x26e6f1b49d8  0x116a4a  __StaticType_ABarracudaTeamState                             Barracuda.GameState.BarracudaTeamState
+0x26e6f1b4e58  0x116aaa  __StaticType_ABarracudaTeamState_TeamOnly                    Barracuda.GameState.BarracudaTeamState_TeamOnly
+0x26e6f1b5058  0x116b1c  __StaticType_UBarracudaMinionRewardComponent                 Barracuda.Minion.BarracudaMinionRewardComponent
+0x26e6f1b52d8  0x116b91  __StaticType_ABarracudaMinionWaypoint                        Barracuda.Minion.Waypoints.BarracudaMinionWaypoint
+0x26e705b7ac8  0x116c02  State_Combat_InCombat                                        GameplayTags
+0x26e7065a6c8  0x116c3d  Green                                                        FColor
+0x26e76e4a248  0x116c62  Identity                                                     FQuat
+0x26e7065a5c8  0x116c89  Yellow                                                       FColor
+0x26e7065c4c8  0x116caf  Purple                                                       FColor
+0x26e6f1b1358  0x116cd5  __StaticType_UBarracudaMinionWaypointFollowerComponent       Barracuda.Minion.Waypoints.BarracudaMinionWaypointFollowerComponent
+0x26e6f1b57d8  0x116d68  __StaticType_UBTService_BarracudaUpdateMinionWaypoint        Barracuda.Minion.Waypoints.BTService_UpdateMinionWaypoint
+0x26e6e67f520  0x116df0  Gold                                                         
+0x26e6f112750  0x116e0d  BarracudaShop - DebugLogGraph                                
+0x26e6f1127b0  0x116e43   unique items                                                
+0x26e6f112790  0x116e69  Found                                                        
+0x26e6f1127f0  0x116ea0  ]                                                            
+0x26e6f1123c0  0x116eba  ][Total Cost:                                                
+0x26e6f1123d0  0x116ee1   - [Recipe:                                                  
+0x26e6f1123b0  0x116f06                                                               
+0x26e6f112c90  0x116f3b  Gold                                                         
+0x26e6f1b5dd8  0x116f58  __StaticType_UBarracudaShopItemGraphNode                     Barracuda.Shop.BarracudaShop
+0x26e6f1b5e58  0x116fb6  __StaticType_ABarracudaShop                                  Barracuda.Shop.BarracudaShop
+0x26e6f1b6058  0x117007  __StaticType_UBarracudaShopItemListWidget                    Barracuda.Shop.BarracudaShopItemListWidget
+0x26e6e67f8b0  0x117074  LOREM IPSUM                                                  
+0x26e6f1b42d8  0x117098  __StaticType_UBarracudaShopItemTreeNodeWidget                Barracuda.Shop.BarracudaShopItemTreeNodeWidget
+0x26e6f1b22d8  0x11710d  __StaticType_UBarracudaShopItemTreeWidget                    Barracuda.Shop.BarracudaShopItemTreeWidget
+0x26e705fc2c8  0x11717a  RightMouseButton                                             EKeys
+0x26e6f1b24d8  0x1171a9  __StaticType_UBarracudaShopItemWidget                        Barracuda.Shop.BarracudaShopItemWidget
+0x26e7044e548  0x11720e  GameMode_Barracuda_InBase                                    GameplayTags
+0x26e705b9348  0x11724d  State_Dead                                                   GameplayTags
+0x26e6f1b2658  0x11727d  __StaticType_UBarracudaShopPlayerControllerComponent         Barracuda.Shop.BarracudaShopPlayerControllerComponent
+0x26e6f1b27d8  0x117300  __StaticType_UBarraucdaShopFilterWidget                      Barracuda.Shop.BarraucdaShopFilterWidget
+0x26e6f1b2d58  0x117369  __StaticType_ABarracudaMinionSpawner                         Barracuda.Spawners.BarracudaMinionSpawner
+0x26e6f1b2e58  0x1173d0  __StaticType_ALokiHeroCharacter_AS                           Character.LokiHeroCharacter
+0x26e6f1b0d58  0x117427  __StaticType_ULokiHeroGroundIndicator                        Character.LokiHeroGroundIndicator
+0x26e7ad80848  0x117487  __StaticType_ALokiHeightMap                                  
+0x26e6f115d80  0x1174bb  UpdateLocalState                                             
+0x26e6f1b37d8  0x1174e4  __StaticType_ATemporaryFloor                                 Content.TemporaryFloor
+0x26e7681a548  0x117530  OneVector                                                    FVector
+0x26e7681ccc8  0x11755a  Identity                                                     FTransform
+0x26e6f1b3a58  0x117586  __StaticType_UTrainAnchor                                    Content.Train.TrainMovableBaseComponent
+0x26e6f1b3bd8  0x1175e0  __StaticType_UBackTrainAnchor                                Content.Train.TrainMovableBaseComponent
+0x26e6f1b3b58  0x11763e  __StaticType_UFrontTrainAnchor                               Content.Train.TrainMovableBaseComponent
+0x26e6f1b3c58  0x11769d  __StaticType_UTrainMovableBaseComponent                      Content.Train.TrainMovableBaseComponent
+0x26e60110310  0x117705  Desaturate                                                   
+0x26e6f115940  0x117728  Desaturate                                                   
+0x26e705b8d48  0x11774b  State_Execute_Executing                                      GameplayTags
+0x26e705b8248  0x117788  State_BeingExecuted                                          GameplayTags
+0x26e6f1b1cd8  0x1177c1  __StaticType_ALokiAimingLaser                                Core.AimingVis.LokiAimingLaser
+0x26e6f1b1fd8  0x117816  __StaticType_ALokiAimingLaserRangeMarker                     Core.AimingVis.LokiAimingLaserRangeMarker
+0x26e6f1b05d8  0x117881  __StaticType_ALokiAimingLaserSpreadLines                     Core.AimingVis.LokiAimingLaserSpreadLines
+0x26e7681c948  0x1178ec  UpVector                                                     FVector
+0x26e6f1b0958  0x117915  __StaticType_ULokiAimingVisComponentScript                   Core.AimingVis.LokiAimingVisComponent
+0x26e6f1b0a58  0x11797e  __StaticType_ALokiAimingLaserSpreadLines_HookGuy             Core.AimingVis.HunterSpecific.LokiAimingLaserSpreadLines_HookGuy
+0x26e6f1b1458  0x117a08  __StaticType_ALokiAimingLaserSpreadLines_Ronin               Core.AimingVis.HunterSpecific.LokiAimingLaserSpreadLines_Ronin
+0x26e6f1b17d8  0x117a8e  __StaticType_ALokiAimingLaser_Huntress                       Core.AimingVis.HunterSpecific.LokiAimingLaser_Huntress
+0x26e6f1b1c58  0x117b04  __StaticType_ULokiMajorStatusEffectComponent_AS              Core.Components.LokiMajorStatusEffectComponent
+0x26e6057f7d8  0x117b7b  __StaticType_ALokiDayNightController_AS                      DayNightController.LokiDayNightController
+0x26e7ad8dbc8  0x117be5  __StaticType_ALokiPlayerStart                                
+0x26e6057da58  0x117c1b  __StaticType_UComp_PC_LokiRespawnComponent                   FFA.Comp_PC_LokiRespawnComponent
+0x26e6f114f80  0x117c7f  Hero:assault                                                 
+0x26e6f1153a0  0x117ca4  Hero:firefox                                                 
+0x26e6f1153c0  0x117cc9  Hero:freeze                                                  
+0x26e6f115330  0x117ced  Hero:sniper                                                  
+0x26e6f115340  0x117d11  Hero:flex                                                    
+0x26e6f114e50  0x117d33  Hero:hookguy                                                 
+0x26e6f115360  0x117d58  Hero:rocketjumper                                            
+0x26e6f1150f0  0x117d82  Hero:Storm                                                   
+0x26e6f115420  0x117da5  Hero:BurstCaster                                             
+0x26e6f1153d0  0x117dce  Hero:BountyHunter                                            
+0x26e6057d958  0x117df8  __StaticType_UFFABotSpawnerComponent                         FFA.FFABotSpawner
+0x26e6f115350  0x117e47  AllPlayersDisconnected                                       
+0x26e6057dc58  0x117e76  __StaticType_AFFAGameMode                                    FFA.FFAGameMode
+0x26e6057e058  0x117eb8  __StaticType_ULokiPlayerRespawnComponent                     FFA.LokiPlayerRespawnComponent
+0x26e6f114950  0x117f18  ) to non-spawning list                                       
+0x26e601102c0  0x117f47  ] Adding bot (                                               
+0x26e6f113140  0x117f6e  [                                                            
+0x26e6f114fe0  0x117f88  ] Removing bot from non-spawning list                        
+0x26e6f114c80  0x117fc6  [                                                            
+0x26e6f1157c0  0x117fe0  ] No player starts found                                     
+0x26e6f114c90  0x118011  [                                                            
+0x26e6057e258  0x11802b  __StaticType_ULokiRespawnComponent                           FFA.LokiRespawnComponent
+0x26e6057fa58  0x11807f  __StaticType_URespawnTimerWidget                             FFA.RespawnTimerWidget
+0x26e6057ffd8  0x1180cf  __StaticType_ULokiExoticLootComponent                        GameMode.LokiGameMode_ExoticLootComponent
+0x26e6f114bd0  0x118137  OnDropPodStartedWithPilot                                    
+0x26e6057e9d8  0x118169  __StaticType_ULokiDropPhase_PlayerStateComponent             GameMode.DropPhase.LokiDropPhase_PlayerStateComponent
+0x26e6057efd8  0x1181e8  __StaticType_ALokiDropPod                                    GameMode.DropPhase.LokiDropPod
+0x26e6057f258  0x118239  __StaticType_ALokiDropPodImpactIndicator                     GameMode.DropPhase.LokiDropPodImpactIndicator
+0x26e6057f558  0x1182a8  __StaticType_ALokiDropPodLaser                               GameMode.DropPhase.LokiDropPodLaser
+0x26e6057d558  0x118303  __StaticType_ALokiDropShip                                   GameMode.DropPhase.LokiDropShip
+0x26e6057b758  0x118356  __StaticType_ALokiGameState_AS                               GameState.LokiGameState
+0x26e705ba648  0x1183a5  State_Knocked                                                GameplayTags
+0x26e6057bad8  0x1183d8  __StaticType_ULokiInteractionPlayerComponent                 Interaction.LokiInteractionPlayerComponent
+0x26e705b84c8  0x118448  State_GemMultiplier                                          GameplayTags
+0x26e6f113880  0x118481  Gems                                                         
+0x26e6057bd58  0x11849e  __StaticType_ALokiGem                                        Items.LokiGem
+0x26e6057fd58  0x1184da  __StaticType_ULokiItemVisualsComponent                       Items.LokiItemVisualsComponent
+0x26e6f114230  0x118568  Gold                                                         
+0x26e6057e558  0x118585  __StaticType_ULokiTeamElimBoxComponent                       Items.LokiTeamElimBoxComponent
+0x26e6f113ad0  0x1185e3  StartMoving                                                  
+0x26e6057e658  0x118607  __StaticType_ULokiNodePathingComponent                       Minions.LokiNodePathingComponent
+0x26e6057c758  0x118667  __StaticType_ULokiGameStateMostWantedComponent               MostWanted.LokiGameStateMostWantedComponent
+0x26e6057cad8  0x1186da  __StaticType_ULokiDragCameraComponent                        PlayerController.LokiDragCameraComponent
+0x26e6f1134e0  0x118741  ServerExec                                                   
+0x26e6f1134a0  0x118765  Gold                                                         
+0x26e6f1133c0  0x118782  Gems                                                         
+0x26e705c1dc8  0x11879f  Static_Barracuda_Spawner_Neutral                             GameplayTags
+0x26e705c1e48  0x1187e5  Static_Barracuda_Spawner_Creep                               GameplayTags
+0x26e6f1140c0  0x118829  RequestAdmin                                                 
+0x26e6f114070  0x11884e  Log LogAbilitySystem Verbose                                 
+0x26e6f114050  0x118883  Log LogLokiAbilitySystemComponent Verbose                    
+0x26e6f114060  0x1188c5  Log LogLokiGameplaySpell Verbose                             
+0x26e6f114080  0x1188fe  DebugLogSpellBuffering 1                                     
+0x26e6f114830  0x11892f  ShowDebug AbilitySystem                                      
+0x26e6f114470  0x11895f  AbilitySystem.Debug.NextCategory                             
+0x26e6f114420  0x118998  AbilitySystem.Debug.NextCategory                             
+0x26e6f113a80  0x1189d1  GodMode                                                      
+0x26e6f114430  0x1189f1  Log LogCharacterMovement Verbose                             
+0x26e6f114810  0x118a2a  p.NetShowCorrections 1                                       
+0x26e6f1147f0  0x118a59  p.DebugLogAllMoves 1                                         
+0x26e6f1147b0  0x118a86  p.DebugLogAllMoves1D 1                                       
+0x26e6f114110  0x118ab5  p.DebugLogAllMoves 0                                         
+0x26e6057ced8  0x118ae2  __StaticType_ALokiPlayerCheats_AS                            PlayerController.LokiPlayerCheats
+0x26e6057d058  0x118b3e  __StaticType_ALokiPlayerController_AS                        PlayerController.LokiPlayerController
+0x26e7044a348  0x118ba2  Data                                                         GameplayTags
+0x26e705ad148  0x118bcc  Immunity_UAV                                                 GameplayTags
+0x26e705bf9c8  0x118bfe  State_UAVUpgraded                                            GameplayTags
+0x26e70482b48  0x118c35  GameplayCue_Effect_UAVBlocked                                GameplayTags
+0x26e7b044158  0x118c78  __StaticType_ULokiGameStateUAVComponent                      UAV.LokiGameStateUAVComponent
+0x26e6f113580  0x118cd6  ] ULokiPlayerControllerUAVComponent doesn't have UAVMapActorClass set on instance. This is required to show UAV Map Icons 
+0x26e6f113000  0x118d68  [                                                            
+0x26e6f114ab0  0x118d82  ] ULokiPlayerControllerUAVComponent doesn't have UAVVaultContentActorClass set on instance. This is required to show UAV Map Icons 
+0x26e6f114b00  0x118e1d  [                                                            
+0x26e7b043ed8  0x118e37  __StaticType_ULokiPlayerControllerUAVComponent               UAV.LokiPlayerControllerUAVComponent
+0x26e7b043958  0x118ea3  __StaticType_AUAVAudioPlayer                                 UAV.UAVAudioPlayer
+0x26e7b043758  0x118eeb  __StaticType_AUAVMapActor                                    UAV.UAVMapActor
+0x26e7b0433d8  0x118f2d  __StaticType_AUAVVaultContentActor                           UAV.UAVVaultContentActor
+0x26e7681a3c8  0x118f81  ZeroVector                                                   FVector2D
+0x26e7b045258  0x118fae  __StaticType_ULokiWidgetHighlighterHitTestBlocker_AS         UI.LokiWidgetHighlighterHitTestBlocker
+0x26e6f112f70  0x119022  m                                                            
+0x26e6f112680  0x11903c  km                                                           
+0x26e7b045158  0x119057  __StaticType_ULokiOffscreenTeamIndicatorWidget_AS            UI.Character.LokiOffscreenTeamIndicatorWidget
+0x26e7b045058  0x1190cf  __StaticType_AVaultItemSpawner                               Vault.VaultItemSpawner
+0x00000000000  0x119119  HandleHealthRegeneration                                     
+0x00000000000  0x119136  Immunity.AirshipRoadkill                                     
+0x00000000000  0x119153  Utility                                                      
+0x00000000000  0x11915f  MinorUtility                                                 
+0x00000000000  0x119170  Boots                                                        
+0x00000000000  0x11917a  OnPlayerInitialized                                          
+0x00000000000  0x119192  Inventory                                                    
+0x00000000000  0x1191a0  OnAssetLoadComplete                                          
+0x00000000000  0x1191b8  OnClassLoadComplete                                          
+0x00000000000  0x1191d0  OnPlayerKilled                                               
+0x00000000000  0x1191e3  AuthHandleBarracudaPhaseChanged                              
+0x00000000000  0x119207  OnCharacterDamaged                                           
+0x00000000000  0x11921e  Trigger                                                      
+0x00000000000  0x11922a  HandleTriggerOverlap                                         
+0x00000000000  0x119243  OnFilterByName                                               
+0x00000000000  0x119256  OnResetFilters                                               
+0x00000000000  0x119269  OnFilterToggleTag                                            
+0x00000000000  0x11927f  OnFocusItem                                                  
+0x00000000000  0x11928f  OnToggleVisibility                                           
+0x00000000000  0x1192a6  OnFilterUpdated                                              
+0x00000000000  0x1192ba  HandleFocusItem                                              
+0x00000000000  0x1192ce  HandleItemEnteredOrExitedInventory                           
+0x00000000000  0x1192f5  ClientOnBuyItem                                              
+0x00000000000  0x119309  ClientOnSellItem                                             
+0x00000000000  0x11931e  AuthOnNewRoundPhase                                          
+0x00000000000  0x119336  AuthOnNewDayNightState                                       
+0x00000000000  0x119351  HandleVisibilityEvaluated                                    
+0x00000000000  0x11936f  StaggerSpawn                                                 
+0x00000000000  0x119380  3DTerrain                                                    
+0x00000000000  0x11938e  AuthHandleBlockHit                                           
+0x00000000000  0x1193a5  UpdateLocalState                                             
+0x00000000000  0x1193ba  NoCollision                                                  
+0x00000000000  0x1193ca  Range Desat Mult                                             
+0x00000000000  0x1193df  Script Desaturation                                          
+0x00000000000  0x1193f7  Range Opacity Floor                                          
+0x00000000000  0x11940f  Final Opacity                                                
+0x00000000000  0x119421  Alpha Step                                                   
+0x00000000000  0x119430  Range Step                                                   
+0x00000000000  0x11943f  AimingLaser                                                  
+0x00000000000  0x11944f  DamagePassthrough                                            
+0x00000000000  0x119465  ShootThrough                                                 
+0x00000000000  0x119476  Script Hue                                                   
+0x00000000000  0x119485  OnOwnerDestroyed                                             
+0x00000000000  0x11949a  Aiming                                                       
+0x00000000000  0x1194a5  UseAimingLaser                                               
+0x00000000000  0x1194b8  OnShowAimingLaserChanged                                     
+0x00000000000  0x1194d5  LimitLaserToCursor                                           
+0x00000000000  0x1194ec  OnLimitLaserToCursorChanged                                  
+0x00000000000  0x11950c  OnLivingStateChanged                                         
+0x00000000000  0x119525  Domination                                                   
+0x00000000000  0x119534  Shield                                                       
+0x00000000000  0x11953f  Health                                                       
+0x00000000000  0x11954a  Consumable                                                   
+0x00000000000  0x119559  OnPlayerDisconnected                                         
+0x00000000000  0x119572  OnRoundPhaseChanged                                          
+0x00000000000  0x11958a  OnPlayerStartsCreated                                        
+0x00000000000  0x1195a4  LokiPlayerRespawnComponent                                   
+0x00000000000  0x1195c3  OnLogout                                                     
+0x00000000000  0x1195d0  SafeTeamSpawnPathfindingAnchor                               
+0x00000000000  0x1195f3  LokiRespawnComponent                                         
+0x00000000000  0x11960c  OnPlayerStateAssigned                                        
+0x00000000000  0x119626  OnRespawnTimeUpdated                                         
+0x00000000000  0x11963f  OnGameAugmentSet                                             
+0x00000000000  0x119654  OnPodSteeringEnabled                                         
+0x00000000000  0x11966d  OnAllowPodDetach                                             
+0x00000000000  0x119682  singleBody_01_m_jnt                                          
+0x00000000000  0x11969a  body_01_m_jnt                                                
+0x00000000000  0x1196ac  OnPodTeamIndexChanged                                        
+0x00000000000  0x1196c6  OnDropPodHit                                                 
+0x00000000000  0x1196d7  OnIntroSequenceFinished                                      
+0x00000000000  0x1196f3  FinishDestroyPod                                             
+0x00000000000  0x119708  OnOutroSequenceStart                                         
+0x00000000000  0x119721  OnOutroSequenceFinished                                      
+0x00000000000  0x11973d  LokiDropPodImpactIndicator                                   
+0x00000000000  0x11975c  GroundLaserIndicator                                         
+0x00000000000  0x119775  OnSpawnedCharacterChangedCalled                              
+0x00000000000  0x119799  OnLivingStateChangedCalled                                   
+0x00000000000  0x1197b8  OnAbilitySystemInitializedCalled                             
+0x00000000000  0x1197dd  OnGameplaySpellAddedCalled                                   
+0x00000000000  0x1197fc  EnableGemCollision                                           
+0x00000000000  0x119813  OnComponentBeginOverlap                                      
+0x00000000000  0x11982f  OnInventoryItemAdded                                         
+0x00000000000  0x119848  OnInventoryItemRemoved                                       
+0x00000000000  0x119863  OnControllerChanged                                          
+0x00000000000  0x11987b  OnMoveCompleted                                              
+0x00000000000  0x11988f  HandleMostWantedEvent                                        
+0x00000000000  0x1198a9  OnVaultDoorDestroyed                                         
+0x00000000000  0x1198c2  OnVaultDestroyed                                             
+0x00000000000  0x1198d7  OnLocationAdded                                              
+0x00000000000  0x1198eb  OnVaultDataAdded                                             
+0x00000000000  0x119900  OnUpdate                                                     
+0x00000000000  0x11990d  OnRemove                                                     
+0x00000000000  0x11991a  ServerSwapSlotAndBuyKit                                      
+0x00000000000  0x119936  ServerSellSlotAndBuyItem                                     
+0x00000000000  0x119953  AuthSellItem_BP                                              
+0x00000000000  0x119967  ShouldShopSellItem_BP                                        
+0x00000000000  0x119981  ServerBuyItem                                                
+0x00000000000  0x119993  ServerBuyShopSaleItem                                        
+0x00000000000  0x1199ad  ServerSwapSlotAndBuyItem                                     
+0x00000000000  0x1199ca  UpdateCurrentTargetEnemy                                     
+0x00000000000  0x1199e7  OnBountyGivenToPlayer                                        
+0x00000000000  0x119a01  OnNewDay                                                     
+0x00000000000  0x119a0e  OnNewNight                                                   
+0x00000000000  0x119a1d  TowerKilled                                                  
+0x00000000000  0x119a2d  TowerGoldRewardVisual                                        
+0x00000000000  0x119a47  AuthPlayPilotVOForAll                                        
+0x00000000000  0x119a61  MultiPlayPilotVO                                             
+0x00000000000  0x119a76  NetMulticastSpawnerNextSpawnTime                             
+0x00000000000  0x119a9b  ClearItemContainer                                           
+0x00000000000  0x119ab2  AddItemToContainer                                           
+0x00000000000  0x119ac9  EventFinishedAddingItems                                     
+0x00000000000  0x119ae6  CreateInputItemWidget                                        
+0x00000000000  0x119b00  UpdateVisuals                                                
+0x00000000000  0x119b12  ServerSellItem                                               
+0x00000000000  0x119b25  ClientBiomeSoulAcquired                                      
+0x00000000000  0x119b41  BP_OnClientBiomeSoulAcquired                                 
+0x00000000000  0x119b62  GetTriggeredDuration                                         
+0x00000000000  0x119b7b  GetFadingDuration                                            
+0x00000000000  0x119b91  GetDeadDuration                                              
+0x00000000000  0x119ba5  GetRespawningDuration                                        
+0x00000000000  0x119bbf  ClientTickTriggered                                          
+0x00000000000  0x119bd7  ClientTickFading                                             
+0x00000000000  0x119bec  ClientTickDead                                               
+0x00000000000  0x119bff  ClientTickRespawning                                         
+0x00000000000  0x119c18  BP_NewLocalState                                             
+0x00000000000  0x119c2d  GetColorableMeshes                                           
+0x00000000000  0x119c44  CustomEvent0                                                 
+0x00000000000  0x119c55  CustomEvent1                                                 
+0x00000000000  0x119c66  CustomEvent2                                                 
+0x00000000000  0x119c77  CustomEvent3                                                 
+0x00000000000  0x119c88  OnLaserSpawned                                               
+0x00000000000  0x119c9b  OnLaserSettingsIndexChanged                                  
+0x00000000000  0x119cbb  SetVisibilityOnAll                                           
+0x00000000000  0x119cd2  OnUpdateProgress                                             
+0x00000000000  0x119ce7  InitClient                                                   
+0x00000000000  0x119cf6  InitLocalClient                                              
+0x00000000000  0x119d0a  InitOnLocalASC                                               
+0x00000000000  0x119d1d  GetBonusPrimaryAttackDistance                                
+0x00000000000  0x119d3f  UsesAimingLaser                                              
+0x00000000000  0x119d53  InitClientLaser                                              
+0x00000000000  0x119d67  SpawnLaser                                                   
+0x00000000000  0x119d76  SwitchLaserSettingsInternal                                  
+0x00000000000  0x119d96  OnLivingStateChangedLaser                                    
+0x00000000000  0x119db4  ClientLaserSetVisibility                                     
+0x00000000000  0x119dd1  ClientLaserSetScriptOverrides                                
+0x00000000000  0x119df3  ClientLaserSetProgressCurve                                  
+0x00000000000  0x119e13  ClientLaserRestartProgressSequence                           
+0x00000000000  0x119e3a  ClientLaserResetProgress                                     
+0x00000000000  0x119e57  ClientLaserTriggerCustomEvent                                
+0x00000000000  0x119e79  ClientLaserSetMaxDistance                                    
+0x00000000000  0x119e97  ClientLaserSetHueShift                                       
+0x00000000000  0x119eb2  ClientLaserSetLaserMaterial                                  
+0x00000000000  0x119ed2  ClientLaserSetEndpointMaterial                               
+0x00000000000  0x119ef5  ClientLaserSetHitFlareNiagaraSystem                          
+0x00000000000  0x119f1d  ClientLaserSetBrightness                                     
+0x00000000000  0x119f3a  ClientLaserOverrideLimitLaserToCursor                        
+0x00000000000  0x119f64  ClientLaserClearOverrideLimitLaserToCursor                   
+0x00000000000  0x119f93  ClientLaserSwitchSettings                                    
+0x00000000000  0x119fb1  ClientLaserShowRangeMarker                                   
+0x00000000000  0x119fd0  ClientLaserSetRangeMarkerDistance                            
+0x00000000000  0x119ff6  ClientLaserSetRangeMarkerMaterial                            
+0x00000000000  0x11a01c  DestroyHeightIndicator                                       
+0x00000000000  0x11a037  OnTookDamageHeightIndicator                                  
+0x00000000000  0x11a057  ClientSetHeightIndicatorVisibility                           
+0x00000000000  0x11a07e  OnShowHeightIndicatorsChanged                                
+0x00000000000  0x11a0a0  SetMaxRangeFromRMB                                           
+0x00000000000  0x11a0b7  BP_EffectRemainingDuration                                   
+0x00000000000  0x11a0d6  AuthCheatNightToDay                                          
+0x00000000000  0x11a0ee  AuthCheatDayToNight                                          
+0x00000000000  0x11a106  BP_IsCharacterInShadow                                       
+0x00000000000  0x11a121  BP_CheatNightToDay                                           
+0x00000000000  0x11a138  BP_CheatDayToNight                                           
+0x00000000000  0x11a14f  InitPlayer                                                   
+0x00000000000  0x11a15e  OnCharacterRespawned                                         
+0x00000000000  0x11a177  GetSpawnDelay                                                
+0x00000000000  0x11a189  AuthRequestRespawn                                           
+0x00000000000  0x11a1a0  GeneratePlayerStarts                                         
+0x00000000000  0x11a1b9  GetValidPlayerStart                                          
+0x00000000000  0x11a1d1  UpdateTimerText                                              
+0x00000000000  0x11a1e5  ServerDetachPodFromLeader                                    
+0x00000000000  0x11a203  ServerUpdatePodMovement                                      
+0x00000000000  0x11a21f  BP_StartPodGameplay                                          
+0x00000000000  0x11a237  BP_OnPrematurePodDestruction                                 
+0x00000000000  0x11a258  OnDropPodReplicated                                          
+0x00000000000  0x11a270  OnLandingRadiusChanged                                       
+0x00000000000  0x11a28b  ShouldTransferItem                                           
+0x00000000000  0x11a2a2  PostTransferToTeamElimBox                                    
+0x00000000000  0x11a2c0  AuthCheatToggleHealthRegen                                   
+0x00000000000  0x11a2df  AuthCheatToggleManaRegen                                     
+0x00000000000  0x11a2fc  AuthCheatGrantGold                                           
+0x00000000000  0x11a313  AuthCheatGrantGems                                           
+0x00000000000  0x11a32a  AuthCheatUnlockFullArmory                                    
+0x00000000000  0x11a348  AuthCheatExecuteUAV                                          
+0x00000000000  0x11a360  AuthCheatBarracudaNextPhase                                  
+0x00000000000  0x11a380  AuthCheatBarracudaToggleSpawnerType                          
+0x00000000000  0x11a3a8  AuthCheatBarracudaToggleDayNightCycle                        
+0x00000000000  0x11a3d2  AuthCheatBarracudaAdvanceDayNightCycle                       
+0x00000000000  0x11a3fd  ServerSpawnWispAS                                            
+0x00000000000  0x11a413  BP_OnClientGliderActivated                                   
+0x00000000000  0x11a432  BP_OnClientGliderDectivated                                  
+0x00000000000  0x11a452  BP_OnSpectatorMapMove                                        
+0x00000000000  0x11a46c  ClientNotifyLocalRadarEmpty                                  
+0x00000000000  0x11a48c  ClientNotifyLocalRadarInstigator                             
+0x00000000000  0x11a4b1  OnRep_ActiveUAVCopy                                          
+0x00000000000  0x11a4c9  ClientUpdateIcon                                             
+0x00000000000  0x11a4de  VaultDataItemUpdated                                         
+0x00000000000  0x11a4f7  GetItemsForUAV                                               
+0x00000000000  0x11a50a  GetDoor                                                      
+0x00000000000  0x11a522  CurrentHealthRegenDamagePhase                                
+0x00000000000  0x11a550  AbilitySystemComponent                                       
+0x00000000000  0x11a577  HealthRegenDamagePhaseEffects                                
+0x00000000000  0x11a5a5  HealthRegenDamagePhaseEffectHandle                           
+0x00000000000  0x11a5d8  HealthRegenTickInterval                                      
+0x00000000000  0x11a600  RunningEffect                                                
+0x00000000000  0x11a61e  NextFuelTickTime                                             
+0x00000000000  0x11a63f  BoostTag                                                     
+0x00000000000  0x11a658  NumSecondsOfFuelWhileBoosting                                
+0x00000000000  0x11a686  NumSecondsOfFuel                                             
+0x00000000000  0x11a6a7  FuelTickInterval                                             
+0x00000000000  0x11a6c8  LastGenericCollisionTimes                                    
+0x00000000000  0x11a6f2  MinGenericCollisionSpeed                                     
+0x00000000000  0x11a71b  MaxHeadOnCollisionAngle                                      
+0x00000000000  0x11a743  AirshipCollisionRearMultiplier                               
+0x00000000000  0x11a772  AirshipCollisionFrontMultiplier                              
+0x00000000000  0x11a7a2  MaxGenericCollisionDamage                                    
+0x00000000000  0x11a7cc  MinGenericCollisionDamage                                    
+0x00000000000  0x11a7f6  MaxGenericCollisionSpeed                                     
+0x00000000000  0x11a81f  MinEjectionRelativeSpeed                                     
+0x00000000000  0x11a848  GenericCollisionEffect                                       
+0x00000000000  0x11a86f  LastRoadkillTimes                                            
+0x00000000000  0x11a891  RoadkillImpactEffect                                         
+0x00000000000  0x11a8b6  MaxRoadkillDamage                                            
+0x00000000000  0x11a8d8  MinRoadkillDamage                                            
+0x00000000000  0x11a8fa  MaxRoadkillDamageSpeed                                       
+0x00000000000  0x11a921  MinRoadkillDamageSpeed                                       
+0x00000000000  0x11a948  RoadkillDamageMinionCoefficient                              
+0x00000000000  0x11a978  RoadkillDamageDestructibleCoefficient                        
+0x00000000000  0x11a9ae  MaxRoadkillBoopForceXY                                       
+0x00000000000  0x11a9d5  MinRoadkillBoopForceXY                                       
+0x00000000000  0x11a9fc  MaxRoadkillBoopSpeed                                         
+0x00000000000  0x11aa21  MinRoadkillBoopSpeed                                         
+0x00000000000  0x11aa46  MaxRoadkillBoopForceZ                                        
+0x00000000000  0x11aa6c  MinRoadkillBoopForceZ                                        
+0x00000000000  0x11aa92  HealthRegenThresholds                                        
+0x00000000000  0x11aab8  NextHealthRegenTickTime                                      
+0x00000000000  0x11aae0  OnPlayerInitializedHandle                                    
+0x00000000000  0x11ab0a  Handle                                                       
+0x00000000000  0x11ab21  bLoadComplete                                                
+0x00000000000  0x11ab3f  DisabledItemAssetIDs                                         
+0x00000000000  0x11ab64  LoadedClasses                                                
+0x00000000000  0x11ab82  DisabledItems                                                
+0x00000000000  0x11aba0  PerkSlotName                                                 
+0x00000000000  0x11abbd  PurchasedKits                                                
+0x00000000000  0x11abdb  DefaultArmory                                                
+0x00000000000  0x11abf9  RelicSlotName                                                
+0x00000000000  0x11ac17  BootsSlotName                                                
+0x00000000000  0x11ac35  bPlayAnimation                                               
+0x00000000000  0x11ac54  SaleItem                                                     
+0x00000000000  0x11ac6d  ShopSaleTable                                                
+0x00000000000  0x11ac8b  StuckDetectionTime                                           
+0x00000000000  0x11acae  UnstuckTeleportTime                                          
+0x00000000000  0x11acd2  CurrentTargetEnemy                                           
+0x00000000000  0x11acf5  HighPriorityEnemyCharacter                                   
+0x00000000000  0x11ad20  ReleaseHighPriorityEnemyTime                                 
+0x00000000000  0x11ad4d  LaneIndex                                                    
+0x00000000000  0x11ad67  OnLaneIndexUpdated                                           
+0x00000000000  0x11ad8a  HighPriorityEnemyMemory                                      
+0x00000000000  0x11adb2  InternalNextRespawnTime                                      
+0x00000000000  0x11adda  OnNextRespawnTimeChanged                                     
+0x00000000000  0x11ae03  Structures                                                   
+0x00000000000  0x11ae1e  bRespawnLocation                                             
+0x00000000000  0x11ae3f  bAttackable                                                  
+0x00000000000  0x11ae5b  NextDayNightSwapTime                                         
+0x00000000000  0x11ae80  bIsDay                                                       
+0x00000000000  0x11ae97  MatchStartTime                                               
+0x00000000000  0x11aeb6  LastKnockedTimeTable                                         
+0x00000000000  0x11aedb  KnockXPCooldownTime                                          
+0x00000000000  0x11aeff  PlayerState                                                  
+0x00000000000  0x11af1b  GoldLossOnDeath                                              
+0x00000000000  0x11af3b  GoldBountyPerCurrentStreak                                   
+0x00000000000  0x11af66  MercyHeroKillXPCoefficients                                  
+0x00000000000  0x11af92  UnderdogHeroKillXPBonusPerLevel                              
+0x00000000000  0x11afc2  MinionSplitXPBonuses                                         
+0x00000000000  0x11afe7  bDayNightTransitionEnabled                                   
+0x00000000000  0x11b012  DayNightDuration                                             
+0x00000000000  0x11b033  bAnyTowersKilled                                             
+0x00000000000  0x11b054  MomentumBossKilledPilotVO                                    
+0x00000000000  0x11b07e  NumDragonsKilled                                             
+0x00000000000  0x11b09f  DragonRewards                                                
+0x00000000000  0x11b0bd  DragonKilledPilotVO                                          
+0x00000000000  0x11b0e1  MomentumBuffEffect                                           
+0x00000000000  0x11b104  NumDragonsKilled                                             
+0x00000000000  0x11b125  RespawnTimePerLevel                                          
+0x00000000000  0x11b149  MatchTimeRespawnCeiling                                      
+0x00000000000  0x11b171  MatchRespawnTimeFactor                                       
+0x00000000000  0x11b198  RallyAggroRange                                              
+0x00000000000  0x11b1b8  TeamKillScores                                               
+0x00000000000  0x11b1d7  OnTeamKillsUpdated                                           
+0x00000000000  0x11b1fa  OnDragonKillsUpdated                                         
+0x00000000000  0x11b21f  Shop                                                         
+0x00000000000  0x11b234  ShopClass                                                    
+0x00000000000  0x11b24e  CurrentPhaseIndex                                            
+0x00000000000  0x11b270  BarracudaPhases                                              
+0x00000000000  0x11b290  CurrentPhaseStartTime                                        
+0x00000000000  0x11b2b6  MinionWaypoints                                              
+0x00000000000  0x11b2d6  DisabledSpawnerTypes                                         
+0x00000000000  0x11b2fb  SpawnerToSpawnTime                                           
+0x00000000000  0x11b31e  bGrantLoot                                                   
+0x00000000000  0x11b339  LastHitGoldBonus                                             
+0x00000000000  0x11b35a  GoldRewardMethod                                             
+0x00000000000  0x11b37b  InitialLaneIndex                                             
+0x00000000000  0x11b39c  LaneComponent                                                
+0x00000000000  0x11b3ba  TriggerComponent                                             
+0x00000000000  0x11b3db  WaypointTowardTeam1                                          
+0x00000000000  0x11b3ff  WaypointTowardTeam0                                          
+0x00000000000  0x11b423  LastWaypointTime                                             
+0x00000000000  0x11b444  CurrentWaypoint                                              
+0x00000000000  0x11b464  LastCombatTime                                               
+0x00000000000  0x11b483  CachedLocation                                               
+0x00000000000  0x11b4a2  TimeFirstArrivedAtCachedLocation                             
+0x00000000000  0x11b4d3  bDrawDebug                                                   
+0x00000000000  0x11b4ee  DebugDrawPathDurationErrorThreshold                          
+0x00000000000  0x11b522  DebugDrawPathDurationWarningThreshold                        
+0x00000000000  0x11b558  LastWaypoint                                                 
+0x00000000000  0x11b575  WaypointLocationKey                                          
+0x00000000000  0x11b599  Interval                                                     
+0x00000000000  0x11b5b2  RandomDeviation                                              
+0x00000000000  0x11b5d2  Item                                                         
+0x00000000000  0x11b5e7  Inputs                                                       
+0x00000000000  0x11b5fe  Outputs                                                      
+0x00000000000  0x11b616  RecipeCost                                                   
+0x00000000000  0x11b631  TotalCost                                                    
+0x00000000000  0x11b64b  bHasTotalCost                                                
+0x00000000000  0x11b669  bDebugLogGraph                                               
+0x00000000000  0x11b688  SellValueCoefficient                                         
+0x00000000000  0x11b6ad  ItemGraphNodes                                               
+0x00000000000  0x11b6cc  AllItems                                                     
+0x00000000000  0x11b6e5  ItemLootTables                                               
+0x00000000000  0x11b704  ClientNameFilterString                                       
+0x00000000000  0x11b72b  ClientTagFilters                                             
+0x00000000000  0x11b74c  ClientCurrentFocus                                           
+0x00000000000  0x11b76f  GameplayTags                                                 
+0x00000000000  0x11b78c  ItemClass                                                    
+0x00000000000  0x11b7a6  ShopItemWidget                                               
+0x00000000000  0x11b7c5  ItemName                                                     
+0x00000000000  0x11b7de  ChildContainer                                               
+0x00000000000  0x11b7fd  DesignTimePreviewDepthCount                                  
+0x00000000000  0x11b829  DesignTimePrviewInputCount                                   
+0x00000000000  0x11b854  bDesignTimePreviewOwned                                      
+0x00000000000  0x11b87c  OwnedIndicator                                               
+0x00000000000  0x11b89b  Tree                                                         
+0x00000000000  0x11b8b0  ItemsToPotentiallyMarkAsOwned                                
+0x00000000000  0x11b8de  RootNode                                                     
+0x00000000000  0x11b8f7  RepresentedItem                                              
+0x00000000000  0x11b917  ValueType                                                    
+0x00000000000  0x11b931  Label                                                        
+0x00000000000  0x11b947  Tag                                                          
+0x00000000000  0x11b95b  RecommendedHeroTag                                           
+0x00000000000  0x11b97e  TagFilters                                                   
+0x00000000000  0x11b999  TeamComponent                                                
+0x00000000000  0x11b9b7  InitialTeam                                                  
+0x00000000000  0x11b9d3  OnNewDayNightStateDelegate                                   
+0x00000000000  0x11b9fe  VisibilityReceiver                                           
+0x00000000000  0x11ba21  bShowTimer                                                   
+0x00000000000  0x11ba3c  MapIconComponent                                             
+0x00000000000  0x11ba5d  RespawnType                                                  
+0x00000000000  0x11ba79  NextSpawnTime                                                
+0x00000000000  0x11ba97  bTimerRequiresVision                                         
+0x00000000000  0x11babc  bSpawnLoopHasStarted                                         
+0x00000000000  0x11bae1  MinimumBarracudaPhaseType                                    
+0x00000000000  0x11bb0b  SpawnLoopStartTime                                           
+0x00000000000  0x11bb2e  InitialSpawnDelay                                            
+0x00000000000  0x11bb50  SpawnPeriod                                                  
+0x00000000000  0x11bb6c  LastSpawnTime                                                
+0x00000000000  0x11bb8a  bStaggerSpawn                                                
+0x00000000000  0x11bba8  Wave                                                         
+0x00000000000  0x11bbbd  LaneComponent                                                
+0x00000000000  0x11bbdb  StartingEffects                                              
+0x00000000000  0x11bbfb  MinionInstances                                              
+0x00000000000  0x11bc1b  bHasLivingMinion                                             
+0x00000000000  0x11bc3c  bSpawnAtAveragePlayerLevel                                   
+0x00000000000  0x11bc67  LevelThresholdsByGametime                                    
+0x00000000000  0x11bc91  WaveBuffer                                                   
+0x00000000000  0x11bcac  CurrentWaveBufferIndex                                       
+0x00000000000  0x11bcd3  BarracksDownEffect                                           
+0x00000000000  0x11bcf6  BarracksClass                                                
+0x00000000000  0x11bd14  SpawnAudioEvent                                              
+0x00000000000  0x11bd34  SpawnPilotVO                                                 
+0x00000000000  0x11bd51  CapsuleCollision                                             
+0x00000000000  0x11bd72  OnBiomeTouchUnlocked                                         
+0x00000000000  0x11bd97  ShadowDecalRotation                                          
+0x00000000000  0x11bdbb  ShadowDecalSize                                              
+0x00000000000  0x11bddb  ShadowDecalMaterial                                          
+0x00000000000  0x11bdff  ShadowDecalComponent                                         
+0x00000000000  0x11be24  ShadowDecalMID                                               
+0x00000000000  0x11be43  RingDecalRotation                                            
+0x00000000000  0x11be65  RingDecalSize                                                
+0x00000000000  0x11be83  RingDecalMaterial                                            
+0x00000000000  0x11bea5  RingDecalComponent                                           
+0x00000000000  0x11bec8  RingDecalMID                                                 
+0x00000000000  0x11bee5  LocalState                                                   
+0x00000000000  0x11bf00  LastTriggerTime                                              
+0x00000000000  0x11bf20  LastHeightMapDirtyTime                                       
+0x00000000000  0x11bf47  NextUpdateTimerHandle                                        
+0x00000000000  0x11bf6d  StaticMesh                                                   
+0x00000000000  0x11bf88  StaticMeshComponent                                          
+0x00000000000  0x11bfac  bGenerateBackupMantleCollision                               
+0x00000000000  0x11bfdb  BackupMantleCollision                                        
+0x00000000000  0x11c001  StateToCumulativeDurationMap                                 
+0x00000000000  0x11c02e  DefaultTriggeredDuration                                     
+0x00000000000  0x11c057  DefaultFadingDuration                                        
+0x00000000000  0x11c07d  DefaultDeadDuration                                          
+0x00000000000  0x11c0a1  DefaultRespawningDuration                                    
+0x00000000000  0x11c0cb  StateAudioEvents                                             
+0x00000000000  0x11c0ec  bShowDebug                                                   
+0x00000000000  0x11c107  TrackSpline                                                  
+0x00000000000  0x11c123  Speed                                                        
+0x00000000000  0x11c139  InitialOffset                                                
+0x00000000000  0x11c157  OwnerAimingVisComponent                                      
+0x00000000000  0x11c17f  ExecutionTagsContainer                                       
+0x00000000000  0x11c1a6  OwnerHero                                                    
+0x00000000000  0x11c1c0  bInvisibleFromExecute                                        
+0x00000000000  0x11c1e6  bInvisibleFromOwnerHidden                                    
+0x00000000000  0x11c210  CurrentCursorPathTime                                        
+0x00000000000  0x11c236  CurrentTraceHitPathTime                                      
+0x00000000000  0x11c25e  bLimitLaserToTraceHit                                        
+0x00000000000  0x11c284  IntersectedHeightIndicator                                   
+0x00000000000  0x11c2af  CurrentEndPathTime                                           
+0x00000000000  0x11c2d2  LaserProjectilePath                                          
+0x00000000000  0x11c2f6  LaserEndpoint                                                
+0x00000000000  0x11c314  bOverrideDesaturationAndOpacity                              
+0x00000000000  0x11c344  bShowTraceHitFlare                                           
+0x00000000000  0x11c367  LaserHitFlare                                                
+0x00000000000  0x11c385  bOverrideRangeAndAlphaStep                                   
+0x00000000000  0x11c3b0  bProgressActive                                              
+0x00000000000  0x11c3d0  bIgnoresHeroes                                               
+0x00000000000  0x11c3ef  MaxDistance                                                  
+0x00000000000  0x11c40b  CapsuleComponent                                             
+0x00000000000  0x11c42c  OverlapHeightIndicatorRadiusBonus                            
+0x00000000000  0x11c45e  HeightIndicator                                              
+0x00000000000  0x11c47e  TargetLocPtr                                                 
+0x00000000000  0x11c49b  bLimitLaserToCursorOverride                                  
+0x00000000000  0x11c4c7  bLimitLaserToCursorOverrideValue                             
+0x00000000000  0x11c4f8  bLimitLaserToCursorUserSetting                               
+0x00000000000  0x11c527  CurrentLaserSettingsIndex                                    
+0x00000000000  0x11c551  ProjectileSourceOffsetDistanceXY                             
+0x00000000000  0x11c582  bUsesProgressSequence                                        
+0x00000000000  0x11c5a8  ProgressCurve                                                
+0x00000000000  0x11c5c6  bProgressCurveIsNormalized                                   
+0x00000000000  0x11c5f1  CurrentProgressCurveDuration                                 
+0x00000000000  0x11c61e  CurrentProgressTime                                          
+0x00000000000  0x11c642  BehindGeoDottedLinesPerMeter                                 
+0x00000000000  0x11c66f  PrimaryAttackDistance                                        
+0x00000000000  0x11c695  ExecutingTag                                                 
+0x00000000000  0x11c6b2  BeingExecutedTag                                             
+0x00000000000  0x11c6d3  bShowRangeMarker                                             
+0x00000000000  0x11c6f4  RangeMarker                                                  
+0x00000000000  0x11c710  MarkerDistance                                               
+0x00000000000  0x11c72f  bOverrideRangeMarkerDesaturationAndOpacity                   
+0x00000000000  0x11c76a  bShowRangeMarkerOnSpawn                                      
+0x00000000000  0x11c792  bSetSpreadAngleViaBloom                                      
+0x00000000000  0x11c7ba  bInterpolateBloomValue                                       
+0x00000000000  0x11c7e1  LastBloomAngle                                               
+0x00000000000  0x11c800  InterpolationRampHalfLife                                    
+0x00000000000  0x11c82a  NonBloomSpreadAngle                                          
+0x00000000000  0x11c84e  HideSpreadLasersAngle                                        
+0x00000000000  0x11c874  LaserSpreadRoot1                                             
+0x00000000000  0x11c895  LaserSpreadRoot2                                             
+0x00000000000  0x11c8b6  LaserSpread1                                                 
+0x00000000000  0x11c8d3  LaserSpread2                                                 
+0x00000000000  0x11c8f0  DimSpreadLasersAngleWindow                                   
+0x00000000000  0x11c91b  LaserOpacityMultWhenSpread                                   
+0x00000000000  0x11c946  ReplicatedLaserSettingsIndex                                 
+0x00000000000  0x11c973  SpawnLaserSettingsIndex                                      
+0x00000000000  0x11c99b  bHasInitializedClient                                        
+0x00000000000  0x11c9c1  OwnerCharacter                                               
+0x00000000000  0x11c9e0  bHasInitializedLocalClient                                   
+0x00000000000  0x11ca0b  LaserSettings                                                
+0x00000000000  0x11ca29  ClientLaserInstance                                          
+0x00000000000  0x11ca4d  bHeroUsesAimingLaser                                         
+0x00000000000  0x11ca72  RangeMin                                                     
+0x00000000000  0x11ca8b  RangeMax                                                     
+0x00000000000  0x11caa4  VisTimeRemaining                                             
+0x00000000000  0x11cac5  PostAttackVisFadeout                                         
+0x00000000000  0x11caea  PostAttackVisDuration                                        
+0x00000000000  0x11cb10  ProgressMarker                                               
+0x00000000000  0x11cb2f  bShowProgressMarker                                          
+0x00000000000  0x11cb53  SettingsIndexLMB                                             
+0x00000000000  0x11cb74  SettingsIndexBase                                            
+0x00000000000  0x11cb96  CurrentProgressEndTime                                       
+0x00000000000  0x11cbbd  SettingsIndexRMB                                             
+0x00000000000  0x11cbde  SettingsIndexUlt                                             
+0x00000000000  0x11cbff  ArrowPerfectGreenChargeMin                                   
+0x00000000000  0x11cc2a  ArrowPerfectGreenChargeMax                                   
+0x00000000000  0x11cc55  ArrowRangeMaxBluePerfect                                     
+0x00000000000  0x11cc7e  ArrowRangeMaxBlue                                            
+0x00000000000  0x11cca0  ArrowRangeMaxGreen                                           
+0x00000000000  0x11ccc3  ArrowRangeMinGreen                                           
+0x00000000000  0x11cce6  ArrowStartChargeFrac                                         
+0x00000000000  0x11cd0b  ProgressMarkerOriginalScale                                  
+0x00000000000  0x11cd37  bRangeMarkerDimmed                                           
+0x00000000000  0x11cd5a  RangeMarkerDimmedMaterial                                    
+0x00000000000  0x11cd84  RangeMarkerLitMaterial                                       
+0x00000000000  0x11cdab  RangeMarkerOriginalScale                                     
+0x00000000000  0x11cdd4  bLaserEndpointDimmed                                         
+0x00000000000  0x11cdf9  LaserEndpointDimmedMaterial                                  
+0x00000000000  0x11ce25  LaserEndpointLitMaterial                                     
+0x00000000000  0x11ce4e  ImpaleRangeMax                                               
+0x00000000000  0x11ce6d  ImpaleRangeMin                                               
+0x00000000000  0x11ce8c  UltArrowRangeMax                                             
+0x00000000000  0x11cead  LMBRangeMarkerDistance                                       
+0x00000000000  0x11ced4  MyCharacter                                                  
+0x00000000000  0x11cef0  EffectHandles                                                
+0x00000000000  0x11cf0e  OnTimelineChanged                                            
+0x00000000000  0x11cf30  OnDayNightStateChanged                                       
+0x00000000000  0x11cf57  OnDayBegin                                                   
+0x00000000000  0x11cf72  OnDayEnd                                                     
+0x00000000000  0x11cf8b  RespawnTimerWidget                                           
+0x00000000000  0x11cfae  AvailableBots                                                
+0x00000000000  0x11cfcc  SpawnedTeamCount                                             
+0x00000000000  0x11cfed  InitializedPlayerStates                                      
+0x00000000000  0x11d015  LevelToGrant                                                 
+0x00000000000  0x11d032  DisconnectedPlayerStates                                     
+0x00000000000  0x11d05b  ArmorItem                                                    
+0x00000000000  0x11d075  BandageItem                                                  
+0x00000000000  0x11d091  ConnectedPlayerControllers                                   
+0x00000000000  0x11d0bc  RespawnTime                                                  
+0x00000000000  0x11d0d8  LocalRespawnTime                                             
+0x00000000000  0x11d0f9  OnRespawnTimeUpdated                                         
+0x00000000000  0x11d11e  HasCreatedPlayerStarts                                       
+0x00000000000  0x11d145  OnPlayerStartsCreated                                        
+0x00000000000  0x11d16b  IsCombatPhase                                                
+0x00000000000  0x11d189  InitialSpawnDelay                                            
+0x00000000000  0x11d1ab  bOnlyScheduleRespawnsDuringCombatPhase                       
+0x00000000000  0x11d1e2  bStartTimerOnlyOnKill                                        
+0x00000000000  0x11d208  SpawnDelay                                                   
+0x00000000000  0x11d223  Starts                                                       
+0x00000000000  0x11d23a  StartIndex                                                   
+0x00000000000  0x11d255  NonSpawningBotStates                                         
+0x00000000000  0x11d27a  OnSpawnEffect                                                
+0x00000000000  0x11d298  HumansBeforeBotDespawn                                       
+0x00000000000  0x11d2bf  SpawnIndex                                                   
+0x00000000000  0x11d2da  SpawnRadius                                                  
+0x00000000000  0x11d2f6  BarrierActor                                                 
+0x00000000000  0x11d313  PSC                                                          
+0x00000000000  0x11d327  RandomSeed                                                   
+0x00000000000  0x11d342  DayToExotics                                                 
+0x00000000000  0x11d35f  DayToLootTable                                               
+0x00000000000  0x11d37e  bCanSelectDropLocation                                       
+0x00000000000  0x11d3a5  PodSteeringEventListenerHanddle                              
+0x00000000000  0x11d3d5  DropPodActor                                                 
+0x00000000000  0x11d3f2  bIsTeamLeaderPod                                             
+0x00000000000  0x11d413  bIsLocalPlayerPilot                                          
+0x00000000000  0x11d437  IntroSequenceTotalTime                                       
+0x00000000000  0x11d45e  PodDetachTotalTime                                           
+0x00000000000  0x11d481  PodDetachFromLeaderMaxTime                                   
+0x00000000000  0x11d4ac  bIgnoreInput                                                 
+0x00000000000  0x11d4c9  DetachInputStartTime                                         
+0x00000000000  0x11d4ee  PodDetachFromLeaderMinTime                                   
+0x00000000000  0x11d519  DropPod                                                      
+0x00000000000  0x11d531  bPodDetachingEnabled                                         
+0x00000000000  0x11d556  bAlwaysUpdateNetwork                                         
+0x00000000000  0x11d57b  NetworkUpdateFrequencyTimer                                  
+0x00000000000  0x11d5a7  bPodSteeringEnabled                                          
+0x00000000000  0x11d5cb  bDropPhaseControlsDisabled                                   
+0x00000000000  0x11d5f6  bPodIsAttachedToLeader                                       
+0x00000000000  0x11d61d  CurrMoveDirection                                            
+0x00000000000  0x11d63f  MovementForwardValue                                         
+0x00000000000  0x11d664  MovementRightValue                                           
+0x00000000000  0x11d687  INVALID_MOVEMENT_VALUE                                       
+0x00000000000  0x11d6ae  CrewPodDetachStartTime                                       
+0x00000000000  0x11d6d5  CurrTotalTimeForDetach                                       
+0x00000000000  0x11d6fc  CurrentInputDirection                                        
+0x00000000000  0x11d722  BufferedDestinationDelta                                     
+0x00000000000  0x11d74b  MaxHeightRange                                               
+0x00000000000  0x11d76a  MinimumTargetLocationMovementSpeed                           
+0x00000000000  0x11d79d  MaximumTargetLocationMovementSpeed                           
+0x00000000000  0x11d7d0  NetworkUpdateFrequencey                                      
+0x00000000000  0x11d7f8  PodTeamIndex                                                 
+0x00000000000  0x11d815  bHasStartedGameplay                                          
+0x00000000000  0x11d839  DetachingFromLeaderPodStartTime                              
+0x00000000000  0x11d869  CrewDetachEvent                                              
+0x00000000000  0x11d889  bIsHidingDropPhaseHiddenActors                               
+0x00000000000  0x11d8b8  bRetryCharacterCameraGlue                                    
+0x00000000000  0x11d8e2  bRetryCrewPodCameraGlue                                      
+0x00000000000  0x11d90a  bRetryLeaderPodCameraGlue                                    
+0x00000000000  0x11d934  CurrPodDestination                                           
+0x00000000000  0x11d957  LeaderPod                                                    
+0x00000000000  0x11d971  PodMeshComponent                                             
+0x00000000000  0x11d992  ImpactIndicator                                              
+0x00000000000  0x11d9b2  AttachedCrewPods                                             
+0x00000000000  0x11d9d3  PodStateEvent                                                
+0x00000000000  0x11d9f1  PlayersInside                                                
+0x00000000000  0x11da0f  PlayersAttached                                              
+0x00000000000  0x11da2f  InitialDropPodSpeed                                          
+0x00000000000  0x11da53  bPodIsDestroying                                             
+0x00000000000  0x11da74  TotalPodDestructionDelayTime                                 
+0x00000000000  0x11daa1  DisplayDropPhaseHiddenActorsHeight                           
+0x00000000000  0x11dad4  LeaderDetachEvent                                            
+0x00000000000  0x11daf6  DetachingCrewPods                                            
+0x00000000000  0x11db18  AllDetachedCrewPods                                          
+0x00000000000  0x11db3c  PodDetachData                                                
+0x00000000000  0x11db5a  OnCrewPodDetached                                            
+0x00000000000  0x11db7c  OnLeaderPodHasCrewPodDetached                                
+0x00000000000  0x11dbaa  bPilotHasPodControl                                          
+0x00000000000  0x11dbce  PodDetachTotalDistance                                       
+0x00000000000  0x11dbf5  PlayersToSpawnCrewPodFor                                     
+0x00000000000  0x11dc1e  CrewDropPodClass                                             
+0x00000000000  0x11dc3f  TotalTimeForPodControls                                      
+0x00000000000  0x11dc67  bReadyForOutro                                               
+0x00000000000  0x11dc86  OnPodOutroStarted                                            
+0x00000000000  0x11dca8  OutroSequenceTotalTime                                       
+0x00000000000  0x11dccf  bSteeringEnabled                                             
+0x00000000000  0x11dcf0  SteeringStartTime                                            
+0x00000000000  0x11dd12  ImpactIndicatorClass                                         
+0x00000000000  0x11dd37  GroundLaserIndicatorClass                                    
+0x00000000000  0x11dd61  GroundLaserIndicator                                         
+0x00000000000  0x11dd86  bIsCrewPod                                                   
+0x00000000000  0x11dda1  CrewPodBoneName                                              
+0x00000000000  0x11ddc1  LeaderPodBoneName                                            
+0x00000000000  0x11dde3  OnPodMoveDirectionChanged                                    
+0x00000000000  0x11de0d  LastInputDirection                                           
+0x00000000000  0x11de30  MaxSteerDistance                                             
+0x00000000000  0x11de51  MaxNonLeaderSteerDistance                                    
+0x00000000000  0x11de7b  OutroDistance                                                
+0x00000000000  0x11de99  IndicatorInterpSpeed                                         
+0x00000000000  0x11debe  OwningDropPod                                                
+0x00000000000  0x11dedc  OwningPlayerState                                            
+0x00000000000  0x11defe  bIsIndicatorInitialized                                      
+0x00000000000  0x11df26  LandingRadius                                                
+0x00000000000  0x11df44  OwningDropPod                                                
+0x00000000000  0x11df62  TeamDropPodClass                                             
+0x00000000000  0x11df83  bHoveredComponentIsValid                                     
+0x00000000000  0x11dfac  UsableDetectionComponent                                     
+0x00000000000  0x11dfd5  CachedLokiPC                                                 
+0x00000000000  0x11dff2  HoveredUsable                                                
+0x00000000000  0x11e010  CachedLokiCharacter                                          
+0x00000000000  0x11e034  bIsSupportingCooldownBuffering                               
+0x00000000000  0x11e063  ActiveUsable                                                 
+0x00000000000  0x11e080  UsableList                                                   
+0x00000000000  0x11e09b  bInputHoldInteractionCanProcess                              
+0x00000000000  0x11e0cb  bInteractionInputPressed                                     
+0x00000000000  0x11e0f4  OnInteractionReleased                                        
+0x00000000000  0x11e11a  CachedLokiAbilitySystem                                      
+0x00000000000  0x11e142  FocusedUsable                                                
+0x00000000000  0x11e160  SelectedUsable                                               
+0x00000000000  0x11e17f  OnInteractionUsableChanged                                   
+0x00000000000  0x11e1aa  UsableNotFoundAudio                                          
+0x00000000000  0x11e1ce  OnInteractionPressed                                         
+0x00000000000  0x11e1f3  InteractionCooldownStartTime                                 
+0x00000000000  0x11e220  MinInteractionCooldownTime                                   
+0x00000000000  0x11e24b  bCanProcessBufferedInteraction                               
+0x00000000000  0x11e27a  ProcessInteractionBufferStartTime                            
+0x00000000000  0x11e2ac  MaxProcessBufferedInteractionTime                            
+0x00000000000  0x11e2de  ProjMovementComp                                             
+0x00000000000  0x11e2ff  bIsMoving                                                    
+0x00000000000  0x11e319  HeightToStop                                                 
+0x00000000000  0x11e336  bIsVaultItem                                                 
+0x00000000000  0x11e353  NoPickupTime                                                 
+0x00000000000  0x11e370  SphereCollision                                              
+0x00000000000  0x11e390  GemCount                                                     
+0x00000000000  0x11e3a9  BonusGemMultiplier                                           
+0x00000000000  0x11e3cc  GemVacuumTag                                                 
+0x00000000000  0x11e3e9  RootSceneComponent                                           
+0x00000000000  0x11e40c  bEnablePooling                                               
+0x00000000000  0x11e42b  PoolPrimeSize                                                
+0x00000000000  0x11e449  BaseClass                                                    
+0x00000000000  0x11e463  RecommendedItems                                             
+0x00000000000  0x11e484  PreferredItems                                               
+0x00000000000  0x11e4a3  bAllowUpgradesFromDupes                                      
+0x00000000000  0x11e4cb  TeamElimBoxClass                                             
+0x00000000000  0x11e4ec  bDropOnTeamElimination                                       
+0x00000000000  0x11e513  InventorySlots                                               
+0x00000000000  0x11e532  T0SlotsToDestroy                                             
+0x00000000000  0x11e553  GoldDropClass                                                
+0x00000000000  0x11e571  TeamIndexToBoxMap                                            
+0x00000000000  0x11e593  PlayersQueue                                                 
+0x00000000000  0x11e5b0  UpdateTimerHandle                                            
+0x00000000000  0x11e5d2  MinimumInsuredGoldValue                                      
+0x00000000000  0x11e5fa  OwningCharacter                                              
+0x00000000000  0x11e61a  OwningAIController                                           
+0x00000000000  0x11e63d  PathNodeActors                                               
+0x00000000000  0x11e65c  LastPathingActor                                             
+0x00000000000  0x11e67d  CurrNodeActorList                                            
+0x00000000000  0x11e69f  RotateToActor                                                
+0x00000000000  0x11e6bd  RotationPrecision                                            
+0x00000000000  0x11e6df  MostWantedCount                                              
+0x00000000000  0x11e6ff  ActiveMostWantedCount                                        
+0x00000000000  0x11e725  bPanning                                                     
+0x00000000000  0x11e73e  bResetting                                                   
+0x00000000000  0x11e759  TimePressed                                                  
+0x00000000000  0x11e775  CursorScreenLocationWhenPressed                              
+0x00000000000  0x11e7a5  OffsetThisPress                                              
+0x00000000000  0x11e7c5  MinimumDragDuration                                          
+0x00000000000  0x11e7e9  CumulativeOffset                                             
+0x00000000000  0x11e80a  LastPawnLocation                                             
+0x00000000000  0x11e82b  CameraPickupRadius                                           
+0x00000000000  0x11e84e  CheatDisableHealthRegenEffectClass                           
+0x00000000000  0x11e881  CheatDisableHealthRegenEffectHandle                          
+0x00000000000  0x11e8b5  CheatDisableManaRegenEffectClass                             
+0x00000000000  0x11e8e6  CheatDisableManaRegenEffectHandle                            
+0x00000000000  0x11e918  UAVComponent                                                 
+0x00000000000  0x11e935  WispControllerClass                                          
+0x00000000000  0x11e959  WispHeroClass                                                
+0x00000000000  0x11e977  AutoJumpStartTime                                            
+0x00000000000  0x11e999  AutoJumpPeriod                                               
+0x00000000000  0x11e9b8  AutoJumpPressed                                              
+0x00000000000  0x11e9d8  AutoJumpLastTime                                             
+0x00000000000  0x11e9f9  OnSneakPressed                                               
+0x00000000000  0x11ea18  OnSneakReleased                                              
+0x00000000000  0x11ea38  OnPracticeRespawnPressed                                     
+0x00000000000  0x11ea61  ActiveUAVs                                                   
+0x00000000000  0x11ea7c  AllVaultItemSpawners                                         
+0x00000000000  0x11eaa1  NextUAVID                                                    
+0x00000000000  0x11eabb  GlobalAudioActorClass                                        
+0x00000000000  0x11eae1  ActiveUAVCopy                                                
+0x00000000000  0x11eaff  UAVUpgradedTag                                               
+0x00000000000  0x11eb1e  VaultVisionDistance                                          
+0x00000000000  0x11eb42  MarkedTeamGameplayEffectClass                                
+0x00000000000  0x11eb70  DataTag                                                      
+0x00000000000  0x11eb88  PlayerGroupingDistance                                       
+0x00000000000  0x11ebaf  MarkedIndividualGameplayEffectClass                          
+0x00000000000  0x11ebe3  UAVImmunityTag                                               
+0x00000000000  0x11ec02  UAVBlockedGameplayCueTag                                     
+0x00000000000  0x11ec2b  UAVMapActorClass                                             
+0x00000000000  0x11ec4c  UAVVaultContentActorClass                                    
+0x00000000000  0x11ec76  LastRadarPlayer                                              
+0x00000000000  0x11ec96  LastRadarID                                                  
+0x00000000000  0x11ecb2  LocalRadarPlayers                                            
+0x00000000000  0x11ecd4  LastEventNotifyTime                                          
+0x00000000000  0x11ecf8  UAVActivatedEventNotifyCooldown                              
+0x00000000000  0x11ed28  VaultDataItem                                                
+0x00000000000  0x11ed46  MyItemID                                                     
+0x00000000000  0x11ed5f  TargetWidget                                                 
+0x00000000000  0x11ed7c  bHideBasedOnActivatableParent                                
+0x00000000000  0x11edaa  LeftBlocker                                                  
+0x00000000000  0x11edc6  TopBlocker                                                   
+0x00000000000  0x11ede1  RightBlocker                                                 
+0x00000000000  0x11edfe  BottomBlocker                                                
+0x00000000000  0x11ee1c  AllyPlayerState                                              
+0x00000000000  0x11ee3c  Meters                                                       
+0x00000000000  0x11ee53  Kilometers                                                   
+0x00000000000  0x11ee6e  Y                                                            
+0x00000000000  0x11ee80  X                                                            
+0x00000000000  0x11ee92  ImpactNormal                                                 
+0x00000000000  0x11eeaf  Z                                                            
+0x00000000000  0x11eec1  CanProceed                                                   
+0x00000000000  0x11eedc  ArmoryUniqueEffects                                          
+0x00000000000  0x11ef00  StarRequirement                                              
+0x00000000000  0x11ef20  bIsItemSpell                                                 
+0x00000000000  0x11ef3d  CanProceed                                                   
+0x00000000000  0x11ef58  EffectClass                                                  
+0x00000000000  0x11ef74  InventoryEquipment                                           
+0x00000000000  0x11ef97  EquipmentAsset                                               
+0x00000000000  0x11efb6  Equipment                                                    
+0x00000000000  0x11efd0  XP                                                           
+0x00000000000  0x11efe3  CanProceed                                                   
+0x00000000000  0x11effe  bIncludeInConciseTooltip                                     
+0x00000000000  0x11f027  CanProceed                                                   
+0x00000000000  0x11f042  ItemsCollection                                              
+0x00000000000  0x11f062  PrimaryAssetId                                               
+0x00000000000  0x11f081  ItemClass                                                    
+0x00000000000  0x11f09b  AssetId                                                      
+0x00000000000  0x11f0b3  ItemType                                                     
+0x00000000000  0x11f0cc  ShopkeeperGoldPrice                                          
+0x00000000000  0x11f0f0  Price                                                        
+0x00000000000  0x11f106  StarLevel                                                    
+0x00000000000  0x11f120  StarCount                                                    
+0x00000000000  0x11f13a  bPrototype                                                   
+0x00000000000  0x11f155  CanProceed                                                   
+0x00000000000  0x11f170  StarCount                                                    
+0x00000000000  0x11f18a  Item                                                         
+0x00000000000  0x11f19f  GoldCost                                                     
+0x00000000000  0x11f1b8  PlayerState                                                  
+0x00000000000  0x11f1d4  Game_Id                                                      
+0x00000000000  0x11f1ec  PlatformPlayerID                                             
+0x00000000000  0x11f20d  Player_Id                                                    
+0x00000000000  0x11f227  Item_Id                                                      
+0x00000000000  0x11f23f  Remaining_Gold                                               
+0x00000000000  0x11f25e  Cost                                                         
+0x00000000000  0x11f273  Game_Time                                                    
+0x00000000000  0x11f28d  Source                                                       
+0x00000000000  0x11f2a4  StarLevel                                                    
+0x00000000000  0x11f2be  Power                                                        
+0x00000000000  0x11f2d4  Prototype                                                    
+0x00000000000  0x11f2ee  Prototype                                                    
+0x00000000000  0x11f308  bFullyUnlockedArmory                                         
+0x00000000000  0x11f32d  ItemClass                                                    
+0x00000000000  0x11f347  PriceOverride                                                
+0x00000000000  0x11f365  CurrDayNightState                                            
+0x00000000000  0x11f387  PrevDayNightState                                            
+0x00000000000  0x11f3a9  DaysEncountered                                              
+0x00000000000  0x11f3c9  NightsEncountered                                            
+0x00000000000  0x11f3eb  _Inner                                                       
+0x00000000000  0x11f402  AggroRange                                                   
+0x00000000000  0x11f41d  Actor                                                        
+0x00000000000  0x11f433  CanProceed                                                   
+0x00000000000  0x11f44e  PlayerState                                                  
+0x00000000000  0x11f46a  _Inner                                                       
+0x00000000000  0x11f481  OnPlayerKilled                                               
+0x00000000000  0x11f4a0  EventResult                                                  
+0x00000000000  0x11f4bc  VictimPlayerState                                            
+0x00000000000  0x11f4de  Killer                                                       
+0x00000000000  0x11f4f5  AssistPlayerStats                                            
+0x00000000000  0x11f517  CanProceed                                                   
+0x00000000000  0x11f532  PlayerState                                                  
+0x00000000000  0x11f54e  CanProceed                                                   
+0x00000000000  0x11f569  DamageStatistic                                              
+0x00000000000  0x11f589  SourceCharacter                                              
+0x00000000000  0x11f5a9  CanProceed                                                   
+0x00000000000  0x11f5c4  Duration                                                     
+0x00000000000  0x11f5dd  Type                                                         
+0x00000000000  0x11f5f2  PreviousPhaseType                                            
+0x00000000000  0x11f614  CurrentPhaseType                                             
+0x00000000000  0x11f635  CanProceed                                                   
+0x00000000000  0x11f650  _Inner                                                       
+0x00000000000  0x11f667  _Inner                                                       
+0x00000000000  0x11f67e  TeamStateTeamOnlyClass                                       
+0x00000000000  0x11f6a5  GenericDamage                                                
+0x00000000000  0x11f6c3  AdditionalTowerDamage                                        
+0x00000000000  0x11f6e9  ProjectileMaxDistance                                        
+0x00000000000  0x11f70f  ProjectileInitialSpeed                                       
+0x00000000000  0x11f736  ProjectileHomingAcceleration                                 
+0x00000000000  0x11f763  Gold                                                         
+0x00000000000  0x11f778  XP                                                           
+0x00000000000  0x11f78b  OnComponentBeginOverlap                                      
+0x00000000000  0x11f7b3  CanProceed                                                   
+0x00000000000  0x11f7ce  CurrentFloor                                                 
+0x00000000000  0x11f7eb  SelectedKeyName                                              
+0x00000000000  0x11f80b  ItemsToConsume                                               
+0x00000000000  0x11f82a  Gold                                                         
+0x00000000000  0x11f83f  CanProceed                                                   
+0x00000000000  0x11f85a  CanProceed                                                   
+0x00000000000  0x11f875  CanProceed                                                   
+0x00000000000  0x11f890  GuaranteedItems                                              
+0x00000000000  0x11f8b0  ItemClassToSpawn                                             
+0x00000000000  0x11f8d1  ShopRecipe                                                   
+0x00000000000  0x11f8ec  ComponentItems                                               
+0x00000000000  0x11f90b  CanProceed                                                   
+0x00000000000  0x11f926  CanProceed                                                   
+0x00000000000  0x11f941  CanProceed                                                   
+0x00000000000  0x11f95c  CanProceed                                                   
+0x00000000000  0x11f977  Query                                                        
+0x00000000000  0x11f98d  Tag                                                          
+0x00000000000  0x11f9a1  Item                                                         
+0x00000000000  0x11f9b6  CanProceed                                                   
+0x00000000000  0x11f9d1  LokiReplicationStrategy                                      
+0x00000000000  0x11f9f9  bDistanceBased                                               
+0x00000000000  0x11fa18  CustomReplicationStrategy                                    
+0x00000000000  0x11fa42  ShopMetaData                                                 
+0x00000000000  0x11fa5f  MetaTags                                                     
+0x00000000000  0x11fa78  CanProceed                                                   
+0x00000000000  0x11fa93  CanProceed                                                   
+0x00000000000  0x11faae  ItemClass                                                    
+0x00000000000  0x11fac8  Item                                                         
+0x00000000000  0x11fadd  Gametime                                                     
+0x00000000000  0x11faf6  Level                                                        
+0x00000000000  0x11fb0c  MinionClass                                                  
+0x00000000000  0x11fb28  Count                                                        
+0x00000000000  0x11fb3e  MinimumMatchTime                                             
+0x00000000000  0x11fb5f  Entries                                                      
+0x00000000000  0x11fb77  OnRoundPhaseChanged                                          
+0x00000000000  0x11fb9b  OnVisibilityEvaluated                                        
+0x00000000000  0x11fbc1  DayNightState                                                
+0x00000000000  0x11fbdf  CanProceed                                                   
+0x00000000000  0x11fbfa  GameStartWorldTime                                           
+0x00000000000  0x11fc1d  CanProceed                                                   
+0x00000000000  0x11fc38  CanProceed                                                   
+0x00000000000  0x11fc53  CanProceed                                                   
+0x00000000000  0x11fc6e  CanProceed                                                   
+0x00000000000  0x11fc89  bVisibilityNotificationsEnabled                              
+0x00000000000  0x11fcb9  bUsedOutsideOfReplication                                    
+0x00000000000  0x11fce3  _Inner                                                       
+0x00000000000  0x11fcfa  Max                                                          
+0x00000000000  0x11fd0e  Min                                                          
+0x00000000000  0x11fd22  OnComponentHit                                               
+0x00000000000  0x11fd41  Tags                                                         
+0x00000000000  0x11fd56  PrimaryActorTick                                             
+0x00000000000  0x11fd77  NetUpdateFrequency                                           
+0x00000000000  0x11fd9a  MinNetUpdateFrequency                                        
+0x00000000000  0x11fdc0  B                                                            
+0x00000000000  0x11fdd2  G                                                            
+0x00000000000  0x11fde4  R                                                            
+0x00000000000  0x11fdf6  TierNumber                                                   
+0x00000000000  0x11fe11  HitLocation                                                  
+0x00000000000  0x11fe2d  HitTime                                                      
+0x00000000000  0x11fe45  HitHeightIndicator                                           
+0x00000000000  0x11fe68  bDidHit                                                      
+0x00000000000  0x11fe80  LaserClass                                                   
+0x00000000000  0x11fe9b  LaserMaterial                                                
+0x00000000000  0x11feb9  EndpointMaterial                                             
+0x00000000000  0x11feda  HitFlareNiagaraSystem                                        
+0x00000000000  0x11ff00  MaxDistance                                                  
+0x00000000000  0x11ff1c  bShowTraceHitFlare                                           
+0x00000000000  0x11ff3f  bLimitLaserToTraceHit                                        
+0x00000000000  0x11ff65  bOverrideLimitLaserToCursor                                  
+0x00000000000  0x11ff91  bLimitLaserToCursor                                          
+0x00000000000  0x11ffb5  bOverrideBrightness                                          
+0x00000000000  0x11ffd9  Brightness                                                   
+0x00000000000  0x11fff4  bUnconditionallyVisibleWhenActive                            
+0x00000000000  0x120026  bIgnoresHeroes                                               
+0x00000000000  0x120045  bBenefitsFromBonusPrimaryAttackDistance                      
+0x00000000000  0x12007d  HeroPredropHidden                                            
+0x00000000000  0x12009f  bIsMidAir                                                    
+0x00000000000  0x1200b9  ImpactPoint                                                  
+0x00000000000  0x1200d5  Distance                                                     
+0x00000000000  0x1200ee  CanProceed                                                   
+0x00000000000  0x120109  CanProceed                                                   
+0x00000000000  0x120124  ProjectileHeight                                             
+0x00000000000  0x120145  bOverrideDesaturationAndOpacity                              
+0x00000000000  0x120175  bOverrideRangeAndAlphaStep                                   
+0x00000000000  0x1201a0  OnDestroyed                                                  
+0x00000000000  0x1201bc  OnLivingStateChanged                                         
+0x00000000000  0x1201e1  MaxBloom                                                     
+0x00000000000  0x1201fa  CanProceed                                                   
+0x00000000000  0x120215  _Inner                                                       
+0x00000000000  0x12022c  _Inner                                                       
+0x00000000000  0x120243  _Inner                                                       
+0x00000000000  0x12025a  _Inner                                                       
+0x00000000000  0x120271  PlayerStartTag                                               
+0x00000000000  0x120290  CanProceed                                                   
+0x00000000000  0x1202ab  GameplayBlueprint                                            
+0x00000000000  0x1202cd  CanProceed                                                   
+0x00000000000  0x1202e8  SlotCategory                                                 
+0x00000000000  0x120305  ItemActor                                                    
+0x00000000000  0x12031f  CanProceed                                                   
+0x00000000000  0x12033a  OnDisconnected                                               
+0x00000000000  0x120359  bDisconnected                                                
+0x00000000000  0x120377  OnPlayerLogout                                               
+0x00000000000  0x120396  CanProceed                                                   
+0x00000000000  0x1203b1  CanProceed                                                   
+0x00000000000  0x1203cc  Exotics                                                      
+0x00000000000  0x1203e4  CanProceed                                                   
+0x00000000000  0x1203ff  GameAugmentClass                                             
+0x00000000000  0x120420  bDropPhaseControlsDisabled                                   
+0x00000000000  0x12044b  PrimaryComponentTick                                         
+0x00000000000  0x120470  CrewDetachState                                              
+0x00000000000  0x120490  PodDetachDirection                                           
+0x00000000000  0x1204b3  PodDetachStartLocation                                       
+0x00000000000  0x1204da  LeaderDetachStartLocation                                    
+0x00000000000  0x120504  MoveDirection                                                
+0x00000000000  0x120522  OnTeamIndexChanged                                           
+0x00000000000  0x120545  DetachState                                                  
+0x00000000000  0x120561  CanProceed                                                   
+0x00000000000  0x12057c  DropPod                                                      
+0x00000000000  0x120594  DropPodState                                                 
+0x00000000000  0x1205b1  PodPilot                                                     
+0x00000000000  0x1205ca  bIsLeaderPod                                                 
+0x00000000000  0x1205e7  Velocity                                                     
+0x00000000000  0x120600  DetachingCrewPod                                             
+0x00000000000  0x120621  LeaderPod                                                    
+0x00000000000  0x12063b  PodPilot                                                     
+0x00000000000  0x120654  InputProgressPercent                                         
+0x00000000000  0x120679  InputDirection                                               
+0x00000000000  0x120698  Direction                                                    
+0x00000000000  0x1206b2  LeaderPod                                                    
+0x00000000000  0x1206cc  DetachingCrewPods                                            
+0x00000000000  0x1206ee  DetachState                                                  
+0x00000000000  0x12070a  LeaderPodPilot                                               
+0x00000000000  0x120729  InputDirection                                               
+0x00000000000  0x120748  Direction                                                    
+0x00000000000  0x120762  DropPod                                                      
+0x00000000000  0x12077a  PodPilot                                                     
+0x00000000000  0x120793  InputDirection                                               
+0x00000000000  0x1207b2  Direction                                                    
+0x00000000000  0x1207cc  _Inner                                                       
+0x00000000000  0x1207e3  _Inner                                                       
+0x00000000000  0x1207fa  _Inner                                                       
+0x00000000000  0x120811  _Inner                                                       
+0x00000000000  0x120828  Actor                                                        
+0x00000000000  0x12083e  OverlapComponent                                             
+0x00000000000  0x12085f  UsableComponent                                              
+0x00000000000  0x12087f  SpellTargets                                                 
+0x00000000000  0x12089c  TargetActor                                                  
+0x00000000000  0x1208b8  CanProceed                                                   
+0x00000000000  0x1208d3  HoveredComponent                                             
+0x00000000000  0x1208f4  HoveredActor                                                 
+0x00000000000  0x120911  OnSpawnedCharacterChanged                                    
+0x00000000000  0x12093b  OnAbilitySystemInitialized                                   
+0x00000000000  0x120966  OnGameplaySpellAdded                                         
+0x00000000000  0x12098b  _Inner                                                       
+0x00000000000  0x1209a2  _Inner                                                       
+0x00000000000  0x1209b9  _Inner                                                       
+0x00000000000  0x1209d0  TeamIndex                                                    
+0x00000000000  0x1209ea  Location                                                     
+0x00000000000  0x120a03  bVision                                                      
+0x00000000000  0x120a1b  MaxSimulationIterations                                      
+0x00000000000  0x120a43  MaxSimulationTimeStep                                        
+0x00000000000  0x120a69  DefaultRecommendedLoadout                                    
+0x00000000000  0x120a93  ItemClasses                                                  
+0x00000000000  0x120aaf  RelevantEquipmentAttributes                                  
+0x00000000000  0x120adb  InventoryEffects                                             
+0x00000000000  0x120afc  CanProceed                                                   
+0x00000000000  0x120b17  CanProceed                                                   
+0x00000000000  0x120b32  Item                                                         
+0x00000000000  0x120b47  CanProceed                                                   
+0x00000000000  0x120b62  Item                                                         
+0x00000000000  0x120b77  LastWalkingLocation                                          
+0x00000000000  0x120b9b  bStarterItem                                                 
+0x00000000000  0x120bb8  PlayerStateDupeArray                                         
+0x00000000000  0x120bdd  bDropCurrencyOnPlayerDeath                                   
+0x00000000000  0x120c08  ReceiveControllerChangedDelegate                             
+0x00000000000  0x120c39  ReceiveMoveCompleted                                         
+0x00000000000  0x120c5e  State                                                        
+0x00000000000  0x120c74  bDynamicCameraPanEnabled                                     
+0x00000000000  0x120c9d  CameraManualPanOffset                                        
+0x00000000000  0x120cc3  LivingStateMachine                                           
+0x00000000000  0x120ce6  _Inner                                                       
+0x00000000000  0x120cfd  _Inner                                                       
+0x00000000000  0x120d14  _Inner                                                       
+0x00000000000  0x120d2b  Config                                                       
+0x00000000000  0x120d42  StartTime                                                    
+0x00000000000  0x120d5c  Duration                                                     
+0x00000000000  0x120d75  CanProceed                                                   
+0x00000000000  0x120d90  bValid                                                       
+0x00000000000  0x120da7  ID                                                           
+0x00000000000  0x120dba  TeamIndex                                                    
+0x00000000000  0x120dd4  SourceLocation                                               
+0x00000000000  0x120df3  AudioActor                                                   
+0x00000000000  0x120e0e  CanProceed                                                   
+0x00000000000  0x120e29  PulseCount                                                   
+0x00000000000  0x120e44  bShowIndividuals                                             
+0x00000000000  0x120e65  bShowTeam                                                    
+0x00000000000  0x120e7f  InaccuracyDistance                                           
+0x00000000000  0x120ea2  PlayersDetected                                              
+0x00000000000  0x120ec2  bRevealVaults                                                
+0x00000000000  0x120ee0  bLocalRadar                                                  
+0x00000000000  0x120efc  TeamVaultDataComponent                                       
+0x00000000000  0x120f23  Players                                                      
+0x00000000000  0x120f3b  Vault                                                        
+0x00000000000  0x120f51  SourceUAVID                                                  
+0x00000000000  0x120f6d  Location                                                     
+0x00000000000  0x120f86  ItemClasses                                                  
+0x00000000000  0x120fa2  Radius                                                       
+0x00000000000  0x120fb9  Characters                                                   
+0x00000000000  0x120fd4  bShowCharacters                                              
+0x00000000000  0x120ff4  CanProceed                                                   
+0x00000000000  0x12100f  CanProceed                                                   
+0x00000000000  0x12102a  CanProceed                                                   
+0x00000000000  0x121045  Source                                                       
+0x00000000000  0x12105c  Location                                                     
+0x00000000000  0x121075  PlayerCount                                                  
+0x00000000000  0x121091  ExpiryTime                                                   
+0x00000000000  0x1210ac  TeamIndex                                                    
+0x00000000000  0x1210c6  CharacterClasses                                             
+0x00000000000  0x1210e7  AverageLevel                                                 
+0x00000000000  0x121104  AverageRelicCount                                            
+0x00000000000  0x121126  AverageArmorLevel                                            
+0x00000000000  0x121148  UAVID                                                        
+0x00000000000  0x12115e  TotalPlayerCount                                             
+0x00000000000  0x12117f  FuzzyPlayerLocationComponent                                 
+0x00000000000  0x1211ac  CanProceed                                                   
+0x00000000000  0x1211c7  CanProceed                                                   
+0x00000000000  0x1211e2  CanProceed                                                   
+0x00000000000  0x1211fd  PlayerState                                                  
+0x00000000000  0x121219  PlayerLocationItem                                           
+0x00000000000  0x12123c  TeamIndex                                                    
+0x00000000000  0x121256  Location                                                     
+0x00000000000  0x12126f  CharacterClass                                               
+0x00000000000  0x12128e  PlayerLevel                                                  
+0x00000000000  0x1212aa  CanProceed                                                   
+0x00000000000  0x1212c5  PlayerLocationItems                                          
+0x00000000000  0x1212e9  VaultDataItem                                                
+0x00000000000  0x121307  ID                                                           
+0x00000000000  0x12131a  PlayerLocationItem                                           
+0x00000000000  0x12133d  PlayerLocationItem                                           
+0x00000000000  0x121360  InitialDelay                                                 
+0x00000000000  0x12137d  Period                                                       
+0x00000000000  0x121394  BlinkDuration                                                
+0x00000000000  0x1213b2  ID                                                           
+0x00000000000  0x1213c5  VaultDataItem                                                
+0x00000000000  0x1213e3  VaultDataItem                                                
+0x00000000000  0x121401  X                                                            
+0x00000000000  0x121413  Y                                                            
+0x00000000000  0x121425  Yaw                                                          

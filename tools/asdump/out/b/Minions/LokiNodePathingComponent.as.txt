@@ -1,0 +1,942 @@
+// ============================================================================
+//  MODULE   Minions.LokiNodePathingComponent
+//  SOURCE   Minions/LokiNodePathingComponent.as
+//  CONTENT  1 class(es), 22 function(s), 0 enum(s), 1 global(s), 3320 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiNodePathingComponent;
+
+ULokiNodePathingComponent@ ULokiNodePathingComponent()   // traits=0x20
+{
+    v2 = ULokiNodePathingComponent();
+    return v2;
+}
+/* ---- ULokiNodePathingComponent: 7 dwords / 4 instructions (cache offset 0xa618a) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         85230 ULokiNodePathingComponent             
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ULokiNodePathingComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ULokiNodePathingComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0xa6250) ----
+    0000  PshGPtr       __StaticType_ULokiNodePathingComponent      
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ULokiNodePathingComponent@ ULokiNodePathingComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiNodePathingComponent, v2, typeid(ULokiNodePathingComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0xa6393) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972720                                    ; ULokiNodePathingComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiNodePathingComponent      
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiNodePathingComponent@ ULokiNodePathingComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiNodePathingComponent, v2, typeid(ULokiNodePathingComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0xa64ee) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972720                                    ; ULokiNodePathingComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiNodePathingComponent      
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiNodePathingComponent@ ULokiNodePathingComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiNodePathingComponent, v2, typeid(ULokiNodePathingComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0xa6644) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972720                                    ; ULokiNodePathingComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiNodePathingComponent      
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ULokiNodePathingComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiNodePathingComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnInstance)
+    TArray<AActor@> PathNodeActors;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 RotationPrecision;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<AActor@> CurrNodeActorList;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    ALokiCharacter@ OwningCharacter;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    AAIController@ OwningAIController;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    AActor@ LastPathingActor;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    AActor@ RotateToActor;
+
+    ULokiNodePathingComponent()   // traits=0x21
+    {
+        this.PathNodeActors = TArray();
+        this.CurrNodeActorList = TArray();
+        v2 = 4621819117588971520;
+        this.RotationPrecision = v2;
+        return;
+    }
+    /* ---- ULokiNodePathingComponent: 23 dwords / 12 instructions (cache offset 0xa88a5) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230896                                 ; .PathNodeActors
+        000C  CALLSYS       TArray::$beh0                               
+        0018  PshVPtr       this                                        
+        001C  ADDSi         232 134230896                                 ; .CurrNodeActorList
+        0024  CALLSYS       TArray::$beh0                               
+        0030  SetV8         v2 0x4024000000000000                       
+        003C  LoadThisR     224 134230896                                 ; this.RotationPrecision
+        0044  WRTV8         v2                                          
+        0048  PshVPtr       this                                        
+        004C  FinConstruct  ULokiNodePathingComponent                   
+        0058  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        v2 = this.GetOwner();
+        if (v2 != nullptr) {
+            v4 = cast<ALokiCharacter@>(v2);
+        } else {
+            v4 = nullptr;
+        }
+        v4 = this.OwningCharacter;
+        if (Loki::LokiIsServer(__WorldContext)) {
+            this.InitializeAIController();
+        }
+        return;
+    }
+    /* ---- LokiBeginPlay_Implementation: 36 dwords / 22 instructions (cache offset 0xa6b28) ----
+        0000  PshVPtr       this                                        
+        0004  CALLSYS       UActorComponent::GetOwner                   
+        0010  STOREOBJ      v2                                          
+        0014  CmpPtrNull    v2                                          
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1140856817                                    ; ALokiCharacter@
+        0028  PSF           v4                                          
+        002C  PshVPtr       v2                                          
+        0030  CALLSYS       UObject::opCast                             
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v4                                          
+      L0048:
+        0048  PshVPtr       v4                                          
+        004C  PshVPtr       this                                        
+        0050  ADDSi         248 134230896                                 ; .OwningCharacter
+        0058  REFCPY                                                    
+        005C  PopPtr                                                    
+        0060  PshGPtr       __WorldContext                              
+        006C  CALLSYS       LokiIsServer                                
+        0078  JLowZ         3                                             -> L008C
+        0080  PshVPtr       this                                        
+        0084  CALLINTF      85217                                         ; ULokiNodePathingComponent::InitializeAIController
+      L008C:
+        008C  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            this.UpdateRotationToActor(DeltaSeconds);
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 13 dwords / 7 instructions (cache offset 0xa6d13) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsServer                                
+        0018  JLowZ         4                                             -> L0030
+        0020  PshV8         DeltaSeconds                                
+        0024  PshVPtr       this                                        
+        0028  CALLINTF      85225                                         ; ULokiNodePathingComponent::UpdateRotationToActor
+      L0030:
+        0030  RET           4                                           
+    */
+
+    void InitializeAIController()   // traits=0x20
+    {
+        v2 = this.OwningCharacter.GetController();
+        if (v2 != nullptr) {
+            v4 = cast<AAIController@>(v2);
+        } else {
+            v4 = nullptr;
+        }
+        v4 = this.OwningAIController;
+        v4 = this.OwningAIController;
+        if (v4 != nullptr) {
+            this.OnAIControllerInitialized();
+            return;
+        } else {
+            this.OwningCharacter.ReceiveControllerChangedDelegate.AddUFunction(this, n"OnControllerChanged");
+        }
+        return;
+    }
+    /* ---- InitializeAIController: 57 dwords / 37 instructions (cache offset 0xa6e47) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         248 134230896                                 ; .OwningCharacter
+        000C  RDSPtr                                                    
+        0010  CALLSYS       APawn::GetController                        
+        001C  STOREOBJ      v2                                          
+        0020  CmpPtrNull    v2                                          
+        0024  JZ            9                                             -> L0050
+        002C  TYPEID        1140853236                                    ; AAIController@
+        0034  PSF           v4                                          
+        0038  PshVPtr       v2                                          
+        003C  CALLSYS       UObject::opCast                             
+        0048  JMP           1                                             -> L0054
+      L0050:
+        0050  ClrVPtr       v4                                          
+      L0054:
+        0054  PshVPtr       v4                                          
+        0058  PshVPtr       this                                        
+        005C  ADDSi         256 134230896                                 ; .OwningAIController
+        0064  REFCPY                                                    
+        0068  PopPtr                                                    
+        006C  PshVPtr       this                                        
+        0070  ADDSi         256 134230896                                 ; .OwningAIController
+        0078  RDSPtr                                                    
+        007C  RefCpyV       v4                                          
+        0080  CmpPtrNull    v4                                          
+        0084  JZ            5                                             -> L00A0
+        008C  PshVPtr       this                                        
+        0090  CALLINTF      85220                                         ; ULokiNodePathingComponent::OnAIControllerInitialized
+        0098  JMP           16                                            -> L00E0
+      L00A0:
+        00A0  PshC4         83                                          
+        00A8  CALLSYS       __STATIC_NAME                               
+        00B4  PshRPtr                                                   
+        00B8  PshVPtr       this                                        
+        00BC  PshVPtr       this                                        
+        00C0  ADDSi         248 134230896                                 ; .OwningCharacter
+        00C8  RDSPtr                                                    
+        00CC  ADDSi         1044 67111506                                 ; .ReceiveControllerChangedDelegate
+        00D4  CALLSYS       FPawnControllerChangedSignature::AddUFunction
+      L00E0:
+        00E0  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetPathNodes(TArray<AActor@>&inout PathActors)   // traits=0x20
+    {
+        this.PathNodeActors = PathActors;
+        return;
+    }
+    /* ---- SetPathNodes: 8 dwords / 5 instructions (cache offset 0xa7033) ----
+        0000  PshVPtr       PathActors                                  
+        0004  PshVPtr       this                                        
+        0008  ADDSi         208 134230896                                 ; .PathNodeActors
+        0010  CALLSYS       TArray::opAssign                            
+        001C  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnControllerChanged(APawn@ Pawn, AController@ OldController, AController@ NewController)   // traits=0x20
+    {
+        if (NewController != nullptr) {
+            v2 = cast<AAIController@>(NewController);
+        } else {
+            v2 = nullptr;
+        }
+        v2 = this.OwningAIController;
+        v2 = this.OwningAIController;
+        if (v2 != nullptr) {
+            this.OwningCharacter.ReceiveControllerChangedDelegate.UnbindObject(this);
+            this.OnAIControllerInitialized();
+        }
+        return;
+    }
+    /* ---- OnControllerChanged: 41 dwords / 28 instructions (cache offset 0xa71f1) ----
+        0000  CmpPtrNull    NewController                               
+        0004  JZ            9                                             -> L0030
+        000C  TYPEID        1140853236                                    ; AAIController@
+        0014  PSF           v2                                          
+        0018  PshVPtr       NewController                               
+        001C  CALLSYS       UObject::opCast                             
+        0028  JMP           1                                             -> L0034
+      L0030:
+        0030  ClrVPtr       v2                                          
+      L0034:
+        0034  PshVPtr       v2                                          
+        0038  PshVPtr       this                                        
+        003C  ADDSi         256 134230896                                 ; .OwningAIController
+        0044  REFCPY                                                    
+        0048  PopPtr                                                    
+        004C  PshVPtr       this                                        
+        0050  ADDSi         256 134230896                                 ; .OwningAIController
+        0058  RDSPtr                                                    
+        005C  RefCpyV       v2                                          
+        0060  CmpPtrNull    v2                                          
+        0064  JZ            13                                            -> L00A0
+        006C  PshVPtr       this                                        
+        0070  PshVPtr       this                                        
+        0074  ADDSi         248 134230896                                 ; .OwningCharacter
+        007C  RDSPtr                                                    
+        0080  ADDSi         1044 67111506                                 ; .ReceiveControllerChangedDelegate
+        0088  CALLSYS       FPawnControllerChangedSignature::UnbindObject
+        0094  PshVPtr       this                                        
+        0098  CALLINTF      85220                                         ; ULokiNodePathingComponent::OnAIControllerInitialized
+      L00A0:
+        00A0  RET           8                                           
+    */
+
+    void OnAIControllerInitialized()   // traits=0x20
+    {
+        this.OwningAIController.ReceiveMoveCompleted.AddUFunction(this, n"OnMoveCompleted");
+        v4 = System::SetTimerForNextTick(this, "StartMoving");
+        return;
+    }
+    /* ---- OnAIControllerInitialized: 29 dwords / 16 instructions (cache offset 0xa73b3) ----
+        0000  PshC4         84                                          
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  PshVPtr       this                                        
+        0020  ADDSi         256 134230896                                 ; .OwningAIController
+        0028  RDSPtr                                                    
+        002C  ADDSi         1224 67111412                                 ; .ReceiveMoveCompleted
+        0034  CALLSYS       FAIMoveCompletedSignature::AddUFunction     
+        0040  PGA           "StartMoving"                               
+        004C  PshVPtr       this                                        
+        0050  PSF           v4                                          
+        0054  CALLSYS       SetTimerForNextTick                         
+        0060  PSF           v4                                          
+        0064  CALLSYS       FTimerHandle::$beh2                         
+        0070  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void StartMoving()   // traits=0x20
+    {
+        v2 = this.FindClosestPathingActor();
+        v2 = this.LastPathingActor;
+        v2 = this.LastPathingActor;
+        if (v2 != nullptr) {
+            this.StartRotatingToActor(this.LastPathingActor);
+        }
+        v3 = false;
+        this.OwningCharacter.SetIdle(v3);
+        return;
+    }
+    /* ---- StartMoving: 36 dwords / 26 instructions (cache offset 0xa74cf) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      85228                                         ; ULokiNodePathingComponent::FindClosestPathingActor
+        000C  STOREOBJ      v2                                          
+        0010  PshVPtr       v2                                          
+        0014  PshVPtr       this                                        
+        0018  ADDSi         264 134230896                                 ; .LastPathingActor
+        0020  REFCPY                                                    
+        0024  PopPtr                                                    
+        0028  PshVPtr       this                                        
+        002C  ADDSi         264 134230896                                 ; .LastPathingActor
+        0034  RDSPtr                                                    
+        0038  RefCpyV       v2                                          
+        003C  CmpPtrNull    v2                                          
+        0040  JZ            7                                             -> L0064
+        0048  PshVPtr       this                                        
+        004C  ADDSi         264 134230896                                 ; .LastPathingActor
+        0054  RDSPtr                                                    
+        0058  PshVPtr       this                                        
+        005C  CALLINTF      85224                                         ; ULokiNodePathingComponent::StartRotatingToActor
+      L0064:
+        0064  SetV1         v3 0                                        
+        006C  PshV4         v3                                          
+        0070  PshVPtr       this                                        
+        0074  ADDSi         248 134230896                                 ; .OwningCharacter
+        007C  RDSPtr                                                    
+        0080  CALLSYS       ALokiCharacter::SetIdle                     
+        008C  RET           2                                           
+    */
+
+    void BuildNodeActorList()   // traits=0x20
+    {
+        this.CurrNodeActorList.Empty(0);
+        v6 = TArray();
+        v8 = this.LastPathingActor;
+        if (v8 != nullptr) {
+            v6.Add(this.LastPathingActor);
+            v12 = this.FindRandomPathingActor(v6);
+            this.CurrNodeActorList.Add(v12);
+            v6 = this.CurrNodeActorList;
+        }
+        v1 = this.CurrNodeActorList.Num();
+        v13 = this.PathNodeActors.Num();
+        while (v1 < v13) {
+            v12 = this.FindRandomPathingActor(v6);
+            this.CurrNodeActorList.Add(v12);
+            v6.Add(v12);
+            continue;
+        }
+        return;
+    }
+    /* ---- BuildNodeActorList: 91 dwords / 56 instructions (cache offset 0xa766e) ----
+        0000  PshC4         0                                           
+        0008  PshVPtr       this                                        
+        000C  ADDSi         232 134230896                                 ; .CurrNodeActorList
+        0014  CALLSYS       TArray::Empty                               
+        0020  PSF           v6                                          
+        0024  CALLSYS       TArray::$beh0                               
+        0030  PshVPtr       this                                        
+        0034  ADDSi         264 134230896                                 ; .LastPathingActor
+        003C  RDSPtr                                                    
+        0040  RefCpyV       v8                                          
+        0044  CmpPtrNull    v8                                          
+        0048  JZ            27                                            -> L00BC
+        0050  PshVPtr       this                                        
+        0054  ADDSi         264 134230896                                 ; .LastPathingActor
+        005C  PSF           v6                                          
+        0060  CALLSYS       TArray::Add                                 
+        006C  PSF           v6                                          
+        0070  PshVPtr       this                                        
+        0074  CALLINTF      85229                                         ; ULokiNodePathingComponent::FindRandomPathingActor
+        007C  STOREOBJ      v12                                         
+        0080  PSF           v12                                         
+        0084  PshVPtr       this                                        
+        0088  ADDSi         232 134230896                                 ; .CurrNodeActorList
+        0090  CALLSYS       TArray::Add                                 
+        009C  PshVPtr       this                                        
+        00A0  ADDSi         232 134230896                                 ; .CurrNodeActorList
+        00A8  PSF           v6                                          
+        00AC  CALLSYS       TArray::opAssign                            
+        00B8  FreeNullV8    v12                                         
+      L00BC:
+        00BC  PshVPtr       this                                        
+        00C0  ADDSi         232 134230896                                 ; .CurrNodeActorList
+        00C8  CALLSYS       TArray::Num                                 
+        00D4  CpyRtoV4      v1                                          
+        00D8  PshVPtr       this                                        
+        00DC  ADDSi         208 134230896                                 ; .PathNodeActors
+        00E4  CALLSYS       TArray::Num                                 
+        00F0  CpyRtoV4      v13                                         
+        00F4  CMPi          v1 v13                                      
+        00FC  JNS           21                                            -> L0158
+        0104  SUSPEND                                                   
+        0108  PSF           v6                                          
+        010C  PshVPtr       this                                        
+        0110  CALLINTF      85229                                         ; ULokiNodePathingComponent::FindRandomPathingActor
+        0118  STOREOBJ      v12                                         
+        011C  PSF           v12                                         
+        0120  PshVPtr       this                                        
+        0124  ADDSi         232 134230896                                 ; .CurrNodeActorList
+        012C  CALLSYS       TArray::Add                                 
+        0138  PSF           v12                                         
+        013C  PSF           v6                                          
+        0140  CALLSYS       TArray::Add                                 
+        014C  FreeNullV8    v12                                         
+        0150  JMP           -39                                           -> L00BC
+      L0158:
+        0158  PSF           v6                                          
+        015C  CALLSYS       TArray::$beh2                               
+        0168  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnMoveCompleted(const FAIRequestID& RequestID, const EPathFollowingResult MovementResult)   // traits=0x20
+    {
+        v1 = this.CurrNodeActorList.Num();
+        if (v1 == 0) {
+            this.BuildNodeActorList();
+        }
+        v1 = this.CurrNodeActorList.Num();
+        if (v1 > 0) {
+            this.CurrNodeActorList[0] = this.LastPathingActor;
+            this.CurrNodeActorList.RemoveAt(0);
+            this.StartRotatingToActor(this.LastPathingActor);
+        }
+        return;
+    }
+    /* ---- OnMoveCompleted: 56 dwords / 34 instructions (cache offset 0xa7947) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         232 134230896                                 ; .CurrNodeActorList
+        000C  CALLSYS       TArray::Num                                 
+        0018  CpyRtoV4      v1                                          
+        001C  CMPIi         v1 0                                        
+        0024  JNZ           3                                             -> L0038
+        002C  PshVPtr       this                                        
+        0030  CALLINTF      85222                                         ; ULokiNodePathingComponent::BuildNodeActorList
+      L0038:
+        0038  PshVPtr       this                                        
+        003C  ADDSi         232 134230896                                 ; .CurrNodeActorList
+        0044  CALLSYS       TArray::Num                                 
+        0050  CpyRtoV4      v1                                          
+        0054  CMPIi         v1 0                                        
+        005C  JNP           30                                            -> L00DC
+        0064  PshC4         0                                           
+        006C  PshVPtr       this                                        
+        0070  ADDSi         232 134230896                                 ; .CurrNodeActorList
+        0078  Thiscall1     TArray::opIndex                             
+        0084  PshRPtr                                                   
+        0088  RDSPtr                                                    
+        008C  PshVPtr       this                                        
+        0090  ADDSi         264 134230896                                 ; .LastPathingActor
+        0098  REFCPY                                                    
+        009C  PopPtr                                                    
+        00A0  PshC4         0                                           
+        00A8  PshVPtr       this                                        
+        00AC  ADDSi         232 134230896                                 ; .CurrNodeActorList
+        00B4  CALLSYS       TArray::RemoveAt                            
+        00C0  PshVPtr       this                                        
+        00C4  ADDSi         264 134230896                                 ; .LastPathingActor
+        00CC  RDSPtr                                                    
+        00D0  PshVPtr       this                                        
+        00D4  CALLINTF      85224                                         ; ULokiNodePathingComponent::StartRotatingToActor
+      L00DC:
+        00DC  RET           5                                           
+    */
+
+    void StartRotatingToActor(AActor@ RotateActor)   // traits=0x20
+    {
+        v2 = RotateActor;
+        if (v2 != nullptr) {
+            RotateActor = this.RotateToActor;
+            this.OwningAIController.SetFocus(this.RotateToActor)  /* UFunction K2_SetFocus */;
+        }
+        return;
+    }
+    /* ---- StartRotatingToActor: 23 dwords / 17 instructions (cache offset 0xa7b84) ----
+        0000  PshVPtr       RotateActor                                 
+        0004  RefCpyV       v2                                          
+        0008  CmpPtrNull    v2                                          
+        000C  JZ            17                                            -> L0058
+        0014  PshVPtr       RotateActor                                 
+        0018  PshVPtr       this                                        
+        001C  ADDSi         272 134230896                                 ; .RotateToActor
+        0024  REFCPY                                                    
+        0028  PopPtr                                                    
+        002C  PshVPtr       this                                        
+        0030  ADDSi         272 134230896                                 ; .RotateToActor
+        0038  RDSPtr                                                    
+        003C  PshVPtr       this                                        
+        0040  ADDSi         256 134230896                                 ; .OwningAIController
+        0048  RDSPtr                                                    
+        004C  CALLSYS       AAIController::SetFocus                     
+      L0058:
+        0058  RET           4                                           
+    */
+
+    void UpdateRotationToActor(const float64 DeltaSeconds)   // traits=0x20
+    {
+        v2 = this.RotateToActor;
+        if (v2 == nullptr) {
+            return;
+        } else {
+            v16 = this.OwningCharacter.GetActorForwardVector();
+            v10 = this.RotateToActor.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v28 = this.OwningCharacter.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v34 = v10 - v28;
+            v34.Normalize(4487126258294980608);
+            if (v16.IsNearlyZero(4547007121832542208)) {
+                v3 = true;
+            } else {
+                v39 = v34.IsNearlyZero(4547007121832542208);
+                v3 = v39;
+            }
+            if (v3) {
+                v42 = 4607182418800017408;
+            } else {
+                v36 = v16.CosineAngle2D(v34);
+                v42 = v36;
+            }
+            v44 = Math::Acos(v42);
+            v38 = Math::RadiansToDegrees(v44);
+            v42 = v38;
+            v36 = this.RotationPrecision;
+            if (v42 < v36) {
+                nullptr = this.RotateToActor;
+                this.OnFinishedRotatingToActor();
+            }
+        }
+        return;
+    }
+    /* ---- UpdateRotationToActor: 115 dwords / 68 instructions (cache offset 0xa7ccf) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         272 134230896                                 ; .RotateToActor
+        000C  RDSPtr                                                    
+        0010  RefCpyV       v2                                          
+        0014  CmpPtrNull    v2                                          
+        0018  JNZ           2                                             -> L0028
+        0020  JMP           104                                           -> L01C8
+      L0028:
+        0028  PSF           v16                                         
+        002C  PshVPtr       this                                        
+        0030  ADDSi         248 134230896                                 ; .OwningCharacter
+        0038  RDSPtr                                                    
+        003C  CALLSYS       AActor::GetActorForwardVector               
+        0048  PSF           v10                                         
+        004C  PshVPtr       this                                        
+        0050  ADDSi         272 134230896                                 ; .RotateToActor
+        0058  RDSPtr                                                    
+        005C  CALLSYS       AActor::GetActorLocation                    
+        0068  PSF           v28                                         
+        006C  PshVPtr       this                                        
+        0070  ADDSi         248 134230896                                 ; .OwningCharacter
+        0078  RDSPtr                                                    
+        007C  CALLSYS       AActor::GetActorLocation                    
+        0088  PSF           v28                                         
+        008C  PSF           v34                                         
+        0090  PSF           v10                                         
+        0094  CALLSYS       FVector::opSub                              
+        00A0  PshC8         0x3e45798ee0000000                          
+        00AC  PSF           v34                                         
+        00B0  CALLSYS       FVector::Normalize                          
+        00BC  PshC8         0x3f1a36e2e0000000                          
+        00C8  PSF           v16                                         
+        00CC  CALLSYS       FVector::IsNearlyZero                       
+        00D8  JLowZ         4                                             -> L00F0
+        00E0  SetV1         v3 1                                        
+        00E8  JMP           10                                            -> L0118
+      L00F0:
+        00F0  PshC8         0x3f1a36e2e0000000                          
+        00FC  PSF           v34                                         
+        0100  CALLSYS       FVector::IsNearlyZero                       
+        010C  CpyRtoV4      v39                                         
+        0110  CpyVtoV4      v3 v39                                      
+      L0118:
+        0118  CpyVtoR1      v3                                          
+        011C  JLowZ         5                                             -> L0138
+        0124  SetV8         v42 0x3ff0000000000000                      
+        0130  JMP           8                                             -> L0158
+      L0138:
+        0138  PSF           v34                                         
+        013C  PSF           v16                                         
+        0140  CALLSYS       FVector::CosineAngle2D                      
+        014C  CpyRtoV8      v36                                         
+        0150  CpyVtoV8      v42 v36                                     
+      L0158:
+        0158  PshV8         v42                                         
+        015C  CALLSYS       Acos                                        
+        0168  CpyRtoV8      v44                                         
+        016C  PSF           v44                                         
+        0170  CALLSYS       RadiansToDegrees                            
+        017C  CpyRtoV8      v38                                         
+        0180  CpyVtoV8      v42 v38                                     
+        0188  LoadThisR     224 134230896                                 ; this.RotationPrecision
+        0190  RDR8          v36                                         
+        0194  CMPd          v42 v36                                     
+        019C  JNS           9                                             -> L01C8
+        01A4  PshNull                                                   
+        01A8  PshVPtr       this                                        
+        01AC  ADDSi         272 134230896                                 ; .RotateToActor
+        01B4  REFCPY                                                    
+        01B8  PopPtr                                                    
+        01BC  PshVPtr       this                                        
+        01C0  CALLINTF      85226                                         ; ULokiNodePathingComponent::OnFinishedRotatingToActor
+      L01C8:
+        01C8  RET           4                                           
+    */
+
+    void OnFinishedRotatingToActor()   // traits=0x20
+    {
+        v2 = this.LastPathingActor;
+        if (v2 != nullptr) {
+            this.MoveToActor(this.LastPathingActor);
+        }
+        return;
+    }
+    /* ---- OnFinishedRotatingToActor: 16 dwords / 12 instructions (cache offset 0xa8005) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         264 134230896                                 ; .LastPathingActor
+        000C  RDSPtr                                                    
+        0010  RefCpyV       v2                                          
+        0014  CmpPtrNull    v2                                          
+        0018  JZ            7                                             -> L003C
+        0020  PshVPtr       this                                        
+        0024  ADDSi         264 134230896                                 ; .LastPathingActor
+        002C  RDSPtr                                                    
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      85227                                         ; ULokiNodePathingComponent::MoveToActor
+      L003C:
+        003C  RET           2                                           
+    */
+
+    bool MoveToActor(AActor@ LocationActor)   // traits=0x20
+    {
+        v2 = LocationActor;
+        if (v2 != nullptr) {
+            v3 = true;
+            v6 = TSubclassOf(nullptr);
+            v7 = false;
+            v8 = true;
+            v9 = true;
+            v11 = this.OwningAIController.MoveToActor(LocationActor, 1120403456, v9, v8, v7, v6, v3);
+            v12 = int(v11);
+            if (v12 == 2) {
+                v7 = true;
+                return v7;
+            }
+        } else {
+            v3 = false;
+        }
+        return v3;
+    }
+    /* ---- MoveToActor: 49 dwords / 32 instructions (cache offset 0xa812b) ----
+        0000  PshVPtr       LocationActor                               
+        0004  RefCpyV       v2                                          
+        0008  CmpPtrNull    v2                                          
+        000C  JZ            40                                            -> L00B4
+        0014  SetV1         v3 1                                        
+        001C  PshV4         v3                                          
+        0020  PshNull                                                   
+        0024  PSF           v6                                          
+        0028  CALLSYS       TSubclassOf::$beh0                          
+        0034  PSF           v6                                          
+        0038  SetV1         v7 0                                        
+        0040  PshV4         v7                                          
+        0044  SetV1         v8 1                                        
+        004C  PshV4         v8                                          
+        0050  SetV1         v9 1                                        
+        0058  PshV4         v9                                          
+        005C  PshC4         1120403456                                  
+        0064  PshVPtr       LocationActor                               
+        0068  PshVPtr       this                                        
+        006C  ADDSi         256 134230896                                 ; .OwningAIController
+        0074  RDSPtr                                                    
+        0078  CALLSYS       AAIController::MoveToActor                  
+        0084  CpyRtoV4      v11                                         
+        0088  sbTOi         v12 v11                                     
+        0090  CMPIi         v12 2                                       
+        0098  JNZ           5                                             -> L00B4
+        00A0  SetV1         v7 1                                        
+        00A8  CpyVtoR4      v7                                          
+        00AC  JMP           3                                             -> L00C0
+      L00B4:
+        00B4  SetV1         v3 0                                        
+        00BC  CpyVtoR4      v3                                          
+      L00C0:
+        00C0  RET           4                                           
+    */
+
+    AActor@ FindClosestPathingActor()   // traits=0x20
+    {
+        v8 = FVector();
+        v10 = 13830554455654793216;
+        v14 = this.GetOwner();
+        v28 = v14.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+        v34 = this.PathNodeActors.Iterator();
+        while (true) {
+            v41 = v34.CanProceed;
+            if (!v41) break;
+            v44 = v34.Proceed();
+            v34.Proceed();
+            if (v44 != nullptr) {
+                v22 = v44.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v12 = v28.DistSquared(v22);
+                if (v2 == nullptr) {
+                    v41 = true;
+                } else {
+                    v53 = v12 < v10;
+                    v41 = v53;
+                }
+                if (v41) {
+                    v2 = v44;
+                    v8 = v22;
+                    v10 = v12;
+                }
+            }
+        }
+        return v2;
+    }
+    /* ---- FindClosestPathingActor: 83 dwords / 52 instructions (cache offset 0xa82df) ----
+        0000  PSF           v8                                          
+        0004  CALLSYS       FVector::$beh0                              
+        0010  SetV8         v10 0xbff0000000000000                      
+        001C  PshVPtr       this                                        
+        0020  CALLSYS       UActorComponent::GetOwner                   
+        002C  STOREOBJ      v14                                         
+        0030  PSF           v28                                         
+        0034  PshVPtr       v14                                         
+        0038  CALLSYS       AActor::GetActorLocation                    
+        0044  PSF           v34                                         
+        0048  PshVPtr       this                                        
+        004C  ADDSi         208 134230896                                 ; .PathNodeActors
+        0054  CALLSYS       TArray::Iterator                            
+        0060  JMP           48                                            -> L0128
+      L0068:
+        0068  SUSPEND                                                   
+        006C  PSF           v34                                         
+        0070  CALLSYS       TArrayIterator::Proceed                     
+        007C  PshRPtr                                                   
+        0080  RDSPtr                                                    
+        0084  RefCpyV       v44                                         
+        0088  CmpPtrNull    v44                                         
+        008C  JZ            36                                            -> L0124
+        0094  PSF           v22                                         
+        0098  PshVPtr       v44                                         
+        009C  CALLSYS       AActor::GetActorLocation                    
+        00A8  PSF           v22                                         
+        00AC  PSF           v28                                         
+        00B0  CALLSYS       FVector::DistSquared                        
+        00BC  CpyRtoV8      v12                                         
+        00C0  CmpPtrNull    v2                                          
+        00C4  JNZ           4                                             -> L00DC
+        00CC  SetV1         v41 1                                       
+        00D4  JMP           6                                             -> L00F4
+      L00DC:
+        00DC  CMPd          v12 v10                                     
+        00E4  TS                                                        
+        00E8  CpyRtoV4      v53                                         
+        00EC  CpyVtoV4      v41 v53                                     
+      L00F4:
+        00F4  CpyVtoR1      v41                                         
+        00F8  JLowZ         9                                             -> L0124
+        0100  PshVPtr       v44                                         
+        0104  RefCpyV       v2                                          
+        0108  PSF           v22                                         
+        010C  PSF           v8                                          
+        0110  CALLSYS       FVector::opAssign                           
+        011C  CpyVtoV8      v10 v12                                     
+      L0124:
+        0124  FreeNullV8    v44                                         
+      L0128:
+        0128  LoadVObjR     v34 16 268448553                              ; .CanProceed
+        0134  RDR1          v41                                         
+        0138  CpyVtoR1      v41                                         
+        013C  JLowNZ        -55                                           -> L0068
+        0144  LOADOBJ       v2                                          
+        0148  RET           2                                           
+    */
+
+    AActor@ FindRandomPathingActor(TArray<AActor@>&inout IgnoreActors)   // traits=0x20
+    {
+        v2 = this.PathNodeActors.Num();
+        v2 = v2 - 1;
+        v4 = Math::RandRange(0, v2);
+        v5 = 0;
+        v1 = this.PathNodeActors.Num();
+        while (v5 < v1) {
+            v8 = this.PathNodeActors[v4];
+            if (v8 == nullptr) {
+                v6 = 0;
+            } else {
+                v9 = IgnoreActors.Contains(v8);
+                v9 = !v9;
+                v6 = v9;
+            }
+            if (v6) {
+                return v8;
+            }
+            v3 = v4 + 1;
+            v2 = this.PathNodeActors.Num();
+            v4 = v3 % v2;
+            v5++;
+            continue;
+        }
+        return v12;
+    }
+    /* ---- FindRandomPathingActor: 82 dwords / 50 instructions (cache offset 0xa862f) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230896                                 ; .PathNodeActors
+        000C  CALLSYS       TArray::Num                                 
+        0018  CpyRtoV4      v2                                          
+        001C  SUBIi         v2 v2 1                                     
+        0028  PshV4         v2                                          
+        002C  PshC4         0                                           
+        0034  CALLSYS       RandRange                                   
+        0040  CpyRtoV4      v4                                          
+        0044  SetV4         v5 0                                        
+      L004C:
+        004C  PshVPtr       this                                        
+        0050  ADDSi         208 134230896                                 ; .PathNodeActors
+        0058  CALLSYS       TArray::Num                                 
+        0064  CpyRtoV4      v1                                          
+        0068  CMPi          v5 v1                                       
+        0070  JNS           49                                            -> L013C
+        0078  SUSPEND                                                   
+        007C  PshV4         v4                                          
+        0080  PshVPtr       this                                        
+        0084  ADDSi         208 134230896                                 ; .PathNodeActors
+        008C  Thiscall1     TArray::opIndex                             
+        0098  PshRPtr                                                   
+        009C  RDSPtr                                                    
+        00A0  RefCpyV       v8                                          
+        00A4  CmpPtrNull    v8                                          
+        00A8  JNZ           4                                             -> L00C0
+        00B0  SetV4         v6 0                                        
+        00B8  JMP           9                                             -> L00E4
+      L00C0:
+        00C0  PSF           v8                                          
+        00C4  PshVPtr       IgnoreActors                                
+        00C8  CALLSYS       TArray::Contains                            
+        00D4  CpyRtoV4      v9                                          
+        00D8  NOT           v9                                          
+        00DC  CpyVtoV4      v6 v9                                       
+      L00E4:
+        00E4  CpyVtoR1      v6                                          
+        00E8  JLowZ         3                                             -> L00FC
+        00F0  LOADOBJ       v8                                          
+        00F4  JMP           18                                            -> L0144
+      L00FC:
+        00FC  ADDIi         v3 v4 1                                     
+        0108  PshVPtr       this                                        
+        010C  ADDSi         208 134230896                                 ; .PathNodeActors
+        0114  CALLSYS       TArray::Num                                 
+        0120  CpyRtoV4      v2                                          
+        0124  MODi          v4 v3 v2                                    
+        012C  IncVi         v5                                          
+        0130  FreeNullV8    v8                                          
+        0134  JMP           -60                                           -> L004C
+      L013C:
+        013C  FreeNullV8    v12                                         
+        0140  LOADOBJ       v12                                         
+      L0144:
+        0144  RET           4                                           
+    */
+
+    void ~ULokiNodePathingComponent()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ULokiNodePathingComponent: 13 dwords / 7 instructions (cache offset 0xa89e0) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230896                                 ; .PathNodeActors
+        000C  CALLSYS       TArray::$beh2                               
+        0018  PshVPtr       this                                        
+        001C  ADDSi         232 134230896                                 ; .CurrNodeActorList
+        0024  CALLSYS       TArray::$beh2                               
+        0030  RET           2                                           
+    */
+
+}
+

@@ -1,0 +1,3401 @@
+// ============================================================================
+//  MODULE   Core.AimingVis.LokiAimingVisComponent
+//  SOURCE   Core/AimingVis/LokiAimingVisComponent.as
+//  CONTENT  2 class(es), 89 function(s), 0 enum(s), 1 global(s), 11756 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiAimingVisComponentScript;
+
+ULokiAimingVisComponentScript@ ULokiAimingVisComponentScript()   // traits=0x20
+{
+    v2 = ULokiAimingVisComponentScript();
+    return v2;
+}
+/* ---- ULokiAimingVisComponentScript: 7 dwords / 4 instructions (cache offset 0x5c003) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84723 ULokiAimingVisComponentScript         
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ULokiAimingVisComponentScript::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ULokiAimingVisComponentScript);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x5c0cd) ----
+    0000  PshGPtr       __StaticType_ULokiAimingVisComponentScript  
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ULokiAimingVisComponentScript@ ULokiAimingVisComponentScript::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiAimingVisComponentScript, v2, typeid(ULokiAimingVisComponentScript@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x5c214) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972665                                    ; ULokiAimingVisComponentScript@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiAimingVisComponentScript  
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiAimingVisComponentScript@ ULokiAimingVisComponentScript::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiAimingVisComponentScript, v2, typeid(ULokiAimingVisComponentScript@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x5c373) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972665                                    ; ULokiAimingVisComponentScript@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiAimingVisComponentScript  
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiAimingVisComponentScript@ ULokiAimingVisComponentScript::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiAimingVisComponentScript, v2, typeid(ULokiAimingVisComponentScript@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x5c4cd) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972665                                    ; ULokiAimingVisComponentScript@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiAimingVisComponentScript  
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FLaserScriptOverrides
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bOverrideDesaturationAndOpacity;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bOverrideRangeAndAlphaStep;
+
+    FLaserScriptOverrides()   // traits=0x21
+    {
+        v1 = false;
+        this.bOverrideDesaturationAndOpacity = v1;
+        v1 = false;
+        this.bOverrideRangeAndAlphaStep = v1;
+        return;
+    }
+    /* ---- FLaserScriptOverrides: 11 dwords / 7 instructions (cache offset 0x5c718) ----
+        0000  SetV1         v1 0                                        
+        0008  LoadThisR     0 134230845                                   ; this.bOverrideDesaturationAndOpacity
+        0010  WRTV1         v1                                          
+        0014  SetV1         v1 0                                        
+        001C  LoadThisR     1 134230845                                   ; this.bOverrideRangeAndAlphaStep
+        0024  WRTV1         v1                                          
+        0028  RET           2                                           
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiAimingVisComponentScript : ULokiAimingVisComponent
+// unreal base : /Script/Loki.LokiAimingVisComponent
+// C++ header  : ../../../Loki/Source/Loki/LokiAimingVisComponent.h
+// static class global: __StaticType_ULokiAimingVisComponentScript
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    ALokiCharacter@ OwnerCharacter;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bHasInitializedClient;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bHasInitializedLocalClient;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    bool bHeroUsesAimingLaser;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance, Transient)
+    ALokiAimingLaser@ ClientLaserInstance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TArray<FAimingLaserSettings> LaserSettings;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    int SpawnLaserSettingsIndex;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    int CurrentLaserSettingsIndex;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    int ReplicatedLaserSettingsIndex;
+
+    ULokiAimingVisComponentScript()   // traits=0x21
+    {
+        this.LaserSettings = TArray();
+        v1 = false;
+        this.bHasInitializedClient = v1;
+        v1 = false;
+        this.bHasInitializedLocalClient = v1;
+        v1 = true;
+        this.bHeroUsesAimingLaser = v1;
+        v2 = 0;
+        this.SpawnLaserSettingsIndex = v2;
+        v2 = -1;
+        this.ReplicatedLaserSettingsIndex = v2;
+        return;
+    }
+    /* ---- ULokiAimingVisComponentScript: 36 dwords / 21 instructions (cache offset 0x65900) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         256 134230841                                 ; .LaserSettings
+        000C  CALLSYS       TArray::$beh0                               
+        0018  SetV1         v1 0                                        
+        0020  LoadThisR     240 134230841                                 ; this.bHasInitializedClient
+        0028  WRTV1         v1                                          
+        002C  SetV1         v1 0                                        
+        0034  LoadThisR     241 134230841                                 ; this.bHasInitializedLocalClient
+        003C  WRTV1         v1                                          
+        0040  SetV1         v1 1                                        
+        0048  LoadThisR     242 134230841                                 ; this.bHeroUsesAimingLaser
+        0050  WRTV1         v1                                          
+        0054  SetV4         v2 0                                        
+        005C  LoadThisR     272 134230841                                 ; this.SpawnLaserSettingsIndex
+        0064  WRTV4         v2                                          
+        0068  SetV4         v2 -1                                       
+        0070  LoadThisR     280 134230841                                 ; this.ReplicatedLaserSettingsIndex
+        0078  WRTV4         v2                                          
+        007C  PshVPtr       this                                        
+        0080  FinConstruct  ULokiAimingVisComponentScript               
+        008C  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        v1 = this.ReplicatedLaserSettingsIndex;
+        if (v1 >= 0) {
+            v1 = this.ReplicatedLaserSettingsIndex;
+            this.SpawnLaserSettingsIndex = v1;
+        }
+        return;
+    }
+    /* ---- LokiBeginPlay_Implementation: 14 dwords / 9 instructions (cache offset 0x5cdbd) ----
+        0000  LoadThisR     280 134230841                                 ; this.ReplicatedLaserSettingsIndex
+        0008  RDR4          v1                                          
+        000C  CMPIi         v1 0                                        
+        0014  JS            6                                             -> L0034
+        001C  LoadThisR     280 134230841                                 ; this.ReplicatedLaserSettingsIndex
+        0024  RDR4          v1                                          
+        0028  LoadThisR     272 134230841                                 ; this.SpawnLaserSettingsIndex
+        0030  WRTV4         v1                                          
+      L0034:
+        0034  RET           2                                           
+    */
+
+    void InitClient()   // traits=0x20
+    {
+        __Evt_Execute(this, n"InitClient");
+        return;
+    }
+    /* ---- InitClient: 11 dwords / 6 instructions (cache offset 0x5cef2) ----
+        0000  PshC4         134                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=InitClient, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    void InitClient_Implementation()   // traits=0x20
+    {
+        v1 = Loki::LokiIsClient(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v1 = this.bHasInitializedClient;
+            v1 = !v1;
+            if (v1) {
+                v1 = this.ValidateOwner();
+                v1 = !v1;
+                if (v1) {
+                    return;
+                } else {
+                    this.OnShowAimingLaserChanged();
+                    this.OnLimitLaserToCursorChanged();
+                    this.InitClientLaser();
+                    this.OwnerCharacter.OnDestroyed.AddUFunction(this, n"OnOwnerDestroyed");
+                    this.BindHardCodedDelegates();
+                    v1 = true;
+                    this.bHasInitializedClient = v1;
+                }
+            }
+        }
+        return;
+    }
+    /* ---- InitClient_Implementation: 65 dwords / 40 instructions (cache offset 0x5cfb0) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  CpyRtoV4      v1                                          
+        001C  NOT           v1                                          
+        0020  CpyVtoR1      v1                                          
+        0024  JLowZ         2                                             -> L0034
+        002C  JMP           51                                            -> L0100
+      L0034:
+        0034  LoadThisR     240 134230841                                 ; this.bHasInitializedClient
+        003C  RDR1          v1                                          
+        0040  NOT           v1                                          
+        0044  CpyVtoR1      v1                                          
+        0048  JLowZ         44                                            -> L0100
+        0050  PshVPtr       this                                        
+        0054  CALLINTF      84653                                         ; ULokiAimingVisComponentScript::ValidateOwner
+        005C  CpyRtoV4      v1                                          
+        0060  NOT           v1                                          
+        0064  CpyVtoR1      v1                                          
+        0068  JLowZ         2                                             -> L0078
+        0070  JMP           34                                            -> L0100
+      L0078:
+        0078  PshVPtr       this                                        
+        007C  CALLINTF      84671                                         ; ULokiAimingVisComponentScript::OnShowAimingLaserChanged
+        0084  PshVPtr       this                                        
+        0088  CALLINTF      84673                                         ; ULokiAimingVisComponentScript::OnLimitLaserToCursorChanged
+        0090  PshVPtr       this                                        
+        0094  CALLINTF      84661                                         ; ULokiAimingVisComponentScript::InitClientLaser
+        009C  PshC4         42                                          
+        00A4  CALLSYS       __STATIC_NAME                               
+        00B0  PshRPtr                                                   
+        00B4  PshVPtr       this                                        
+        00B8  PshVPtr       this                                        
+        00BC  ADDSi         232 134230841                                 ; .OwnerCharacter
+        00C4  RDSPtr                                                    
+        00C8  ADDSi         544 67111343                                  ; .OnDestroyed
+        00D0  CALLSYS       FActorDestroyedSignature::AddUFunction      
+        00DC  PshVPtr       this                                        
+        00E0  CALLSYS       ULokiAimingVisComponent::BindHardCodedDelegates
+        00EC  SetV1         v1 1                                        
+        00F4  LoadThisR     240 134230841                                 ; this.bHasInitializedClient
+        00FC  WRTV1         v1                                          
+      L0100:
+        0100  RET           2                                           
+    */
+
+    void InitLocalClient()   // traits=0x20
+    {
+        __Evt_Execute(this, n"InitLocalClient");
+        return;
+    }
+    /* ---- InitLocalClient: 11 dwords / 6 instructions (cache offset 0x5d1e3) ----
+        0000  PshC4         135                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=InitLocalClient, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    void InitLocalClient_Implementation()   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.IsOwnerLocallyControlled();
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = this.bHasInitializedLocalClient;
+            v2 = !v2;
+            if (v2) {
+                v7 = FOnGenericPlayerConfigValueUpdated(this, n"OnShowAimingLaserChanged");
+                UPlayerConfigManager::RegisterOnGenericPlayerConfigValueUpdated(__WorldContext, n"Aiming", n"UseAimingLaser", v7);
+                v7 = FOnGenericPlayerConfigValueUpdated(this, n"OnLimitLaserToCursorChanged");
+                UPlayerConfigManager::RegisterOnGenericPlayerConfigValueUpdated(__WorldContext, n"Aiming", n"LimitLaserToCursor", v7);
+                this.OnShowAimingLaserChanged();
+                this.OnLimitLaserToCursorChanged();
+                this.InitClientLaser();
+                v1 = true;
+                this.bHasInitializedLocalClient = v1;
+            }
+        }
+        return;
+    }
+    /* ---- InitLocalClient_Implementation: 111 dwords / 60 instructions (cache offset 0x5d2a6) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84654                                         ; ULokiAimingVisComponentScript::IsOwnerLocallyControlled
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         89                                            -> L01B8
+        0054  LoadThisR     241 134230841                                 ; this.bHasInitializedLocalClient
+        005C  RDR1          v2                                          
+        0060  NOT           v2                                          
+        0064  CpyVtoR1      v2                                          
+        0068  JLowZ         82                                            -> L01B8
+        0070  PshC4         45                                          
+        0078  CALLSYS       __STATIC_NAME                               
+        0084  PshRPtr                                                   
+        0088  PshVPtr       this                                        
+        008C  PSF           v7                                          
+        0090  CALLSYS       FOnGenericPlayerConfigValueUpdated::$beh0   
+        009C  PSF           v7                                          
+        00A0  PshC4         44                                          
+        00A8  CALLSYS       __STATIC_NAME                               
+        00B4  PshRPtr                                                   
+        00B8  PshC4         43                                          
+        00C0  CALLSYS       __STATIC_NAME                               
+        00CC  PshRPtr                                                   
+        00D0  PshGPtr       __WorldContext                              
+        00DC  CALLSYS       RegisterOnGenericPlayerConfigValueUpdated   
+        00E8  PSF           v7                                          
+        00EC  CALLSYS       FOnGenericPlayerConfigValueUpdated::$beh2   
+        00F8  PshC4         47                                          
+        0100  CALLSYS       __STATIC_NAME                               
+        010C  PshRPtr                                                   
+        0110  PshVPtr       this                                        
+        0114  PSF           v7                                          
+        0118  CALLSYS       FOnGenericPlayerConfigValueUpdated::$beh0   
+        0124  PSF           v7                                          
+        0128  PshC4         46                                          
+        0130  CALLSYS       __STATIC_NAME                               
+        013C  PshRPtr                                                   
+        0140  PshC4         43                                          
+        0148  CALLSYS       __STATIC_NAME                               
+        0154  PshRPtr                                                   
+        0158  PshGPtr       __WorldContext                              
+        0164  CALLSYS       RegisterOnGenericPlayerConfigValueUpdated   
+        0170  PSF           v7                                          
+        0174  CALLSYS       FOnGenericPlayerConfigValueUpdated::$beh2   
+        0180  PshVPtr       this                                        
+        0184  CALLINTF      84671                                         ; ULokiAimingVisComponentScript::OnShowAimingLaserChanged
+        018C  PshVPtr       this                                        
+        0190  CALLINTF      84673                                         ; ULokiAimingVisComponentScript::OnLimitLaserToCursorChanged
+        0198  PshVPtr       this                                        
+        019C  CALLINTF      84661                                         ; ULokiAimingVisComponentScript::InitClientLaser
+        01A4  SetV1         v1 1                                        
+        01AC  LoadThisR     241 134230841                                 ; this.bHasInitializedLocalClient
+        01B4  WRTV1         v1                                          
+      L01B8:
+        01B8  RET           2                                           
+    */
+
+    void InitOnLocalASC()   // traits=0x20
+    {
+        __Evt_Execute(this, n"InitOnLocalASC");
+        return;
+    }
+    /* ---- InitOnLocalASC: 11 dwords / 6 instructions (cache offset 0x5d5b9) ----
+        0000  PshC4         136                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=InitOnLocalASC, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    void InitOnLocalASC_Implementation()   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateOwner();
+            v1 = v2;
+        }
+        if (v1) {
+            this.OwnerCharacter.OnLivingStateChanged.AddUFunction(this, n"OnLivingStateChanged");
+        }
+        return;
+    }
+    /* ---- InitOnLocalASC_Implementation: 38 dwords / 21 instructions (cache offset 0x5d67b) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84653                                         ; ULokiAimingVisComponentScript::ValidateOwner
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         16                                            -> L0094
+        0054  PshC4         48                                          
+        005C  CALLSYS       __STATIC_NAME                               
+        0068  PshRPtr                                                   
+        006C  PshVPtr       this                                        
+        0070  PshVPtr       this                                        
+        0074  ADDSi         232 134230841                                 ; .OwnerCharacter
+        007C  RDSPtr                                                    
+        0080  ADDSi         3128 67114993                                 ; .OnLivingStateChanged
+        0088  CALLSYS       FLivingStateDelegate::AddUFunction          
+      L0094:
+        0094  RET           2                                           
+    */
+
+    float64 GetBonusPrimaryAttackDistance()   // traits=0x20
+    {
+        v2 = 0;
+        __Evt_PushArgumentRef__float(v2);
+        __Evt_Execute(this, n"GetBonusPrimaryAttackDistance");
+        return v2;
+    }
+    /* ---- GetBonusPrimaryAttackDistance: 19 dwords / 10 instructions (cache offset 0x5d824) ----
+        0000  SetV8         v2 0x0                                      
+        000C  PSF           v2                                          
+        0010  CALLSYS       __Evt_PushArgumentRef__float                
+        001C  PshC4         137                                         
+        0024  CALLSYS       __STATIC_NAME                               
+        0030  PshRPtr                                                   
+        0034  PshVPtr       this                                        
+        0038  CALLSYS       __Evt_Execute                               
+        0044  CpyVtoR8      v2                                          
+        0048  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=GetBonusPrimaryAttackDistance, BlueprintEvent, CanOverrideEvent)
+    float64 GetBonusPrimaryAttackDistance_Implementation()   // traits=0x20
+    {
+        v2 = 0;
+        return v2;
+    }
+    /* ---- GetBonusPrimaryAttackDistance_Implementation: 5 dwords / 3 instructions (cache offset 0x5d915) ----
+        0000  SetV8         v2 0x0                                      
+        000C  CpyVtoR8      v2                                          
+        0010  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnBonusPrimaryAttackDistanceChanged(const float64 NewBonusMaxDist)   // traits=0x20
+    {
+        if (this.HasValidAimingLaser()) {
+            v5 = this.CurrentLaserSettingsIndex;
+            v8 = this.LaserSettings[v5].MaxDistance;
+            v4 = v8;
+            v8 = 4607182418800017408;
+            v8 = v8 + NewBonusMaxDist;
+            v8 = v4 * v8;
+            this.ClientLaserInstance.SetMaxDistance(v8);
+            this.ClientLaserInstance.PrimaryAttackDistance = NewBonusMaxDist;
+        }
+        return;
+    }
+    /* ---- OnBonusPrimaryAttackDistanceChanged: 45 dwords / 29 instructions (cache offset 0x5da77) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84658                                         ; ULokiAimingVisComponentScript::HasValidAimingLaser
+        000C  JLowZ         39                                            -> L00B0
+        0014  LoadThisR     276 134230841                                 ; this.CurrentLaserSettingsIndex
+        001C  RDR4          v5                                          
+        0020  PshV4         v5                                          
+        0024  PshVPtr       this                                        
+        0028  ADDSi         256 134230841                                 ; .LaserSettings
+        0030  Thiscall1     TArray::opIndex                             
+        003C  PshRPtr                                                   
+        0040  ADDSi         8 134230837                                   ; .MaxDistance
+        0048  PopRPtr                                                   
+        004C  RDR8          v8                                          
+        0050  CpyVtoV8      v4 v8                                       
+        0058  SetV8         v8 0x3ff0000000000000                       
+        0064  ADDd          v8 v8 NewBonusMaxDist                       
+        006C  MULd          v8 v4 v8                                    
+        0074  PshV8         v8                                          
+        0078  PshVPtr       this                                        
+        007C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0084  RDSPtr                                                    
+        0088  CALLINTF      84601                                         ; ALokiAimingLaser::SetMaxDistance
+        0090  PshVPtr       this                                        
+        0094  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        009C  RDSPtr                                                    
+        00A0  ADDSi         1072 134230838                                ; .PrimaryAttackDistance
+        00A8  PopRPtr                                                   
+        00AC  WRTV8         NewBonusMaxDist                             
+      L00B0:
+        00B0  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool ValidateOwner()   // traits=0x20
+    {
+        v1 = IsValid(this.OwnerCharacter);
+        v1 = !v1;
+        if (v1) {
+            v4 = this.GetOwner();
+            v1 = IsValid(v4);
+            v1 = !v1;
+            if (v1) {
+                v1 = false;
+                return v1;
+            }
+            if (v4 != nullptr) {
+                v10 = cast<ALokiCharacter@>(v4);
+            } else {
+                v10 = nullptr;
+            }
+            v8 = v10;
+            v1 = IsValid(v8);
+            v1 = !v1;
+            if (v1) {
+                v1 = false;
+                return v1;
+            }
+            v8 = this.OwnerCharacter;
+        }
+        v1 = true;
+        return v1;
+    }
+    /* ---- ValidateOwner: 72 dwords / 49 instructions (cache offset 0x5dc41) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         232 134230841                                 ; .OwnerCharacter
+        000C  RDSPtr                                                    
+        0010  CALLSYS       IsValid                                     
+        001C  CpyRtoV4      v1                                          
+        0020  NOT           v1                                          
+        0024  CpyVtoR1      v1                                          
+        0028  JLowZ         56                                            -> L0110
+        0030  PshVPtr       this                                        
+        0034  CALLSYS       UActorComponent::GetOwner                   
+        0040  STOREOBJ      v4                                          
+        0044  PshVPtr       v4                                          
+        0048  CALLSYS       IsValid                                     
+        0054  CpyRtoV4      v1                                          
+        0058  NOT           v1                                          
+        005C  CpyVtoR1      v1                                          
+        0060  JLowZ         5                                             -> L007C
+        0068  SetV1         v1 0                                        
+        0070  CpyVtoR4      v1                                          
+        0074  JMP           40                                            -> L011C
+      L007C:
+        007C  CmpPtrNull    v4                                          
+        0080  JZ            9                                             -> L00AC
+        0088  TYPEID        1140856817                                    ; ALokiCharacter@
+        0090  PSF           v10                                         
+        0094  PshVPtr       v4                                          
+        0098  CALLSYS       UObject::opCast                             
+        00A4  JMP           1                                             -> L00B0
+      L00AC:
+        00AC  ClrVPtr       v10                                         
+      L00B0:
+        00B0  PshVPtr       v10                                         
+        00B4  RefCpyV       v8                                          
+        00B8  PshVPtr       v8                                          
+        00BC  CALLSYS       IsValid                                     
+        00C8  CpyRtoV4      v1                                          
+        00CC  NOT           v1                                          
+        00D0  CpyVtoR1      v1                                          
+        00D4  JLowZ         5                                             -> L00F0
+        00DC  SetV1         v1 0                                        
+        00E4  CpyVtoR4      v1                                          
+        00E8  JMP           11                                            -> L011C
+      L00F0:
+        00F0  PshVPtr       v8                                          
+        00F4  PshVPtr       this                                        
+        00F8  ADDSi         232 134230841                                 ; .OwnerCharacter
+        0100  REFCPY                                                    
+        0104  PopPtr                                                    
+        0108  FreeNullV8    v8                                          
+        010C  FreeNullV8    v4                                          
+      L0110:
+        0110  SetV1         v1 1                                        
+        0118  CpyVtoR4      v1                                          
+      L011C:
+        011C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool IsOwnerLocallyControlled()   // traits=0x20
+    {
+        v1 = this.ValidateOwner();
+        v1 = !v1;
+        if (v1) {
+            v1 = false;
+            return v1;
+        } else {
+            v1 = this.OwnerCharacter.IsLocallyControlled();
+        }
+        return v1;
+    }
+    /* ---- IsOwnerLocallyControlled: 23 dwords / 16 instructions (cache offset 0x5decc) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84653                                         ; ULokiAimingVisComponentScript::ValidateOwner
+        000C  CpyRtoV4      v1                                          
+        0010  NOT           v1                                          
+        0014  CpyVtoR1      v1                                          
+        0018  JLowZ         5                                             -> L0034
+        0020  SetV1         v1 0                                        
+        0028  CpyVtoR4      v1                                          
+        002C  JMP           9                                             -> L0058
+      L0034:
+        0034  PshVPtr       this                                        
+        0038  ADDSi         232 134230841                                 ; .OwnerCharacter
+        0040  RDSPtr                                                    
+        0044  CALLSYS       APawn::IsLocallyControlled                  
+        0050  CpyRtoV4      v1                                          
+        0054  CpyVtoR4      v1                                          
+      L0058:
+        0058  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool ValidateLaser()   // traits=0x20
+    {
+        if (Loki::LokiIsClient(__WorldContext)) {
+            if (this.UsesAimingLaser()) {
+                v1 = this.HasValidAimingLaser();
+                return v1;
+            }
+        } else {
+            v1 = false;
+        }
+        return v1;
+    }
+    /* ---- ValidateLaser: 24 dwords / 14 instructions (cache offset 0x5e033) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowZ         12                                            -> L0050
+        0020  PshVPtr       this                                        
+        0024  CALLINTF      84656                                         ; ULokiAimingVisComponentScript::UsesAimingLaser
+        002C  JLowZ         7                                             -> L0050
+        0034  PshVPtr       this                                        
+        0038  CALLINTF      84658                                         ; ULokiAimingVisComponentScript::HasValidAimingLaser
+        0040  CpyRtoV4      v1                                          
+        0044  CpyVtoR4      v1                                          
+        0048  JMP           3                                             -> L005C
+      L0050:
+        0050  SetV1         v1 0                                        
+        0058  CpyVtoR4      v1                                          
+      L005C:
+        005C  RET           2                                           
+    */
+
+    bool UsesAimingLaser()   // traits=0x20
+    {
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"UsesAimingLaser");
+        return v1;
+    }
+    /* ---- UsesAimingLaser: 20 dwords / 11 instructions (cache offset 0x5e1ad) ----
+        0000  SetV1         v2 0                                        
+        0008  CpyVtoV4      v1 v2                                       
+        0010  PSF           v1                                          
+        0014  CALLSYS       __Evt_PushArgumentRef__bool                 
+        0020  PshC4         138                                         
+        0028  CALLSYS       __STATIC_NAME                               
+        0034  PshRPtr                                                   
+        0038  PshVPtr       this                                        
+        003C  CALLSYS       __Evt_Execute                               
+        0048  CpyVtoR4      v1                                          
+        004C  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=UsesAimingLaser, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    bool UsesAimingLaser_Implementation()   // traits=0x20
+    {
+        v1 = this.bHeroUsesAimingLaser;
+        if (v1) {
+            v3 = this.LaserSettings.Num();
+            if (v3 > 0) {
+                if (UPlayerConfigManager::GetGenericPlayerConfigBoolValue(__WorldContext, n"Aiming", n"UseAimingLaser")) {
+                    v1 = true;
+                    return v1;
+                }
+                v2 = this.CurrentLaserSettingsIndex;
+                if (v2 < v3) {
+                    v2 = this.CurrentLaserSettingsIndex;
+                    v1 = this.LaserSettings[v2].bUnconditionallyVisibleWhenActive;
+                    return v1;
+                }
+            }
+        } else {
+            v1 = false;
+        }
+        return v1;
+    }
+    /* ---- UsesAimingLaser_Implementation: 71 dwords / 41 instructions (cache offset 0x5e294) ----
+        0000  LoadThisR     242 134230841                                 ; this.bHeroUsesAimingLaser
+        0008  RDR1          v1                                          
+        000C  CpyVtoR1      v1                                          
+        0010  JLowZ         61                                            -> L010C
+        0018  PshVPtr       this                                        
+        001C  ADDSi         256 134230841                                 ; .LaserSettings
+        0024  CALLSYS       TArray::Num                                 
+        0030  CpyRtoV4      v3                                          
+        0034  CMPIi         v3 0                                        
+        003C  JNP           50                                            -> L010C
+        0044  PshC4         44                                          
+        004C  CALLSYS       __STATIC_NAME                               
+        0058  PshRPtr                                                   
+        005C  PshC4         43                                          
+        0064  CALLSYS       __STATIC_NAME                               
+        0070  PshRPtr                                                   
+        0074  PshGPtr       __WorldContext                              
+        0080  CALLSYS       GetGenericPlayerConfigBoolValue             
+        008C  JLowZ         5                                             -> L00A8
+        0094  SetV1         v1 1                                        
+        009C  CpyVtoR4      v1                                          
+        00A0  JMP           28                                            -> L0118
+      L00A8:
+        00A8  LoadThisR     276 134230841                                 ; this.CurrentLaserSettingsIndex
+        00B0  RDR4          v2                                          
+        00B4  CMPi          v2 v3                                       
+        00BC  JNS           18                                            -> L010C
+        00C4  LoadThisR     276 134230841                                 ; this.CurrentLaserSettingsIndex
+        00CC  RDR4          v2                                          
+        00D0  PshV4         v2                                          
+        00D4  PshVPtr       this                                        
+        00D8  ADDSi         256 134230841                                 ; .LaserSettings
+        00E0  Thiscall1     TArray::opIndex                             
+        00EC  PshRPtr                                                   
+        00F0  ADDSi         64 134230837                                  ; .bUnconditionallyVisibleWhenActive
+        00F8  PopRPtr                                                   
+        00FC  RDR1          v1                                          
+        0100  CpyVtoR4      v1                                          
+        0104  JMP           3                                             -> L0118
+      L010C:
+        010C  SetV1         v1 0                                        
+        0114  CpyVtoR4      v1                                          
+      L0118:
+        0118  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool HasValidAimingLaser()   // traits=0x20
+    {
+        v1 = IsValid(this.ClientLaserInstance);
+        return v1;
+    }
+    /* ---- HasValidAimingLaser: 10 dwords / 7 instructions (cache offset 0x5e500) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        000C  RDSPtr                                                    
+        0010  CALLSYS       IsValid                                     
+        001C  CpyRtoV4      v1                                          
+        0020  CpyVtoR4      v1                                          
+        0024  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    ALokiAimingLaser@ GetAimingLaserInstanceIfValid()   // traits=0x20
+    {
+        if (Loki::LokiIsClient(__WorldContext)) {
+            if (this.HasValidAimingLaser()) {
+                v4 = this.ClientLaserInstance;
+                return v4;
+            }
+        } else {
+        }
+        return v4;
+    }
+    /* ---- GetAimingLaserInstanceIfValid: 24 dwords / 15 instructions (cache offset 0x5e626) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowZ         13                                            -> L0054
+        0020  PshVPtr       this                                        
+        0024  CALLINTF      84658                                         ; ULokiAimingVisComponentScript::HasValidAimingLaser
+        002C  JLowZ         8                                             -> L0054
+        0034  PshVPtr       this                                        
+        0038  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0040  RDSPtr                                                    
+        0044  RefCpyV       v4                                          
+        0048  LOADOBJ       v4                                          
+        004C  JMP           2                                             -> L005C
+      L0054:
+        0054  FreeNullV8    v4                                          
+        0058  LOADOBJ       v4                                          
+      L005C:
+        005C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    ALokiAimingLaser@ GetOrCreateAimingLaserInstance()   // traits=0x20
+    {
+        if (Loki::LokiIsClient(__WorldContext)) {
+            if (this.ValidateLaser()) {
+                v4 = this.ClientLaserInstance;
+                return v4;
+            }
+        } else {
+        }
+        return v4;
+    }
+    /* ---- GetOrCreateAimingLaserInstance: 24 dwords / 15 instructions (cache offset 0x5e7cb) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowZ         13                                            -> L0054
+        0020  PshVPtr       this                                        
+        0024  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        002C  JLowZ         8                                             -> L0054
+        0034  PshVPtr       this                                        
+        0038  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0040  RDSPtr                                                    
+        0044  RefCpyV       v4                                          
+        0048  LOADOBJ       v4                                          
+        004C  JMP           2                                             -> L005C
+      L0054:
+        0054  FreeNullV8    v4                                          
+        0058  LOADOBJ       v4                                          
+      L005C:
+        005C  RET           2                                           
+    */
+
+    void InitClientLaser()   // traits=0x20
+    {
+        __Evt_Execute(this, n"InitClientLaser");
+        return;
+    }
+    /* ---- InitClientLaser: 11 dwords / 6 instructions (cache offset 0x5e962) ----
+        0000  PshC4         139                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=InitClientLaser, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    void InitClientLaser_Implementation()   // traits=0x20
+    {
+        if (!this.UsesAimingLaser()) {
+            v1 = 0;
+        } else {
+            v2 = this.HasValidAimingLaser();
+            v2 = !v2;
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v3 = this.SpawnLaserSettingsIndex;
+            v2 = v3 >= 0;
+            v1 = v2;
+        }
+        if (v1) {
+            v22.FAimingLaserSettings();
+            v4 = this.SpawnLaserSettingsIndex;
+            this.SpawnLaser(v22);
+            v3 = this.SpawnLaserSettingsIndex;
+            this.SwitchLaserSettingsInternal(v3);
+        }
+        return;
+    }
+    /* ---- InitClientLaser_Implementation: 66 dwords / 43 instructions (cache offset 0x5ea25) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84656                                         ; ULokiAimingVisComponentScript::UsesAimingLaser
+        000C  JLowNZ        4                                             -> L0024
+        0014  SetV4         v1 0                                        
+        001C  JMP           7                                             -> L0040
+      L0024:
+        0024  PshVPtr       this                                        
+        0028  CALLINTF      84658                                         ; ULokiAimingVisComponentScript::HasValidAimingLaser
+        0030  CpyRtoV4      v2                                          
+        0034  NOT           v2                                          
+        0038  CpyVtoV4      v1 v2                                       
+      L0040:
+        0040  CpyVtoR1      v1                                          
+        0044  JLowNZ        4                                             -> L005C
+        004C  SetV4         v1 0                                        
+        0054  JMP           9                                             -> L0080
+      L005C:
+        005C  LoadThisR     272 134230841                                 ; this.SpawnLaserSettingsIndex
+        0064  RDR4          v3                                          
+        0068  CMPIi         v3 0                                        
+        0070  TNS                                                       
+        0074  CpyRtoV4      v2                                          
+        0078  CpyVtoV4      v1 v2                                       
+      L0080:
+        0080  CpyVtoR1      v1                                          
+        0084  JLowZ         30                                            -> L0104
+        008C  PSF           v22                                         
+        0090  CALL          84571                                         ; FAimingLaserSettings::FAimingLaserSettings
+        0098  LoadThisR     272 134230841                                 ; this.SpawnLaserSettingsIndex
+        00A0  RDR4          v4                                          
+        00A4  PshV4         v4                                          
+        00A8  PshVPtr       this                                        
+        00AC  ADDSi         256 134230841                                 ; .LaserSettings
+        00B4  Thiscall1     TArray::opIndex                             
+        00C0  PshRPtr                                                   
+        00C4  PSF           v22                                         
+        00C8  CopyScript    FAimingLaserSettings                        
+        00D4  PopPtr                                                    
+        00D8  PSF           v22                                         
+        00DC  PshVPtr       this                                        
+        00E0  CALLINTF      84664                                         ; ULokiAimingVisComponentScript::SpawnLaser
+        00E8  LoadThisR     272 134230841                                 ; this.SpawnLaserSettingsIndex
+        00F0  RDR4          v3                                          
+        00F4  PshV4         v3                                          
+        00F8  PshVPtr       this                                        
+        00FC  CALLINTF      84667                                         ; ULokiAimingVisComponentScript::SwitchLaserSettingsInternal
+      L0104:
+        0104  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=OnGamepadHasCursorChanged, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnGamepadHasCursorChanged_Implementation(const bool bGamepadHasCursor)   // traits=0x20
+    {
+        v2 = this.ClientLaserInstance;
+        if (v2 == nullptr) {
+            v3 = 0;
+        } else {
+            v6 = this.ClientLaserInstance.LaserProjectilePath;
+            v7 = v6 != nullptr;
+            v3 = v7;
+        }
+        if (v3) {
+            if (bGamepadHasCursor) {
+                v8 = 1106247680;
+                this.ClientLaserInstance.LaserProjectilePath.ProjectileHeight = v8;
+                return;
+            } else {
+                v12 = this.OwnerCharacter;
+                if (v12 != nullptr) {
+                    v14 = cast<ALokiHeroCharacter@>(v12);
+                } else {
+                    v14 = nullptr;
+                }
+                v10 = v14;
+                if (v10 != nullptr) {
+                    v16 = v10.GetCharacterProjectileTerrainHeightOffset();
+                    v8 = float32(v16);
+                    this.ClientLaserInstance.LaserProjectilePath.ProjectileHeight = v8;
+                }
+            }
+        }
+        return;
+    }
+    /* ---- OnGamepadHasCursorChanged_Implementation: 89 dwords / 62 instructions (cache offset 0x5ecb0) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        000C  RDSPtr                                                    
+        0010  RefCpyV       v2                                          
+        0014  CmpPtrNull    v2                                          
+        0018  JNZ           4                                             -> L0030
+        0020  SetV4         v3 0                                        
+        0028  JMP           13                                            -> L0064
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        003C  RDSPtr                                                    
+        0040  ADDSi         936 134230838                                 ; .LaserProjectilePath
+        0048  RDSPtr                                                    
+        004C  RefCpyV       v6                                          
+        0050  CmpPtrNull    v6                                          
+        0054  TNZ                                                       
+        0058  CpyRtoV4      v7                                          
+        005C  CpyVtoV4      v3 v7                                       
+      L0064:
+        0064  CpyVtoR1      v3                                          
+        0068  JLowZ         60                                            -> L0160
+        0070  CpyVtoR1      bGamepadHasCursor                           
+        0074  JLowZ         15                                            -> L00B8
+        007C  SetV4         v8 1106247680                               
+        0084  PshVPtr       this                                        
+        0088  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0090  RDSPtr                                                    
+        0094  ADDSi         936 134230838                                 ; .LaserProjectilePath
+        009C  RDSPtr                                                    
+        00A0  ADDSi         212 67115347                                  ; .ProjectileHeight
+        00A8  PopRPtr                                                   
+        00AC  WRTV4         v8                                          
+        00B0  JMP           42                                            -> L0160
+      L00B8:
+        00B8  PshVPtr       this                                        
+        00BC  ADDSi         232 134230841                                 ; .OwnerCharacter
+        00C4  RDSPtr                                                    
+        00C8  RefCpyV       v12                                         
+        00CC  CmpPtrNull    v12                                         
+        00D0  JZ            9                                             -> L00FC
+        00D8  TYPEID        1140857000                                    ; ALokiHeroCharacter@
+        00E0  PSF           v14                                         
+        00E4  PshVPtr       v12                                         
+        00E8  CALLSYS       UObject::opCast                             
+        00F4  JMP           1                                             -> L0100
+      L00FC:
+        00FC  ClrVPtr       v14                                         
+      L0100:
+        0100  PshVPtr       v14                                         
+        0104  RefCpyV       v10                                         
+        0108  CmpPtrNull    v10                                         
+        010C  JZ            18                                            -> L015C
+        0114  PshVPtr       v10                                         
+        0118  CALLSYS       ALokiCharacter::GetCharacterProjectileTerrainHeightOffset
+        0124  CpyRtoV8      v16                                         
+        0128  dTOf          v8 v16                                      
+        0130  PshVPtr       this                                        
+        0134  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        013C  RDSPtr                                                    
+        0140  ADDSi         936 134230838                                 ; .LaserProjectilePath
+        0148  RDSPtr                                                    
+        014C  ADDSi         212 67115347                                  ; .ProjectileHeight
+        0154  PopRPtr                                                   
+        0158  WRTV4         v8                                          
+      L015C:
+        015C  FreeNullV8    v10                                         
+      L0160:
+        0160  RET           3                                           
+    */
+
+    void SpawnLaser(const FAimingLaserSettings& Settings)   // traits=0x20
+    {
+        __Evt_PushArgument(Settings, typeid(FAimingLaserSettings));
+        __Evt_Execute(this, n"SpawnLaser");
+        return;
+    }
+    /* ---- SpawnLaser: 17 dwords / 9 instructions (cache offset 0x5efda) ----
+        0000  TYPEID        134230837                                     ; FAimingLaserSettings
+        0008  PshVPtr       Settings                                    
+        000C  CALLSYS       __Evt_PushArgument                          
+        0018  PshC4         140                                         
+        0020  CALLSYS       __STATIC_NAME                               
+        002C  PshRPtr                                                   
+        0030  PshVPtr       this                                        
+        0034  CALLSYS       __Evt_Execute                               
+        0040  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=SpawnLaser, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    void SpawnLaser_Implementation(const FAimingLaserSettings& Settings)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateOwner();
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v2 = this.UsesAimingLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = Settings.bUnconditionallyVisibleWhenActive;
+            v2 = !v2;
+            if (!v2) {
+                v2 = 0;
+            } else {
+                v1 = this.IsOwnerLocallyControlled();
+                v1 = !v1;
+                v2 = v1;
+            }
+            if (v2) {
+                return;
+            } else {
+                v1 = Settings.LaserClass.IsValid();
+                v1 = !v1;
+                if (v1) {
+                    return;
+                } else {
+                    if (this.HasValidAimingLaser()) {
+                        v4 = UClass@(Settings.LaserClass);
+                        if (this.ClientLaserInstance.IsA(v4)) {
+                            return;
+                        }
+                        this.DestroyLaser();
+                    }
+                    v6 = this.OwnerCharacter;
+                    if (v6 != nullptr) {
+                        v8 = cast<ALokiHeroCharacter@>(v6);
+                    } else {
+                        v8 = nullptr;
+                    }
+                    v10 = v8;
+                    if (IsValid(v10)) {
+                        v22 = v10.GetCharacterProjectileSpawnLocation();
+                        v10.GetActorTransform()  /* UFunction GetTransform */;
+                        v16 = v10.GetActorTransform()  /* UFunction GetTransform */.InverseTransformPosition(v22);
+                        v28 = this.OwnerCharacter.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                        v40 = FVector(FVector::UpVector);
+                        v42 = v16.Z;
+                        v48 = v40 * v42;
+                        v40 = v28 + v48;
+                        v1 = false;
+                        v50 = SpawnActor(Settings.LaserClass, v40, FRotator::ZeroRotator, NAME_None, v1, nullptr);
+                        v50.SetInstigator(this.OwnerCharacter);
+                        this = v50.OwnerAimingVisComponent;
+                        v50.UpdateOwner(v10);
+                        v53 = 2;
+                        v50.AttachToActor(this.OwnerCharacter, NAME_None, v53)  /* UFunction K2_AttachToActor */;
+                        v42 = v10.GetCharacterProjectileTerrainHeightOffset();
+                        v56 = v16.Size2D();
+                        v50.SetProjectileSpawnLocation(v56, v42);
+                        v2 = true;
+                        this.ClientLaserSetVisibility(v2);
+                        v50 = this.ClientLaserInstance;
+                        this.OnLimitLaserToCursorChanged();
+                        this.ClientLaserInstance.OnLaserSpawned();
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- SpawnLaser_Implementation: 259 dwords / 161 instructions (cache offset 0x5f0e9) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84653                                         ; ULokiAimingVisComponentScript::ValidateOwner
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowNZ        4                                             -> L0064
+        0054  SetV4         v1 0                                        
+        005C  JMP           6                                             -> L007C
+      L0064:
+        0064  PshVPtr       this                                        
+        0068  CALLINTF      84656                                         ; ULokiAimingVisComponentScript::UsesAimingLaser
+        0070  CpyRtoV4      v2                                          
+        0074  CpyVtoV4      v1 v2                                       
+      L007C:
+        007C  CpyVtoR1      v1                                          
+        0080  JLowZ         224                                           -> L0408
+        0088  LoadRObjR     Settings 64 134230837                         ; .bUnconditionallyVisibleWhenActive
+        0094  RDR1          v2                                          
+        0098  NOT           v2                                          
+        009C  CpyVtoR1      v2                                          
+        00A0  JLowNZ        4                                             -> L00B8
+        00A8  SetV4         v2 0                                        
+        00B0  JMP           7                                             -> L00D4
+      L00B8:
+        00B8  PshVPtr       this                                        
+        00BC  CALLINTF      84654                                         ; ULokiAimingVisComponentScript::IsOwnerLocallyControlled
+        00C4  CpyRtoV4      v1                                          
+        00C8  NOT           v1                                          
+        00CC  CpyVtoV4      v2 v1                                       
+      L00D4:
+        00D4  CpyVtoR1      v2                                          
+        00D8  JLowZ         2                                             -> L00E8
+        00E0  JMP           200                                           -> L0408
+      L00E8:
+        00E8  PshVPtr       Settings                                    
+        00EC  ADDSi         0 134230837                                   ; .LaserClass
+        00F4  CALLSYS       TSubclassOf::IsValid                        
+        0100  CpyRtoV4      v1                                          
+        0104  NOT           v1                                          
+        0108  CpyVtoR1      v1                                          
+        010C  JLowZ         2                                             -> L011C
+        0114  JMP           187                                           -> L0408
+      L011C:
+        011C  PshVPtr       this                                        
+        0120  CALLINTF      84658                                         ; ULokiAimingVisComponentScript::HasValidAimingLaser
+        0128  JLowZ         22                                            -> L0188
+        0130  PshVPtr       Settings                                    
+        0134  ADDSi         0 134230837                                   ; .LaserClass
+        013C  CALLSYS       TSubclassOf::opImplConv                     
+        0148  STOREOBJ      v4                                          
+        014C  PshVPtr       v4                                          
+        0150  PshVPtr       this                                        
+        0154  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        015C  RDSPtr                                                    
+        0160  CALLSYS       UObject::IsA                                
+        016C  JLowZ         2                                             -> L017C
+        0174  JMP           163                                           -> L0408
+      L017C:
+        017C  PshVPtr       this                                        
+        0180  CALLINTF      84666                                         ; ULokiAimingVisComponentScript::DestroyLaser
+      L0188:
+        0188  PshVPtr       this                                        
+        018C  ADDSi         232 134230841                                 ; .OwnerCharacter
+        0194  RDSPtr                                                    
+        0198  RefCpyV       v6                                          
+        019C  CmpPtrNull    v6                                          
+        01A0  JZ            9                                             -> L01CC
+        01A8  TYPEID        1140857000                                    ; ALokiHeroCharacter@
+        01B0  PSF           v8                                          
+        01B4  PshVPtr       v6                                          
+        01B8  CALLSYS       UObject::opCast                             
+        01C4  JMP           1                                             -> L01D0
+      L01CC:
+        01CC  ClrVPtr       v8                                          
+      L01D0:
+        01D0  PshVPtr       v8                                          
+        01D4  RefCpyV       v10                                         
+        01D8  PshVPtr       v10                                         
+        01DC  CALLSYS       IsValid                                     
+        01E8  JLowZ         133                                           -> L0404
+        01F0  PSF           v22                                         
+        01F4  PshVPtr       v10                                         
+        01F8  CALLSYS       ALokiCharacter::GetCharacterProjectileSpawnLocation
+        0204  PSF           v22                                         
+        0208  PSF           v16                                         
+        020C  PshVPtr       v10                                         
+        0210  CALLSYS       AActor::GetActorTransform                   
+        021C  PshRPtr                                                   
+        0220  CALLSYS       FTransform::InverseTransformPosition        
+        022C  PSF           v28                                         
+        0230  PshVPtr       this                                        
+        0234  ADDSi         232 134230841                                 ; .OwnerCharacter
+        023C  RDSPtr                                                    
+        0240  CALLSYS       AActor::GetActorLocation                    
+        024C  PshGPtr       FVector::UpVector                           
+        0258  PSF           v40                                         
+        025C  CALLSYS       FVector::$beh0                              
+        0268  LoadVObjR     v16 16 67117444                               ; .Z
+        0274  RDR8          v42                                         
+        0278  PshV8         v42                                         
+        027C  PSF           v48                                         
+        0280  PSF           v40                                         
+        0284  CALLSYS       FVector::opMul                              
+        0290  PSF           v48                                         
+        0294  PSF           v40                                         
+        0298  PSF           v28                                         
+        029C  CALLSYS       FVector::opAdd                              
+        02A8  PshNull                                                   
+        02AC  SetV1         v1 0                                        
+        02B4  PshV4         v1                                          
+        02B8  PshGPtr       NAME_None                                   
+        02C4  PshGPtr       FRotator::ZeroRotator                       
+        02D0  PSF           v40                                         
+        02D4  PshVPtr       Settings                                    
+        02D8  ADDSi         0 134230837                                   ; .LaserClass
+        02E0  CALLSYS       SpawnActor                                  
+        02EC  STOREOBJ      v50                                         
+        02F0  PshVPtr       this                                        
+        02F4  ADDSi         232 134230841                                 ; .OwnerCharacter
+        02FC  RDSPtr                                                    
+        0300  PshVPtr       v50                                         
+        0304  CALLSYS       AActor::SetInstigator                       
+        0310  PshVPtr       this                                        
+        0314  PshVPtr       v50                                         
+        0318  ADDSi         952 134230838                                 ; .OwnerAimingVisComponent
+        0320  REFCPY                                                    
+        0324  PopPtr                                                    
+        0328  PshVPtr       v10                                         
+        032C  PshVPtr       v50                                         
+        0330  CALLINTF      84577                                         ; ALokiAimingLaser::UpdateOwner
+        0338  SetV1         v53 2                                       
+        0340  PshV4         v53                                         
+        0344  PshGPtr       NAME_None                                   
+        0350  PshVPtr       this                                        
+        0354  ADDSi         232 134230841                                 ; .OwnerCharacter
+        035C  RDSPtr                                                    
+        0360  PshVPtr       v50                                         
+        0364  CALLSYS       AActor::AttachToActor                       
+        0370  PshVPtr       v10                                         
+        0374  CALLSYS       ALokiCharacter::GetCharacterProjectileTerrainHeightOffset
+        0380  CpyRtoV8      v42                                         
+        0384  PshV8         v42                                         
+        0388  PSF           v16                                         
+        038C  CALLSYS       FVector::Size2D                             
+        0398  CpyRtoV8      v56                                         
+        039C  PshV8         v56                                         
+        03A0  PshVPtr       v50                                         
+        03A4  CALLINTF      84600                                         ; ALokiAimingLaser::SetProjectileSpawnLocation
+        03AC  SetV1         v2 1                                        
+        03B4  PshV4         v2                                          
+        03B8  PshVPtr       this                                        
+        03BC  CALLINTF      84675                                         ; ULokiAimingVisComponentScript::ClientLaserSetVisibility
+        03C4  PshVPtr       v50                                         
+        03C8  PshVPtr       this                                        
+        03CC  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        03D4  REFCPY                                                    
+        03D8  PopPtr                                                    
+        03DC  PshVPtr       this                                        
+        03E0  CALLINTF      84673                                         ; ULokiAimingVisComponentScript::OnLimitLaserToCursorChanged
+        03E8  PshVPtr       this                                        
+        03EC  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        03F4  RDSPtr                                                    
+        03F8  CALLINTF      84593                                         ; ALokiAimingLaser::OnLaserSpawned
+        0400  FreeNullV8    v50                                         
+      L0404:
+        0404  FreeNullV8    v10                                         
+      L0408:
+        0408  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void DestroyLaser()   // traits=0x20
+    {
+        if (this.HasValidAimingLaser()) {
+            this.ClientLaserInstance.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+    /* ---- DestroyLaser: 13 dwords / 8 instructions (cache offset 0x5f7a1) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84658                                         ; ULokiAimingVisComponentScript::HasValidAimingLaser
+        000C  JLowZ         7                                             -> L0030
+        0014  PshVPtr       this                                        
+        0018  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0020  RDSPtr                                                    
+        0024  CALLSYS       AActor::DestroyActor                        
+      L0030:
+        0030  RET           2                                           
+    */
+
+    protected void SwitchLaserSettingsInternal(const int NewIndex)   // traits=0x30
+    {
+        __Evt_PushArgument__int(NewIndex);
+        __Evt_Execute(this, n"SwitchLaserSettingsInternal");
+        return;
+    }
+    /* ---- SwitchLaserSettingsInternal: 15 dwords / 8 instructions (cache offset 0x5f91b) ----
+        0000  PSF           NewIndex                                    
+        0004  CALLSYS       __Evt_PushArgument__int                     
+        0010  PshC4         141                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           3                                           
+    */
+
+    UFUNCTION(UnrealName=SwitchLaserSettingsInternal, BlueprintEvent, CanOverrideEvent, meta.BlueprintProtected)
+    protected void SwitchLaserSettingsInternal_Implementation(const int NewIndex)   // traits=0x30
+    {
+        if (Loki::LokiIsClient(__WorldContext)) {
+            if (this.ValidateOwner()) {
+                if (this.LaserSettings.IsValidIndex(NewIndex)) {
+                    v3 = this.CurrentLaserSettingsIndex;
+                    v2 = v3;
+                    this.CurrentLaserSettingsIndex = NewIndex;
+                    v22.FAimingLaserSettings();
+                    v24 = UObject@(v22.LaserClass);
+                    if (IsValid(v24)) {
+                        this.DestroyLaser();
+                        this.SpawnLaser(v22);
+                    }
+                    v1 = this.HasValidAimingLaser();
+                    v1 = !v1;
+                    if (v1) {
+                        return;
+                    } else {
+                        v1 = v22.bOverrideLimitLaserToCursor;
+                        if (v1) {
+                            v1 = v22.bLimitLaserToCursor;
+                            this.ClientLaserInstance.OverrideLimitLaserToCursor(v1);
+                        } else {
+                            this.ClientLaserInstance.ClearOverrideLimitLaserToCursor();
+                        }
+                        v28 = v22.MaxDistance;
+                        v26 = v28;
+                        v1 = v22.bBenefitsFromBonusPrimaryAttackDistance;
+                        if (v1) {
+                            v28 = this.GetBonusPrimaryAttackDistance();
+                            this.ClientLaserInstance.PrimaryAttackDistance = v28;
+                            v30 = 4607182418800017408;
+                            v28 = this.GetBonusPrimaryAttackDistance();
+                            v30 = v30 + v28;
+                            v26 = v26 * v30;
+                        }
+                        this.ClientLaserInstance.SetMaxDistance(v26);
+                        if (IsValid(v22.LaserMaterial)) {
+                            this.ClientLaserInstance.SetLaserMaterial(v22.LaserMaterial);
+                        }
+                        if (IsValid(v22.EndpointMaterial)) {
+                            this.ClientLaserInstance.SetEndpointMaterial(v22.EndpointMaterial);
+                        }
+                        if (IsValid(v22.HitFlareNiagaraSystem)) {
+                            this.ClientLaserInstance.SetHitFlareNiagaraSystem(v22.HitFlareNiagaraSystem);
+                        }
+                        v1 = v22.bOverrideBrightness;
+                        if (v1) {
+                            v28 = v22.Brightness;
+                            this.ClientLaserInstance.SetBrightness(v28);
+                        }
+                        v1 = v22.bShowTraceHitFlare;
+                        this.ClientLaserInstance.bShowTraceHitFlare = v1;
+                        v1 = v22.bLimitLaserToTraceHit;
+                        this.ClientLaserInstance.bLimitLaserToTraceHit = v1;
+                        v1 = v22.bIgnoresHeroes;
+                        this.ClientLaserInstance.bIgnoresHeroes = v1;
+                        this.ClientLaserInstance.OnLaserSettingsIndexChanged(v2, NewIndex);
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- SwitchLaserSettingsInternal_Implementation: 265 dwords / 166 instructions (cache offset 0x5fa33) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowZ         256                                           -> L0420
+        0020  PshVPtr       this                                        
+        0024  CALLINTF      84653                                         ; ULokiAimingVisComponentScript::ValidateOwner
+        002C  JLowZ         251                                           -> L0420
+        0034  PshV4         NewIndex                                    
+        0038  PshVPtr       this                                        
+        003C  ADDSi         256 134230841                                 ; .LaserSettings
+        0044  CALLSYS       TArray::IsValidIndex                        
+        0050  JLowZ         242                                           -> L0420
+        0058  LoadThisR     276 134230841                                 ; this.CurrentLaserSettingsIndex
+        0060  RDR4          v3                                          
+        0064  CpyVtoV4      v2 v3                                       
+        006C  LoadThisR     276 134230841                                 ; this.CurrentLaserSettingsIndex
+        0074  WRTV4         NewIndex                                    
+        0078  PSF           v22                                         
+        007C  CALL          84571                                         ; FAimingLaserSettings::FAimingLaserSettings
+        0084  PshV4         NewIndex                                    
+        0088  PshVPtr       this                                        
+        008C  ADDSi         256 134230841                                 ; .LaserSettings
+        0094  Thiscall1     TArray::opIndex                             
+        00A0  PshRPtr                                                   
+        00A4  PSF           v22                                         
+        00A8  CopyScript    FAimingLaserSettings                        
+        00B4  PopPtr                                                    
+        00B8  PSF           v22                                         
+        00BC  ADDSi         0 134230837                                   ; .LaserClass
+        00C4  CALLSYS       TSubclassOf::opImplConv                     
+        00D0  STOREOBJ      v24                                         
+        00D4  PshVPtr       v24                                         
+        00D8  CALLSYS       IsValid                                     
+        00E4  JLowZ         7                                             -> L0108
+        00EC  PshVPtr       this                                        
+        00F0  CALLINTF      84666                                         ; ULokiAimingVisComponentScript::DestroyLaser
+        00F8  PSF           v22                                         
+        00FC  PshVPtr       this                                        
+        0100  CALLINTF      84664                                         ; ULokiAimingVisComponentScript::SpawnLaser
+      L0108:
+        0108  PshVPtr       this                                        
+        010C  CALLINTF      84658                                         ; ULokiAimingVisComponentScript::HasValidAimingLaser
+        0114  CpyRtoV4      v1                                          
+        0118  NOT           v1                                          
+        011C  CpyVtoR1      v1                                          
+        0120  JLowZ         2                                             -> L0130
+        0128  JMP           188                                           -> L0420
+      L0130:
+        0130  LoadVObjR     v22 18 134230837                              ; .bOverrideLimitLaserToCursor
+        013C  RDR1          v1                                          
+        0140  CpyVtoR1      v1                                          
+        0144  JLowZ         13                                            -> L0180
+        014C  LoadVObjR     v22 19 134230837                              ; .bLimitLaserToCursor
+        0158  RDR1          v1                                          
+        015C  PshV4         v1                                          
+        0160  PshVPtr       this                                        
+        0164  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        016C  RDSPtr                                                    
+        0170  CALLINTF      84608                                         ; ALokiAimingLaser::OverrideLimitLaserToCursor
+        0178  JMP           6                                             -> L0198
+      L0180:
+        0180  PshVPtr       this                                        
+        0184  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        018C  RDSPtr                                                    
+        0190  CALLINTF      84609                                         ; ALokiAimingLaser::ClearOverrideLimitLaserToCursor
+      L0198:
+        0198  LoadVObjR     v22 8 134230837                               ; .MaxDistance
+        01A4  RDR8          v28                                         
+        01A8  CpyVtoV8      v26 v28                                     
+        01B0  LoadVObjR     v22 66 134230837                              ; .bBenefitsFromBonusPrimaryAttackDistance
+        01BC  RDR1          v1                                          
+        01C0  CpyVtoR1      v1                                          
+        01C4  JLowZ         23                                            -> L0228
+        01CC  PshVPtr       this                                        
+        01D0  CALLINTF      84650                                         ; ULokiAimingVisComponentScript::GetBonusPrimaryAttackDistance
+        01D8  CpyRtoV8      v28                                         
+        01DC  PshVPtr       this                                        
+        01E0  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        01E8  RDSPtr                                                    
+        01EC  ADDSi         1072 134230838                                ; .PrimaryAttackDistance
+        01F4  PopRPtr                                                   
+        01F8  WRTV8         v28                                         
+        01FC  SetV8         v30 0x3ff0000000000000                      
+        0208  PshVPtr       this                                        
+        020C  CALLINTF      84650                                         ; ULokiAimingVisComponentScript::GetBonusPrimaryAttackDistance
+        0214  CpyRtoV8      v28                                         
+        0218  ADDd          v30 v30 v28                                 
+        0220  MULd          v26 v26 v30                                 
+      L0228:
+        0228  PshV8         v26                                         
+        022C  PshVPtr       this                                        
+        0230  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0238  RDSPtr                                                    
+        023C  CALLINTF      84601                                         ; ALokiAimingLaser::SetMaxDistance
+        0244  PSF           v22                                         
+        0248  ADDSi         24 134230837                                  ; .LaserMaterial
+        0250  RDSPtr                                                    
+        0254  CALLSYS       IsValid                                     
+        0260  JLowZ         10                                            -> L0290
+        0268  PSF           v22                                         
+        026C  ADDSi         24 134230837                                  ; .LaserMaterial
+        0274  RDSPtr                                                    
+        0278  PshVPtr       this                                        
+        027C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0284  RDSPtr                                                    
+        0288  CALLINTF      84603                                         ; ALokiAimingLaser::SetLaserMaterial
+      L0290:
+        0290  PSF           v22                                         
+        0294  ADDSi         32 134230837                                  ; .EndpointMaterial
+        029C  RDSPtr                                                    
+        02A0  CALLSYS       IsValid                                     
+        02AC  JLowZ         10                                            -> L02DC
+        02B4  PSF           v22                                         
+        02B8  ADDSi         32 134230837                                  ; .EndpointMaterial
+        02C0  RDSPtr                                                    
+        02C4  PshVPtr       this                                        
+        02C8  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        02D0  RDSPtr                                                    
+        02D4  CALLINTF      84604                                         ; ALokiAimingLaser::SetEndpointMaterial
+      L02DC:
+        02DC  PSF           v22                                         
+        02E0  ADDSi         40 134230837                                  ; .HitFlareNiagaraSystem
+        02E8  RDSPtr                                                    
+        02EC  CALLSYS       IsValid                                     
+        02F8  JLowZ         10                                            -> L0328
+        0300  PSF           v22                                         
+        0304  ADDSi         40 134230837                                  ; .HitFlareNiagaraSystem
+        030C  RDSPtr                                                    
+        0310  PshVPtr       this                                        
+        0314  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        031C  RDSPtr                                                    
+        0320  CALLINTF      84605                                         ; ALokiAimingLaser::SetHitFlareNiagaraSystem
+      L0328:
+        0328  LoadVObjR     v22 48 134230837                              ; .bOverrideBrightness
+        0334  RDR1          v1                                          
+        0338  CpyVtoR1      v1                                          
+        033C  JLowZ         11                                            -> L0370
+        0344  LoadVObjR     v22 56 134230837                              ; .Brightness
+        0350  RDR8          v28                                         
+        0354  PshV8         v28                                         
+        0358  PshVPtr       this                                        
+        035C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0364  RDSPtr                                                    
+        0368  CALLINTF      84606                                         ; ALokiAimingLaser::SetBrightness
+      L0370:
+        0370  LoadVObjR     v22 16 134230837                              ; .bShowTraceHitFlare
+        037C  RDR1          v1                                          
+        0380  PshVPtr       this                                        
+        0384  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        038C  RDSPtr                                                    
+        0390  ADDSi         1000 134230838                                ; .bShowTraceHitFlare
+        0398  PopRPtr                                                   
+        039C  WRTV1         v1                                          
+        03A0  LoadVObjR     v22 17 134230837                              ; .bLimitLaserToTraceHit
+        03AC  RDR1          v1                                          
+        03B0  PshVPtr       this                                        
+        03B4  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        03BC  RDSPtr                                                    
+        03C0  ADDSi         1001 134230838                                ; .bLimitLaserToTraceHit
+        03C8  PopRPtr                                                   
+        03CC  WRTV1         v1                                          
+        03D0  LoadVObjR     v22 65 134230837                              ; .bIgnoresHeroes
+        03DC  RDR1          v1                                          
+        03E0  PshVPtr       this                                        
+        03E4  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        03EC  RDSPtr                                                    
+        03F0  ADDSi         1002 134230838                                ; .bIgnoresHeroes
+        03F8  PopRPtr                                                   
+        03FC  WRTV1         v1                                          
+        0400  PshV4         NewIndex                                    
+        0404  PshV4         v2                                          
+        0408  PshVPtr       this                                        
+        040C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0414  RDSPtr                                                    
+        0418  CALLINTF      84596                                         ; ALokiAimingLaser::OnLaserSettingsIndexChanged
+      L0420:
+        0420  RET           3                                           
+    */
+
+    void OnLivingStateChangedLaser(const ELivingState NewLivingState)   // traits=0x20
+    {
+        __Evt_PushArgument__ELivingState(NewLivingState);
+        __Evt_Execute(this, n"OnLivingStateChangedLaser");
+        return;
+    }
+    /* ---- OnLivingStateChangedLaser: 15 dwords / 8 instructions (cache offset 0x60127) ----
+        0000  PSF           NewLivingState                              
+        0004  CALLSYS       __Evt_PushArgument__ELivingState            
+        0010  PshC4         142                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           3                                           
+    */
+
+    UFUNCTION(UnrealName=OnLivingStateChangedLaser, BlueprintEvent, CanOverrideEvent)
+    void OnLivingStateChangedLaser_Implementation(const ELivingState NewLivingState)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.UsesAimingLaser();
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateOwner();
+            v1 = v2;
+        }
+        if (v1) {
+            v3 = int(NewLivingState);
+            if (v3 <= 2) {
+                if (v3 >= 0) {
+                    v4 = v3 - 0;
+                    switch (v4)
+                    {
+                        case 0: goto L00F4;
+                        case 1: goto L011C;
+                    }
+                    v2 = false;
+                    this.ClientLaserSetVisibility(v2);
+                    return;
+    L00F4:
+                    if (this.HasValidAimingLaser()) {
+                        this.DestroyLaser();
+                    }
+                    return;
+    L011C:
+                    if (this.HasValidAimingLaser()) {
+                        v1 = true;
+                        this.ClientLaserSetVisibility(v1);
+                    } else {
+                        v22.FAimingLaserSettings();
+                        v3 = this.SpawnLaserSettingsIndex;
+                        this.SpawnLaser(v22);
+                        v4 = this.SpawnLaserSettingsIndex;
+                        this.SwitchLaserSettingsInternal(v4);
+                    }
+                    return;
+                }
+            }
+        }
+        return;
+    }
+    /* ---- OnLivingStateChangedLaser_Implementation: 117 dwords / 69 instructions (cache offset 0x60243) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84656                                         ; ULokiAimingVisComponentScript::UsesAimingLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowNZ        4                                             -> L0064
+        0054  SetV4         v1 0                                        
+        005C  JMP           6                                             -> L007C
+      L0064:
+        0064  PshVPtr       this                                        
+        0068  CALLINTF      84653                                         ; ULokiAimingVisComponentScript::ValidateOwner
+        0070  CpyRtoV4      v2                                          
+        0074  CpyVtoV4      v1 v2                                       
+      L007C:
+        007C  CpyVtoR1      v1                                          
+        0080  JLowZ         82                                            -> L01D0
+        0088  sbTOi         v3 NewLivingState                           
+        0090  CMPIi         v3 2                                        
+        0098  JP            76                                            -> L01D0
+        00A0  CMPIi         v3 0                                        
+        00A8  JS            72                                            -> L01D0
+        00B0  SUBIi         v4 v3 0                                     
+        00BC  JMPP          v4 2                                        
+        00C4  JMP           10                                            -> L00F4
+        00CC  JMP           18                                            -> L011C
+        00D4  SetV1         v2 0                                        
+        00DC  PshV4         v2                                          
+        00E0  PshVPtr       this                                        
+        00E4  CALLINTF      84675                                         ; ULokiAimingVisComponentScript::ClientLaserSetVisibility
+        00EC  JMP           55                                            -> L01D0
+      L00F4:
+        00F4  PshVPtr       this                                        
+        00F8  CALLINTF      84658                                         ; ULokiAimingVisComponentScript::HasValidAimingLaser
+        0100  JLowZ         3                                             -> L0114
+        0108  PshVPtr       this                                        
+        010C  CALLINTF      84666                                         ; ULokiAimingVisComponentScript::DestroyLaser
+      L0114:
+        0114  JMP           45                                            -> L01D0
+      L011C:
+        011C  PshVPtr       this                                        
+        0120  CALLINTF      84658                                         ; ULokiAimingVisComponentScript::HasValidAimingLaser
+        0128  JLowZ         8                                             -> L0150
+        0130  SetV1         v1 1                                        
+        0138  PshV4         v1                                          
+        013C  PshVPtr       this                                        
+        0140  CALLINTF      84675                                         ; ULokiAimingVisComponentScript::ClientLaserSetVisibility
+        0148  JMP           30                                            -> L01C8
+      L0150:
+        0150  PSF           v22                                         
+        0154  CALL          84571                                         ; FAimingLaserSettings::FAimingLaserSettings
+        015C  LoadThisR     272 134230841                                 ; this.SpawnLaserSettingsIndex
+        0164  RDR4          v3                                          
+        0168  PshV4         v3                                          
+        016C  PshVPtr       this                                        
+        0170  ADDSi         256 134230841                                 ; .LaserSettings
+        0178  Thiscall1     TArray::opIndex                             
+        0184  PshRPtr                                                   
+        0188  PSF           v22                                         
+        018C  CopyScript    FAimingLaserSettings                        
+        0198  PopPtr                                                    
+        019C  PSF           v22                                         
+        01A0  PshVPtr       this                                        
+        01A4  CALLINTF      84664                                         ; ULokiAimingVisComponentScript::SpawnLaser
+        01AC  LoadThisR     272 134230841                                 ; this.SpawnLaserSettingsIndex
+        01B4  RDR4          v4                                          
+        01B8  PshV4         v4                                          
+        01BC  PshVPtr       this                                        
+        01C0  CALLINTF      84667                                         ; ULokiAimingVisComponentScript::SwitchLaserSettingsInternal
+      L01C8:
+        01C8  JMP           0                                             -> L01D0
+      L01D0:
+        01D0  RET           3                                           
+    */
+
+    void OnShowAimingLaserChanged()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnShowAimingLaserChanged");
+        return;
+    }
+    /* ---- OnShowAimingLaserChanged: 11 dwords / 6 instructions (cache offset 0x6059a) ----
+        0000  PshC4         45                                          
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=OnShowAimingLaserChanged, BlueprintEvent, CanOverrideEvent)
+    void OnShowAimingLaserChanged_Implementation()   // traits=0x20
+    {
+        v1 = this.UsesAimingLaser();
+        v1 = !v1;
+        if (v1) {
+            if (this.HasValidAimingLaser()) {
+                this.DestroyLaser();
+            }
+            return;
+        } else {
+            v1 = this.HasValidAimingLaser();
+            v1 = !v1;
+            if (v1) {
+                v20.FAimingLaserSettings();
+                v2 = this.SpawnLaserSettingsIndex;
+                this.SpawnLaser(v20);
+                v2 = this.SpawnLaserSettingsIndex;
+                this.SwitchLaserSettingsInternal(v2);
+            }
+        }
+        return;
+    }
+    /* ---- OnShowAimingLaserChanged_Implementation: 57 dwords / 39 instructions (cache offset 0x60666) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84656                                         ; ULokiAimingVisComponentScript::UsesAimingLaser
+        000C  CpyRtoV4      v1                                          
+        0010  NOT           v1                                          
+        0014  CpyVtoR1      v1                                          
+        0018  JLowZ         10                                            -> L0048
+        0020  PshVPtr       this                                        
+        0024  CALLINTF      84658                                         ; ULokiAimingVisComponentScript::HasValidAimingLaser
+        002C  JLowZ         3                                             -> L0040
+        0034  PshVPtr       this                                        
+        0038  CALLINTF      84666                                         ; ULokiAimingVisComponentScript::DestroyLaser
+      L0040:
+        0040  JMP           38                                            -> L00E0
+      L0048:
+        0048  PshVPtr       this                                        
+        004C  CALLINTF      84658                                         ; ULokiAimingVisComponentScript::HasValidAimingLaser
+        0054  CpyRtoV4      v1                                          
+        0058  NOT           v1                                          
+        005C  CpyVtoR1      v1                                          
+        0060  JLowZ         30                                            -> L00E0
+        0068  PSF           v20                                         
+        006C  CALL          84571                                         ; FAimingLaserSettings::FAimingLaserSettings
+        0074  LoadThisR     272 134230841                                 ; this.SpawnLaserSettingsIndex
+        007C  RDR4          v2                                          
+        0080  PshV4         v2                                          
+        0084  PshVPtr       this                                        
+        0088  ADDSi         256 134230841                                 ; .LaserSettings
+        0090  Thiscall1     TArray::opIndex                             
+        009C  PshRPtr                                                   
+        00A0  PSF           v20                                         
+        00A4  CopyScript    FAimingLaserSettings                        
+        00B0  PopPtr                                                    
+        00B4  PSF           v20                                         
+        00B8  PshVPtr       this                                        
+        00BC  CALLINTF      84664                                         ; ULokiAimingVisComponentScript::SpawnLaser
+        00C4  LoadThisR     272 134230841                                 ; this.SpawnLaserSettingsIndex
+        00CC  RDR4          v2                                          
+        00D0  PshV4         v2                                          
+        00D4  PshVPtr       this                                        
+        00D8  CALLINTF      84667                                         ; ULokiAimingVisComponentScript::SwitchLaserSettingsInternal
+      L00E0:
+        00E0  RET           2                                           
+    */
+
+    void OnLimitLaserToCursorChanged()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnLimitLaserToCursorChanged");
+        return;
+    }
+    /* ---- OnLimitLaserToCursorChanged: 11 dwords / 6 instructions (cache offset 0x608cf) ----
+        0000  PshC4         47                                          
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=OnLimitLaserToCursorChanged, BlueprintEvent, CanOverrideEvent)
+    void OnLimitLaserToCursorChanged_Implementation()   // traits=0x20
+    {
+        if (Loki::LokiIsClient(__WorldContext)) {
+            if (!this.UsesAimingLaser()) {
+                v1 = 0;
+            } else {
+                v2 = this.HasValidAimingLaser();
+                v1 = v2;
+            }
+            if (v1) {
+                v2 = UPlayerConfigManager::GetGenericPlayerConfigBoolValue(__WorldContext, n"Aiming", n"LimitLaserToCursor");
+                this.ClientLaserInstance.SetLimitLaserToCursorUserSetting(v2);
+            }
+        }
+        return;
+    }
+    /* ---- OnLimitLaserToCursorChanged_Implementation: 53 dwords / 29 instructions (cache offset 0x6099e) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowZ         44                                            -> L00D0
+        0020  PshVPtr       this                                        
+        0024  CALLINTF      84656                                         ; ULokiAimingVisComponentScript::UsesAimingLaser
+        002C  JLowNZ        4                                             -> L0044
+        0034  SetV4         v1 0                                        
+        003C  JMP           6                                             -> L005C
+      L0044:
+        0044  PshVPtr       this                                        
+        0048  CALLINTF      84658                                         ; ULokiAimingVisComponentScript::HasValidAimingLaser
+        0050  CpyRtoV4      v2                                          
+        0054  CpyVtoV4      v1 v2                                       
+      L005C:
+        005C  CpyVtoR1      v1                                          
+        0060  JLowZ         26                                            -> L00D0
+        0068  PshC4         46                                          
+        0070  CALLSYS       __STATIC_NAME                               
+        007C  PshRPtr                                                   
+        0080  PshC4         43                                          
+        0088  CALLSYS       __STATIC_NAME                               
+        0094  PshRPtr                                                   
+        0098  PshGPtr       __WorldContext                              
+        00A4  CALLSYS       GetGenericPlayerConfigBoolValue             
+        00B0  CpyRtoV4      v2                                          
+        00B4  PshV4         v2                                          
+        00B8  PshVPtr       this                                        
+        00BC  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        00C4  RDSPtr                                                    
+        00C8  CALLINTF      84607                                         ; ALokiAimingLaser::SetLimitLaserToCursorUserSetting
+      L00D0:
+        00D0  RET           2                                           
+    */
+
+    void ClientLaserSetVisibility(const bool bNewVisibility)   // traits=0x20
+    {
+        __Evt_PushArgument__bool(bNewVisibility);
+        __Evt_Execute(this, n"ClientLaserSetVisibility");
+        return;
+    }
+    /* ---- ClientLaserSetVisibility: 15 dwords / 8 instructions (cache offset 0x60be2) ----
+        0000  PSF           bNewVisibility                              
+        0004  CALLSYS       __Evt_PushArgument__bool                    
+        0010  PshC4         143                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           3                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserSetVisibility, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetVisibility_Implementation(const bool bNewVisibility)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetVisibilityOnAll(bNewVisibility);
+        }
+        return;
+    }
+    /* ---- ClientLaserSetVisibility_Implementation: 29 dwords / 17 instructions (cache offset 0x60cfd) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         7                                             -> L0070
+        0054  PshV4         bNewVisibility                              
+        0058  PshVPtr       this                                        
+        005C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0064  RDSPtr                                                    
+        0068  CALLINTF      84598                                         ; ALokiAimingLaser::SetVisibilityOnAll
+      L0070:
+        0070  RET           3                                           
+    */
+
+    void ClientLaserSetScriptOverrides(const FLaserScriptOverrides& Overrides)   // traits=0x20
+    {
+        __Evt_PushArgument(Overrides, typeid(FLaserScriptOverrides));
+        __Evt_Execute(this, n"ClientLaserSetScriptOverrides");
+        return;
+    }
+    /* ---- ClientLaserSetScriptOverrides: 17 dwords / 9 instructions (cache offset 0x60ec6) ----
+        0000  TYPEID        134230845                                     ; FLaserScriptOverrides
+        0008  PshVPtr       Overrides                                   
+        000C  CALLSYS       __Evt_PushArgument                          
+        0018  PshC4         144                                         
+        0020  CALLSYS       __STATIC_NAME                               
+        002C  PshRPtr                                                   
+        0030  PshVPtr       this                                        
+        0034  CALLSYS       __Evt_Execute                               
+        0040  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserSetScriptOverrides, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetScriptOverrides_Implementation(const FLaserScriptOverrides& Overrides)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = Overrides.bOverrideDesaturationAndOpacity;
+            this.ClientLaserInstance.bOverrideDesaturationAndOpacity = v2;
+            v1 = Overrides.bOverrideRangeAndAlphaStep;
+            this.ClientLaserInstance.bOverrideRangeAndAlphaStep = v1;
+        }
+        return;
+    }
+    /* ---- ClientLaserSetScriptOverrides_Implementation: 46 dwords / 28 instructions (cache offset 0x60fe9) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         24                                            -> L00B4
+        0054  LoadRObjR     Overrides 0 134230845                         ; .bOverrideDesaturationAndOpacity
+        0060  RDR1          v2                                          
+        0064  PshVPtr       this                                        
+        0068  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0070  RDSPtr                                                    
+        0074  ADDSi         1024 134230838                                ; .bOverrideDesaturationAndOpacity
+        007C  PopRPtr                                                   
+        0080  WRTV1         v2                                          
+        0084  LoadRObjR     Overrides 1 134230845                         ; .bOverrideRangeAndAlphaStep
+        0090  RDR1          v1                                          
+        0094  PshVPtr       this                                        
+        0098  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        00A0  RDSPtr                                                    
+        00A4  ADDSi         1025 134230838                                ; .bOverrideRangeAndAlphaStep
+        00AC  PopRPtr                                                   
+        00B0  WRTV1         v1                                          
+      L00B4:
+        00B4  RET           4                                           
+    */
+
+    void ClientLaserSetProgressCurve(UCurveFloat@ NewCurve)   // traits=0x20
+    {
+        __Evt_PushArgument__UCurveFloat(NewCurve);
+        __Evt_Execute(this, n"ClientLaserSetProgressCurve");
+        return;
+    }
+    /* ---- ClientLaserSetProgressCurve: 15 dwords / 8 instructions (cache offset 0x611f8) ----
+        0000  PSF           NewCurve                                    
+        0004  CALLSYS       __Evt_PushArgument__UCurveFloat             
+        0010  PshC4         145                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserSetProgressCurve, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetProgressCurve_Implementation(UCurveFloat@ NewCurve)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetProgressCurve(NewCurve);
+        }
+        return;
+    }
+    /* ---- ClientLaserSetProgressCurve_Implementation: 29 dwords / 17 instructions (cache offset 0x61310) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         7                                             -> L0070
+        0054  PshVPtr       NewCurve                                    
+        0058  PshVPtr       this                                        
+        005C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0064  RDSPtr                                                    
+        0068  CALLINTF      84611                                         ; ALokiAimingLaser::SetProgressCurve
+      L0070:
+        0070  RET           4                                           
+    */
+
+    void ClientLaserRestartProgressSequence(const float64 Duration, const bool bIsCurveNormalized)   // traits=0x20
+    {
+        __Evt_PushArgument__float(Duration);
+        __Evt_PushArgument__bool(bIsCurveNormalized);
+        __Evt_Execute(this, n"ClientLaserRestartProgressSequence");
+        return;
+    }
+    /* ---- ClientLaserRestartProgressSequence: 19 dwords / 10 instructions (cache offset 0x61523) ----
+        0000  PSF           Duration                                    
+        0004  CALLSYS       __Evt_PushArgument__float                   
+        0010  PSF           bIsCurveNormalized                          
+        0014  CALLSYS       __Evt_PushArgument__bool                    
+        0020  PshC4         146                                         
+        0028  CALLSYS       __STATIC_NAME                               
+        0034  PshRPtr                                                   
+        0038  PshVPtr       this                                        
+        003C  CALLSYS       __Evt_Execute                               
+        0048  RET           5                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserRestartProgressSequence, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserRestartProgressSequence_Implementation(const float64 Duration, const bool bIsCurveNormalized)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.RestartProgressSequence(Duration, bIsCurveNormalized);
+        }
+        return;
+    }
+    /* ---- ClientLaserRestartProgressSequence_Implementation: 30 dwords / 18 instructions (cache offset 0x61695) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         8                                             -> L0074
+        0054  PshV4         bIsCurveNormalized                          
+        0058  PshV8         Duration                                    
+        005C  PshVPtr       this                                        
+        0060  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0068  RDSPtr                                                    
+        006C  CALLINTF      84613                                         ; ALokiAimingLaser::RestartProgressSequence
+      L0074:
+        0074  RET           5                                           
+    */
+
+    void ClientLaserResetProgress()   // traits=0x20
+    {
+        __Evt_Execute(this, n"ClientLaserResetProgress");
+        return;
+    }
+    /* ---- ClientLaserResetProgress: 11 dwords / 6 instructions (cache offset 0x6182d) ----
+        0000  PshC4         147                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserResetProgress, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserResetProgress_Implementation()   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.ResetProgress();
+        }
+        return;
+    }
+    /* ---- ClientLaserResetProgress_Implementation: 28 dwords / 16 instructions (cache offset 0x618f9) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         6                                             -> L006C
+        0054  PshVPtr       this                                        
+        0058  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0060  RDSPtr                                                    
+        0064  CALLINTF      84612                                         ; ALokiAimingLaser::ResetProgress
+      L006C:
+        006C  RET           2                                           
+    */
+
+    void ClientLaserTriggerCustomEvent(const int EventNumber, const float64 Value)   // traits=0x20
+    {
+        __Evt_PushArgument__int(EventNumber);
+        __Evt_PushArgument__float(Value);
+        __Evt_Execute(this, n"ClientLaserTriggerCustomEvent");
+        return;
+    }
+    /* ---- ClientLaserTriggerCustomEvent: 19 dwords / 10 instructions (cache offset 0x61af6) ----
+        0000  PSF           EventNumber                                 
+        0004  CALLSYS       __Evt_PushArgument__int                     
+        0010  PSF           Value                                       
+        0014  CALLSYS       __Evt_PushArgument__float                   
+        0020  PshC4         148                                         
+        0028  CALLSYS       __STATIC_NAME                               
+        0034  PshRPtr                                                   
+        0038  PshVPtr       this                                        
+        003C  CALLSYS       __Evt_Execute                               
+        0048  RET           5                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserTriggerCustomEvent, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserTriggerCustomEvent_Implementation(const int EventNumber, const float64 Value)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            if (EventNumber <= 3) {
+                if (EventNumber <= 3) {
+                    if (EventNumber >= 0) {
+                        v3 = EventNumber - 0;
+                        switch (v3)
+                        {
+                            case 0: goto L00B8;
+                            case 1: goto L00DC;
+                            case 2: goto L0100;
+                            case 3: goto L0124;
+                        }
+    L00B8:
+                        this.ClientLaserInstance.CustomEvent0(Value);
+                        return;
+    L00DC:
+                        this.ClientLaserInstance.CustomEvent1(Value);
+                        return;
+    L0100:
+                        this.ClientLaserInstance.CustomEvent2(Value);
+                        return;
+    L0124:
+                        this.ClientLaserInstance.CustomEvent3(Value);
+                        return;
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- ClientLaserTriggerCustomEvent_Implementation: 83 dwords / 48 instructions (cache offset 0x61c59) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         61                                            -> L0148
+        0054  CMPIi         EventNumber 3                               
+        005C  JP            57                                            -> L0148
+        0064  CMPIi         EventNumber 3                               
+        006C  JP            53                                            -> L0148
+        0074  CMPIi         EventNumber 0                               
+        007C  JS            49                                            -> L0148
+        0084  SUBIi         v3 EventNumber 0                            
+        0090  JMPP          v3 3                                        
+        0098  JMP           6                                             -> L00B8
+        00A0  JMP           13                                            -> L00DC
+        00A8  JMP           20                                            -> L0100
+        00B0  JMP           27                                            -> L0124
+      L00B8:
+        00B8  PshV8         Value                                       
+        00BC  PshVPtr       this                                        
+        00C0  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        00C8  RDSPtr                                                    
+        00CC  CALLINTF      84585                                         ; ALokiAimingLaser::CustomEvent0
+        00D4  JMP           27                                            -> L0148
+      L00DC:
+        00DC  PshV8         Value                                       
+        00E0  PshVPtr       this                                        
+        00E4  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        00EC  RDSPtr                                                    
+        00F0  CALLINTF      84587                                         ; ALokiAimingLaser::CustomEvent1
+        00F8  JMP           18                                            -> L0148
+      L0100:
+        0100  PshV8         Value                                       
+        0104  PshVPtr       this                                        
+        0108  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0110  RDSPtr                                                    
+        0114  CALLINTF      84589                                         ; ALokiAimingLaser::CustomEvent2
+        011C  JMP           9                                             -> L0148
+      L0124:
+        0124  PshV8         Value                                       
+        0128  PshVPtr       this                                        
+        012C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0134  RDSPtr                                                    
+        0138  CALLINTF      84591                                         ; ALokiAimingLaser::CustomEvent3
+        0140  JMP           0                                             -> L0148
+      L0148:
+        0148  RET           5                                           
+    */
+
+    void ClientLaserSetMaxDistance(const float64 MaxDistance)   // traits=0x20
+    {
+        __Evt_PushArgument__float(MaxDistance);
+        __Evt_Execute(this, n"ClientLaserSetMaxDistance");
+        return;
+    }
+    /* ---- ClientLaserSetMaxDistance: 15 dwords / 8 instructions (cache offset 0x61f15) ----
+        0000  PSF           MaxDistance                                 
+        0004  CALLSYS       __Evt_PushArgument__float                   
+        0010  PshC4         149                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserSetMaxDistance, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetMaxDistance_Implementation(const float64 MaxDistance)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetMaxDistance(MaxDistance);
+        }
+        return;
+    }
+    /* ---- ClientLaserSetMaxDistance_Implementation: 29 dwords / 17 instructions (cache offset 0x6202e) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         7                                             -> L0070
+        0054  PshV8         MaxDistance                                 
+        0058  PshVPtr       this                                        
+        005C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0064  RDSPtr                                                    
+        0068  CALLINTF      84601                                         ; ALokiAimingLaser::SetMaxDistance
+      L0070:
+        0070  RET           4                                           
+    */
+
+    void ClientLaserSetHueShift(const float64 NewHueShift)   // traits=0x20
+    {
+        __Evt_PushArgument__float(NewHueShift);
+        __Evt_Execute(this, n"ClientLaserSetHueShift");
+        return;
+    }
+    /* ---- ClientLaserSetHueShift: 15 dwords / 8 instructions (cache offset 0x621f3) ----
+        0000  PSF           NewHueShift                                 
+        0004  CALLSYS       __Evt_PushArgument__float                   
+        0010  PshC4         150                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserSetHueShift, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetHueShift_Implementation(const float64 NewHueShift)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetHueShift(NewHueShift);
+        }
+        return;
+    }
+    /* ---- ClientLaserSetHueShift_Implementation: 29 dwords / 17 instructions (cache offset 0x62309) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         7                                             -> L0070
+        0054  PshV8         NewHueShift                                 
+        0058  PshVPtr       this                                        
+        005C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0064  RDSPtr                                                    
+        0068  CALLINTF      84602                                         ; ALokiAimingLaser::SetHueShift
+      L0070:
+        0070  RET           4                                           
+    */
+
+    void ClientLaserSetLaserMaterial(UMaterialInterface@ NewMaterial)   // traits=0x20
+    {
+        __Evt_PushArgument__UMaterialInterface(NewMaterial);
+        __Evt_Execute(this, n"ClientLaserSetLaserMaterial");
+        return;
+    }
+    /* ---- ClientLaserSetLaserMaterial: 15 dwords / 8 instructions (cache offset 0x624d0) ----
+        0000  PSF           NewMaterial                                 
+        0004  CALLSYS       __Evt_PushArgument__UMaterialInterface      
+        0010  PshC4         151                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserSetLaserMaterial, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetLaserMaterial_Implementation(UMaterialInterface@ NewMaterial)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetLaserMaterial(NewMaterial);
+        }
+        return;
+    }
+    /* ---- ClientLaserSetLaserMaterial_Implementation: 29 dwords / 17 instructions (cache offset 0x625eb) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         7                                             -> L0070
+        0054  PshVPtr       NewMaterial                                 
+        0058  PshVPtr       this                                        
+        005C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0064  RDSPtr                                                    
+        0068  CALLINTF      84603                                         ; ALokiAimingLaser::SetLaserMaterial
+      L0070:
+        0070  RET           4                                           
+    */
+
+    void ClientLaserSetEndpointMaterial(UMaterialInterface@ NewMaterial)   // traits=0x20
+    {
+        __Evt_PushArgument__UMaterialInterface(NewMaterial);
+        __Evt_Execute(this, n"ClientLaserSetEndpointMaterial");
+        return;
+    }
+    /* ---- ClientLaserSetEndpointMaterial: 15 dwords / 8 instructions (cache offset 0x627ba) ----
+        0000  PSF           NewMaterial                                 
+        0004  CALLSYS       __Evt_PushArgument__UMaterialInterface      
+        0010  PshC4         152                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserSetEndpointMaterial, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetEndpointMaterial_Implementation(UMaterialInterface@ NewMaterial)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetEndpointMaterial(NewMaterial);
+        }
+        return;
+    }
+    /* ---- ClientLaserSetEndpointMaterial_Implementation: 29 dwords / 17 instructions (cache offset 0x628d8) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         7                                             -> L0070
+        0054  PshVPtr       NewMaterial                                 
+        0058  PshVPtr       this                                        
+        005C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0064  RDSPtr                                                    
+        0068  CALLINTF      84604                                         ; ALokiAimingLaser::SetEndpointMaterial
+      L0070:
+        0070  RET           4                                           
+    */
+
+    void ClientLaserSetHitFlareNiagaraSystem(UNiagaraSystem@ NewNiagaraSystem)   // traits=0x20
+    {
+        __Evt_PushArgument__UNiagaraSystem(NewNiagaraSystem);
+        __Evt_Execute(this, n"ClientLaserSetHitFlareNiagaraSystem");
+        return;
+    }
+    /* ---- ClientLaserSetHitFlareNiagaraSystem: 15 dwords / 8 instructions (cache offset 0x62ab4) ----
+        0000  PSF           NewNiagaraSystem                            
+        0004  CALLSYS       __Evt_PushArgument__UNiagaraSystem          
+        0010  PshC4         153                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserSetHitFlareNiagaraSystem, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetHitFlareNiagaraSystem_Implementation(UNiagaraSystem@ NewNiagaraSystem)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetHitFlareNiagaraSystem(NewNiagaraSystem);
+        }
+        return;
+    }
+    /* ---- ClientLaserSetHitFlareNiagaraSystem_Implementation: 29 dwords / 17 instructions (cache offset 0x62bdc) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         7                                             -> L0070
+        0054  PshVPtr       NewNiagaraSystem                            
+        0058  PshVPtr       this                                        
+        005C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0064  RDSPtr                                                    
+        0068  CALLINTF      84605                                         ; ALokiAimingLaser::SetHitFlareNiagaraSystem
+      L0070:
+        0070  RET           4                                           
+    */
+
+    void ClientLaserSetBrightness(const float64 NewBrightness)   // traits=0x20
+    {
+        __Evt_PushArgument__float(NewBrightness);
+        __Evt_Execute(this, n"ClientLaserSetBrightness");
+        return;
+    }
+    /* ---- ClientLaserSetBrightness: 15 dwords / 8 instructions (cache offset 0x62daf) ----
+        0000  PSF           NewBrightness                               
+        0004  CALLSYS       __Evt_PushArgument__float                   
+        0010  PshC4         154                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserSetBrightness, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetBrightness_Implementation(const float64 NewBrightness)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetBrightness(NewBrightness);
+        }
+        return;
+    }
+    /* ---- ClientLaserSetBrightness_Implementation: 29 dwords / 17 instructions (cache offset 0x62ec9) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         7                                             -> L0070
+        0054  PshV8         NewBrightness                               
+        0058  PshVPtr       this                                        
+        005C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0064  RDSPtr                                                    
+        0068  CALLINTF      84606                                         ; ALokiAimingLaser::SetBrightness
+      L0070:
+        0070  RET           4                                           
+    */
+
+    void ClientLaserOverrideLimitLaserToCursor(const bool bNewLimitLaserToCursorOverride)   // traits=0x20
+    {
+        __Evt_PushArgument__bool(bNewLimitLaserToCursorOverride);
+        __Evt_Execute(this, n"ClientLaserOverrideLimitLaserToCursor");
+        return;
+    }
+    /* ---- ClientLaserOverrideLimitLaserToCursor: 15 dwords / 8 instructions (cache offset 0x630af) ----
+        0000  PSF           bNewLimitLaserToCursorOverride              
+        0004  CALLSYS       __Evt_PushArgument__bool                    
+        0010  PshC4         155                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           3                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserOverrideLimitLaserToCursor, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserOverrideLimitLaserToCursor_Implementation(const bool bNewLimitLaserToCursorOverride)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.OverrideLimitLaserToCursor(bNewLimitLaserToCursorOverride);
+        }
+        return;
+    }
+    /* ---- ClientLaserOverrideLimitLaserToCursor_Implementation: 29 dwords / 17 instructions (cache offset 0x631e7) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         7                                             -> L0070
+        0054  PshV4         bNewLimitLaserToCursorOverride              
+        0058  PshVPtr       this                                        
+        005C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0064  RDSPtr                                                    
+        0068  CALLINTF      84608                                         ; ALokiAimingLaser::OverrideLimitLaserToCursor
+      L0070:
+        0070  RET           3                                           
+    */
+
+    void ClientLaserClearOverrideLimitLaserToCursor()   // traits=0x20
+    {
+        __Evt_Execute(this, n"ClientLaserClearOverrideLimitLaserToCursor");
+        return;
+    }
+    /* ---- ClientLaserClearOverrideLimitLaserToCursor: 11 dwords / 6 instructions (cache offset 0x63390) ----
+        0000  PshC4         156                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserClearOverrideLimitLaserToCursor, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserClearOverrideLimitLaserToCursor_Implementation()   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.ClearOverrideLimitLaserToCursor();
+        }
+        return;
+    }
+    /* ---- ClientLaserClearOverrideLimitLaserToCursor_Implementation: 28 dwords / 16 instructions (cache offset 0x6346e) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         6                                             -> L006C
+        0054  PshVPtr       this                                        
+        0058  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0060  RDSPtr                                                    
+        0064  CALLINTF      84609                                         ; ALokiAimingLaser::ClearOverrideLimitLaserToCursor
+      L006C:
+        006C  RET           2                                           
+    */
+
+    void ClientLaserSwitchSettings(const int NewSettingsIndex)   // traits=0x20
+    {
+        __Evt_PushArgument__int(NewSettingsIndex);
+        __Evt_Execute(this, n"ClientLaserSwitchSettings");
+        return;
+    }
+    /* ---- ClientLaserSwitchSettings: 15 dwords / 8 instructions (cache offset 0x63648) ----
+        0000  PSF           NewSettingsIndex                            
+        0004  CALLSYS       __Evt_PushArgument__int                     
+        0010  PshC4         157                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           3                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserSwitchSettings, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSwitchSettings_Implementation(const int NewSettingsIndex)   // traits=0x20
+    {
+        this.ReplicatedLaserSettingsIndex = NewSettingsIndex;
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v2 = this.ReplicatedLaserSettingsIndex;
+            this.SwitchLaserSettingsInternal(v2);
+        }
+        return;
+    }
+    /* ---- ClientLaserSwitchSettings_Implementation: 19 dwords / 11 instructions (cache offset 0x63766) ----
+        0000  LoadThisR     280 134230841                                 ; this.ReplicatedLaserSettingsIndex
+        0008  WRTV4         NewSettingsIndex                            
+        000C  PshGPtr       __WorldContext                              
+        0018  CALLSYS       LokiIsClient                                
+        0024  JLowZ         7                                             -> L0048
+        002C  LoadThisR     280 134230841                                 ; this.ReplicatedLaserSettingsIndex
+        0034  RDR4          v2                                          
+        0038  PshV4         v2                                          
+        003C  PshVPtr       this                                        
+        0040  CALLINTF      84667                                         ; ULokiAimingVisComponentScript::SwitchLaserSettingsInternal
+      L0048:
+        0048  RET           3                                           
+    */
+
+    void ClientLaserShowRangeMarker(const bool bNewShowRangeMarker)   // traits=0x20
+    {
+        __Evt_PushArgument__bool(bNewShowRangeMarker);
+        __Evt_Execute(this, n"ClientLaserShowRangeMarker");
+        return;
+    }
+    /* ---- ClientLaserShowRangeMarker: 15 dwords / 8 instructions (cache offset 0x6390f) ----
+        0000  PSF           bNewShowRangeMarker                         
+        0004  CALLSYS       __Evt_PushArgument__bool                    
+        0010  PshC4         158                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           3                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserShowRangeMarker, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserShowRangeMarker_Implementation(const bool bNewShowRangeMarker)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v4 = UClass@(__StaticType_ALokiAimingLaserRangeMarker);
+            v2 = this.ClientLaserInstance.IsA(v4);
+            v1 = v2;
+        }
+        if (v1) {
+            v6 = this.ClientLaserInstance;
+            if (v6 != nullptr) {
+                v8 = cast<ALokiAimingLaserRangeMarker@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v8.SetShowRangeMarker(<?>);
+        }
+        return;
+    }
+    /* ---- ClientLaserShowRangeMarker_Implementation: 70 dwords / 42 instructions (cache offset 0x63a31) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowNZ        4                                             -> L0064
+        0054  SetV4         v1 0                                        
+        005C  JMP           19                                            -> L00B0
+      L0064:
+        0064  PshGPtr       __StaticType_ALokiAimingLaserRangeMarker    
+        0070  CHKREF                                                    
+        0074  CALLSYS       TSubclassOf::opImplConv                     
+        0080  STOREOBJ      v4                                          
+        0084  PshVPtr       v4                                          
+        0088  PshVPtr       this                                        
+        008C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0094  RDSPtr                                                    
+        0098  CALLSYS       UObject::IsA                                
+        00A4  CpyRtoV4      v2                                          
+        00A8  CpyVtoV4      v1 v2                                       
+      L00B0:
+        00B0  CpyVtoR1      v1                                          
+        00B4  JLowZ         22                                            -> L0114
+        00BC  PshV4         bNewShowRangeMarker                         
+        00C0  PshVPtr       this                                        
+        00C4  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        00CC  RDSPtr                                                    
+        00D0  RefCpyV       v6                                          
+        00D4  CmpPtrNull    v6                                          
+        00D8  JZ            9                                             -> L0104
+        00E0  TYPEID        1207972667                                    ; ALokiAimingLaserRangeMarker@
+        00E8  PSF           v8                                          
+        00EC  PshVPtr       v6                                          
+        00F0  CALLSYS       UObject::opCast                             
+        00FC  JMP           1                                             -> L0108
+      L0104:
+        0104  ClrVPtr       v8                                          
+      L0108:
+        0108  PshVPtr       v8                                          
+        010C  CALLINTF      84623                                         ; ALokiAimingLaserRangeMarker::SetShowRangeMarker
+      L0114:
+        0114  RET           3                                           
+    */
+
+    void ClientLaserSetRangeMarkerDistance(const float64 NewDistance)   // traits=0x20
+    {
+        __Evt_PushArgument__float(NewDistance);
+        __Evt_Execute(this, n"ClientLaserSetRangeMarkerDistance");
+        return;
+    }
+    /* ---- ClientLaserSetRangeMarkerDistance: 15 dwords / 8 instructions (cache offset 0x63cca) ----
+        0000  PSF           NewDistance                                 
+        0004  CALLSYS       __Evt_PushArgument__float                   
+        0010  PshC4         159                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserSetRangeMarkerDistance, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetRangeMarkerDistance_Implementation(const float64 NewDistance)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v4 = UClass@(__StaticType_ALokiAimingLaserRangeMarker);
+            v2 = this.ClientLaserInstance.IsA(v4);
+            v1 = v2;
+        }
+        if (v1) {
+            v6 = this.ClientLaserInstance;
+            if (v6 != nullptr) {
+                v8 = cast<ALokiAimingLaserRangeMarker@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v8.SetRangeMarkerDistance(<?>);
+        }
+        return;
+    }
+    /* ---- ClientLaserSetRangeMarkerDistance_Implementation: 70 dwords / 42 instructions (cache offset 0x63deb) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowNZ        4                                             -> L0064
+        0054  SetV4         v1 0                                        
+        005C  JMP           19                                            -> L00B0
+      L0064:
+        0064  PshGPtr       __StaticType_ALokiAimingLaserRangeMarker    
+        0070  CHKREF                                                    
+        0074  CALLSYS       TSubclassOf::opImplConv                     
+        0080  STOREOBJ      v4                                          
+        0084  PshVPtr       v4                                          
+        0088  PshVPtr       this                                        
+        008C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0094  RDSPtr                                                    
+        0098  CALLSYS       UObject::IsA                                
+        00A4  CpyRtoV4      v2                                          
+        00A8  CpyVtoV4      v1 v2                                       
+      L00B0:
+        00B0  CpyVtoR1      v1                                          
+        00B4  JLowZ         22                                            -> L0114
+        00BC  PshV8         NewDistance                                 
+        00C0  PshVPtr       this                                        
+        00C4  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        00CC  RDSPtr                                                    
+        00D0  RefCpyV       v6                                          
+        00D4  CmpPtrNull    v6                                          
+        00D8  JZ            9                                             -> L0104
+        00E0  TYPEID        1207972667                                    ; ALokiAimingLaserRangeMarker@
+        00E8  PSF           v8                                          
+        00EC  PshVPtr       v6                                          
+        00F0  CALLSYS       UObject::opCast                             
+        00FC  JMP           1                                             -> L0108
+      L0104:
+        0104  ClrVPtr       v8                                          
+      L0108:
+        0108  PshVPtr       v8                                          
+        010C  CALLINTF      84624                                         ; ALokiAimingLaserRangeMarker::SetRangeMarkerDistance
+      L0114:
+        0114  RET           4                                           
+    */
+
+    void ClientLaserSetRangeMarkerMaterial(UMaterialInterface@ NewMaterial)   // traits=0x20
+    {
+        __Evt_PushArgument__UMaterialInterface(NewMaterial);
+        __Evt_Execute(this, n"ClientLaserSetRangeMarkerMaterial");
+        return;
+    }
+    /* ---- ClientLaserSetRangeMarkerMaterial: 15 dwords / 8 instructions (cache offset 0x6408b) ----
+        0000  PSF           NewMaterial                                 
+        0004  CALLSYS       __Evt_PushArgument__UMaterialInterface      
+        0010  PshC4         160                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientLaserSetRangeMarkerMaterial, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetRangeMarkerMaterial_Implementation(UMaterialInterface@ NewMaterial)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v4 = UClass@(__StaticType_ALokiAimingLaserRangeMarker);
+            v2 = this.ClientLaserInstance.IsA(v4);
+            v1 = v2;
+        }
+        if (v1) {
+            v6 = this.ClientLaserInstance;
+            if (v6 != nullptr) {
+                v8 = cast<ALokiAimingLaserRangeMarker@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v8.SetRangeMarkerMaterial(<?>);
+        }
+        return;
+    }
+    /* ---- ClientLaserSetRangeMarkerMaterial_Implementation: 70 dwords / 42 instructions (cache offset 0x641ac) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84655                                         ; ULokiAimingVisComponentScript::ValidateLaser
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowNZ        4                                             -> L0064
+        0054  SetV4         v1 0                                        
+        005C  JMP           19                                            -> L00B0
+      L0064:
+        0064  PshGPtr       __StaticType_ALokiAimingLaserRangeMarker    
+        0070  CHKREF                                                    
+        0074  CALLSYS       TSubclassOf::opImplConv                     
+        0080  STOREOBJ      v4                                          
+        0084  PshVPtr       v4                                          
+        0088  PshVPtr       this                                        
+        008C  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        0094  RDSPtr                                                    
+        0098  CALLSYS       UObject::IsA                                
+        00A4  CpyRtoV4      v2                                          
+        00A8  CpyVtoV4      v1 v2                                       
+      L00B0:
+        00B0  CpyVtoR1      v1                                          
+        00B4  JLowZ         22                                            -> L0114
+        00BC  PSF           NewMaterial                                 
+        00C0  PshVPtr       this                                        
+        00C4  ADDSi         248 134230841                                 ; .ClientLaserInstance
+        00CC  RDSPtr                                                    
+        00D0  RefCpyV       v6                                          
+        00D4  CmpPtrNull    v6                                          
+        00D8  JZ            9                                             -> L0104
+        00E0  TYPEID        1207972667                                    ; ALokiAimingLaserRangeMarker@
+        00E8  PSF           v8                                          
+        00EC  PshVPtr       v6                                          
+        00F0  CALLSYS       UObject::opCast                             
+        00FC  JMP           1                                             -> L0108
+      L0104:
+        0104  ClrVPtr       v8                                          
+      L0108:
+        0108  PshVPtr       v8                                          
+        010C  CALLINTF      84625                                         ; ALokiAimingLaserRangeMarker::SetRangeMarkerMaterial
+      L0114:
+        0114  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool HasValidHeightIndicator()   // traits=0x20
+    {
+        v1 = IsValid(this.HeightIndicator);
+        return v1;
+    }
+    /* ---- HasValidHeightIndicator: 10 dwords / 7 instructions (cache offset 0x64406) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         216 67114911                                  ; .HeightIndicator
+        000C  RDSPtr                                                    
+        0010  CALLSYS       IsValid                                     
+        001C  CpyRtoV4      v1                                          
+        0020  CpyVtoR4      v1                                          
+        0024  RET           2                                           
+    */
+
+    void DestroyHeightIndicator()   // traits=0x20
+    {
+        __Evt_Execute(this, n"DestroyHeightIndicator");
+        return;
+    }
+    /* ---- DestroyHeightIndicator: 11 dwords / 6 instructions (cache offset 0x64529) ----
+        0000  PshC4         161                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=DestroyHeightIndicator, BlueprintEvent, CanOverrideEvent)
+    void DestroyHeightIndicator_Implementation()   // traits=0x20
+    {
+        if (this.HasValidHeightIndicator()) {
+            this.HeightIndicator.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+    /* ---- DestroyHeightIndicator_Implementation: 13 dwords / 8 instructions (cache offset 0x645f3) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84711                                         ; ULokiAimingVisComponentScript::HasValidHeightIndicator
+        000C  JLowZ         7                                             -> L0030
+        0014  PshVPtr       this                                        
+        0018  ADDSi         216 67114911                                  ; .HeightIndicator
+        0020  RDSPtr                                                    
+        0024  CALLSYS       AActor::DestroyActor                        
+      L0030:
+        0030  RET           2                                           
+    */
+
+    void OnTookDamageHeightIndicator(ALokiCharacter@ SourceCharacter, AActor@ TargetActor, const float32 TotalDamage, const FLokiDamageStatistic&in DamageStatistic, const FGameplayEffectSpec&in EffectSpec, const FGameplayTagContainer&in ExecutionTags)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiCharacter(SourceCharacter);
+        __Evt_PushArgument__AActor(TargetActor);
+        __Evt_PushArgument__float32(TotalDamage);
+        __Evt_PushArgument__FLokiDamageStatistic(DamageStatistic);
+        __Evt_PushArgument__FGameplayEffectSpec(EffectSpec);
+        __Evt_PushArgument__FGameplayTagContainer(ExecutionTags);
+        __Evt_Execute(this, n"OnTookDamageHeightIndicator");
+        return;
+    }
+    /* ---- OnTookDamageHeightIndicator: 35 dwords / 18 instructions (cache offset 0x648af) ----
+        0000  PSF           SourceCharacter                             
+        0004  CALLSYS       __Evt_PushArgument__ALokiCharacter          
+        0010  PSF           TargetActor                                 
+        0014  CALLSYS       __Evt_PushArgument__AActor                  
+        0020  PSF           TotalDamage                                 
+        0024  CALLSYS       __Evt_PushArgument__float32                 
+        0030  PshVPtr       DamageStatistic                             
+        0034  CALLSYS       __Evt_PushArgument__FLokiDamageStatistic    
+        0040  PshVPtr       EffectSpec                                  
+        0044  CALLSYS       __Evt_PushArgument__FGameplayEffectSpec     
+        0050  PshVPtr       ExecutionTags                               
+        0054  CALLSYS       __Evt_PushArgument__FGameplayTagContainer   
+        0060  PshC4         162                                         
+        0068  CALLSYS       __STATIC_NAME                               
+        0074  PshRPtr                                                   
+        0078  PshVPtr       this                                        
+        007C  CALLSYS       __Evt_Execute                               
+        0088  RET           13                                          
+    */
+
+    UFUNCTION(UnrealName=OnTookDamageHeightIndicator, BlueprintEvent, CanOverrideEvent)
+    void OnTookDamageHeightIndicator_Implementation(ALokiCharacter@ SourceCharacter, AActor@ TargetActor, const float32 TotalDamage, const FLokiDamageStatistic&in DamageStatistic, const FGameplayEffectSpec&in EffectSpec, const FGameplayTagContainer&in ExecutionTags)   // traits=0x20
+    {
+        if (!this.ValidateOwner()) {
+            v1 = 0;
+        } else {
+            v2 = this.HasValidHeightIndicator();
+            v1 = v2;
+        }
+        if (v1) {
+            this.HeightIndicator.OnTookDamage(SourceCharacter, TargetActor, TotalDamage, DamageStatistic, EffectSpec, ExecutionTags);
+        }
+        return;
+    }
+    /* ---- OnTookDamageHeightIndicator_Implementation: 32 dwords / 22 instructions (cache offset 0x64b4f) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84653                                         ; ULokiAimingVisComponentScript::ValidateOwner
+        000C  JLowNZ        4                                             -> L0024
+        0014  SetV4         v1 0                                        
+        001C  JMP           6                                             -> L003C
+      L0024:
+        0024  PshVPtr       this                                        
+        0028  CALLINTF      84711                                         ; ULokiAimingVisComponentScript::HasValidHeightIndicator
+        0030  CpyRtoV4      v2                                          
+        0034  CpyVtoV4      v1 v2                                       
+      L003C:
+        003C  CpyVtoR1      v1                                          
+        0040  JLowZ         13                                            -> L007C
+        0048  PshVPtr       ExecutionTags                               
+        004C  PshVPtr       EffectSpec                                  
+        0050  PshVPtr       DamageStatistic                             
+        0054  PshV4         TotalDamage                                 
+        0058  PshVPtr       TargetActor                                 
+        005C  PshVPtr       SourceCharacter                             
+        0060  PshVPtr       this                                        
+        0064  ADDSi         216 67114911                                  ; .HeightIndicator
+        006C  RDSPtr                                                    
+        0070  CALLSYS       ALokiHeroHeightIndicator::OnTookDamage      
+      L007C:
+        007C  RET           13                                          
+    */
+
+    void ClientSetHeightIndicatorVisibility(const bool bNewVisibility)   // traits=0x20
+    {
+        __Evt_PushArgument__bool(bNewVisibility);
+        __Evt_Execute(this, n"ClientSetHeightIndicatorVisibility");
+        return;
+    }
+    /* ---- ClientSetHeightIndicatorVisibility: 15 dwords / 8 instructions (cache offset 0x64d31) ----
+        0000  PSF           bNewVisibility                              
+        0004  CALLSYS       __Evt_PushArgument__bool                    
+        0010  PshC4         163                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           3                                           
+    */
+
+    UFUNCTION(UnrealName=ClientSetHeightIndicatorVisibility, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientSetHeightIndicatorVisibility_Implementation(const bool bNewVisibility)   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.HasValidHeightIndicator();
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v2 = this.HeightIndicator.ShouldShowHeightIndicator();
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = true;
+            v4 = this.HeightIndicator.GetRootComponent()  /* UFunction K2_GetRootComponent */;
+            v4.SetVisibility(bNewVisibility, v2);
+        }
+        return;
+    }
+    /* ---- ClientSetHeightIndicatorVisibility_Implementation: 55 dwords / 32 instructions (cache offset 0x64e56) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84711                                         ; ULokiAimingVisComponentScript::HasValidHeightIndicator
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowNZ        4                                             -> L0064
+        0054  SetV4         v1 0                                        
+        005C  JMP           10                                            -> L008C
+      L0064:
+        0064  PshVPtr       this                                        
+        0068  ADDSi         216 67114911                                  ; .HeightIndicator
+        0070  RDSPtr                                                    
+        0074  CALLSYS       ALokiHeroHeightIndicator::ShouldShowHeightIndicator
+        0080  CpyRtoV4      v2                                          
+        0084  CpyVtoV4      v1 v2                                       
+      L008C:
+        008C  CpyVtoR1      v1                                          
+        0090  JLowZ         16                                            -> L00D8
+        0098  SetV1         v2 1                                        
+        00A0  PshV4         v2                                          
+        00A4  PshV4         bNewVisibility                              
+        00A8  PshVPtr       this                                        
+        00AC  ADDSi         216 67114911                                  ; .HeightIndicator
+        00B4  RDSPtr                                                    
+        00B8  CALLSYS       AActor::GetRootComponent                    
+        00C4  STOREOBJ      v4                                          
+        00C8  PshVPtr       v4                                          
+        00CC  CALLSYS       USceneComponent::SetVisibility              
+      L00D8:
+        00D8  RET           3                                           
+    */
+
+    void OnShowHeightIndicatorsChanged()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnShowHeightIndicatorsChanged");
+        return;
+    }
+    /* ---- OnShowHeightIndicatorsChanged: 11 dwords / 6 instructions (cache offset 0x65063) ----
+        0000  PshC4         164                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=OnShowHeightIndicatorsChanged, BlueprintEvent, CanOverrideEvent)
+    void OnShowHeightIndicatorsChanged_Implementation()   // traits=0x20
+    {
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.HasValidHeightIndicator();
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = this.HeightIndicator.ShouldShowHeightIndicator();
+            this.ClientSetHeightIndicatorVisibility(v2);
+        }
+        return;
+    }
+    /* ---- OnShowHeightIndicatorsChanged_Implementation: 34 dwords / 20 instructions (cache offset 0x65134) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsClient                                
+        0018  JLowNZ        4                                             -> L0030
+        0020  SetV4         v1 0                                        
+        0028  JMP           6                                             -> L0048
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84711                                         ; ULokiAimingVisComponentScript::HasValidHeightIndicator
+        003C  CpyRtoV4      v2                                          
+        0040  CpyVtoV4      v1 v2                                       
+      L0048:
+        0048  CpyVtoR1      v1                                          
+        004C  JLowZ         12                                            -> L0084
+        0054  PshVPtr       this                                        
+        0058  ADDSi         216 67114911                                  ; .HeightIndicator
+        0060  RDSPtr                                                    
+        0064  CALLSYS       ALokiHeroHeightIndicator::ShouldShowHeightIndicator
+        0070  CpyRtoV4      v2                                          
+        0074  PshV4         v2                                          
+        0078  PshVPtr       this                                        
+        007C  CALLINTF      84716                                         ; ULokiAimingVisComponentScript::ClientSetHeightIndicatorVisibility
+      L0084:
+        0084  RET           2                                           
+    */
+
+    void OnLivingStateChanged(const ELivingState NewLivingState, ALokiCharacter@ Character)   // traits=0x20
+    {
+        __Evt_PushArgument__ELivingState(NewLivingState);
+        __Evt_PushArgument__ALokiCharacter(arg_m3);
+        __Evt_Execute(this, n"OnLivingStateChanged");
+        return;
+    }
+    /* ---- OnLivingStateChanged: 19 dwords / 10 instructions (cache offset 0x6534c) ----
+        0000  PSF           NewLivingState                              
+        0004  CALLSYS       __Evt_PushArgument__ELivingState            
+        0010  PSF           arg_m3                                      
+        0014  CALLSYS       __Evt_PushArgument__ALokiCharacter          
+        0020  PshC4         48                                          
+        0028  CALLSYS       __STATIC_NAME                               
+        0034  PshRPtr                                                   
+        0038  PshVPtr       this                                        
+        003C  CALLSYS       __Evt_Execute                               
+        0048  RET           5                                           
+    */
+
+    UFUNCTION(UnrealName=OnLivingStateChanged, BlueprintEvent, CanOverrideEvent)
+    void OnLivingStateChanged_Implementation(const ELivingState NewLivingState, ALokiCharacter@ Character)   // traits=0x20
+    {
+        this.OnLivingStateChangedLaser(NewLivingState);
+        return;
+    }
+    /* ---- OnLivingStateChanged_Implementation: 5 dwords / 4 instructions (cache offset 0x654ad) ----
+        0000  PshV4         NewLivingState                              
+        0004  PshVPtr       this                                        
+        0008  CALLINTF      84669                                         ; ULokiAimingVisComponentScript::OnLivingStateChangedLaser
+        0010  RET           5                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnOwnerDestroyed(AActor@ DestroyedActor)   // traits=0x20
+    {
+        this.DestroyHeightIndicator();
+        return;
+    }
+    /* ---- OnOwnerDestroyed: 4 dwords / 3 instructions (cache offset 0x655f2) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84712                                         ; ULokiAimingVisComponentScript::DestroyHeightIndicator
+        000C  RET           4                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = true;
+        this.SetbReplicates(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 8 dwords / 5 instructions (cache offset 0x656ee) ----
+        0000  SetV1         v1 1                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       UActorComponent::SetbReplicates             
+        001C  RET           2                                           
+    */
+
+    void ~ULokiAimingVisComponentScript()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ULokiAimingVisComponentScript: 7 dwords / 4 instructions (cache offset 0x65a73) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         256 134230841                                 ; .LaserSettings
+        000C  CALLSYS       TArray::$beh2                               
+        0018  RET           2                                           
+    */
+
+}
+

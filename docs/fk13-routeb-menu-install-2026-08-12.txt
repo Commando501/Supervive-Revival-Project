@@ -1,0 +1,23 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[CHM] Route B: construct a UCheatManager and install it on the live PlayerController.
+[CHM] Inject AFTER the world is up (menu is fine -- CheatClass is populated in both).
+[CHM] KFUNCSWAP=1: game-thread callback via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF7C92354A0 stub=0x248F8C824B0 funcCls=0x2483872B000 gameTid=16692
+[CHM] === RM_CHEATMGR: install a UCheatManager on the live PlayerController ===
+[FS] arm: swapped=18223 BP UFunctions  (scan 3062 ms over 177238 objects, 34913 UFunctions total) -- NO .text WRITE
+[CHM] cand 'LokiPlayerController' -> 0x24848421470 (LokiPlayerControllerUAVComponent) REJECTED: CheatManager@0xFFFFFFFF CheatClass@0xFFFFFFFF
+[FS] hot: 0 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   (none -- the swapped functions are not being dispatched on the game thread)
+[CHM] PC=0x24983CBC040 class=PC_MainMenu_C  CheatManager@0x520 CheatClass@0x528 (by name, not literals)
+[CHM] CheatClass=0x2484A275100 (CheatManager)
+[FOW] resolved 'SpawnObject' fn=0x24847E15630 thunk=0x7FF7CB6FFF40 owner=GameplayStatics cdo=0x2484816A140
+[CHM] SpawnObject: fn=0000024847E15630 thunk=0x7FF7CB6FFF40 child=0x24880DD0200 cdo=0x2484816A140
+[CHM] SpawnObject params: ObjectClass@0x0 Outer@0x8 ReturnValue@0x10
+[CHM] SpawnObject ok -> 0x24A071D2D60
+[CHM] constructed 0x24A071D2D60 class=CheatManager
+[CHM] *** INSTALLED: PC(0x24983CBC040)->CheatManager@0x520 = 0x24A071D2D60 (CheatManager) -- readback verified ***
+[CHM] UPlayer::Exec branch 7 is now live. Verify externally with cheat_reach_probe.py,
+[CHM] then drive it with ExecuteConsoleCommand("<verb>").
+[FS] disarm: restored=18223 of 18223 swapped (scan 3015 ms, 34913 UFunctions live)
+[CHM] done (installed=0x24A071D2D60 pc=0x24983CBC040 called=1 hitsGT=1)

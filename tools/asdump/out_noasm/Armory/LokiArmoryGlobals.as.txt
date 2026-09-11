@@ -1,0 +1,379 @@
+// ============================================================================
+//  MODULE   Armory.LokiArmoryGlobals
+//  SOURCE   Armory/LokiArmoryGlobals.as
+//  CONTENT  0 class(es), 6 function(s), 0 enum(s), 0 global(s), 4000 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Armory_LokiArmoryGlobalsStatics
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+TArray<FString> GetPerTierPowerDescription(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+{
+    TArray<FString> v4;
+    auto v5;
+    ALokiBaseItem v8;
+    FText v14;
+    FText v18;
+    int v19;
+    int v20;
+    FString v26;
+    FLokiArmoryUniqueEffect v32;
+    auto v33;
+    auto v34;
+
+    v4 = TArray<FString>();
+    v5 = ItemClass.IsValid();
+    v5 = !v5;
+    if (v5) {
+        __ret = TArray<FString>();
+        __ret = v4;
+        return;
+    } else {
+        v8 = ItemClass.GetDefaultObject();
+        v5 = IsValid(v8);
+        v5 = !v5;
+        if (v5) {
+            __ret = TArray<FString>();
+            __ret = v4;
+            return;
+        } else {
+            v18 = FText();
+            v19 = 0;
+            while (true) {
+                if (v19 >= 6) break;
+                v26 = FString();
+                v4.Add(v26);
+                v19++;
+            }
+            v19 = 0;
+            while (true) {
+                v20 = v8.ArmoryUniqueEffects.Num();
+                if (v19 >= v20) break;
+                v32 = FLokiArmoryUniqueEffect(v8.ArmoryUniqueEffects[v19]);
+                v33 = v32.StarRequirement;
+                v20 = v4.Num();
+                if (v33 >= v20) {
+                    v5 = true;
+                } else {
+                    v20 = v32.StarRequirement;
+                    v34 = v20 < 0;
+                    v5 = v34;
+                }
+                if (!v5) {
+                    v14 = v8.GetArmoryUniqueEffectDescriptionAtIndex(v19);
+                    v26 = v14.ToString();
+                    v20 = v32.StarRequirement;
+                    v4[v20] = v26;
+                }
+                v19++;
+            }
+            __ret = TArray<FString>();
+            __ret = v4;
+        }
+    }
+    return;
+}
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+bool IsItemSpellDescription(ALokiBaseItem@ Item, const int StarCount)   // traits=0x20
+{
+    auto v1;
+    TArrayIterator<FLokiArmoryUniqueEffect> v8;
+    auto v16;
+    auto v17;
+
+    v1 = IsValid(Item);
+    v1 = !v1;
+    if (v1) {
+        v1 = false;
+        return v1;
+    } else {
+        v8 = Item.ArmoryUniqueEffects.Iterator();
+        while (true) {
+            v1 = v8.CanProceed;
+            if (!v1) break;
+            v16 = v8.Proceed();
+            v17 = v16.StarRequirement;
+            if (v17 == StarCount) {
+                v1 = v16.bIsItemSpell;
+                return v1;
+            }
+        }
+        v1 = false;
+    }
+    return v1;
+}
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+TSubclassOf<UGameplayEffect@> GetUniqueEffectForStar(const TSubclassOf<ALokiBaseItem@>& ItemClass, const int StarCount)   // traits=0x20
+{
+    auto v1;
+    TSubclassOf<UGameplayEffect@> v4;
+    ALokiBaseItem v6;
+    TArrayIterator<FLokiArmoryUniqueEffect> v14;
+    auto v22;
+    auto v23;
+
+    v1 = ItemClass.IsValid();
+    v1 = !v1;
+    if (v1) {
+        __ret = TSubclassOf<UGameplayEffect@>();
+        v4 = TSubclassOf<UGameplayEffect@>(nullptr);
+        __ret = v4;
+        return;
+    } else {
+        v6 = ItemClass.GetDefaultObject();
+        v1 = IsValid(v6);
+        v1 = !v1;
+        if (v1) {
+            __ret = TSubclassOf<UGameplayEffect@>();
+            v4 = TSubclassOf<UGameplayEffect@>(nullptr);
+            __ret = v4;
+            return;
+        } else {
+            v14 = v6.ArmoryUniqueEffects.Iterator();
+            while (true) {
+                v1 = v14.CanProceed;
+                if (!v1) break;
+                v22 = v14.Proceed();
+                v23 = v22.StarRequirement;
+                if (v23 == StarCount) {
+                    __ret = TSubclassOf<UGameplayEffect@>();
+                    __ret = v22.EffectClass;
+                    return;
+                }
+            }
+            __ret = TSubclassOf<UGameplayEffect@>();
+            v4 = TSubclassOf<UGameplayEffect@>(nullptr);
+            __ret = v4;
+        }
+    }
+    return;
+}
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+FText GetArmoryUniqueEffectTextForItem(ALokiBaseItem@ Item, const FText& InactiveWarningFmt, const FText& LevelUpText)   // traits=0x20
+{
+    auto v1;
+    FText v6;
+    UClass v8;
+    UObject v10;
+    ALokiBaseItem v12;
+    ALokiBaseItem v14;
+    ALokiBaseItem v16;
+    TSubclassOf<ALokiBaseItem@> v18;
+    FText v22;
+
+    v1 = IsValid(Item);
+    v1 = !v1;
+    if (v1) {
+        v6 = FText();
+        __ret = FText(v6);
+        return;
+    } else {
+        v8 = Item.GetClass();
+        v10 = v8.GetDefaultObject();
+        if (v10 != nullptr) {
+            v12 = cast<ALokiBaseItem@>(v10);
+        } else {
+            v12 = nullptr;
+        }
+        v14 = v12;
+        v16 = Item;
+        if (v14 == v16) {
+            v8 = Item.GetClass();
+            v18 = TSubclassOf<ALokiBaseItem@>(v8);
+            v6 = GetArmoryUniqueEffectTextForItemClass(v18, InactiveWarningFmt, LevelUpText);
+            __ret = FText(v6);
+            return;
+        } else {
+            v1 = Item.CanHaveAnyArmoryUniqueEffects();
+            v1 = !v1;
+            if (v1) {
+                v6 = FText();
+                __ret = FText(v6);
+                return;
+            } else {
+                v6 = Item.GetArmoryUniqueEffectDescriptionAtIndex(0);
+                if (Item.MeetsRequirementsForUniqueEffectAtIndex(0)) {
+                    v22 = FText();
+                    __ret = FText(v22);
+                    return;
+                } else {
+                    if (Item.HasArmoryStarsForUniqueEffectAtIndex(0)) {
+                        v22 = FText::Format(InactiveWarningFmt, v6, typeid(FText));
+                        __ret = FText(v22);
+                        return;
+                    } else {
+                        __ret = FText(LevelUpText);
+                    }
+                }
+            }
+        }
+    }
+    return;
+}
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+FText GetArmoryUniqueEffectTextForItemClass(const TSubclassOf<ALokiBaseItem@>& ItemClass, const FText& InactiveWarningFmt, const FText& LevelUpText)   // traits=0x20
+{
+    UObject v2;
+    auto v3;
+    FText v8;
+    ALokiBaseItem v12;
+    auto v13;
+    FLokiArmoryUniqueEffect v20;
+    ALokiPlayerController v24;
+    UClass v26;
+    TSubclassOf<UActorComponent@> v28;
+    UActorComponent v30;
+    ULokiPlayerControllerArmoryComponent v32;
+    ULokiPlayerControllerArmoryComponent v34;
+    auto v35;
+    auto v36;
+    FText v40;
+    UArmoryManager v44;
+    UPlayerArmoryModel v48;
+    TArrayIterator<UEquipmentModel@> v54;
+    UEquipmentModel v62;
+    TSubclassOf<ALokiBaseItem@> v66;
+    auto v67;
+
+    v2 = UObject@(ItemClass);
+    v3 = IsValid(v2);
+    v3 = !v3;
+    if (v3) {
+        v8 = FText();
+        __ret = FText(v8);
+        return;
+    } else {
+        v12 = ItemClass.GetDefaultObject();
+        v3 = IsValid(v12);
+        v3 = !v3;
+        if (v3) {
+            v8 = FText();
+            __ret = FText(v8);
+            return;
+        } else {
+            if (v12.ArmoryUniqueEffects.IsEmpty()) {
+                v8 = FText();
+                __ret = FText(v8);
+                return;
+            } else {
+                v20 = FLokiArmoryUniqueEffect(v12.ArmoryUniqueEffects[0]);
+                if (Loki::IsInGameWorld(__WorldContext)) {
+                    v24 = Loki::GetLocalLokiController(__WorldContext);
+                    if (IsValid(v24)) {
+                        v26 = ULokiPlayerControllerArmoryComponent::StaticClass();
+                        v28 = TSubclassOf<UActorComponent@>(v26);
+                        v30 = v24.GetComponentByClass(v28);
+                        if (v30 != nullptr) {
+                            v32 = cast<ULokiPlayerControllerArmoryComponent@>(v30);
+                        } else {
+                            v32 = nullptr;
+                        }
+                        v34 = v32;
+                        v3 = IsValid(v34);
+                        v3 = !v3;
+                        if (v3) {
+                            v8 = FText();
+                            __ret = FText(v8);
+                            return;
+                        }
+                        v3 = false;
+                        v35 = v3;
+                        v36 = -1;
+                        v13 = v20.StarRequirement;
+                        if (v13 <= v36) {
+                            if (v12.HasArmoryTierForUniqueEffectAtIndex(0)) {
+                                v8 = v12.GetArmoryUniqueEffectDescriptionAtIndex(0);
+                                __ret = FText(v8);
+                                return;
+                            }
+                            v8 = v12.GetArmoryUniqueEffectDescriptionAtIndex(0);
+                            v40 = FText::Format(InactiveWarningFmt, v8, typeid(FText));
+                            __ret = FText(v40);
+                            return;
+                        }
+                    }
+                    __ret = FText(LevelUpText);
+                    return;
+                } else {
+                    v44 = UArmoryManager::GetArmoryManager(__WorldContext);
+                    v48 = v44.GetPlayerArmoryModel();
+                    v3 = false;
+                    v35 = v3;
+                    v36 = -1;
+                    v54 = v48.InventoryEquipment.Iterator();
+                    while (true) {
+                        v3 = v54.CanProceed;
+                        if (!v3) break;
+                        v62 = v54.Proceed();
+                        v54.Proceed();
+                        if (v62.EquipmentAsset.Equipment.IsValid()) {
+                            v66 = v62.EquipmentAsset.Equipment.Get();
+                            if (v66 == ItemClass) {
+                                v3 = true;
+                                v35 = v3;
+                                v13 = v62.XP;
+                                if (v13 < 2) {
+                                    v36 = 0;
+                                } else {
+                                    v13 = v62.XP;
+                                    if (v13 < 5) {
+                                        v36 = 1;
+                                    } else {
+                                        v36 = 2;
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    v67 = v20.StarRequirement;
+                    if (v67 <= v36) {
+                        v8 = v12.GetArmoryUniqueEffectDescriptionAtIndex(0);
+                        __ret = FText(v8);
+                        return;
+                    } else {
+                        __ret = FText(LevelUpText);
+                    }
+                }
+            }
+        }
+    }
+    return;
+}
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+bool HasEffectsIgnoredInConciseTooltip(const TArray<FLokiArmoryUniqueEffect>& UniqueEffects)   // traits=0x20
+{
+    TArrayConstIterator<FLokiArmoryUniqueEffect> v6;
+    auto v13;
+    auto v16;
+    auto v17;
+
+    v6 = UniqueEffects.Iterator();
+    while (true) {
+        v13 = v6.CanProceed;
+        if (!v13) break;
+        v16 = v6.Proceed();
+        v13 = v16.bIncludeInConciseTooltip;
+        v13 = !v13;
+        v17 = false;
+        v17 = !v17;
+        if (v13 == v17) {
+            v17 = true;
+            return v17;
+        }
+    }
+    v13 = false;
+    return v13;
+}
+

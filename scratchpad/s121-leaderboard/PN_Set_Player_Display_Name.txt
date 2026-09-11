@@ -1,0 +1,178 @@
+# Asset:         Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_LeaderboardEntry_PlayerName.uasset
+# UFunction:     Set Player Display Name
+# FunctionFlags: FUNC_Public, FUNC_HasOutParms, FUNC_HasDefaults, FUNC_BlueprintCallable, FUNC_BlueprintEvent
+# Outer class:   WBP_UI_LeaderboardEntry_PlayerName_C
+# ScriptBytecode entries: 11
+# ChildProperties: 9
+# --- Parameters / locals (FField chain) ---
+#   [0] FObjectProperty  ?
+#   [1] FBoolProperty  ?
+#   [2] FTextProperty  ?
+#   [3] FObjectProperty  ?
+#   [4] FObjectProperty  ?
+#   [5] FStrProperty  ?
+#   [6] FTextProperty  ?
+#   [7] FBoolProperty  ?
+#   [8] FTextProperty  ?
+
+# --- ScriptBytecode tree ---
+[  0] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetPlatformPlayerManager_ReturnValue
+      StatementIndex: 1
+  Assignment:
+    EX_CallMath
+      StackNode: GetPlatformPlayerManager
+      Parameters: [1]
+        [  0] EX_Self
+          StatementIndex: 19
+      StatementIndex: 10
+  StatementIndex: 0
+[  1] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetPlayer_ReturnValue
+      StatementIndex: 22
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_LocalVariable
+          Variable: CallFunc_GetPlatformPlayerManager_ReturnValue
+          StatementIndex: 32
+      Offset: 28
+      RValuePointer: CallFunc_GetPlayer_ReturnValue
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: GetPlayer
+          Parameters: [1]
+            [  0] EX_StructMemberContext
+              Property: PlayerID
+              StructExpression:
+                EX_InstanceVariable
+                  Variable: Leaderboard Ranking
+                  StatementIndex: 71
+              StatementIndex: 62
+          StatementIndex: 53
+      StatementIndex: 31
+  StatementIndex: 21
+[  2] EX_Let
+  Property: Temp_text_Variable
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_text_Variable
+      StatementIndex: 90
+  Assignment:
+    EX_TextConst
+      Value: CUE4Parse.UE4.Kismet.FScriptText
+      StatementIndex: 99
+  StatementIndex: 81
+[  3] EX_Let
+  Property: CallFunc_DisplayNameAndTag_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_DisplayNameAndTag_ReturnValue
+      StatementIndex: 151
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_LocalVariable
+          Variable: CallFunc_GetPlayer_ReturnValue
+          StatementIndex: 161
+      Offset: 14
+      RValuePointer: CallFunc_DisplayNameAndTag_ReturnValue
+      ContextExpression:
+        EX_VirtualFunction
+          VirtualFunctionName: DisplayNameAndTag
+          Parameters: [0]
+          StatementIndex: 182
+      StatementIndex: 160
+  StatementIndex: 142
+[  4] EX_Let
+  Property: CallFunc_Conv_StringToText_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_StringToText_ReturnValue
+      StatementIndex: 205
+  Assignment:
+    EX_CallMath
+      StackNode: Conv_StringToText
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_DisplayNameAndTag_ReturnValue
+          StatementIndex: 223
+      StatementIndex: 214
+  StatementIndex: 196
+[  5] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_TextIsEmpty_ReturnValue
+      StatementIndex: 234
+  Assignment:
+    EX_CallMath
+      StackNode: TextIsEmpty
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_Conv_StringToText_ReturnValue
+          StatementIndex: 252
+      StatementIndex: 243
+  StatementIndex: 233
+[  6] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_bool_Variable
+      StatementIndex: 263
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_TextIsEmpty_ReturnValue
+      StatementIndex: 272
+  StatementIndex: 262
+[  7] EX_Context
+  ObjectExpression:
+    EX_InstanceVariable
+      Variable: WBP_UI_LeaderboardEntry_PlayerName
+      StatementIndex: 282
+  Offset: 85
+  RValuePointer: 0
+  ContextExpression:
+    EX_LocalVirtualFunction
+      VirtualFunctionName: Set Text
+      Parameters: [2]
+        [  0] EX_SwitchValue
+          EndGotoOffset: 369
+          IndexTerm:
+            EX_LocalVariable
+              Variable: Temp_bool_Variable
+              StatementIndex: 323
+          DefaultTerm:
+            EX_LocalVariable
+              Variable: K2Node_Select_Default
+              StatementIndex: 360
+          Cases: [CUE4Parse.UE4.Kismet.FKismetSwitchCase, CUE4Parse.UE4.Kismet.FKismetSwitchCase]
+          StatementIndex: 316
+        [  1] EX_StructMemberContext
+          Property: Rank
+          StructExpression:
+            EX_InstanceVariable
+              Variable: Leaderboard Ranking
+              StatementIndex: 378
+          StatementIndex: 369
+      StatementIndex: 303
+  StatementIndex: 281
+[  8] EX_LetObj
+  Variable:
+    EX_LocalOutVariable
+      Variable: Platform Player model
+      StatementIndex: 389
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_GetPlayer_ReturnValue
+      StatementIndex: 398
+  StatementIndex: 388
+[  9] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 408
+  StatementIndex: 407
+[ 10] EX_EndOfScript
+  StatementIndex: 409

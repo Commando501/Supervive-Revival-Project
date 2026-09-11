@@ -1,0 +1,21 @@
+[stage] waiting for game process...
+[stage] game PID=38832
+[stage] waiting for TryUIReady SUCCESS + uptime>=100s...
+[stage] ready: uptime=101s uiready=2
+[stage] >>> inject tutorial_launch_fo.dll
+  DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+  verify: MZ at 0x1A478360000 ✓
+OK: manual-map complete (DllMain returned).
+[stage] >>> inject gft_ready_fix.dll
+  DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+  verify: MZ at 0x1A478BE0000 ✓
+OK: manual-map complete (DllMain returned).
+[stage] >>> inject tutorial_launch_sp.dll
+  DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+  verify: MZ at 0x1A47F120000 ✓
+OK: manual-map complete (DllMain returned).
+[stage] >>> inject PROBE build/tutorial_launch_play_wprobe_v66.dll
+  DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+  verify: MZ at 0x1A4838A0000 ✓
+OK: manual-map complete (DllMain returned).
+[stage] all four injected; probe armed window begins

@@ -1,0 +1,1424 @@
+// ============================================================================
+//  MODULE   Core.AimingVis.HunterSpecific.LokiAimingLaser_Huntress
+//  SOURCE   Core/AimingVis/HunterSpecific/LokiAimingLaser_Huntress.as
+//  CONTENT  1 class(es), 21 function(s), 0 enum(s), 1 global(s), 5112 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiAimingLaser_Huntress;
+
+ALokiAimingLaser_Huntress@ ALokiAimingLaser_Huntress()   // traits=0x20
+{
+    v2 = ALokiAimingLaser_Huntress();
+    return v2;
+}
+/* ---- ALokiAimingLaser_Huntress: 7 dwords / 4 instructions (cache offset 0x67971) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84758 ALokiAimingLaser_Huntress             
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ALokiAimingLaser_Huntress::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ALokiAimingLaser_Huntress);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x67a37) ----
+    0000  PshGPtr       __StaticType_ALokiAimingLaser_Huntress      
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ALokiAimingLaser_Huntress@ ALokiAimingLaser_Huntress::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    v2 = __StaticType_ALokiAimingLaser_Huntress.Get();
+    v4 = TSubclassOf(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiAimingLaser_Huntress@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x67c65) ----
+    0000  PshVPtr       Level                                       
+    0004  PshV4         bDeferredSpawn                              
+    0008  PshVPtr       Name                                        
+    000C  PshVPtr       Rotation                                    
+    0010  PshVPtr       Location                                    
+    0014  PshGPtr       __StaticType_ALokiAimingLaser_Huntress      
+    0020  CHKREF                                                    
+    0024  CALLSYS       TSubclassOf::Get                            
+    0030  STOREOBJ      v2                                          
+    0034  PshVPtr       v2                                          
+    0038  PSF           v4                                          
+    003C  CALLSYS       TSubclassOf::$beh0                          
+    0048  PSF           v4                                          
+    004C  CALLSYS       SpawnActor                                  
+    0058  STOREOBJ      v6                                          
+    005C  CmpPtrNull    v6                                          
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972672                                    ; ALokiAimingLaser_Huntress@
+    0070  PSF           v8                                          
+    0074  PshVPtr       v6                                          
+    0078  CALLSYS       UObject::opCast                             
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8                                          
+  L0090:
+    0090  LOADOBJ       v8                                          
+    0094  RET           9                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class ALokiAimingLaser_Huntress : ALokiAimingLaserRangeMarker
+// static class global: __StaticType_ALokiAimingLaser_Huntress
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UStaticMeshComponent@ ProgressMarker;
+    protected bool bShowProgressMarker;
+    float64 ProgressMarkerOriginalScale;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Laser)
+    int SettingsIndexBase;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Laser - LMB)
+    int SettingsIndexLMB;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Laser - LMB)
+    float64 LMBRangeMarkerDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - LMB)
+    float64 ArrowRangeMinGreen;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - LMB)
+    float64 ArrowRangeMaxGreen;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - LMB)
+    float64 ArrowRangeMaxBlue;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - LMB)
+    float64 ArrowRangeMaxBluePerfect;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - LMB)
+    float64 ArrowPerfectGreenChargeMin;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - LMB)
+    float64 ArrowPerfectGreenChargeMax;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - LMB)
+    float64 ArrowStartChargeFrac;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - LMB)
+    UMaterialInterface@ RangeMarkerDimmedMaterial;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - LMB)
+    UMaterialInterface@ RangeMarkerLitMaterial;
+    bool bRangeMarkerDimmed;
+    float64 RangeMarkerOriginalScale;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - LMB)
+    UMaterialInterface@ LaserEndpointDimmedMaterial;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - LMB)
+    UMaterialInterface@ LaserEndpointLitMaterial;
+    bool bLaserEndpointDimmed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Laser - RMB)
+    int SettingsIndexRMB;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - RMB)
+    float64 ImpaleRangeMin;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - RMB)
+    float64 ImpaleRangeMax;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Laser - Ult)
+    int SettingsIndexUlt;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Laser - Ult)
+    float64 UltArrowRangeMax;
+    protected float64 CurrentProgressEndTime;
+    protected bool bOriginalLimitLaserToCursor;
+    protected bool bOriginalLimitLaserToCursorDoFade;
+
+    ALokiAimingLaser_Huntress()   // traits=0x21
+    {
+        this.ALokiAimingLaserRangeMarker();
+        v1 = false;
+        this.bShowProgressMarker = v1;
+        v2 = 3;
+        this.SettingsIndexBase = v2;
+        v2 = 0;
+        this.SettingsIndexLMB = v2;
+        v4 = 4650687894887858176;
+        this.LMBRangeMarkerDistance = v4;
+        v4 = 4607182418800017408;
+        this.ArrowPerfectGreenChargeMin = v4;
+        v4 = 4608533498688228557;
+        this.ArrowPerfectGreenChargeMax = v4;
+        v4 = 4602678819172646912;
+        this.ArrowStartChargeFrac = v4;
+        v1 = false;
+        this.bRangeMarkerDimmed = v1;
+        v1 = false;
+        this.bLaserEndpointDimmed = v1;
+        v2 = 1;
+        this.SettingsIndexRMB = v2;
+        v2 = 2;
+        this.SettingsIndexUlt = v2;
+        return;
+    }
+    /* ---- ALokiAimingLaser_Huntress: 67 dwords / 38 instructions (cache offset 0x6b296) ----
+        0000  PshVPtr       this                                        
+        0004  CALL          84628                                         ; ALokiAimingLaserRangeMarker::ALokiAimingLaserRangeMarker
+        000C  SetV1         v1 0                                        
+        0014  LoadThisR     1176 134230848                                ; this.bShowProgressMarker
+        001C  WRTV1         v1                                          
+        0020  SetV4         v2 3                                        
+        0028  LoadThisR     1192 134230848                                ; this.SettingsIndexBase
+        0030  WRTV4         v2                                          
+        0034  SetV4         v2 0                                        
+        003C  LoadThisR     1196 134230848                                ; this.SettingsIndexLMB
+        0044  WRTV4         v2                                          
+        0048  SetV8         v4 0x408a900000000000                       
+        0054  LoadThisR     1200 134230848                                ; this.LMBRangeMarkerDistance
+        005C  WRTV8         v4                                          
+        0060  SetV8         v4 0x3ff0000000000000                       
+        006C  LoadThisR     1240 134230848                                ; this.ArrowPerfectGreenChargeMin
+        0074  WRTV8         v4                                          
+        0078  SetV8         v4 0x3ff4cccccccccccd                       
+        0084  LoadThisR     1248 134230848                                ; this.ArrowPerfectGreenChargeMax
+        008C  WRTV8         v4                                          
+        0090  SetV8         v4 0x3fe0000000000000                       
+        009C  LoadThisR     1256 134230848                                ; this.ArrowStartChargeFrac
+        00A4  WRTV8         v4                                          
+        00A8  SetV1         v1 0                                        
+        00B0  LoadThisR     1280 134230848                                ; this.bRangeMarkerDimmed
+        00B8  WRTV1         v1                                          
+        00BC  SetV1         v1 0                                        
+        00C4  LoadThisR     1312 134230848                                ; this.bLaserEndpointDimmed
+        00CC  WRTV1         v1                                          
+        00D0  SetV4         v2 1                                        
+        00D8  LoadThisR     1316 134230848                                ; this.SettingsIndexRMB
+        00E0  WRTV4         v2                                          
+        00E4  SetV4         v2 2                                        
+        00EC  LoadThisR     1336 134230848                                ; this.SettingsIndexUlt
+        00F4  WRTV4         v2                                          
+        00F8  PshVPtr       this                                        
+        00FC  FinConstruct  ALokiAimingLaser_Huntress                   
+        0108  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=CustomEvent0, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void CustomEvent0_Implementation(const float64 Value)   // traits=0x20
+    {
+        v1 = false;
+        this.SetShowProgressMarker(v1);
+        return;
+    }
+    /* ---- CustomEvent0_Implementation: 7 dwords / 5 instructions (cache offset 0x68e52) ----
+        0000  SetV1         v1 0                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLINTF      84755                                         ; ALokiAimingLaser_Huntress::SetShowProgressMarker
+        0018  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=CustomEvent1, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void CustomEvent1_Implementation(const float64 Value)   // traits=0x20
+    {
+        v1 = true;
+        this.SetShowProgressMarker(v1);
+        return;
+    }
+    /* ---- CustomEvent1_Implementation: 7 dwords / 5 instructions (cache offset 0x68f99) ----
+        0000  SetV1         v1 1                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLINTF      84755                                         ; ALokiAimingLaser_Huntress::SetShowProgressMarker
+        0018  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=OnLaserSpawned, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnLaserSpawned_Implementation()   // traits=0x20
+    {
+        this.OnLaserSpawned_Implementation();
+        v1 = false;
+        this.bShowProgressMarker = v1;
+        v1 = false;
+        v2 = true;
+        this.ProgressMarker.SetHiddenInGame(v2, v1);
+        v4 = this.LMBRangeMarkerDistance;
+        this.SetRangeMarkerDistance(v4);
+        v10 = this.RangeMarker.GetRelativeScale3D();
+        v4 = v10.X;
+        this.RangeMarkerOriginalScale = v4;
+        v10 = this.ProgressMarker.GetRelativeScale3D();
+        v4 = v10.X;
+        this.ProgressMarkerOriginalScale = v4;
+        return;
+    }
+    /* ---- OnLaserSpawned_Implementation: 59 dwords / 37 instructions (cache offset 0x690ac) ----
+        0000  PshVPtr       this                                        
+        0004  CALL          84627                                         ; ALokiAimingLaserRangeMarker::OnLaserSpawned_Implementation
+        000C  SetV1         v1 0                                        
+        0014  LoadThisR     1176 134230848                                ; this.bShowProgressMarker
+        001C  WRTV1         v1                                          
+        0020  SetV1         v1 0                                        
+        0028  PshV4         v1                                          
+        002C  SetV1         v2 1                                        
+        0034  PshV4         v2                                          
+        0038  PshVPtr       this                                        
+        003C  ADDSi         1168 134230848                                ; .ProgressMarker
+        0044  RDSPtr                                                    
+        0048  CALLSYS       USceneComponent::SetHiddenInGame            
+        0054  LoadThisR     1200 134230848                                ; this.LMBRangeMarkerDistance
+        005C  RDR8          v4                                          
+        0060  PshV8         v4                                          
+        0064  PshVPtr       this                                        
+        0068  CALLINTF      84624                                         ; ALokiAimingLaserRangeMarker::SetRangeMarkerDistance
+        0070  PSF           v10                                         
+        0074  PshVPtr       this                                        
+        0078  ADDSi         1136 134230843                                ; .RangeMarker
+        0080  RDSPtr                                                    
+        0084  CALLSYS       USceneComponent::GetRelativeScale3D         
+        0090  LoadVObjR     v10 0 67117444                                ; .X
+        009C  RDR8          v4                                          
+        00A0  LoadThisR     1288 134230848                                ; this.RangeMarkerOriginalScale
+        00A8  WRTV8         v4                                          
+        00AC  PSF           v10                                         
+        00B0  PshVPtr       this                                        
+        00B4  ADDSi         1168 134230848                                ; .ProgressMarker
+        00BC  RDSPtr                                                    
+        00C0  CALLSYS       USceneComponent::GetRelativeScale3D         
+        00CC  LoadVObjR     v10 0 67117444                                ; .X
+        00D8  RDR8          v4                                          
+        00DC  LoadThisR     1184 134230848                                ; this.ProgressMarkerOriginalScale
+        00E4  WRTV8         v4                                          
+        00E8  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=OnLaserSettingsIndexChanged, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnLaserSettingsIndexChanged_Implementation(const int OldIndex, const int NewIndex)   // traits=0x20
+    {
+        this.OnLaserSettingsIndexChanged_Implementation(OldIndex, NewIndex);
+        v1 = this.SettingsIndexLMB;
+        if (NewIndex != v1) {
+            v8 = FVector(FVector::OneVector);
+            v10 = this.RangeMarkerOriginalScale;
+            v16 = v8 * v10;
+            this.RangeMarker.SetRelativeScale3D(v16);
+            v8 = FVector(FVector::OneVector);
+            v10 = this.ProgressMarkerOriginalScale;
+            v16 = v8 * v10;
+            this.ProgressMarker.SetRelativeScale3D(v16);
+        }
+        v1 = this.SettingsIndexLMB;
+        if (NewIndex == v1) {
+            this.OnSwapToLMB();
+            return;
+        } else {
+            v1 = this.SettingsIndexBase;
+            if (NewIndex == v1) {
+                this.OnSwapToBase();
+                return;
+            } else {
+                v1 = this.SettingsIndexRMB;
+                if (NewIndex == v1) {
+                    this.OnSwapToRMB();
+                    return;
+                } else {
+                    v1 = this.SettingsIndexUlt;
+                    if (NewIndex == v1) {
+                        this.OnSwapToUlt();
+                        return;
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- OnLaserSettingsIndexChanged_Implementation: 109 dwords / 65 instructions (cache offset 0x6934c) ----
+        0000  PshV4         NewIndex                                    
+        0004  PshV4         OldIndex                                    
+        0008  PshVPtr       this                                        
+        000C  CALL          84597                                         ; ALokiAimingLaser::OnLaserSettingsIndexChanged_Implementation
+        0014  LoadThisR     1196 134230848                                ; this.SettingsIndexLMB
+        001C  RDR4          v1                                          
+        0020  CMPi          NewIndex v1                                 
+        0028  JZ            48                                            -> L00F0
+        0030  PshGPtr       FVector::OneVector                          
+        003C  PSF           v8                                          
+        0040  CALLSYS       FVector::$beh0                              
+        004C  LoadThisR     1288 134230848                                ; this.RangeMarkerOriginalScale
+        0054  RDR8          v10                                         
+        0058  PshV8         v10                                         
+        005C  PSF           v16                                         
+        0060  PSF           v8                                          
+        0064  CALLSYS       FVector::opMul                              
+        0070  PSF           v16                                         
+        0074  PshVPtr       this                                        
+        0078  ADDSi         1136 134230843                                ; .RangeMarker
+        0080  RDSPtr                                                    
+        0084  CALLSYS       USceneComponent::SetRelativeScale3D         
+        0090  PshGPtr       FVector::OneVector                          
+        009C  PSF           v8                                          
+        00A0  CALLSYS       FVector::$beh0                              
+        00AC  LoadThisR     1184 134230848                                ; this.ProgressMarkerOriginalScale
+        00B4  RDR8          v10                                         
+        00B8  PshV8         v10                                         
+        00BC  PSF           v16                                         
+        00C0  PSF           v8                                          
+        00C4  CALLSYS       FVector::opMul                              
+        00D0  PSF           v16                                         
+        00D4  PshVPtr       this                                        
+        00D8  ADDSi         1168 134230848                                ; .ProgressMarker
+        00E0  RDSPtr                                                    
+        00E4  CALLSYS       USceneComponent::SetRelativeScale3D         
+      L00F0:
+        00F0  LoadThisR     1196 134230848                                ; this.SettingsIndexLMB
+        00F8  RDR4          v1                                          
+        00FC  CMPi          NewIndex v1                                 
+        0104  JNZ           5                                             -> L0120
+        010C  PshVPtr       this                                        
+        0110  CALLINTF      84748                                         ; ALokiAimingLaser_Huntress::OnSwapToLMB
+        0118  JMP           36                                            -> L01B0
+      L0120:
+        0120  LoadThisR     1192 134230848                                ; this.SettingsIndexBase
+        0128  RDR4          v1                                          
+        012C  CMPi          NewIndex v1                                 
+        0134  JNZ           5                                             -> L0150
+        013C  PshVPtr       this                                        
+        0140  CALLINTF      84749                                         ; ALokiAimingLaser_Huntress::OnSwapToBase
+        0148  JMP           24                                            -> L01B0
+      L0150:
+        0150  LoadThisR     1316 134230848                                ; this.SettingsIndexRMB
+        0158  RDR4          v1                                          
+        015C  CMPi          NewIndex v1                                 
+        0164  JNZ           5                                             -> L0180
+        016C  PshVPtr       this                                        
+        0170  CALLINTF      84750                                         ; ALokiAimingLaser_Huntress::OnSwapToRMB
+        0178  JMP           12                                            -> L01B0
+      L0180:
+        0180  LoadThisR     1336 134230848                                ; this.SettingsIndexUlt
+        0188  RDR4          v1                                          
+        018C  CMPi          NewIndex v1                                 
+        0194  JNZ           5                                             -> L01B0
+        019C  PshVPtr       this                                        
+        01A0  CALLINTF      84751                                         ; ALokiAimingLaser_Huntress::OnSwapToUlt
+        01A8  JMP           0                                             -> L01B0
+      L01B0:
+        01B0  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=OnUpdateProgress, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnUpdateProgress_Implementation(const float64 ProgressValue)   // traits=0x20
+    {
+        this.OnUpdateProgress_Implementation(ProgressValue);
+        v1 = this.ValidateOwner();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v2 = this.ProgressMarker.GetbHiddenInGame();
+            v2 = !v2;
+            v1 = this.bShowProgressMarker;
+            v1 = !v1;
+            v1 = !v1;
+            if (v2 != v1) {
+                v2 = false;
+                v1 = this.bShowProgressMarker;
+                v1 = !v1;
+                this.ProgressMarker.SetHiddenInGame(v1, v2);
+            }
+            v4 = this.GetCurrentLaserSettingsIndex();
+            v3 = this.SettingsIndexLMB;
+            if (v4 == v3) {
+                this.UpdateProgressLMB(ProgressValue);
+            } else {
+                v3 = this.SettingsIndexBase;
+                if (v4 == v3) {
+                    v6 = 4607182418800017408;
+                    this.CurrentProgressEndTime = v6;
+                } else {
+                    v3 = this.SettingsIndexRMB;
+                    if (v4 == v3) {
+                        this.UpdateProgressRMB(ProgressValue);
+                    } else {
+                        v3 = this.SettingsIndexUlt;
+                        if (v4 == v3) {
+                            v8 = this.LaserProjectilePath.GetMaterial(0);
+                            v8.SetScalarParameterValue(n"Range Step", 1065353216);
+                            return;
+                        }
+                    }
+                }
+            }
+            v6 = this.CurrentProgressEndTime;
+            v9 = float32(v6);
+            v8 = this.LaserProjectilePath.GetMaterial(0);
+            v8.SetScalarParameterValue(n"Range Step", v9);
+            v6 = this.CurrentProgressEndTime;
+            v9 = float32(v6);
+            v16 = this.LaserProjectilePath.GetPositionForTime(v9);
+            this.ProgressMarker.SetWorldLocation(v16)  /* UFunction K2_SetWorldLocation */;
+        }
+        return;
+    }
+    /* ---- OnUpdateProgress_Implementation: 172 dwords / 106 instructions (cache offset 0x69736) ----
+        0000  PshV8         ProgressValue                               
+        0004  PshVPtr       this                                        
+        0008  CALL          84616                                         ; ALokiAimingLaser::OnUpdateProgress_Implementation
+        0010  PshVPtr       this                                        
+        0014  CALLINTF      84575                                         ; ALokiAimingLaser::ValidateOwner
+        001C  CpyRtoV4      v1                                          
+        0020  NOT           v1                                          
+        0024  CpyVtoR1      v1                                          
+        0028  JLowZ         2                                             -> L0038
+        0030  JMP           157                                           -> L02AC
+      L0038:
+        0038  PshVPtr       this                                        
+        003C  ADDSi         1168 134230848                                ; .ProgressMarker
+        0044  RDSPtr                                                    
+        0048  CALLSYS       USceneComponent::GetbHiddenInGame           
+        0054  CpyRtoV4      v2                                          
+        0058  NOT           v2                                          
+        005C  LoadThisR     1176 134230848                                ; this.bShowProgressMarker
+        0064  RDR1          v1                                          
+        0068  NOT           v1                                          
+        006C  NOT           v1                                          
+        0070  CMPi          v2 v1                                       
+        0078  JZ            15                                            -> L00BC
+        0080  SetV1         v2 0                                        
+        0088  PshV4         v2                                          
+        008C  LoadThisR     1176 134230848                                ; this.bShowProgressMarker
+        0094  RDR1          v1                                          
+        0098  NOT           v1                                          
+        009C  PshV4         v1                                          
+        00A0  PshVPtr       this                                        
+        00A4  ADDSi         1168 134230848                                ; .ProgressMarker
+        00AC  RDSPtr                                                    
+        00B0  CALLSYS       USceneComponent::SetHiddenInGame            
+      L00BC:
+        00BC  PshVPtr       this                                        
+        00C0  CALLINTF      84595                                         ; ALokiAimingLaser::GetCurrentLaserSettingsIndex
+        00C8  CpyRtoV4      v4                                          
+        00CC  LoadThisR     1196 134230848                                ; this.SettingsIndexLMB
+        00D4  RDR4          v3                                          
+        00D8  CMPi          v4 v3                                       
+        00E0  JNZ           6                                             -> L0100
+        00E8  PshV8         ProgressValue                               
+        00EC  PshVPtr       this                                        
+        00F0  CALLINTF      84744                                         ; ALokiAimingLaser_Huntress::UpdateProgressLMB
+        00F8  JMP           59                                            -> L01EC
+      L0100:
+        0100  LoadThisR     1192 134230848                                ; this.SettingsIndexBase
+        0108  RDR4          v3                                          
+        010C  CMPi          v4 v3                                       
+        0114  JNZ           8                                             -> L013C
+        011C  SetV8         v6 0x3ff0000000000000                       
+        0128  LoadThisR     1352 134230848                                ; this.CurrentProgressEndTime
+        0130  WRTV8         v6                                          
+        0134  JMP           44                                            -> L01EC
+      L013C:
+        013C  LoadThisR     1316 134230848                                ; this.SettingsIndexRMB
+        0144  RDR4          v3                                          
+        0148  CMPi          v4 v3                                       
+        0150  JNZ           6                                             -> L0170
+        0158  PshV8         ProgressValue                               
+        015C  PshVPtr       this                                        
+        0160  CALLINTF      84745                                         ; ALokiAimingLaser_Huntress::UpdateProgressRMB
+        0168  JMP           31                                            -> L01EC
+      L0170:
+        0170  LoadThisR     1336 134230848                                ; this.SettingsIndexUlt
+        0178  RDR4          v3                                          
+        017C  CMPi          v4 v3                                       
+        0184  JNZ           24                                            -> L01EC
+        018C  PshC4         1065353216                                  
+        0194  PshC4         37                                          
+        019C  CALLSYS       __STATIC_NAME                               
+        01A8  PshRPtr                                                   
+        01AC  PshC4         0                                           
+        01B4  PshVPtr       this                                        
+        01B8  ADDSi         936 134230838                                 ; .LaserProjectilePath
+        01C0  RDSPtr                                                    
+        01C4  CALLSYS       ULokiProjectilePathComponent::GetMaterial   
+        01D0  STOREOBJ      v8                                          
+        01D4  PshVPtr       v8                                          
+        01D8  CALLSYS       UMaterialInstanceDynamic::SetScalarParameterValue
+        01E4  JMP           48                                            -> L02AC
+      L01EC:
+        01EC  LoadThisR     1352 134230848                                ; this.CurrentProgressEndTime
+        01F4  RDR8          v6                                          
+        01F8  dTOf          v9 v6                                       
+        0200  PshV4         v9                                          
+        0204  PshC4         37                                          
+        020C  CALLSYS       __STATIC_NAME                               
+        0218  PshRPtr                                                   
+        021C  PshC4         0                                           
+        0224  PshVPtr       this                                        
+        0228  ADDSi         936 134230838                                 ; .LaserProjectilePath
+        0230  RDSPtr                                                    
+        0234  CALLSYS       ULokiProjectilePathComponent::GetMaterial   
+        0240  STOREOBJ      v8                                          
+        0244  PshVPtr       v8                                          
+        0248  CALLSYS       UMaterialInstanceDynamic::SetScalarParameterValue
+        0254  LoadThisR     1352 134230848                                ; this.CurrentProgressEndTime
+        025C  RDR8          v6                                          
+        0260  dTOf          v9 v6                                       
+        0268  PshV4         v9                                          
+        026C  PSF           v16                                         
+        0270  PshVPtr       this                                        
+        0274  ADDSi         936 134230838                                 ; .LaserProjectilePath
+        027C  RDSPtr                                                    
+        0280  CALLSYS       ULokiProjectilePathComponent::GetPositionForTime
+        028C  PSF           v16                                         
+        0290  PshVPtr       this                                        
+        0294  ADDSi         1168 134230848                                ; .ProgressMarker
+        029C  RDSPtr                                                    
+        02A0  CALLSYS       USceneComponent::SetWorldLocation           
+      L02AC:
+        02AC  RET           4                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = false;
+        this.ProgressMarker.SetCastShadow(v1);
+        v1 = false;
+        this.ProgressMarker.SetGenerateOverlapEvents(v1);
+        v1 = true;
+        this.ProgressMarker.SetCollisionProfileName(n"NoCollision", v1);
+        return;
+    }
+    /* ---- __InitDefaults: 37 dwords / 22 instructions (cache offset 0x69b92) ----
+        0000  SetV1         v1 0                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  ADDSi         1168 134230848                                ; .ProgressMarker
+        0018  RDSPtr                                                    
+        001C  CALLSYS       UPrimitiveComponent::SetCastShadow          
+        0028  SetV1         v1 0                                        
+        0030  PshV4         v1                                          
+        0034  PshVPtr       this                                        
+        0038  ADDSi         1168 134230848                                ; .ProgressMarker
+        0040  RDSPtr                                                    
+        0044  CALLSYS       UPrimitiveComponent::SetGenerateOverlapEvents
+        0050  SetV1         v1 1                                        
+        0058  PshV4         v1                                          
+        005C  PshC4         31                                          
+        0064  CALLSYS       __STATIC_NAME                               
+        0070  PshRPtr                                                   
+        0074  PshVPtr       this                                        
+        0078  ADDSi         1168 134230848                                ; .ProgressMarker
+        0080  RDSPtr                                                    
+        0084  CALLSYS       UPrimitiveComponent::SetCollisionProfileName
+        0090  RET           2                                           
+    */
+
+    void UpdateProgressLMB(const float64 ProgressValue)   // traits=0x20
+    {
+        v7 = Math::IsNearlyEqual(ProgressValue, 4611686018427387904, 4562254508917369340);
+        v4 = this.ArrowPerfectGreenChargeMin;
+        v1 = ProgressValue >= v4;
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v4 = this.ArrowPerfectGreenChargeMax;
+            v9 = ProgressValue <= v4;
+            v1 = v9;
+        }
+        if (!v7) {
+        }
+        v6 = this.ArrowRangeMaxBlue;
+        v12 = v6;
+        v4 = this.ArrowPerfectGreenChargeMin;
+        if (ProgressValue <= v4) {
+            v4 = this.ArrowRangeMaxGreen;
+            v6 = this.ArrowRangeMinGreen;
+            v18 = FVector2D(v6, v4);
+            v4 = this.ArrowPerfectGreenChargeMin;
+            v6 = this.ArrowStartChargeFrac;
+            v22 = FVector2D(v6, v4);
+            v4 = Math::GetMappedRangeValueClamped(v22, v18, ProgressValue);
+            v14 = v4;
+        } else {
+            v6 = this.ArrowRangeMaxGreen;
+            v18 = FVector2D(v6, v12);
+            v4 = this.ArrowPerfectGreenChargeMin;
+            v22 = FVector2D(v4, 4611686018427387904);
+            v6 = Math::GetMappedRangeValueClamped(v22, v18, ProgressValue);
+            v14 = v6;
+        }
+        v23 = float32(v14);
+        v24 = this.LaserProjectilePath.GetTimeForXDistance(v23);
+        v4 = float64(v24);
+        this.CurrentProgressEndTime = v4;
+        if (v1) {
+            v8 = true;
+        } else {
+            v8 = v7;
+        }
+        if (v8) {
+            v4 = 4608083138725491507;
+        } else {
+            v6 = this.ProgressMarkerOriginalScale;
+            v4 = v6;
+        }
+        v32 = FVector(FVector::OneVector);
+        v38 = v32 * v4;
+        this.ProgressMarker.SetRelativeScale3D(v38);
+        v32 = this.RangeMarker.GetWorldLocation()  /* UFunction K2_GetComponentLocation */;
+        v23 = this.LaserProjectilePath.GetTimeForPosition(v32);
+        v6 = float64(v23);
+        v40 = v6;
+        v26 = this.CurrentProgressEndTime;
+        if (v26 >= v40) {
+            v9 = 0;
+        } else {
+            v8 = this.bRangeMarkerDimmed;
+            v8 = !v8;
+            v9 = v8;
+        }
+        if (v9) {
+            this.RangeMarker.SetMaterial(0, this.RangeMarkerDimmedMaterial);
+            v8 = true;
+            this.bRangeMarkerDimmed = v8;
+        } else {
+            v26 = this.CurrentProgressEndTime;
+            if (v26 < v40) {
+                v8 = 0;
+            } else {
+                v9 = this.bRangeMarkerDimmed;
+                v8 = v9;
+            }
+            if (v8) {
+                this.RangeMarker.SetMaterial(0, this.RangeMarkerLitMaterial);
+                v8 = false;
+                this.bRangeMarkerDimmed = v8;
+            }
+        }
+        if (v1) {
+            v9 = true;
+        } else {
+            v9 = v7;
+        }
+        if (v9) {
+            v26 = 4608083138725491507;
+        } else {
+            v6 = this.RangeMarkerOriginalScale;
+            v26 = v6;
+        }
+        v38 = FVector(FVector::OneVector);
+        v32 = v38 * v26;
+        this.RangeMarker.SetRelativeScale3D(v32);
+        v44 = 4611686018427387904;
+        if (ProgressValue >= v44) {
+            v8 = 0;
+        } else {
+            v9 = this.bLaserEndpointDimmed;
+            v9 = !v9;
+            v8 = v9;
+        }
+        if (v8) {
+            this.LaserEndpoint.SetMaterial(0, this.LaserEndpointDimmedMaterial);
+            v8 = true;
+            this.bLaserEndpointDimmed = v8;
+            return;
+        } else {
+            v44 = 4611686018427387904;
+            if (ProgressValue < v44) {
+                v8 = 0;
+            } else {
+                v9 = this.bLaserEndpointDimmed;
+                v8 = v9;
+            }
+            if (v8) {
+                this.LaserEndpoint.SetMaterial(0, this.LaserEndpointLitMaterial);
+                v8 = false;
+                this.bLaserEndpointDimmed = v8;
+            }
+        }
+        return;
+    }
+    /* ---- UpdateProgressLMB: 395 dwords / 234 instructions (cache offset 0x69cee) ----
+        0000  PshC8         0x3f50624dd2f1a9fc                          
+        000C  PshC8         0x4000000000000000                          
+        0018  PshV8         ProgressValue                               
+        001C  CALLSYS       IsNearlyEqual                               
+        0028  CpyRtoV4      v7                                          
+        002C  LoadThisR     1240 134230848                                ; this.ArrowPerfectGreenChargeMin
+        0034  RDR8          v4                                          
+        0038  CMPd          ProgressValue v4                            
+        0040  TNS                                                       
+        0044  CpyRtoV4      v1                                          
+        0048  CpyVtoR1      v1                                          
+        004C  JLowNZ        4                                             -> L0064
+        0054  SetV4         v1 0                                        
+        005C  JMP           9                                             -> L0088
+      L0064:
+        0064  LoadThisR     1248 134230848                                ; this.ArrowPerfectGreenChargeMax
+        006C  RDR8          v4                                          
+        0070  CMPd          ProgressValue v4                            
+        0078  TNP                                                       
+        007C  CpyRtoV4      v9                                          
+        0080  CpyVtoV4      v1 v9                                       
+      L0088:
+        0088  CpyVtoR1      v7                                          
+        008C  JLowZ         4                                             -> L00A4
+        0094  LoadThisR     1232 134230848                                ; this.ArrowRangeMaxBluePerfect
+        009C  JMP           2                                             -> L00AC
+      L00A4:
+        00A4  LoadThisR     1224 134230848                                ; this.ArrowRangeMaxBlue
+      L00AC:
+        00AC  RDR8          v6                                          
+        00B0  CpyVtoV8      v12 v6                                      
+        00B8  LoadThisR     1240 134230848                                ; this.ArrowPerfectGreenChargeMin
+        00C0  RDR8          v4                                          
+        00C4  CMPd          ProgressValue v4                            
+        00CC  JP            35                                            -> L0160
+        00D4  PshV8         ProgressValue                               
+        00D8  LoadThisR     1216 134230848                                ; this.ArrowRangeMaxGreen
+        00E0  RDR8          v4                                          
+        00E4  PshV8         v4                                          
+        00E8  LoadThisR     1208 134230848                                ; this.ArrowRangeMinGreen
+        00F0  RDR8          v6                                          
+        00F4  PshV8         v6                                          
+        00F8  PSF           v18                                         
+        00FC  CALLSYS       FVector2D::$beh0                            
+        0108  PSF           v18                                         
+        010C  LoadThisR     1240 134230848                                ; this.ArrowPerfectGreenChargeMin
+        0114  RDR8          v4                                          
+        0118  PshV8         v4                                          
+        011C  LoadThisR     1256 134230848                                ; this.ArrowStartChargeFrac
+        0124  RDR8          v6                                          
+        0128  PshV8         v6                                          
+        012C  PSF           v22                                         
+        0130  CALLSYS       FVector2D::$beh0                            
+        013C  PSF           v22                                         
+        0140  CALLSYS       GetMappedRangeValueClamped                  
+        014C  CpyRtoV8      v4                                          
+        0150  CpyVtoV8      v14 v4                                      
+        0158  JMP           29                                            -> L01D4
+      L0160:
+        0160  PshV8         ProgressValue                               
+        0164  PshV8         v12                                         
+        0168  LoadThisR     1216 134230848                                ; this.ArrowRangeMaxGreen
+        0170  RDR8          v6                                          
+        0174  PshV8         v6                                          
+        0178  PSF           v18                                         
+        017C  CALLSYS       FVector2D::$beh0                            
+        0188  PSF           v18                                         
+        018C  PshC8         0x4000000000000000                          
+        0198  LoadThisR     1240 134230848                                ; this.ArrowPerfectGreenChargeMin
+        01A0  RDR8          v4                                          
+        01A4  PshV8         v4                                          
+        01A8  PSF           v22                                         
+        01AC  CALLSYS       FVector2D::$beh0                            
+        01B8  PSF           v22                                         
+        01BC  CALLSYS       GetMappedRangeValueClamped                  
+        01C8  CpyRtoV8      v6                                          
+        01CC  CpyVtoV8      v14 v6                                      
+      L01D4:
+        01D4  dTOf          v23 v14                                     
+        01DC  PshV4         v23                                         
+        01E0  PshVPtr       this                                        
+        01E4  ADDSi         936 134230838                                 ; .LaserProjectilePath
+        01EC  RDSPtr                                                    
+        01F0  CALLSYS       ULokiProjectilePathComponent::GetTimeForXDistance
+        01FC  CpyRtoV4      v24                                         
+        0200  fTOd          v4 v24                                      
+        0208  LoadThisR     1352 134230848                                ; this.CurrentProgressEndTime
+        0210  WRTV8         v4                                          
+        0214  CpyVtoR1      v1                                          
+        0218  JLowZ         4                                             -> L0230
+        0220  SetV1         v8 1                                        
+        0228  JMP           2                                             -> L0238
+      L0230:
+        0230  CpyVtoV4      v8 v7                                       
+      L0238:
+        0238  CpyVtoR1      v8                                          
+        023C  JLowZ         5                                             -> L0258
+        0244  SetV8         v4 0x3ff3333333333333                       
+        0250  JMP           5                                             -> L026C
+      L0258:
+        0258  LoadThisR     1184 134230848                                ; this.ProgressMarkerOriginalScale
+        0260  RDR8          v6                                          
+        0264  CpyVtoV8      v4 v6                                       
+      L026C:
+        026C  PshGPtr       FVector::OneVector                          
+        0278  PSF           v32                                         
+        027C  CALLSYS       FVector::$beh0                              
+        0288  PshV8         v4                                          
+        028C  PSF           v38                                         
+        0290  PSF           v32                                         
+        0294  CALLSYS       FVector::opMul                              
+        02A0  PSF           v38                                         
+        02A4  PshVPtr       this                                        
+        02A8  ADDSi         1168 134230848                                ; .ProgressMarker
+        02B0  RDSPtr                                                    
+        02B4  CALLSYS       USceneComponent::SetRelativeScale3D         
+        02C0  PSF           v32                                         
+        02C4  PshVPtr       this                                        
+        02C8  ADDSi         1136 134230843                                ; .RangeMarker
+        02D0  RDSPtr                                                    
+        02D4  CALLSYS       USceneComponent::GetWorldLocation           
+        02E0  PSF           v32                                         
+        02E4  PshVPtr       this                                        
+        02E8  ADDSi         936 134230838                                 ; .LaserProjectilePath
+        02F0  RDSPtr                                                    
+        02F4  CALLSYS       ULokiProjectilePathComponent::GetTimeForPosition
+        0300  CpyRtoV4      v23                                         
+        0304  fTOd          v6 v23                                      
+        030C  CpyVtoV8      v40 v6                                      
+        0314  LoadThisR     1352 134230848                                ; this.CurrentProgressEndTime
+        031C  RDR8          v26                                         
+        0320  CMPd          v26 v40                                     
+        0328  JS            4                                             -> L0340
+        0330  SetV4         v9 0                                        
+        0338  JMP           6                                             -> L0358
+      L0340:
+        0340  LoadThisR     1280 134230848                                ; this.bRangeMarkerDimmed
+        0348  RDR1          v8                                          
+        034C  NOT           v8                                          
+        0350  CpyVtoV4      v9 v8                                       
+      L0358:
+        0358  CpyVtoR1      v9                                          
+        035C  JLowZ         20                                            -> L03B4
+        0364  PshVPtr       this                                        
+        0368  ADDSi         1264 134230848                                ; .RangeMarkerDimmedMaterial
+        0370  RDSPtr                                                    
+        0374  PshC4         0                                           
+        037C  PshVPtr       this                                        
+        0380  ADDSi         1136 134230843                                ; .RangeMarker
+        0388  RDSPtr                                                    
+        038C  CALLSYS       UPrimitiveComponent::SetMaterial            
+        0398  SetV1         v8 1                                        
+        03A0  LoadThisR     1280 134230848                                ; this.bRangeMarkerDimmed
+        03A8  WRTV1         v8                                          
+        03AC  JMP           37                                            -> L0448
+      L03B4:
+        03B4  LoadThisR     1352 134230848                                ; this.CurrentProgressEndTime
+        03BC  RDR8          v26                                         
+        03C0  CMPd          v26 v40                                     
+        03C8  JNS           4                                             -> L03E0
+        03D0  SetV4         v8 0                                        
+        03D8  JMP           5                                             -> L03F4
+      L03E0:
+        03E0  LoadThisR     1280 134230848                                ; this.bRangeMarkerDimmed
+        03E8  RDR1          v9                                          
+        03EC  CpyVtoV4      v8 v9                                       
+      L03F4:
+        03F4  CpyVtoR1      v8                                          
+        03F8  JLowZ         18                                            -> L0448
+        0400  PshVPtr       this                                        
+        0404  ADDSi         1272 134230848                                ; .RangeMarkerLitMaterial
+        040C  RDSPtr                                                    
+        0410  PshC4         0                                           
+        0418  PshVPtr       this                                        
+        041C  ADDSi         1136 134230843                                ; .RangeMarker
+        0424  RDSPtr                                                    
+        0428  CALLSYS       UPrimitiveComponent::SetMaterial            
+        0434  SetV1         v8 0                                        
+        043C  LoadThisR     1280 134230848                                ; this.bRangeMarkerDimmed
+        0444  WRTV1         v8                                          
+      L0448:
+        0448  CpyVtoR1      v1                                          
+        044C  JLowZ         4                                             -> L0464
+        0454  SetV1         v9 1                                        
+        045C  JMP           2                                             -> L046C
+      L0464:
+        0464  CpyVtoV4      v9 v7                                       
+      L046C:
+        046C  CpyVtoR1      v9                                          
+        0470  JLowZ         5                                             -> L048C
+        0478  SetV8         v26 0x3ff3333333333333                      
+        0484  JMP           5                                             -> L04A0
+      L048C:
+        048C  LoadThisR     1288 134230848                                ; this.RangeMarkerOriginalScale
+        0494  RDR8          v6                                          
+        0498  CpyVtoV8      v26 v6                                      
+      L04A0:
+        04A0  PshGPtr       FVector::OneVector                          
+        04AC  PSF           v38                                         
+        04B0  CALLSYS       FVector::$beh0                              
+        04BC  PshV8         v26                                         
+        04C0  PSF           v32                                         
+        04C4  PSF           v38                                         
+        04C8  CALLSYS       FVector::opMul                              
+        04D4  PSF           v32                                         
+        04D8  PshVPtr       this                                        
+        04DC  ADDSi         1136 134230843                                ; .RangeMarker
+        04E4  RDSPtr                                                    
+        04E8  CALLSYS       USceneComponent::SetRelativeScale3D         
+        04F4  SetV8         v44 0x4000000000000000                      
+        0500  CMPd          ProgressValue v44                           
+        0508  JS            4                                             -> L0520
+        0510  SetV4         v8 0                                        
+        0518  JMP           6                                             -> L0538
+      L0520:
+        0520  LoadThisR     1312 134230848                                ; this.bLaserEndpointDimmed
+        0528  RDR1          v9                                          
+        052C  NOT           v9                                          
+        0530  CpyVtoV4      v8 v9                                       
+      L0538:
+        0538  CpyVtoR1      v8                                          
+        053C  JLowZ         20                                            -> L0594
+        0544  PshVPtr       this                                        
+        0548  ADDSi         1296 134230848                                ; .LaserEndpointDimmedMaterial
+        0550  RDSPtr                                                    
+        0554  PshC4         0                                           
+        055C  PshVPtr       this                                        
+        0560  ADDSi         920 134230838                                 ; .LaserEndpoint
+        0568  RDSPtr                                                    
+        056C  CALLSYS       UPrimitiveComponent::SetMaterial            
+        0578  SetV1         v8 1                                        
+        0580  LoadThisR     1312 134230848                                ; this.bLaserEndpointDimmed
+        0588  WRTV1         v8                                          
+        058C  JMP           37                                            -> L0628
+      L0594:
+        0594  SetV8         v44 0x4000000000000000                      
+        05A0  CMPd          ProgressValue v44                           
+        05A8  JNS           4                                             -> L05C0
+        05B0  SetV4         v8 0                                        
+        05B8  JMP           5                                             -> L05D4
+      L05C0:
+        05C0  LoadThisR     1312 134230848                                ; this.bLaserEndpointDimmed
+        05C8  RDR1          v9                                          
+        05CC  CpyVtoV4      v8 v9                                       
+      L05D4:
+        05D4  CpyVtoR1      v8                                          
+        05D8  JLowZ         18                                            -> L0628
+        05E0  PshVPtr       this                                        
+        05E4  ADDSi         1304 134230848                                ; .LaserEndpointLitMaterial
+        05EC  RDSPtr                                                    
+        05F0  PshC4         0                                           
+        05F8  PshVPtr       this                                        
+        05FC  ADDSi         920 134230838                                 ; .LaserEndpoint
+        0604  RDSPtr                                                    
+        0608  CALLSYS       UPrimitiveComponent::SetMaterial            
+        0614  SetV1         v8 0                                        
+        061C  LoadThisR     1312 134230848                                ; this.bLaserEndpointDimmed
+        0624  WRTV1         v8                                          
+      L0628:
+        0628  RET           4                                           
+    */
+
+    void UpdateProgressRMB(const float64 ProgressValue)   // traits=0x20
+    {
+        v4 = Math::Lerp(this.ImpaleRangeMin, this.ImpaleRangeMax, ProgressValue);
+        v5 = float32(v4);
+        v6 = this.LaserProjectilePath.GetTimeForXDistance(v5);
+        v2 = float64(v6);
+        this.CurrentProgressEndTime = v2;
+        v10 = this.bShowProgressMarker;
+        if (!v10) {
+            v10 = 0;
+        } else {
+            v2 = this.CurrentProgressEndTime;
+            v8 = this.CurrentTraceHitPathTime;
+            v9 = v2 > v8;
+            v10 = v9;
+        }
+        if (v10) {
+            v9 = false;
+            v10 = true;
+            this.ProgressMarker.SetHiddenInGame(v10, v9);
+            return;
+        } else {
+            v9 = this.bShowProgressMarker;
+            if (!v9) {
+                v9 = 0;
+            } else {
+                v2 = this.CurrentProgressEndTime;
+                v8 = this.CurrentTraceHitPathTime;
+                v10 = v2 <= v8;
+                v9 = v10;
+            }
+            if (v9) {
+                v10 = false;
+                v9 = false;
+                this.ProgressMarker.SetHiddenInGame(v9, v10);
+            }
+        }
+        return;
+    }
+    /* ---- UpdateProgressRMB: 106 dwords / 67 instructions (cache offset 0x6a57a) ----
+        0000  PSF           ProgressValue                               
+        0004  LoadThisR     1328 134230848                                ; this.ImpaleRangeMax
+        000C  PshRPtr                                                   
+        0010  LoadThisR     1320 134230848                                ; this.ImpaleRangeMin
+        0018  PshRPtr                                                   
+        001C  CALLSYS       Lerp                                        
+        0028  CpyRtoV8      v4                                          
+        002C  dTOf          v5 v4                                       
+        0034  PshV4         v5                                          
+        0038  PshVPtr       this                                        
+        003C  ADDSi         936 134230838                                 ; .LaserProjectilePath
+        0044  RDSPtr                                                    
+        0048  CALLSYS       ULokiProjectilePathComponent::GetTimeForXDistance
+        0054  CpyRtoV4      v6                                          
+        0058  fTOd          v2 v6                                       
+        0060  LoadThisR     1352 134230848                                ; this.CurrentProgressEndTime
+        0068  WRTV8         v2                                          
+        006C  LoadThisR     1176 134230848                                ; this.bShowProgressMarker
+        0074  RDR1          v10                                         
+        0078  CpyVtoR1      v10                                         
+        007C  JLowNZ        4                                             -> L0094
+        0084  SetV4         v10 0                                       
+        008C  JMP           12                                            -> L00C4
+      L0094:
+        0094  LoadThisR     1352 134230848                                ; this.CurrentProgressEndTime
+        009C  RDR8          v2                                          
+        00A0  LoadThisR     976 134230838                                 ; this.CurrentTraceHitPathTime
+        00A8  RDR8          v8                                          
+        00AC  CMPd          v2 v8                                       
+        00B4  TP                                                        
+        00B8  CpyRtoV4      v9                                          
+        00BC  CpyVtoV4      v10 v9                                      
+      L00C4:
+        00C4  CpyVtoR1      v10                                         
+        00C8  JLowZ         15                                            -> L010C
+        00D0  SetV1         v9 0                                        
+        00D8  PshV4         v9                                          
+        00DC  SetV1         v10 1                                       
+        00E4  PshV4         v10                                         
+        00E8  PshVPtr       this                                        
+        00EC  ADDSi         1168 134230848                                ; .ProgressMarker
+        00F4  RDSPtr                                                    
+        00F8  CALLSYS       USceneComponent::SetHiddenInGame            
+        0104  JMP           38                                            -> L01A4
+      L010C:
+        010C  LoadThisR     1176 134230848                                ; this.bShowProgressMarker
+        0114  RDR1          v9                                          
+        0118  CpyVtoR1      v9                                          
+        011C  JLowNZ        4                                             -> L0134
+        0124  SetV4         v9 0                                        
+        012C  JMP           12                                            -> L0164
+      L0134:
+        0134  LoadThisR     1352 134230848                                ; this.CurrentProgressEndTime
+        013C  RDR8          v2                                          
+        0140  LoadThisR     976 134230838                                 ; this.CurrentTraceHitPathTime
+        0148  RDR8          v8                                          
+        014C  CMPd          v2 v8                                       
+        0154  TNP                                                       
+        0158  CpyRtoV4      v10                                         
+        015C  CpyVtoV4      v9 v10                                      
+      L0164:
+        0164  CpyVtoR1      v9                                          
+        0168  JLowZ         13                                            -> L01A4
+        0170  SetV1         v10 0                                       
+        0178  PshV4         v10                                         
+        017C  SetV1         v9 0                                        
+        0184  PshV4         v9                                          
+        0188  PshVPtr       this                                        
+        018C  ADDSi         1168 134230848                                ; .ProgressMarker
+        0194  RDSPtr                                                    
+        0198  CALLSYS       USceneComponent::SetHiddenInGame            
+      L01A4:
+        01A4  RET           4                                           
+    */
+
+    void UpdateProgressUlt(const float64 ProgressValue)   // traits=0x20
+    {
+        v4 = 4641240890982006784;
+        v6 = Math::Lerp(v4, this.UltArrowRangeMax, ProgressValue);
+        v7 = float32(v6);
+        v8 = this.LaserProjectilePath.GetTimeForXDistance(v7);
+        v4 = float64(v8);
+        this.CurrentProgressEndTime = v4;
+        return;
+    }
+    /* ---- UpdateProgressUlt: 29 dwords / 18 instructions (cache offset 0x6a81a) ----
+        0000  PSF           ProgressValue                               
+        0004  LoadThisR     1344 134230848                                ; this.UltArrowRangeMax
+        000C  PshRPtr                                                   
+        0010  SetV8         v4 0x4069000000000000                       
+        001C  PSF           v4                                          
+        0020  CALLSYS       Lerp                                        
+        002C  CpyRtoV8      v6                                          
+        0030  dTOf          v7 v6                                       
+        0038  PshV4         v7                                          
+        003C  PshVPtr       this                                        
+        0040  ADDSi         936 134230838                                 ; .LaserProjectilePath
+        0048  RDSPtr                                                    
+        004C  CALLSYS       ULokiProjectilePathComponent::GetTimeForXDistance
+        0058  CpyRtoV4      v8                                          
+        005C  fTOd          v4 v8                                       
+        0064  LoadThisR     1352 134230848                                ; this.CurrentProgressEndTime
+        006C  WRTV8         v4                                          
+        0070  RET           4                                           
+    */
+
+    void OnSwapToLMB()   // traits=0x20
+    {
+        v1 = true;
+        this.SetShowRangeMarker(v1);
+        v1 = true;
+        this.SetShowProgressMarker(v1);
+        v1 = true;
+        this.bOverrideRangeMarkerDesaturationAndOpacity = v1;
+        v1 = true;
+        this.bOverrideDesaturationAndOpacity = v1;
+        v1 = true;
+        this.bOverrideRangeAndAlphaStep = v1;
+        this.LaserEndpoint.SetMaterial(0, this.LaserEndpointDimmedMaterial);
+        v1 = true;
+        this.bLaserEndpointDimmed = v1;
+        return;
+    }
+    /* ---- OnSwapToLMB: 46 dwords / 29 instructions (cache offset 0x6a912) ----
+        0000  SetV1         v1 1                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLINTF      84623                                         ; ALokiAimingLaserRangeMarker::SetShowRangeMarker
+        0018  SetV1         v1 1                                        
+        0020  PshV4         v1                                          
+        0024  PshVPtr       this                                        
+        0028  CALLINTF      84755                                         ; ALokiAimingLaser_Huntress::SetShowProgressMarker
+        0030  SetV1         v1 1                                        
+        0038  LoadThisR     1160 134230843                                ; this.bOverrideRangeMarkerDesaturationAndOpacity
+        0040  WRTV1         v1                                          
+        0044  SetV1         v1 1                                        
+        004C  LoadThisR     1024 134230838                                ; this.bOverrideDesaturationAndOpacity
+        0054  WRTV1         v1                                          
+        0058  SetV1         v1 1                                        
+        0060  LoadThisR     1025 134230838                                ; this.bOverrideRangeAndAlphaStep
+        0068  WRTV1         v1                                          
+        006C  PshVPtr       this                                        
+        0070  ADDSi         1296 134230848                                ; .LaserEndpointDimmedMaterial
+        0078  RDSPtr                                                    
+        007C  PshC4         0                                           
+        0084  PshVPtr       this                                        
+        0088  ADDSi         920 134230838                                 ; .LaserEndpoint
+        0090  RDSPtr                                                    
+        0094  CALLSYS       UPrimitiveComponent::SetMaterial            
+        00A0  SetV1         v1 1                                        
+        00A8  LoadThisR     1312 134230848                                ; this.bLaserEndpointDimmed
+        00B0  WRTV1         v1                                          
+        00B4  RET           2                                           
+    */
+
+    void OnSwapToBase()   // traits=0x20
+    {
+        v1 = true;
+        this.SetShowRangeMarker(v1);
+        v1 = false;
+        this.SetShowProgressMarker(v1);
+        v1 = false;
+        this.bOverrideRangeMarkerDesaturationAndOpacity = v1;
+        v1 = false;
+        this.bOverrideDesaturationAndOpacity = v1;
+        v1 = false;
+        this.bOverrideRangeAndAlphaStep = v1;
+        v1 = this.bRangeMarkerDimmed;
+        v1 = !v1;
+        if (v1) {
+            this.RangeMarker.SetMaterial(0, this.RangeMarkerDimmedMaterial);
+            v1 = true;
+            this.bRangeMarkerDimmed = v1;
+        }
+        v1 = this.bLaserEndpointDimmed;
+        v1 = !v1;
+        if (v1) {
+            this.LaserEndpoint.SetMaterial(0, this.RangeMarkerDimmedMaterial);
+            v1 = true;
+            this.bLaserEndpointDimmed = v1;
+        }
+        return;
+    }
+    /* ---- OnSwapToBase: 78 dwords / 50 instructions (cache offset 0x6aa4f) ----
+        0000  SetV1         v1 1                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLINTF      84623                                         ; ALokiAimingLaserRangeMarker::SetShowRangeMarker
+        0018  SetV1         v1 0                                        
+        0020  PshV4         v1                                          
+        0024  PshVPtr       this                                        
+        0028  CALLINTF      84755                                         ; ALokiAimingLaser_Huntress::SetShowProgressMarker
+        0030  SetV1         v1 0                                        
+        0038  LoadThisR     1160 134230843                                ; this.bOverrideRangeMarkerDesaturationAndOpacity
+        0040  WRTV1         v1                                          
+        0044  SetV1         v1 0                                        
+        004C  LoadThisR     1024 134230838                                ; this.bOverrideDesaturationAndOpacity
+        0054  WRTV1         v1                                          
+        0058  SetV1         v1 0                                        
+        0060  LoadThisR     1025 134230838                                ; this.bOverrideRangeAndAlphaStep
+        0068  WRTV1         v1                                          
+        006C  LoadThisR     1280 134230848                                ; this.bRangeMarkerDimmed
+        0074  RDR1          v1                                          
+        0078  NOT           v1                                          
+        007C  CpyVtoR1      v1                                          
+        0080  JLowZ         18                                            -> L00D0
+        0088  PshVPtr       this                                        
+        008C  ADDSi         1264 134230848                                ; .RangeMarkerDimmedMaterial
+        0094  RDSPtr                                                    
+        0098  PshC4         0                                           
+        00A0  PshVPtr       this                                        
+        00A4  ADDSi         1136 134230843                                ; .RangeMarker
+        00AC  RDSPtr                                                    
+        00B0  CALLSYS       UPrimitiveComponent::SetMaterial            
+        00BC  SetV1         v1 1                                        
+        00C4  LoadThisR     1280 134230848                                ; this.bRangeMarkerDimmed
+        00CC  WRTV1         v1                                          
+      L00D0:
+        00D0  LoadThisR     1312 134230848                                ; this.bLaserEndpointDimmed
+        00D8  RDR1          v1                                          
+        00DC  NOT           v1                                          
+        00E0  CpyVtoR1      v1                                          
+        00E4  JLowZ         18                                            -> L0134
+        00EC  PshVPtr       this                                        
+        00F0  ADDSi         1264 134230848                                ; .RangeMarkerDimmedMaterial
+        00F8  RDSPtr                                                    
+        00FC  PshC4         0                                           
+        0104  PshVPtr       this                                        
+        0108  ADDSi         920 134230838                                 ; .LaserEndpoint
+        0110  RDSPtr                                                    
+        0114  CALLSYS       UPrimitiveComponent::SetMaterial            
+        0120  SetV1         v1 1                                        
+        0128  LoadThisR     1312 134230848                                ; this.bLaserEndpointDimmed
+        0130  WRTV1         v1                                          
+      L0134:
+        0134  RET           2                                           
+    */
+
+    void OnSwapToRMB()   // traits=0x20
+    {
+        v1 = false;
+        this.SetShowRangeMarker(v1);
+        v1 = true;
+        this.SetShowProgressMarker(v1);
+        this.SetMaxRangeFromRMB();
+        v1 = false;
+        this.bOverrideDesaturationAndOpacity = v1;
+        v1 = false;
+        this.bOverrideRangeAndAlphaStep = v1;
+        return;
+    }
+    /* ---- OnSwapToRMB: 26 dwords / 17 instructions (cache offset 0x6ac3b) ----
+        0000  SetV1         v1 0                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLINTF      84623                                         ; ALokiAimingLaserRangeMarker::SetShowRangeMarker
+        0018  SetV1         v1 1                                        
+        0020  PshV4         v1                                          
+        0024  PshVPtr       this                                        
+        0028  CALLINTF      84755                                         ; ALokiAimingLaser_Huntress::SetShowProgressMarker
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84752                                         ; ALokiAimingLaser_Huntress::SetMaxRangeFromRMB
+        003C  SetV1         v1 0                                        
+        0044  LoadThisR     1024 134230838                                ; this.bOverrideDesaturationAndOpacity
+        004C  WRTV1         v1                                          
+        0050  SetV1         v1 0                                        
+        0058  LoadThisR     1025 134230838                                ; this.bOverrideRangeAndAlphaStep
+        0060  WRTV1         v1                                          
+        0064  RET           2                                           
+    */
+
+    void OnSwapToUlt()   // traits=0x20
+    {
+        v1 = false;
+        this.SetShowRangeMarker(v1);
+        v1 = false;
+        this.SetShowProgressMarker(v1);
+        v1 = false;
+        this.bOverrideRangeAndAlphaStep = v1;
+        return;
+    }
+    /* ---- OnSwapToUlt: 18 dwords / 12 instructions (cache offset 0x6ad27) ----
+        0000  SetV1         v1 0                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLINTF      84623                                         ; ALokiAimingLaserRangeMarker::SetShowRangeMarker
+        0018  SetV1         v1 0                                        
+        0020  PshV4         v1                                          
+        0024  PshVPtr       this                                        
+        0028  CALLINTF      84755                                         ; ALokiAimingLaser_Huntress::SetShowProgressMarker
+        0030  SetV1         v1 0                                        
+        0038  LoadThisR     1025 134230838                                ; this.bOverrideRangeAndAlphaStep
+        0040  WRTV1         v1                                          
+        0044  RET           2                                           
+    */
+
+    void SetMaxRangeFromRMB()   // traits=0x20
+    {
+        __Evt_Execute(this, n"SetMaxRangeFromRMB");
+        return;
+    }
+    /* ---- SetMaxRangeFromRMB: 11 dwords / 6 instructions (cache offset 0x6adfa) ----
+        0000  PshC4         165                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=SetMaxRangeFromRMB, BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+    void SetMaxRangeFromRMB_Implementation()   // traits=0x20
+    {
+        return;
+    }
+    /* ---- SetMaxRangeFromRMB_Implementation: 1 dwords / 1 instructions (cache offset 0x6aec0) ----
+        0000  RET           2                                           
+    */
+
+    protected void SetShowProgressMarker(const bool bNewShowProgressMarker)   // traits=0x30
+    {
+        if (this.ValidateOwner()) {
+            this.bShowProgressMarker = bNewShowProgressMarker;
+            v2 = false;
+            v1 = bNewShowProgressMarker;
+            v1 = !v1;
+            this.ProgressMarker.SetHiddenInGame(v1, v2);
+            v2 = bNewShowProgressMarker;
+            v2 = !v2;
+            if (v2) {
+                v6 = this.LaserProjectilePath.GetMaterial(0);
+                v6.SetScalarParameterValue(n"Range Step", 1065353216);
+            }
+        }
+        return;
+    }
+    /* ---- SetShowProgressMarker: 51 dwords / 31 instructions (cache offset 0x6b000) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84575                                         ; ALokiAimingLaser::ValidateOwner
+        000C  JLowZ         45                                            -> L00C8
+        0014  LoadThisR     1176 134230848                                ; this.bShowProgressMarker
+        001C  WRTV1         bNewShowProgressMarker                      
+        0020  SetV1         v2 0                                        
+        0028  PshV4         v2                                          
+        002C  CpyVtoV4      v1 bNewShowProgressMarker                   
+        0034  NOT           v1                                          
+        0038  PshV4         v1                                          
+        003C  PshVPtr       this                                        
+        0040  ADDSi         1168 134230848                                ; .ProgressMarker
+        0048  RDSPtr                                                    
+        004C  CALLSYS       USceneComponent::SetHiddenInGame            
+        0058  CpyVtoV4      v2 bNewShowProgressMarker                   
+        0060  NOT           v2                                          
+        0064  CpyVtoR1      v2                                          
+        0068  JLowZ         22                                            -> L00C8
+        0070  PshC4         1065353216                                  
+        0078  PshC4         37                                          
+        0080  CALLSYS       __STATIC_NAME                               
+        008C  PshRPtr                                                   
+        0090  PshC4         0                                           
+        0098  PshVPtr       this                                        
+        009C  ADDSi         936 134230838                                 ; .LaserProjectilePath
+        00A4  RDSPtr                                                    
+        00A8  CALLSYS       ULokiProjectilePathComponent::GetMaterial   
+        00B4  STOREOBJ      v6                                          
+        00B8  PshVPtr       v6                                          
+        00BC  CALLSYS       UMaterialInstanceDynamic::SetScalarParameterValue
+      L00C8:
+        00C8  RET           3                                           
+    */
+
+    void ~ALokiAimingLaser_Huntress()   // traits=0x22
+    {
+        this.~ALokiAimingLaserRangeMarker();
+        return;
+    }
+    /* ---- ~ALokiAimingLaser_Huntress: 4 dwords / 3 instructions (cache offset 0x6b481) ----
+        0000  PshVPtr       this                                        
+        0004  CALL          85481                                         ; ALokiAimingLaserRangeMarker::~ALokiAimingLaserRangeMarker
+        000C  RET           2                                           
+    */
+
+}
+

@@ -1,0 +1,132 @@
+==============================================================================
+FK-13 lane 4 -- CHEAT-SURFACE REACHABILITY  (pure RPM, read-only)
+==============================================================================
+  PID / base       : 41620 / 0x7FF7C7EF0000
+  ObjObjects       : 0x195F3099520  NumElements=190844
+
+  building the object index (ONE pass) ...
+      ... indexed 40000 objects
+      ... indexed 80000 objects
+      ... indexed 120000 objects
+      indexed 151332 objects total
+
+------------------------------------------------------------------------------
+[CTRL] instrument positive controls -- if these fail the run is VOID
+------------------------------------------------------------------------------
+  UClass PlayerController         : 0x195F72A4E80
+  UClass PlayerInput              : 0x195F999DF80
+  UClass CheatManager             : 0x195F72A5100
+  UClass LokiPlayerCheats         : 0x195FB249E80
+  UClass LokiClientPlayerCheats   : 0x195FA748300
+  UClass Function                 : 0x195E53BB000
+  live instances of LokiGameInstance      : 1
+  live instances of PlayerController      : 1
+  live instances of GameViewportClient    : 1
+
+------------------------------------------------------------------------------
+[1] INSTANCE CENSUS -- does anything exist to call a thunk ON?
+------------------------------------------------------------------------------
+  LokiPlayerCheats         CDO=2  LIVE=0      (Route A target: 25 exec verbs, ACTOR, not on the exec chain)
+        0x195F52CB460  class=LokiPlayerCheats  Default__LokiPlayerCheats
+        0x195F53CF990  class=LokiPlayerCheats_AS  Default__LokiPlayerCheats_AS
+  LokiPlayerCheats_AS      CDO=1  LIVE=0      (the Angelscript-generated sibling UClass (FK-1))
+        0x195F53CF990  class=LokiPlayerCheats_AS  Default__LokiPlayerCheats_AS
+  LokiClientPlayerCheats   CDO=1  LIVE=0      (5 exec verbs, UObject, held by LokiGameInstance -> may exist AT THE MENU)
+        0x195F5274820  class=LokiClientPlayerCheats  Default__LokiClientPlayerCheats
+  CheatManager             CDO=1  LIVE=0      (Route B: 48 exec verbs + the CheatManagerExtensions chain)
+        0x195F5100690  class=CheatManager  Default__CheatManager
+  CheatManagerExtension    CDO=1  LIVE=0      (what a CheatManagerExtensions entry would be)
+        0x195F5100660  class=CheatManagerExtension  Default__CheatManagerExtension
+
+  INTERPRETATION (offline evidence, S114 lane 4):
+    ALokiPlayerController::AddLokiPlayerCheats's exec thunk 0x05254180 is
+    `P_FINISH; jmp 0x00F7EC20` and 0x00F7EC20 is `ret 0` -- the game's own
+    creation path is an EMPTY BODY -- and 20+ live tutorial runs recorded
+    `[CHEAT] localCheatObj=0x0(-)`. So LIVE=0 for LokiPlayerCheats is the
+    EXPECTED result and confirms it. LIVE>0 would REFUTE the offline read
+    and is the more interesting outcome -- report it loudly.
+
+------------------------------------------------------------------------------
+[2] THE UPlayer::Exec CHAIN on the live PlayerController
+------------------------------------------------------------------------------
+
+  --- PlayerController 0x19666190010  class=BP_LokiPlayerController_Dev_C  name=BP_LokiPlayerController_Dev_C ---
+    PlayerInput          +0x530  [ObjectProperty   on PlayerController      ] -> 0x195B1B14980    class=EnhancedPlayerInput
+        UPlayer::Exec branch 2 -- PlayerInput->ProcessConsoleExec (5 exec fns)
+    MyHUD                +0x468  [ObjectProperty   on PlayerController      ] -> 0x0              (NULL)
+        UPlayer::Exec branch 5 -- AHUD has 6 exec fns
+    Pawn                 +0x3F8  [ObjectProperty   on Controller            ] -> 0x19770C50040    class=BP_HERO_Ronin_C
+        GetPawnOrSpectator() primary -- ALokiCharacter has 10 exec fns (8 EMPTY)
+    AcknowledgedPawn     +0x460  [ObjectProperty   on PlayerController      ] -> 0x19770C50040    class=BP_HERO_Ronin_C
+        cross-check on Pawn
+    SpectatorPawn        +0x7D8  [ObjectProperty   on PlayerController      ] -> 0x0              (NULL)
+        GetPawnOrSpectator() fallback when Pawn is null
+    CheatManager         +0x520  [ObjectProperty   on PlayerController      ] -> 0x0              (NULL)
+        UPlayer::Exec branch 7 -- THE Route B slot (literal +0x520)
+    CheatClass           +0x528  [ClassProperty    on PlayerController      ] -> 0x195F72A5100    class=Class
+        AddCheats() needs this non-null; literal +0x528
+    PlayerCameraManager  +0x470  [ObjectProperty   on PlayerController      ] -> 0x197714CAAC0    class=BP_LokiPlayerCameraManager_C
+        UPlayer::Exec branch 9
+    Player               +0x458  [ObjectProperty   on PlayerController      ] -> 0x195BBBB68C0    class=LocalPlayer
+        the ULocalPlayer whose ::Exec IS the chain
+    LokiPlayerCheats     +0xA30  [ObjectProperty   on LokiPlayerController  ] -> 0x0              (NULL)
+        Loki's OWN slot for the cheat actor -- set by AddLokiPlayerCheats, which is EMPTY
+    RAW +0x520 (CheatManager literal) = 0x0
+    RAW +0x528 (CheatClass   literal) = 0x195F72A5100
+
+------------------------------------------------------------------------------
+[3] WORLD BRANCHES of the chain -- GameMode / GameState
+------------------------------------------------------------------------------
+  GameMode   0x19688FCCBB0  class=EndOfGameModel  name=EndOfGameModel
+  GameMode   0x19733DD2A40  class=Comp_GameMode_EoGFinisher_C  name=Comp_GameMode_EoGFinisher
+  GameMode   0x195FC7F6500  class=Comp_GameMode_DeathCircle_C  name=Comp_GameMode_DeathCircle
+  GameMode   0x1977BABB5C0  class=Comp_GameMode_DropPlane_Tutorial_C  name=Comp_GameMode_DropPlane_Tutorial
+  GameState  0x195F53CDE30  class=LokiGameStateUAVComponent  name=UAVComponent
+  GameState  0x1976B7FA600  class=Comp_GameState_Music_Tutorial_C  name=Comp_GameState_Music_Tutorial
+  GameState  0x19768E40400  class=Comp_GameState_GamePhase_C  name=Comp_GameState_GamePhase
+  GameState  0x1976B7F4C00  class=Comp_GameState_DropTutorial_C  name=Comp_GameState_DropTutorial
+  HUD        none live
+
+------------------------------------------------------------------------------
+[4] ULokiGlobals -> DebugGlobals -> CDO.LokiPlayerCheats (soft class)
+------------------------------------------------------------------------------
+  LokiGlobals object   : 0x195F52A6580  Default__LokiGlobals
+  DebugGlobals @+0x50 [ClassProperty] -> 0x0  (NULL)
+
+------------------------------------------------------------------------------
+[5] TARGET UFunctions -- does UFunction.Func (+0xE0) match the offline RVA?
+------------------------------------------------------------------------------
+  A mismatch on EVERY row means --base is wrong (or the game updated) and
+  the offline thunk table is unusable for a Func swap. A mismatch on ONE
+  row is a real finding about that function.
+
+  LokiBlueprintLibrary   CheatsEnabled                UFunction=0x195F4F306F0  Func=0x7FF7CD0529C0  rva=0x051629C0  expect 0x051629C0  MATCH
+        decl on LokiBlueprintLibrary  -> call 0x00F7EB60 (xor al,al; ret) = ALWAYS FALSE. Route C target.
+  LokiPlayerCheats       AreHotkeyCheatsEnabled       UFunction=0x195F4FBC5B0  Func=0x7FF7CD1ED980  rva=0x052FD980  expect 0x052FD980  MATCH
+        decl on LokiPlayerCheats      -> call 0x00F7EB60 = ALWAYS FALSE (same fold; NOT previously recorded).
+  LokiPlayerCheats       EnableHotkeyCheats           UFunction=0x195F4FBD690  Func=0x7FF7CD314670  rva=0x05424670  expect 0x05424670  MATCH
+        decl on LokiPlayerCheats      REAL body, 128 B. 1 param (double Enabled).
+  LokiPlayerCheats       GetLocalLokiPlayerCheatsBP   UFunction=0x195F4FBDC30  Func=0x7FF7CD314F70  rva=0x05424F70  expect 0x05424F70  MATCH
+        decl on LokiPlayerCheats      REAL body, 133 B. Static, 2 props (WorldContext + return).
+  LokiPlayerController   AddLokiPlayerCheats          UFunction=0x195F4FC01B0  Func=0x7FF7CD144180  rva=0x05254180  expect 0x05254180  MATCH
+        decl on LokiPlayerController  P_FINISH; jmp 0x00F7EC20 (ret 0) = EMPTY. The creation path is stripped.
+  LokiPlayerController   FinishAddLokiPlayerCheats    UFunction=0x195F4FC2CD0  Func=0x7FF7CD144180  rva=0x05254180  expect 0x05254180  MATCH
+        decl on LokiPlayerController  same folded thunk as AddLokiPlayerCheats = EMPTY.
+  KismetSystemLibrary    ExecuteConsoleCommand        UFunction=0x195F4B0D8B0  Func=0x7FF7CB84D790  rva=0x0395D790  expect 0x0395D790  MATCH
+        decl on KismetSystemLibrary   REAL body, 469 B. The BlueprintCallable string entry point.
+  PlayerController       LocalTravel                  UFunction=0x195F4DB0960  Func=0x7FF7CBB54600  rva=0x03C64600  expect 0x03C64600  MATCH
+        decl on PlayerController      REAL body, 157 B.
+  CheatManager           God                          UFunction=0x195F4D87470  Func=0x7FF7CB4B7FD0  rva=0x035C7FD0  expect 0x035C7FD0  MATCH
+        decl on CheatManager          REAL. Positive control: UCheatManager's 50/50 exec thunks are real.
+  CheatManager           Summon                       UFunction=0x195F4D88280  Func=0x7FF7CB4BA510  rva=0x035CA510  expect 0x035CA510  MATCH
+        decl on CheatManager          REAL, 157 B, 1 param. Positive control.
+  LokiCharacter          InfiniteHealth               UFunction=0x195F4F481B0  Func=0x7FF7CD144180  rva=0x05254180  expect 0x05254180  MATCH
+        decl on LokiCharacter         folded to ret 0 = EMPTY (8 of ALokiCharacter's 10 exec fns are).
+
+  thunk table: 11 match, 0 mismatch, 0 UFunction not found
+
+------------------------------------------------------------------------------
+RPM stats: 1164847 reads, 0 failed.
+A NULL/zero above is only a finding if [CTRL] passed. If a control failed,
+record the run as VOID, not as evidence.
+------------------------------------------------------------------------------

@@ -1,0 +1,307 @@
+==============================================================================
+MODULE   Character.LokiHeroGroundIndicator
+SOURCE   Character/LokiHeroGroundIndicator.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiHeroGroundIndicator;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiHeroGroundIndicator@ ULokiHeroGroundIndicator()
+// 4 instr, 28 B bytecode, id=0x9FA8B017, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiHeroGroundIndicator v2;
+
+    v2 = ULokiHeroGroundIndicator();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84486 q:0x26e6ed75e00; new ULokiHeroGroundIndicator   ctor=ULokiHeroGroundIndicator::ULokiHeroGroundIndicator
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x3B203D6F, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiHeroGroundIndicator);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b0d58         ; __StaticType_ULokiHeroGroundIndicator
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ULokiHeroGroundIndicator@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xAD9958FC, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiHeroGroundIndicator v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiHeroGroundIndicator, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972654            ; ULokiHeroGroundIndicator@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b0d58         ; __StaticType_ULokiHeroGroundIndicator
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiHeroGroundIndicator@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xC6C31081, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiHeroGroundIndicator v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiHeroGroundIndicator, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972654            ; ULokiHeroGroundIndicator@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b0d58         ; __StaticType_ULokiHeroGroundIndicator
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiHeroGroundIndicator@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x1EA2823E, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiHeroGroundIndicator v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiHeroGroundIndicator, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972654            ; ULokiHeroGroundIndicator@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b0d58         ; __StaticType_ULokiHeroGroundIndicator
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class ULokiHeroGroundIndicator : ULokiHeroGroundIndicatorBase
+// base /Script/Loki.LokiHeroGroundIndicatorBase  ->  ../../../Loki/Source/Loki/Character/Hero/LokiHeroGroundIndicatorBase.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=GroundIndicator|Shadow)) protected FVector ShadowDecalSize;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=GroundIndicator|Shadow)) protected FRotator ShadowDecalRotation;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=GroundIndicator|Ring)) protected FVector RingDecalSize;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=GroundIndicator|Ring)) protected FRotator RingDecalRotation;
+
+}
+
+------------------------------------------------------------------------------
+ULokiHeroGroundIndicator() const
+// 39 instr, 340 B bytecode, id=0x388CD42E, varspace=18
+------------------------------------------------------------------------------
+{
+    FVector v6;
+    FRotator v18;
+
+    v6 = FVector(50, 100, 100);
+    this.ShadowDecalSize = FVector(v6);
+    v18 = FRotator(-90, 0, 0);
+    this.ShadowDecalRotation = FRotator(v18);
+    v6 = FVector(200, 300, 300);
+    this.RingDecalSize = FVector(v6);
+    v18 = FRotator(-90, 0, 0);
+    this.RingDecalRotation = FRotator(v18);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC8          q:0x4059000000000000
+    //     3  PshC8          q:0x4059000000000000
+    //     6  PshC8          q:0x4049000000000000
+    //     9  PSF            rW0:6
+    //    10  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //    13  PSF            rW0:6
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:304 d:134230830      ; ULokiHeroGroundIndicator::ShadowDecalSize  (+304)
+    //    17  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    20  PshC8          q:0x0
+    //    23  PshC8          q:0x0
+    //    26  PshC8          q:0xc056800000000000
+    //    29  PSF            rW0:18
+    //    30  CALLSYS        q:0x26e69557e80         ; void FRotator::$beh0(float64, float64, float64)
+    //    33  PSF            rW0:18
+    //    34  PshVPtr        rW0:0
+    //    35  ADDSi          W0:328 d:134230830      ; ULokiHeroGroundIndicator::ShadowDecalRotation  (+328)
+    //    37  CALLSYS        q:0x26e69557940         ; void FRotator::$beh0(const FRotator&)
+    //    40  PshC8          q:0x4072c00000000000
+    //    43  PshC8          q:0x4072c00000000000
+    //    46  PshC8          q:0x4069000000000000
+    //    49  PSF            rW0:6
+    //    50  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //    53  PSF            rW0:6
+    //    54  PshVPtr        rW0:0
+    //    55  ADDSi          W0:352 d:134230830      ; ULokiHeroGroundIndicator::RingDecalSize  (+352)
+    //    57  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    60  PshC8          q:0x0
+    //    63  PshC8          q:0x0
+    //    66  PshC8          q:0xc056800000000000
+    //    69  PSF            rW0:18
+    //    70  CALLSYS        q:0x26e69557e80         ; void FRotator::$beh0(float64, float64, float64)
+    //    73  PSF            rW0:18
+    //    74  PshVPtr        rW0:0
+    //    75  ADDSi          W0:376 d:134230830      ; ULokiHeroGroundIndicator::RingDecalRotation  (+376)
+    //    77  CALLSYS        q:0x26e69557940         ; void FRotator::$beh0(const FRotator&)
+    //    80  PshVPtr        rW0:0
+    //    81  FinConstruct   q:0x26e6ed75e00         ; ULokiHeroGroundIndicator
+    //    84  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: CreateShadowDecal
+void CreateShadowDecal_Implementation()
+// 42 instr, 272 B bytecode, id=0x712D7077, varspace=10
+------------------------------------------------------------------------------
+{
+    this.ShadowDecalComponent = Gameplay::SpawnDecalAtLocation(__WorldContext, this.ShadowDecalMaterial, this.ShadowDecalSize, FVector::ZeroVector, this.ShadowDecalRotation, 0);
+    this.ShadowDecalMID = Material::CreateDynamicMaterialInstance(__WorldContext, this.ShadowDecalComponent.GetDecalMaterial(), NAME_None, false);
+    this.ShadowDecalComponent.SetDecalMaterial(this.ShadowDecalMID);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:0
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:328 d:134230830      ; ULokiHeroGroundIndicator::ShadowDecalRotation  (+328)
+    //     5  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:304 d:134230830      ; ULokiHeroGroundIndicator::ShadowDecalSize  (+304)
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:216 d:67115181       ; ULokiHeroGroundIndicatorBase::ShadowDecalMaterial  (+216)
+    //    14  RDSPtr
+    //    15  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    18  CALLSYS        q:0x26e79ab59c0         ; UDecalComponent@ Gameplay::SpawnDecalAtLocation(const UObject@, UMaterialInterface@, FVector, FVector, FRotator, float)
+    //    21  STOREOBJ       wW0:4
+    //    22  PshVPtr        rW0:4
+    //    23  PshVPtr        rW0:0
+    //    24  ADDSi          W0:208 d:67115181       ; ULokiHeroGroundIndicatorBase::ShadowDecalComponent  (+208)
+    //    26  REFCPY
+    //    27  PopPtr
+    //    28  SetV1          wW0:5 d:0
+    //    30  PshV4          rW0:5
+    //    31  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    34  PshVPtr        rW0:0
+    //    35  ADDSi          W0:208 d:67115181       ; ULokiHeroGroundIndicatorBase::ShadowDecalComponent  (+208)
+    //    37  RDSPtr
+    //    38  CALLSYS        q:0x26e79a05d40         ; UMaterialInterface@ UDecalComponent::GetDecalMaterial() const
+    //    41  STOREOBJ       wW0:8
+    //    42  PshVPtr        rW0:8
+    //    43  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    46  CALLSYS        q:0x26e79acd0c0         ; UMaterialInstanceDynamic@ Material::CreateDynamicMaterialInstance(UObject@, UMaterialInterface@, FName, EMIDCreationFlags)
+    //    49  STOREOBJ       wW0:10
+    //    50  PshVPtr        rW0:10
+    //    51  PshVPtr        rW0:0
+    //    52  ADDSi          W0:224 d:67115181       ; ULokiHeroGroundIndicatorBase::ShadowDecalMID  (+224)
+    //    54  REFCPY
+    //    55  PopPtr
+    //    56  PshVPtr        rW0:0
+    //    57  ADDSi          W0:224 d:67115181       ; ULokiHeroGroundIndicatorBase::ShadowDecalMID  (+224)
+    //    59  RDSPtr
+    //    60  PshVPtr        rW0:0
+    //    61  ADDSi          W0:208 d:67115181       ; ULokiHeroGroundIndicatorBase::ShadowDecalComponent  (+208)
+    //    63  RDSPtr
+    //    64  CALLSYS        q:0x26e79a052c0         ; void UDecalComponent::SetDecalMaterial(UMaterialInterface@)
+    //    67  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: CreateRingDecal
+void CreateRingDecal_Implementation()
+// 42 instr, 272 B bytecode, id=0x1B59EDEF, varspace=10
+------------------------------------------------------------------------------
+{
+    this.RingDecalComponent = Gameplay::SpawnDecalAtLocation(__WorldContext, this.RingDecalMaterial, this.RingDecalSize, FVector::ZeroVector, this.RingDecalRotation, 0);
+    this.RingDecalMID = Material::CreateDynamicMaterialInstance(__WorldContext, this.RingDecalComponent.GetDecalMaterial(), NAME_None, false);
+    this.RingDecalComponent.SetDecalMaterial(this.RingDecalMID);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:0
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:376 d:134230830      ; ULokiHeroGroundIndicator::RingDecalRotation  (+376)
+    //     5  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:352 d:134230830      ; ULokiHeroGroundIndicator::RingDecalSize  (+352)
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:240 d:67115181       ; ULokiHeroGroundIndicatorBase::RingDecalMaterial  (+240)
+    //    14  RDSPtr
+    //    15  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    18  CALLSYS        q:0x26e79ab59c0         ; UDecalComponent@ Gameplay::SpawnDecalAtLocation(const UObject@, UMaterialInterface@, FVector, FVector, FRotator, float)
+    //    21  STOREOBJ       wW0:4
+    //    22  PshVPtr        rW0:4
+    //    23  PshVPtr        rW0:0
+    //    24  ADDSi          W0:232 d:67115181       ; ULokiHeroGroundIndicatorBase::RingDecalComponent  (+232)
+    //    26  REFCPY
+    //    27  PopPtr
+    //    28  SetV1          wW0:5 d:0
+    //    30  PshV4          rW0:5
+    //    31  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    34  PshVPtr        rW0:0
+    //    35  ADDSi          W0:232 d:67115181       ; ULokiHeroGroundIndicatorBase::RingDecalComponent  (+232)
+    //    37  RDSPtr
+    //    38  CALLSYS        q:0x26e79a05d40         ; UMaterialInterface@ UDecalComponent::GetDecalMaterial() const
+    //    41  STOREOBJ       wW0:8
+    //    42  PshVPtr        rW0:8
+    //    43  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    46  CALLSYS        q:0x26e79acd0c0         ; UMaterialInstanceDynamic@ Material::CreateDynamicMaterialInstance(UObject@, UMaterialInterface@, FName, EMIDCreationFlags)
+    //    49  STOREOBJ       wW0:10
+    //    50  PshVPtr        rW0:10
+    //    51  PshVPtr        rW0:0
+    //    52  ADDSi          W0:248 d:67115181       ; ULokiHeroGroundIndicatorBase::RingDecalMID  (+248)
+    //    54  REFCPY
+    //    55  PopPtr
+    //    56  PshVPtr        rW0:0
+    //    57  ADDSi          W0:248 d:67115181       ; ULokiHeroGroundIndicatorBase::RingDecalMID  (+248)
+    //    59  RDSPtr
+    //    60  PshVPtr        rW0:0
+    //    61  ADDSi          W0:232 d:67115181       ; ULokiHeroGroundIndicatorBase::RingDecalComponent  (+232)
+    //    63  RDSPtr
+    //    64  CALLSYS        q:0x26e79a052c0         ; void UDecalComponent::SetDecalMaterial(UMaterialInterface@)
+    //    67  RET            W0:2
+

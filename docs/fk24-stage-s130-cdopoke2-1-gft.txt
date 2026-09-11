@@ -1,0 +1,8 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[2] worldCtx=0x164A23A7A20 kslCDO=0x164A65BD050 eccThunk=0x7FF7C79AD790(rva 0x395D790) child=0x164E6D37A00 offWCO=0x0 offCmd=0x8 offSP=0x18 gameTid=28876 cmd='open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[3] hook built; issuing ExecuteConsoleCommand('open LVL_Tutorial') on the game thread...
+[VT] custom-login INSTALL: 5 vtables slot285, stockLogin=0x7FF7C7830C50 tramp=0x1654C6A2750
+[PIM] PI hook mutex acquired (clean)
+[PIM] PI hook mutex released
+[4] CALLED (called=1 hitsGT=1) — de-override held; sampling tutorial state across travel...

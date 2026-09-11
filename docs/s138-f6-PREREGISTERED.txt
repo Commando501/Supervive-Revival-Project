@@ -1,0 +1,89 @@
+S138 FLIGHT 6 -- PRE-REGISTRATION: poke LivingState = Alive
+Written 2026-08-23 BEFORE launching. Not editable afterwards; corrections go in the write-up.
+
+================================================================================================
+0. THE ARM, AND WHY IT IS EXTERNAL RATHER THAN AN INJECTED SHIM
+================================================================================================
+Write ONE aligned byte: botPawn + 0x1090 = 1 (ELivingStateAlive), from an EXTERNAL process via
+WriteProcessMemory. No injection, no rebuild, no manual-map.
+
+Justification, and the risk it is chosen to avoid:
+  * RISK CLASS IS UNCHANGED. This project grades write hazard by WHAT is written, not by who writes
+    it: a DATA write measured at 0 deaths / 22 armed windows, against a standing .text patch at
+    7/8. This is a heap DATA byte on a UObject -- the safest recorded class.
+  * IT REMOVES a manual-map. Every S137/S138 sitting has ended in FK-32 after 4-7 manual maps.
+    Doing this in a shim would cost a rebuild AND an injection; doing it externally costs neither.
+  * THE HANDLE ALREADY HAS WRITE RIGHTS. Every read-only probe this project runs opens with
+    OpenProcess(0x1F0FFF) = PROCESS_ALL_ACCESS, which already includes PROCESS_VM_WRITE, and those
+    succeed. So the protector is not stripping write access from our handle.
+  ⚠ HONEST NOVELTY: this project has never written to the game from an EXTERNAL process before --
+    every prior poke came from an injected shim. The write class is the same and the handle is
+    already proven, but "external WPM is not detected" is UNTESTED. If the client dies within
+    seconds of the poke with no crashpad artifact, that is a candidate cause and must be recorded
+    as such rather than filed as ordinary FK-32.
+
+================================================================================================
+1. WHAT IS ALREADY MEASURED (docs/s138-livingstate-writers-settled.md)
+================================================================================================
+  * LivingState @ +0x1090 on ALokiCharacter, uint8, enum ELivingState: Dead=0 Alive=1 Knocked=2.
+  * Only TWO native writers exist in the decrypted image and BOTH write 0. Nothing writes 1.
+  * The bridge ALokiCharacter::OnLivingStateMachineStateChanged is the VOID FOLD 0x0F7EC20.
+  * Net|RepNotify|private, no BP access, no config -> the reflected writer is FRepLayout on the
+    replication receive path, and this client has no NetDriver.
+  * MEASURED live, n=3 clients: every character reads Dead, and ALokiBotController's gate
+    bCharacterControllable (+0x6A0) = 0 with ForceCharacterNotControllable (+0x602) = 0.
+
+================================================================================================
+2. PREDICTIONS
+================================================================================================
+  P1  The poke LANDS: a readback of botPawn+0x1090 returns 1.
+      (Free second instrument: ALokiCharacter::GetLivingState is `movzx eax,[rcx+0x1090]; ret`,
+       so tools/re/livingstate_sweep.py reads the same byte by an independent path.)
+  P2  SPECIFICITY CONTROL -- the PLAYER hero is NOT poked and MUST still read 0. If the player
+      hero's value also moves, the write went somewhere unintended and P1 is void.
+  P3  bCharacterControllable (controller +0x6A0) flips 0 -> 1.
+  P4  IF P3: RandomMoveDirection (controller +0x658) becomes a non-zero horizontal unit vector
+      within ~2 s (Tick re-randomises it every 2.0 s).
+  P5  IF P4: pawn ControlInputVector (+0x418) becomes non-zero, and the pawn's world location
+      changes between samples.
+  P6  RESTORE (A-B-A): writing 0 back returns +0x6A0 to 0. The restore is what makes this a
+      measurement rather than a one-way change.
+
+★★ P3 IS THE ONE I EXPECT TO FAIL, AND SAYING SO NOW IS THE POINT OF THIS FILE.
+   ALokiBotController::UpdateCharacterControllable (thunk 0x52EEDB0, impl 0x5570B80) is a REAL
+   reflected FUNCTION, and ALokiBotController::HandleLivingStateChanged (0x5560910) is a REAL
+   function whose body is `jmp 0x5570B80` -- i.e. a DELEGATE HANDLER that calls it. That is the
+   shape of a value that is COMPUTED ON A STATE-CHANGE EVENT AND CACHED at +0x6A0, not one
+   recomputed every Tick. S137 measured the bind: OnPossess binds HandleLivingStateChanged onto
+   hero+0xC38 (OnLivingStateChanged).
+   => Poking the byte SILENTLY, without firing that delegate, plausibly changes nothing at +0x6A0.
+   That is NOT a refutation of the LivingState finding; it locates the next lever.
+
+  P3-ALT  If P3 fails with P1 and P2 holding, the named next step is to DRIVE the recompute:
+          call ALokiBotController::UpdateCharacterControllable (impl 0x5570B80) on the live
+          controller via the S55 direct-thunk primitive, or fire the OnLivingStateChanged delegate
+          at hero+0xC38. Neither is attempted in THIS flight -- this flight tests the byte alone,
+          precisely so that a null is attributable to the missing recompute and not confounded
+          with a second change.
+
+================================================================================================
+3. WHAT WOULD MAKE THIS FLIGHT UNINTERPRETABLE
+================================================================================================
+  U1  No LokiBotController exists (ARM D did not run) -> there is no +0x6A0 to read. Staging
+      statement, not a result.
+  U2  The readback fails or shows a value other than 1 -> the write did not land; nothing
+      downstream may be interpreted.
+  U3  The player hero's LivingState also changes -> wrong target; whole flight void.
+  U4  The client dies before the AFTER samples. Capture as you go.
+  U5  ⚠ A null at +0x6A0 is ONLY interpretable if P1 and P2 both hold. Without the readback the
+      null says nothing.
+
+================================================================================================
+4. SCOPE
+================================================================================================
+Even on full success this shows that ONE gate term can be flipped by one byte. It does NOT show
+that an "Alive" character behaves alive, and IsStunned -- the gate's second conjunct -- has NEVER
+been measured (no such property surfaced; it is likely a function or gameplay-tag query).
+ServerSetHeroClass and SetPlayerTeam remain stripped folds regardless.
+⛔ Still not a working bot, and this is a DIAGNOSIS, not a shipping fix: it mutates live object
+state and must never enter the default shim set.

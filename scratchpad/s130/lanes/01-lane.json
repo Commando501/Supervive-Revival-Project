@@ -1,0 +1,130 @@
+{
+ "lane": "Does the pooled spawn path consult the same actor-pool \"feature enabled\" gate, or merely want a primed pool? (FK-22 / SpawnPoolableActorFromClass{,Deferred} returning NULL)",
+ "headline": "Neither: the pooled spawn path never calls the `[vtable+0x2D0]` gate and never requires a primed pool (it FindOrAdds an empty pool and explicitly falls back to a normal `UWorld::SpawnActor`) — what it does require, and the ordinary spawn path does not, is a non-null `World->GameState` that IsA `ALokiGameState`, plus a per-class CDO byte at `+0x6C` being zero.",
+ "claims": [
+  {
+   "claim": "The exec thunk for SpawnPoolableActorFromClass is rva 0x537EEE0 and its IMPLEMENTATION is rva 0x566FF50; for ...Deferred the thunk is 0x537F1A0 and the impl 0x5670090. Thunk!=impl confirmed by reading the thunk's own call+store.",
+   "grade": "M",
+   "evidence": "strxref.py native \"SpawnPoolableActorFromClass\" -> \"FNameNativePtrPair slot 0x09BE6E40 -> exec thunk 0x537EEE0 ... call 0x566FF50 callers=1 +0x28B\". Disassembly of the thunk tail: 0x0537F16B e8e00d2f00 call 0x7ff7bdd3ff50 (= rva 0x566FF50, ImageBase 0x7FF7B86D0000); 0x0537F170 49890424 mov qword ptr [r12], rax (writes the FFrame return slot). Lane-supplied VA 0x7FF7BDA4EEE0 re-derives to exactly 0x537EEE0.",
+   "load_bearing": true
+  },
+  {
+   "claim": "NEITHER impl, NOR the wrapper 0x5647F00, NOR the shared core 0x5648050, NOR the pool-manager getter 0x3840490, NOR the three sibling pooled-spawn helpers contains a single `call qword ptr [reg+0x2D0]`. The gate is called at exactly ONE address in the whole family: 0x33560C5 inside PrimePools.",
+   "grade": "M",
+   "evidence": "Byte scan of dumps/s129-poolgate for regex \\xff[\\x90-\\x97]\\xd0\\x02\\x00\\x00 (call [reg+0x2D0], with/without REX.B) over each function extent. Output: SpawnPoolableActorFromClass_impl NO; Deferred_impl NO; wrapper_0x5647F00 NO; CORE_0x5648050 NO; poolmgr_getter_0x3840490 NO; sibling_0x55EE1BE NO; sibling_0x56181E0 NO; sibling_0x56D42D0 NO; PrimePools_0x3356000 -> call [reg+0x2D0] at 0x33560c5. Image-wide count of that pattern is 524 sites (unit: call sites), so the slot is common and the per-function negatives are what matter.",
+   "load_bearing": true
+  },
+  {
+   "claim": "Total indirect (virtual) calls in the entire 3702-byte core 0x5648050..0x5648EC6 are THREE: [r8+0x538] at 0x5648CFE, [rax+0x188] at 0x5648D89, [rax+0x10] at 0x5648E69. None is 0x2D0.",
+   "grade": "M",
+   "evidence": "python fkdis.py d 0x5648050 0xE76 --dump s129 | grep -E 'call +qword ptr \\[' -> exactly those 3 lines (819 disassembly lines total).",
+   "load_bearing": true
+  },
+  {
+   "claim": "A missing/empty pool CANNOT produce NULL. The pool lookup 0x334E7A0 is a TMap FindOrAdd: it has exactly one `ret` (0x334E8BA) and every path returns `MapData + idx*0x28 + 8`; on a miss it calls 0x334E5D0 to insert first. It is never null.",
+   "grade": "M",
+   "evidence": "fkdis d 0x334E7A0 (extent 0x334E7A0..0x334E8BB, 283 B, .pdata EXACT). Miss paths all `je 0x334E86D` -> 0x334E88B `call 0x7ff7bba1e5d0` (insert) -> 0x334E890 movsxd rax,[rsp+0x60]; lea rcx,[rax+rax*4]; mov rax,[r14]; lea rax,[rax+rcx*8]; 0x334E8A5 add rax,8; single ret at 0x334E8BA.",
+   "load_bearing": true
+  },
+  {
+   "claim": "With an empty pool the core takes an explicit documented fallback and spawns a fresh actor. The game states this itself: the format string at .rdata 0x08B06440 is 'Failed to find an actor in the pool for %s, spawning a new instance from scratch.'",
+   "grade": "M",
+   "evidence": "0x56482F0 cmp dword ptr [rax+8], r14d ; 0x56482F4 jle 0x5648353 (skip reuse loop when pool Num<=0). 0x5648360 inc dword [rbx+0x10] (miss counter) -> 0x56483C8 jmp 0x5648D27. Block 0x5648D24..0x5648D82 formats 0x08B06440 and falls THROUGH into 0x5648D83. Hexdump of 0x08B06440 (UTF-16LE): 46 00 61 00 69 00 6c 00 ... = 'Failed to find an actor in the pool for %s, spawning a new instance from scratch.' strxref xref 0x08B06440 -> 4 code refs, one is site 0x5648D48 in fn 0x5648CDC (a chained .pdata row of 0x5648050).",
+   "load_bearing": true
+  },
+  {
+   "claim": "The fallback at 0x5648D83 does GetWorld() then a normal UWorld::SpawnActor and RETURNS the new actor (non-null) - so 'priming never ran' is not a null-producing condition anywhere.",
+   "grade": "M",
+   "evidence": "0x5648D83 mov rax,[rsi]; 0x5648D86 mov rcx,rsi; 0x5648D89 call qword ptr [rax+0x188] (slot 49); 0x5648D94 test rax,rax; je 0x5648EA1. Then 0x5648E48 call 0x7ff7bc093db0 (rva 0x39C3DB0 = UWorld::SpawnActor(UClass*, FTransform const*, FActorSpawnParameters const&)) with rcx=World, rdx=class, r8=transform, r9=&SpawnParams; result in r14; 0x5648E6F test r14,r14 / je NULL, else 0x5648E8E / 0x5648E9C mov rax,r14; jmp epilogue 0x5648EA3.",
+   "load_bearing": true
+  },
+  {
+   "claim": "The core has exactly NINE edges to the NULL epilogue 0x5648EA1, all in its first ~450 bytes plus two at the end; the whole 0x564848E..0x5648CDC reuse body contains none. Only 0x5648EA1 zeroes the return.",
+   "grade": "M",
+   "evidence": "grep of the full 819-line disassembly for '0x7ff7bdd18ea1' -> 9 hits at 0x56480B8, 0x56480C6, 0x56480FE, 0x564810C, 0x5648119, 0x564817A, 0x5648210, 0x5648D97, 0x5648E6F. grep 'xor eax, eax' -> only 0x5648E93 (which is `mov byte [r14+0x374], al` then returns r14, non-null) and 0x5648EA1. Jumps to the shared epilogue 0x5648EA3: 0x5648D1F (rax=pooled actor), 0x5648E91 (rax=r14), 0x5648E9F (rax=r14).",
+   "load_bearing": true
+  },
+  {
+   "claim": "Core NULL conditions, in order: C1 Class==null (0x56480B8); C2 AActor::StaticClass()==null (0x56480C6, unreachable); C3/C4 !Class->IsChildOf(AActor) (0x56480FE/0x564810C); C5 Class==null re-read (0x5648119); C6 Class->[0xdc] & 1 (0x564817A); C7 ClassDefaultObject->byte@0x6C != 0 (0x5648210); C8 this->GetWorld()==null (0x5648D97); C9 UWorld::SpawnActor returned null (0x5648E6F).",
+   "grade": "M",
+   "evidence": "Byte-level: 0x56480B5 test rdi,rdi / je; 0x5648173 f680dc00000001 test byte ptr [rax+0xdc],1 then 0f85 jne 0x5648EA1; 0x56481DA cmp qword [rbx+0x178],r14; 0x56481E3 call 0x338BD10 (AActor::StaticClass - strings 'AActor','/Script/Engine','Engine'); 0x56481EB lea rcx,[rbx+0x178]; call 0x12C7DD0 (which does `mov rbx,[rcx]; mov rbx,[rbx+0x18]` = classOff 0x18, this build's measured value); 0x56481FB mov rax,[rbx+0x178]; 0x564820C cmp byte ptr [rax+0x6c],r14b; 0x5648210 jne 0x5648EA1.",
+   "load_bearing": true
+  },
+  {
+   "claim": "Class->[0xdc] is ClassFlags and bit 0 is CLASS_Abstract, so C6 = 'class is abstract'. This is derived from stock UClass layout anchored on a measured landmark, not read from a symbol.",
+   "grade": "I",
+   "evidence": "Measured anchor: FStructBaseChain sits at UClass+0x38 (array ptr) / +0x40 (NumStructBasesInChainMinusOne) - used by every IsChildOf fast path in these functions (`movsxd rbx,[rax+0x40]; lea rsi,[rax+0x38]; cmp [rdi_arr + rbx*8], rsi`). With this build's UObjectBase (Class@0x18, Name@0x20, Outer@0x28 => sizeof 0x30) plus UField::Next@0x30, FStructBaseChain lands at 0x38 exactly as stock. Continuing stock UStruct/UClass member order puts ClassFlags at 0xdc. NOT independently confirmed against a UHT offset - graded I.",
+   "load_bearing": false
+  },
+  {
+   "claim": "C6 (abstract) is RULED OUT by the lane's own control: the same class spawns fine via the ordinary path, and UWorld::SpawnActor itself rejects abstract classes.",
+   "grade": "I",
+   "evidence": "Ordinary SpawnActorFromClass impl 0x566EB70 does the same null + IsChildOf(AActor) prologue and then proceeds; the abstract rejection lives in UWorld::SpawnActor which the ordinary path also reaches. So an abstract class could not have succeeded ordinarily.",
+   "load_bearing": false
+  },
+  {
+   "claim": "BOTH outer impls carry NINE additional NULL-return conditions before the core is ever entered, and four of them are an ALokiGameState precondition chain that the ordinary spawn path does not have: O6 GetWorldFromContextObject(ctx,1)==null; O7 *(World+0x258) (World->GameState)==null; O8 !GameState->IsA(ALokiGameState); O9 GameState==null.",
+   "grade": "M",
+   "evidence": "0x566FFE0 mov rcx,[rip+0x4949a89] (GEngine); mov r8d,1; mov rdx,r15; 0x566FFF0 call 0x7ff7bc5abe70 (rva 0x3EDBE70, strings 'A null object was passed as a world context object to UEngine::GetWorldFromContextObject' / 'No world was found for object (%s) passed in to UEngine::GetWorldFromContextObject().'); 0x566FFF8 je NULL. 0x566FFFA lea rbx,[rax+0x258]; 0x5670001 cmp [rbx],rbp; je NULL. 0x5670006 call 0x7ff7bda50690 (rva 0x5380690, strings 'ALokiGameState','/Script/Loki','Game'); 0x5670011 call 0x12C7DD0; 0x5670018 test al,al; je NULL. 0x567001A mov rcx,[rbx]; test rcx,rcx; 0x5670020 je NULL. Deferred is byte-parallel at 0x5670133 / 0x567013D / 0x5670149 / 0x5670154 / 0x567015D.",
+   "load_bearing": true
+  },
+  {
+   "claim": "DIFFERENTIAL CONTROL: the ordinary SpawnActorFromClass (impl 0x566EB70) makes ZERO calls to ALokiGameState::StaticClass and has ZERO `lea [+0x258]`, while both pooled impls have exactly one of each. That is the precise extra precondition the pooled path adds.",
+   "grade": "M",
+   "evidence": "rel32 E8 scan for target 0x5380690 and byte scan for 48 8d 98 58 02 00 00 over each extent: SpawnActorFromClass_impl 0x566EB70..0x566EF90 -> ALokiGameState::StaticClass calls=[], lea[+0x258]=[], GetWorldFromContextObject=['0x566ecbd']; SpawnPoolableActorFromClass_impl -> ['0x5670006'], ['0x566fffa']; Deferred_impl -> ['0x5670149'], ['0x567013d'].",
+   "load_bearing": true
+  },
+  {
+   "claim": "The pool manager is obtained by a lazy getter 0x3840490(GameState) that reads a cache at GameState+0x428 and, if null, spawns an actor of class GameState+0x430 and caches it. Its result is passed to the core WITHOUT a null check, so a failure there faults rather than returning NULL.",
+   "grade": "M",
+   "evidence": "0x38404AD mov rax,[rcx+0x428]; test rax,rax; jne 0x38406AB (cached fast path). Cold path builds FActorSpawnParameters on stack (0x3840617 call 0x39A9B80, Owner=rdi at [rsp+0x48], class rbx at [rsp+0x50]) and 0x3840643 call 0x1373E90, then 0x3840699 mov [rdi+0x428],rbx; mov rax,rbx. Caller: 0x5670022 call 0x3840490 / 0x5670027.. mov rcx,rax / 0x5670056 call 0x5647F00 - no test rax,rax between them. The core's first deref of `this` is 0x56482E1 lea rcx,[rsi+0x38] -> call 0x334E7A0 which dereferences it.",
+   "load_bearing": true
+  },
+  {
+   "claim": "CDO byte +0x2D3 is the per-class 'poolable' flag and it does NOT cause NULL - a class with it zero simply skips pooling and goes to the fresh-spawn fallback.",
+   "grade": "M",
+   "evidence": "0x5648216 cmp byte ptr [rax+0x2d3], r14b (rax = ClassDefaultObject) ; 0x564821D je 0x5648D83 - i.e. straight to the GetWorld+SpawnActor block, not to 0x5648EA1. The same offset is tested on the spawned instance at 0x5648E71 (`cmp byte ptr [r14+0x2d3],0`), which is the internal consistency check that rbx+0x178 is a CDO of the same actor class.",
+   "load_bearing": true
+  },
+  {
+   "claim": "The 'pool miss' log call is stripped: 0x5648D6F targets the universal fold 0x00F7EC20 = `c2 00 00` (`ret 0`), which has 4,972 direct E8 call sites image-wide, so the address identifies nothing.",
+   "grade": "M",
+   "evidence": "bytes at 0x5648D6F = e8 ac 5e 93 fb -> target 0x00F7EC20; bytes at 0xF7EC20 = c2 00 00 4c 8b dc; rel32 E8 caller count over rva 0x1000..0x7500000 = 4972 (unit: call sites).",
+   "load_bearing": false
+  },
+  {
+   "claim": "`[this+0x188]` at 0x5648D89 is vtable slot 49, and slot 49 of the ULokiActorPoolManager vtable (.rdata 0x08877A80, 95 slots) is 0x12C7260 - the same function the gate override 0x56363F0 calls to obtain its UWorld. Slot 90 of that vtable is the gate 0x56363F0.",
+   "grade": "M",
+   "evidence": "vtables.py at 0x08877A80 -> owner ['ULokiActorPoolManager'], [49] 0x12C7260, [90] 0x56363F0. 0x188/8 = 49.",
+   "load_bearing": true
+  },
+  {
+   "claim": "The owning class of both UFUNCTIONs is a large Loki BlueprintFunctionLibrary (159 entries incl. BranchOnFeatureToggle, GetActorsInSphere, RespawnPlayer, SpawnActorFromClass), i.e. they are static BlueprintCallable helpers, not members of the pool manager.",
+   "grade": "M",
+   "evidence": "strxref nattable 0x089796F8 -> 'FClassFunctionLinkInfo[] 0x08978D98..0x08979787 159 entries', with [147] SpawnActorFromClass, [149] SpawnObjectFromClass, [150] SpawnPoolableActorFromClass, [151] SpawnPoolableActorFromClassDeferred.",
+   "load_bearing": false
+  },
+  {
+   "claim": "Marshalled signature (from the exec thunk): (UObject* WorldContextObject /rcx, const TSubclassOf<AActor>& Class /rdx, const FTransform& /r8, bool /r9b, bool /stack+0x20, UObject* Owner /stack+0x28, UObject* Instigator /stack+0x30).",
+   "grade": "I",
+   "evidence": "0x537F14D mov rcx,[rbp-0x49]; lea rdx,[rbp-0x41]; mov [rsp+0x30],rbx; movzx r9d,r15b; mov [rsp+0x28],rdi; mov r8,rsi; mov [rsp+0x20],r14b; call 0x566FF50. Impl derefs rdx (`mov rdi,[rdx]`) and the core copies 0x60 bytes from r8 via 6 movups (0x564840A..0x564844D) = FTransform. Param NAMES not read from UHT - graded I.",
+   "load_bearing": false
+  },
+  {
+   "claim": "Page coverage was checked before every absence claim: 0x5648000, 0x566F000, 0x5670000 are all present in BOTH s129-poolgate and merged2. No zero-page reasoning was involved.",
+   "grade": "M",
+   "evidence": "fkdis.py cov 0x5648050 0xE80 --dump s129 -> 'page 0x05648000 present'; same in merged2. fkdis.py cov 0x566FF50 0x400 --dump s129 and --dump merged2 -> both pages present. All .pdata extents came from tools/strxref/index/pdata_union.csv (seen_in_dumps 11/18/69), since the dumps' own .pdata is zeroed.",
+   "load_bearing": true
+  }
+ ],
+ "open_questions": [
+  "What is the per-class CDO bool at AActor+0x6C tested at 0x5648210? It is the only class-level hard NULL that survives the 'ordinary spawn works' control. Not named offline (no UHT offset oracle applied; binds_members.csv carries no offsets).",
+  "Which of the four ALokiGameState preconditions (O6 world resolve / O7 World+0x258 non-null / O8 IsA(ALokiGameState) / O9) actually failed in the live staged tutorial world? All four are invisible to the ordinary spawn path and all four are one read-only RPM away.",
+  "Is `this` in 0x5648050 really a ULokiActorPoolManager? Strong circumstantial evidence (same TU as the ActorPoolManager.h strings; a TMap at this+0x38; slot-49 GetWorld) but not pinned - the object comes from ALokiGameState+0x428 and its class was never read. Graded I.",
+  "What is `this->byte@0xE9` (0x5648353, `jne` -> skip the miss counter and go straight to fresh spawn)? Looks like a 'pooling suspended at runtime' flag on the manager, but it changes nothing about NULL.",
+  "What are the other three sibling pooled-spawn helpers (chain roots 0x55EE1BE, 0x56181E0, 0x56D42D0, each ~490-497 B and each referencing the same 'Failed to find an actor in the pool' string at +0x6C)? If SpawnDropPodForTeam inlines one of these, it inherits the identical fallback-not-null behaviour - worth confirming before assuming FK-22's blocker is anywhere near pooling.",
+  "Does PrimePools' skip have ANY consequence for the spawn path other than an empty pool? Nothing in the core reads state that PrimePools writes (the map is FindOrAdd, the manager is lazily spawned by a different function), but PrimePools' full body was not read."
+ ],
+ "next_experiment": "Four read-only RPM reads on a live staged tutorial world - no launch beyond an already-running client, no injection, no .text write. (1) Read `World+0x258`: non-null? and its object's class at +0x18 - settles O7/O8, the pooled path's unique precondition. (2) Read `GameState+0x428` - is a pool manager instance cached? - and `GameState+0x430` (its class). (3) Read `CDO(BP_DropPod_C)+0x6C` - if non-zero, that alone is the whole NULL (branch C7 at 0x5648210) and the repair has nothing to do with pooling being disabled. (4) Read `CDO(BP_DropPod_C)+0x2D3` - tells you whether the class is even flagged poolable (but note: zero here does NOT cause NULL). If all four read healthy, the remaining candidates are C8 (`PoolMgr->GetWorld()` null at 0x5648D97) and C9, and a free instrument is already in the binary: when the core returns NULL the non-deferred wrapper logs `Failed to spawn actor of type %s.` from fn 0x5647FFD (string .rdata 0x08B06390) - grep Loki.log for it.",
+ "traps_hit": "Two. (a) I hand-computed a rip-relative lea target (0x5648D48 + 0x34BD6F1) and fed it to `strxref near`, which returned only neighbouring strings - it read like the string was absent. Fixed by hexdumping the computed address directly, which produced the decisive 'Failed to find an actor in the pool for %s, spawning a new instance from scratch.' That is the documented 'recompute with a machine / suspect the query before the coverage' rule; I hit it and caught it. (b) I nearly wrote up the call at 0x5648D6F as the pool-miss logger; a fold check showed it targets 0x00F7EC20 = `ret 0` with 4,972 direct call sites - non-identifying and stripped. Also deliberately avoided: I ran `fkdis cov` on every function extent in BOTH s129 and merged2 before writing any 'no call [reg+0x2D0]' claim, so none of the negatives rests on an undecrypted page."
+}

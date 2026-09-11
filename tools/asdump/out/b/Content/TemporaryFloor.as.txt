@@ -1,0 +1,1757 @@
+// ============================================================================
+//  MODULE   Content.TemporaryFloor
+//  SOURCE   Content/TemporaryFloor.as
+//  CONTENT  1 class(es), 40 function(s), 1 enum(s), 1 global(s), 6344 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+enum ETemporaryFloorState
+{
+    Alive = 0,
+    Triggered = 1,
+    Fading = 2,
+    Dead = 3,
+    Respawning = 4,
+    Max = 5,
+}
+
+const TSubclassOf<UObject@> __StaticType_ATemporaryFloor;
+
+ATemporaryFloor@ ATemporaryFloor()   // traits=0x20
+{
+    v2 = ATemporaryFloor();
+    return v2;
+}
+/* ---- ATemporaryFloor: 7 dwords / 4 instructions (cache offset 0x46a23) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84526 ATemporaryFloor                       
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ATemporaryFloor::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ATemporaryFloor);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x46adf) ----
+    0000  PshGPtr       __StaticType_ATemporaryFloor                
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ATemporaryFloor@ ATemporaryFloor::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    v2 = __StaticType_ATemporaryFloor.Get();
+    v4 = TSubclassOf(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ATemporaryFloor@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x46d03) ----
+    0000  PshVPtr       Level                                       
+    0004  PshV4         bDeferredSpawn                              
+    0008  PshVPtr       Name                                        
+    000C  PshVPtr       Rotation                                    
+    0010  PshVPtr       Location                                    
+    0014  PshGPtr       __StaticType_ATemporaryFloor                
+    0020  CHKREF                                                    
+    0024  CALLSYS       TSubclassOf::Get                            
+    0030  STOREOBJ      v2                                          
+    0034  PshVPtr       v2                                          
+    0038  PSF           v4                                          
+    003C  CALLSYS       TSubclassOf::$beh0                          
+    0048  PSF           v4                                          
+    004C  CALLSYS       SpawnActor                                  
+    0058  STOREOBJ      v6                                          
+    005C  CmpPtrNull    v6                                          
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972655                                    ; ATemporaryFloor@
+    0070  PSF           v8                                          
+    0074  PshVPtr       v6                                          
+    0078  CALLSYS       UObject::opCast                             
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8                                          
+  L0090:
+    0090  LOADOBJ       v8                                          
+    0094  RET           9                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ATemporaryFloor : ALokiTemporaryFloorBase
+// unreal base : /Script/Loki.LokiTemporaryFloorBase
+// C++ header  : ../../../Loki/Source/Loki/Character/LokiTemporaryFloorBase.h
+// static class global: __StaticType_ATemporaryFloor
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.RootComponent)
+    protected USceneComponent@ RootSceneComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.Attach=RootSceneComponent)
+    protected UStaticMeshComponent@ StaticMeshComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.Attach=RootSceneComponent)
+    protected UBoxComponent@ BackupMantleCollision;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Temporary Floor)
+    protected bool bGenerateBackupMantleCollision;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Temporary Floor)
+    protected UStaticMesh@ StaticMesh;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Temporary Floor)
+    float64 DefaultTriggeredDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Temporary Floor)
+    float64 DefaultFadingDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Temporary Floor)
+    float64 DefaultDeadDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Temporary Floor)
+    float64 DefaultRespawningDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Temporary Floor)
+    protected TMap<ETemporaryFloorState, UAkAudioEvent@> StateAudioEvents;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, meta.Category=Temporary Floor | Debug)
+    protected bool bShowDebug;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    private ETemporaryFloorState LocalState;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_LastTriggerTime)
+    private float64 LastTriggerTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    private float64 LastHeightMapDirtyTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    private TMap<ETemporaryFloorState, float64> StateToCumulativeDurationMap;
+    private FTimerHandle NextUpdateTimerHandle;
+
+    ATemporaryFloor()   // traits=0x21
+    {
+        this.StateAudioEvents = TMap();
+        this.StateToCumulativeDurationMap = TMap();
+        this.NextUpdateTimerHandle = FTimerHandle();
+        v1 = true;
+        this.bGenerateBackupMantleCollision = v1;
+        v4 = 4607182418800017408;
+        this.DefaultTriggeredDuration = v4;
+        v4 = 4607182418800017408;
+        this.DefaultFadingDuration = v4;
+        v4 = 4607182418800017408;
+        this.DefaultDeadDuration = v4;
+        v4 = 4607182418800017408;
+        this.DefaultRespawningDuration = v4;
+        v1 = false;
+        this.bShowDebug = v1;
+        v5 = false;
+        this.LocalState = v5;
+        v4 = 13830554455654793216;
+        this.LastTriggerTime = v4;
+        v4 = 13830554455654793216;
+        this.LastHeightMapDirtyTime = v4;
+        return;
+    }
+    /* ---- ATemporaryFloor: 74 dwords / 39 instructions (cache offset 0x4b6a0) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         992 134230831                                 ; .StateAudioEvents
+        000C  CALLSYS       TMap::$beh0                                 
+        0018  PshVPtr       this                                        
+        001C  ADDSi         1096 134230831                                ; .StateToCumulativeDurationMap
+        0024  CALLSYS       TMap::$beh0                                 
+        0030  PshVPtr       this                                        
+        0034  ADDSi         1176 134230831                                ; .NextUpdateTimerHandle
+        003C  CALLSYS       FTimerHandle::$beh0                         
+        0048  SetV1         v1 1                                        
+        0050  LoadThisR     944 134230831                                 ; this.bGenerateBackupMantleCollision
+        0058  WRTV1         v1                                          
+        005C  SetV8         v4 0x3ff0000000000000                       
+        0068  LoadThisR     960 134230831                                 ; this.DefaultTriggeredDuration
+        0070  WRTV8         v4                                          
+        0074  SetV8         v4 0x3ff0000000000000                       
+        0080  LoadThisR     968 134230831                                 ; this.DefaultFadingDuration
+        0088  WRTV8         v4                                          
+        008C  SetV8         v4 0x3ff0000000000000                       
+        0098  LoadThisR     976 134230831                                 ; this.DefaultDeadDuration
+        00A0  WRTV8         v4                                          
+        00A4  SetV8         v4 0x3ff0000000000000                       
+        00B0  LoadThisR     984 134230831                                 ; this.DefaultRespawningDuration
+        00B8  WRTV8         v4                                          
+        00BC  SetV1         v1 0                                        
+        00C4  LoadThisR     1072 134230831                                ; this.bShowDebug
+        00CC  WRTV1         v1                                          
+        00D0  SetV1         v5 0                                        
+        00D8  LoadThisR     1073 134230831                                ; this.LocalState
+        00E0  WRTV1         v5                                          
+        00E4  SetV8         v4 0xbff0000000000000                       
+        00F0  LoadThisR     1080 134230831                                ; this.LastTriggerTime
+        00F8  WRTV8         v4                                          
+        00FC  SetV8         v4 0xbff0000000000000                       
+        0108  LoadThisR     1088 134230831                                ; this.LastHeightMapDirtyTime
+        0110  WRTV8         v4                                          
+        0114  PshVPtr       this                                        
+        0118  FinConstruct  ATemporaryFloor                             
+        0124  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, meta.Category=Temporary Floor)
+    ETemporaryFloorState GetLocalState()   // traits=0x20
+    {
+        v1 = this.LocalState;
+        return v1;
+    }
+    /* ---- GetLocalState: 5 dwords / 4 instructions (cache offset 0x479a8) ----
+        0000  LoadThisR     1073 134230831                                ; this.LocalState
+        0008  RDR1          v1                                          
+        000C  CpyVtoR4      v1                                          
+        0010  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod, meta.Category=Temporary Floor)
+    float64 GetLastTriggerTime() const   // traits=0x24
+    {
+        v2 = this.LastTriggerTime;
+        return v2;
+    }
+    /* ---- GetLastTriggerTime: 5 dwords / 4 instructions (cache offset 0x47aca) ----
+        0000  LoadThisR     1080 134230831                                ; this.LastTriggerTime
+        0008  RDR8          v2                                          
+        000C  CpyVtoR8      v2                                          
+        0010  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod, meta.Category=Temporary Floor)
+    float64 GetLastHeightMapDirtyTime() const   // traits=0x24
+    {
+        v2 = this.LastHeightMapDirtyTime;
+        return v2;
+    }
+    /* ---- GetLastHeightMapDirtyTime: 5 dwords / 4 instructions (cache offset 0x47bf8) ----
+        0000  LoadThisR     1088 134230831                                ; this.LastHeightMapDirtyTime
+        0008  RDR8          v2                                          
+        000C  CpyVtoR8      v2                                          
+        0010  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod, meta.Category=Temporary Floor)
+    float64 GetTimeUntilNextUpdate() const   // traits=0x24
+    {
+        v1 = System::IsValidTimerHandle(this.NextUpdateTimerHandle);
+        v1 = !v1;
+        if (v1) {
+            v4 = 13830554455654793216;
+            return v4;
+        } else {
+            v5 = System::GetTimerRemainingTimeHandle(__WorldContext, this.NextUpdateTimerHandle);
+            v4 = float64(v5);
+        }
+        return v4;
+    }
+    /* ---- GetTimeUntilNextUpdate: 31 dwords / 18 instructions (cache offset 0x47d2a) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         1176 134230831                                ; .NextUpdateTimerHandle
+        000C  CALLSYS       IsValidTimerHandle                          
+        0018  CpyRtoV4      v1                                          
+        001C  NOT           v1                                          
+        0020  CpyVtoR1      v1                                          
+        0024  JLowZ         6                                             -> L0044
+        002C  SetV8         v4 0xbff0000000000000                       
+        0038  CpyVtoR8      v4                                          
+        003C  JMP           13                                            -> L0078
+      L0044:
+        0044  PshVPtr       this                                        
+        0048  ADDSi         1176 134230831                                ; .NextUpdateTimerHandle
+        0050  PshGPtr       __WorldContext                              
+        005C  CALLSYS       GetTimerRemainingTimeHandle                 
+        0068  CpyRtoV4      v5                                          
+        006C  fTOd          v4 v5                                       
+        0074  CpyVtoR8      v4                                          
+      L0078:
+        0078  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=ConstructionScript, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void ConstructionScript_Implementation()   // traits=0x20
+    {
+        v4 = this.StaticMesh;
+        this.StaticMeshComponent.SetStaticMesh(this.StaticMesh);
+        if (v4 != nullptr) {
+            v18 = FBox();
+            v32 = this.StaticMesh.GetBoundingBox();
+            v32 = v18;
+            v36 = v18.Max.Z;
+            v36 = -v36;
+            v42 = FVector(0, 0, v36);
+            this.StaticMeshComponent.SetRelativeLocation(v42)  /* UFunction K2_SetRelativeLocation */;
+            v1 = this.bGenerateBackupMantleCollision;
+            if (v1) {
+                v42 = FVector(v18.Max);
+                v56 = v42 - v18.Min;
+                v42 = v56 / 4611686018427387904;
+                v44 = v18.Max.X;
+                v34 = v42.X;
+                v44 = v44 - v34;
+                v34 = v18.Max.Y;
+                v58 = v42.Y;
+                v34 = v34 - v58;
+                v62 = 4658815484840378368;
+                v60 = 4611686018427387904;
+                v58 = v62 / v60;
+                v1 = true;
+                v64 = v42.Y;
+                v60 = v42.X;
+                v50 = FVector(v60, v64, v58);
+                this.BackupMantleCollision.SetBoxExtent(v50, v1);
+                v60 = v58;
+                v60 = -v60;
+                v50 = FVector(v44, v34, v60);
+                this.BackupMantleCollision.SetRelativeLocation(v50)  /* UFunction K2_SetRelativeLocation */;
+                return;
+            } else {
+                v1 = true;
+                this.BackupMantleCollision.SetBoxExtent(FVector::ZeroVector, v1);
+                this.BackupMantleCollision.SetRelativeLocation(FVector::ZeroVector)  /* UFunction K2_SetRelativeLocation */;
+            }
+        }
+        return;
+    }
+    /* ---- ConstructionScript_Implementation: 196 dwords / 118 instructions (cache offset 0x47ee4) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         952 134230831                                 ; .StaticMesh
+        000C  RDSPtr                                                    
+        0010  PshVPtr       this                                        
+        0014  ADDSi         928 134230831                                 ; .StaticMeshComponent
+        001C  RDSPtr                                                    
+        0020  CALLSYS       UStaticMeshComponent::SetStaticMesh         
+        002C  PshVPtr       this                                        
+        0030  ADDSi         952 134230831                                 ; .StaticMesh
+        0038  RDSPtr                                                    
+        003C  RefCpyV       v4                                          
+        0040  CmpPtrNull    v4                                          
+        0044  JZ            176                                           -> L030C
+        004C  PSF           v18                                         
+        0050  CALLSYS       FBox::$beh0                                 
+        005C  PSF           v32                                         
+        0060  PshVPtr       this                                        
+        0064  ADDSi         952 134230831                                 ; .StaticMesh
+        006C  RDSPtr                                                    
+        0070  CALLSYS       UStaticMesh::GetBoundingBox                 
+        007C  PSF           v32                                         
+        0080  PSF           v18                                         
+        0084  COPY          56 67117429                                   ; FBox
+        008C  PopPtr                                                    
+        0090  PSF           v18                                         
+        0094  ADDSi         24 67117429                                   ; .Max
+        009C  ADDSi         16 67117444                                   ; .Z
+        00A4  PopRPtr                                                   
+        00A8  RDR8          v36                                         
+        00AC  NEGd          v36                                         
+        00B0  PshV8         v36                                         
+        00B4  PshC8         0x0                                         
+        00C0  PshC8         0x0                                         
+        00CC  PSF           v42                                         
+        00D0  CALLSYS       FVector::$beh0                              
+        00DC  PSF           v42                                         
+        00E0  PshVPtr       this                                        
+        00E4  ADDSi         928 134230831                                 ; .StaticMeshComponent
+        00EC  RDSPtr                                                    
+        00F0  CALLSYS       USceneComponent::SetRelativeLocation        
+        00FC  LoadThisR     944 134230831                                 ; this.bGenerateBackupMantleCollision
+        0104  RDR1          v1                                          
+        0108  CpyVtoR1      v1                                          
+        010C  JLowZ         103                                           -> L02B0
+        0114  PSF           v18                                         
+        0118  ADDSi         24 67117429                                   ; .Max
+        0120  PSF           v42                                         
+        0124  CALLSYS       FVector::$beh0                              
+        0130  PSF           v18                                         
+        0134  ADDSi         0 67117429                                    ; .Min
+        013C  PSF           v56                                         
+        0140  PSF           v42                                         
+        0144  CALLSYS       FVector::opSub                              
+        0150  PshC8         0x4000000000000000                          
+        015C  PSF           v42                                         
+        0160  PSF           v56                                         
+        0164  CALLSYS       FVector::opDiv                              
+        0170  PSF           v18                                         
+        0174  ADDSi         24 67117429                                   ; .Max
+        017C  ADDSi         0 67117444                                    ; .X
+        0184  PopRPtr                                                   
+        0188  RDR8          v44                                         
+        018C  LoadVObjR     v42 0 67117444                                ; .X
+        0198  RDR8          v34                                         
+        019C  SUBd          v44 v44 v34                                 
+        01A4  PSF           v18                                         
+        01A8  ADDSi         24 67117429                                   ; .Max
+        01B0  ADDSi         8 67117444                                    ; .Y
+        01B8  PopRPtr                                                   
+        01BC  RDR8          v34                                         
+        01C0  LoadVObjR     v42 8 67117444                                ; .Y
+        01CC  RDR8          v58                                         
+        01D0  SUBd          v34 v34 v58                                 
+        01D8  SetV8         v62 0x40a7700000000000                      
+        01E4  SetV8         v60 0x4000000000000000                      
+        01F0  DIVd          v58 v62 v60                                 
+        01F8  SetV1         v1 1                                        
+        0200  PshV4         v1                                          
+        0204  PshV8         v58                                         
+        0208  LoadVObjR     v42 8 67117444                                ; .Y
+        0214  RDR8          v64                                         
+        0218  PshV8         v64                                         
+        021C  LoadVObjR     v42 0 67117444                                ; .X
+        0228  RDR8          v60                                         
+        022C  PshV8         v60                                         
+        0230  PSF           v50                                         
+        0234  CALLSYS       FVector::$beh0                              
+        0240  PSF           v50                                         
+        0244  PshVPtr       this                                        
+        0248  ADDSi         936 134230831                                 ; .BackupMantleCollision
+        0250  RDSPtr                                                    
+        0254  CALLSYS       UBoxComponent::SetBoxExtent                 
+        0260  CpyVtoV8      v60 v58                                     
+        0268  NEGd          v60                                         
+        026C  PshV8         v60                                         
+        0270  PshV8         v34                                         
+        0274  PshV8         v44                                         
+        0278  PSF           v50                                         
+        027C  CALLSYS       FVector::$beh0                              
+        0288  PSF           v50                                         
+        028C  PshVPtr       this                                        
+        0290  ADDSi         936 134230831                                 ; .BackupMantleCollision
+        0298  RDSPtr                                                    
+        029C  CALLSYS       USceneComponent::SetRelativeLocation        
+        02A8  JMP           23                                            -> L030C
+      L02B0:
+        02B0  SetV1         v1 1                                        
+        02B8  PshV4         v1                                          
+        02BC  PshGPtr       FVector::ZeroVector                         
+        02C8  PshVPtr       this                                        
+        02CC  ADDSi         936 134230831                                 ; .BackupMantleCollision
+        02D4  RDSPtr                                                    
+        02D8  CALLSYS       UBoxComponent::SetBoxExtent                 
+        02E4  PshGPtr       FVector::ZeroVector                         
+        02F0  PshVPtr       this                                        
+        02F4  ADDSi         936 134230831                                 ; .BackupMantleCollision
+        02FC  RDSPtr                                                    
+        0300  CALLSYS       USceneComponent::SetRelativeLocation        
+      L030C:
+        030C  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            this.StaticMeshComponent.OnComponentHit.AddUFunction(this, n"AuthHandleBlockHit");
+            this.BackupMantleCollision.OnComponentHit.AddUFunction(this, n"AuthHandleBlockHit");
+        }
+        v4 = 0;
+        v7 = true;
+        this.StateToCumulativeDurationMap.Add(v7, v4);
+        v6 = this.GetTriggeredDuration();
+        v4 = v4 + v6;
+        v7 = 2;
+        this.StateToCumulativeDurationMap.Add(v7, v4);
+        v6 = this.GetFadingDuration();
+        v4 = v4 + v6;
+        v7 = 3;
+        this.StateToCumulativeDurationMap.Add(v7, v4);
+        v6 = this.GetDeadDuration();
+        v4 = v4 + v6;
+        v7 = 4;
+        this.StateToCumulativeDurationMap.Add(v7, v4);
+        v6 = this.GetRespawningDuration();
+        v4 = v4 + v6;
+        v7 = false;
+        this.StateToCumulativeDurationMap.Add(v7, v4);
+        if (Loki::LokiIsClient(__WorldContext)) {
+            this.UpdateLocalState();
+            v6 = this.LastTriggerTime;
+            v10 = 13830554455654793216;
+            if (v6 != v10) {
+                this.DirtyHeightMap();
+            }
+        }
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 142 dwords / 81 instructions (cache offset 0x4843c) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsServer                                
+        0018  JLowZ         32                                            -> L00A0
+        0020  PshC4         29                                          
+        0028  CALLSYS       __STATIC_NAME                               
+        0034  PshRPtr                                                   
+        0038  PshVPtr       this                                        
+        003C  PshVPtr       this                                        
+        0040  ADDSi         928 134230831                                 ; .StaticMeshComponent
+        0048  RDSPtr                                                    
+        004C  ADDSi         1632 67111354                                 ; .OnComponentHit
+        0054  CALLSYS       FComponentHitSignature::AddUFunction        
+        0060  PshC4         29                                          
+        0068  CALLSYS       __STATIC_NAME                               
+        0074  PshRPtr                                                   
+        0078  PshVPtr       this                                        
+        007C  PshVPtr       this                                        
+        0080  ADDSi         936 134230831                                 ; .BackupMantleCollision
+        0088  RDSPtr                                                    
+        008C  ADDSi         1632 67111354                                 ; .OnComponentHit
+        0094  CALLSYS       FComponentHitSignature::AddUFunction        
+      L00A0:
+        00A0  SetV8         v4 0x0                                      
+        00AC  PSF           v4                                          
+        00B0  SetV1         v7 1                                        
+        00B8  PSF           v7                                          
+        00BC  PshVPtr       this                                        
+        00C0  ADDSi         1096 134230831                                ; .StateToCumulativeDurationMap
+        00C8  CALLSYS       TMap::Add                                   
+        00D4  PshVPtr       this                                        
+        00D8  CALLINTF      84499                                         ; ATemporaryFloor::GetTriggeredDuration
+        00E0  CpyRtoV8      v6                                          
+        00E4  ADDd          v4 v4 v6                                    
+        00EC  PSF           v4                                          
+        00F0  SetV1         v7 2                                        
+        00F8  PSF           v7                                          
+        00FC  PshVPtr       this                                        
+        0100  ADDSi         1096 134230831                                ; .StateToCumulativeDurationMap
+        0108  CALLSYS       TMap::Add                                   
+        0114  PshVPtr       this                                        
+        0118  CALLINTF      84501                                         ; ATemporaryFloor::GetFadingDuration
+        0120  CpyRtoV8      v6                                          
+        0124  ADDd          v4 v4 v6                                    
+        012C  PSF           v4                                          
+        0130  SetV1         v7 3                                        
+        0138  PSF           v7                                          
+        013C  PshVPtr       this                                        
+        0140  ADDSi         1096 134230831                                ; .StateToCumulativeDurationMap
+        0148  CALLSYS       TMap::Add                                   
+        0154  PshVPtr       this                                        
+        0158  CALLINTF      84503                                         ; ATemporaryFloor::GetDeadDuration
+        0160  CpyRtoV8      v6                                          
+        0164  ADDd          v4 v4 v6                                    
+        016C  PSF           v4                                          
+        0170  SetV1         v7 4                                        
+        0178  PSF           v7                                          
+        017C  PshVPtr       this                                        
+        0180  ADDSi         1096 134230831                                ; .StateToCumulativeDurationMap
+        0188  CALLSYS       TMap::Add                                   
+        0194  PshVPtr       this                                        
+        0198  CALLINTF      84505                                         ; ATemporaryFloor::GetRespawningDuration
+        01A0  CpyRtoV8      v6                                          
+        01A4  ADDd          v4 v4 v6                                    
+        01AC  PSF           v4                                          
+        01B0  SetV1         v7 0                                        
+        01B8  PSF           v7                                          
+        01BC  PshVPtr       this                                        
+        01C0  ADDSi         1096 134230831                                ; .StateToCumulativeDurationMap
+        01C8  CALLSYS       TMap::Add                                   
+        01D4  PshGPtr       __WorldContext                              
+        01E0  CALLSYS       LokiIsClient                                
+        01EC  JLowZ         16                                            -> L0234
+        01F4  PshVPtr       this                                        
+        01F8  CALLINTF      84523                                         ; ATemporaryFloor::UpdateLocalState
+        0200  LoadThisR     1080 134230831                                ; this.LastTriggerTime
+        0208  RDR8          v6                                          
+        020C  SetV8         v10 0xbff0000000000000                      
+        0218  CMPd          v6 v10                                      
+        0220  JZ            3                                             -> L0234
+        0228  PshVPtr       this                                        
+        022C  CALLINTF      84517                                         ; ATemporaryFloor::DirtyHeightMap
+      L0234:
+        0234  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = true;
+        } else {
+            v2 = this.LocalState;
+            v3 = int(v2);
+            v5 = v3 == 0;
+            v1 = v5;
+        }
+        if (v1) {
+            v5 = false;
+            this.SetActorTickEnabled(v5);
+            return;
+        } else {
+            v10 = this.LastTriggerTime;
+            v11 = float32(v10);
+            v12 = Loki::GetServerTimeSince(v11, __WorldContext);
+            v10 = float64(v12);
+            v8 = v10;
+            v10 = this.LocalState;
+            v14 = v10;
+            v10 = v8 - v14;
+            v18 = Math::Abs(v10);
+            v2 = this.LocalState;
+            v3 = int(v2);
+            if (v3 <= 4) {
+                if (v3 >= 1) {
+                    v4 = v3 - 1;
+                    switch (v4)
+                    {
+                        case 0: goto L0184;
+                        case 1: goto L019C;
+                        case 2: goto L01B4;
+                        case 3: goto L01CC;
+                    }
+    L0184:
+                    this.ClientTickTriggered(v18);
+                    return;
+    L019C:
+                    this.ClientTickFading(v18);
+                    return;
+    L01B4:
+                    this.ClientTickDead(v18);
+                    return;
+    L01CC:
+                    this.ClientTickRespawning(v18);
+                    return;
+                }
+            }
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 122 dwords / 69 instructions (cache offset 0x487e3) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsServer                                
+        0018  JLowZ         4                                             -> L0030
+        0020  SetV1         v1 1                                        
+        0028  JMP           11                                            -> L005C
+      L0030:
+        0030  LoadThisR     1073 134230831                                ; this.LocalState
+        0038  RDR1          v2                                          
+        003C  sbTOi         v3 v2                                       
+        0044  CMPIi         v3 0                                        
+        004C  TZ                                                        
+        0050  CpyRtoV4      v5                                          
+        0054  CpyVtoV4      v1 v5                                       
+      L005C:
+        005C  CpyVtoR1      v1                                          
+        0060  JLowZ         9                                             -> L008C
+        0068  SetV1         v5 0                                        
+        0070  PshV4         v5                                          
+        0074  PshVPtr       this                                        
+        0078  CALLSYS       AActor::SetActorTickEnabled                 
+        0084  JMP           86                                            -> L01E4
+      L008C:
+        008C  PshGPtr       __WorldContext                              
+        0098  LoadThisR     1080 134230831                                ; this.LastTriggerTime
+        00A0  RDR8          v10                                         
+        00A4  dTOf          v11 v10                                     
+        00AC  PshV4         v11                                         
+        00B0  CALLSYS       GetServerTimeSince                          
+        00BC  CpyRtoV4      v12                                         
+        00C0  fTOd          v10 v12                                     
+        00C8  CpyVtoV8      v8 v10                                      
+        00D0  LoadThisR     1073 134230831                                ; this.LocalState
+        00D8  PshRPtr                                                   
+        00DC  PshVPtr       this                                        
+        00E0  ADDSi         1096 134230831                                ; .StateToCumulativeDurationMap
+        00E8  CALLSYS       TMap::opIndex                               
+        00F4  RDR8          v10                                         
+        00F8  CpyVtoV8      v14 v10                                     
+        0100  SUBd          v10 v8 v14                                  
+        0108  PshV8         v10                                         
+        010C  CALLSYS       Abs                                         
+        0118  CpyRtoV8      v18                                         
+        011C  LoadThisR     1073 134230831                                ; this.LocalState
+        0124  RDR1          v2                                          
+        0128  sbTOi         v3 v2                                       
+        0130  CMPIi         v3 4                                        
+        0138  JP            41                                            -> L01E4
+        0140  CMPIi         v3 1                                        
+        0148  JS            37                                            -> L01E4
+        0150  SUBIi         v4 v3 1                                     
+        015C  JMPP          v4 3                                        
+        0164  JMP           6                                             -> L0184
+        016C  JMP           10                                            -> L019C
+        0174  JMP           14                                            -> L01B4
+        017C  JMP           18                                            -> L01CC
+      L0184:
+        0184  PshV8         v18                                         
+        0188  PshVPtr       this                                        
+        018C  CALLINTF      84507                                         ; ATemporaryFloor::ClientTickTriggered
+        0194  JMP           18                                            -> L01E4
+      L019C:
+        019C  PshV8         v18                                         
+        01A0  PshVPtr       this                                        
+        01A4  CALLINTF      84509                                         ; ATemporaryFloor::ClientTickFading
+        01AC  JMP           12                                            -> L01E4
+      L01B4:
+        01B4  PshV8         v18                                         
+        01B8  PshVPtr       this                                        
+        01BC  CALLINTF      84511                                         ; ATemporaryFloor::ClientTickDead
+        01C4  JMP           6                                             -> L01E4
+      L01CC:
+        01CC  PshV8         v18                                         
+        01D0  PshVPtr       this                                        
+        01D4  CALLINTF      84513                                         ; ATemporaryFloor::ClientTickRespawning
+        01DC  JMP           0                                             -> L01E4
+      L01E4:
+        01E4  RET           4                                           
+    */
+
+    protected float64 GetTriggeredDuration() const   // traits=0x34
+    {
+        v2 = 0;
+        __Evt_PushArgumentRef__float(v2);
+        __Evt_Execute(this, n"GetTriggeredDuration");
+        return v2;
+    }
+    /* ---- GetTriggeredDuration: 19 dwords / 10 instructions (cache offset 0x48ac9) ----
+        0000  SetV8         v2 0x0                                      
+        000C  PSF           v2                                          
+        0010  CALLSYS       __Evt_PushArgumentRef__float                
+        001C  PshC4         116                                         
+        0024  CALLSYS       __STATIC_NAME                               
+        0030  PshRPtr                                                   
+        0034  PshVPtr       this                                        
+        0038  CALLSYS       __Evt_Execute                               
+        0044  CpyVtoR8      v2                                          
+        0048  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=GetTriggeredDuration, BlueprintEvent, CanOverrideEvent, ConstMethod)
+    protected float64 GetTriggeredDuration_Implementation() const   // traits=0x34
+    {
+        v2 = this.DefaultTriggeredDuration;
+        return v2;
+    }
+    /* ---- GetTriggeredDuration_Implementation: 5 dwords / 4 instructions (cache offset 0x48bb1) ----
+        0000  LoadThisR     960 134230831                                 ; this.DefaultTriggeredDuration
+        0008  RDR8          v2                                          
+        000C  CpyVtoR8      v2                                          
+        0010  RET           2                                           
+    */
+
+    protected float64 GetFadingDuration() const   // traits=0x34
+    {
+        v2 = 0;
+        __Evt_PushArgumentRef__float(v2);
+        __Evt_Execute(this, n"GetFadingDuration");
+        return v2;
+    }
+    /* ---- GetFadingDuration: 19 dwords / 10 instructions (cache offset 0x48cb8) ----
+        0000  SetV8         v2 0x0                                      
+        000C  PSF           v2                                          
+        0010  CALLSYS       __Evt_PushArgumentRef__float                
+        001C  PshC4         117                                         
+        0024  CALLSYS       __STATIC_NAME                               
+        0030  PshRPtr                                                   
+        0034  PshVPtr       this                                        
+        0038  CALLSYS       __Evt_Execute                               
+        0044  CpyVtoR8      v2                                          
+        0048  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=GetFadingDuration, BlueprintEvent, CanOverrideEvent, ConstMethod)
+    protected float64 GetFadingDuration_Implementation() const   // traits=0x34
+    {
+        v2 = this.DefaultFadingDuration;
+        return v2;
+    }
+    /* ---- GetFadingDuration_Implementation: 5 dwords / 4 instructions (cache offset 0x48d9d) ----
+        0000  LoadThisR     968 134230831                                 ; this.DefaultFadingDuration
+        0008  RDR8          v2                                          
+        000C  CpyVtoR8      v2                                          
+        0010  RET           2                                           
+    */
+
+    protected float64 GetDeadDuration() const   // traits=0x34
+    {
+        v2 = 0;
+        __Evt_PushArgumentRef__float(v2);
+        __Evt_Execute(this, n"GetDeadDuration");
+        return v2;
+    }
+    /* ---- GetDeadDuration: 19 dwords / 10 instructions (cache offset 0x48e9f) ----
+        0000  SetV8         v2 0x0                                      
+        000C  PSF           v2                                          
+        0010  CALLSYS       __Evt_PushArgumentRef__float                
+        001C  PshC4         118                                         
+        0024  CALLSYS       __STATIC_NAME                               
+        0030  PshRPtr                                                   
+        0034  PshVPtr       this                                        
+        0038  CALLSYS       __Evt_Execute                               
+        0044  CpyVtoR8      v2                                          
+        0048  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=GetDeadDuration, BlueprintEvent, CanOverrideEvent, ConstMethod)
+    protected float64 GetDeadDuration_Implementation() const   // traits=0x34
+    {
+        v2 = this.DefaultDeadDuration;
+        return v2;
+    }
+    /* ---- GetDeadDuration_Implementation: 5 dwords / 4 instructions (cache offset 0x48f82) ----
+        0000  LoadThisR     976 134230831                                 ; this.DefaultDeadDuration
+        0008  RDR8          v2                                          
+        000C  CpyVtoR8      v2                                          
+        0010  RET           2                                           
+    */
+
+    protected float64 GetRespawningDuration() const   // traits=0x34
+    {
+        v2 = 0;
+        __Evt_PushArgumentRef__float(v2);
+        __Evt_Execute(this, n"GetRespawningDuration");
+        return v2;
+    }
+    /* ---- GetRespawningDuration: 19 dwords / 10 instructions (cache offset 0x49088) ----
+        0000  SetV8         v2 0x0                                      
+        000C  PSF           v2                                          
+        0010  CALLSYS       __Evt_PushArgumentRef__float                
+        001C  PshC4         119                                         
+        0024  CALLSYS       __STATIC_NAME                               
+        0030  PshRPtr                                                   
+        0034  PshVPtr       this                                        
+        0038  CALLSYS       __Evt_Execute                               
+        0044  CpyVtoR8      v2                                          
+        0048  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=GetRespawningDuration, BlueprintEvent, CanOverrideEvent, ConstMethod)
+    protected float64 GetRespawningDuration_Implementation() const   // traits=0x34
+    {
+        v2 = this.DefaultRespawningDuration;
+        return v2;
+    }
+    /* ---- GetRespawningDuration_Implementation: 5 dwords / 4 instructions (cache offset 0x49171) ----
+        0000  LoadThisR     984 134230831                                 ; this.DefaultRespawningDuration
+        0008  RDR8          v2                                          
+        000C  CpyVtoR8      v2                                          
+        0010  RET           2                                           
+    */
+
+    protected void ClientTickTriggered(const float64 PhaseTime)   // traits=0x30
+    {
+        __Evt_PushArgument__float(PhaseTime);
+        __Evt_Execute(this, n"ClientTickTriggered");
+        return;
+    }
+    /* ---- ClientTickTriggered: 15 dwords / 8 instructions (cache offset 0x492b5) ----
+        0000  PSF           PhaseTime                                   
+        0004  CALLSYS       __Evt_PushArgument__float                   
+        0010  PshC4         120                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientTickTriggered, BlueprintEvent, CanOverrideEvent, NoOp)
+    protected void ClientTickTriggered_Implementation(const float64 PhaseTime)   // traits=0x30
+    {
+        return;
+    }
+    /* ---- ClientTickTriggered_Implementation: 1 dwords / 1 instructions (cache offset 0x493c6) ----
+        0000  RET           4                                           
+    */
+
+    protected void ClientTickFading(const float64 PhaseTime)   // traits=0x30
+    {
+        __Evt_PushArgument__float(PhaseTime);
+        __Evt_Execute(this, n"ClientTickFading");
+        return;
+    }
+    /* ---- ClientTickFading: 15 dwords / 8 instructions (cache offset 0x494f5) ----
+        0000  PSF           PhaseTime                                   
+        0004  CALLSYS       __Evt_PushArgument__float                   
+        0010  PshC4         121                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientTickFading, BlueprintEvent, CanOverrideEvent, NoOp)
+    protected void ClientTickFading_Implementation(const float64 PhaseTime)   // traits=0x30
+    {
+        return;
+    }
+    /* ---- ClientTickFading_Implementation: 1 dwords / 1 instructions (cache offset 0x49603) ----
+        0000  RET           4                                           
+    */
+
+    protected void ClientTickDead(const float64 PhaseTime)   // traits=0x30
+    {
+        __Evt_PushArgument__float(PhaseTime);
+        __Evt_Execute(this, n"ClientTickDead");
+        return;
+    }
+    /* ---- ClientTickDead: 15 dwords / 8 instructions (cache offset 0x4972d) ----
+        0000  PSF           PhaseTime                                   
+        0004  CALLSYS       __Evt_PushArgument__float                   
+        0010  PshC4         122                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientTickDead, BlueprintEvent, CanOverrideEvent, NoOp)
+    protected void ClientTickDead_Implementation(const float64 PhaseTime)   // traits=0x30
+    {
+        return;
+    }
+    /* ---- ClientTickDead_Implementation: 1 dwords / 1 instructions (cache offset 0x49839) ----
+        0000  RET           4                                           
+    */
+
+    protected void ClientTickRespawning(const float64 PhaseTime)   // traits=0x30
+    {
+        __Evt_PushArgument__float(PhaseTime);
+        __Evt_Execute(this, n"ClientTickRespawning");
+        return;
+    }
+    /* ---- ClientTickRespawning: 15 dwords / 8 instructions (cache offset 0x49967) ----
+        0000  PSF           PhaseTime                                   
+        0004  CALLSYS       __Evt_PushArgument__float                   
+        0010  PshC4         123                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=ClientTickRespawning, BlueprintEvent, CanOverrideEvent, NoOp)
+    protected void ClientTickRespawning_Implementation(const float64 PhaseTime)   // traits=0x30
+    {
+        return;
+    }
+    /* ---- ClientTickRespawning_Implementation: 1 dwords / 1 instructions (cache offset 0x49a79) ----
+        0000  RET           4                                           
+    */
+
+    protected void BP_NewLocalState()   // traits=0x30
+    {
+        __Evt_Execute(this, n"BP_NewLocalState");
+        return;
+    }
+    /* ---- BP_NewLocalState: 11 dwords / 6 instructions (cache offset 0x49b6f) ----
+        0000  PshC4         124                                         
+        0008  CALLSYS       __STATIC_NAME                               
+        0014  PshRPtr                                                   
+        0018  PshVPtr       this                                        
+        001C  CALLSYS       __Evt_Execute                               
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=BP_NewLocalState, BlueprintEvent, CanOverrideEvent, NoOp, meta.DisplayName=NewLocalState)
+    protected void BP_NewLocalState_Implementation()   // traits=0x30
+    {
+        return;
+    }
+    /* ---- BP_NewLocalState_Implementation: 1 dwords / 1 instructions (cache offset 0x49c33) ----
+        0000  RET           2                                           
+    */
+
+    private void DirtyHeightMap()   // traits=0x28
+    {
+        v2 = ALokiHeightMap::GetInstance(__WorldContext);
+        v6 = TSubclassOf();
+        v6 = __StaticType_ALokiHeightMap;
+        v7 = v6 == nullptr;
+        v7 = !v7;
+        if (v7) {
+            v14 = this.StaticMeshComponent.GetBoundingBoxExtents();
+            v20 = this.StaticMeshComponent.GetWorldLocation()  /* UFunction K2_GetComponentLocation */;
+            v2.Dirty(v20, v14);
+            v21 = Gameplay::GetServerTime(__WorldContext);
+            v24 = float64(v21);
+            this.LastHeightMapDirtyTime = v24;
+        }
+        return;
+    }
+    /* ---- DirtyHeightMap: 63 dwords / 36 instructions (cache offset 0x49d45) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetInstance                                 
+        0018  STOREOBJ      v2                                          
+        001C  PSF           v6                                          
+        0020  CALLSYS       TSubclassOf::$beh0                          
+        002C  PshGPtr       __StaticType_ALokiHeightMap                 
+        0038  PSF           v6                                          
+        003C  CALLSYS       TSubclassOf::opAssign                       
+        0048  PshNull                                                   
+        004C  PSF           v6                                          
+        0050  CALLSYS       TSubclassOf::opEquals                       
+        005C  CpyRtoV4      v7                                          
+        0060  NOT           v7                                          
+        0064  CpyVtoR1      v7                                          
+        0068  JLowZ         34                                            -> L00F8
+        0070  PSF           v14                                         
+        0074  PshVPtr       this                                        
+        0078  ADDSi         928 134230831                                 ; .StaticMeshComponent
+        0080  RDSPtr                                                    
+        0084  CALLSYS       UPrimitiveComponent::GetBoundingBoxExtents  
+        0090  PSF           v14                                         
+        0094  PSF           v20                                         
+        0098  PshVPtr       this                                        
+        009C  ADDSi         928 134230831                                 ; .StaticMeshComponent
+        00A4  RDSPtr                                                    
+        00A8  CALLSYS       USceneComponent::GetWorldLocation           
+        00B4  PSF           v20                                         
+        00B8  PshVPtr       v2                                          
+        00BC  CALLSYS       ALokiHeightMap::Dirty                       
+        00C8  PshGPtr       __WorldContext                              
+        00D4  CALLSYS       GetServerTime                               
+        00E0  CpyRtoV4      v21                                         
+        00E4  fTOd          v24 v21                                     
+        00EC  LoadThisR     1088 134230831                                ; this.LastHeightMapDirtyTime
+        00F4  WRTV8         v24                                         
+      L00F8:
+        00F8  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent, meta.DisplayName=NewLocalState_Script)
+    private void NewLocalState()   // traits=0x28
+    {
+        v2 = this.LocalState;
+        v3 = int(v2);
+        v5 = v3 != 3;
+        if (v5) {
+            v8 = 3;
+            v7 = v8;
+        } else {
+            v8 = false;
+            v7 = v8;
+        }
+        v1 = this.StaticMeshComponent.IsCollisionEnabled()  /* UFunction K2_IsCollisionEnabled */;
+        v1 = !v1;
+        v10 = v5;
+        v10 = !v10;
+        v1 = v1 != v10;
+        if (v1) {
+            this.StaticMeshComponent.SetCollisionEnabled(v7);
+            this.BackupMantleCollision.SetCollisionEnabled(v7);
+        }
+        if (v1) {
+            this.DirtyHeightMap();
+        }
+        v9 = false;
+        v10 = v5;
+        v10 = !v10;
+        this.StaticMeshComponent.SetHiddenInGame(v10, v9);
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v2 = this.LocalState;
+            v3 = int(v2);
+            if (v3 == 0) {
+                v10 = false;
+                this.SetActorTickEnabled(v10);
+            } else {
+                v9 = true;
+                this.SetActorTickEnabled(v9);
+            }
+            v12 = this.StateAudioEvents[Loki::LokiIsClient(__WorldContext)];
+            if (v12 != nullptr) {
+                v9 = true;
+                v18 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                LokiAudio::PostEventLocation(__WorldContext, v12, v18, nullptr, nullptr, v9);
+            }
+        } else {
+            v2 = this.LocalState;
+            v3 = int(v2);
+            if (v3 == 0) {
+                v19 = 2;
+                this.SetNetDormancy(v19);
+                this.ForceNetUpdate();
+            }
+        }
+        this.BP_NewLocalState();
+        return;
+    }
+    /* ---- NewLocalState: 170 dwords / 103 instructions (cache offset 0x49f63) ----
+        0000  LoadThisR     1073 134230831                                ; this.LocalState
+        0008  RDR1          v2                                          
+        000C  sbTOi         v3 v2                                       
+        0014  CMPIi         v3 3                                        
+        001C  TNZ                                                       
+        0020  CpyRtoV4      v5                                          
+        0024  CpyVtoR1      v5                                          
+        0028  JLowZ         6                                             -> L0048
+        0030  SetV1         v8 3                                        
+        0038  CpyVtoV4      v7 v8                                       
+        0040  JMP           4                                             -> L0058
+      L0048:
+        0048  SetV1         v8 0                                        
+        0050  CpyVtoV4      v7 v8                                       
+      L0058:
+        0058  PshVPtr       this                                        
+        005C  ADDSi         928 134230831                                 ; .StaticMeshComponent
+        0064  RDSPtr                                                    
+        0068  CALLSYS       UPrimitiveComponent::IsCollisionEnabled     
+        0074  CpyRtoV4      v1                                          
+        0078  NOT           v1                                          
+        007C  CpyVtoV4      v10 v5                                      
+        0084  NOT           v10                                         
+        0088  CMPi          v1 v10                                      
+        0090  TNZ                                                       
+        0094  CpyRtoV4      v1                                          
+        0098  CpyVtoR1      v1                                          
+        009C  JLowZ         16                                            -> L00E4
+        00A4  PshV4         v7                                          
+        00A8  PshVPtr       this                                        
+        00AC  ADDSi         928 134230831                                 ; .StaticMeshComponent
+        00B4  RDSPtr                                                    
+        00B8  CALLSYS       UPrimitiveComponent::SetCollisionEnabled    
+        00C4  PshV4         v7                                          
+        00C8  PshVPtr       this                                        
+        00CC  ADDSi         936 134230831                                 ; .BackupMantleCollision
+        00D4  RDSPtr                                                    
+        00D8  CALLSYS       UPrimitiveComponent::SetCollisionEnabled    
+      L00E4:
+        00E4  CpyVtoR1      v1                                          
+        00E8  JLowZ         3                                             -> L00FC
+        00F0  PshVPtr       this                                        
+        00F4  CALLINTF      84517                                         ; ATemporaryFloor::DirtyHeightMap
+      L00FC:
+        00FC  SetV1         v9 0                                        
+        0104  PshV4         v9                                          
+        0108  CpyVtoV4      v10 v5                                      
+        0110  NOT           v10                                         
+        0114  PshV4         v10                                         
+        0118  PshVPtr       this                                        
+        011C  ADDSi         928 134230831                                 ; .StaticMeshComponent
+        0124  RDSPtr                                                    
+        0128  CALLSYS       USceneComponent::SetHiddenInGame            
+        0134  PshGPtr       __WorldContext                              
+        0140  CALLSYS       LokiIsClient                                
+        014C  JLowZ         61                                            -> L0248
+        0154  LoadThisR     1073 134230831                                ; this.LocalState
+        015C  RDR1          v2                                          
+        0160  sbTOi         v3 v2                                       
+        0168  CMPIi         v3 0                                        
+        0170  JNZ           9                                             -> L019C
+        0178  SetV1         v10 0                                       
+        0180  PshV4         v10                                         
+        0184  PshVPtr       this                                        
+        0188  CALLSYS       AActor::SetActorTickEnabled                 
+        0194  JMP           7                                             -> L01B8
+      L019C:
+        019C  SetV1         v9 1                                        
+        01A4  PshV4         v9                                          
+        01A8  PshVPtr       this                                        
+        01AC  CALLSYS       AActor::SetActorTickEnabled                 
+      L01B8:
+        01B8  LoadThisR     1073 134230831                                ; this.LocalState
+        01C0  PshRPtr                                                   
+        01C4  PshVPtr       this                                        
+        01C8  ADDSi         992 134230831                                 ; .StateAudioEvents
+        01D0  CALLSYS       TMap::opIndex                               
+        01DC  PshRPtr                                                   
+        01E0  RDSPtr                                                    
+        01E4  RefCpyV       v12                                         
+        01E8  CmpPtrNull    v12                                         
+        01EC  JZ            18                                            -> L023C
+        01F4  SetV1         v9 1                                        
+        01FC  PshV4         v9                                          
+        0200  PshNull                                                   
+        0204  PshNull                                                   
+        0208  PSF           v18                                         
+        020C  PshVPtr       this                                        
+        0210  CALLSYS       AActor::GetActorLocation                    
+        021C  PSF           v18                                         
+        0220  PshVPtr       v12                                         
+        0224  PshGPtr       __WorldContext                              
+        0230  CALLSYS       PostEventLocation                           
+      L023C:
+        023C  FreeNullV8    v12                                         
+        0240  JMP           20                                            -> L0298
+      L0248:
+        0248  LoadThisR     1073 134230831                                ; this.LocalState
+        0250  RDR1          v2                                          
+        0254  sbTOi         v3 v2                                       
+        025C  CMPIi         v3 0                                        
+        0264  JNZ           11                                            -> L0298
+        026C  SetV1         v19 2                                       
+        0274  PshV4         v19                                         
+        0278  PshVPtr       this                                        
+        027C  CALLSYS       AActor::SetNetDormancy                      
+        0288  PshVPtr       this                                        
+        028C  CALLSYS       AActor::ForceNetUpdate                      
+      L0298:
+        0298  PshVPtr       this                                        
+        029C  CALLINTF      84515                                         ; ATemporaryFloor::BP_NewLocalState
+        02A4  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=Script_BeginCharacterBase, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    private void Script_BeginCharacterBase_Implementation(ACharacter@ Character)   // traits=0x28
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            this.AuthTryTrigger(Character);
+        }
+        return;
+    }
+    /* ---- Script_BeginCharacterBase_Implementation: 13 dwords / 7 instructions (cache offset 0x4a449) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       LokiIsServer                                
+        0018  JLowZ         4                                             -> L0030
+        0020  PshVPtr       Character                                   
+        0024  PshVPtr       this                                        
+        0028  CALLINTF      84521                                         ; ATemporaryFloor::AuthTryTrigger
+      L0030:
+        0030  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void AuthHandleBlockHit(UPrimitiveComponent@ HitComponent, AActor@ OtherActor, UPrimitiveComponent@ OtherComp, const FVector& NormalImpulse, const FHitResult&in Hit)   // traits=0x28
+    {
+        v1 = Hit.GetbBlockingHit();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            this.AuthTryTrigger(OtherActor);
+        }
+        return;
+    }
+    /* ---- AuthHandleBlockHit: 16 dwords / 11 instructions (cache offset 0x4a6b2) ----
+        0000  PshVPtr       Hit                                         
+        0004  CALLSYS       FHitResult::GetbBlockingHit                 
+        0010  CpyRtoV4      v1                                          
+        0014  NOT           v1                                          
+        0018  CpyVtoR1      v1                                          
+        001C  JLowZ         2                                             -> L002C
+        0024  JMP           4                                             -> L003C
+      L002C:
+        002C  PshVPtr       OtherActor                                  
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84521                                         ; ATemporaryFloor::AuthTryTrigger
+      L003C:
+        003C  RET           12                                          
+    */
+
+    private void AuthTryTrigger(AActor@ OtherActor)   // traits=0x28
+    {
+        v1 = this.LocalState;
+        v2 = int(v1);
+        if (v2 != 0) {
+            return;
+        } else {
+            v6 = OtherActor;
+            if (v6 == nullptr) {
+                v4 = true;
+            } else {
+                v8 = ALokiCharacter::StaticClass();
+                v9 = OtherActor.IsA(v8);
+                v9 = !v9;
+                v4 = v9;
+            }
+            if (v4) {
+                return;
+            } else {
+                v10 = true;
+                this.SetNetDormancy(v10);
+                v11 = Gameplay::GetServerTime(__WorldContext);
+                v14 = float64(v11);
+                this.LastTriggerTime = v14;
+                this.UpdateLocalState();
+            }
+        }
+        return;
+    }
+    /* ---- AuthTryTrigger: 61 dwords / 36 instructions (cache offset 0x4a833) ----
+        0000  LoadThisR     1073 134230831                                ; this.LocalState
+        0008  RDR1          v1                                          
+        000C  sbTOi         v2 v1                                       
+        0014  CMPIi         v2 0                                        
+        001C  JZ            2                                             -> L002C
+        0024  JMP           49                                            -> L00F0
+      L002C:
+        002C  PshVPtr       OtherActor                                  
+        0030  RefCpyV       v6                                          
+        0034  CmpPtrNull    v6                                          
+        0038  JNZ           4                                             -> L0050
+        0040  SetV1         v4 1                                        
+        0048  JMP           13                                            -> L0084
+      L0050:
+        0050  CALLSYS       StaticClass                                 
+        005C  STOREOBJ      v8                                          
+        0060  PshVPtr       v8                                          
+        0064  PshVPtr       OtherActor                                  
+        0068  CALLSYS       UObject::IsA                                
+        0074  CpyRtoV4      v9                                          
+        0078  NOT           v9                                          
+        007C  CpyVtoV4      v4 v9                                       
+      L0084:
+        0084  CpyVtoR1      v4                                          
+        0088  JLowZ         2                                             -> L0098
+        0090  JMP           22                                            -> L00F0
+      L0098:
+        0098  SetV1         v10 1                                       
+        00A0  PshV4         v10                                         
+        00A4  PshVPtr       this                                        
+        00A8  CALLSYS       AActor::SetNetDormancy                      
+        00B4  PshGPtr       __WorldContext                              
+        00C0  CALLSYS       GetServerTime                               
+        00CC  CpyRtoV4      v11                                         
+        00D0  fTOd          v14 v11                                     
+        00D8  LoadThisR     1080 134230831                                ; this.LastTriggerTime
+        00E0  WRTV8         v14                                         
+        00E4  PshVPtr       this                                        
+        00E8  CALLINTF      84523                                         ; ATemporaryFloor::UpdateLocalState
+      L00F0:
+        00F0  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnRep_LastTriggerTime()   // traits=0x28
+    {
+        v2 = this.LastTriggerTime;
+        v4 = 13830554455654793216;
+        if (v2 == v4) {
+            return;
+        } else {
+            this.UpdateLocalState();
+            if (AkGameplay::IsEditor()) {
+                this.DirtyHeightMap();
+            }
+        }
+        return;
+    }
+    /* ---- OnRep_LastTriggerTime: 24 dwords / 13 instructions (cache offset 0x4a9fd) ----
+        0000  LoadThisR     1080 134230831                                ; this.LastTriggerTime
+        0008  RDR8          v2                                          
+        000C  SetV8         v4 0xbff0000000000000                       
+        0018  CMPd          v2 v4                                       
+        0020  JNZ           2                                             -> L0030
+        0028  JMP           11                                            -> L005C
+      L0030:
+        0030  PshVPtr       this                                        
+        0034  CALLINTF      84523                                         ; ATemporaryFloor::UpdateLocalState
+        003C  CALLSYS       IsEditor                                    
+        0048  JLowZ         3                                             -> L005C
+        0050  PshVPtr       this                                        
+        0054  CALLINTF      84517                                         ; ATemporaryFloor::DirtyHeightMap
+      L005C:
+        005C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void UpdateLocalState()   // traits=0x28
+    {
+        v2 = this.CalculateCurrentState();
+        v1 = this.LocalState;
+        v3 = int(v1);
+        v4 = int(v2);
+        if (v3 != v4) {
+            this.LocalState = v2;
+            this.NewLocalState();
+        }
+        v1 = this.LocalState;
+        v3 = int(v1);
+        if (v3 == 0) {
+            return;
+        } else {
+            v1 = this.LocalState;
+            v7 = this.GetNextState(v1);
+            v12 = this.LocalState;
+            v10 = v12;
+            v12 = this.LastTriggerTime;
+            v15 = float32(v12);
+            v16 = Loki::GetServerTimeSince(v15, __WorldContext);
+            v12 = float64(v16);
+            v14 = v12;
+            v12 = v10 - v14;
+            v18 = 0;
+            if (v12 > v18) {
+                v5 = false;
+                v19 = false;
+                v20 = float32(v12);
+                v22 = System::SetTimer(this, n"UpdateLocalState", v20, v19, v5, 0, 0);
+                this.NextUpdateTimerHandle = v22;
+                return;
+            } else {
+                v22 = System::SetTimerForNextTick(this, "UpdateLocalState");
+                this.NextUpdateTimerHandle = v22;
+            }
+        }
+        return;
+    }
+    /* ---- UpdateLocalState: 133 dwords / 76 instructions (cache offset 0x4ab80) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84525                                         ; ATemporaryFloor::CalculateCurrentState
+        000C  CpyRtoV4      v2                                          
+        0010  LoadThisR     1073 134230831                                ; this.LocalState
+        0018  RDR1          v1                                          
+        001C  sbTOi         v3 v1                                       
+        0024  sbTOi         v4 v2                                       
+        002C  CMPi          v3 v4                                       
+        0034  JZ            6                                             -> L0054
+        003C  LoadThisR     1073 134230831                                ; this.LocalState
+        0044  WRTV1         v2                                          
+        0048  PshVPtr       this                                        
+        004C  CALLINTF      84518                                         ; ATemporaryFloor::NewLocalState
+      L0054:
+        0054  LoadThisR     1073 134230831                                ; this.LocalState
+        005C  RDR1          v1                                          
+        0060  sbTOi         v3 v1                                       
+        0068  CMPIi         v3 0                                        
+        0070  JNZ           2                                             -> L0080
+        0078  JMP           100                                           -> L0210
+      L0080:
+        0080  LoadThisR     1073 134230831                                ; this.LocalState
+        0088  RDR1          v1                                          
+        008C  PshV4         v1                                          
+        0090  PshVPtr       this                                        
+        0094  CALLINTF      84524                                         ; ATemporaryFloor::GetNextState
+        009C  CpyRtoV4      v7                                          
+        00A0  PSF           v7                                          
+        00A4  PshVPtr       this                                        
+        00A8  ADDSi         1096 134230831                                ; .StateToCumulativeDurationMap
+        00B0  CALLSYS       TMap::opIndex                               
+        00BC  RDR8          v12                                         
+        00C0  CpyVtoV8      v10 v12                                     
+        00C8  PshGPtr       __WorldContext                              
+        00D4  LoadThisR     1080 134230831                                ; this.LastTriggerTime
+        00DC  RDR8          v12                                         
+        00E0  dTOf          v15 v12                                     
+        00E8  PshV4         v15                                         
+        00EC  CALLSYS       GetServerTimeSince                          
+        00F8  CpyRtoV4      v16                                         
+        00FC  fTOd          v12 v16                                     
+        0104  CpyVtoV8      v14 v12                                     
+        010C  SUBd          v12 v10 v14                                 
+        0114  SetV8         v18 0x0                                     
+        0120  CMPd          v12 v18                                     
+        0128  JNP           37                                            -> L01C4
+        0130  PshC4         0                                           
+        0138  PshC4         0                                           
+        0140  SetV1         v5 0                                        
+        0148  PshV4         v5                                          
+        014C  SetV1         v19 0                                       
+        0154  PshV4         v19                                         
+        0158  dTOf          v20 v12                                     
+        0160  PshV4         v20                                         
+        0164  PshC4         30                                          
+        016C  CALLSYS       __STATIC_NAME                               
+        0178  PshRPtr                                                   
+        017C  PshVPtr       this                                        
+        0180  PSF           v22                                         
+        0184  CALLSYS       SetTimer                                    
+        0190  PSF           v22                                         
+        0194  PshVPtr       this                                        
+        0198  ADDSi         1176 134230831                                ; .NextUpdateTimerHandle
+        01A0  CALLSYS       FTimerHandle::opAssign                      
+        01AC  PSF           v22                                         
+        01B0  CALLSYS       FTimerHandle::$beh2                         
+        01BC  JMP           19                                            -> L0210
+      L01C4:
+        01C4  PGA           "UpdateLocalState"                          
+        01D0  PshVPtr       this                                        
+        01D4  PSF           v22                                         
+        01D8  CALLSYS       SetTimerForNextTick                         
+        01E4  PSF           v22                                         
+        01E8  PshVPtr       this                                        
+        01EC  ADDSi         1176 134230831                                ; .NextUpdateTimerHandle
+        01F4  CALLSYS       FTimerHandle::opAssign                      
+        0200  PSF           v22                                         
+        0204  CALLSYS       FTimerHandle::$beh2                         
+      L0210:
+        0210  RET           2                                           
+    */
+
+    private ETemporaryFloorState GetNextState(const ETemporaryFloorState CurrentState)   // traits=0x28
+    {
+        v2 = int(CurrentState);
+        v2 = v2 + 1;
+        v4 = int8(v2);
+        v3 = int(v4);
+        if (v3 == 5) {
+            v1 = false;
+            return v1;
+        } else {
+        }
+        return v4;
+    }
+    /* ---- GetNextState: 20 dwords / 11 instructions (cache offset 0x4af57) ----
+        0000  sbTOi         v2 CurrentState                             
+        0008  ADDIi         v2 v2 1                                     
+        0014  iTOb          v4 v2                                       
+        001C  sbTOi         v3 v4                                       
+        0024  CMPIi         v3 5                                        
+        002C  JNZ           5                                             -> L0048
+        0034  SetV1         v1 0                                        
+        003C  CpyVtoR4      v1                                          
+        0040  JMP           1                                             -> L004C
+      L0048:
+        0048  CpyVtoR4      v4                                          
+      L004C:
+        004C  RET           3                                           
+    */
+
+    private ETemporaryFloorState CalculateCurrentState()   // traits=0x28
+    {
+        v2 = this.LastTriggerTime;
+        v4 = 0;
+        if (v2 <= v4) {
+            v6 = false;
+            return v6;
+        } else {
+            v2 = this.LastTriggerTime;
+            v9 = float32(v2);
+            v10 = Loki::GetServerTimeSince(v9, __WorldContext);
+            v4 = float64(v10);
+            v8 = v4;
+            v6 = false;
+            v4 = this.LastTriggerTime;
+            v12 = v4;
+            v6 = this.LocalState;
+            v13 = int(v6);
+            if (v13 != 0) {
+                v5 = 0;
+            } else {
+                v15 = v8 >= v12;
+                v5 = v15;
+            }
+            if (v5) {
+                v6 = false;
+                return v6;
+            } else {
+                v6 = this.LocalState;
+                v17 = this.GetNextState(v6);
+                v2 = this.LocalState;
+                v20 = v2;
+                if (v8 >= v20) {
+                    return v17;
+                } else {
+                    v16 = this.LocalState;
+                    return v16;
+                }
+            }
+        }
+        return v16;
+    }
+    /* ---- CalculateCurrentState: 103 dwords / 61 instructions (cache offset 0x4b04d) ----
+        0000  LoadThisR     1080 134230831                                ; this.LastTriggerTime
+        0008  RDR8          v2                                          
+        000C  SetV8         v4 0x0                                      
+        0018  CMPd          v2 v4                                       
+        0020  JP            5                                             -> L003C
+        0028  SetV1         v6 0                                        
+        0030  CpyVtoR4      v6                                          
+        0034  JMP           87                                            -> L0198
+      L003C:
+        003C  PshGPtr       __WorldContext                              
+        0048  LoadThisR     1080 134230831                                ; this.LastTriggerTime
+        0050  RDR8          v2                                          
+        0054  dTOf          v9 v2                                       
+        005C  PshV4         v9                                          
+        0060  CALLSYS       GetServerTimeSince                          
+        006C  CpyRtoV4      v10                                         
+        0070  fTOd          v4 v10                                      
+        0078  CpyVtoV8      v8 v4                                       
+        0080  SetV1         v6 0                                        
+        0088  PSF           v6                                          
+        008C  PshVPtr       this                                        
+        0090  ADDSi         1096 134230831                                ; .StateToCumulativeDurationMap
+        0098  CALLSYS       TMap::opIndex                               
+        00A4  RDR8          v4                                          
+        00A8  CpyVtoV8      v12 v4                                      
+        00B0  LoadThisR     1073 134230831                                ; this.LocalState
+        00B8  RDR1          v6                                          
+        00BC  sbTOi         v13 v6                                      
+        00C4  CMPIi         v13 0                                       
+        00CC  JZ            4                                             -> L00E4
+        00D4  SetV4         v5 0                                        
+        00DC  JMP           6                                             -> L00FC
+      L00E4:
+        00E4  CMPd          v8 v12                                      
+        00EC  TNS                                                       
+        00F0  CpyRtoV4      v15                                         
+        00F4  CpyVtoV4      v5 v15                                      
+      L00FC:
+        00FC  CpyVtoR1      v5                                          
+        0100  JLowZ         5                                             -> L011C
+        0108  SetV1         v6 0                                        
+        0110  CpyVtoR4      v6                                          
+        0114  JMP           31                                            -> L0198
+      L011C:
+        011C  LoadThisR     1073 134230831                                ; this.LocalState
+        0124  RDR1          v6                                          
+        0128  PshV4         v6                                          
+        012C  PshVPtr       this                                        
+        0130  CALLINTF      84524                                         ; ATemporaryFloor::GetNextState
+        0138  CpyRtoV4      v17                                         
+        013C  PSF           v17                                         
+        0140  PshVPtr       this                                        
+        0144  ADDSi         1096 134230831                                ; .StateToCumulativeDurationMap
+        014C  CALLSYS       TMap::opIndex                               
+        0158  RDR8          v2                                          
+        015C  CpyVtoV8      v20 v2                                      
+        0164  CMPd          v8 v20                                      
+        016C  JS            3                                             -> L0180
+        0174  CpyVtoR4      v17                                         
+        0178  JMP           6                                             -> L0198
+      L0180:
+        0180  LoadThisR     1073 134230831                                ; this.LocalState
+        0188  RDR1          v16                                         
+        018C  CpyVtoR4      v16                                         
+        0190  JMP           0                                             -> L0198
+      L0198:
+        0198  RET           2                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v4 = TArray();
+        this.Tags = v4;
+        this.Tags.Add(n"3DTerrain");
+        v6 = false;
+        this.PrimaryActorTick.SetbStartWithTickEnabled(v6);
+        v6 = false;
+        this.PrimaryActorTick.SetbAllowTickOnDedicatedServer(v6);
+        v6 = true;
+        this.SetbReplicates(v6);
+        v7 = 4;
+        this.SetNetDormancy(v7);
+        v8 = 1048576000;
+        this.NetUpdateFrequency = v8;
+        v8 = 1048576000;
+        this.MinNetUpdateFrequency = v8;
+        v6 = true;
+        this.StaticMeshComponent.SetCollisionProfileName(n"3DTerrain", v6);
+        v6 = true;
+        this.BackupMantleCollision.SetCollisionProfileName(n"3DTerrain", v6);
+        v10 = nullptr;
+        v11 = false;
+        this.StateAudioEvents.Add(v11, v10);
+        v10 = nullptr;
+        v11 = true;
+        this.StateAudioEvents.Add(v11, v10);
+        v10 = nullptr;
+        v11 = 2;
+        this.StateAudioEvents.Add(v11, v10);
+        v10 = nullptr;
+        v11 = 3;
+        this.StateAudioEvents.Add(v11, v10);
+        v10 = nullptr;
+        v11 = 4;
+        this.StateAudioEvents.Add(v11, v10);
+        return;
+    }
+    /* ---- __InitDefaults: 157 dwords / 92 instructions (cache offset 0x4b2d0) ----
+        0000  PSF           v4                                          
+        0004  CALLSYS       TArray::$beh0                               
+        0010  PSF           v4                                          
+        0014  PshVPtr       this                                        
+        0018  ADDSi         496 67111343                                  ; .Tags
+        0020  CALLSYS       TArray::opAssign                            
+        002C  PSF           v4                                          
+        0030  CALLSYS       TArray::$beh2                               
+        003C  PshC4         28                                          
+        0044  CALLSYS       __STATIC_NAME                               
+        0050  PshRPtr                                                   
+        0054  PshVPtr       this                                        
+        0058  ADDSi         496 67111343                                  ; .Tags
+        0060  CALLSYS       TArray::Add                                 
+        006C  SetV1         v6 0                                        
+        0074  PshV4         v6                                          
+        0078  PshVPtr       this                                        
+        007C  ADDSi         56 67111343                                   ; .PrimaryActorTick
+        0084  CALLSYS       FActorTickFunction::SetbStartWithTickEnabled
+        0090  SetV1         v6 0                                        
+        0098  PshV4         v6                                          
+        009C  PshVPtr       this                                        
+        00A0  ADDSi         56 67111343                                   ; .PrimaryActorTick
+        00A8  CALLSYS       FActorTickFunction::SetbAllowTickOnDedicatedServer
+        00B4  SetV1         v6 1                                        
+        00BC  PshV4         v6                                          
+        00C0  PshVPtr       this                                        
+        00C4  CALLSYS       AActor::SetbReplicates                      
+        00D0  SetV1         v7 4                                        
+        00D8  PshV4         v7                                          
+        00DC  PshVPtr       this                                        
+        00E0  CALLSYS       AActor::SetNetDormancy                      
+        00EC  SetV4         v8 1048576000                               
+        00F4  LoadThisR     384 67111343                                  ; this.NetUpdateFrequency
+        00FC  WRTV4         v8                                          
+        0100  SetV4         v8 1048576000                               
+        0108  LoadThisR     388 67111343                                  ; this.MinNetUpdateFrequency
+        0110  WRTV4         v8                                          
+        0114  SetV1         v6 1                                        
+        011C  PshV4         v6                                          
+        0120  PshC4         28                                          
+        0128  CALLSYS       __STATIC_NAME                               
+        0134  PshRPtr                                                   
+        0138  PshVPtr       this                                        
+        013C  ADDSi         928 134230831                                 ; .StaticMeshComponent
+        0144  RDSPtr                                                    
+        0148  CALLSYS       UPrimitiveComponent::SetCollisionProfileName
+        0154  SetV1         v6 1                                        
+        015C  PshV4         v6                                          
+        0160  PshC4         28                                          
+        0168  CALLSYS       __STATIC_NAME                               
+        0174  PshRPtr                                                   
+        0178  PshVPtr       this                                        
+        017C  ADDSi         936 134230831                                 ; .BackupMantleCollision
+        0184  RDSPtr                                                    
+        0188  CALLSYS       UPrimitiveComponent::SetCollisionProfileName
+        0194  ClrVPtr       v10                                         
+        0198  PSF           v10                                         
+        019C  SetV1         v11 0                                       
+        01A4  PSF           v11                                         
+        01A8  PshVPtr       this                                        
+        01AC  ADDSi         992 134230831                                 ; .StateAudioEvents
+        01B4  CALLSYS       TMap::Add                                   
+        01C0  ClrVPtr       v10                                         
+        01C4  PSF           v10                                         
+        01C8  SetV1         v11 1                                       
+        01D0  PSF           v11                                         
+        01D4  PshVPtr       this                                        
+        01D8  ADDSi         992 134230831                                 ; .StateAudioEvents
+        01E0  CALLSYS       TMap::Add                                   
+        01EC  ClrVPtr       v10                                         
+        01F0  PSF           v10                                         
+        01F4  SetV1         v11 2                                       
+        01FC  PSF           v11                                         
+        0200  PshVPtr       this                                        
+        0204  ADDSi         992 134230831                                 ; .StateAudioEvents
+        020C  CALLSYS       TMap::Add                                   
+        0218  ClrVPtr       v10                                         
+        021C  PSF           v10                                         
+        0220  SetV1         v11 3                                       
+        0228  PSF           v11                                         
+        022C  PshVPtr       this                                        
+        0230  ADDSi         992 134230831                                 ; .StateAudioEvents
+        0238  CALLSYS       TMap::Add                                   
+        0244  ClrVPtr       v10                                         
+        0248  PSF           v10                                         
+        024C  SetV1         v11 4                                       
+        0254  PSF           v11                                         
+        0258  PshVPtr       this                                        
+        025C  ADDSi         992 134230831                                 ; .StateAudioEvents
+        0264  CALLSYS       TMap::Add                                   
+        0270  RET           2                                           
+    */
+
+    void ~ATemporaryFloor()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ATemporaryFloor: 19 dwords / 10 instructions (cache offset 0x4b89d) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         992 134230831                                 ; .StateAudioEvents
+        000C  CALLSYS       TMap::$beh2                                 
+        0018  PshVPtr       this                                        
+        001C  ADDSi         1096 134230831                                ; .StateToCumulativeDurationMap
+        0024  CALLSYS       TMap::$beh2                                 
+        0030  PshVPtr       this                                        
+        0034  ADDSi         1176 134230831                                ; .NextUpdateTimerHandle
+        003C  CALLSYS       FTimerHandle::$beh2                         
+        0048  RET           2                                           
+    */
+
+}
+

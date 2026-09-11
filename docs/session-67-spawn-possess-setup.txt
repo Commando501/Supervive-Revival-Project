@@ -1,0 +1,71 @@
+SESSION 67 — LEAD B setup: two blocking bugs FIXED; the spawn+possess path is confirmed CALLABLE
+================================================================================================
+Date: 2026-07-11. Continues S66 (real gate = LokiRoundGameMode stuck at EGP_BeginInit -> no local-player drop-in
+-> dead spectator). Pursued LEAD B: force-spawn + possess a hero for the local PC via the ProcessInternal native-
+call primitive. Did NOT complete the spawn+possess call, but fixed two bugs that were silently breaking things and
+confirmed the whole path is callable. Live/autonomous.
+
+★ BUG FIX 1 — the force-open "intermittent crash" was a LOGIN-HOLD TIMING bug (now reliable) ★
+---------------------------------------------------------------------------------------------
+Symptom: some force-open runs crashed with "Couldn't spawn player: ALokiGameMode::Login failed to Login" (the S61
+login reject), not the expected pass. ROOT CAUSE: the slot-285 CustomLogin de-override is TRANSIENT (installed
+before force-open, restored after a hold). The "open" console command is DEFERRED — the travel + Login run ~7s
+LATER. The old code held ~8-12s via the sampling loop, which happened to cover Login. When I trimmed the hold, the
+restore ran BEFORE Login fired -> the strict native Login ran -> fatal. FIX: hold CustomLogin installed until Login
+actually fires — poll g_loginCalls (set by LogLoginResult), max 16s, then a grace, THEN restore. (See the
+kPokeMatchModel==false branch in Worker.) Force-open now RELIABLY passes login + survives (LOGIN1 approved, tutorial
+init -> Finished, game alive as spectator). The S63/S66 "intermittent" crashes were largely this.
+
+★ BUG FIX 2 — SuperStruct offset was WRONG (0x40); it is @+0x48 this build (reusable correction) ★
+-------------------------------------------------------------------------------------------------
+Every class super-walk in the shim used UStruct::SuperStruct @ +0x40. DIAGNOSTIC (dump cls+0x38..0x50 as UObjects):
+  cls+0x40 = 0xA (garbage);  cls+0x48 = BP_LokiPlayerController_C (the PARENT class);  cls+0x50 = first Child (UField).
+So SuperStruct is @+0x48 (Children@0x50, ChildProperties@0x58 were already correct). The wrong 0x40 meant EVERY
+super-walk silently traversed nothing — which is why (a) probes only ever showed a class's OWN funcs/props, (b)
+PropOffset("PlayerState") returned 0xFFFFFFFF (PlayerState is on a super), (c) Possess wasn't found. FIXED all 6
+super-walk sites (DumpClassFuncs, DumpParams, DumpFeatureToggles, DumpCoreGameState, PropOffset, the match-model
+walk) 0x40 -> 0x48. After the fix the PC func dump correctly shows the full chain (BP_LokiPlayerController_C ->
+LokiPlayerController -> PlayerController -> Controller).
+
+★ THE SPAWN+POSSESS PATH IS CALLABLE (all UFunctions confirmed live) ★
+---------------------------------------------------------------------
+Survey of the RUNNING tutorial (in-shim DumpGameModeFuncs / DumpPCFuncs / DumpParams; game kept alive by fix 1):
+  GAMEMODE (BP_LokiGameMode_Tutorial_C) UFunctions + params:
+    SpawnDefaultPawnFor        (NewPlayer @0x0, StartSpot @0x8) -> ReturnValue @0x10 (+PlayerStartLocation @0x18,
+                                PlayerStartRotation @0x30)
+    SpawnDefaultPawnAtTransform (NewPlayer @0x0, SpawnTransform @0x10 [~0x60-byte FTransform]) -> ReturnValue @0x70
+    K2_OnRestartPlayer (NewPlayer @0x0)   [event, not a trigger]
+    + SpawnBots, "Spawn AI Hero Bot", SpawnMonster, ChoosePlayerStart, OnPlayerSpawned_BP, GrantStarterItems, ...
+  PLAYERCONTROLLER (super chain) UFunctions:
+    Controller::Possess  <-- the possession call (BlueprintCallable UFunction; also ReceivePossess, ClientOnPossess,
+                             ServerCheckClientPossession, UnPossess). InPawn is param 0 (@0x0).
+So LEAD B is buildable entirely with the primitive: spawn a pawn, then Possess it.
+
+NEXT (S68) — build the spawn+possess call (or the simpler possess-existing-hero) via the primitive
+---------------------------------------------------------------------------------------------------
+The primitive already calls a UFunction on the game thread (OnPI does it for ExecuteConsoleCommand). Adapt it to
+call Possess (and/or SpawnDefaultPawn*) on the game thread with a params buffer. Two options:
+  OPTION 1 (simplest — possess an EXISTING hero): the tutorial already spawns hero pawns (AI bots — 166 live
+    LokiCharacter actors). Find a live hero PAWN (class contains "Hero"/is a LokiCharacter pawn, NOT a component),
+    then call Controller::Possess(Context=local PC, InPawn@0x0=that pawn) via the primitive. If the player then
+    controls that hero -> PLAYABLE (even if it was a "bot" hero). One native call. Try FIRST.
+  OPTION 2 (spawn a fresh hero): call SpawnDefaultPawnFor(Context=gamemode, {NewPlayer@0x0=PC, StartSpot@0x8=
+    <a live map actor: a CapturePoint/RespawnBeacon/bot>}) -> pawn@0x10; OR SpawnDefaultPawnAtTransform(gamemode,
+    {NewPlayer@0x0=PC, SpawnTransform@0x10=<FTransform: identity quat + a valid island translation + unit scale>})
+    -> pawn@0x70. Then Controller::Possess(PC, pawn). (FTransform is LWC doubles: FQuat 4d + FVector 3d translation
+    + FVector 3d scale; easier to reuse a live actor's transform or use SpawnDefaultPawnFor with a StartSpot actor.)
+  Recipe details: params at each param FProperty Offset_Internal@+0x44; OUT param (ReturnValue) via FFrame.OutParms
+  @+0x80 (missions s58). Resolve the func across supers with the FIXED super-walk (@+0x48). Verify: PC->Pawn set,
+  the DeadSpectatorCameraLock spam stops, hero movable = PLAYABLE.
+
+CONFIG / STATE AT END
+---------------------
+- ags: HYBRID still on (forceTutorialMatch=true + empty address). Restart reuses certs.
+- tutorial_launch.dll = durable force-open build with BOTH fixes (login-hold; SuperStruct@0x48) + all probes
+  (DumpCoreGameState, FindCoreGameManager, DumpClassFuncs, DumpParams, DumpPawns, DumpFeatureToggles,
+  DumpGameModeFuncs, DumpPCFuncs). kInvestigateOnly=false (force-open); =true does a read-only census.
+- REPRODUCE: kill any prior game (launch-redirect doesn't); launch-redirect -NoHook; wait for auto-arm (pre-game
+  lobby); inject (force-open) -> tutorial runs + STAYS (login-hold fix); inject again (census) to survey.
+- Game left ALIVE (pid 62600, spectator in the tutorial). Static xref stays dead (packer). Preserved: scratchpad
+  marker-s67-survey.txt.
+- Handoff: docs/next-session-prompt-s68.md.

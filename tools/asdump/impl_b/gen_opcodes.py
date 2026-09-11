@@ -1,0 +1,168 @@
+#!/usr/bin/env python
+"""Generate opcode_table.py by reading the GAME'S OWN asBCInfo[256] / asBCTypeSize[]
+out of the unpacked image dump. Run once; the generated table is checked in so the
+tool works without the dump present.
+
+    asSBCInfo { asEBCInstr bc; asEBCType type; int stackInc; const char *name; }  == 24 bytes
+
+Independently located and verified in this session:
+    asBCInfo[256]   RVA 0x084a22c0
+    asBCTypeSize[]  RVA 0x084b45a0  (and an identical copy at 0x084ea4a0)
+    ImageBase       0x7ff6af000000   (dumpimage sets file-offset == RVA)
+"""
+import struct, sys, os
+
+DUMP = r"G:\git\Supervive Revival Project\dumps\merged.dump.exe"
+IMAGE_BASE = 0x7FF6AF000000
+RVA_BCINFO = 0x084A22C0
+RVA_TYPESIZE = 0x084B45A0
+RVA_TYPESIZE2 = 0x084EA4A0
+
+# asEBCType names, in ordinal order, from the fork's own angelscript.h.
+# 21 (asBCTYPE_W_rW_ARG) does not exist upstream -- it is a fork addition.
+TYPE_NAMES = [
+    "INFO", "NO_ARG", "W_ARG", "wW_ARG", "DW_ARG", "rW_DW_ARG", "QW_ARG",
+    "DW_DW_ARG", "wW_rW_rW_ARG", "wW_QW_ARG", "wW_rW_ARG", "rW_ARG",
+    "wW_DW_ARG", "wW_rW_DW_ARG", "rW_rW_ARG", "wW_W_ARG", "QW_DW_ARG",
+    "rW_QW_ARG", "W_DW_ARG", "rW_W_DW_ARG", "rW_DW_DW_ARG", "W_rW_ARG",
+]
+
+
+def derive_layout(type_name):
+    """Derive (operand list, size in dwords) from the asEBCType name alone.
+
+    AngelScript's accessors are positional:
+        SWORDARG0 @ +2, SWORDARG1 @ +4, SWORDARG2 @ +6
+        INTARG/QWORDARG land on the next free DWORD boundary.
+    Returns [(field, byte_off, kind)], size_dwords.
+    """
+    if type_name == "INFO":
+        return [], 0
+    if type_name == "NO_ARG":
+        return [], 1
+    parts = type_name[:-4].split("_")   # strip trailing "_ARG"
+    cur = 2
+    out = []
+    shortn = 0
+    for p in parts:
+        if p in ("W", "wW", "rW"):
+            out.append((p + str(shortn), cur, "s16"))
+            shortn += 1
+            cur += 2
+        elif p == "DW":
+            cur = (cur + 3) & ~3
+            if cur < 4:
+                cur = 4
+            out.append(("DW" if not any(f[0].startswith("DW") for f in out)
+                        else "DW%d" % sum(1 for f in out if f[0].startswith("DW")),
+                        cur, "i32"))
+            cur += 4
+        elif p == "QW":
+            cur = (cur + 3) & ~3
+            if cur < 4:
+                cur = 4
+            out.append(("QW", cur, "u64"))
+            cur += 8
+        else:
+            raise ValueError("unknown operand part %r in %r" % (p, type_name))
+    return out, (cur + 3) // 4
+
+
+def main():
+    if not os.path.exists(DUMP):
+        sys.exit("dump not found: %s" % DUMP)
+    f = open(DUMP, "rb")
+
+    # --- asBCTypeSize, both copies, must agree -------------------------------
+    f.seek(RVA_TYPESIZE)
+    sz1 = list(struct.unpack("<22i", f.read(88)))
+    f.seek(RVA_TYPESIZE2)
+    sz2 = list(struct.unpack("<22i", f.read(88)))
+    assert sz1 == sz2, "the two asBCTypeSize copies disagree: %r vs %r" % (sz1, sz2)
+
+    # --- cross-check: derive sizes purely from the type NAMES ----------------
+    derived = [derive_layout(n)[1] for n in TYPE_NAMES]
+    assert derived == sz1, (
+        "derived operand layout does not reproduce the binary's asBCTypeSize.\n"
+        "  binary : %r\n  derived: %r" % (sz1, derived))
+
+    # --- asBCInfo[256] -------------------------------------------------------
+    f.seek(RVA_BCINFO)
+    raw = f.read(24 * 256)
+    rows = []
+    for i in range(256):
+        bc, ty, stk = struct.unpack_from("<iii", raw, i * 24)
+        nameptr = struct.unpack_from("<Q", raw, i * 24 + 16)[0]
+        f.seek(nameptr - IMAGE_BASE)
+        name = f.read(64).split(b"\x00")[0].decode("latin1")
+        rows.append((i, bc, ty, stk, name))
+
+    # self-proof: bc == index for every non-dummy slot
+    real = [r for r in rows if not r[4].startswith("BC_")]
+    for i, bc, ty, stk, name in real:
+        assert bc == i, "asBCInfo[%d].bc == %d (expected %d) name=%r" % (i, bc, i, name)
+    # asBCINFO_DUMMY(b) is {asBC_MAXBYTECODE, asBCTYPE_INFO, 0, "BC_"#b}, so every dummy
+    # slot's .bc field literally IS asBC_MAXBYTECODE from the fork's header.
+    dummy_bc = set(r[1] for r in rows if r[4].startswith("BC_"))
+    assert len(dummy_bc) == 1, "dummy slots disagree on asBC_MAXBYTECODE: %r" % dummy_bc
+    hdr_max = dummy_bc.pop()
+    # ...but slot 212 (ThrowException) is a fully-populated REAL entry, i.e. the fork
+    # appended an opcode without bumping asBC_MAXBYTECODE. Trust the table, not the
+    # constant: decodable range is 0..hdr_max inclusive when hdr_max is a real entry.
+    maxbc = hdr_max if not rows[hdr_max][4].startswith("BC_") else hdr_max - 1
+    # 251..255 (VarDecl/Block/ObjInfo/LINE/LABEL) are AngelScript PSEUDO-instructions,
+    # stripped during bytecode finalization -- they can never occur in a saved stream.
+    PSEUDO = set(range(251, 256))
+
+    out = ['"""AngelScript opcode table for SUPERVIVE\'s FORKED engine.',
+           "",
+           "GENERATED by gen_opcodes.py -- do not hand-edit.",
+           "Source of truth: the game's own asBCInfo[256] read out of",
+           "  %s" % DUMP.replace("\\", "/"),
+           "at RVA 0x%08X, with asBCTypeSize[] at RVA 0x%08X (verified against a" % (RVA_BCINFO, RVA_TYPESIZE),
+           "second identical copy at 0x%08X)." % (RVA_TYPESIZE2,),
+           "",
+           "The operand layouts below are DERIVED from the asEBCType names using",
+           "AngelScript's positional accessor rule (SWORDARG0/1/2 at +2/+4/+6, INT/QWORD",
+           "args on the next free dword boundary). That derivation independently",
+           "reproduces all 22 entries of the binary's own asBCTypeSize table, which is",
+           "what pins the layout of the fork-added type 21 (asBCTYPE_W_rW_ARG).",
+           '"""',
+           "",
+           "# Decodable opcodes are 0..MAXBYTECODE-1. asBC_MAXBYTECODE in the fork's own",
+           "# header reads %d (from the dummy slots), and slot %d is a real entry, so the" % (hdr_max, hdr_max),
+           "# fork appended an opcode without bumping the constant. We trust the table.",
+           "MAXBYTECODE = %d" % (maxbc + 1),
+           "PSEUDO_OPS = %r  # never present in a serialized stream" % (sorted(PSEUDO),),
+           "",
+           "TYPE_NAMES = %r" % (TYPE_NAMES,),
+           "TYPE_SIZE = %r" % (sz1,),
+           "",
+           "# type_id -> [(field_name, byte_offset_within_instruction, kind)]",
+           "TYPE_LAYOUT = {"]
+    for tid, tname in enumerate(TYPE_NAMES):
+        lay, _ = derive_layout(tname)
+        out.append("    %2d: %r,   # %s" % (tid, lay, tname))
+    out.append("}")
+    out.append("")
+    out.append("# opcode -> (name, type_id, size_dwords, stack_inc)")
+    out.append("# stack_inc 0xFFFF is AngelScript's 'variable stack effect' sentinel.")
+    out.append("OPCODES = {")
+    for i, bc, ty, stk, name in rows:
+        if name.startswith("BC_"):
+            continue
+        out.append("    %3d: (%-18r, %2d, %d, %6d)," % (i, name, ty, sz1[ty], stk))
+    out.append("}")
+    out.append("")
+    out.append("NAME_TO_OP = {v[0]: k for k, v in OPCODES.items()}")
+    out.append("")
+
+    dst = os.path.join(os.path.dirname(os.path.abspath(__file__)), "opcode_table.py")
+    open(dst, "w").write("\n".join(out))
+    print("wrote %s" % dst)
+    print("  %d real opcodes (0..%d), %d dummy slots" % (len(real), maxbc, 256 - len(real)))
+    print("  asBCTypeSize verified against 2 copies AND reproduced from type names")
+
+
+if __name__ == "__main__":
+    main()

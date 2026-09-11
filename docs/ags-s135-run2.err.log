@@ -1,0 +1,9 @@
+2026/08/21 00:54:04 menu: config "state\\menu-config.json" not read (open state\menu-config.json: The system cannot find the file specified.) — using built-in defaults
+2026/08/21 00:54:04 [pingecho] UDP echo responder on 127.0.0.1:443 (UE ICMP-module ping, 8..128 byte datagrams)
+2026/08/21 00:54:04 SUPERVIVE Revival AGS backend
+2026/08/21 00:54:04   capture log: G:\git\Supervive Revival Project\docs\capture.log
+2026/08/21 00:54:04   ADMIN  panel on http://127.0.0.1:9210/
+2026/08/21 00:54:04   ADMIN  panel on http://[::1]:9210/
+2026/08/21 00:54:04   TLS cert (append to game cacert.pem): G:\git\Supervive Revival Project\certs\root.crt
+2026/08/21 00:54:04   HTTP   listening on :8080
+2026/08/21 00:54:04   HTTPS  listening on :443

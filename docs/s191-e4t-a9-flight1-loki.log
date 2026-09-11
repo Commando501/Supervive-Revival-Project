@@ -1,0 +1,81 @@
+
+[2026.09.11-00.11.14:130][783]LogLokiGameplaySpell: Verbose: 
+[BP_HERO_Ronin_C_2147470735][GS_Ronin_MiniDash_Charges_C_2147470636][] Pre Dash Start
+[2026.09.11-00.11.14:130][783]LogLokiGameplaySpell: Verbose: 
+[BP_HERO_Ronin_C_2147470735][GS_Ronin_MiniDash_Charges_C_2147470636][][1] Post Dash Start
+[2026.09.11-00.11.14:469][783]LogAbilitySystem: Property Health new value is: 81.78
+[2026.09.11-00.11.14:469][783]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_MiniDash_Damage_C
+[2026.09.11-00.11.14:469][783]LogAbilitySystem: Display: GameplayCueNotify 
+/Game/Loki/Characters/Heroes/Ronin/Abilities/MiniDash/GC_Ronin_MiniDash_Impact.GC_Ronin_MiniDash_Impact_C was not 
+loaded when GameplayCue was invoked. Starting async loading.
+[2026.09.11-00.11.14:469][783]LogAbilitySystem: Verbose: InternalOnActiveGameplayEffectAdded: Auth: TRUE Handle: 1 
+Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.11.23:744][784]LogLokiGameplaySpell: Verbose: 
+[BP_HERO_Ronin_C_2147470735][GS_Ronin_MiniDash_Charges_C_2147470636][1] Dash Ended
+[2026.09.11-00.11.23:833][784]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect: Auth: TRUE Handle: 1 Def: 
+Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.11.23:833][784]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect while locked; Counting as 
+a Pending Remove: Auth: TRUE Handle: 1 Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.11:550][256]LogLokiGameplaySpell: Verbose: 
+[BP_HERO_Ronin_C_2147470735][GS_Ronin_MiniDash_Charges_C_2147470636][] Pre Dash Start
+[2026.09.11-00.19.11:551][256]LogLokiGameplaySpell: Verbose: 
+[BP_HERO_Ronin_C_2147470735][GS_Ronin_MiniDash_Charges_C_2147470636][][2] Post Dash Start
+[2026.09.11-00.19.11:852][256]LogAbilitySystem: Property Health new value is: 81.78
+[2026.09.11-00.19.11:852][256]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_MiniDash_Damage_C
+[2026.09.11-00.19.11:853][256]LogAbilitySystem: Verbose: InternalOnActiveGameplayEffectAdded: Auth: TRUE Handle: 3 
+Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.12:104][256]LogAbilitySystem: Property Health new value is: 63.55
+[2026.09.11-00.19.12:104][256]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_MiniDash_Damage_C
+[2026.09.11-00.19.12:104][256]LogAbilitySystem: Verbose: InternalOnActiveGameplayEffectAdded: Auth: TRUE Handle: 5 
+Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.12:356][256]LogAbilitySystem: Property Health new value is: 45.33
+[2026.09.11-00.19.12:356][256]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_MiniDash_Damage_C
+[2026.09.11-00.19.12:357][256]LogAbilitySystem: Verbose: InternalOnActiveGameplayEffectAdded: Auth: TRUE Handle: 7 
+Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.12:607][256]LogAbilitySystem: Property Health new value is: 27.10
+[2026.09.11-00.19.12:607][256]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_MiniDash_Damage_C
+[2026.09.11-00.19.12:607][256]LogAbilitySystem: Verbose: InternalOnActiveGameplayEffectAdded: Auth: TRUE Handle: 9 
+Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.12:859][256]LogAbilitySystem: Property Health new value is: 8.88
+[2026.09.11-00.19.12:859][256]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_MiniDash_Damage_C
+[2026.09.11-00.19.12:860][256]LogAbilitySystem: Verbose: InternalOnActiveGameplayEffectAdded: Auth: TRUE Handle: 11 
+Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.13:174][256]LogAbilitySystem: Property Health new value is: 0.00
+[2026.09.11-00.19.13:174][256]LogAbilitySystem: Invoking Execute GameplayCue for Default__GE_Ronin_MiniDash_Damage_C
+[2026.09.11-00.19.13:174][256]LogAbilitySystem: Verbose: InternalOnActiveGameplayEffectAdded: Auth: TRUE Handle: 13 
+Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:747][257]LogLokiGameplaySpell: Verbose: 
+[BP_HERO_Ronin_C_2147470735][GS_Ronin_MiniDash_Charges_C_2147470636][2] Dash Ended
+[2026.09.11-00.19.18:754][257]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect: Auth: TRUE Handle: 5 Def: 
+Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:754][257]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect while locked; Counting as 
+a Pending Remove: Auth: TRUE Handle: 5 Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:754][257]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect: Auth: TRUE Handle: 7 Def: 
+Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:754][257]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect while locked; Counting as 
+a Pending Remove: Auth: TRUE Handle: 7 Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:754][257]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect: Auth: TRUE Handle: 3 Def: 
+Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:754][257]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect while locked; Counting as 
+a Pending Remove: Auth: TRUE Handle: 3 Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:754][257]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect: Auth: TRUE Handle: 9 Def: 
+Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:754][257]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect while locked; Counting as 
+a Pending Remove: Auth: TRUE Handle: 9 Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:755][257]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect: Auth: TRUE Handle: 11 
+Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:755][257]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect while locked; Counting as 
+a Pending Remove: Auth: TRUE Handle: 11 Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:755][257]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect: Auth: TRUE Handle: 13 
+Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:755][257]LogAbilitySystem: Verbose: InternalRemoveActiveGameplayEffect while locked; Counting as 
+a Pending Remove: Auth: TRUE Handle: 13 Def: Default__GE_Ult_PreventMultiHits_C
+[2026.09.11-00.19.18:782][258]LogAbilitySystem: Display: GameplayCueNotify /Game/Loki/Characters/Heroes/Ronin/Abilities
+/Passive/ExecuteHighlight/GC_Ronin_Execute_Highlight.GC_Ronin_Execute_Highlight_C was not loaded when GameplayCue was 
+invoked. Starting async loading.
+[2026.09.11-00.19.18:782][258]LogAbilitySystem: Display: GameplayCueNotify /Game/Loki/Characters/Heroes/Ronin/Abilities
+/Passive/ExecuteHighlight/GC_Ronin_Execute_Highlight.GC_Ronin_Execute_Highlight_C was not loaded when GameplayCue was 
+invoked. Starting async loading.
+[2026.09.11-00.19.18:815][259]LogAbilitySystem: VeryVerbose: GC_Ronin_Execute_Highlight_C_2147470472 - OnActive
+
+

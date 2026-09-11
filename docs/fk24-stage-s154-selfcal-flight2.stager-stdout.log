@@ -1,0 +1,57 @@
+[stage] pre-flight: is ags serving an armed match?
+[stage]   /core-game/players -> MatchID='match-9b9d2c887e2524f918e383a895f2f1c2' Version=1788905334
+[stage] waiting for game process...
+[stage] game process -> OK (0s)
+[stage] game PID=44184 started=09/08/2026 17:08:57
+[stage] parked match model (uiready + match fetched + uptime) -> OK (73s)
+[stage] uptime=112s
+[stage] >>> inject gft
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\gft_ready_fix.dll into PID 44184
+[stage]       remote image base: 0x1A6E00E0000 (size 0x25000)
+[stage]       relocations applied (delta 0x1A5600E0000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x17D entries at 0x1A6E0102000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x1A6E00E0000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     marker -> fk24-stage-s154-selfcal-f2-1-gft.txt
+[stage] force-open DLL: tutorial_launch_fo.dll
+[stage]     spacing: 5s since last inject, waiting 15s more (min gap 20s)
+[stage] >>> inject fo
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\tutorial_launch_fo.dll into PID 44184
+[stage]       remote image base: 0x1A777850000 (size 0x2C000)
+[stage]       relocations applied (delta 0x1A5F7850000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x197 entries at 0x1A777879000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x1A777850000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     marker -> fk24-stage-s154-selfcal-f2-2-fo.txt
+[stage] LVL_Tutorial load complete -> OK (9s)
+[stage]     spacing: 19s since last inject, waiting 1s more (min gap 20s)
+[stage] >>> inject sp
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\tutorial_launch_sp.dll into PID 44184
+[stage]       remote image base: 0x1A66D480000 (size 0x36000)
+[stage]       relocations applied (delta 0x1A4ED480000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x1AB entries at 0x1A66D4B3000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x1A66D480000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     marker -> fk24-stage-s154-selfcal-f2-3-sp.txt
+[stage] [SP] done step=4 (hero possessed) -> OK (12s)
+[stage]     spacing: 17s since last inject, waiting 3s more (min gap 20s)
+[stage] >>> inject probe-tutorial_launch_botfight_damage_self_cal
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\build\tutorial_launch_botfight_damage_self_cal.dll into PID 44184
+[stage]       remote image base: 0x1A786050000 (size 0x3C000)
+[stage]       relocations applied (delta 0x1A606050000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x1B2 entries at 0x1A786089000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x1A786050000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     marker -> fk24-stage-s154-selfcal-f2-4-probe-tutorial_launch_botfight_damage_self_cal.txt
+[stage] probe injected; armed window begins
+[stage] stage complete
+
+[exited with code 0]

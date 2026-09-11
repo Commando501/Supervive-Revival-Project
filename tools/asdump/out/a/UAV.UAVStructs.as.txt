@@ -1,0 +1,370 @@
+==============================================================================
+MODULE   UAV.UAVStructs
+SOURCE   UAV/UAVStructs.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+==============================================================================
+UCLASS(meta=(IsBlueprintBase=true, Blueprintable=true))
+class FLokiUAVConfig
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 Duration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 InitialDelay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 Period;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 BlinkDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bShowIndividuals;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bShowTeam;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 InaccuracyDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bRevealVaults;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 Radius;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bShowCharacters;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bLocalRadar;
+
+}
+
+------------------------------------------------------------------------------
+FLokiUAVConfig() const
+// 34 instr, 248 B bytecode, id=0xEB11EB97, varspace=3
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v3;
+
+    v2 = 11;
+    this.Duration = 11;
+    v2 = 1;
+    this.InitialDelay = 1;
+    v2 = 5;
+    this.Period = 5;
+    v2 = 0.2;
+    this.BlinkDuration = 0.2;
+    v3 = false;
+    this.bShowIndividuals = false;
+    v3 = false;
+    this.bShowTeam = false;
+    v2 = 1500;
+    this.InaccuracyDistance = 1500;
+    v3 = true;
+    this.bRevealVaults = true;
+    v2 = 0;
+    this.Radius = 0;
+    v3 = false;
+    this.bShowCharacters = false;
+    v3 = false;
+    this.bLocalRadar = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x4026000000000000
+    //     3  LoadThisR      W0:0 d:134230906        ; FLokiUAVConfig::Duration  (+0)
+    //     5  WRTV8          rW0:2
+    //     6  SetV8          wW0:2 q:0x3ff0000000000000
+    //     9  LoadThisR      W0:8 d:134230906        ; FLokiUAVConfig::InitialDelay  (+8)
+    //    11  WRTV8          rW0:2
+    //    12  SetV8          wW0:2 q:0x4014000000000000
+    //    15  LoadThisR      W0:16 d:134230906       ; FLokiUAVConfig::Period  (+16)
+    //    17  WRTV8          rW0:2
+    //    18  SetV8          wW0:2 q:0x3fc999999999999a
+    //    21  LoadThisR      W0:24 d:134230906       ; FLokiUAVConfig::BlinkDuration  (+24)
+    //    23  WRTV8          rW0:2
+    //    24  SetV1          wW0:3 d:0
+    //    26  LoadThisR      W0:32 d:134230906       ; FLokiUAVConfig::bShowIndividuals  (+32)
+    //    28  WRTV1          rW0:3
+    //    29  SetV1          wW0:3 d:0
+    //    31  LoadThisR      W0:33 d:134230906       ; FLokiUAVConfig::bShowTeam  (+33)
+    //    33  WRTV1          rW0:3
+    //    34  SetV8          wW0:2 q:0x4097700000000000
+    //    37  LoadThisR      W0:40 d:134230906       ; FLokiUAVConfig::InaccuracyDistance  (+40)
+    //    39  WRTV8          rW0:2
+    //    40  SetV1          wW0:3 d:1
+    //    42  LoadThisR      W0:48 d:134230906       ; FLokiUAVConfig::bRevealVaults  (+48)
+    //    44  WRTV1          rW0:3
+    //    45  SetV8          wW0:2 q:0x0
+    //    48  LoadThisR      W0:56 d:134230906       ; FLokiUAVConfig::Radius  (+56)
+    //    50  WRTV8          rW0:2
+    //    51  SetV1          wW0:3 d:0
+    //    53  LoadThisR      W0:64 d:134230906       ; FLokiUAVConfig::bShowCharacters  (+64)
+    //    55  WRTV1          rW0:3
+    //    56  SetV1          wW0:3 d:0
+    //    58  LoadThisR      W0:65 d:134230906       ; FLokiUAVConfig::bLocalRadar  (+65)
+    //    60  WRTV1          rW0:3
+    //    61  RET            W0:2
+
+------------------------------------------------------------------------------
+bool IsInfiniteDuration()
+// 8 instr, 48 B bytecode, id=0x3DAEE7F9, varspace=5
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v5;
+
+    v2 = this.Duration;
+    v5 = v2 <= 0;
+    return v5;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:0 d:134230906        ; FLokiUAVConfig::Duration  (+0)
+    //     2  RDR8           wW0:2
+    //     3  SetV8          wW0:4 q:0x0
+    //     6  CMPd           rW0:2 rW1:4
+    //     8  TNP
+    //     9  CpyRtoV4       wW0:5
+    //    10  CpyVtoR4       rW0:5
+    //    11  RET            W0:2
+
+==============================================================================
+UCLASS(meta=(IsBlueprintBase=true, Blueprintable=true))
+class FActiveUAV
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) bool bValid;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) int ID;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) FLokiUAVConfig Config;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) float64 StartTime;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) int TeamIndex;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) AUAVAudioPlayer@ AudioActor;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) FVector SourceLocation;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) int PulseCount;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance) int PlayersDetected;
+
+}
+
+------------------------------------------------------------------------------
+FActiveUAV() const
+// 31 instr, 208 B bytecode, id=0x4CFEB20D, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = 0;
+    this.ID = 0;
+    this.Config.FLokiUAVConfig();
+    this.bValid = false;
+    this.StartTime = 0;
+    v1 = 1;
+    this.TeamIndex = 1;
+    this.AudioActor = null;
+    this.SourceLocation = FVector(FVector::ZeroVector);
+    v1 = 0;
+    this.PulseCount = 0;
+    v1 = 0;
+    this.PlayersDetected = 0;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:4 d:134230905        ; FActiveUAV::ID  (+4)
+    //     2  SetV4          wW0:1 d:0
+    //     4  WRTV4          rW0:1
+    //     5  PshVPtr        rW0:0
+    //     6  ADDSi          W0:8 d:134230905        ; FActiveUAV::Config  (+8)
+    //     8  CALL           d:85409                 ; void FLokiUAVConfig::FLokiUAVConfig()
+    //    10  SetV1          wW0:2 d:0
+    //    12  LoadThisR      W0:0 d:134230905        ; FActiveUAV::bValid  (+0)
+    //    14  WRTV1          rW0:2
+    //    15  SetV8          wW0:4 q:0x0
+    //    18  LoadThisR      W0:80 d:134230905       ; FActiveUAV::StartTime  (+80)
+    //    20  WRTV8          rW0:4
+    //    21  SetV4          wW0:1 d:1
+    //    23  LoadThisR      W0:88 d:134230905       ; FActiveUAV::TeamIndex  (+88)
+    //    25  WRTV4          rW0:1
+    //    26  PshNull
+    //    27  PshVPtr        rW0:0
+    //    28  ADDSi          W0:96 d:134230905       ; FActiveUAV::AudioActor  (+96)
+    //    30  REFCPY
+    //    31  PopPtr
+    //    32  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    35  PshVPtr        rW0:0
+    //    36  ADDSi          W0:104 d:134230905      ; FActiveUAV::SourceLocation  (+104)
+    //    38  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    41  SetV4          wW0:1 d:0
+    //    43  LoadThisR      W0:128 d:134230905      ; FActiveUAV::PulseCount  (+128)
+    //    45  WRTV4          rW0:1
+    //    46  SetV4          wW0:1 d:0
+    //    48  LoadThisR      W0:132 d:134230905      ; FActiveUAV::PlayersDetected  (+132)
+    //    50  WRTV4          rW0:1
+    //    51  RET            W0:2
+
+------------------------------------------------------------------------------
+bool ShouldPulse(const float64 CurrentServerTime)
+// 23 instr, 136 B bytecode, id=0x82D41891, varspace=11
+------------------------------------------------------------------------------
+{
+    auto v4;
+    auto v6;
+    auto v10;
+    auto v11;
+
+    v4 = this.StartTime;
+    v6 = this.Config.InitialDelay;
+    v4 = v4 + v6;
+    v10 = float64(this.PulseCount);
+    v6 = this.Config.Period;
+    v10 = v10 * v6;
+    v6 = v4 + v10;
+    v11 = CurrentServerTime > v6;
+    return v11;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:80 d:134230905       ; FActiveUAV::StartTime  (+80)
+    //     2  RDR8           wW0:4
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:8 d:134230905        ; FActiveUAV::Config  (+8)
+    //     6  ADDSi          W0:8 d:134230906        ; FLokiUAVConfig::InitialDelay  (+8)
+    //     8  PopRPtr
+    //     9  RDR8           wW0:6
+    //    10  ADDd           wW0:4 rW1:4 rW2:6
+    //    12  LoadThisR      W0:128 d:134230905      ; FActiveUAV::PulseCount  (+128)
+    //    14  RDR4           wW0:7
+    //    15  iTOd           wW0:10 rW1:7
+    //    17  PshVPtr        rW0:0
+    //    18  ADDSi          W0:8 d:134230905        ; FActiveUAV::Config  (+8)
+    //    20  ADDSi          W0:16 d:134230906       ; FLokiUAVConfig::Period  (+16)
+    //    22  PopRPtr
+    //    23  RDR8           wW0:6
+    //    24  MULd           wW0:10 rW1:10 rW2:6
+    //    26  ADDd           wW0:6 rW1:4 rW2:10
+    //    28  CMPd           rW0:-2 rW1:6
+    //    30  TP
+    //    31  CpyRtoV4       wW0:11
+    //    32  CpyVtoR4       rW0:11
+    //    33  RET            W0:4
+
+------------------------------------------------------------------------------
+float64 GetPulseLifespan()
+// 13 instr, 72 B bytecode, id=0xD2E4ACCF, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = this.Config.Period;
+    v2 = v2 - this.Config.BlinkDuration;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:8 d:134230905        ; FActiveUAV::Config  (+8)
+    //     3  ADDSi          W0:16 d:134230906       ; FLokiUAVConfig::Period  (+16)
+    //     5  PopRPtr
+    //     6  RDR8           wW0:2
+    //     7  PshVPtr        rW0:0
+    //     8  ADDSi          W0:8 d:134230905        ; FActiveUAV::Config  (+8)
+    //    10  ADDSi          W0:24 d:134230906       ; FLokiUAVConfig::BlinkDuration  (+24)
+    //    12  PopRPtr
+    //    13  RDR8           wW0:4
+    //    14  SUBd           wW0:2 rW1:2 rW2:4
+    //    16  CpyVtoR8       rW0:2
+    //    17  RET            W0:2
+
+------------------------------------------------------------------------------
+FVector ObfuscateLocation(const FVector&inout Location)
+// 23 instr, 148 B bytecode, id=0x4975F44B, varspace=26
+------------------------------------------------------------------------------
+{
+    FVector v12;
+    FVector v26;
+
+    v12 = Math::VRand();
+    __return = FVector(v26);
+    return;   // value returned via the caller's temp
+    Math::RandRange(0, this.Config.InaccuracyDistance);
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:12
+    //     1  CALLSYS        q:0x26e69d2fe40         ; FVector Math::VRand()
+    //     4  PshVPtr        rW0:0
+    //     5  ADDSi          W0:8 d:134230905        ; FActiveUAV::Config  (+8)
+    //     7  ADDSi          W0:40 d:134230906       ; FLokiUAVConfig::InaccuracyDistance  (+40)
+    //     9  PopRPtr
+    //    10  RDR8           wW0:16
+    //    11  PshV8          rW0:16
+    //    12  PshC8          q:0x0
+    //    15  CALLSYS        q:0x26e69d2b140         ; float64 Math::RandRange(float64, float64)
+    //    18  CpyRtoV8       wW0:20
+    //    19  PshV8          rW0:20
+    //    20  PSF            rW0:6
+    //    21  PSF            rW0:12
+    //    22  CALLSYS        q:0x26e69d00780         ; FVector FVector::opMul(float64) const
+    //    25  PSF            rW0:6
+    //    26  PSF            rW0:26
+    //    27  PshVPtr        rW0:-4
+    //    28  CALLSYS        q:0x26e69d00e80         ; FVector FVector::opAdd(const FVector&) const
+    //    31  PSF            rW0:26
+    //    32  PshVPtr        rW0:-2
+    //    33  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    36  RET            W0:6
+
+------------------------------------------------------------------------------
+void Cleanup()
+// 11 instr, 64 B bytecode, id=0xC22A12CA, varspace=3
+------------------------------------------------------------------------------
+{
+    if (this.AudioActor != null) {
+        this.AudioActor.DestroyActor();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:96 d:134230905       ; FActiveUAV::AudioActor  (+96)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->15
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:96 d:134230905       ; FActiveUAV::AudioActor  (+96)
+    //    11  RDSPtr
+    //    12  CALLSYS        q:0x26e79712fc0         ; void AActor::DestroyActor()   [UFunction K2_DestroyActor]
+    //    15  RET            W0:2
+
+==============================================================================
+UCLASS()
+class FUAVCharacterGrouping
+==============================================================================
+{
+    UPROPERTY() TArray<ALokiCharacter@> Characters;
+
+}
+
+------------------------------------------------------------------------------
+FUAVCharacterGrouping() const
+// 4 instr, 28 B bytecode, id=0xFF3C128B, varspace=0
+------------------------------------------------------------------------------
+{
+    this.Characters = TArray<ALokiCharacter@>();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230914        ; FUAVCharacterGrouping::Characters  (+0)
+    //     3  CALLSYS        q:0x26e6ee8bbc0         ; void TArray<ALokiCharacter@>::$beh0()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+~FUAVCharacterGrouping()
+// 4 instr, 28 B bytecode, id=0x2051028A, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:0 d:134230914        ; FUAVCharacterGrouping::Characters  (+0)
+    //     3  CALLSYS        q:0x26e771b7400         ; void TArray<ALokiCharacter@>::$beh2()
+    //     6  RET            W0:2
+

@@ -1,0 +1,9 @@
+RAW BIT PATTERNS -- is Acceleration a SIGNED ZERO whose sign tracks ControlInputVector?
+(IEEE-754 double: +0.0 = 0x0000000000000000 ; -0.0 = 0x8000000000000000)
+
+#   CIV sign bits (x,y)        Acc raw (x,y)              match?
+
+samples where Acc is EXACTLY +-0.0 AND its sign bits equal CIV's sign bits: 0/0
+samples with any NON-ZERO magnitude in Acceleration: 0
+
+NOT confirmed -- do not read the signed-zero argument.

@@ -1,0 +1,218 @@
+// ============================================================================
+//  MODULE   Barracuda.Shop.BarracudaShopItemWidget
+//  SOURCE   Barracuda/Shop/BarracudaShopItemWidget.as
+//  CONTENT  1 class(es), 9 function(s), 1 enum(s), 1 global(s), 1540 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+enum EBarracudaShopValueType
+{
+    TotalCost = 0,
+    RecipeCost = 1,
+    SellValue = 2,
+    IncrementalCost = 3,
+}
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaShopItemWidget;
+
+UBarracudaShopItemWidget@ UBarracudaShopItemWidget()   // traits=0x20
+{
+    UBarracudaShopItemWidget v2;
+
+    v2 = UBarracudaShopItemWidget();
+    return v2;
+}
+
+UClass@ UBarracudaShopItemWidget::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaShopItemWidget);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaShopItemWidget : UUserWidget
+// unreal base : /Script/UMG.UserWidget
+// C++ header  : ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+// static class global: __StaticType_UBarracudaShopItemWidget
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.ExposeOnSpawn)
+    EBarracudaShopValueType ValueType;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient, meta.ExposeOnSpawn)
+    ALokiBaseItem@ RepresentedItem;
+
+    UBarracudaShopItemWidget()   // traits=0x21
+    {
+        return;
+    }
+
+    void UpdateVisuals()   // traits=0x20
+    {
+        __Evt_Execute(this, n"UpdateVisuals");
+        return;
+    }
+
+    UFUNCTION(UnrealName=UpdateVisuals, BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+    void UpdateVisuals_Implementation()   // traits=0x20
+    {
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnMouseButtonDown, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    FEventReply OnMouseButtonDown_Implementation(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)   // traits=0x20
+    {
+        FEventReply v92;
+        UGameEventRouterComponent v96;
+        auto v97;
+        ALokiBaseItem v100;
+        auto v101;
+        TSubclassOf<ALokiBaseItem@> v104;
+        UClass v106;
+        FUIEvent_Barracuda_Shop_FocusItem v114;
+        ALokiBaseItem v116;
+        FUIEvent_Barracuda_Shop_BuyItem v124;
+        FUIEvent_Barracuda_Shop_SellItem v132;
+
+        v92 = FEventReply::Handled();
+        v96 = UGameEventRouterSubsystem::GetUIGameEventRouter(__WorldContext);
+        if (v96 == nullptr) {
+            v97 = true;
+        } else {
+            v100 = this.RepresentedItem;
+            v101 = v100 == nullptr;
+            v97 = v101;
+        }
+        if (v97) {
+            __ret = FEventReply(v92);
+            return;
+        } else {
+            v106 = this.RepresentedItem.GetClass();
+            v104 = TSubclassOf<ALokiBaseItem@>();
+            v104 = v106;
+            v101 = MouseEvent.IsMouseButtonDown(EKeys::RightMouseButton);
+            v101 = !v101;
+            if (v101) {
+                v114 = FUIEvent_Barracuda_Shop_FocusItem();
+                v114.Item = v104;
+                v96.BroadcastEvent(v114, typeid(FUIEvent_Barracuda_Shop_FocusItem), nullptr);
+                __ret = FEventReply(v92);
+                return;
+            } else {
+                v116 = this.RepresentedItem;
+                v100 = v104.GetDefaultObject();
+                if (v116 == v100) {
+                    v124 = FUIEvent_Barracuda_Shop_BuyItem();
+                    v124.ItemClass = v104;
+                    v96.BroadcastEvent(v124, typeid(FUIEvent_Barracuda_Shop_BuyItem), nullptr);
+                    __ret = FEventReply(v92);
+                    return;
+                } else {
+                    v132 = FUIEvent_Barracuda_Shop_SellItem();
+                    v132.Item = this.RepresentedItem;
+                    v96.BroadcastEvent(v132, typeid(FUIEvent_Barracuda_Shop_SellItem), nullptr);
+                    __ret = FEventReply(v92);
+                    return;
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetRepresentedItem(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        ALokiBaseItem v2;
+        ALokiBaseItem v4;
+
+        v2 = this.RepresentedItem;
+        v4 = Item;
+        if (v2 == v4) {
+            return;
+        } else {
+            this.RepresentedItem = Item;
+            this.UpdateVisuals();
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    int GetValue()   // traits=0x20
+    {
+        ABarracudaShop v4;
+        auto v5;
+        ALokiBaseItem v8;
+        auto v9;
+        int v10;
+        auto v11;
+        auto v12;
+        UClass v14;
+        TSubclassOf<ALokiBaseItem@> v16;
+
+        v4 = GetBarracudaShop();
+        if (v4 == nullptr) {
+            v5 = true;
+        } else {
+            v8 = this.RepresentedItem;
+            v9 = v8 == nullptr;
+            v5 = v9;
+        }
+        if (v5) {
+            v10 = 0;
+            return v10;
+        } else {
+            v11 = this.ValueType;
+            v10 = int(v11);
+            if (v10 <= 3) {
+                if (v10 >= 0) {
+                    v12 = v10 - 0;
+                    switch (v12)
+                    {
+                        case 0: goto L00D8;
+                        case 1: goto L012C;
+                        case 2: goto L0158;
+                        case 3: goto L01AC;
+                    }
+    L00D8:
+                    v14 = this.RepresentedItem.GetClass();
+                    v16 = TSubclassOf<ALokiBaseItem@>(v14);
+                    v12 = v4.GetItemTotalCost(v16);
+                    return v12;
+    L012C:
+                    v10 = this.RepresentedItem.GetGoldValue();
+                    return v10;
+    L0158:
+                    v14 = this.RepresentedItem.GetClass();
+                    v16 = TSubclassOf<ALokiBaseItem@>(v14);
+                    v10 = v4.GetItemSellValue(v16);
+                    return v10;
+    L01AC:
+                    v14 = this.RepresentedItem.GetClass();
+                    v16 = TSubclassOf<ALokiBaseItem@>(v14);
+                    v10 = v4.GetIncrementalCost(v16);
+                    return v10;
+                }
+            } else {
+                v12 = 0;
+            }
+        }
+        return v12;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = false;
+        this.ValueType = v1;
+        return;
+    }
+
+}
+

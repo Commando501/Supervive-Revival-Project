@@ -1,0 +1,368 @@
+==============================================================================
+MODULE   Core.Components.LokiMajorStatusEffectComponent
+SOURCE   Core/Components/LokiMajorStatusEffectComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiMajorStatusEffectComponent_AS;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiMajorStatusEffectComponent_AS@ ULokiMajorStatusEffectComponent_AS()
+// 4 instr, 28 B bytecode, id=0x35F8EDA9, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiMajorStatusEffectComponent_AS v2;
+
+    v2 = ULokiMajorStatusEffectComponent_AS();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84767 q:0x26e6ed72e00; new ULokiMajorStatusEffectComponent_AS   ctor=ULokiMajorStatusEffectComponent_AS::ULokiMajorStatusEffectComponent_AS
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x05835B86, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiMajorStatusEffectComponent_AS);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b1c58         ; __StaticType_ULokiMajorStatusEffectComponent_AS
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ULokiMajorStatusEffectComponent_AS@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x256ADAB2, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiMajorStatusEffectComponent_AS v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiMajorStatusEffectComponent_AS, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972673            ; ULokiMajorStatusEffectComponent_AS@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b1c58         ; __StaticType_ULokiMajorStatusEffectComponent_AS
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiMajorStatusEffectComponent_AS@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x9A7A5C41, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiMajorStatusEffectComponent_AS v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiMajorStatusEffectComponent_AS, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972673            ; ULokiMajorStatusEffectComponent_AS@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b1c58         ; __StaticType_ULokiMajorStatusEffectComponent_AS
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiMajorStatusEffectComponent_AS@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x8980187B, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiMajorStatusEffectComponent_AS v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiMajorStatusEffectComponent_AS, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972673            ; ULokiMajorStatusEffectComponent_AS@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b1c58         ; __StaticType_ULokiMajorStatusEffectComponent_AS
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class ULokiMajorStatusEffectComponent_AS : ULokiMajorStatusEffectComponent
+// base /Script/Loki.LokiMajorStatusEffectComponent  ->  ../../../Loki/Source/Loki/Character/LokiMajorStatusEffectComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) protected ALokiCharacter@ MyCharacter;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TMap<FGameplayTag, FActiveGameplayEffectHandle> EffectHandles;
+
+}
+
+------------------------------------------------------------------------------
+ULokiMajorStatusEffectComponent_AS() const
+// 6 instr, 44 B bytecode, id=0x5010B849, varspace=0
+------------------------------------------------------------------------------
+{
+    this.EffectHandles = TMap<FGameplayTag, FActiveGameplayEffectHandle>();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:232 d:134230849      ; ULokiMajorStatusEffectComponent_AS::EffectHandles  (+232)
+    //     3  CALLSYS        q:0x26e6ef291c0         ; void TMap<FGameplayTag, FActiveGameplayEffectHandle>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  FinConstruct   q:0x26e6ed72e00         ; ULokiMajorStatusEffectComponent_AS
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 17 instr, 100 B bytecode, id=0x1A361A71, varspace=4
+------------------------------------------------------------------------------
+{
+    AActor v2;
+    ALokiCharacter v4;
+
+    v2 = this.GetOwner();
+    if (v2 == null) {
+        v4 = null;
+    } else {
+        v4 = cast<ALokiCharacter>(v2);
+    }
+    this.MyCharacter = v4;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140856817            ; ALokiCharacter@
+    //    10  PSF            rW0:4
+    //    11  PshVPtr        rW0:2
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:4
+    //    18  PshVPtr        rW0:4
+    //    19  PshVPtr        rW0:0
+    //    20  ADDSi          W0:224 d:134230849      ; ULokiMajorStatusEffectComponent_AS::MyCharacter  (+224)
+    //    22  REFCPY
+    //    23  PopPtr
+    //    24  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetLongestRemainingEffectHandle(const FGameplayTag&inout Tag)
+// 72 instr, 472 B bytecode, id=0x615F73FE, varspace=44
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ULokiAbilitySystemComponent v4;
+    FGameplayTagContainer v14;
+    TArray<FActiveGameplayEffectHandle> v18;
+    TArrayConstIterator<FActiveGameplayEffectHandle> v28;
+    FActiveGameplayEffectHandle v36;
+    auto v40;
+    auto v42;
+    FActiveGameplayEffectHandle v44;
+
+    v1 = IsValid(this.MyCharacter);
+    v1 = !v1;
+    if (!v1) {
+        v4 = this.MyCharacter.GetLokiAbilitySystem_BP();
+        v1 = IsValid(v4);
+        v1 = !v1;
+        if (!v1) {
+            v14 = GameplayTag::MakeGameplayTagContainerFromTag(Tag);
+            v18 = v4.GetActiveEffectsWithAllOwningTags(v14);
+            v28 = v18.Iterator();
+            while (true) {
+                v1 = v28.CanProceed;
+                if (!v1) break;
+                v36 = v28.Proceed();
+                v40 = this.BP_EffectRemainingDuration(v36);
+                v42 = 0;
+                v44 = FActiveGameplayEffectHandle();
+                if (this.EffectHandles.Find(Tag, v44)) {
+                    v42 = this.BP_EffectRemainingDuration(v44);
+                }
+                if (v40 > v42) {
+                    this.EffectHandles.Add(Tag, v36);
+                }
+            }
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:224 d:134230849      ; ULokiMajorStatusEffectComponent_AS::MyCharacter  (+224)
+    //     3  RDSPtr
+    //     4  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //     7  CpyRtoV4       wW0:1
+    //     8  NOT            rW0:1
+    //     9  CpyVtoR1       rW0:1
+    //    10  JLowZ          ->14
+    //    12  JMP            ->117
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:224 d:134230849      ; ULokiMajorStatusEffectComponent_AS::MyCharacter  (+224)
+    //    17  RDSPtr
+    //    18  CALLSYS        q:0x26e7a188740         ; ULokiAbilitySystemComponent@ ALokiCharacter::GetLokiAbilitySystem_BP() const
+    //    21  STOREOBJ       wW0:4
+    //    22  PshVPtr        rW0:4
+    //    23  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    26  CpyRtoV4       wW0:1
+    //    27  NOT            rW0:1
+    //    28  CpyVtoR1       rW0:1
+    //    29  JLowZ          ->33
+    //    31  JMP            ->117
+    //    33  PshVPtr        rW0:-2
+    //    34  PSF            rW0:14
+    //    35  CALLSYS        q:0x26e7977ba00         ; FGameplayTagContainer GameplayTag::MakeGameplayTagContainerFromTag(FGameplayTag)
+    //    38  PSF            rW0:14
+    //    39  PSF            rW0:18
+    //    40  PshVPtr        rW0:4
+    //    41  CALLSYS        q:0x26e79e76980         ; TArray<FActiveGameplayEffectHandle> UAbilitySystemComponent::GetActiveEffectsWithAllOwningTags(FGameplayTagContainer) const
+    //    44  PSF            rW0:14
+    //    45  CALLSYS        q:0x26e78761ac0         ; void FGameplayTagContainer::$beh2()
+    //    48  PSF            rW0:28
+    //    49  PSF            rW0:18
+    //    50  CALLSYS        q:0x26e6ef29a80         ; TArrayConstIterator<FActiveGameplayEffectHandle> TArray<FActiveGameplayEffectHandle>::Iterator() const
+    //    53  JMP            ->106
+    //    55  SUSPEND
+    //    56  PSF            rW0:28
+    //    57  CALLSYS        q:0x26e6ef29700         ; const FActiveGameplayEffectHandle& TArrayConstIterator<FActiveGameplayEffectHandle>::Proceed()
+    //    60  CpyRtoV8       wW0:36
+    //    61  PshVPtr        rW0:36
+    //    62  PshVPtr        rW0:0
+    //    63  CALLINTF       d:84765                 ; float64 ULokiMajorStatusEffectComponent_AS::BP_EffectRemainingDuration(const FActiveGameplayEffectHandle&)
+    //    65  CpyRtoV8       wW0:40
+    //    66  SetV8          wW0:42 q:0x0
+    //    69  PSF            rW0:44
+    //    70  CALLSYS        q:0x26e78f7eb00         ; void FActiveGameplayEffectHandle::$beh0()
+    //    73  PSF            rW0:44
+    //    74  PshVPtr        rW0:-2
+    //    75  PshVPtr        rW0:0
+    //    76  ADDSi          W0:232 d:134230849      ; ULokiMajorStatusEffectComponent_AS::EffectHandles  (+232)
+    //    78  CALLSYS        q:0x26e6ef29540         ; bool TMap<FGameplayTag, FActiveGameplayEffectHandle>::Find(const FGameplayTag&, FActiveGameplayEffectHandle&) const
+    //    81  JLowZ          ->90
+    //    83  PSF            rW0:44
+    //    84  PshVPtr        rW0:0
+    //    85  CALLINTF       d:84765                 ; float64 ULokiMajorStatusEffectComponent_AS::BP_EffectRemainingDuration(const FActiveGameplayEffectHandle&)
+    //    87  CpyRtoV8       wW0:38
+    //    88  CpyVtoV8       wW0:42 rW1:38
+    //    90  CMPd           rW0:40 rW1:42
+    //    92  JNP            ->102
+    //    94  PshVPtr        rW0:36
+    //    95  PshVPtr        rW0:-2
+    //    96  PshVPtr        rW0:0
+    //    97  ADDSi          W0:232 d:134230849      ; ULokiMajorStatusEffectComponent_AS::EffectHandles  (+232)
+    //    99  CALLSYS        q:0x26e6ef29380         ; void TMap<FGameplayTag, FActiveGameplayEffectHandle>::Add(const FGameplayTag&, const FActiveGameplayEffectHandle&)
+    //   102  PSF            rW0:44
+    //   103  CALLSYS        q:0x26e78f7e940         ; void FActiveGameplayEffectHandle::$beh2()
+    //   106  LoadVObjR      rW0:28 W1:16 DW2:268448578; TArrayConstIterator::CanProceed  (+16)
+    //   109  RDR1           wW0:1
+    //   110  CpyVtoR1       rW0:1
+    //   111  JLowNZ         ->55
+    //   113  PSF            rW0:18
+    //   114  CALLSYS        q:0x26e79e76d00         ; void TArray<FActiveGameplayEffectHandle>::$beh2()
+    //   117  RET            W0:4
+
+------------------------------------------------------------------------------
+float64 BP_EffectRemainingDuration(const FActiveGameplayEffectHandle&inout ActiveEffectHandle)
+// 12 instr, 92 B bytecode, id=0x1F1969A9, varspace=5
+------------------------------------------------------------------------------
+{
+    float64 v2;
+
+    __Evt_PushArgument__FActiveGameplayEffectHandle(ActiveEffectHandle);
+    v2 = 0;
+    __Evt_PushArgumentRef__float(v2);
+    __Evt_Execute(this, __STATIC_NAME(166));
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e783aee80         ; void __Evt_PushArgument__FActiveGameplayEffectHandle(const FActiveGameplayEffectHandle&)
+    //     4  SetV8          wW0:2 q:0x0
+    //     7  PSF            rW0:2
+    //     8  CALLSYS        q:0x26e77fcd980         ; void __Evt_PushArgumentRef__float(const float64&)
+    //    11  PshC4          d:166
+    //    13  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    16  PshRPtr
+    //    17  PshVPtr        rW0:0
+    //    18  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    21  CpyVtoR8       rW0:2
+    //    22  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, meta=(DisplayName=Effect Remaining Duration))
+// UFunction name: BP_EffectRemainingDuration
+float64 BP_EffectRemainingDuration_Implementation(const FActiveGameplayEffectHandle&inout ActiveEffectHandle)
+// 3 instr, 20 B bytecode, id=0x24A76B85, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = 0;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x0
+    //     3  CpyVtoR8       rW0:2
+    //     4  RET            W0:4
+
+------------------------------------------------------------------------------
+~ULokiMajorStatusEffectComponent_AS()
+// 4 instr, 28 B bytecode, id=0xA3F90E36, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:232 d:134230849      ; ULokiMajorStatusEffectComponent_AS::EffectHandles  (+232)
+    //     3  CALLSYS        q:0x26e6edc5100         ; void TMap<FGameplayTag, FActiveGameplayEffectHandle>::$beh2()
+    //     6  RET            W0:2
+

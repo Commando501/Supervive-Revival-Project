@@ -1,0 +1,26 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[0v] module OK; installing AVEH
+[0v] AVEH installed handle=0x0 modBase=0x7FF6D71C0000; entering WaitTid budget=120s
+[0v] WaitTid ok gameTid=41552; skipping RM_X branches for kRunMode=0 (0=RM_FORCEOPEN)
+[0v] entering Resolve polling loop budget=120s
+[0v] Resolve iter=0 worldCtx=0x1D1071F7A20 kslCDO=0x1D108F9D050 eccThunk=0x7FF6DAB1D790 eccChild=0x1D148D87380 offCmd=0x8 offWCO=0x0 offSP=0x18
+[0v] Resolve loop exited after iter=1 totalMs=2703 (worldCtx=0x1D1071F7A20 eccThunk=0x7FF6DAB1D790 eccChild=0x1D148D87380 offCmd=0x8)
+[2] worldCtx=0x1D1071F7A20 kslCDO=0x1D108F9D050 eccThunk=0x7FF6DAB1D790(rva 0x395D790) child=0x1D148D87380 offWCO=0x0 offCmd=0x8 offSP=0x18 gameTid=41552 cmd='open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[3] hook built; issuing ExecuteConsoleCommand('open LVL_Tutorial') on the game thread...
+[VT] custom-login INSTALL: 5 vtables slot285, stockLogin=0x7FF6DA9A0C50 tramp=0x1D2780A28B0
+[PIM] PI hook mutex acquired (clean)
+[4v] PI bytes after wait: e9 7b ab ca fe  (installed[0]=0xE9 / kPiProlog[0]=0x48 / read_ok=1 / hitsAny=29)
+[4c] PI callers ring: total_hits=29 sampled=29 (unique callers below)
+    [0] count=29  SUPERVIVE.exe + 0x1225fd6  (raw 0x7ff6d83e5fd6)
+[PIM] PI hook mutex released
+[4] CALLED (called=1 hitsGT=1) — de-override held; sampling tutorial state across travel...
+[PREP] lokiCDO=0x1D2888D6280(vt rva 0x8A1AEE0) stockCDO=0x1D108F8CD00(vt rva 0x81A82F8) stockPCClass=0x1D17FCB4E80
+[DIFF] PS-cand slot 260 stockRva=0x36E1D40 lokiRva=0x569B110
+[DIFF] PS-cand slot 273 stockRva=0x36DEE20 lokiRva=0xF7EC20
+[DIFF] overrideCount=18 psCandidates=2 fixMode=2
+[FIX] targeted: de-overrode 2 PC vtable slot(s) -> stock InitPlayerState
+[LOGIN1] gm=BP_LokiGameMode_Tutorial_C PCClass=BP_LokiPlayerController_Dev_C pc=0x1D21C560010(BP_LokiPlayerController_Dev_C) PSClass=BP_LokiPlayerState_C PS(off=0x3C0)=0x1D305810010(BP_LokiPlayerState_C) err='(empty=approved)'
+[VT] custom-login restore: 5 vtables slot285, stockLogin=0x7FF6DA9A0C50 tramp=0x1D2780A28B0
+[5] done (vtable restored)
+[6] NearAlloc region freed at 00007FF6D71B0000 (vf=1)

@@ -1,0 +1,146 @@
+// ============================================================================
+//  MODULE   FFA.FFABotSpawner
+//  SOURCE   FFA/FFABotSpawner.as
+//  CONTENT  1 class(es), 9 function(s), 0 enum(s), 1 global(s), 1404 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UFFABotSpawnerComponent;
+
+UFFABotSpawnerComponent@ UFFABotSpawnerComponent()   // traits=0x20
+{
+    UFFABotSpawnerComponent v2;
+
+    v2 = UFFABotSpawnerComponent();
+    return v2;
+}
+
+UClass@ UFFABotSpawnerComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UFFABotSpawnerComponent);
+    return v2;
+}
+
+UFFABotSpawnerComponent@ UFFABotSpawnerComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UFFABotSpawnerComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UFFABotSpawnerComponent, v2, typeid(UFFABotSpawnerComponent@), WithName);
+    return v2;
+}
+
+UFFABotSpawnerComponent@ UFFABotSpawnerComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UFFABotSpawnerComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UFFABotSpawnerComponent, v2, typeid(UFFABotSpawnerComponent@), WithName);
+    return v2;
+}
+
+UFFABotSpawnerComponent@ UFFABotSpawnerComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UFFABotSpawnerComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UFFABotSpawnerComponent, v2, typeid(UFFABotSpawnerComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UFFABotSpawnerComponent : ULokiBotSpawnerComponent
+// unreal base : /Script/Loki.LokiBotSpawnerComponent
+// C++ header  : ../../../Loki/Source/Loki/AI/Bots/LokiBotSpawnerComponent.h
+// static class global: __StaticType_UFFABotSpawnerComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<FPrimaryAssetId> AvailableBots;
+
+    UFFABotSpawnerComponent()   // traits=0x21
+    {
+        this.AvailableBots = TArray<FPrimaryAssetId>();
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        FPrimaryAssetId v4;
+        TArray<TSubclassOf<ALokiHeroCharacter@>> v8;
+        TArrayIterator<FPrimaryAssetId> v14;
+        auto v21;
+        FPrimaryAssetId v24;
+        ELokiAssetLookupExecPins v25;
+        auto v26;
+        ULokiHeroAsset v30;
+        int v31;
+        TSubclassOf<ALokiHeroCharacter@> v34;
+        UClass v36;
+
+        v4 = FPrimaryAssetId("Hero:assault");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:firefox");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:freeze");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:sniper");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:flex");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:hookguy");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:rocketjumper");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:Storm");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:BurstCaster");
+        this.AvailableBots.Add(v4);
+        v4 = FPrimaryAssetId("Hero:BountyHunter");
+        this.AvailableBots.Add(v4);
+        v8 = TArray<TSubclassOf<ALokiHeroCharacter@>>();
+        v14 = this.AvailableBots.Iterator();
+        while (true) {
+            v21 = v14.CanProceed;
+            if (!v21) break;
+            v24 = v14.Proceed();
+            v26 = true;
+            v25 = v26;
+            v30 = ULokiAssetLoader::GetHeroAssetFromPrimaryAssetId(__WorldContext, v24, v25);
+            v31 = int(v25);
+            if (v31 != ELokiAssetLookupExecPins::LookupFailed) {
+                v36 = System::LoadClassAsset_Blocking(v30.GameplayBlueprint);
+                v34 = TSubclassOf<ALokiHeroCharacter@>();
+                v34 = v36;
+                if (v34.IsValid()) {
+                    v8.Add(v34);
+                }
+            }
+        }
+        this.SetSpawnableBots(v8);
+        return;
+    }
+
+    UFUNCTION(UnrealName=GetNextTeamIndex, BlueprintOverride, BlueprintEvent, CanOverrideEvent, ConstMethod)
+    int GetNextTeamIndex_Implementation() const   // traits=0x24
+    {
+        auto v1;
+        auto v2;
+
+        v1 = this.SpawnedTeamCount;
+        v2 = v1 + 4;
+        return v2;
+    }
+
+    void ~UFFABotSpawnerComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

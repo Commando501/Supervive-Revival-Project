@@ -1,0 +1,375 @@
+==============================================================================
+MODULE   UAV.UAVMapActor
+SOURCE   UAV/UAVMapActor.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_AUAVMapActor;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+AUAVMapActor@ AUAVMapActor()
+// 4 instr, 28 B bytecode, id=0x15B80421, varspace=2
+------------------------------------------------------------------------------
+{
+    AUAVMapActor v2;
+
+    v2 = AUAVMapActor();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85421 q:0x26e6ed77000; new AUAVMapActor   ctor=AUAVMapActor::AUAVMapActor
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x2AA926B0, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_AUAVMapActor);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e7b043758         ; __StaticType_AUAVMapActor
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+AUAVMapActor@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0xB84CECE2, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    AUAVMapActor v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_AUAVMapActor.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<AUAVMapActor>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e7b043758         ; __StaticType_AUAVMapActor
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972746            ; AUAVMapActor@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS(Abstract, meta=(IsBlueprintBase=true, Blueprintable=true))
+class AUAVMapActor : AActor
+// base /Script/Engine.Actor  ->  ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) int MyItemID;
+
+}
+
+------------------------------------------------------------------------------
+AUAVMapActor() const
+// 3 instr, 20 B bytecode, id=0x7B18AD5D, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  FinConstruct   q:0x26e6ed77000         ; AUAVMapActor
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+void ClientUpdateIcon(const FLokiFuzzyPlayerLocationItem&inout Item)
+// 8 instr, 60 B bytecode, id=0x893C76CA, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__FLokiFuzzyPlayerLocationItem(Item);
+    __Evt_Execute(this, __STATIC_NAME(204));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e78502c40         ; void __Evt_PushArgument__FLokiFuzzyPlayerLocationItem(const FLokiFuzzyPlayerLocationItem&)
+    //     4  PshC4          d:204
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: ClientUpdateIcon
+void ClientUpdateIcon_Implementation(const FLokiFuzzyPlayerLocationItem&inout Item)
+// 1 instr, 4 B bytecode, id=0x2669451F, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void Init(const FLokiFuzzyPlayerLocationItem&inout Item)
+// 65 instr, 460 B bytecode, id=0x790F92C2, varspace=74
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    auto v3;
+    UGameEventRouterComponent v6;
+    FGameEvent_FuzzyPlayerLocation_Update v34;
+    auto v35;
+    FGameEventListenerHandle v48;
+    FGameEvent_FuzzyPlayerLocation_Remove v74;
+
+    v2 = true;
+    v1 = true;
+    v3 = Item.ID;
+    this.MyItemID = v3;
+    v3 = Item.ID;
+    if (v3 < 0) {
+        v2 = false;
+        v1 = false;
+    }
+    v6 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+    if (v6 == null) {
+        v2 = false;
+        v1 = false;
+    } else {
+        v35 = false;
+        v34 = FGameEvent_FuzzyPlayerLocation_Update();
+        v48 = v6.RegisterForEvent(this, v34, null, __STATIC_NAME(90), false);
+        v35 = false;
+        v74 = FGameEvent_FuzzyPlayerLocation_Remove();
+        v48 = v6.RegisterForEvent(this, v74, null, __STATIC_NAME(91), false);
+    }
+    if (!v1) {
+        this.DestroyActor();
+    } else {
+        this.ClientUpdateIcon(Item);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:2 d:1
+    //     2  CpyVtoV4       wW0:1 rW1:2
+    //     4  LoadRObjR      rW0:-2 W1:12 DW2:67120891; FLokiFuzzyPlayerLocationItem::ID  (+12)
+    //     7  RDR4           wW0:3
+    //     8  LoadThisR      W0:912 d:134230922      ; AUAVMapActor::MyItemID  (+912)
+    //    10  WRTV4          rW0:3
+    //    11  LoadRObjR      rW0:-2 W1:12 DW2:67120891; FLokiFuzzyPlayerLocationItem::ID  (+12)
+    //    14  RDR4           wW0:3
+    //    15  CMPIi          rW0:3 d:0
+    //    17  JNS            ->23
+    //    19  SetV1          wW0:2 d:0
+    //    21  CpyVtoV4       wW0:1 rW1:2
+    //    23  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    26  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //    29  STOREOBJ       wW0:6
+    //    30  CmpPtrNull     rW0:6
+    //    31  JZ             ->97
+    //    33  SetV1          wW0:35 d:0
+    //    35  PshV4          rW0:35
+    //    36  PshC4          d:90
+    //    38  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    41  PshRPtr
+    //    42  PshNull
+    //    43  TYPEID         d:67120893              ; FGameEvent_FuzzyPlayerLocation_Update
+    //    45  PSF            rW0:34
+    //    46  CALLSYS        q:0x26e79398200         ; void FGameEvent_FuzzyPlayerLocation_Update::$beh0()
+    //    49  PSF            rW0:34
+    //    50  PshVPtr        rW0:0
+    //    51  PSF            rW0:48
+    //    52  PshVPtr        rW0:6
+    //    53  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    56  PSF            rW0:34
+    //    57  CALLSYS        q:0x26e79398040         ; void FGameEvent_FuzzyPlayerLocation_Update::$beh2()
+    //    60  PSF            rW0:48
+    //    61  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    64  SetV1          wW0:35 d:0
+    //    66  PshV4          rW0:35
+    //    67  PshC4          d:91
+    //    69  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    72  PshRPtr
+    //    73  PshNull
+    //    74  TYPEID         d:67120894              ; FGameEvent_FuzzyPlayerLocation_Remove
+    //    76  PSF            rW0:74
+    //    77  CALLSYS        q:0x26e79397b00         ; void FGameEvent_FuzzyPlayerLocation_Remove::$beh0()
+    //    80  PSF            rW0:74
+    //    81  PshVPtr        rW0:0
+    //    82  PSF            rW0:48
+    //    83  PshVPtr        rW0:6
+    //    84  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    87  PSF            rW0:74
+    //    88  CALLSYS        q:0x26e79397940         ; void FGameEvent_FuzzyPlayerLocation_Remove::$beh2()
+    //    91  PSF            rW0:48
+    //    92  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    95  JMP            ->101
+    //    97  SetV1          wW0:2 d:0
+    //    99  CpyVtoV4       wW0:1 rW1:2
+    //   101  CpyVtoR1       rW0:1
+    //   102  JLowZ          ->110
+    //   104  PshVPtr        rW0:-2
+    //   105  PshVPtr        rW0:0
+    //   106  CALLINTF       d:85416                 ; void AUAVMapActor::ClientUpdateIcon(const FLokiFuzzyPlayerLocationItem&)
+    //   108  JMP            ->114
+    //   110  PshVPtr        rW0:0
+    //   111  CALLSYS        q:0x26e79712fc0         ; void AActor::DestroyActor()   [UFunction K2_DestroyActor]
+    //   114  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnUpdate(const FGameEvent_FuzzyPlayerLocation_Update&inout Event, const AActor@&inout Context)
+// 23 instr, 160 B bytecode, id=0xFC347A33, varspace=27
+------------------------------------------------------------------------------
+{
+    FLokiFuzzyPlayerLocationItem v24;
+    auto v25;
+
+    v24 = FLokiFuzzyPlayerLocationItem(Event.PlayerLocationItem);
+    v25 = v24.ID;
+    if (v25 == this.MyItemID) {
+        this.SetActorLocation(v24.Location);
+        this.ClientUpdateIcon(v24);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:8 d:67120893         ; FGameEvent_FuzzyPlayerLocation_Update::PlayerLocationItem  (+8)
+    //     3  PSF            rW0:24
+    //     4  CALLSYS        q:0x26e79399000         ; void FLokiFuzzyPlayerLocationItem::$beh0(const FLokiFuzzyPlayerLocationItem&)
+    //     7  LoadVObjR      rW0:24 W1:12 DW2:67120891; FLokiFuzzyPlayerLocationItem::ID  (+12)
+    //    10  RDR4           wW0:25
+    //    11  LoadThisR      W0:912 d:134230922      ; AUAVMapActor::MyItemID  (+912)
+    //    13  RDR4           wW0:26
+    //    14  CMPi           rW0:25 rW1:26
+    //    16  JZ             ->24
+    //    18  PSF            rW0:24
+    //    19  CALLSYS        q:0x26e793991c0         ; void FLokiFuzzyPlayerLocationItem::$beh2()
+    //    22  JMP            ->39
+    //    24  PSF            rW0:24
+    //    25  ADDSi          W0:24 d:67120891        ; FLokiFuzzyPlayerLocationItem::Location  (+24)
+    //    27  PshVPtr        rW0:0
+    //    28  CALLSYS        q:0x26e79f5fc80         ; void AActor::SetActorLocation(const FVector&)   [UFunction K2_SetActorLocation]
+    //    31  PSF            rW0:24
+    //    32  PshVPtr        rW0:0
+    //    33  CALLINTF       d:85416                 ; void AUAVMapActor::ClientUpdateIcon(const FLokiFuzzyPlayerLocationItem&)
+    //    35  PSF            rW0:24
+    //    36  CALLSYS        q:0x26e793991c0         ; void FLokiFuzzyPlayerLocationItem::$beh2()
+    //    39  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnRemove(const FGameEvent_FuzzyPlayerLocation_Remove&inout Event, const AActor@&inout Context)
+// 18 instr, 132 B bytecode, id=0xA2643D3C, varspace=27
+------------------------------------------------------------------------------
+{
+    FLokiFuzzyPlayerLocationItem v24;
+    auto v25;
+
+    v24 = FLokiFuzzyPlayerLocationItem(Event.PlayerLocationItem);
+    v25 = v24.ID;
+    if (v25 == this.MyItemID) {
+        this.DestroyActor();
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:8 d:67120894         ; FGameEvent_FuzzyPlayerLocation_Remove::PlayerLocationItem  (+8)
+    //     3  PSF            rW0:24
+    //     4  CALLSYS        q:0x26e79399000         ; void FLokiFuzzyPlayerLocationItem::$beh0(const FLokiFuzzyPlayerLocationItem&)
+    //     7  LoadVObjR      rW0:24 W1:12 DW2:67120891; FLokiFuzzyPlayerLocationItem::ID  (+12)
+    //    10  RDR4           wW0:25
+    //    11  LoadThisR      W0:912 d:134230922      ; AUAVMapActor::MyItemID  (+912)
+    //    13  RDR4           wW0:26
+    //    14  CMPi           rW0:25 rW1:26
+    //    16  JZ             ->24
+    //    18  PSF            rW0:24
+    //    19  CALLSYS        q:0x26e793991c0         ; void FLokiFuzzyPlayerLocationItem::$beh2()
+    //    22  JMP            ->32
+    //    24  PshVPtr        rW0:0
+    //    25  CALLSYS        q:0x26e79712fc0         ; void AActor::DestroyActor()   [UFunction K2_DestroyActor]
+    //    28  PSF            rW0:24
+    //    29  CALLSYS        q:0x26e793991c0         ; void FLokiFuzzyPlayerLocationItem::$beh2()
+    //    32  RET            W0:6
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 10 instr, 68 B bytecode, id=0x1E3B4A1A, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.SetbReplicates(false);
+    v1 = false;
+    this.PrimaryActorTick.SetbStartWithTickEnabled(false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a6291c0         ; void AActor::SetbReplicates(bool)
+    //     7  SetV1          wW0:1 d:0
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:56 d:67111343        ; AActor::PrimaryActorTick  (+56)
+    //    13  CALLSYS        q:0x26e788b4680         ; void FActorTickFunction::SetbStartWithTickEnabled(bool)
+    //    16  RET            W0:2
+

@@ -1,0 +1,23 @@
+714:[2026.07.01-07.51.26:750][  0]LogLokiStub: Display: InjectServerVerifyViewTarget: found UFunction on APlayerController (NumParms=0, ParmsSize=0, FunctionFlags=0x80220CC2)
+715:[2026.07.01-07.51.26:750][  0]LogLokiStub: Display: InjectServerVerifyViewTarget: added FVector+FRotator+FString params. New NumParms=2, ParmsSize=24
+1164:[2026.07.01-07.52.04:581][138]LogLokiActorChannel: Verbose: ReceivedBunch: ChIndex=3 ChSeq=1015 bReliable=1 bOpen=0 bClose=0 NumBits=2339 StartPos=0 remaining=2339 bits
+1175:[2026.07.01-07.52.04:836][138]LogOutputDevice: Error: FBitReader::SetOverflowed() called! (ReadLen: 2952, Remaining: 2248, Max: 2298)
+1213:[2026.07.01-07.52.05:844][138]LogRep: Error: ReceivedRPC: ReceivePropertiesForRPC - Reader.IsError() == true: Function: ServerVerifyViewTarget, Object: PlayerController /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0
+1217:[2026.07.01-07.52.05:847][138]LogNet:  - Result=ObjectReplicatorReceivedBunchFail, ErrorContext="ObjectReplicatorReceivedBunchFail"
+1247:[2026.07.01-07.52.05:854][138]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from ReceivedJoin to CleanedUp
+
+=== SESSION 30 BREAKTHROUGH ===
+
+Trial: (AActor* NewViewTarget, FString ClientMapName)
+Engine diagnostic (BitReader.cpp line 276):
+  FBitReader::SetOverflowed() called!
+  ReadLen: 2952, Remaining: 2248, Max: 2298
+
+Decoded:
+- Max: 2298 = sub-reader capacity (matches session-25 decode)
+- AActor* NetGUID consumed exactly 50 bits (2298 - 2248 = 50)
+- FString read at bit 50 attempted 2952 more bits (count was ~369)
+
+This is the FIRST precise engine-side bit-consumption confirmation.
+Session 31 can iterate: try (AActor*, X, FString) where X consumes 941
+bits (991 - 50 = 941), leading to FString at bit 991.

@@ -1,0 +1,168 @@
+﻿drop_ride_readout  PID=33364 BASE=0x7FF6B5A70000  2026-09-01 14:52:38
+waiting for a flying pod (BP_DropPod*) to appear (stage droppod-pe-cdopoke first)...
+
+pod candidates:
+  0x2648C2346F0  BP_DropPod_Tutorial_C  loc=?
+  0x2648C237630  BP_DropPod_Child_C  loc=?
+  0x2648C237A20  BP_DropPod_C  loc=?
+  0x263D57D85F0  BP_DropPodLaser_C  loc=?
+  0x26408D3D850  BP_DropPod_Tutorial_C  loc=(844054.5,5070.5,20100.0)
+hero candidates:
+  0x26494B68020  BP_HERO_Ronin_C  loc=(0.0,0.0,13240.0)
+  0x264F63EF820  BP_HERO_Reaper_C  loc=?
+  0x26488DD2380  BP_HERO_Ronin_C  loc=?
+  0x264FCF085F0  BP_HERO_Void_C  loc=?
+  0x264FDCFDC90  BP_HERO_BountyHunter_C  loc=?
+  0x26300314ED0  BP_HERO_BurstCaster_C  loc=?
+  0x26488DD7240  BP_HERO_Storm_LightningGunProjectile_C  loc=?
+  0x2648B6AE080  BP_HERO_Flex_C  loc=?
+  0x264878FC000  BP_HERO_Flex_Blaster_Cartwheel_AutoGenFunc  loc=?
+  0x264878F9900  BP_HERO_Flex_Blaster_Cartwheel_AutoGenFunc  loc=?
+  0x264C0706E50  BP_HERO_Sniper_C  loc=?
+  0x264C0709D90  BP_HERO_Sniper_SniperShot_ProjectileV2_C  loc=?
+  0x265095A3340  BP_HERO_Freeze_C  loc=?
+  0x26486F6AD50  BP_HERO_FireFox_C  loc=?
+  0x263D5B86A60  BP_HERO_HookGuy_Shotgun_CloseRange_ProjectileV2_CenterShot_C  loc=?
+  0x263D5B87E10  BP_HERO_HookGuy_Shotgun_CloseRange_ProjectileV2_C  loc=?
+  0x264724A3730  BP_HERO_RocketJumper_C  loc=?
+  0x2648E01B530  BP_HERO_Assault_C  loc=?
+  0x264809BE470  BP_HERO_Assault_AssaultRifle_Projectile_V2_C  loc=?
+
+⚠ MULTIPLE BP_HERO_ candidates -- using the first (0x26494B68020). If the ride reads wrong, re-run with --hero from the arm's [RD] hero marker (bots are BP_HERO_ too).
+
+using  pod=0x2648C2346F0  hero=0x26494B68020  rideable=0x0 (⚠ +0x6C8 is not a Rideable -- R1 unavailable; PlayersAttached.Num will read '?')
+CurrPodDestination = (0.0,0.0,0.0)
+
+time      HSG  state       pod loc                  hero loc                 |h-pod|xy pod vel
++0.0s     192  0:None      ?                        (0,0,13240)              ?         ?
++0.5s     192  0:None      ?                        (0,0,13240)              ?         ?
++1.0s     192  0:None      ?                        (0,0,13240)              ?         ?
++1.5s     192  0:None      ?                        (0,0,13240)              ?         ?
++2.0s     192  0:None      ?                        (0,0,13240)              ?         ?
++2.5s     192  0:None      ?                        (0,0,13240)              ?         ?
++3.0s     192  0:None      ?                        (0,0,13240)              ?         ?
++3.5s     192  0:None      ?                        (0,0,13240)              ?         ?
++4.0s     192  0:None      ?                        (0,0,13240)              ?         ?
++4.5s     192  0:None      ?                        (0,0,13240)              ?         ?
++5.0s     192  0:None      ?                        (0,0,13240)              ?         ?
++5.5s     192  0:None      ?                        (0,0,13240)              ?         ?
++6.0s     192  0:None      ?                        (0,0,13240)              ?         ?
++6.5s     192  0:None      ?                        (0,0,13240)              ?         ?
++7.0s     192  0:None      ?                        (0,0,13240)              ?         ?
++7.5s     192  0:None      ?                        (0,0,13240)              ?         ?
++8.0s     192  0:None      ?                        (0,0,13240)              ?         ?
++8.5s     192  0:None      ?                        (0,0,13240)              ?         ?
++9.0s     192  0:None      ?                        (0,0,13240)              ?         ?
++9.5s     192  0:None      ?                        (0,0,13240)              ?         ?
++10.0s    192  0:None      ?                        (0,0,13240)              ?         ?
++10.5s    192  0:None      ?                        (0,0,13240)              ?         ?
++11.0s    192  0:None      ?                        (0,0,13240)              ?         ?
++11.5s    192  0:None      ?                        (0,0,13240)              ?         ?
++12.0s    192  0:None      ?                        (0,0,13240)              ?         ?
++12.5s    192  0:None      ?                        (0,0,13240)              ?         ?
++13.0s    192  0:None      ?                        (0,0,13240)              ?         ?
++13.5s    192  0:None      ?                        (0,0,13240)              ?         ?
++14.0s    192  0:None      ?                        (0,0,13240)              ?         ?
++14.5s    192  0:None      ?                        (0,0,13240)              ?         ?
++15.0s    192  0:None      ?                        (0,0,13240)              ?         ?
++15.5s    192  0:None      ?                        (0,0,13240)              ?         ?
++16.0s    192  0:None      ?                        (0,0,13240)              ?         ?
++16.5s    192  0:None      ?                        (0,0,13240)              ?         ?
++17.0s    192  0:None      ?                        (0,0,13240)              ?         ?
++17.5s    192  0:None      ?                        (0,0,13240)              ?         ?
++18.0s    192  0:None      ?                        (0,0,13240)              ?         ?
++18.5s    192  0:None      ?                        (1138420,5070,20220)     ?         ?
++19.0s    192  0:None      ?                        (1148173,5070,20220)     ?         ?
++19.5s    192  0:None      ?                        (1158431,5070,20220)     ?         ?
++20.0s    192  0:None      ?                        (1168407,5070,20220)     ?         ?
++20.5s    192  0:None      ?                        (1178491,5070,20220)     ?         ?
++21.0s    192  0:None      ?                        (1188495,5070,20220)     ?         ?
++21.5s    192  0:None      ?                        (1198498,5070,20220)     ?         ?
++22.0s    192  0:None      ?                        (1208505,5070,20220)     ?         ?
++22.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++23.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++23.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++24.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++24.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++25.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++25.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++26.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++26.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++27.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++27.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++28.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++28.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++29.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++29.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++30.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++30.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++31.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++31.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++32.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++32.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++33.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++33.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++34.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++34.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++35.0s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++35.5s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++36.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++36.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++37.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++37.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++38.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++38.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++39.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++39.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++40.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++40.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++41.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++41.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++42.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++42.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++43.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++43.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++44.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++44.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++45.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++45.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++46.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++46.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++47.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++47.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++48.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++48.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++49.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++49.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++50.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++50.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++51.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++51.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++52.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++52.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++53.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++53.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++54.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++54.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++55.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++55.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++56.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++56.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++57.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++57.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++58.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++58.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++59.1s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
++59.6s    192  0:None      ?                        (1208975,5070,20220)     ?         ?
+
+====================================================================================================
+VERDICT   (from the 120 observed samples above)
+====================================================================================================
+  R1 PlayersAttached.Num                 : UNAVAILABLE (rideable not resolved)
+  PB bHasStartedGameplay reached 1       : no
+  pod horizontal displacement over window: 0 uu
+  hero horizontal displacement           : 0 uu
+  max |hero-pod| horizontal              : 0 uu
+
+  R3 RIDE (the decisive receipt):
+    -- POD DID NOT FLY (moved 0 uu). Can't judge the ride. Check state/HSG above: if StartPodGameplay ran, the mover is deactivated and descent is timer-deferred ~6.5s.

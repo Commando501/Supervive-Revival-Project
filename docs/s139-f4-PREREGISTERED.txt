@@ -1,0 +1,59 @@
+S139 FLIGHT 4 -- PRE-REGISTRATION. Written BEFORE staging completes. DO NOT EDIT AFTER.
+
+ARM: tools/sigbypass-mod/build/tutorial_launch_gasattr.dll   RAW 2fcc2536e21f18e3
+CONTROL BUILD (not flown unless the treatment is null): gasattr-ctrl RAW 4465ebc4d7168c03  (DISTINCT)
+REGRESSION GATE: botai RAW 5e47c13cf7f0a158 -- UNCHANGED by every edit in this session.
+
+WHAT IT DOES
+  ARM D (make an ALokiBotController + hero pawn) -> ARM F (poke LivingState, call
+  UpdateCharacterControllable, open the gate) -> ** ARM G ** (new):
+  borrow Default__LokiPlayerState_HeroAffiliated's DEFAULT SUBOBJECTS into the BOT pawn's
+  AbilitySystemComponentStorage/AttributeSetStorage/AttributeSetHealthStorage (+0xF00/+0xF08/+0xF10)
+  and write the WHOLE movement attribute block into the borrowed AttributeSet:
+  MoveSpeed 500, MaxMoveSpeed 500, MaxAcceleration 50000, GroundFriction 8,
+  BrakingDecelerationWalking 2048, Mass 100 -- each at FGameplayAttributeData +0x8 AND +0xC.
+  This is ds_hybrid.cpp:2370-2430, which docs/coverage-audit-s101.md:283 records as LIVE-PROVEN on
+  the DS route (GetMaxSpeed 0->500, GetMaxAcceleration 0->50000, hero translated via the stock chain)
+  and which was never ported. Risk class DATA. No module-image write, no PI hook, no SpawnActor.
+  DO NOT SPAWN the carrier (S80: instant client crash) -- the CDO's subobjects are used.
+
+WHY IT SHOULD WORK, IN ONE LINE
+  S139 flight 3 measured Acceleration = input * GetMaxAcceleration() == 0 via a SIGNED ZERO
+  (Acceleration carried ControlInputVector's sign 22/22). The getter is GAS-backed; +0xF08 is NULL.
+
+PREDICTIONS
+P1  ARM G reports storages 3/3 and attributes 6/6, all readback-verified.
+    REFUTED BY: anything less. ds_hybrid.cpp records that a PARTIAL port is insufficient, so a
+    partial write makes every downstream null UNINTERPRETABLE, not a refutation. I will say so.
+P2  ** THE HEADLINE READ ** The BOT's Acceleration (CMC+0x328) becomes NON-ZERO and COLLINEAR with
+    its ControlInputVector (+0x418), instead of the signed zero flight 3 measured.
+    REFUTED BY: still a signed zero => GetMaxAcceleration is NOT sourced from the attribute set we
+    wrote, or it reads a different set. That would refute the recipe ON THIS ROUTE and is a real
+    result, not a failure.
+P3  SPECIFICITY: the PLAYER hero is deliberately UNTREATED. Its Acceleration must STAY a signed
+    zero for the whole window.
+    REFUTED BY: the player's Acceleration also becoming non-zero => the change is not specific to
+    what ARM G wrote, and P2 is uninterpretable.
+P4  ** THE RESIDUAL, AND I AM NOT ASSUMING IT ** The StartNewPhysics latch (CMC+0x16C8) on the bot:
+      goes 0 -> 1  => the physics step now runs => the input wall and the physics-step wall were
+                      ONE problem, and the pawn should also start moving/falling.
+      stays 0      => they are TWO problems. Acceleration is fixed and the pawn still does not move.
+    I have NOT predicted which. Flight 2 measured latch 0 on all 37 components in the world, and a
+    zero Acceleration cannot explain absent GRAVITY, so both outcomes are live.
+P5  Position: if the latch flips, the bot should MOVE (it is MOVE_Falling at Z=13240 with
+    GravityScale 1.0 and nothing beneath it -- expect it to FALL, fast, not to walk).
+    A bot that gains velocity but no position, or position but no velocity, is a NEW finding.
+
+WHAT I WILL NOT CLAIM
+  * That a non-zero Acceleration means "the bot moves". Acceleration is upstream of displacement.
+  * That the player staying still is evidence of anything if ARM G reported an incomplete write.
+  * Anything from +0x12B0: it is accumulated UPSTREAM of the engine Super (retracted this session)
+    and says nothing about how far the engine impl gets.
+  * A per-frame rate from +0x16C8 (sticky latch, never cleared).
+
+HONEST ALTERNATIVE
+  GetMaxAcceleration may read the attribute through a path that caches, or may read
+  AttributeSetHealth / a different set than the one the CDO exposes as "AttributeSet". Then P2 is
+  null with a complete write, and the next step is to transcribe the getter (ULokiCMC::
+  GetMaxAcceleration 0x055AC910 -> ALokiCharacter vtable slot 384 / disp 0xC00 -> 0x055AC9F0)
+  rather than to try more values.

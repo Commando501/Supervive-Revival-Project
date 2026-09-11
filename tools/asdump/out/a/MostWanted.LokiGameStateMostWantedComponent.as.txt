@@ -1,0 +1,323 @@
+==============================================================================
+MODULE   MostWanted.LokiGameStateMostWantedComponent
+SOURCE   MostWanted/LokiGameStateMostWantedComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiGameStateMostWantedComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiGameStateMostWantedComponent@ ULokiGameStateMostWantedComponent()
+// 4 instr, 28 B bytecode, id=0x148CF6DA, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiGameStateMostWantedComponent v2;
+
+    v2 = ULokiGameStateMostWantedComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85238 q:0x26e6ed78e00; new ULokiGameStateMostWantedComponent   ctor=ULokiGameStateMostWantedComponent::ULokiGameStateMostWantedComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xFAF6D7DB, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiGameStateMostWantedComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057c758         ; __StaticType_ULokiGameStateMostWantedComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ULokiGameStateMostWantedComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x2D1338D5, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiGameStateMostWantedComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiGameStateMostWantedComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972721            ; ULokiGameStateMostWantedComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057c758         ; __StaticType_ULokiGameStateMostWantedComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiGameStateMostWantedComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x37B71DE4, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiGameStateMostWantedComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiGameStateMostWantedComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972721            ; ULokiGameStateMostWantedComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057c758         ; __StaticType_ULokiGameStateMostWantedComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiGameStateMostWantedComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x98582A77, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiGameStateMostWantedComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiGameStateMostWantedComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972721            ; ULokiGameStateMostWantedComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057c758         ; __StaticType_ULokiGameStateMostWantedComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class ULokiGameStateMostWantedComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, RepCond=0) int MostWantedCount;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, RepCond=0) int ActiveMostWantedCount;
+
+}
+
+------------------------------------------------------------------------------
+ULokiGameStateMostWantedComponent() const
+// 9 instr, 60 B bytecode, id=0xBFDA2EE2, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = 0;
+    this.MostWantedCount = 0;
+    v1 = 0;
+    this.ActiveMostWantedCount = 0;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV4          wW0:1 d:0
+    //     2  LoadThisR      W0:208 d:134230897      ; ULokiGameStateMostWantedComponent::MostWantedCount  (+208)
+    //     4  WRTV4          rW0:1
+    //     5  SetV4          wW0:1 d:0
+    //     7  LoadThisR      W0:212 d:134230897      ; ULokiGameStateMostWantedComponent::ActiveMostWantedCount  (+212)
+    //     9  WRTV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  FinConstruct   q:0x26e6ed78e00         ; ULokiGameStateMostWantedComponent
+    //    14  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 26 instr, 192 B bytecode, id=0x3072F6AF, varspace=38
+------------------------------------------------------------------------------
+{
+    UGameEventRouterComponent v4;
+    FGameEvent_MostWanted v24;
+    FGameEventListenerHandle v38;
+
+    if (Loki::LokiIsServer(__WorldContext)) {
+        v4 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        v24 = FGameEvent_MostWanted();
+        v38 = v4.RegisterForEvent(this, v24, null, __STATIC_NAME(85), false);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->47
+    //     8  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    11  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //    14  STOREOBJ       wW0:4
+    //    15  SetV1          wW0:25 d:0
+    //    17  PshV4          rW0:25
+    //    18  PshC4          d:85
+    //    20  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    23  PshRPtr
+    //    24  PshNull
+    //    25  TYPEID         d:67120904              ; FGameEvent_MostWanted
+    //    27  PSF            rW0:24
+    //    28  CALLSYS        q:0x26e7939f200         ; void FGameEvent_MostWanted::$beh0()
+    //    31  PSF            rW0:24
+    //    32  PshVPtr        rW0:0
+    //    33  PSF            rW0:38
+    //    34  PshVPtr        rW0:4
+    //    35  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    38  PSF            rW0:24
+    //    39  CALLSYS        q:0x26e7939f040         ; void FGameEvent_MostWanted::$beh2()
+    //    42  PSF            rW0:38
+    //    43  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    46  FreeNullV8     wW0:4
+    //    47  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void HandleMostWantedEvent(const FGameEvent_MostWanted&inout Event, const AActor@&inout Context)
+// 43 instr, 316 B bytecode, id=0x9B32A756, varspace=4
+------------------------------------------------------------------------------
+{
+    int v2;
+    int v3;
+    auto v4;
+
+    // control flow not structured (structuring dropped 10 of 15 block(s)); flat form:
+        v2 = int(Event.State);
+        if (v2 > 4) goto L77; else goto L10;
+    L10:
+        if (v2 < 0) goto L77; else goto L14;
+    L14:
+        v3 = v2 - 0;
+        switch (v3) { /* computed jump */ }
+        // computed jump -- flow not reconstructed
+        goto L75;
+        goto L29;
+        goto L34;
+        goto L52;
+        goto L57;
+    L29:
+        this.MostWantedCount++;
+        goto L78;
+    L34:
+        v2 = this.MostWantedCount;
+        v2 = v2 - 1;
+        v4 = Math::Max(0, v2);
+        this.MostWantedCount = v4;
+        goto L78;
+    L52:
+        this.ActiveMostWantedCount++;
+        goto L78;
+    L57:
+        v4 = this.ActiveMostWantedCount;
+        v3 = v4 - 1;
+        v4 = Math::Max(0, v3);
+        this.ActiveMostWantedCount = v4;
+        goto L78;
+    L75:
+        goto L78;
+    L77:
+        throw;   // ThrowException 0
+    L78:
+        return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadRObjR      rW0:-2 W1:8 DW2:67120904; FGameEvent_MostWanted::State  (+8)
+    //     3  RDR1           wW0:1
+    //     4  sbTOi          wW0:2 rW1:1
+    //     6  CMPIi          rW0:2 d:4
+    //     8  JP             ->77
+    //    10  CMPIi          rW0:2 d:0
+    //    12  JS             ->77
+    //    14  SUBIi          wW0:3 rW1:2 DW2:0
+    //    17  JMPP           rW0:3 d:4
+    //    19  JMP            ->75
+    //    21  JMP            ->29
+    //    23  JMP            ->34
+    //    25  JMP            ->52
+    //    27  JMP            ->57
+    //    29  LoadThisR      W0:208 d:134230897      ; ULokiGameStateMostWantedComponent::MostWantedCount  (+208)
+    //    31  INCi
+    //    32  JMP            ->78
+    //    34  LoadThisR      W0:208 d:134230897      ; ULokiGameStateMostWantedComponent::MostWantedCount  (+208)
+    //    36  RDR4           wW0:2
+    //    37  SUBIi          wW0:2 rW1:2 DW2:1
+    //    40  PshV4          rW0:2
+    //    41  PshC4          d:0
+    //    43  CALLSYS        q:0x26e70381c80         ; int Math::Max(int, int)
+    //    46  CpyRtoV4       wW0:4
+    //    47  LoadThisR      W0:208 d:134230897      ; ULokiGameStateMostWantedComponent::MostWantedCount  (+208)
+    //    49  WRTV4          rW0:4
+    //    50  JMP            ->78
+    //    52  LoadThisR      W0:212 d:134230897      ; ULokiGameStateMostWantedComponent::ActiveMostWantedCount  (+212)
+    //    54  INCi
+    //    55  JMP            ->78
+    //    57  LoadThisR      W0:212 d:134230897      ; ULokiGameStateMostWantedComponent::ActiveMostWantedCount  (+212)
+    //    59  RDR4           wW0:4
+    //    60  SUBIi          wW0:3 rW1:4 DW2:1
+    //    63  PshV4          rW0:3
+    //    64  PshC4          d:0
+    //    66  CALLSYS        q:0x26e70381c80         ; int Math::Max(int, int)
+    //    69  CpyRtoV4       wW0:4
+    //    70  LoadThisR      W0:212 d:134230897      ; ULokiGameStateMostWantedComponent::ActiveMostWantedCount  (+212)
+    //    72  WRTV4          rW0:4
+    //    73  JMP            ->78
+    //    75  JMP            ->78
+    //    77  ThrowException W0:0
+    //    78  RET            W0:6
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 9 instr, 60 B bytecode, id=0xB66B171F, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = true;
+    this.SetbReplicates(true);
+    v1 = false;
+    this.SetComponentTickEnabled(false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a62c640         ; void UActorComponent::SetbReplicates(bool)
+    //     7  SetV1          wW0:1 d:0
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7973d440         ; void UActorComponent::SetComponentTickEnabled(bool)
+    //    14  RET            W0:2
+

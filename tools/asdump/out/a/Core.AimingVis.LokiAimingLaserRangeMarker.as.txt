@@ -1,0 +1,502 @@
+==============================================================================
+MODULE   Core.AimingVis.LokiAimingLaserRangeMarker
+SOURCE   Core/AimingVis/LokiAimingLaserRangeMarker.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ALokiAimingLaserRangeMarker;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ALokiAimingLaserRangeMarker@ ALokiAimingLaserRangeMarker()
+// 4 instr, 28 B bytecode, id=0x3DFB2D0C, varspace=2
+------------------------------------------------------------------------------
+{
+    ALokiAimingLaserRangeMarker v2;
+
+    v2 = ALokiAimingLaserRangeMarker();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84628 q:0x26e6ed74300; new ALokiAimingLaserRangeMarker   ctor=ALokiAimingLaserRangeMarker::ALokiAimingLaserRangeMarker
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xF5A8C6A3, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ALokiAimingLaserRangeMarker);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b1fd8         ; __StaticType_ALokiAimingLaserRangeMarker
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ALokiAimingLaserRangeMarker@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0xD00498AE, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiAimingLaserRangeMarker v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ALokiAimingLaserRangeMarker.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ALokiAimingLaserRangeMarker>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6f1b1fd8         ; __StaticType_ALokiAimingLaserRangeMarker
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972667            ; ALokiAimingLaserRangeMarker@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class ALokiAimingLaserRangeMarker : ALokiAimingLaser
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True, Category=Laser)) UStaticMeshComponent@ RangeMarker;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Laser)) bool bShowRangeMarkerOnSpawn;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser)) bool bShowRangeMarker;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser)) float64 MarkerDistance;
+    protected bool bOverrideRangeMarkerDesaturationAndOpacity;
+
+}
+
+------------------------------------------------------------------------------
+ALokiAimingLaserRangeMarker() const
+// 11 instr, 72 B bytecode, id=0xEFE08CBD, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    this.ALokiAimingLaser();
+    v1 = true;
+    this.bShowRangeMarkerOnSpawn = true;
+    v1 = false;
+    this.bOverrideRangeMarkerDesaturationAndOpacity = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALL           d:84617                 ; void ALokiAimingLaser::ALokiAimingLaser()
+    //     3  SetV1          wW0:1 d:1
+    //     5  LoadThisR      W0:1144 d:134230843     ; ALokiAimingLaserRangeMarker::bShowRangeMarkerOnSpawn  (+1144)
+    //     7  WRTV1          rW0:1
+    //     8  SetV1          wW0:1 d:0
+    //    10  LoadThisR      W0:1160 d:134230843     ; ALokiAimingLaserRangeMarker::bOverrideRangeMarkerDesaturationAndOpacity  (+1160)
+    //    12  WRTV1          rW0:1
+    //    13  PshVPtr        rW0:0
+    //    14  FinConstruct   q:0x26e6ed74300         ; ALokiAimingLaserRangeMarker
+    //    17  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 129 instr, 860 B bytecode, id=0xE680D243, varspace=24
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v4;
+    float v5;
+    float v6;
+    bool v7;
+    bool v8;
+    FVector v14;
+    UMaterialInstanceDynamic v20;
+
+    this.Tick_Implementation(DeltaSeconds);
+    v4 = this.MarkerDistance;
+    v5 = float(v4);
+    v6 = this.LaserProjectilePath.GetTimeForXDistance(v5);
+    v4 = float64(v6);
+    v2 = v4;
+    v4 = this.CurrentEndPathTime;
+    if (v4 >= v4) {
+        v8 = false;
+        v7 = this.bShowRangeMarker;
+        v7 = !v7;
+        this.RangeMarker.SetHiddenInGame(v7, false);
+        v6 = float(v2);
+        v14 = this.LaserProjectilePath.GetPositionForTime(v6);
+        this.RangeMarker.SetWorldLocation(v14);
+        v7 = this.bOverrideRangeMarkerDesaturationAndOpacity;
+        v7 = !v7;
+        if (v7) {
+            v8 = this.GetLimitLaserToCursor();
+            v8 = !v8;
+            if (v8) {
+                v4 = this.CurrentCursorPathTime;
+                v7 = v4 <= v2;
+                v8 = v7;
+            } else {
+                v8 = 0;
+            }
+            if (!v8) {
+                this.RangeMarker.SetScalarParameterValueOnMaterials(__STATIC_NAME(33), 0);
+                this.RangeMarker.SetScalarParameterValueOnMaterials(__STATIC_NAME(35), 1);
+            } else {
+                v20 = this.LaserProjectilePath.GetMaterial(0);
+                v5 = v20.GetScalarParameterValue(__STATIC_NAME(32));
+                v4 = float64(v5);
+                v6 = float(v4);
+                this.RangeMarker.SetScalarParameterValueOnMaterials(__STATIC_NAME(33), v6);
+                v6 = v20.GetScalarParameterValue(__STATIC_NAME(34));
+                v4 = float64(v6);
+                v6 = float(v4);
+                this.RangeMarker.SetScalarParameterValueOnMaterials(__STATIC_NAME(35), v6);
+            }
+        }
+    } else {
+        v7 = false;
+        v8 = true;
+        this.RangeMarker.SetHiddenInGame(true, false);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshV8          rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALL           d:84572                 ; void ALokiAimingLaser::Tick_Implementation(const float64)
+    //     4  LoadThisR      W0:1152 d:134230843     ; ALokiAimingLaserRangeMarker::MarkerDistance  (+1152)
+    //     6  RDR8           wW0:4
+    //     7  dTOf           wW0:5 rW1:4
+    //     9  PshV4          rW0:5
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    13  RDSPtr
+    //    14  CALLSYS        q:0x26e7a3b1ac0         ; float ULokiProjectilePathComponent::GetTimeForXDistance(float) const
+    //    17  CpyRtoV4       wW0:6
+    //    18  fTOd           wW0:4 rW1:6
+    //    20  CpyVtoV8       wW0:2 rW1:4
+    //    22  LoadThisR      W0:960 d:134230838      ; ALokiAimingLaser::CurrentEndPathTime  (+960)
+    //    24  RDR8           wW0:4
+    //    25  CMPd           rW0:4 rW1:2
+    //    27  JNS            ->44
+    //    29  SetV1          wW0:7 d:0
+    //    31  PshV4          rW0:7
+    //    32  SetV1          wW0:8 d:1
+    //    34  PshV4          rW0:8
+    //    35  PshVPtr        rW0:0
+    //    36  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //    38  RDSPtr
+    //    39  CALLSYS        q:0x26e79751580         ; void USceneComponent::SetHiddenInGame(bool, bool)
+    //    42  JMP            ->214
+    //    44  SetV1          wW0:8 d:0
+    //    46  PshV4          rW0:8
+    //    47  LoadThisR      W0:1145 d:134230843     ; ALokiAimingLaserRangeMarker::bShowRangeMarker  (+1145)
+    //    49  RDR1           wW0:7
+    //    50  NOT            rW0:7
+    //    51  PshV4          rW0:7
+    //    52  PshVPtr        rW0:0
+    //    53  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //    55  RDSPtr
+    //    56  CALLSYS        q:0x26e79751580         ; void USceneComponent::SetHiddenInGame(bool, bool)
+    //    59  dTOf           wW0:6 rW1:2
+    //    61  PshV4          rW0:6
+    //    62  PSF            rW0:14
+    //    63  PshVPtr        rW0:0
+    //    64  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    66  RDSPtr
+    //    67  CALLSYS        q:0x26e7a3b1e40         ; FVector ULokiProjectilePathComponent::GetPositionForTime(float) const
+    //    70  PSF            rW0:14
+    //    71  PshVPtr        rW0:0
+    //    72  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //    74  RDSPtr
+    //    75  CALLSYS        q:0x26e79f60780         ; void USceneComponent::SetWorldLocation(const FVector&)   [UFunction K2_SetWorldLocation]
+    //    78  LoadThisR      W0:1160 d:134230843     ; ALokiAimingLaserRangeMarker::bOverrideRangeMarkerDesaturationAndOpacity  (+1160)
+    //    80  RDR1           wW0:7
+    //    81  NOT            rW0:7
+    //    82  CpyVtoR1       rW0:7
+    //    83  JLowZ          ->214
+    //    85  PshVPtr        rW0:0
+    //    86  CALLINTF       d:84584                 ; bool ALokiAimingLaser::GetLimitLaserToCursor()
+    //    88  CpyRtoV4       wW0:8
+    //    89  NOT            rW0:8
+    //    90  CpyVtoR1       rW0:8
+    //    91  JLowNZ         ->97
+    //    93  SetV4          wW0:8 d:0
+    //    95  JMP            ->106
+    //    97  LoadThisR      W0:968 d:134230838      ; ALokiAimingLaser::CurrentCursorPathTime  (+968)
+    //    99  RDR8           wW0:4
+    //   100  CMPd           rW0:4 rW1:2
+    //   102  TNP
+    //   103  CpyRtoV4       wW0:7
+    //   104  CpyVtoV4       wW0:8 rW1:7
+    //   106  CpyVtoR1       rW0:8
+    //   107  JLowZ          ->184
+    //   109  PshC4          d:0
+    //   111  PshVPtr        rW0:0
+    //   112  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   114  RDSPtr
+    //   115  CALLSYS        q:0x26e7a3b2700         ; UMaterialInstanceDynamic@ ULokiProjectilePathComponent::GetMaterial(int) const
+    //   118  STOREOBJ       wW0:20
+    //   119  PshC4          d:32
+    //   121  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   124  PshRPtr
+    //   125  PshVPtr        rW0:20
+    //   126  CALLSYS        q:0x26e79b328c0         ; float UMaterialInstanceDynamic::GetScalarParameterValue(FName)   [UFunction K2_GetScalarParameterValue]
+    //   129  CpyRtoV4       wW0:5
+    //   130  fTOd           wW0:4 rW1:5
+    //   132  CpyVtoV8       wW0:22 rW1:4
+    //   134  dTOf           wW0:6 rW1:22
+    //   136  PshV4          rW0:6
+    //   137  PshC4          d:33
+    //   139  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   142  PshRPtr
+    //   143  PshVPtr        rW0:0
+    //   144  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //   146  RDSPtr
+    //   147  CALLSYS        q:0x26e79776600         ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float)
+    //   150  PshC4          d:34
+    //   152  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   155  PshRPtr
+    //   156  PshVPtr        rW0:20
+    //   157  CALLSYS        q:0x26e79b328c0         ; float UMaterialInstanceDynamic::GetScalarParameterValue(FName)   [UFunction K2_GetScalarParameterValue]
+    //   160  CpyRtoV4       wW0:6
+    //   161  fTOd           wW0:4 rW1:6
+    //   163  CpyVtoV8       wW0:24 rW1:4
+    //   165  dTOf           wW0:6 rW1:24
+    //   167  PshV4          rW0:6
+    //   168  PshC4          d:35
+    //   170  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   173  PshRPtr
+    //   174  PshVPtr        rW0:0
+    //   175  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //   177  RDSPtr
+    //   178  CALLSYS        q:0x26e79776600         ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float)
+    //   181  FreeNullV8     wW0:20
+    //   182  JMP            ->214
+    //   184  PshC4          d:0
+    //   186  PshC4          d:33
+    //   188  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   191  PshRPtr
+    //   192  PshVPtr        rW0:0
+    //   193  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //   195  RDSPtr
+    //   196  CALLSYS        q:0x26e79776600         ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float)
+    //   199  PshC4          d:1065353216
+    //   201  PshC4          d:35
+    //   203  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   206  PshRPtr
+    //   207  PshVPtr        rW0:0
+    //   208  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //   210  RDSPtr
+    //   211  CALLSYS        q:0x26e79776600         ; void UMeshComponent::SetScalarParameterValueOnMaterials(const FName, const float)
+    //   214  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnLaserSpawned
+void OnLaserSpawned_Implementation()
+// 13 instr, 76 B bytecode, id=0xF0B52FAF, varspace=2
+------------------------------------------------------------------------------
+{
+    bool v1;
+
+    this.OnLaserSpawned_Implementation();
+    v1 = this.bShowRangeMarkerOnSpawn;
+    v1 = !v1;
+    this.RangeMarker.SetHiddenInGame(v1, false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALL           d:84594                 ; void ALokiAimingLaser::OnLaserSpawned_Implementation()
+    //     3  SetV1          wW0:2 d:0
+    //     5  PshV4          rW0:2
+    //     6  LoadThisR      W0:1144 d:134230843     ; ALokiAimingLaserRangeMarker::bShowRangeMarkerOnSpawn  (+1144)
+    //     8  RDR1           wW0:1
+    //     9  NOT            rW0:1
+    //    10  PshV4          rW0:1
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //    14  RDSPtr
+    //    15  CALLSYS        q:0x26e79751580         ; void USceneComponent::SetHiddenInGame(bool, bool)
+    //    18  RET            W0:2
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 22 instr, 148 B bytecode, id=0xE74D5EB9, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.RangeMarker.SetCastShadow(false);
+    v1 = false;
+    this.RangeMarker.SetGenerateOverlapEvents(false);
+    v1 = true;
+    this.RangeMarker.SetCollisionProfileName(__STATIC_NAME(31), true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //     6  RDSPtr
+    //     7  CALLSYS        q:0x26e7975cf00         ; void UPrimitiveComponent::SetCastShadow(bool)
+    //    10  SetV1          wW0:1 d:0
+    //    12  PshV4          rW0:1
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //    16  RDSPtr
+    //    17  CALLSYS        q:0x26e7975f900         ; void UPrimitiveComponent::SetGenerateOverlapEvents(bool)
+    //    20  SetV1          wW0:1 d:1
+    //    22  PshV4          rW0:1
+    //    23  PshC4          d:31
+    //    25  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    28  PshRPtr
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //    32  RDSPtr
+    //    33  CALLSYS        q:0x26e7975c800         ; void UPrimitiveComponent::SetCollisionProfileName(FName, bool)
+    //    36  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetShowRangeMarker(const bool bNewShowRangeMarker)
+// 15 instr, 92 B bytecode, id=0x25E2EC46, varspace=2
+------------------------------------------------------------------------------
+{
+    bool v1;
+
+    if (this.ValidateOwner()) {
+        this.bShowRangeMarker = bNewShowRangeMarker;
+        v1 = bNewShowRangeMarker;
+        v1 = !bNewShowRangeMarker;
+        this.RangeMarker.SetHiddenInGame(v1, false);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //     3  JLowZ          ->22
+    //     5  LoadThisR      W0:1145 d:134230843     ; ALokiAimingLaserRangeMarker::bShowRangeMarker  (+1145)
+    //     7  WRTV1          rW0:-2
+    //     8  SetV1          wW0:2 d:0
+    //    10  PshV4          rW0:2
+    //    11  CpyVtoV4       wW0:1 rW1:-2
+    //    13  NOT            rW0:1
+    //    14  PshV4          rW0:1
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //    18  RDSPtr
+    //    19  CALLSYS        q:0x26e79751580         ; void USceneComponent::SetHiddenInGame(bool, bool)
+    //    22  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetRangeMarkerDistance(const float64 NewDistance)
+// 6 instr, 36 B bytecode, id=0xED744554, varspace=1
+------------------------------------------------------------------------------
+{
+    if (this.ValidateOwner()) {
+        this.MarkerDistance = NewDistance;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //     3  JLowZ          ->8
+    //     5  LoadThisR      W0:1152 d:134230843     ; ALokiAimingLaserRangeMarker::MarkerDistance  (+1152)
+    //     7  WRTV8          rW0:-2
+    //     8  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void SetRangeMarkerMaterial(UMaterialInterface@&inout NewMaterial)
+// 11 instr, 68 B bytecode, id=0x1D71BF3E, varspace=2
+------------------------------------------------------------------------------
+{
+    if (this.ValidateOwner()) {
+        this.RangeMarker.SetMaterial(0, NewMaterial);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //     3  JLowZ          ->16
+    //     5  PshVPtr        rW0:-2
+    //     6  RDSPtr
+    //     7  PshC4          d:0
+    //     9  PshVPtr        rW0:0
+    //    10  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //    12  RDSPtr
+    //    13  CALLSYS        q:0x26e7975e940         ; void UPrimitiveComponent::SetMaterial(int, UMaterialInterface@)
+    //    16  RET            W0:4
+
+------------------------------------------------------------------------------
+~ALokiAimingLaserRangeMarker()
+// 3 instr, 16 B bytecode, id=0xD461ED72, varspace=0
+------------------------------------------------------------------------------
+{
+    this.~ALokiAimingLaser();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALL           d:85480                 ; void ALokiAimingLaser::~ALokiAimingLaser()
+    //     3  RET            W0:2
+

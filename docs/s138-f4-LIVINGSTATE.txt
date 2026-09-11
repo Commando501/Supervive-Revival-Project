@@ -1,0 +1,20 @@
+S138 flight 4 -- LivingState read (secondary objective L1-L3). pid=34804 base=0x7FF759320000
+Read with tools/re/obj_scalars.py (read-only RPM), both objects in the same session.
+
+  BOT pawn    0x24C1DB65580  BP_HERO_Ronin_C   +0x1090 EnumProperty LivingState = 0
+  PLAYER hero 0x24DA09E5580  BP_HERO_Ronin_C   +0x1090 EnumProperty LivingState = 0    <- POSITIVE CONTROL
+
+Enumerator values, read from the UHT {const char* Name; int64 Value} tables in
+dumps/s138-f3/SUPERVIVE-Win64-Shipping.dump.exe (ImageBase 0x7FF6EE290000, fileoffset==RVA):
+
+  EPlayerLivingState:  NoCharacter=0  Dead=1  Knocked=2  Alive=3  Count=4
+  ELivingState:        ELivingStateDead=0  ELivingStateAlive=1  ELivingStateKnocked=2  Count=3
+
+=> Under EITHER candidate enum, 0 is NOT "Alive".
+=> BUT the PLAYER hero reads the same 0, so the positive control FAILED, and by the
+   pre-registration's own rule L2 the bot reading is UNINTERPRETABLE as a statement about the BOT.
+
+UNRESOLVED: which enum LokiCharacter::LivingState uses. 'ELokiLivingState' occurs 0 times in the
+image (controls: ERoundPhase 12, ELokiActivityState 7), so that guessed name is wrong. The two
+candidates above are both present; a UHT params-adjacency scan did not place either enum's name
+pointer within +/-0x180 of the 'LivingState' property-name pointer, so it is not settled here.

@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+# Pre-commit size gate: rejects any staged file whose blob would fail GitHub's
+# per-file push limit. Written after the commit 38d96d9 (S139) accident, where
+# two evidence files (111 MB and 188 MB) landed in dedicated-server-stub and
+# rendered the whole 49-commit backlog unpushable to github.com until history
+# is rewritten (git-lfs migrate or git-filter-repo).
+#
+# GitHub's numbers (as of 2026-09; see https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github):
+#   >= 50 MB per file : soft warning at push time.
+#   >= 100 MB per file: HARD REJECTION at push time (pre-receive hook).
+#
+# This hook enforces a HARD ceiling *below* GitHub's warning band, so a file
+# never even reaches the point where a `git push` would surprise you.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# Install (once per clone):
+#     git config core.hooksPath configs/git-hooks
+#
+# The install is intentionally NOT automatic -- setting core.hooksPath is a
+# local git config change, and this repo's policy is to never modify a
+# contributor's git config without an explicit action. Every fresh clone needs
+# to run the line above once.
+#
+# Verify the hook is active:
+#     git config --get core.hooksPath
+#     # should print: configs/git-hooks
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# Overrides (STRONGLY discouraged):
+#   * Bypass this hook alone:   git commit --no-verify
+#   * Raise the ceiling once:   HOOK_MAX_MB=95 git commit ...
+#   * Whitelist a specific path: add its full path to configs/git-hooks/large-file-allowlist.txt
+
+set -eu
+
+# --- tunables ---------------------------------------------------------------
+# The HARD ceiling. Any staged file at or above this many bytes fails the commit.
+# Kept safely below GitHub's 100 MB hard limit so there is headroom for
+# metadata / packfile overhead / future limit tightening.
+MAX_MB="${HOOK_MAX_MB:-90}"
+# The WARN band. Files this size are noted but pass -- they still push, but
+# GitHub itself will warn on the push. Keeps you honest about tracking large
+# evidence.
+WARN_MB="${HOOK_WARN_MB:-50}"
+
+MAX_BYTES=$(( MAX_MB * 1024 * 1024 ))
+WARN_BYTES=$(( WARN_MB * 1024 * 1024 ))
+
+repo_root=$(git rev-parse --show-toplevel)
+allowlist_file="$repo_root/configs/git-hooks/large-file-allowlist.txt"
+
+# --- gather staged additions/modifications ---------------------------------
+# --diff-filter=AM: added or modified (not deleted / renamed source / typechange).
+# -z + --raw : machine-readable, robust to unusual filenames.
+# The raw line format for one entry is:
+#   :100644 100644 <old_sha> <new_sha> <status>\0<path>\0
+# We take fields directly.
+fail=0
+warn=0
+
+# Note the process substitution is on a subshell; `fail=$fail` at the end can
+# be scoped away if you refactor. Kept as a simple while+file redirect.
+tmpfile=$(mktemp)
+trap 'rm -f "$tmpfile"' EXIT
+git diff --cached --raw --diff-filter=AM -z > "$tmpfile"
+
+# Locate a real Python 3. On Windows, `python3` on PATH may be the Microsoft
+# Store install-prompt stub -- ignore anything that lives under WindowsApps.
+find_python() {
+    for candidate in python3 python py python3.exe python.exe; do
+        path=$(command -v "$candidate" 2>/dev/null || true)
+        [ -z "$path" ] && continue
+        case "$path" in
+            */WindowsApps/*|*/WindowsApps/python3*) continue ;;
+        esac
+        # Verify it actually runs and reports Python 3.
+        ver=$("$path" --version 2>&1 || true)
+        case "$ver" in
+            "Python 3."*) echo "$path"; return 0 ;;
+        esac
+    done
+    return 1
+}
+
+PY_BIN=$(find_python) || {
+    echo "REJECT: pre-commit hook needs Python 3 on PATH (not the Microsoft-Store stub)." >&2
+    echo "        Install Python 3 (https://www.python.org/downloads/) and retry, or" >&2
+    echo "        set PY_BIN=<path-to-python> in your env." >&2
+    exit 1
+}
+[ -n "${PY_BIN_OVERRIDE:-}" ] && PY_BIN="$PY_BIN_OVERRIDE"
+
+# Parse the null-separated records.
+"$PY_BIN" - "$tmpfile" "$MAX_BYTES" "$WARN_BYTES" "$allowlist_file" <<'PY' || fail=$?
+import os
+import subprocess
+import sys
+
+raw_path, max_bytes, warn_bytes, allowlist_path = sys.argv[1:5]
+max_bytes = int(max_bytes)
+warn_bytes = int(warn_bytes)
+
+allow = set()
+if os.path.exists(allowlist_path):
+    with open(allowlist_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                allow.add(line)
+
+with open(raw_path, "rb") as f:
+    blob = f.read()
+
+# Records look like: `:mode mode oldsha newsha STATUS\0PATH\0`
+# Splitting on \0 gives us alternating "meta" and "path" chunks; a trailing
+# empty chunk closes the sequence.
+chunks = blob.split(b"\0")
+# Drop the trailing empty
+if chunks and chunks[-1] == b"":
+    chunks = chunks[:-1]
+
+fail = 0
+warn = 0
+i = 0
+while i < len(chunks):
+    meta = chunks[i].decode("utf-8", "replace")
+    if i + 1 >= len(chunks):
+        break
+    path = chunks[i + 1].decode("utf-8", "replace")
+    i += 2
+
+    # meta is like ":100644 100644 <old> <new> M" (space separated).
+    parts = meta.split(" ")
+    if len(parts) < 5:
+        continue
+    new_sha = parts[3]
+    status = parts[4]
+    if status not in ("A", "M"):
+        continue
+
+    # Look up the blob size from its sha.
+    try:
+        size = int(
+            subprocess.check_output(["git", "cat-file", "-s", new_sha]).strip()
+        )
+    except subprocess.CalledProcessError:
+        continue
+
+    mb = size / (1024 * 1024)
+
+    if path in allow:
+        sys.stderr.write(f"NOTE:  {path} is {mb:.1f} MB -- allowlisted, skipping check\n")
+        continue
+
+    if size >= max_bytes:
+        sys.stderr.write(
+            f"REJECT: {path} is {mb:.1f} MB (>= {max_bytes // (1024 * 1024)} MB hook ceiling, "
+            f"GitHub's is 100 MB).\n"
+            f"        Add to .gitignore, or use `git lfs track` if it MUST be committed.\n"
+            f"        To override for this file once: add the path to "
+            f"configs/git-hooks/large-file-allowlist.txt.\n"
+        )
+        fail = 1
+    elif size >= warn_bytes:
+        sys.stderr.write(
+            f"WARN:   {path} is {mb:.1f} MB (>= {warn_bytes // (1024 * 1024)} MB warn band; "
+            f"GitHub prints its own warning at 50 MB).\n"
+            f"        Consider .gitignore for evidence files, or LFS if tracking is required.\n"
+        )
+        warn = 1
+
+if fail:
+    sys.stderr.write("\nOne or more staged files exceed this repo's size ceiling.\n")
+    sys.stderr.write("Commit aborted. To bypass (STRONGLY discouraged): git commit --no-verify\n")
+    sys.exit(1)
+
+sys.exit(0)
+PY
+
+exit $fail

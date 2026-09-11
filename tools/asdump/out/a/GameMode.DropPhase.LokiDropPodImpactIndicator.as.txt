@@ -1,0 +1,378 @@
+==============================================================================
+MODULE   GameMode.DropPhase.LokiDropPodImpactIndicator
+SOURCE   GameMode/DropPhase/LokiDropPodImpactIndicator.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ALokiDropPodImpactIndicator;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ALokiDropPodImpactIndicator@ ALokiDropPodImpactIndicator()
+// 4 instr, 28 B bytecode, id=0xB8F6431B, varspace=2
+------------------------------------------------------------------------------
+{
+    ALokiDropPodImpactIndicator v2;
+
+    v2 = ALokiDropPodImpactIndicator();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85077 q:0x26e6ed7b500; new ALokiDropPodImpactIndicator   ctor=ALokiDropPodImpactIndicator::ALokiDropPodImpactIndicator
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x6AA6BCB2, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ALokiDropPodImpactIndicator);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057f258         ; __StaticType_ALokiDropPodImpactIndicator
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ALokiDropPodImpactIndicator@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0xEC58B253, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiDropPodImpactIndicator v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ALokiDropPodImpactIndicator.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ALokiDropPodImpactIndicator>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6057f258         ; __StaticType_ALokiDropPodImpactIndicator
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972703            ; ALokiDropPodImpactIndicator@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class ALokiDropPodImpactIndicator : ALokiActor
+// base /Script/Engine.LokiActor  ->  ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/LokiActor.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, RepNotify, RepCond=0, meta=(ReplicatedUsing=OnRep_OwningDropPod)) protected ALokiDropPod@ OwningDropPod;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Replicated, RepCond=0) protected ALokiPlayerState@ OwningPlayerState;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) float64 LandingRadius;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bIsIndicatorInitialized;
+
+}
+
+------------------------------------------------------------------------------
+ALokiDropPodImpactIndicator() const
+// 9 instr, 64 B bytecode, id=0x48358F08, varspace=3
+------------------------------------------------------------------------------
+{
+    this.LandingRadius = 0;
+    this.bIsIndicatorInitialized = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0x0
+    //     3  LoadThisR      W0:968 d:134230879      ; ALokiDropPodImpactIndicator::LandingRadius  (+968)
+    //     5  WRTV8          rW0:2
+    //     6  SetV1          wW0:3 d:0
+    //     8  LoadThisR      W0:976 d:134230879      ; ALokiDropPodImpactIndicator::bIsIndicatorInitialized  (+976)
+    //    10  WRTV1          rW0:3
+    //    11  PshVPtr        rW0:0
+    //    12  FinConstruct   q:0x26e6ed7b500         ; ALokiDropPodImpactIndicator
+    //    15  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 3 instr, 16 B bytecode, id=0x9CDF9679, varspace=0
+------------------------------------------------------------------------------
+{
+    this.CheckIndicatorReady();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85071                 ; void ALokiDropPodImpactIndicator::CheckIndicatorReady()
+    //     3  RET            W0:2
+
+------------------------------------------------------------------------------
+void InitializeIndicator(ALokiDropPod@ DropPod)
+// 19 instr, 104 B bytecode, id=0x6708BAE0, varspace=2
+------------------------------------------------------------------------------
+{
+    this.OwningDropPod = DropPod;
+    this.OwningPlayerState = DropPod.GetPilotPlayerState();
+    this.SetOwner(this.OwningPlayerState);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:952 d:134230879      ; ALokiDropPodImpactIndicator::OwningDropPod  (+952)
+    //     4  REFCPY
+    //     5  PopPtr
+    //     6  PshVPtr        rW0:-2
+    //     7  CALLSYS        q:0x26e7addd600         ; ALokiPlayerState@ ALokiDropPodBase::GetPilotPlayerState() const
+    //    10  STOREOBJ       wW0:2
+    //    11  PshVPtr        rW0:2
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:960 d:134230879      ; ALokiDropPodImpactIndicator::OwningPlayerState  (+960)
+    //    15  REFCPY
+    //    16  PopPtr
+    //    17  PshVPtr        rW0:0
+    //    18  ADDSi          W0:960 d:134230879      ; ALokiDropPodImpactIndicator::OwningPlayerState  (+960)
+    //    20  RDSPtr
+    //    21  PshVPtr        rW0:0
+    //    22  CALLSYS        q:0x26e79714680         ; void AActor::SetOwner(AActor@)
+    //    25  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool IsIndicatorReadyToDisplay()
+// 4 instr, 20 B bytecode, id=0x9553F7A6, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.bIsIndicatorInitialized;
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:976 d:134230879      ; ALokiDropPodImpactIndicator::bIsIndicatorInitialized  (+976)
+    //     2  RDR1           wW0:1
+    //     3  CpyVtoR4       rW0:1
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 18 instr, 124 B bytecode, id=0x3267B08A, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.bIsIndicatorInitialized;
+    if (v1) {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = IsValid(this.OwningDropPod);
+            v1 = !v1;
+            if (v1) {
+                this.DestroyActor();
+            }
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:976 d:134230879      ; ALokiDropPodImpactIndicator::bIsIndicatorInitialized  (+976)
+    //     2  RDR1           wW0:1
+    //     3  CpyVtoR1       rW0:1
+    //     4  JLowZ          ->30
+    //     6  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     9  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //    12  JLowZ          ->30
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:952 d:134230879      ; ALokiDropPodImpactIndicator::OwningDropPod  (+952)
+    //    17  RDSPtr
+    //    18  CALLSYS        q:0x26e7039a180         ; bool IsValid(const UObject@)
+    //    21  CpyRtoV4       wW0:1
+    //    22  NOT            rW0:1
+    //    23  CpyVtoR1       rW0:1
+    //    24  JLowZ          ->30
+    //    26  PshVPtr        rW0:0
+    //    27  CALLSYS        q:0x26e79712fc0         ; void AActor::DestroyActor()   [UFunction K2_DestroyActor]
+    //    30  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnRep_OwningDropPod()
+// 5 instr, 28 B bytecode, id=0x1C6FA526, varspace=0
+------------------------------------------------------------------------------
+{
+    this.CheckIndicatorReady();
+    this.OnDropPodReplicated();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85071                 ; void ALokiDropPodImpactIndicator::CheckIndicatorReady()
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:85073                 ; void ALokiDropPodImpactIndicator::OnDropPodReplicated()
+    //     6  RET            W0:2
+
+------------------------------------------------------------------------------
+void CheckIndicatorReady()
+// 15 instr, 88 B bytecode, id=0xD3A9EE36, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = this.bIsIndicatorInitialized;
+    if (!v1) {
+        if (this.OwningDropPod != null) {
+            v1 = true;
+            this.bIsIndicatorInitialized = true;
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:976 d:134230879      ; ALokiDropPodImpactIndicator::bIsIndicatorInitialized  (+976)
+    //     2  RDR1           wW0:1
+    //     3  CpyVtoR1       rW0:1
+    //     4  JLowZ          ->8
+    //     6  JMP            ->21
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:952 d:134230879      ; ALokiDropPodImpactIndicator::OwningDropPod  (+952)
+    //    11  RDSPtr
+    //    12  RefCpyV        wW0:4
+    //    13  CmpPtrNull     rW0:4
+    //    14  JZ             ->21
+    //    16  SetV1          wW0:1 d:1
+    //    18  LoadThisR      W0:976 d:134230879      ; ALokiDropPodImpactIndicator::bIsIndicatorInitialized  (+976)
+    //    20  WRTV1          rW0:1
+    //    21  RET            W0:2
+
+------------------------------------------------------------------------------
+void SetLandingRangeRadius(const float64 Radius)
+// 9 instr, 56 B bytecode, id=0xA6FC178A, varspace=3
+------------------------------------------------------------------------------
+{
+    if (Radius != this.LandingRadius) {
+        this.LandingRadius = Radius;
+        this.OnLandingRadiusChanged();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:968 d:134230879      ; ALokiDropPodImpactIndicator::LandingRadius  (+968)
+    //     2  RDR8           wW0:2
+    //     3  CMPd           rW0:-2 rW1:2
+    //     5  JZ             ->13
+    //     7  LoadThisR      W0:968 d:134230879      ; ALokiDropPodImpactIndicator::LandingRadius  (+968)
+    //     9  WRTV8          rW0:-2
+    //    10  PshVPtr        rW0:0
+    //    11  CALLINTF       d:85075                 ; void ALokiDropPodImpactIndicator::OnLandingRadiusChanged()
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+void OnDropPodReplicated()
+// 6 instr, 44 B bytecode, id=0x49728544, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(183));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:183
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: OnDropPodReplicated
+void OnDropPodReplicated_Implementation()
+// 1 instr, 4 B bytecode, id=0x7B3F02FF, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:2
+
+------------------------------------------------------------------------------
+void OnLandingRadiusChanged()
+// 6 instr, 44 B bytecode, id=0x7EC28B91, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(184));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:184
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: OnLandingRadiusChanged
+void OnLandingRadiusChanged_Implementation()
+// 1 instr, 4 B bytecode, id=0xE1CE2809, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:2
+

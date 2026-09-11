@@ -1,0 +1,68 @@
+S139 FLIGHT 1 -- PRE-REGISTRATION.  Written BEFORE the flight.  DO NOT EDIT AFTER.
+Date 2026-08-23.  Source of the plan: the S139 offline synthesis (6 RE lanes + 6 adversarial
+verifiers over dumps/merged13.dump.exe).  Probe: tools/re/cmc_earlyout_readout.py (READ-ONLY RPM).
+
+THE SPLIT BEING TESTED
+  S1  DeltaTime is zeroed before the engine integrates (ULokiCMC "HitStop": TickComponent
+      0x055C2B90 xorps xmm6,xmm6 @0x055C2C1B; second site in ULokiCMC::PerformMovement @0x055B83FA).
+      Everything downstream still runs; the engine bails on MIN_TICK_TIME (1e-6).
+  S2  An early-out between HasValidData (0x03603825) and ControlledCharacterMove (0x03603B18).
+
+THE BISECTOR
+  CMC+0x16C8, ULokiCMC::StartNewPhysics 0x055C2469 `mov byte [rcx+0x16C8],1`, on the Iterations==0
+  path, with NO DeltaTime test above it (engine MIN_TICK_TIME bail is downstream).
+  It is a STICKY "ever reached" latch, never cleared.
+
+PREDICTIONS -- each is falsifiable and each names what would refute it.
+
+P1  IDENTITY CONTROLS PASS on both sides: CMC+0x198 == pawn, and FTickFunction Target
+    (CMC+0x68) == CMC.
+    REFUTED BY: either failing => the probe is reading the wrong object and the sitting is VOID
+    for that side.  (ALokiCharacter has its OWN live byte at +0x16C8, so this is not ceremony.)
+
+P2  CONTROL: the PLAYER's CMC+0x16C8 reads 1.
+    REFUTED BY: 0.  Then the bisector is UNINTERPRETABLE this sitting -- either the offset is
+    wrong, or the player's PerformMovement has never reached StartNewPhysics either.  I will say
+    so and will NOT read the bot's value as a result.
+
+P3  The premise re-confirms live: the bot's ControlInputVector (+0x418) is a UNIT vector and
+    LastControlInputVector (+0x430) is non-zero / tracking it.
+    REFUTED BY: +0x418 large or growing, or +0x430 zero/stale => nothing consumes, the whole
+    ladder analysis is moot, and the question becomes tick registration (R10).
+
+P4  MovementMode decodes with THIS BUILD's table (MOVE_Dashing inserted at 6, MOVE_Custom 7).
+    Expect 3 = MOVE_Falling on both, matching S138 flight 9.
+
+P5  THE VERDICT, stated in advance so it cannot be reinterpreted after:
+      bot latch == 1  =>  S1 leading; S2 ELIMINATED.  Confirm with R2 (TimeSinceFallingStart
+                          +0x12B0 FROZEN on the bot while the player's ADVANCES).
+      bot latch == 0  =>  S2; S1 dead unless HitStop fires upstream.  R4/R5 then localise:
+                          UpdatedComponent NULL or RF_Garbage set -> E1/E3
+                          Mobility != 2                            -> E2
+                          Role != 3                                -> E6
+                          Controller NULL + bRunPhysicsWithNoController clear -> E7
+
+P6  Role@pawn+0x160 on the BOT has NEVER been measured in this project.  I predict 3
+    (ROLE_Authority) because AActor::AActor writes 3 and SpawnAIFromClass goes through SpawnActor.
+    A value of 0 or 1 would be a FINDING and would immediately explain E6.
+
+P7  R8 (GAS): AttributeSetStorage@0xF08 is NULL on BOTH pawns.  This is a REAL lateral wall
+    (GetMaxAcceleration and GetMaxSpeed both collapse to 0) but it CANNOT suppress gravity, and
+    being shared with the player it is NOT the differentiator.  I will not report it as the cause.
+    NOTE: if @0xF00 is NULL on the BOT, S1 is dead for the bot BY CONSTRUCTION -- the HitStop tag
+    query needs a non-null ASC ([char+0x7F0] -> vt+0x10).  That is a cheap conditional kill.
+
+THINGS I WILL NOT CLAIM FROM THIS FLIGHT
+  * Acceleration == (0,0,0) proves anything.  Three independent zero-writers produce it.
+    Only "non-zero AND collinear with RandomMoveDirection" is informative.
+  * That the player is a control on Velocity(+0xE8) or Acceleration(+0x328) -- `play` writes both
+    every game-thread hit.  Structural fields only.
+  * That "the player moved" means "the player walked" -- KFLYMODE=5 makes it HOVER.
+  * Any per-frame rate from +0x16C8.  It is sticky.
+
+HONEST ALTERNATIVE
+  Both survivors could be wrong together: the ladder could break inside PerformMovement /
+  StartNewPhysics / PhysFalling (S3).  Partly pre-excluded (MovementMode is already measured 3, so
+  the MOVE_None bail is dead), but ULokiCMC::PhysFalling 0x055B89F0 is a Loki override nobody has
+  transcribed.  latch==1 AND dt ADVANCING would point there, and I will say so rather than forcing
+  the result into S1.

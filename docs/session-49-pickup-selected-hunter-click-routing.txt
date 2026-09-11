@@ -1,0 +1,169 @@
+SESSION 49 PICKUP — the SELECTED-HUNTER CLICK→CENTER flow (the last open menu gap)
+Copy this whole file into a fresh Claude session's first message.
+Repo: G:\git\Supervive Revival Project — branch dedicated-server-stub. Baseline commit: see `git log`.
+==============================================================================
+
+=========================== TL;DR (read twice) ==============================
+The ALL HUNTERS roster GRID is SOLVED (renders the full 25-hero roster, owned) and the CENTER shows a
+seeded default hero (Mercury/Alchemist) instead of "?". Both are committed + live-validated.
+
+THE ONE REMAINING GAP: clicking an OWNED hunter tile in the grid does NOT change the hero shown in the
+CENTER. For UNOWNED/locked heroes clicking DOES populate the center (the preview path); for OWNED heroes
+it does not. USER GROUND TRUTH (they drove real clicks): clicking an owned tile gives it the PURPLE
+selection highlight (the tile selects fine) but "that's all that occurs visually" — the center stays on
+the seeded hero. So the click registers as a CommonUI list-selection, but the center-update handler
+doesn't fire/act for owned heroes.
+
+GOAL S49: make clicking a hunter (owned) show that hunter in the center, persisted. This is the last
+visible menu-flow gap.
+
+=========================== WHAT IS DONE (committed, don't re-grind) =========
+* ROSTER GRID: catalog_ready_fix.cpp (scan Hero=25 + NOP the jz at +0x57BB722 so IsCatalogDataReady
+  ignores the never-set CatMgr+0x354, then self-restore) makes WBP_HeroPicker/TileView_Hunters build.
+  The grid populates the full roster ONCE the 25 hero asset objects finish streaming (~a minute after
+  menu-load); it's empty on the very first view and self-heals on re-navigation. INJECT PER LAUNCH.
+* SEED: server/internal/interactive interactive.go buildSoloParty seeds member.heroAssetId = persisted
+  SelectedHeroAssetId (default "Hero:alchemist"). The main-menu/HUNTERS center reads the local party
+  member's HeroAssetID (via Comp_MainMenu_PartySlotSubject.DetermineCosmeticToShow ->
+  ResolveCosmeticsBundleForHero, deriving DefaultCosmeticsBundle when cosmetic empty), so seeding it
+  renders Mercury/Alchemist. LIVE-CONFIRMED (Loki.log: PartySlot_C_0 UpdateActor -> BP_LokiHeroSelect
+  Preview_Alchemist_Default_C). Committed (a146ce5 + the S48 docs).
+* INVENTORY: all 25 heroes IsOwned=true (menu.go handleInventory). Committed (0351118).
+
+=========================== THE OPEN PROBLEM (precise diagnosis) =============
+Clicking an owned tile:
+  - SELECTS the tile (purple highlight) — the click registers as a CommonUI selectable.
+  - Does NOT update the center; does NOT fire the native pick (pick_probe: TryPickMyHeroAndCosmetics
+    hits=0 on click); does NOT call the leaf predicates I patched (see "what was tried").
+WHY the ownership split exists (bytecode, settled): the tile is HeroPickerSelectable_CatalogEntryWith
+Preview. IsPreviewable = IsValid(Entry) AND (NOT IsDisabled) AND (NOT CanUse) — TRUE only for UNOWNED
+heroes; IsUseable = CanUse (owned). So unowned => previewable => clicking browses into the center;
+owned => selectable => routes to the (native) pick, which doesn't complete against our stub.
+
+The native pick chain IS reverse-engineered (in case route A is revisited):
+  FName "TryPickMyHeroAndCosmetics" id=0x005904F7; exec thunk +0x54B5380 -> impl **+0x58467E0** ->
+  action **+0x5846BE0** (serializes a member-update request body). Impl reads r13=this(PartyManager),
+  r15=&HeroAssetId; +0x5846808 call +0x5840730 (members getter -> [rsp+0x40]=data,[rsp+0x48]=count);
+  loops members; returns (built-string-len>0). BUT on click it is never invoked, and even when invoked
+  it emits NO HTTP (diffed all ags requests), NO WS frame (lobby WS only carries friends/status), and
+  no LogLokiPlatformQuery party-write — so the send is gated/deferred and our stub never triggers it.
+
+=========================== WHAT WAS TRIED S49 — ROUTE B (INERT, learn from it) ==
+Idea: make owned heroes previewable so clicking browses them into the center (drop the NOT-CanUse term
+in IsPreviewable). Built a BP Func-swap patcher (heap-only, NO code-integrity wall):
+  - find_ufunc.py: locate a UFunction (obj = Name-findptr-hit - 0x20; UObject layout THIS build:
+    Class@+0x18, Name@+0x20, Outer@+0x28; UFunction Func ptr @+0xE0 = shared ProcessInternal
+    0x7FF683DC54A0 across all BP funcs).
+  - patch_ispreviewable.py / patch_count.py: VirtualAllocEx a remote PAGE_EXECUTE_READWRITE stub
+    (`if(r8)*(byte*)r8=1; ret`, or a lock-inc counter + true), then WPM the Func slot to it.
+  Located: IsPreviewable UFunctions @0x26D001D6F00 (CatalogEntryWithPreview tile), @0x26D001D4D00 (base
+  HeroPickerSelectable_C); IsPreviewSelection UFunction @0x26CFB237400 (Outer=WBP_HeroPicker_C, id
+  0x0079339D). (Heap addrs are PER-RUN — re-derive via findptr each launch.)
+RESULT — INERT: patched IsPreviewable->true and IsPreviewSelection->counter. NO center change, and the
+counter stayed **0** through 4 MINUTES of the user's real clicks AND a full grid rebuild — even for
+IsPreviewable which SHOULD fire per-tile at build. The patch WRITE persists (re-read slot = my stub;
+obj Name still IsPreviewable). CONCLUSIONS:
+  (1) The traced click chain (HandlePortraitClicked -> "Update Hero Selection" -> IsPreviewSelection ->
+      OnHeroSelected) is NOT the runtime path — IsPreviewSelection is never hit on click.
+  (2) The tiles don't re-evaluate IsPreviewable in the click/rebuild flow: CommonUI TileView POOLS the
+      entry widgets, so "previewable" is computed once at FIRST build (before any patch) and reused;
+      filter/re-nav reuses pooled entries.
+  (3) I never confirmed the Func-swap actually REDIRECTS (couldn't get a target function to fire), so
+      0-counts are ambiguous — VERIFY the swap on a known-hot function before trusting it.
+
+=========================== *** NEXT PLAN (S49) — do these in order *** ======
+1. VERIFY the Func-swap mechanism first. Counter-instrument a function you KNOW fires every frame or on
+   hover (not a leaf predicate). If the counter moves, the swap redirects and 0-counts mean "not called";
+   if it doesn't, the swap is wrong (then use an alternative: patch the UFunction Script bytecode — it's
+   heap data too, no integrity wall — Script.Data/Num live in the UFunction near +0x68/+0x70 in this
+   build; patch Script[0..] to set ReturnValue then EX_Return).
+2. TRACE THE REAL runtime click->center path (instrument the ACTUAL handlers, not leaf predicates):
+   - The visible grid = WBP_HeroPicker / TileView_Hunters (UTileView). Clicking = a CommonUI list
+     SELECTION (purple). Find + instrument the UTileView OnItemSelectionChanged / OnItemClicked binding
+     and the WBP_UI_PartyHeroSelect **OnHeroSelected** handler, **SetPreviewHero**, **RefreshContentPreview**,
+     and the **BPFL_MainMenu_ContentPreview** spawner (Default__BPFL_MainMenu_ContentPreview_C —
+     ContentPreview_GotoScene / "Content Preview Set Scene Tag"). One of these updates the center for a
+     PREVIEWABLE hero and is skipped for owned. Confirm which fires on an owned click vs an unowned click.
+   - bpdump these OFFLINE first (they may reveal the ownership branch without live work): `& "$env:Program
+     Files\dotnet\dotnet.exe" run -c Release -- bpdump <asset-substr> <fn|*|@props>` from tools/extractor/
+     extractor (out -> tools/extractor/out). Candidates: WBP_HeroPicker (OnItemSelectionChanged /
+     HandlePortraitClicked / "Update Hero Selection" — but note the trace says these may NOT be the live
+     path), WBP_UI_PartyHeroSelect (OnHeroSelected / SetPreviewHero / RefreshContentPreview / TryPick /
+     CheckCanUseSelection), BPFL_MainMenu_ContentPreview.
+3. FIX at the confirmed divergence point + FORCE tile re-eval: patch the function that gates the center
+   update on ownership so owned heroes also update the center; then rebuild the TileView from scratch
+   (clear list items + re-add, not a filter toggle) so pooled entries re-evaluate. Persist the chosen
+   hero (the S48 write-back handler POST/PUT /party/parties/{partyId}/members/{memberId} + the seed
+   already round-trip a SelectedHeroAssetId server-side — wire the client selection to it once the
+   client route is captured).
+
+=========================== CLICK / INPUT GOTCHAS (critical) =================
+* SYNTHETIC clicks (PowerShell SetForegroundWindow + mouse_event) fire NAV buttons but ONLY HOVER the
+  TileView tiles (do not activate them). computer-use left_click DOES activate tiles BUT is blocked by
+  "desktop shell frontmost". FIX to land a real computer-use click: PowerShell Alt-tap (keybd_event 0x12
+  down/up) UNLOCKS SetForegroundWindow, then AttachThreadInput+BringWindowToTop+SetForegroundWindow makes
+  the game GENUINELY foreground (verify GetForegroundWindow==game hwnd), THEN computer-use left_click.
+* NEVER use computer-use open_application to focus the game — it SPAWNS a bare 2nd instance (no -ini
+  redirect) every call. Kill bare instances: the one whose Win32_Process.CommandLine LACKS 'localhost:8080'.
+* Enter is bound to global chat ("Press Enter to Chat") — not tile activation.
+* The BEST validation is to have the USER click (their real mouse activates tiles reliably); instrument
+  first, then ask them to click, then read.
+
+=========================== HOW TO LAUNCH / INJECT / OBSERVE =================
+Steam MUST be running (else Auth Failure 14005). Seeded ags is the committed build.
+0) Build + run ags from the REPO ROOT (so certs\ + state\ resolve):
+   & "$env:ProgramFiles\Go\bin\go.exe" build -C server -o ags.exe ./cmd/ags
+   .\server\ags.exe -log "<scratchpad>\ags.log"    (run from server\ CWD; re-append certs\root.crt to
+   <GameRoot>\Loki\Content\Certificates\cacert.pem if the client rejects TLS — memory/supervive-ags-cert-
+   rebuild-gotcha.md).
+1) Roster fix (per launch) — inject as a HARNESS-TRACKED BACKGROUND task (NOT a child of a foreground
+   tool call; the 2-min tool timeout kills a child injector before it injects):
+   tools\inject\inject.exe watch SUPERVIVE-Win64-Shipping.exe
+     tools\sigbypass-mod\catalog_ready_fix.dll 0x3EC57D0 40555356574154415541564157   (run_in_background)
+2) Launch: powershell -ExecutionPolicy Bypass -File configs\launch-recon.ps1   (run_in_background)
+3) Wait for menu (Loki.log PartySlot_C_0 UpdateActor line) + ~1min for heroes to load, then navigate to
+   HUNTERS (the grid populates on nav once heroes are loaded).
+4) Inject a probe into the RUNNING client (pick page already decrypted, no relaunch, no menu-load crash):
+   tools\inject\inject.exe mmap <PID> <probe.dll>
+INTERMITTENT menu-load crash (Clearing gameplay cue BPs -> InvalidateAllWidgets -> Sentry) hits a
+fraction of launches regardless of mods — just relaunch. Keep any .text patch < ~3min (integrity wall);
+BP Func/Script patches are HEAP data (no wall). Read live Loki.log at
+C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Logs\Loki.log.
+
+=========================== TOOLS (this session) ============================
+* tools/re/find_ufunc.py — locate a UFunction among findptr hits (Name/Class/Outer resolve).
+* tools/re/patch_ispreviewable.py — Func-swap a UFunction to a return-true stub (VirtualAllocEx+WPM).
+* tools/re/patch_count.py — Func-swap to a lock-inc-counter+true stub; `... <slot> read <counter>` reads it.
+* tools/re/hero_enum.py — walk LokiAssetManager AssetTypeMap -> Hero AssetMap Num (enum count, live).
+* tools/re/catalog_hidden.py — walk CatalogManager +0x60 map; read/poke hero CatalogEntry flags.
+* tools/sigbypass-mod/pick_probe.cpp — intra-jmp capture of TryPickMyHeroAndCosmetics args/members-count
+  (unpatch 45s to dodge the integrity wall). Inject via `inject mmap <PID>`.
+* tools/sigbypass-mod/catalog_ready_fix.cpp — the roster fix (scan + jz + self-restore + VEH).
+* tools/sigbypass-mod/hero_resolve_probe.cpp — reusable intra-jmp register/struct capture pattern.
+* tools/usmapdump/usmapdump.exe — live RPM (non-elevated): nameid/findptr/peek/disasm/poke/vtdump.
+* tools/extractor bpdump — offline Kismet bytecode of any packaged BP/widget fn.
+
+=========================== GROUND-TRUTH OFFSETS (base 0x7FF682A80000 CONSTANT; heap ptrs per-run) ===
+UObject layout THIS build: Class@+0x18, Name@+0x20, Outer@+0x28. UFunction Func @+0xE0 (BP funcs share
+ProcessInternal 0x7FF683DC54A0); UFunction Script TArray near +0x68 (Data)/+0x70 (Num,Max).
+IsPreviewable = IsValid(Entry) AND NOT IsDisabled AND NOT CanUse (id 0x00777E46). IsPreviewSelection id
+0x0079339D (Outer WBP_HeroPicker_C). TryPickMyHeroAndCosmetics id 0x005904F7: exec +0x54B5380, impl
++0x58467E0, action +0x5846BE0, members-getter +0x5840730. LokiAssetManager vtable RVA +0x88CCB78 (NOT
++0x888CB78); AssetTypeMap mgr+0x478 (0x20-byte elems {KeyFName@0, tdPtr@+8, ptr2@+0x10, hashints@+0x18});
+FPrimaryAssetTypeData.AssetMap TMap @tdPtr+0x178. CatalogManager vtable RVA +0x8831758; IsCatalogDataReady
+impl +0x57BB700 (flags CatMgr+0x350..+0x354 all-nonzero => ready), jz to NOP +0x57BB722; IsHidden getter
++0x525C210 (CatalogEntry+0xd3). Hero FName type id 0x1A568. FNamePool &Blocks[0] +0x9D81450. Browse gate
+0x3EC57D0. GetHeroAssetFromPrimaryAssetId impl +0x562E9F6 / keep-set +0x562EB2E.
+
+=========================== READ FIRST (memory + docs) =====================
+1. CLAUDE.md — project rules, launch gotchas, DO-NOT list.
+2. memory/supervive-hero-roster-blocker.md (TOP entries) — the full chronological RE incl. this session's
+   route-B-inert + TileView-pooling finding. memory/supervive-ags-cert-rebuild-gotcha.md.
+3. docs/session-48-selected-hunter-flow.txt (the seed) + docs/session-47-tile-widget-FOUND.txt (grid).
+4. docs/trackb-notes.md (party/personalization endpoints) + server/internal/interactive/interactive.go.
+
+=========================== WRAP-UP EXPECTATIONS ===========================
+Write a docs/session-49-*.txt evidence log; update memory/supervive-hero-roster-blocker.md (top) + MEMORY.md.
+Small single-purpose commits. If S49 makes clicking an owned hunter update the center (client-selection
+persisted via the S48 write-back) — and forces the pooled TileView to re-render — the last menu "?" gap
+closes and the hunter flow is end-to-end functional.

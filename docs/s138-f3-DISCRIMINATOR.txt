@@ -1,0 +1,6 @@
+=== PS PROBE AFTER-ARM-E  pid=12904  PS=0x2C98A6DCCD0  00:55:22 ===
+  PlatformPlayerID FString @+0x8C0 : Data=0x2C99BACADB0  Num=5  Max=8
+  >>> [PS+0x8C8] (the DISCRIMINATOR) = 5
+  >>> string contents = 'bot0'
+
+  => P1: the naming block RAN  => execution passed 0x556DD63  => divert was 0x556DE6A (GetTeamState)

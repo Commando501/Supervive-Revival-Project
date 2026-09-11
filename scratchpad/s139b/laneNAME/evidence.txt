@@ -1,0 +1,182 @@
+== ULokiCMC::TickComponent 0x055C2B90 (HitStop gate) ==
+0x055C2B90  488bc4                   mov rax, rsp
+0x055C2B93  53                       push rbx
+0x055C2B94  4881ec80000000           sub rsp, 0x80
+0x055C2B9B  48896808                 mov qword ptr [rax + 8], rbp
+0x055C2B9F  488bd9                   mov rbx, rcx
+0x055C2BA2  48897010                 mov qword ptr [rax + 0x10], rsi
+0x055C2BA6  33d2                     xor edx, edx
+0x055C2BA8  0f2970e8                 movaps xmmword ptr [rax - 0x18], xmm6
+0x055C2BAC  b178                     mov cl, 0x78
+0x055C2BAE  0f28f1                   movaps xmm6, xmm1
+0x055C2BB1  498bf1                   mov rsi, r9
+0x055C2BB4  418be8                   mov ebp, r8d
+0x055C2BB7  e854501200               call 0x56e7c10
+0x055C2BBC  84c0                     test al, al
+0x055C2BBE  7466                     je 0x55c2c26
+0x055C2BC0  4889bc24a0000000         mov qword ptr [rsp + 0xa0], rdi
+0x055C2BC8  488bbb98010000           mov rdi, qword ptr [rbx + 0x198]
+0x055C2BCF  4885ff                   test rdi, rdi
+0x055C2BD2  740c                     je 0x55c2be0
+0x055C2BD4  488bcf                   mov rcx, rdi
+0x055C2BD7  e86460f3ff               call 0x54f8c40
+0x055C2BDC  84c0                     test al, al
+0x055C2BDE  7502                     jne 0x55c2be2
+0x055C2BE0  33ff                     xor edi, edi
+0x055C2BE2  488d8ff0070000           lea rcx, [rdi + 0x7f0]
+0x055C2BE9  488b01                   mov rax, qword ptr [rcx]
+0x055C2BEC  ff5010                   call qword ptr [rax + 0x10]
+0x055C2BEF  488bf8                   mov rdi, rax
+0x055C2BF2  4885c0                   test rax, rax
+0x055C2BF5  7427                     je 0x55c2c1e
+0x055C2BF7  488bc8                   mov rcx, rax
+0x055C2BFA  e84163f3ff               call 0x54f8f40
+0x055C2BFF  84c0                     test al, al
+0x055C2C01  741b                     je 0x55c2c1e
+0x055C2C03  488b153e58a704           mov rdx, qword ptr [rip + 0x4a7583e]
+0x055C2C0A  488d8f48010000           lea rcx, [rdi + 0x148]
+0x055C2C11  488b01                   mov rax, qword ptr [rcx]
+0x055C2C14  ff5018                   call qword ptr [rax + 0x18]
+0x055C2C17  84c0                     test al, al
+0x055C2C19  7403                     je 0x55c2c1e
+0x055C2C1B  0f57f6                   xorps xmm6, xmm6
+0x055C2C1E  488bbc24a0000000         mov rdi, qword ptr [rsp + 0xa0]
+0x055C2C26  4c8bce                   mov r9, rsi
+0x055C2C29  448bc5                   mov r8d, ebp
+0x055C2C2C  0f28ce                   movaps xmm1, xmm6
+0x055C2C2F  488bcb                   mov rcx, rbx
+0x055C2C32  e8490b04fe               call 0x3603780
+0x055C2C37  0fb68331020000           movzx eax, byte ptr [rbx + 0x231]
+
+== ULokiCMC::PerformMovement 0x055B8370 (HitStop gate) ==
+0x055B8370  4056                     push rsi
+0x055B8372  4881eca0000000           sub rsp, 0xa0
+0x055B8379  4c897c2470               mov qword ptr [rsp + 0x70], r15
+0x055B837E  488bf1                   mov rsi, rcx
+0x055B8381  4c8bb998010000           mov r15, qword ptr [rcx + 0x198]
+0x055B8388  0f29742460               movaps xmmword ptr [rsp + 0x60], xmm6
+0x055B838D  0f28f1                   movaps xmm6, xmm1
+0x055B8390  0f297c2450               movaps xmmword ptr [rsp + 0x50], xmm7
+0x055B8395  4d85ff                   test r15, r15
+0x055B8398  740c                     je 0x55b83a6
+0x055B839A  498bcf                   mov rcx, r15
+0x055B839D  e89e08f4ff               call 0x54f8c40
+0x055B83A2  84c0                     test al, al
+0x055B83A4  7503                     jne 0x55b83a9
+0x055B83A6  4533ff                   xor r15d, r15d
+0x055B83A9  33d2                     xor edx, edx
+0x055B83AB  48899c24c0000000         mov qword ptr [rsp + 0xc0], rbx
+0x055B83B3  b178                     mov cl, 0x78
+0x055B83B5  e856f81200               call 0x56e7c10
+0x055B83BA  0f57ff                   xorps xmm7, xmm7
+0x055B83BD  84c0                     test al, al
+0x055B83BF  743c                     je 0x55b83fd
+0x055B83C1  498d8ff0070000           lea rcx, [r15 + 0x7f0]
+0x055B83C8  488b01                   mov rax, qword ptr [rcx]
+0x055B83CB  ff5010                   call qword ptr [rax + 0x10]
+0x055B83CE  488bd8                   mov rbx, rax
+0x055B83D1  4885c0                   test rax, rax
+0x055B83D4  7427                     je 0x55b83fd
+0x055B83D6  488bc8                   mov rcx, rax
+0x055B83D9  e8620bf4ff               call 0x54f8f40
+0x055B83DE  84c0                     test al, al
+0x055B83E0  741b                     je 0x55b83fd
+0x055B83E2  488b155f00a804           mov rdx, qword ptr [rip + 0x4a8005f]
+0x055B83E9  488d8b48010000           lea rcx, [rbx + 0x148]
+0x055B83F0  488b01                   mov rax, qword ptr [rcx]
+0x055B83F3  ff5018                   call qword ptr [rax + 0x18]
+0x055B83F6  84c0                     test al, al
+0x055B83F8  7403                     je 0x55b83fd
+0x055B83FA  0f57f6                   xorps xmm6, xmm6
+0x055B83FD  488b06                   mov rax, qword ptr [rsi]
+0x055B8400  488bce                   mov rcx, rsi
+
+== ULokiCMC::ConstrainInputAcceleration 0x055A75B0 ==
+0x055A75B0  48895c2408               mov qword ptr [rsp + 8], rbx
+0x055A75B5  48896c2410               mov qword ptr [rsp + 0x10], rbp
+0x055A75BA  4889742418               mov qword ptr [rsp + 0x18], rsi
+0x055A75BF  57                       push rdi
+0x055A75C0  4883ec40                 sub rsp, 0x40
+0x055A75C4  488bb198010000           mov rsi, qword ptr [rcx + 0x198]
+0x055A75CB  498be8                   mov rbp, r8
+0x055A75CE  488bda                   mov rbx, rdx
+0x055A75D1  488bf9                   mov rdi, rcx
+0x055A75D4  4885f6                   test rsi, rsi
+0x055A75D7  7431                     je 0x55a760a
+0x055A75D9  488bce                   mov rcx, rsi
+0x055A75DC  e85f16f5ff               call 0x54f8c40
+0x055A75E1  84c0                     test al, al
+0x055A75E3  7425                     je 0x55a760a
+0x055A75E5  488bce                   mov rcx, rsi
+0x055A75E8  e843b30000               call 0x55b2930
+0x055A75ED  84c0                     test al, al
+0x055A75EF  7419                     je 0x55a760a
+0x055A75F1  0f1005a8104204           movups xmm0, xmmword ptr [rip + 0x44210a8]
+0x055A75F8  0f1103                   movups xmmword ptr [rbx], xmm0
+0x055A75FB  f20f1005ad104204         movsd xmm0, qword ptr [rip + 0x44210ad]
+0x055A7603  f20f114310               movsd qword ptr [rbx + 0x10], xmm0
+0x055A7608  eb54                     jmp 0x55a765e
+0x055A760A  4c8bc5                   mov r8, rbp
+0x055A760D  488d542420               lea rdx, [rsp + 0x20]
+0x055A7612  488bcf                   mov rcx, rdi
+0x055A7615  e8a65503fe               call 0x35dcbc0
+0x055A761A  f20f104c2430             movsd xmm1, qword ptr [rsp + 0x30]
+0x055A7620  0f57c0                   xorps xmm0, xmm0
+0x055A7623  660f2ec8                 ucomisd xmm1, xmm0
+0x055A7627  7428                     je 0x55a7651
+0x055A7629  488b07                   mov rax, qword ptr [rdi]
+0x055A762C  488bcf                   mov rcx, rdi
+0x055A762F  ff90e00c0000             call qword ptr [rax + 0xce0]
+0x055A7635  84c0                     test al, al
+0x055A7637  7412                     je 0x55a764b
+0x055A7639  0f10442420               movups xmm0, xmmword ptr [rsp + 0x20]
+0x055A763E  48c7431000000000         mov qword ptr [rbx + 0x10], 0
+0x055A7646  0f1103                   movups xmmword ptr [rbx], xmm0
+0x055A7649  eb13                     jmp 0x55a765e
+0x055A764B  f20f104c2430             movsd xmm1, qword ptr [rsp + 0x30]
+0x055A7651  0f10442420               movups xmm0, xmmword ptr [rsp + 0x20]
+0x055A7656  0f1103                   movups xmmword ptr [rbx], xmm0
+0x055A7659  f20f114b10               movsd qword ptr [rbx + 0x10], xmm1
+
+== ALokiCharacter::IsStunned impl 0x055B2930 ==
+0x055B2930  4053                     push rbx
+0x055B2932  4883ec20                 sub rsp, 0x20
+0x055B2936  4889742430               mov qword ptr [rsp + 0x30], rsi
+0x055B293B  488bf1                   mov rsi, rcx
+0x055B293E  e84da0ddfd               call 0x338c990
+0x055B2943  488bc8                   mov rcx, rax
+0x055B2946  e8556d0400               call 0x55f96a0
+0x055B294B  33db                     xor ebx, ebx
+0x055B294D  4885c0                   test rax, rax
+0x055B2950  742b                     je 0x55b297d
+0x055B2952  48897c2438               mov qword ptr [rsp + 0x38], rdi
+0x055B2957  488b7838                 mov rdi, qword ptr [rax + 0x38]
+0x055B295B  4885ff                   test rdi, rdi
+0x055B295E  7418                     je 0x55b2978
+0x055B2960  48399f78010000           cmp qword ptr [rdi + 0x178], rbx
+0x055B2967  7508                     jne 0x55b2971
+0x055B2969  488bcf                   mov rcx, rdi
+0x055B296C  e8af35c7fb               call 0x1225f20
+0x055B2971  488b9f78010000           mov rbx, qword ptr [rdi + 0x178]
+0x055B2978  488b7c2438               mov rdi, qword ptr [rsp + 0x38]
+0x055B297D  488d8ef0070000           lea rcx, [rsi + 0x7f0]
+0x055B2984  488b01                   mov rax, qword ptr [rcx]
+0x055B2987  ff5010                   call qword ptr [rax + 0x10]
+0x055B298A  488b742430               mov rsi, qword ptr [rsp + 0x30]
+0x055B298F  4885c0                   test rax, rax
+0x055B2992  7424                     je 0x55b29b8
+0x055B2994  8b480c                   mov ecx, dword ptr [rax + 0xc]
+0x055B2997  c1e91e                   shr ecx, 0x1e
+0x055B299A  f6d1                     not cl
+0x055B299C  f6c101                   test cl, 1
+0x055B299F  7417                     je 0x55b29b8
+0x055B29A1  488b5348                 mov rdx, qword ptr [rbx + 0x48]
+0x055B29A5  488d8848010000           lea rcx, [rax + 0x148]
+0x055B29AC  488b01                   mov rax, qword ptr [rcx]
+0x055B29AF  4883c420                 add rsp, 0x20
+0x055B29B3  5b                       pop rbx
+0x055B29B4  48ff6018                 jmp qword ptr [rax + 0x18]
+0x055B29B8  32c0                     xor al, al
+0x055B29BA  4883c420                 add rsp, 0x20
+0x055B29BE  5b                       pop rbx
+0x055B29BF  c3                       ret 

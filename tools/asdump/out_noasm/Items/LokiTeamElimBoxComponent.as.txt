@@ -1,0 +1,449 @@
+// ============================================================================
+//  MODULE   Items.LokiTeamElimBoxComponent
+//  SOURCE   Items/LokiTeamElimBoxComponent.as
+//  CONTENT  1 class(es), 16 function(s), 0 enum(s), 1 global(s), 4000 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiTeamElimBoxComponent;
+
+ULokiTeamElimBoxComponent@ ULokiTeamElimBoxComponent()   // traits=0x20
+{
+    ULokiTeamElimBoxComponent v2;
+
+    v2 = ULokiTeamElimBoxComponent();
+    return v2;
+}
+
+UClass@ ULokiTeamElimBoxComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiTeamElimBoxComponent);
+    return v2;
+}
+
+ULokiTeamElimBoxComponent@ ULokiTeamElimBoxComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiTeamElimBoxComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiTeamElimBoxComponent, v2, typeid(ULokiTeamElimBoxComponent@), WithName);
+    return v2;
+}
+
+ULokiTeamElimBoxComponent@ ULokiTeamElimBoxComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiTeamElimBoxComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiTeamElimBoxComponent, v2, typeid(ULokiTeamElimBoxComponent@), WithName);
+    return v2;
+}
+
+ULokiTeamElimBoxComponent@ ULokiTeamElimBoxComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiTeamElimBoxComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiTeamElimBoxComponent, v2, typeid(ULokiTeamElimBoxComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiTeamElimBoxComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiTeamElimBoxComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TArray<FName> InventorySlots;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TSubclassOf<ALokiSearchableBox@> TeamElimBoxClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TSubclassOf<ALokiBaseItem@> GoldDropClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TArray<FName> T0SlotsToDestroy;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    int MinimumInsuredGoldValue;
+    TMap<int, ALokiSearchableBox@> TeamIndexToBoxMap;
+    TArray<ALokiPlayerState@> PlayersQueue;
+    private FTimerHandle UpdateTimerHandle;
+
+    ULokiTeamElimBoxComponent()   // traits=0x21
+    {
+        auto v1;
+
+        this.InventorySlots = TArray<FName>();
+        this.T0SlotsToDestroy = TArray<FName>();
+        this.TeamIndexToBoxMap = TMap<int, ALokiSearchableBox@>();
+        this.PlayersQueue = TArray<ALokiPlayerState@>();
+        this.UpdateTimerHandle = FTimerHandle();
+        this.TeamElimBoxClass = TSubclassOf<ALokiSearchableBox@>();
+        this.TeamElimBoxClass = nullptr;
+        this.GoldDropClass = TSubclassOf<ALokiBaseItem@>();
+        this.GoldDropClass = nullptr;
+        v1 = 0;
+        this.MinimumInsuredGoldValue = v1;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    AActor@ DropWipedTeamInventories(AActor@ LastVictimActor, APawn@ WipeInstigator, const int TeamIndex)   // traits=0x20
+    {
+        bool v1;
+        AActor v4;
+        TSubclassOf<ALokiSearchableBox@> v6;
+        ALokiHeroCharacter v8;
+        ALokiHeroCharacter v10;
+        FVector v16;
+        FVector v22;
+        ALokiHeightMap v26;
+        bool v27;
+        ALokiHeroCharacter v30;
+        ULokiCharacterMovementComponent v32;
+        ULokiCharacterMovementComponent v34;
+        FVector v40;
+        FName v42;
+        ALokiSearchableBox v50;
+        FRotator v56;
+        ESpawnActorCollisionHandlingMethod v57;
+        ALokiSearchableBox v60;
+        TArray<ALokiPlayerState@> v64;
+        ULokiInventoryComponentBase v72;
+        TArray<ALokiBaseItem@> v76;
+        TArrayIterator<ALokiPlayerState@> v82;
+        ALokiPlayerState v90;
+
+        v1 = IsValid(LastVictimActor);
+        v1 = !v1;
+        if (v1) {
+            return v4;
+        } else {
+            v6 = TSubclassOf<ALokiSearchableBox@>();
+            v6 = this.TeamElimBoxClass;
+            v1 = v6 == nullptr;
+            if (v1) {
+                return v4;
+            } else {
+                if (LastVictimActor != nullptr) {
+                    v10 = cast<ALokiHeroCharacter@>(LastVictimActor);
+                } else {
+                    v10 = nullptr;
+                }
+                v8 = v10;
+                if (v8 == nullptr) {
+                    return v4;
+                } else {
+                    v22 = v8.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v26 = ALokiHeightMap::GetInstance(__WorldContext);
+                    if (v26 != nullptr) {
+                        v1 = true;
+                        if (v26.IsAbyss(v22, v1)) {
+                            if (WipeInstigator != nullptr) {
+                                v10 = cast<ALokiHeroCharacter@>(WipeInstigator);
+                            } else {
+                                v10 = nullptr;
+                            }
+                            v30 = v10;
+                            if (IsValid(v30)) {
+                                v32 = v30.GetLokiCharacterMovement();
+                                if (v32 != nullptr) {
+                                    v22 = v32.LastWalkingLocation;
+                                }
+                            } else {
+                                v34 = v8.GetLokiCharacterMovement();
+                                v22 = v34.LastWalkingLocation;
+                            }
+                        }
+                    }
+                    v40 = FVector();
+                    v42 = FName("");
+                    v27 = false;
+                    v1 = LokiProjection::SimpleProjectToUnobstructedTerrain(__WorldContext, v22, v40, 1000.0, 5000.0, v8, v27, 0, 10, v42);
+                    if (!v1) {
+                        v1 = 0;
+                    } else {
+                        v27 = ALokiBaseItem::IsValidItemLocation(__WorldContext, v8, v22);
+                        v1 = v27;
+                    }
+                    if (v1) {
+                        v22 = v40;
+                    } else {
+                        v16 = this.FindLocationForBox(v22, v8);
+                        v22 = v16;
+                    }
+                    v57 = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+                    v56 = FRotator();
+                    v60 = LokiGameplay::SpawnActorFromClass(__WorldContext, this.TeamElimBoxClass, v40, v56, nullptr, v57, nullptr);
+                    v50 = v60;
+                    v64 = LokiGameplay::GetPlayerStatesOnTeam(__WorldContext, TeamIndex);
+                    v72 = ULokiInventoryComponentBase::GetInventoryComponent(v50);
+                    v76 = TArray<ALokiBaseItem@>();
+                    v82 = v64.Iterator();
+                    while (true) {
+                        v1 = v82.CanProceed;
+                        if (!v1) break;
+                        v90 = v82.Proceed();
+                        v82.Proceed();
+                        this.TransferInventoryItems(v90, v72, v76);
+                    }
+                    this.TransferKilledPlayerGold(v8, v72);
+                    this.PostTransferToTeamElimBox(v72, v76);
+                }
+            }
+        }
+        return v50;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    FVector FindLocationForBox(const FVector& Origin, AActor@ KilledCharacter)   // traits=0x20
+    {
+        FVector v6;
+        auto v7;
+        FVector v14;
+        FVector v20;
+        auto v21;
+        bool v22;
+        TSubclassOf<UNavigationQueryFilter@> v26;
+        FName v29;
+        auto v32;
+        auto v34;
+        auto v36;
+
+        v6 = FVector(Origin);
+        v7 = 10;
+        v14 = FVector();
+        v20 = FVector();
+        v21 = 0;
+        while (true) {
+            if (v21 >= v7) break;
+            v26 = TSubclassOf<UNavigationQueryFilter@>(nullptr);
+            v22 = UNavigationSystemV1::GetRandomLocationInNavigableRadius(__WorldContext, Origin, v14, 250.0, nullptr, v26);
+            if (v22) {
+                v29 = FName("");
+                v22 = false;
+                v34 = LokiProjection::SimpleProjectToUnobstructedTerrain(__WorldContext, Origin, v20, 1000.0, 5000.0, KilledCharacter, v22, 0, 10, v29);
+                if (v34) {
+                    if (ALokiBaseItem::IsValidItemLocation(__WorldContext, KilledCharacter, Origin)) {
+                        v6 = v20;
+                        __ret = FVector(v6);
+                        return;
+                    }
+                }
+            }
+            v21++;
+        }
+        v36 = 90.0;
+        v32 = v6.Z;
+        v32 = v32 - v36;
+        v6.Z = v32;
+        __ret = FVector(v6);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void TransferInventoryItems(ALokiPlayerState@ PlayerState, ULokiInventoryComponentBase@ DestinationInventory, TArray<ALokiBaseItem@>&inout OutDeniedItems)   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+        ULokiInventoryComponentComboItems v4;
+        TArray<ALokiBaseItem@> v14;
+        TArrayIterator<ALokiBaseItem@> v20;
+        ALokiBaseItem v28;
+        FName v30;
+        FName v32;
+        auto v33;
+        auto v34;
+
+        v1 = IsValid(PlayerState);
+        v1 = !v1;
+        if (v1) {
+            v1 = true;
+        } else {
+            v2 = IsValid(DestinationInventory);
+            v2 = !v2;
+            v1 = v2;
+        }
+        if (v1) {
+            return;
+        } else {
+            v4 = PlayerState.GetInventory();
+            v2 = IsValid(v4);
+            v2 = !v2;
+            if (v2) {
+                return;
+            } else {
+                v14 = v4.GetAllValidItems();
+                v20 = v14.Iterator();
+                while (true) {
+                    v1 = v20.CanProceed;
+                    if (!v1) break;
+                    v28 = v20.Proceed();
+                    v20.Proceed();
+                    v2 = IsValid(v28);
+                    v2 = !v2;
+                    if (!v2) {
+                        PlayerState.AddItemToElimInventorySnapShot(v28);
+                        v1 = v28.bDropOnTeamElimination;
+                        v1 = !v1;
+                        if (!v1) {
+                            v2 = v28.bStarterItem;
+                            if (!v2) {
+                                v32 = v28.GetSlotName();
+                                v30 = FName(v32);
+                                v1 = this.InventorySlots.Contains(v30);
+                                v1 = !v1;
+                                if (!v1) {
+                                    if (!this.T0SlotsToDestroy.Contains(v30)) {
+                                        v2 = 0;
+                                    } else {
+                                        v33 = v28.TierNumber;
+                                        v1 = v33 == 0;
+                                        v2 = v1;
+                                    }
+                                    if (!v2) {
+                                        v1 = this.ShouldTransferItem(v28, PlayerState);
+                                        v1 = !v1;
+                                        if (v1) {
+                                            OutDeniedItems.Add(v28);
+                                        } else {
+                                            v34 = v28.PlayerStateDupeArray.Num();
+                                            if (v34 > 0) {
+                                                v28.PlayerStateDupeArray.Reset(0);
+                                            }
+                                            v1 = false;
+                                            v4.TryTransferToInventory(v28, DestinationInventory, NAME_None, -1, v1);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void TransferKilledPlayerGold(ALokiHeroCharacter@ KilledCharacter, ULokiInventoryComponentBase@ BoxInventory)   // traits=0x20
+    {
+        ALokiHeroCharacter v2;
+        bool v3;
+        APlayerState v6;
+        ALokiPlayerState v8;
+        ALokiPlayerState v10;
+        ALokiGameMode v14;
+        auto v15;
+        int v16;
+        float32 v17;
+        float32 v18;
+        ALokiBaseItem v24;
+        bool v25;
+        ELokiAddToInventoryReason v26;
+
+        v2 = KilledCharacter;
+        if (v2 == nullptr) {
+            return;
+        } else {
+            v6 = KilledCharacter.PlayerState;
+            if (v6 != nullptr) {
+                v8 = cast<ALokiPlayerState@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v10 = v8;
+            if (v10 == nullptr) {
+                return;
+            } else {
+                v14 = Loki::GetLokiGameMode(__WorldContext);
+                v3 = v14.bDropCurrencyOnPlayerDeath;
+                v3 = !v3;
+                if (v3) {
+                    return;
+                } else {
+                    v15 = v10.GetWalletGold();
+                    if (v15 <= 0) {
+                        return;
+                    } else {
+                        v17 = v14.GetGoldDeathboxTransferRatio();
+                        v18 = float32(v15);
+                        v17 = v17 * v18;
+                        v16 = Math::RoundToInt(v17);
+                        v3 = false;
+                        v24 = SpawnActor(this.GoldDropClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v3, nullptr);
+                        v24.DroppedAsCurrency(v10, v16)  /* UFunction ReceiveDroppedAsCurrency */;
+                        v3 = false;
+                        v25 = true;
+                        v26 = ELokiAddToInventoryReason::Created;
+                        v3 = false;
+                        BoxInventory.TryAddToInventory(v24, v26, NAME_None, -1, v25, v3);
+                        v10.ConsumeWalletCurrency("Gold", v16, v3);
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    bool ShouldTransferItem(ALokiBaseItem@ Item, ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+
+        __Evt_PushArgument__ALokiBaseItem(Item);
+        __Evt_PushArgument__ALokiPlayerState(PlayerState);
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"ShouldTransferItem");
+        return v1;
+    }
+
+    UFUNCTION(UnrealName=ShouldTransferItem, BlueprintEvent, CanOverrideEvent)
+    bool ShouldTransferItem_Implementation(ALokiBaseItem@ Item, ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        auto v1;
+
+        v1 = true;
+        return v1;
+    }
+
+    void PostTransferToTeamElimBox(ULokiInventoryComponentBase@ TeamElimBox, const TArray<ALokiBaseItem@>& DeniedItems)   // traits=0x20
+    {
+        __Evt_PushArgument__ULokiInventoryComponentBase(TeamElimBox);
+        __Evt_PushArgument(DeniedItems, typeid(TArray));
+        __Evt_Execute(this, n"PostTransferToTeamElimBox");
+        return;
+    }
+
+    UFUNCTION(UnrealName=PostTransferToTeamElimBox, BlueprintEvent, CanOverrideEvent, NoOp)
+    void PostTransferToTeamElimBox_Implementation(ULokiInventoryComponentBase@ TeamElimBox, const TArray<ALokiBaseItem@>& DeniedItems)   // traits=0x20
+    {
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.PrimaryComponentTick.SetbAllowTickOnDedicatedServer(v1);
+        v1 = false;
+        this.PrimaryComponentTick.SetbStartWithTickEnabled(v1);
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        return;
+    }
+
+    void ~ULokiTeamElimBoxComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

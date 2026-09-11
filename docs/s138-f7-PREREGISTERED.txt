@@ -1,0 +1,63 @@
+S138 FLIGHT 7 -- PRE-REGISTRATION. Written BEFORE launching. Not editable afterwards.
+
+TWO EXPERIMENTS ON ONE STAGED CLIENT, IN THIS ORDER, AND THE ORDER IS DELIBERATE:
+  6b  (external, cheap, DOWNSTREAM): poke controller+0x6A0 = 1 and see whether the bot MOVES.
+  ARM F (shim, UPSTREAM): poke pawn+0x1090 = 1 then CALL UpdateCharacterControllable and see
+      whether the gate opens by the game's own logic.
+6b first, because it is free and it answers "is the gate sufficient?" -- and if the gate is NOT
+sufficient, then ARM F opening it would prove nothing about motion anyway.
+
+================================================================================================
+ARMS
+================================================================================================
+  driverecompute       RAW a2a952babfed256b   ARM D + ARM F (KBSPSARMS=0xA0)
+  driverecompute-ctrl  RAW 2a91f0aa7f3d521b   ARM D only, ARM F COMPILED OUT (0x20)
+  botai                RAW 5e47c13cf7f0a158   regression gate, UNCHANGED
+Static two-sided check, 6 rows, all pass: the ARM F banner / signature gate / THE CALL appear ONLY
+in the treatment; "ARM F SKIPPED by KBSPSARMS bit7" appears ONLY in the control; ARM D appears in
+both. verify_dll PASS on both; WriteProcessMemory / FlushInstructionCache / VirtualAlloc absent.
+
+================================================================================================
+6b -- POKE THE GATE ITSELF  (controller+0x6A0 = 1)
+================================================================================================
+  Q1  readback returns 1.
+  Q2  RandomMoveDirection (+0x658) becomes a NON-ZERO horizontal unit vector within ~2 s
+      (Tick re-randomises every 2.0 s).
+  Q3  pawn ControlInputVector (+0x418) becomes non-zero.
+  Q4  the pawn's world location CHANGES. THAT WOULD BE THE FIRST BOT MOTION IN THIS PROJECT.
+  Q5  restoring 0 stops it.
+  ⚠ HONEST ALTERNATIVE, stated now: S137 recorded the wander driver ALSO gates on a blackboard
+    bool key (.data 0xA0348F0). A null at Q2 locates THAT and refutes nothing already established.
+  ⚠ If +0x6A0 reads back 1 and then returns to 0 WITHOUT me restoring it, that is itself a result:
+    it proves UpdateCharacterControllable is actively running and recomputing to 0.
+
+================================================================================================
+ARM F -- DRIVE THE RECOMPUTE
+================================================================================================
+  F1  ARM D produces a LokiBotController (else ARM F REFUSES -- staging statement, not a result).
+  F2  the input poke pawn+0x1090 = 1 lands (readback 1).
+  F3  the 16-byte prologue at 0x5570B80 matches the offline transcription, so the arm calls the
+      function it thinks it is calling.
+  F4  the call does not fault.
+  F5  ★ THE GATE OPENS: controller+0x6A0 goes 0 -> 1.
+  ⚠ F5 IS GENUINELY UNCERTAIN AND I AM NOT PREDICTING SUCCESS. The transcribed prologue shows the
+    function reading +0x602 (force) FIRST and, on that branch, STORING 0 into the gate; it then
+    dereferences the Blackboard at +0x4B0. So there are at least two further preconditions inside
+    it. A 0 afterwards locates one of them; it is NOT evidence against the LivingState result,
+    which is about entirely different functions.
+  ⚠ If force+0x602 is non-zero at entry, a resulting 0 is EXPECTED AND UNINTERPRETABLE. The arm
+    reads and prints it before calling, precisely so that case is visible rather than silent.
+  CONTROL: driverecompute-ctrl runs ARM D and skips ARM F. Under it the gate MUST stay 0. That
+  converts an ARM F null from "something is broken" into "the call specifically did nothing".
+
+================================================================================================
+UNINTERPRETABLE
+================================================================================================
+  U1  no LokiBotController -> staging statement.
+  U2  [BS] done absent -> the arm did not complete; read nothing.
+  U3  F2 or F3 fails -> nothing downstream may be read.
+  U4  client dies first -> NOT OBTAINED, which is not a null.
+
+SCOPE: even full success shows one cached flag can be driven and, at most, that a wander driver
+runs. It does NOT make a functional bot. ServerSetHeroClass / SetPlayerTeam remain stripped folds.
+This is a DIAGNOSIS and must never enter the default shim set.

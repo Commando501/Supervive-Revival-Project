@@ -1,0 +1,946 @@
+// ============================================================================
+//  MODULE   GameMode.DropPhase.LokiDropPhase_PlayerStateComponent
+//  SOURCE   GameMode/DropPhase/LokiDropPhase_PlayerStateComponent.as
+//  CONTENT  1 class(es), 34 function(s), 0 enum(s), 1 global(s), 6760 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiDropPhase_PlayerStateComponent;
+
+ULokiDropPhase_PlayerStateComponent@ ULokiDropPhase_PlayerStateComponent()   // traits=0x20
+{
+    ULokiDropPhase_PlayerStateComponent v2;
+
+    v2 = ULokiDropPhase_PlayerStateComponent();
+    return v2;
+}
+
+UClass@ ULokiDropPhase_PlayerStateComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiDropPhase_PlayerStateComponent);
+    return v2;
+}
+
+ULokiDropPhase_PlayerStateComponent@ ULokiDropPhase_PlayerStateComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiDropPhase_PlayerStateComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiDropPhase_PlayerStateComponent, v2, typeid(ULokiDropPhase_PlayerStateComponent@), WithName);
+    return v2;
+}
+
+ULokiDropPhase_PlayerStateComponent@ ULokiDropPhase_PlayerStateComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiDropPhase_PlayerStateComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiDropPhase_PlayerStateComponent, v2, typeid(ULokiDropPhase_PlayerStateComponent@), WithName);
+    return v2;
+}
+
+ULokiDropPhase_PlayerStateComponent@ ULokiDropPhase_PlayerStateComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiDropPhase_PlayerStateComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiDropPhase_PlayerStateComponent, v2, typeid(ULokiDropPhase_PlayerStateComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiDropPhase_PlayerStateComponent : ULokiPlayerDropPlaneComponent
+// unreal base : /Script/Loki.LokiPlayerDropPlaneComponent
+// C++ header  : ../../../Loki/Source/Loki/Player/LokiPlayerDropPlaneComponent.h
+// static class global: __StaticType_ULokiDropPhase_PlayerStateComponent
+{
+    protected float64 MaxHeightRange;
+    protected float64 MinimumTargetLocationMovementSpeed;
+    protected float64 MaximumTargetLocationMovementSpeed;
+    protected float64 PodDetachFromLeaderMinTime;
+    protected float64 PodDetachFromLeaderMaxTime;
+    protected bool bDropPhaseControlsDisabled;
+    protected bool bCanSelectDropLocation;
+    protected float64 TargetMovespeedDelta;
+    protected float64 NetworkUpdateFrequencey;
+    protected FVector BufferedDestinationDelta;
+    protected ALokiDropPod@ DropPodActor;
+    protected FGameEventListenerHandle PodSteeringEventListenerHanddle;
+    protected bool bPodSteeringEnabled;
+    protected bool bPodDetachingEnabled;
+    protected bool bIgnoreInput;
+    private bool bAlwaysUpdateNetwork;
+    private FTimerHandle NetworkUpdateFrequencyTimer;
+    protected const float64 INVALID_MOVEMENT_VALUE;
+    private float64 MovementForwardValue;
+    private float64 MovementRightValue;
+    protected ELokiMovementInputDirection CurrMoveDirection;
+    protected float64 CrewPodDetachStartTime;
+    protected bool bPodIsAttachedToLeader;
+    protected float64 DetachInputStartTime;
+    protected float64 CurrTotalTimeForDetach;
+
+    ULokiDropPhase_PlayerStateComponent()   // traits=0x21
+    {
+        auto v2;
+        auto v3;
+        auto v4;
+
+        this.BufferedDestinationDelta = FVector();
+        this.PodSteeringEventListenerHanddle = FGameEventListenerHandle();
+        this.NetworkUpdateFrequencyTimer = FTimerHandle();
+        v2 = 20000.0;
+        this.MaxHeightRange = v2;
+        v2 = 300.0;
+        this.MinimumTargetLocationMovementSpeed = v2;
+        v2 = 900.0;
+        this.MaximumTargetLocationMovementSpeed = v2;
+        v2 = 0.5;
+        this.PodDetachFromLeaderMinTime = v2;
+        v2 = 2.0;
+        this.PodDetachFromLeaderMaxTime = v2;
+        v3 = false;
+        this.bDropPhaseControlsDisabled = v3;
+        v3 = false;
+        this.bCanSelectDropLocation = v3;
+        v2 = 0.05;
+        this.NetworkUpdateFrequencey = v2;
+        v3 = false;
+        this.bPodSteeringEnabled = v3;
+        v3 = false;
+        this.bPodDetachingEnabled = v3;
+        v3 = true;
+        this.bIgnoreInput = v3;
+        v3 = true;
+        this.bAlwaysUpdateNetwork = v3;
+        v2 = -1000.0;
+        this.INVALID_MOVEMENT_VALUE = v2;
+        v2 = this.INVALID_MOVEMENT_VALUE;
+        this.MovementForwardValue = v2;
+        v2 = this.INVALID_MOVEMENT_VALUE;
+        this.MovementRightValue = v2;
+        v4 = false;
+        this.CurrMoveDirection = v4;
+        v2 = 0;
+        this.CrewPodDetachStartTime = v2;
+        v3 = true;
+        this.bPodIsAttachedToLeader = v3;
+        v2 = -1.0;
+        this.DetachInputStartTime = v2;
+        v2 = -1.0;
+        this.CurrTotalTimeForDetach = v2;
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnSelectDropLocationStarted, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void OnSelectDropLocationStarted_Implementation()   // traits=0x30
+    {
+        bool v1;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v1 = true;
+            this.bCanSelectDropLocation = v1;
+            v1 = true;
+            this.SetComponentTickEnabled(v1);
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnEventRouterReady, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnEventRouterReady_Implementation(UGameEventRouterComponent@ Router)   // traits=0x20
+    {
+        FGameEvent_GameAugmentSet v6;
+        auto v7;
+        FGameEventListenerHandle v20;
+        FGameEvent_PodSteeringEnabled v24;
+
+        v7 = false;
+        v6 = FGameEvent_GameAugmentSet();
+        v20 = Router.RegisterForEvent(this, v6, typeid(FGameEvent_GameAugmentSet), nullptr, n"OnGameAugmentSet", v7);
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v7 = false;
+            v24 = FGameEvent_PodSteeringEnabled();
+            v20 = Router.RegisterForEvent(this, v24, typeid(FGameEvent_PodSteeringEnabled), nullptr, n"OnPodSteeringEnabled", v7);
+            this.PodSteeringEventListenerHanddle = v20;
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnSelectDropLocationEnded, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void OnSelectDropLocationEnded_Implementation()   // traits=0x30
+    {
+        bool v1;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v1 = false;
+            this.bCanSelectDropLocation = v1;
+            v1 = false;
+            this.SetComponentTickEnabled(v1);
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnDropPodStarted, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void OnDropPodStarted_Implementation(AActor@ PodActor)   // traits=0x30
+    {
+        ALokiDropPod v2;
+        auto v3;
+        ALokiPlayerState v6;
+        FTimerHandle v8;
+
+        if (PodActor != nullptr) {
+            v2 = cast<ALokiDropPod@>(PodActor);
+        } else {
+            v2 = nullptr;
+        }
+        this.DropPodActor = v2;
+        v3 = this.IsLocalClient();
+        v3 = !v3;
+        if (v3) {
+            return;
+        } else {
+            v6 = this.DropPodActor.GetPilotPlayerState();
+            if (v6 == nullptr) {
+                v8 = System::SetTimerForNextTick(this, "OnDropPodStartedWithPilot");
+                return;
+            } else {
+                this.OnDropPodStartedWithPilot();
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    protected void OnDropPodStartedWithPilot()   // traits=0x30
+    {
+        bool v1;
+        bool v2;
+        auto v6;
+        auto v8;
+        auto v10;
+        float32 v14;
+        FTimerHandle v16;
+
+        v1 = this.DropPodActor.bIsTeamLeaderPod;
+        v1 = !v1;
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v2 = this.DropPodActor.bIsLocalPlayerPilot;
+            v1 = v2;
+        }
+        if (v1) {
+            v6 = this.DropPodActor.IntroSequenceTotalTime;
+            v8 = this.DropPodActor.PodDetachTotalTime;
+            v6 = v6 - v8;
+            v10 = this.PodDetachFromLeaderMaxTime;
+            v8 = v6 - v10;
+            v2 = false;
+            v1 = false;
+            v14 = float32(v8);
+            v16 = System::SetTimer(this, n"OnAllowPodDetach", v14, v1, v2, 0, 0);
+            return;
+        } else {
+            v2 = false;
+            this.bIgnoreInput = v2;
+        }
+        return;
+    }
+
+    protected float64 GetInputTimeForDetach()   // traits=0x30
+    {
+        float64 v2;
+        UWorld v4;
+        auto v6;
+        auto v8;
+        float64 v12;
+
+        v4 = this.GetWorld();
+        v6 = v4.GetTimeSeconds();
+        v8 = this.DetachInputStartTime;
+        v6 = v6 - v8;
+        v8 = this.PodDetachFromLeaderMaxTime;
+        if (v6 >= v8) {
+            v2 = this.PodDetachFromLeaderMinTime;
+            return v2;
+        } else {
+            v12 = this.PodDetachFromLeaderMinTime;
+            v8 = this.PodDetachFromLeaderMaxTime;
+            v2 = v8 - v6;
+            v8 = Math::Max(v2, v12);
+            return v8;
+        }
+        return v8;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnAllowPodDetach()   // traits=0x20
+    {
+        ALokiDropPod v2;
+        AActor v4;
+        ALokiDropPod v6;
+        auto v7;
+        UWorld v10;
+        auto v12;
+        ELokiMovementInputDirection v13;
+        ELokiCrewPodDetachState v14;
+
+        v4 = this.DropPod;
+        if (v4 != nullptr) {
+            v6 = cast<ALokiDropPod@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 == nullptr) {
+            return;
+        } else {
+            v7 = true;
+            this.bPodDetachingEnabled = v7;
+            v7 = false;
+            this.bIgnoreInput = v7;
+            v10 = this.GetWorld();
+            v12 = v10.GetTimeSeconds();
+            this.DetachInputStartTime = v12;
+            v13 = ELokiMovementInputDirection::None;
+            v14 = ELokiCrewPodDetachState::Detachable;
+            v2.SetCrewPodDetachState(v14, 0, v13, FVector::ZeroVector);
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnDropPodEnded, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void OnDropPodEnded_Implementation()   // traits=0x30
+    {
+        auto v1;
+        UGameEventRouterComponent v4;
+
+        this.DropPodActor = nullptr;
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v1 = this.bAlwaysUpdateNetwork;
+            v1 = !v1;
+            if (v1) {
+                System::ClearAndInvalidateTimerHandle(__WorldContext, this.NetworkUpdateFrequencyTimer);
+            }
+            v4 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+            v4.StopListeningToEvent(this.PodSteeringEventListenerHanddle);
+            v1 = false;
+            this.bPodSteeringEnabled = v1;
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    protected void OnPodSteeringEnabled(const FGameEvent_PodSteeringEnabled& Event, const EGameEventStatefulEventType EventType)   // traits=0x30
+    {
+        auto v1;
+        auto v2;
+        int v3;
+        ALokiPlayerState v6;
+        AActor v8;
+        ALokiPlayerState v10;
+        auto v11;
+        auto v12;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            v1 = true;
+        } else {
+            v2 = this.bDropPhaseControlsDisabled;
+            v1 = v2;
+        }
+        if (v1) {
+            return;
+        } else {
+            v3 = int(EventType);
+            if (v3 == EGameEventStatefulEventType::Cleared) {
+                v1 = false;
+                this.bPodSteeringEnabled = v1;
+                v2 = false;
+                this.bPodDetachingEnabled = v2;
+                return;
+            } else {
+                v1 = true;
+                this.bPodSteeringEnabled = v1;
+                v2 = true;
+                this.bPodDetachingEnabled = v2;
+                v8 = this.GetOwner();
+                if (v8 != nullptr) {
+                    v10 = cast<ALokiPlayerState@>(v8);
+                } else {
+                    v10 = nullptr;
+                }
+                v6 = v10;
+                v1 = this.bPodIsAttachedToLeader;
+                if (v1) {
+                    if (v6 == nullptr) {
+                        v2 = 0;
+                    } else {
+                        v11 = v6.IsSpawnTeamLeader();
+                        v11 = !v11;
+                        v2 = v11;
+                    }
+                    v12 = v2;
+                } else {
+                    v11 = false;
+                    v12 = v11;
+                }
+                this.bPodIsAttachedToLeader = v12;
+                this.TryStartSteering();
+            }
+        }
+        return;
+    }
+
+    void TryStartSteering()   // traits=0x20
+    {
+        auto v1;
+        ELokiMovementInputDirection v2;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            if (this.HasDropPodControl()) {
+                v2 = this.CurrMoveDirection;
+                this.UpdatePodMovement(v2);
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x30
+    {
+        auto v1;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            this.UpdateDropLocationCursor();
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnForwardMovementInput, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void OnForwardMovementInput_Implementation(const float64 ForwardValue)   // traits=0x30
+    {
+        auto v1;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            this.MovementForwardValue = ForwardValue;
+            this.ProcessMovement();
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnRightMovementInput, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    protected void OnRightMovementInput_Implementation(const float64 RightValue)   // traits=0x30
+    {
+        auto v1;
+
+        v1 = this.IsLocalClient();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            this.MovementRightValue = RightValue;
+            this.ProcessMovement();
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    protected void OnGameAugmentSet(const FGameEvent_GameAugmentSet& Event, const EGameEventStatefulEventType EventType)   // traits=0x30
+    {
+        int v1;
+        auto v3;
+        TSubclassOf<ALokiGameAugment@> v6;
+        ALokiGameAugment v8;
+
+        v1 = int(EventType);
+        if (v1 != EGameEventStatefulEventType::Cleared) {
+            v6 = TSubclassOf<ALokiGameAugment@>();
+            v6 = Event.GameAugmentClass;
+            v3 = v6 == nullptr;
+            v3 = !v3;
+            if (v3) {
+                v8 = Event.GameAugmentClass.GetDefaultObject();
+                v3 = v8.bDropPhaseControlsDisabled;
+                this.bDropPhaseControlsDisabled = v3;
+            }
+        }
+        return;
+    }
+
+    bool IsLocalClient()   // traits=0x20
+    {
+        auto v1;
+        APlayerState v4;
+        AActor v6;
+        APlayerState v8;
+        APlayerController v10;
+
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v6 = this.GetOwner();
+            if (v6 != nullptr) {
+                v8 = cast<APlayerState@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v4 = v8;
+            v10 = v4.GetPlayerController();
+            v1 = v10 != nullptr;
+            return v1;
+        } else {
+            v1 = false;
+        }
+        return v1;
+    }
+
+    private void UpdateDropLocationCursor()   // traits=0x28
+    {
+        ALokiPlayerState v2;
+        AActor v4;
+        ALokiPlayerState v6;
+        ALokiPlayerController v8;
+        auto v9;
+        APlayerController v12;
+        ALokiPlayerController v14;
+        ALokiPlayerController v16;
+        ALokiHeightMap v18;
+        auto v21;
+        ELokiProjectionDistanceType v29;
+        FVector v36;
+        FVector2D v44;
+        float64 v46;
+        float64 v48;
+        FVector v54;
+        FVector v60;
+        auto v62;
+        auto v63;
+
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiPlayerState@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 != nullptr) {
+            v12 = v2.GetPlayerController();
+            if (v12 != nullptr) {
+                v14 = cast<ALokiPlayerController@>(v12);
+            } else {
+                v14 = nullptr;
+            }
+            v16 = v14;
+        } else {
+        }
+        v8 = v16;
+        v18 = ALokiHeightMap::GetInstance(__WorldContext);
+        if (v8 == nullptr) {
+            v9 = 0;
+        } else {
+            v21 = v18 != nullptr;
+            v9 = v21;
+        }
+        if (v9) {
+            v29 = ELokiProjectionDistanceType::Default;
+            v36 = v8.GetCursorLocation(v29);
+            v46 = v36.Y;
+            v48 = v36.X;
+            v44 = FVector2D(v48, v46);
+            v54 = FVector();
+            v60 = FVector();
+            if (Gameplay::DeprojectScreenToWorld(v8, v44, v54, v60)) {
+                v63 = v18.GetTerrainPercentInRadius(v54, 1000.0);
+                v48 = float64(v63);
+                v62 = v48;
+                v9 = v18.IsTerrainInRadius(v54, 1000.0, 0.5);
+            }
+        }
+        return;
+    }
+
+    private void ProcessMovement()   // traits=0x28
+    {
+        auto v1;
+        auto v2;
+        float64 v4;
+        float64 v6;
+        ELokiMovementInputDirection v8;
+
+        v1 = this.bDropPhaseControlsDisabled;
+        if (v1) {
+            v1 = true;
+        } else {
+            v2 = this.bIgnoreInput;
+            v1 = v2;
+        }
+        if (v1) {
+            v1 = true;
+        } else {
+            v4 = this.MovementForwardValue;
+            v6 = this.INVALID_MOVEMENT_VALUE;
+            v2 = v4 == v6;
+            v1 = v2;
+        }
+        if (v1) {
+            v1 = true;
+        } else {
+            v6 = this.MovementRightValue;
+            v4 = this.INVALID_MOVEMENT_VALUE;
+            v2 = v6 == v4;
+            v1 = v2;
+        }
+        if (v1) {
+            return;
+        } else {
+            v4 = this.MovementRightValue;
+            v6 = this.MovementForwardValue;
+            v8 = this.CalculateDetachDirection(v6, v4);
+            if (this.UpdatePodControl(v8)) {
+                v2 = this.bPodIsAttachedToLeader;
+                v2 = !v2;
+                if (v2) {
+                    this.UpdatePodMovement(v8);
+                }
+            }
+            v4 = this.INVALID_MOVEMENT_VALUE;
+            this.MovementForwardValue = v4;
+            v6 = this.INVALID_MOVEMENT_VALUE;
+            this.MovementRightValue = v6;
+        }
+        return;
+    }
+
+    protected bool UpdatePodControl(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        auto v1;
+        ALokiDropPod v4;
+        AActor v6;
+        ALokiDropPod v8;
+        int v9;
+        float64 v12;
+        auto v14;
+        ELokiMovementInputDirection v15;
+        ELokiCrewPodDetachState v16;
+        UWorld v18;
+        auto v22;
+
+        v1 = this.bPodIsAttachedToLeader;
+        v1 = !v1;
+        if (v1) {
+            v1 = this.HasDropPodControl();
+            return v1;
+        } else {
+            v6 = this.DropPod;
+            if (v6 != nullptr) {
+                v8 = cast<ALokiDropPod@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v4 = v8;
+            if (v4 == nullptr) {
+                v1 = false;
+                return v1;
+            } else {
+                v9 = int(MoveDirection);
+                if (v9 == ELokiMovementInputDirection::None) {
+                    v12 = this.CrewPodDetachStartTime;
+                    v14 = 0;
+                    if (v12 > v14) {
+                        v14 = 0;
+                        this.CrewPodDetachStartTime = v14;
+                        v15 = ELokiMovementInputDirection::None;
+                        v16 = ELokiCrewPodDetachState::DetachInputStopped;
+                        v4.SetCrewPodDetachState(v16, 0, v15, FVector::ZeroVector);
+                    }
+                    v1 = false;
+                    return v1;
+                } else {
+                    v14 = this.CrewPodDetachStartTime;
+                    v12 = 0;
+                    if (v14 <= v12) {
+                        v18 = this.GetWorld();
+                        v12 = v18.GetTimeSeconds();
+                        this.CrewPodDetachStartTime = v12;
+                        v15 = ELokiMovementInputDirection::None;
+                        v16 = ELokiCrewPodDetachState::DetachInputStarted;
+                        v4.SetCrewPodDetachState(v16, 0, v15, FVector::ZeroVector);
+                        v14 = this.GetInputTimeForDetach();
+                        this.CurrTotalTimeForDetach = v14;
+                    }
+                    v18 = this.GetWorld();
+                    v14 = v18.GetTimeSeconds();
+                    v12 = this.CrewPodDetachStartTime;
+                    v14 = v14 - v12;
+                    v22 = this.CurrTotalTimeForDetach;
+                    v12 = v14 / v22;
+                    v22 = 1.0;
+                    if (v12 >= v22) {
+                        this.DetachPodFromLeader(MoveDirection);
+                        this.TryStartSteering();
+                        v1 = this.HasDropPodControl();
+                        return v1;
+                    } else {
+                        v16 = ELokiCrewPodDetachState::DetachInputContinue;
+                        v4.SetCrewPodDetachState(v16, v12, MoveDirection, FVector::ZeroVector);
+                        v1 = false;
+                    }
+                }
+            }
+        }
+        return v1;
+    }
+
+    protected ELokiMovementInputDirection CalculateDetachDirection(const float64 ForwardMovementValue, const float64 RightMovementValue)   // traits=0x30
+    {
+        auto v2;
+        auto v3;
+        auto v4;
+        auto v5;
+        auto v6;
+
+        v2 = 0;
+        if (ForwardMovementValue != v2) {
+            v3 = 0;
+        } else {
+            v2 = 0;
+            v4 = RightMovementValue == v2;
+            v3 = v4;
+        }
+        if (v3) {
+            v5 = false;
+            return v5;
+        } else {
+            v2 = 0;
+            if (ForwardMovementValue > v2) {
+                v2 = 0;
+                if (RightMovementValue == v2) {
+                    v5 = true;
+                    return v5;
+                }
+                v2 = 0;
+                if (RightMovementValue > v2) {
+                    v6 = 2;
+                    v5 = v6;
+                } else {
+                    v6 = 8;
+                    v5 = v6;
+                }
+                return v5;
+            } else {
+                v2 = 0;
+                if (ForwardMovementValue < v2) {
+                    v2 = 0;
+                    if (RightMovementValue == v2) {
+                        v5 = 5;
+                        return v5;
+                    }
+                    v2 = 0;
+                    if (RightMovementValue > v2) {
+                        v6 = 4;
+                        v5 = v6;
+                    } else {
+                        v6 = 6;
+                        v5 = v6;
+                    }
+                    return v5;
+                } else {
+                    v2 = 0;
+                    if (RightMovementValue > v2) {
+                        v6 = 3;
+                        v5 = v6;
+                    } else {
+                        v6 = 7;
+                        v5 = v6;
+                    }
+                    return v5;
+                }
+            }
+        }
+        return v5;
+    }
+
+    protected void DetachPodFromLeader(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        auto v1;
+        ALokiDropPod v4;
+        AActor v6;
+        ALokiDropPod v8;
+
+        v1 = this.bPodDetachingEnabled;
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = this.DropPod;
+            if (v6 != nullptr) {
+                v8 = cast<ALokiDropPod@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v4 = v8;
+            if (v4 != nullptr) {
+                v1 = false;
+                this.bPodIsAttachedToLeader = v1;
+                v4.DetachPodFromLeader(MoveDirection);
+                this.ServerDetachPodFromLeader(MoveDirection);
+            }
+        }
+        return;
+    }
+
+    protected void ServerDetachPodFromLeader(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        __Evt_PushArgument__ELokiMovementInputDirection(MoveDirection);
+        __Evt_Execute(this, n"ServerDetachPodFromLeader");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ServerDetachPodFromLeader, BlueprintCallable, BlueprintEvent, NetServer)
+    protected void ServerDetachPodFromLeader_Implementation(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        ALokiDropPod v2;
+        AActor v4;
+        ALokiDropPod v6;
+        auto v7;
+
+        v4 = this.DropPod;
+        if (v4 != nullptr) {
+            v6 = cast<ALokiDropPod@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v2 = v6;
+        if (v2 != nullptr) {
+            v7 = false;
+            this.bPodIsAttachedToLeader = v7;
+            v2.DetachPodFromLeader(MoveDirection);
+        }
+        return;
+    }
+
+    protected bool HasDropPodControl() const   // traits=0x34
+    {
+        auto v1;
+        auto v2;
+        ALokiPlayerState v4;
+        AActor v6;
+        ALokiPlayerState v8;
+        ALokiDropPod v10;
+
+        v1 = this.bPodSteeringEnabled;
+        v1 = !v1;
+        if (v1) {
+            v1 = true;
+        } else {
+            v2 = this.bPodIsAttachedToLeader;
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = false;
+            return v2;
+        } else {
+            v6 = this.GetOwner();
+            if (v6 != nullptr) {
+                v8 = cast<ALokiPlayerState@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v4 = v8;
+            v10 = this.DropPodActor;
+            if (v10 == nullptr) {
+                v1 = 0;
+            } else {
+                v2 = this.DropPodActor.IsPlayerStatePilot(v4);
+                v1 = v2;
+            }
+        }
+        return v1;
+    }
+
+    protected void UpdatePodMovement(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        auto v1;
+        int v2;
+        int v3;
+        ALokiDropPod v6;
+
+        v2 = int(MoveDirection);
+        v1 = this.CurrMoveDirection;
+        v3 = int(v1);
+        if (v2 != v3) {
+            v6 = this.DropPodActor;
+            if (v6 != nullptr) {
+                this.DropPodActor.CurrentInputDirection = MoveDirection;
+                this.ServerUpdatePodMovement(MoveDirection);
+            }
+            this.CurrMoveDirection = MoveDirection;
+        }
+        return;
+    }
+
+    protected void ServerUpdatePodMovement(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        __Evt_PushArgument__ELokiMovementInputDirection(MoveDirection);
+        __Evt_Execute(this, n"ServerUpdatePodMovement");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ServerUpdatePodMovement, BlueprintCallable, BlueprintEvent, NetServer)
+    protected void ServerUpdatePodMovement_Implementation(const ELokiMovementInputDirection MoveDirection)   // traits=0x30
+    {
+        ALokiDropPod v2;
+
+        this.CurrMoveDirection = MoveDirection;
+        v2 = this.DropPodActor;
+        if (v2 != nullptr) {
+            this.DropPodActor.CurrentInputDirection = MoveDirection;
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.PrimaryComponentTick.SetbStartWithTickEnabled(v1);
+        return;
+    }
+
+    void ~ULokiDropPhase_PlayerStateComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

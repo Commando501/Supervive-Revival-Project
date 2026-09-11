@@ -1,0 +1,1469 @@
+==============================================================================
+MODULE   Core.AimingVis.HunterSpecific.LokiAimingLaser_Huntress
+SOURCE   Core/AimingVis/HunterSpecific/LokiAimingLaser_Huntress.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ALokiAimingLaser_Huntress;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ALokiAimingLaser_Huntress@ ALokiAimingLaser_Huntress()
+// 4 instr, 28 B bytecode, id=0x3E24F9FB, varspace=2
+------------------------------------------------------------------------------
+{
+    ALokiAimingLaser_Huntress v2;
+
+    v2 = ALokiAimingLaser_Huntress();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84758 q:0x26e6ed73100; new ALokiAimingLaser_Huntress   ctor=ALokiAimingLaser_Huntress::ALokiAimingLaser_Huntress
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x91FF5B79, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ALokiAimingLaser_Huntress);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b17d8         ; __StaticType_ALokiAimingLaser_Huntress
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ALokiAimingLaser_Huntress@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0x8F882EC3, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiAimingLaser_Huntress v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ALokiAimingLaser_Huntress.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ALokiAimingLaser_Huntress>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6f1b17d8         ; __StaticType_ALokiAimingLaser_Huntress
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972672            ; ALokiAimingLaser_Huntress@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class ALokiAimingLaser_Huntress : ALokiAimingLaserRangeMarker
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) UStaticMeshComponent@ ProgressMarker;
+    protected bool bShowProgressMarker;
+    float64 ProgressMarkerOriginalScale;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Laser)) int SettingsIndexBase;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Laser - LMB)) int SettingsIndexLMB;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Laser - LMB)) float64 LMBRangeMarkerDistance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - LMB)) float64 ArrowRangeMinGreen;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - LMB)) float64 ArrowRangeMaxGreen;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - LMB)) float64 ArrowRangeMaxBlue;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - LMB)) float64 ArrowRangeMaxBluePerfect;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - LMB)) float64 ArrowPerfectGreenChargeMin;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - LMB)) float64 ArrowPerfectGreenChargeMax;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - LMB)) float64 ArrowStartChargeFrac;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - LMB)) UMaterialInterface@ RangeMarkerDimmedMaterial;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - LMB)) UMaterialInterface@ RangeMarkerLitMaterial;
+    bool bRangeMarkerDimmed;
+    float64 RangeMarkerOriginalScale;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - LMB)) UMaterialInterface@ LaserEndpointDimmedMaterial;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - LMB)) UMaterialInterface@ LaserEndpointLitMaterial;
+    bool bLaserEndpointDimmed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Laser - RMB)) int SettingsIndexRMB;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - RMB)) float64 ImpaleRangeMin;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - RMB)) float64 ImpaleRangeMax;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta=(Category=Laser - Ult)) int SettingsIndexUlt;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta=(Category=Laser - Ult)) float64 UltArrowRangeMax;
+    protected float64 CurrentProgressEndTime;
+    protected bool bOriginalLimitLaserToCursor;
+    protected bool bOriginalLimitLaserToCursorDoFade;
+
+}
+
+------------------------------------------------------------------------------
+ALokiAimingLaser_Huntress() const
+// 38 instr, 268 B bytecode, id=0xE23943BF, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    auto v4;
+
+    this.ALokiAimingLaserRangeMarker();
+    v1 = false;
+    this.bShowProgressMarker = false;
+    v2 = 3;
+    this.SettingsIndexBase = 3;
+    v2 = 0;
+    this.SettingsIndexLMB = 0;
+    v4 = 850;
+    this.LMBRangeMarkerDistance = 850;
+    v4 = 1;
+    this.ArrowPerfectGreenChargeMin = 1;
+    v4 = 1.3;
+    this.ArrowPerfectGreenChargeMax = 1.3;
+    v4 = 0.5;
+    this.ArrowStartChargeFrac = 0.5;
+    v1 = false;
+    this.bRangeMarkerDimmed = false;
+    v1 = false;
+    this.bLaserEndpointDimmed = false;
+    v2 = 1;
+    this.SettingsIndexRMB = 1;
+    v2 = 2;
+    this.SettingsIndexUlt = 2;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALL           d:84628                 ; void ALokiAimingLaserRangeMarker::ALokiAimingLaserRangeMarker()
+    //     3  SetV1          wW0:1 d:0
+    //     5  LoadThisR      W0:1176 d:134230848     ; ALokiAimingLaser_Huntress::bShowProgressMarker  (+1176)
+    //     7  WRTV1          rW0:1
+    //     8  SetV4          wW0:2 d:3
+    //    10  LoadThisR      W0:1192 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexBase  (+1192)
+    //    12  WRTV4          rW0:2
+    //    13  SetV4          wW0:2 d:0
+    //    15  LoadThisR      W0:1196 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexLMB  (+1196)
+    //    17  WRTV4          rW0:2
+    //    18  SetV8          wW0:4 q:0x408a900000000000
+    //    21  LoadThisR      W0:1200 d:134230848     ; ALokiAimingLaser_Huntress::LMBRangeMarkerDistance  (+1200)
+    //    23  WRTV8          rW0:4
+    //    24  SetV8          wW0:4 q:0x3ff0000000000000
+    //    27  LoadThisR      W0:1240 d:134230848     ; ALokiAimingLaser_Huntress::ArrowPerfectGreenChargeMin  (+1240)
+    //    29  WRTV8          rW0:4
+    //    30  SetV8          wW0:4 q:0x3ff4cccccccccccd
+    //    33  LoadThisR      W0:1248 d:134230848     ; ALokiAimingLaser_Huntress::ArrowPerfectGreenChargeMax  (+1248)
+    //    35  WRTV8          rW0:4
+    //    36  SetV8          wW0:4 q:0x3fe0000000000000
+    //    39  LoadThisR      W0:1256 d:134230848     ; ALokiAimingLaser_Huntress::ArrowStartChargeFrac  (+1256)
+    //    41  WRTV8          rW0:4
+    //    42  SetV1          wW0:1 d:0
+    //    44  LoadThisR      W0:1280 d:134230848     ; ALokiAimingLaser_Huntress::bRangeMarkerDimmed  (+1280)
+    //    46  WRTV1          rW0:1
+    //    47  SetV1          wW0:1 d:0
+    //    49  LoadThisR      W0:1312 d:134230848     ; ALokiAimingLaser_Huntress::bLaserEndpointDimmed  (+1312)
+    //    51  WRTV1          rW0:1
+    //    52  SetV4          wW0:2 d:1
+    //    54  LoadThisR      W0:1316 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexRMB  (+1316)
+    //    56  WRTV4          rW0:2
+    //    57  SetV4          wW0:2 d:2
+    //    59  LoadThisR      W0:1336 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexUlt  (+1336)
+    //    61  WRTV4          rW0:2
+    //    62  PshVPtr        rW0:0
+    //    63  FinConstruct   q:0x26e6ed73100         ; ALokiAimingLaser_Huntress
+    //    66  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: CustomEvent0
+void CustomEvent0_Implementation(const float64 Value)
+// 5 instr, 28 B bytecode, id=0xF4B4256E, varspace=1
+------------------------------------------------------------------------------
+{
+    this.SetShowProgressMarker(false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:84755                 ; void ALokiAimingLaser_Huntress::SetShowProgressMarker(const bool)
+    //     6  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: CustomEvent1
+void CustomEvent1_Implementation(const float64 Value)
+// 5 instr, 28 B bytecode, id=0xF043C9D4, varspace=1
+------------------------------------------------------------------------------
+{
+    this.SetShowProgressMarker(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:84755                 ; void ALokiAimingLaser_Huntress::SetShowProgressMarker(const bool)
+    //     6  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnLaserSpawned
+void OnLaserSpawned_Implementation()
+// 37 instr, 236 B bytecode, id=0x26392789, varspace=10
+------------------------------------------------------------------------------
+{
+    auto v1;
+    float64 v4;
+    FVector v10;
+
+    this.OnLaserSpawned_Implementation();
+    v1 = false;
+    this.bShowProgressMarker = false;
+    v1 = false;
+    this.ProgressMarker.SetHiddenInGame(true, false);
+    v4 = this.LMBRangeMarkerDistance;
+    this.SetRangeMarkerDistance(v4);
+    v10 = this.RangeMarker.GetRelativeScale3D();
+    v4 = v10.X;
+    this.RangeMarkerOriginalScale = v4;
+    v10 = this.ProgressMarker.GetRelativeScale3D();
+    v4 = v10.X;
+    this.ProgressMarkerOriginalScale = v4;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALL           d:84627                 ; void ALokiAimingLaserRangeMarker::OnLaserSpawned_Implementation()
+    //     3  SetV1          wW0:1 d:0
+    //     5  LoadThisR      W0:1176 d:134230848     ; ALokiAimingLaser_Huntress::bShowProgressMarker  (+1176)
+    //     7  WRTV1          rW0:1
+    //     8  SetV1          wW0:1 d:0
+    //    10  PshV4          rW0:1
+    //    11  SetV1          wW0:2 d:1
+    //    13  PshV4          rW0:2
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //    17  RDSPtr
+    //    18  CALLSYS        q:0x26e79751580         ; void USceneComponent::SetHiddenInGame(bool, bool)
+    //    21  LoadThisR      W0:1200 d:134230848     ; ALokiAimingLaser_Huntress::LMBRangeMarkerDistance  (+1200)
+    //    23  RDR8           wW0:4
+    //    24  PshV8          rW0:4
+    //    25  PshVPtr        rW0:0
+    //    26  CALLINTF       d:84624                 ; void ALokiAimingLaserRangeMarker::SetRangeMarkerDistance(const float64)
+    //    28  PSF            rW0:10
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //    32  RDSPtr
+    //    33  CALLSYS        q:0x26e79f61e40         ; FVector USceneComponent::GetRelativeScale3D() const
+    //    36  LoadVObjR      rW0:10 W1:0 DW2:67117444; FVector::X  (+0)
+    //    39  RDR8           wW0:4
+    //    40  LoadThisR      W0:1288 d:134230848     ; ALokiAimingLaser_Huntress::RangeMarkerOriginalScale  (+1288)
+    //    42  WRTV8          rW0:4
+    //    43  PSF            rW0:10
+    //    44  PshVPtr        rW0:0
+    //    45  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //    47  RDSPtr
+    //    48  CALLSYS        q:0x26e79f61e40         ; FVector USceneComponent::GetRelativeScale3D() const
+    //    51  LoadVObjR      rW0:10 W1:0 DW2:67117444; FVector::X  (+0)
+    //    54  RDR8           wW0:4
+    //    55  LoadThisR      W0:1184 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarkerOriginalScale  (+1184)
+    //    57  WRTV8          rW0:4
+    //    58  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnLaserSettingsIndexChanged
+void OnLaserSettingsIndexChanged_Implementation(const int OldIndex, const int NewIndex)
+// 65 instr, 436 B bytecode, id=0x7E075D92, varspace=16
+------------------------------------------------------------------------------
+{
+    auto v1;
+    FVector v8;
+    float64 v10;
+    FVector v16;
+
+    this.OnLaserSettingsIndexChanged_Implementation(OldIndex, NewIndex);
+    v1 = this.SettingsIndexLMB;
+    if (NewIndex != v1) {
+        v8 = FVector(FVector::OneVector);
+        v10 = this.RangeMarkerOriginalScale;
+        this.RangeMarker.SetRelativeScale3D(v16);
+        v8 = FVector(FVector::OneVector);
+        v10 = this.ProgressMarkerOriginalScale;
+        this.ProgressMarker.SetRelativeScale3D(v16);
+    }
+    v1 = this.SettingsIndexLMB;
+    if (NewIndex != v1) {
+        v1 = this.SettingsIndexBase;
+        if (NewIndex != v1) {
+            v1 = this.SettingsIndexRMB;
+            if (NewIndex != v1) {
+                v1 = this.SettingsIndexUlt;
+                if (NewIndex == v1) {
+                    this.OnSwapToUlt();
+                }
+            } else {
+                this.OnSwapToRMB();
+            }
+        } else {
+            this.OnSwapToBase();
+        }
+    } else {
+        this.OnSwapToLMB();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshV4          rW0:-3
+    //     1  PshV4          rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  CALL           d:84597                 ; void ALokiAimingLaser::OnLaserSettingsIndexChanged_Implementation(const int, const int)
+    //     5  LoadThisR      W0:1196 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexLMB  (+1196)
+    //     7  RDR4           wW0:1
+    //     8  CMPi           rW0:-3 rW1:1
+    //    10  JZ             ->60
+    //    12  PshGPtr        q:0x26e7681a548         ; FVector::OneVector
+    //    15  PSF            rW0:8
+    //    16  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    19  LoadThisR      W0:1288 d:134230848     ; ALokiAimingLaser_Huntress::RangeMarkerOriginalScale  (+1288)
+    //    21  RDR8           wW0:10
+    //    22  PshV8          rW0:10
+    //    23  PSF            rW0:16
+    //    24  PSF            rW0:8
+    //    25  CALLSYS        q:0x26e69d00780         ; FVector FVector::opMul(float64) const
+    //    28  PSF            rW0:16
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //    32  RDSPtr
+    //    33  CALLSYS        q:0x26e79751200         ; void USceneComponent::SetRelativeScale3D(FVector)
+    //    36  PshGPtr        q:0x26e7681a548         ; FVector::OneVector
+    //    39  PSF            rW0:8
+    //    40  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    43  LoadThisR      W0:1184 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarkerOriginalScale  (+1184)
+    //    45  RDR8           wW0:10
+    //    46  PshV8          rW0:10
+    //    47  PSF            rW0:16
+    //    48  PSF            rW0:8
+    //    49  CALLSYS        q:0x26e69d00780         ; FVector FVector::opMul(float64) const
+    //    52  PSF            rW0:16
+    //    53  PshVPtr        rW0:0
+    //    54  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //    56  RDSPtr
+    //    57  CALLSYS        q:0x26e79751200         ; void USceneComponent::SetRelativeScale3D(FVector)
+    //    60  LoadThisR      W0:1196 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexLMB  (+1196)
+    //    62  RDR4           wW0:1
+    //    63  CMPi           rW0:-3 rW1:1
+    //    65  JNZ            ->72
+    //    67  PshVPtr        rW0:0
+    //    68  CALLINTF       d:84748                 ; void ALokiAimingLaser_Huntress::OnSwapToLMB()
+    //    70  JMP            ->108
+    //    72  LoadThisR      W0:1192 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexBase  (+1192)
+    //    74  RDR4           wW0:1
+    //    75  CMPi           rW0:-3 rW1:1
+    //    77  JNZ            ->84
+    //    79  PshVPtr        rW0:0
+    //    80  CALLINTF       d:84749                 ; void ALokiAimingLaser_Huntress::OnSwapToBase()
+    //    82  JMP            ->108
+    //    84  LoadThisR      W0:1316 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexRMB  (+1316)
+    //    86  RDR4           wW0:1
+    //    87  CMPi           rW0:-3 rW1:1
+    //    89  JNZ            ->96
+    //    91  PshVPtr        rW0:0
+    //    92  CALLINTF       d:84750                 ; void ALokiAimingLaser_Huntress::OnSwapToRMB()
+    //    94  JMP            ->108
+    //    96  LoadThisR      W0:1336 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexUlt  (+1336)
+    //    98  RDR4           wW0:1
+    //    99  CMPi           rW0:-3 rW1:1
+    //   101  JNZ            ->108
+    //   103  PshVPtr        rW0:0
+    //   104  CALLINTF       d:84751                 ; void ALokiAimingLaser_Huntress::OnSwapToUlt()
+    //   106  JMP            ->108
+    //   108  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: OnUpdateProgress
+void OnUpdateProgress_Implementation(const float64 ProgressValue)
+// 106 instr, 688 B bytecode, id=0x6694AB94, varspace=16
+------------------------------------------------------------------------------
+{
+    bool v1;
+    auto v2;
+    auto v3;
+    auto v4;
+    auto v6;
+    UMaterialInstanceDynamic v8;
+    float v9;
+    FVector v16;
+
+    this.OnUpdateProgress_Implementation(ProgressValue);
+    v1 = this.ValidateOwner();
+    v1 = !v1;
+    if (!v1) {
+        v2 = this.ProgressMarker.GetbHiddenInGame();
+        v2 = !v2;
+        v1 = this.bShowProgressMarker;
+        v1 = !v1;
+        v1 = !v1;
+        if (v2 != v1) {
+            v2 = false;
+            v1 = this.bShowProgressMarker;
+            v1 = !v1;
+            this.ProgressMarker.SetHiddenInGame(v1, false);
+        }
+        v4 = this.GetCurrentLaserSettingsIndex();
+        v3 = this.SettingsIndexLMB;
+        if (v4 != v3) {
+            v3 = this.SettingsIndexBase;
+            if (v4 != v3) {
+                v3 = this.SettingsIndexRMB;
+                if (v4 != v3) {
+                    v3 = this.SettingsIndexUlt;
+                    if (v4 == v3) {
+                        v8 = this.LaserProjectilePath.GetMaterial(0);
+                        v8.SetScalarParameterValue(__STATIC_NAME(37), 1);
+                        goto L171;
+                    }
+                } else {
+                    this.UpdateProgressRMB(ProgressValue);
+                }
+            } else {
+                v6 = 1;
+                this.CurrentProgressEndTime = 1;
+            }
+        } else {
+            this.UpdateProgressLMB(ProgressValue);
+        }
+        v6 = this.CurrentProgressEndTime;
+        v9 = float(v6);
+        v8 = this.LaserProjectilePath.GetMaterial(0);
+        v8.SetScalarParameterValue(__STATIC_NAME(37), v9);
+        v6 = this.CurrentProgressEndTime;
+        v9 = float(v6);
+        v16 = this.LaserProjectilePath.GetPositionForTime(v9);
+        this.ProgressMarker.SetWorldLocation(v16);
+    } else {
+    }
+    L171:
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshV8          rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALL           d:84616                 ; void ALokiAimingLaser::OnUpdateProgress_Implementation(const float64)
+    //     4  PshVPtr        rW0:0
+    //     5  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //     7  CpyRtoV4       wW0:1
+    //     8  NOT            rW0:1
+    //     9  CpyVtoR1       rW0:1
+    //    10  JLowZ          ->14
+    //    12  JMP            ->171
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //    17  RDSPtr
+    //    18  CALLSYS        q:0x26e7a62f740         ; bool USceneComponent::GetbHiddenInGame() const
+    //    21  CpyRtoV4       wW0:2
+    //    22  NOT            rW0:2
+    //    23  LoadThisR      W0:1176 d:134230848     ; ALokiAimingLaser_Huntress::bShowProgressMarker  (+1176)
+    //    25  RDR1           wW0:1
+    //    26  NOT            rW0:1
+    //    27  NOT            rW0:1
+    //    28  CMPi           rW0:2 rW1:1
+    //    30  JZ             ->47
+    //    32  SetV1          wW0:2 d:0
+    //    34  PshV4          rW0:2
+    //    35  LoadThisR      W0:1176 d:134230848     ; ALokiAimingLaser_Huntress::bShowProgressMarker  (+1176)
+    //    37  RDR1           wW0:1
+    //    38  NOT            rW0:1
+    //    39  PshV4          rW0:1
+    //    40  PshVPtr        rW0:0
+    //    41  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //    43  RDSPtr
+    //    44  CALLSYS        q:0x26e79751580         ; void USceneComponent::SetHiddenInGame(bool, bool)
+    //    47  PshVPtr        rW0:0
+    //    48  CALLINTF       d:84595                 ; int ALokiAimingLaser::GetCurrentLaserSettingsIndex()
+    //    50  CpyRtoV4       wW0:4
+    //    51  LoadThisR      W0:1196 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexLMB  (+1196)
+    //    53  RDR4           wW0:3
+    //    54  CMPi           rW0:4 rW1:3
+    //    56  JNZ            ->64
+    //    58  PshV8          rW0:-2
+    //    59  PshVPtr        rW0:0
+    //    60  CALLINTF       d:84744                 ; void ALokiAimingLaser_Huntress::UpdateProgressLMB(const float64)
+    //    62  JMP            ->123
+    //    64  LoadThisR      W0:1192 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexBase  (+1192)
+    //    66  RDR4           wW0:3
+    //    67  CMPi           rW0:4 rW1:3
+    //    69  JNZ            ->79
+    //    71  SetV8          wW0:6 q:0x3ff0000000000000
+    //    74  LoadThisR      W0:1352 d:134230848     ; ALokiAimingLaser_Huntress::CurrentProgressEndTime  (+1352)
+    //    76  WRTV8          rW0:6
+    //    77  JMP            ->123
+    //    79  LoadThisR      W0:1316 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexRMB  (+1316)
+    //    81  RDR4           wW0:3
+    //    82  CMPi           rW0:4 rW1:3
+    //    84  JNZ            ->92
+    //    86  PshV8          rW0:-2
+    //    87  PshVPtr        rW0:0
+    //    88  CALLINTF       d:84745                 ; void ALokiAimingLaser_Huntress::UpdateProgressRMB(const float64)
+    //    90  JMP            ->123
+    //    92  LoadThisR      W0:1336 d:134230848     ; ALokiAimingLaser_Huntress::SettingsIndexUlt  (+1336)
+    //    94  RDR4           wW0:3
+    //    95  CMPi           rW0:4 rW1:3
+    //    97  JNZ            ->123
+    //    99  PshC4          d:1065353216
+    //   101  PshC4          d:37
+    //   103  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   106  PshRPtr
+    //   107  PshC4          d:0
+    //   109  PshVPtr        rW0:0
+    //   110  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   112  RDSPtr
+    //   113  CALLSYS        q:0x26e7a3b2700         ; UMaterialInstanceDynamic@ ULokiProjectilePathComponent::GetMaterial(int) const
+    //   116  STOREOBJ       wW0:8
+    //   117  PshVPtr        rW0:8
+    //   118  CALLSYS        q:0x26e79b31580         ; void UMaterialInstanceDynamic::SetScalarParameterValue(FName, float)
+    //   121  JMP            ->171
+    //   123  LoadThisR      W0:1352 d:134230848     ; ALokiAimingLaser_Huntress::CurrentProgressEndTime  (+1352)
+    //   125  RDR8           wW0:6
+    //   126  dTOf           wW0:9 rW1:6
+    //   128  PshV4          rW0:9
+    //   129  PshC4          d:37
+    //   131  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   134  PshRPtr
+    //   135  PshC4          d:0
+    //   137  PshVPtr        rW0:0
+    //   138  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   140  RDSPtr
+    //   141  CALLSYS        q:0x26e7a3b2700         ; UMaterialInstanceDynamic@ ULokiProjectilePathComponent::GetMaterial(int) const
+    //   144  STOREOBJ       wW0:8
+    //   145  PshVPtr        rW0:8
+    //   146  CALLSYS        q:0x26e79b31580         ; void UMaterialInstanceDynamic::SetScalarParameterValue(FName, float)
+    //   149  LoadThisR      W0:1352 d:134230848     ; ALokiAimingLaser_Huntress::CurrentProgressEndTime  (+1352)
+    //   151  RDR8           wW0:6
+    //   152  dTOf           wW0:9 rW1:6
+    //   154  PshV4          rW0:9
+    //   155  PSF            rW0:16
+    //   156  PshVPtr        rW0:0
+    //   157  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   159  RDSPtr
+    //   160  CALLSYS        q:0x26e7a3b1e40         ; FVector ULokiProjectilePathComponent::GetPositionForTime(float) const
+    //   163  PSF            rW0:16
+    //   164  PshVPtr        rW0:0
+    //   165  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //   167  RDSPtr
+    //   168  CALLSYS        q:0x26e79f60780         ; void USceneComponent::SetWorldLocation(const FVector&)   [UFunction K2_SetWorldLocation]
+    //   171  RET            W0:4
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 22 instr, 148 B bytecode, id=0x1572AAB8, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.ProgressMarker.SetCastShadow(false);
+    v1 = false;
+    this.ProgressMarker.SetGenerateOverlapEvents(false);
+    v1 = true;
+    this.ProgressMarker.SetCollisionProfileName(__STATIC_NAME(31), true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //     6  RDSPtr
+    //     7  CALLSYS        q:0x26e7975cf00         ; void UPrimitiveComponent::SetCastShadow(bool)
+    //    10  SetV1          wW0:1 d:0
+    //    12  PshV4          rW0:1
+    //    13  PshVPtr        rW0:0
+    //    14  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //    16  RDSPtr
+    //    17  CALLSYS        q:0x26e7975f900         ; void UPrimitiveComponent::SetGenerateOverlapEvents(bool)
+    //    20  SetV1          wW0:1 d:1
+    //    22  PshV4          rW0:1
+    //    23  PshC4          d:31
+    //    25  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    28  PshRPtr
+    //    29  PshVPtr        rW0:0
+    //    30  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //    32  RDSPtr
+    //    33  CALLSYS        q:0x26e7975c800         ; void UPrimitiveComponent::SetCollisionProfileName(FName, bool)
+    //    36  RET            W0:2
+
+------------------------------------------------------------------------------
+void UpdateProgressLMB(const float64 ProgressValue)
+// 234 instr, 1580 B bytecode, id=0xA030D1F6, varspace=44
+------------------------------------------------------------------------------
+{
+    auto v1;
+    float64 v4;
+    float64 v6;
+    auto v7;
+    auto v8;
+    auto v9;
+    float64 v12;
+    float64 v14;
+    FVector2D v18;
+    FVector2D v22;
+    float v23;
+    float64 v26;
+    FVector v32;
+    FVector v38;
+    float64 v40;
+    auto v44;
+
+    v7 = Math::IsNearlyEqual(ProgressValue, 2, 0.001);
+    v4 = this.ArrowPerfectGreenChargeMin;
+    v1 = ProgressValue >= v4;
+    if (v1) {
+        v4 = this.ArrowPerfectGreenChargeMax;
+        v9 = ProgressValue <= v4;
+        v1 = v9;
+    } else {
+        v1 = 0;
+    }
+    v6 = !v7 ? this.ArrowRangeMaxBlue : this.ArrowRangeMaxBluePerfect;
+    v12 = v6;
+    v4 = this.ArrowPerfectGreenChargeMin;
+    if (ProgressValue > v4) {
+        v6 = this.ArrowRangeMaxGreen;
+        v18 = FVector2D(v6, v12);
+        v4 = this.ArrowPerfectGreenChargeMin;
+        v22 = FVector2D(v4, 2);
+        v6 = Math::GetMappedRangeValueClamped(v22, v18, ProgressValue);
+        v14 = v6;
+    } else {
+        v4 = this.ArrowRangeMaxGreen;
+        v6 = this.ArrowRangeMinGreen;
+        v18 = FVector2D(v6, v4);
+        v4 = this.ArrowPerfectGreenChargeMin;
+        v6 = this.ArrowStartChargeFrac;
+        v22 = FVector2D(v6, v4);
+        v4 = Math::GetMappedRangeValueClamped(v22, v18, ProgressValue);
+        v14 = v4;
+    }
+    v23 = float(v14);
+    v4 = float64(this.LaserProjectilePath.GetTimeForXDistance(v23));
+    this.CurrentProgressEndTime = v4;
+    if (!v1) {
+        v8 = v7;
+    } else {
+        v8 = true;
+    }
+    if (!v8) {
+        v6 = this.ProgressMarkerOriginalScale;
+        v4 = v6;
+    } else {
+        v4 = 1.2;
+    }
+    v32 = FVector(FVector::OneVector);
+    this.ProgressMarker.SetRelativeScale3D(v38);
+    v32 = this.RangeMarker.GetWorldLocation();
+    v23 = this.LaserProjectilePath.GetTimeForPosition(v32);
+    v6 = float64(v23);
+    v40 = v6;
+    v26 = this.CurrentProgressEndTime;
+    if (v26 < v6) {
+        v8 = this.bRangeMarkerDimmed;
+        v8 = !v8;
+        v9 = v8;
+    } else {
+        v9 = 0;
+    }
+    if (!v9) {
+        v26 = this.CurrentProgressEndTime;
+        if (v26 >= v40) {
+            v9 = this.bRangeMarkerDimmed;
+            v8 = v9;
+        } else {
+            v8 = 0;
+        }
+        if (v8) {
+            this.RangeMarker.SetMaterial(0, this.RangeMarkerLitMaterial);
+            v8 = false;
+            this.bRangeMarkerDimmed = false;
+        }
+    } else {
+        this.RangeMarker.SetMaterial(0, this.RangeMarkerDimmedMaterial);
+        v8 = true;
+        this.bRangeMarkerDimmed = true;
+    }
+    if (!v1) {
+        v9 = v7;
+    } else {
+        v9 = true;
+    }
+    if (!v9) {
+        v6 = this.RangeMarkerOriginalScale;
+        v26 = v6;
+    } else {
+        v26 = 1.2;
+    }
+    v38 = FVector(FVector::OneVector);
+    this.RangeMarker.SetRelativeScale3D(v32);
+    v44 = 2;
+    if (ProgressValue < 2) {
+        v9 = this.bLaserEndpointDimmed;
+        v9 = !v9;
+        v8 = v9;
+    } else {
+        v8 = 0;
+    }
+    if (!v8) {
+        v44 = 2;
+        if (ProgressValue >= 2) {
+            v9 = this.bLaserEndpointDimmed;
+            v8 = v9;
+        } else {
+            v8 = 0;
+        }
+        if (v8) {
+            this.LaserEndpoint.SetMaterial(0, this.LaserEndpointLitMaterial);
+            v8 = false;
+            this.bLaserEndpointDimmed = false;
+        }
+    } else {
+        this.LaserEndpoint.SetMaterial(0, this.LaserEndpointDimmedMaterial);
+        v8 = true;
+        this.bLaserEndpointDimmed = true;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC8          q:0x3f50624dd2f1a9fc
+    //     3  PshC8          q:0x4000000000000000
+    //     6  PshV8          rW0:-2
+    //     7  CALLSYS        q:0x26e69d2f3c0         ; bool Math::IsNearlyEqual(float64, float64, float64)
+    //    10  CpyRtoV4       wW0:7
+    //    11  LoadThisR      W0:1240 d:134230848     ; ALokiAimingLaser_Huntress::ArrowPerfectGreenChargeMin  (+1240)
+    //    13  RDR8           wW0:4
+    //    14  CMPd           rW0:-2 rW1:4
+    //    16  TNS
+    //    17  CpyRtoV4       wW0:1
+    //    18  CpyVtoR1       rW0:1
+    //    19  JLowNZ         ->25
+    //    21  SetV4          wW0:1 d:0
+    //    23  JMP            ->34
+    //    25  LoadThisR      W0:1248 d:134230848     ; ALokiAimingLaser_Huntress::ArrowPerfectGreenChargeMax  (+1248)
+    //    27  RDR8           wW0:4
+    //    28  CMPd           rW0:-2 rW1:4
+    //    30  TNP
+    //    31  CpyRtoV4       wW0:9
+    //    32  CpyVtoV4       wW0:1 rW1:9
+    //    34  CpyVtoR1       rW0:7
+    //    35  JLowZ          ->41
+    //    37  LoadThisR      W0:1232 d:134230848     ; ALokiAimingLaser_Huntress::ArrowRangeMaxBluePerfect  (+1232)
+    //    39  JMP            ->43
+    //    41  LoadThisR      W0:1224 d:134230848     ; ALokiAimingLaser_Huntress::ArrowRangeMaxBlue  (+1224)
+    //    43  RDR8           wW0:6
+    //    44  CpyVtoV8       wW0:12 rW1:6
+    //    46  LoadThisR      W0:1240 d:134230848     ; ALokiAimingLaser_Huntress::ArrowPerfectGreenChargeMin  (+1240)
+    //    48  RDR8           wW0:4
+    //    49  CMPd           rW0:-2 rW1:4
+    //    51  JP             ->88
+    //    53  PshV8          rW0:-2
+    //    54  LoadThisR      W0:1216 d:134230848     ; ALokiAimingLaser_Huntress::ArrowRangeMaxGreen  (+1216)
+    //    56  RDR8           wW0:4
+    //    57  PshV8          rW0:4
+    //    58  LoadThisR      W0:1208 d:134230848     ; ALokiAimingLaser_Huntress::ArrowRangeMinGreen  (+1208)
+    //    60  RDR8           wW0:6
+    //    61  PshV8          rW0:6
+    //    62  PSF            rW0:18
+    //    63  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //    66  PSF            rW0:18
+    //    67  LoadThisR      W0:1240 d:134230848     ; ALokiAimingLaser_Huntress::ArrowPerfectGreenChargeMin  (+1240)
+    //    69  RDR8           wW0:4
+    //    70  PshV8          rW0:4
+    //    71  LoadThisR      W0:1256 d:134230848     ; ALokiAimingLaser_Huntress::ArrowStartChargeFrac  (+1256)
+    //    73  RDR8           wW0:6
+    //    74  PshV8          rW0:6
+    //    75  PSF            rW0:22
+    //    76  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //    79  PSF            rW0:22
+    //    80  CALLSYS        q:0x26e70381200         ; float64 Math::GetMappedRangeValueClamped(const FVector2D&, const FVector2D&, const float64)
+    //    83  CpyRtoV8       wW0:4
+    //    84  CpyVtoV8       wW0:14 rW1:4
+    //    86  JMP            ->117
+    //    88  PshV8          rW0:-2
+    //    89  PshV8          rW0:12
+    //    90  LoadThisR      W0:1216 d:134230848     ; ALokiAimingLaser_Huntress::ArrowRangeMaxGreen  (+1216)
+    //    92  RDR8           wW0:6
+    //    93  PshV8          rW0:6
+    //    94  PSF            rW0:18
+    //    95  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //    98  PSF            rW0:18
+    //    99  PshC8          q:0x4000000000000000
+    //   102  LoadThisR      W0:1240 d:134230848     ; ALokiAimingLaser_Huntress::ArrowPerfectGreenChargeMin  (+1240)
+    //   104  RDR8           wW0:4
+    //   105  PshV8          rW0:4
+    //   106  PSF            rW0:22
+    //   107  CALLSYS        q:0x26e69c5b840         ; void FVector2D::$beh0(float64, float64)
+    //   110  PSF            rW0:22
+    //   111  CALLSYS        q:0x26e70381200         ; float64 Math::GetMappedRangeValueClamped(const FVector2D&, const FVector2D&, const float64)
+    //   114  CpyRtoV8       wW0:6
+    //   115  CpyVtoV8       wW0:14 rW1:6
+    //   117  dTOf           wW0:23 rW1:14
+    //   119  PshV4          rW0:23
+    //   120  PshVPtr        rW0:0
+    //   121  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   123  RDSPtr
+    //   124  CALLSYS        q:0x26e7a3b1ac0         ; float ULokiProjectilePathComponent::GetTimeForXDistance(float) const
+    //   127  CpyRtoV4       wW0:24
+    //   128  fTOd           wW0:4 rW1:24
+    //   130  LoadThisR      W0:1352 d:134230848     ; ALokiAimingLaser_Huntress::CurrentProgressEndTime  (+1352)
+    //   132  WRTV8          rW0:4
+    //   133  CpyVtoR1       rW0:1
+    //   134  JLowZ          ->140
+    //   136  SetV1          wW0:8 d:1
+    //   138  JMP            ->142
+    //   140  CpyVtoV4       wW0:8 rW1:7
+    //   142  CpyVtoR1       rW0:8
+    //   143  JLowZ          ->150
+    //   145  SetV8          wW0:4 q:0x3ff3333333333333
+    //   148  JMP            ->155
+    //   150  LoadThisR      W0:1184 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarkerOriginalScale  (+1184)
+    //   152  RDR8           wW0:6
+    //   153  CpyVtoV8       wW0:4 rW1:6
+    //   155  PshGPtr        q:0x26e7681a548         ; FVector::OneVector
+    //   158  PSF            rW0:32
+    //   159  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //   162  PshV8          rW0:4
+    //   163  PSF            rW0:38
+    //   164  PSF            rW0:32
+    //   165  CALLSYS        q:0x26e69d00780         ; FVector FVector::opMul(float64) const
+    //   168  PSF            rW0:38
+    //   169  PshVPtr        rW0:0
+    //   170  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //   172  RDSPtr
+    //   173  CALLSYS        q:0x26e79751200         ; void USceneComponent::SetRelativeScale3D(FVector)
+    //   176  PSF            rW0:32
+    //   177  PshVPtr        rW0:0
+    //   178  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //   180  RDSPtr
+    //   181  CALLSYS        q:0x26e79752e00         ; FVector USceneComponent::GetWorldLocation() const   [UFunction K2_GetComponentLocation]
+    //   184  PSF            rW0:32
+    //   185  PshVPtr        rW0:0
+    //   186  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //   188  RDSPtr
+    //   189  CALLSYS        q:0x26e7a3b1c80         ; float ULokiProjectilePathComponent::GetTimeForPosition(FVector) const
+    //   192  CpyRtoV4       wW0:23
+    //   193  fTOd           wW0:6 rW1:23
+    //   195  CpyVtoV8       wW0:40 rW1:6
+    //   197  LoadThisR      W0:1352 d:134230848     ; ALokiAimingLaser_Huntress::CurrentProgressEndTime  (+1352)
+    //   199  RDR8           wW0:26
+    //   200  CMPd           rW0:26 rW1:40
+    //   202  JS             ->208
+    //   204  SetV4          wW0:9 d:0
+    //   206  JMP            ->214
+    //   208  LoadThisR      W0:1280 d:134230848     ; ALokiAimingLaser_Huntress::bRangeMarkerDimmed  (+1280)
+    //   210  RDR1           wW0:8
+    //   211  NOT            rW0:8
+    //   212  CpyVtoV4       wW0:9 rW1:8
+    //   214  CpyVtoR1       rW0:9
+    //   215  JLowZ          ->237
+    //   217  PshVPtr        rW0:0
+    //   218  ADDSi          W0:1264 d:134230848     ; ALokiAimingLaser_Huntress::RangeMarkerDimmedMaterial  (+1264)
+    //   220  RDSPtr
+    //   221  PshC4          d:0
+    //   223  PshVPtr        rW0:0
+    //   224  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //   226  RDSPtr
+    //   227  CALLSYS        q:0x26e7975e940         ; void UPrimitiveComponent::SetMaterial(int, UMaterialInterface@)
+    //   230  SetV1          wW0:8 d:1
+    //   232  LoadThisR      W0:1280 d:134230848     ; ALokiAimingLaser_Huntress::bRangeMarkerDimmed  (+1280)
+    //   234  WRTV1          rW0:8
+    //   235  JMP            ->274
+    //   237  LoadThisR      W0:1352 d:134230848     ; ALokiAimingLaser_Huntress::CurrentProgressEndTime  (+1352)
+    //   239  RDR8           wW0:26
+    //   240  CMPd           rW0:26 rW1:40
+    //   242  JNS            ->248
+    //   244  SetV4          wW0:8 d:0
+    //   246  JMP            ->253
+    //   248  LoadThisR      W0:1280 d:134230848     ; ALokiAimingLaser_Huntress::bRangeMarkerDimmed  (+1280)
+    //   250  RDR1           wW0:9
+    //   251  CpyVtoV4       wW0:8 rW1:9
+    //   253  CpyVtoR1       rW0:8
+    //   254  JLowZ          ->274
+    //   256  PshVPtr        rW0:0
+    //   257  ADDSi          W0:1272 d:134230848     ; ALokiAimingLaser_Huntress::RangeMarkerLitMaterial  (+1272)
+    //   259  RDSPtr
+    //   260  PshC4          d:0
+    //   262  PshVPtr        rW0:0
+    //   263  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //   265  RDSPtr
+    //   266  CALLSYS        q:0x26e7975e940         ; void UPrimitiveComponent::SetMaterial(int, UMaterialInterface@)
+    //   269  SetV1          wW0:8 d:0
+    //   271  LoadThisR      W0:1280 d:134230848     ; ALokiAimingLaser_Huntress::bRangeMarkerDimmed  (+1280)
+    //   273  WRTV1          rW0:8
+    //   274  CpyVtoR1       rW0:1
+    //   275  JLowZ          ->281
+    //   277  SetV1          wW0:9 d:1
+    //   279  JMP            ->283
+    //   281  CpyVtoV4       wW0:9 rW1:7
+    //   283  CpyVtoR1       rW0:9
+    //   284  JLowZ          ->291
+    //   286  SetV8          wW0:26 q:0x3ff3333333333333
+    //   289  JMP            ->296
+    //   291  LoadThisR      W0:1288 d:134230848     ; ALokiAimingLaser_Huntress::RangeMarkerOriginalScale  (+1288)
+    //   293  RDR8           wW0:6
+    //   294  CpyVtoV8       wW0:26 rW1:6
+    //   296  PshGPtr        q:0x26e7681a548         ; FVector::OneVector
+    //   299  PSF            rW0:38
+    //   300  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //   303  PshV8          rW0:26
+    //   304  PSF            rW0:32
+    //   305  PSF            rW0:38
+    //   306  CALLSYS        q:0x26e69d00780         ; FVector FVector::opMul(float64) const
+    //   309  PSF            rW0:32
+    //   310  PshVPtr        rW0:0
+    //   311  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //   313  RDSPtr
+    //   314  CALLSYS        q:0x26e79751200         ; void USceneComponent::SetRelativeScale3D(FVector)
+    //   317  SetV8          wW0:44 q:0x4000000000000000
+    //   320  CMPd           rW0:-2 rW1:44
+    //   322  JS             ->328
+    //   324  SetV4          wW0:8 d:0
+    //   326  JMP            ->334
+    //   328  LoadThisR      W0:1312 d:134230848     ; ALokiAimingLaser_Huntress::bLaserEndpointDimmed  (+1312)
+    //   330  RDR1           wW0:9
+    //   331  NOT            rW0:9
+    //   332  CpyVtoV4       wW0:8 rW1:9
+    //   334  CpyVtoR1       rW0:8
+    //   335  JLowZ          ->357
+    //   337  PshVPtr        rW0:0
+    //   338  ADDSi          W0:1296 d:134230848     ; ALokiAimingLaser_Huntress::LaserEndpointDimmedMaterial  (+1296)
+    //   340  RDSPtr
+    //   341  PshC4          d:0
+    //   343  PshVPtr        rW0:0
+    //   344  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //   346  RDSPtr
+    //   347  CALLSYS        q:0x26e7975e940         ; void UPrimitiveComponent::SetMaterial(int, UMaterialInterface@)
+    //   350  SetV1          wW0:8 d:1
+    //   352  LoadThisR      W0:1312 d:134230848     ; ALokiAimingLaser_Huntress::bLaserEndpointDimmed  (+1312)
+    //   354  WRTV1          rW0:8
+    //   355  JMP            ->394
+    //   357  SetV8          wW0:44 q:0x4000000000000000
+    //   360  CMPd           rW0:-2 rW1:44
+    //   362  JNS            ->368
+    //   364  SetV4          wW0:8 d:0
+    //   366  JMP            ->373
+    //   368  LoadThisR      W0:1312 d:134230848     ; ALokiAimingLaser_Huntress::bLaserEndpointDimmed  (+1312)
+    //   370  RDR1           wW0:9
+    //   371  CpyVtoV4       wW0:8 rW1:9
+    //   373  CpyVtoR1       rW0:8
+    //   374  JLowZ          ->394
+    //   376  PshVPtr        rW0:0
+    //   377  ADDSi          W0:1304 d:134230848     ; ALokiAimingLaser_Huntress::LaserEndpointLitMaterial  (+1304)
+    //   379  RDSPtr
+    //   380  PshC4          d:0
+    //   382  PshVPtr        rW0:0
+    //   383  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //   385  RDSPtr
+    //   386  CALLSYS        q:0x26e7975e940         ; void UPrimitiveComponent::SetMaterial(int, UMaterialInterface@)
+    //   389  SetV1          wW0:8 d:0
+    //   391  LoadThisR      W0:1312 d:134230848     ; ALokiAimingLaser_Huntress::bLaserEndpointDimmed  (+1312)
+    //   393  WRTV1          rW0:8
+    //   394  RET            W0:4
+
+------------------------------------------------------------------------------
+void UpdateProgressRMB(const float64 ProgressValue)
+// 67 instr, 424 B bytecode, id=0x3B167E2A, varspace=10
+------------------------------------------------------------------------------
+{
+    auto v2;
+    auto v8;
+    auto v9;
+    auto v10;
+
+    v2 = float64(this.LaserProjectilePath.GetTimeForXDistance(float(Math::Lerp(this.ImpaleRangeMin, this.ImpaleRangeMax, ProgressValue))));
+    this.CurrentProgressEndTime = v2;
+    v10 = this.bShowProgressMarker;
+    if (v10) {
+        v2 = this.CurrentProgressEndTime;
+        v8 = this.CurrentTraceHitPathTime;
+        v9 = v2 > v8;
+        v10 = v9;
+    } else {
+        v10 = 0;
+    }
+    if (!v10) {
+        v9 = this.bShowProgressMarker;
+        if (v9) {
+            v2 = this.CurrentProgressEndTime;
+            v8 = this.CurrentTraceHitPathTime;
+            v10 = v2 <= v8;
+            v9 = v10;
+        } else {
+            v9 = 0;
+        }
+        if (v9) {
+            v10 = false;
+            v9 = false;
+            this.ProgressMarker.SetHiddenInGame(false, false);
+        }
+    } else {
+        v9 = false;
+        v10 = true;
+        this.ProgressMarker.SetHiddenInGame(true, false);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  LoadThisR      W0:1328 d:134230848     ; ALokiAimingLaser_Huntress::ImpaleRangeMax  (+1328)
+    //     3  PshRPtr
+    //     4  LoadThisR      W0:1320 d:134230848     ; ALokiAimingLaser_Huntress::ImpaleRangeMin  (+1320)
+    //     6  PshRPtr
+    //     7  CALLSYS        q:0x26e703513c0         ; float64 Math::Lerp(const float64&, const float64&, const float64&)
+    //    10  CpyRtoV8       wW0:4
+    //    11  dTOf           wW0:5 rW1:4
+    //    13  PshV4          rW0:5
+    //    14  PshVPtr        rW0:0
+    //    15  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    17  RDSPtr
+    //    18  CALLSYS        q:0x26e7a3b1ac0         ; float ULokiProjectilePathComponent::GetTimeForXDistance(float) const
+    //    21  CpyRtoV4       wW0:6
+    //    22  fTOd           wW0:2 rW1:6
+    //    24  LoadThisR      W0:1352 d:134230848     ; ALokiAimingLaser_Huntress::CurrentProgressEndTime  (+1352)
+    //    26  WRTV8          rW0:2
+    //    27  LoadThisR      W0:1176 d:134230848     ; ALokiAimingLaser_Huntress::bShowProgressMarker  (+1176)
+    //    29  RDR1           wW0:10
+    //    30  CpyVtoR1       rW0:10
+    //    31  JLowNZ         ->37
+    //    33  SetV4          wW0:10 d:0
+    //    35  JMP            ->49
+    //    37  LoadThisR      W0:1352 d:134230848     ; ALokiAimingLaser_Huntress::CurrentProgressEndTime  (+1352)
+    //    39  RDR8           wW0:2
+    //    40  LoadThisR      W0:976 d:134230838      ; ALokiAimingLaser::CurrentTraceHitPathTime  (+976)
+    //    42  RDR8           wW0:8
+    //    43  CMPd           rW0:2 rW1:8
+    //    45  TP
+    //    46  CpyRtoV4       wW0:9
+    //    47  CpyVtoV4       wW0:10 rW1:9
+    //    49  CpyVtoR1       rW0:10
+    //    50  JLowZ          ->67
+    //    52  SetV1          wW0:9 d:0
+    //    54  PshV4          rW0:9
+    //    55  SetV1          wW0:10 d:1
+    //    57  PshV4          rW0:10
+    //    58  PshVPtr        rW0:0
+    //    59  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //    61  RDSPtr
+    //    62  CALLSYS        q:0x26e79751580         ; void USceneComponent::SetHiddenInGame(bool, bool)
+    //    65  JMP            ->105
+    //    67  LoadThisR      W0:1176 d:134230848     ; ALokiAimingLaser_Huntress::bShowProgressMarker  (+1176)
+    //    69  RDR1           wW0:9
+    //    70  CpyVtoR1       rW0:9
+    //    71  JLowNZ         ->77
+    //    73  SetV4          wW0:9 d:0
+    //    75  JMP            ->89
+    //    77  LoadThisR      W0:1352 d:134230848     ; ALokiAimingLaser_Huntress::CurrentProgressEndTime  (+1352)
+    //    79  RDR8           wW0:2
+    //    80  LoadThisR      W0:976 d:134230838      ; ALokiAimingLaser::CurrentTraceHitPathTime  (+976)
+    //    82  RDR8           wW0:8
+    //    83  CMPd           rW0:2 rW1:8
+    //    85  TNP
+    //    86  CpyRtoV4       wW0:10
+    //    87  CpyVtoV4       wW0:9 rW1:10
+    //    89  CpyVtoR1       rW0:9
+    //    90  JLowZ          ->105
+    //    92  SetV1          wW0:10 d:0
+    //    94  PshV4          rW0:10
+    //    95  SetV1          wW0:9 d:0
+    //    97  PshV4          rW0:9
+    //    98  PshVPtr        rW0:0
+    //    99  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //   101  RDSPtr
+    //   102  CALLSYS        q:0x26e79751580         ; void USceneComponent::SetHiddenInGame(bool, bool)
+    //   105  RET            W0:4
+
+------------------------------------------------------------------------------
+void UpdateProgressUlt(const float64 ProgressValue)
+// 18 instr, 116 B bytecode, id=0x94210CB3, varspace=8
+------------------------------------------------------------------------------
+{
+    float64 v4;
+
+    v4 = 200;
+    this.CurrentProgressEndTime = float64(this.LaserProjectilePath.GetTimeForXDistance(float(Math::Lerp(v4, this.UltArrowRangeMax, ProgressValue))));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  LoadThisR      W0:1344 d:134230848     ; ALokiAimingLaser_Huntress::UltArrowRangeMax  (+1344)
+    //     3  PshRPtr
+    //     4  SetV8          wW0:4 q:0x4069000000000000
+    //     7  PSF            rW0:4
+    //     8  CALLSYS        q:0x26e703513c0         ; float64 Math::Lerp(const float64&, const float64&, const float64&)
+    //    11  CpyRtoV8       wW0:6
+    //    12  dTOf           wW0:7 rW1:6
+    //    14  PshV4          rW0:7
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    18  RDSPtr
+    //    19  CALLSYS        q:0x26e7a3b1ac0         ; float ULokiProjectilePathComponent::GetTimeForXDistance(float) const
+    //    22  CpyRtoV4       wW0:8
+    //    23  fTOd           wW0:4 rW1:8
+    //    25  LoadThisR      W0:1352 d:134230848     ; ALokiAimingLaser_Huntress::CurrentProgressEndTime  (+1352)
+    //    27  WRTV8          rW0:4
+    //    28  RET            W0:4
+
+------------------------------------------------------------------------------
+void OnSwapToLMB()
+// 29 instr, 184 B bytecode, id=0x090E1262, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = true;
+    this.SetShowRangeMarker(true);
+    v1 = true;
+    this.SetShowProgressMarker(true);
+    v1 = true;
+    this.bOverrideRangeMarkerDesaturationAndOpacity = true;
+    v1 = true;
+    this.bOverrideDesaturationAndOpacity = true;
+    v1 = true;
+    this.bOverrideRangeAndAlphaStep = true;
+    this.LaserEndpoint.SetMaterial(0, this.LaserEndpointDimmedMaterial);
+    v1 = true;
+    this.bLaserEndpointDimmed = true;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:84623                 ; void ALokiAimingLaserRangeMarker::SetShowRangeMarker(const bool)
+    //     6  SetV1          wW0:1 d:1
+    //     8  PshV4          rW0:1
+    //     9  PshVPtr        rW0:0
+    //    10  CALLINTF       d:84755                 ; void ALokiAimingLaser_Huntress::SetShowProgressMarker(const bool)
+    //    12  SetV1          wW0:1 d:1
+    //    14  LoadThisR      W0:1160 d:134230843     ; ALokiAimingLaserRangeMarker::bOverrideRangeMarkerDesaturationAndOpacity  (+1160)
+    //    16  WRTV1          rW0:1
+    //    17  SetV1          wW0:1 d:1
+    //    19  LoadThisR      W0:1024 d:134230838     ; ALokiAimingLaser::bOverrideDesaturationAndOpacity  (+1024)
+    //    21  WRTV1          rW0:1
+    //    22  SetV1          wW0:1 d:1
+    //    24  LoadThisR      W0:1025 d:134230838     ; ALokiAimingLaser::bOverrideRangeAndAlphaStep  (+1025)
+    //    26  WRTV1          rW0:1
+    //    27  PshVPtr        rW0:0
+    //    28  ADDSi          W0:1296 d:134230848     ; ALokiAimingLaser_Huntress::LaserEndpointDimmedMaterial  (+1296)
+    //    30  RDSPtr
+    //    31  PshC4          d:0
+    //    33  PshVPtr        rW0:0
+    //    34  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //    36  RDSPtr
+    //    37  CALLSYS        q:0x26e7975e940         ; void UPrimitiveComponent::SetMaterial(int, UMaterialInterface@)
+    //    40  SetV1          wW0:1 d:1
+    //    42  LoadThisR      W0:1312 d:134230848     ; ALokiAimingLaser_Huntress::bLaserEndpointDimmed  (+1312)
+    //    44  WRTV1          rW0:1
+    //    45  RET            W0:2
+
+------------------------------------------------------------------------------
+void OnSwapToBase()
+// 50 instr, 312 B bytecode, id=0x4A6485EF, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = true;
+    this.SetShowRangeMarker(true);
+    v1 = false;
+    this.SetShowProgressMarker(false);
+    v1 = false;
+    this.bOverrideRangeMarkerDesaturationAndOpacity = false;
+    v1 = false;
+    this.bOverrideDesaturationAndOpacity = false;
+    v1 = false;
+    this.bOverrideRangeAndAlphaStep = false;
+    v1 = this.bRangeMarkerDimmed;
+    v1 = !v1;
+    if (v1) {
+        this.RangeMarker.SetMaterial(0, this.RangeMarkerDimmedMaterial);
+        v1 = true;
+        this.bRangeMarkerDimmed = true;
+    }
+    v1 = this.bLaserEndpointDimmed;
+    v1 = !v1;
+    if (v1) {
+        this.LaserEndpoint.SetMaterial(0, this.RangeMarkerDimmedMaterial);
+        v1 = true;
+        this.bLaserEndpointDimmed = true;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:84623                 ; void ALokiAimingLaserRangeMarker::SetShowRangeMarker(const bool)
+    //     6  SetV1          wW0:1 d:0
+    //     8  PshV4          rW0:1
+    //     9  PshVPtr        rW0:0
+    //    10  CALLINTF       d:84755                 ; void ALokiAimingLaser_Huntress::SetShowProgressMarker(const bool)
+    //    12  SetV1          wW0:1 d:0
+    //    14  LoadThisR      W0:1160 d:134230843     ; ALokiAimingLaserRangeMarker::bOverrideRangeMarkerDesaturationAndOpacity  (+1160)
+    //    16  WRTV1          rW0:1
+    //    17  SetV1          wW0:1 d:0
+    //    19  LoadThisR      W0:1024 d:134230838     ; ALokiAimingLaser::bOverrideDesaturationAndOpacity  (+1024)
+    //    21  WRTV1          rW0:1
+    //    22  SetV1          wW0:1 d:0
+    //    24  LoadThisR      W0:1025 d:134230838     ; ALokiAimingLaser::bOverrideRangeAndAlphaStep  (+1025)
+    //    26  WRTV1          rW0:1
+    //    27  LoadThisR      W0:1280 d:134230848     ; ALokiAimingLaser_Huntress::bRangeMarkerDimmed  (+1280)
+    //    29  RDR1           wW0:1
+    //    30  NOT            rW0:1
+    //    31  CpyVtoR1       rW0:1
+    //    32  JLowZ          ->52
+    //    34  PshVPtr        rW0:0
+    //    35  ADDSi          W0:1264 d:134230848     ; ALokiAimingLaser_Huntress::RangeMarkerDimmedMaterial  (+1264)
+    //    37  RDSPtr
+    //    38  PshC4          d:0
+    //    40  PshVPtr        rW0:0
+    //    41  ADDSi          W0:1136 d:134230843     ; ALokiAimingLaserRangeMarker::RangeMarker  (+1136)
+    //    43  RDSPtr
+    //    44  CALLSYS        q:0x26e7975e940         ; void UPrimitiveComponent::SetMaterial(int, UMaterialInterface@)
+    //    47  SetV1          wW0:1 d:1
+    //    49  LoadThisR      W0:1280 d:134230848     ; ALokiAimingLaser_Huntress::bRangeMarkerDimmed  (+1280)
+    //    51  WRTV1          rW0:1
+    //    52  LoadThisR      W0:1312 d:134230848     ; ALokiAimingLaser_Huntress::bLaserEndpointDimmed  (+1312)
+    //    54  RDR1           wW0:1
+    //    55  NOT            rW0:1
+    //    56  CpyVtoR1       rW0:1
+    //    57  JLowZ          ->77
+    //    59  PshVPtr        rW0:0
+    //    60  ADDSi          W0:1264 d:134230848     ; ALokiAimingLaser_Huntress::RangeMarkerDimmedMaterial  (+1264)
+    //    62  RDSPtr
+    //    63  PshC4          d:0
+    //    65  PshVPtr        rW0:0
+    //    66  ADDSi          W0:920 d:134230838      ; ALokiAimingLaser::LaserEndpoint  (+920)
+    //    68  RDSPtr
+    //    69  CALLSYS        q:0x26e7975e940         ; void UPrimitiveComponent::SetMaterial(int, UMaterialInterface@)
+    //    72  SetV1          wW0:1 d:1
+    //    74  LoadThisR      W0:1312 d:134230848     ; ALokiAimingLaser_Huntress::bLaserEndpointDimmed  (+1312)
+    //    76  WRTV1          rW0:1
+    //    77  RET            W0:2
+
+------------------------------------------------------------------------------
+void OnSwapToRMB()
+// 17 instr, 104 B bytecode, id=0x8D49E394, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.SetShowRangeMarker(false);
+    v1 = true;
+    this.SetShowProgressMarker(true);
+    this.SetMaxRangeFromRMB();
+    v1 = false;
+    this.bOverrideDesaturationAndOpacity = false;
+    v1 = false;
+    this.bOverrideRangeAndAlphaStep = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:84623                 ; void ALokiAimingLaserRangeMarker::SetShowRangeMarker(const bool)
+    //     6  SetV1          wW0:1 d:1
+    //     8  PshV4          rW0:1
+    //     9  PshVPtr        rW0:0
+    //    10  CALLINTF       d:84755                 ; void ALokiAimingLaser_Huntress::SetShowProgressMarker(const bool)
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84752                 ; void ALokiAimingLaser_Huntress::SetMaxRangeFromRMB()
+    //    15  SetV1          wW0:1 d:0
+    //    17  LoadThisR      W0:1024 d:134230838     ; ALokiAimingLaser::bOverrideDesaturationAndOpacity  (+1024)
+    //    19  WRTV1          rW0:1
+    //    20  SetV1          wW0:1 d:0
+    //    22  LoadThisR      W0:1025 d:134230838     ; ALokiAimingLaser::bOverrideRangeAndAlphaStep  (+1025)
+    //    24  WRTV1          rW0:1
+    //    25  RET            W0:2
+
+------------------------------------------------------------------------------
+void OnSwapToUlt()
+// 12 instr, 72 B bytecode, id=0xE27A28A3, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.SetShowRangeMarker(false);
+    v1 = false;
+    this.SetShowProgressMarker(false);
+    v1 = false;
+    this.bOverrideRangeAndAlphaStep = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:84623                 ; void ALokiAimingLaserRangeMarker::SetShowRangeMarker(const bool)
+    //     6  SetV1          wW0:1 d:0
+    //     8  PshV4          rW0:1
+    //     9  PshVPtr        rW0:0
+    //    10  CALLINTF       d:84755                 ; void ALokiAimingLaser_Huntress::SetShowProgressMarker(const bool)
+    //    12  SetV1          wW0:1 d:0
+    //    14  LoadThisR      W0:1025 d:134230838     ; ALokiAimingLaser::bOverrideRangeAndAlphaStep  (+1025)
+    //    16  WRTV1          rW0:1
+    //    17  RET            W0:2
+
+------------------------------------------------------------------------------
+void SetMaxRangeFromRMB()
+// 6 instr, 44 B bytecode, id=0x2A0BC77E, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(165));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:165
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: SetMaxRangeFromRMB
+void SetMaxRangeFromRMB_Implementation()
+// 1 instr, 4 B bytecode, id=0x8A7ABE52, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:2
+
+------------------------------------------------------------------------------
+void SetShowProgressMarker(const bool bNewShowProgressMarker)
+// 31 instr, 204 B bytecode, id=0xA6373D16, varspace=7
+------------------------------------------------------------------------------
+{
+    bool v1;
+    auto v2;
+
+    if (this.ValidateOwner()) {
+        this.bShowProgressMarker = bNewShowProgressMarker;
+        v2 = false;
+        v1 = bNewShowProgressMarker;
+        v1 = !bNewShowProgressMarker;
+        this.ProgressMarker.SetHiddenInGame(v1, false);
+        v2 = bNewShowProgressMarker;
+        v2 = !bNewShowProgressMarker;
+        if (v2) {
+            this.LaserProjectilePath.GetMaterial(0).SetScalarParameterValue(__STATIC_NAME(37), 1);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84575                 ; bool ALokiAimingLaser::ValidateOwner()
+    //     3  JLowZ          ->50
+    //     5  LoadThisR      W0:1176 d:134230848     ; ALokiAimingLaser_Huntress::bShowProgressMarker  (+1176)
+    //     7  WRTV1          rW0:-2
+    //     8  SetV1          wW0:2 d:0
+    //    10  PshV4          rW0:2
+    //    11  CpyVtoV4       wW0:1 rW1:-2
+    //    13  NOT            rW0:1
+    //    14  PshV4          rW0:1
+    //    15  PshVPtr        rW0:0
+    //    16  ADDSi          W0:1168 d:134230848     ; ALokiAimingLaser_Huntress::ProgressMarker  (+1168)
+    //    18  RDSPtr
+    //    19  CALLSYS        q:0x26e79751580         ; void USceneComponent::SetHiddenInGame(bool, bool)
+    //    22  CpyVtoV4       wW0:2 rW1:-2
+    //    24  NOT            rW0:2
+    //    25  CpyVtoR1       rW0:2
+    //    26  JLowZ          ->50
+    //    28  PshC4          d:1065353216
+    //    30  PshC4          d:37
+    //    32  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    35  PshRPtr
+    //    36  PshC4          d:0
+    //    38  PshVPtr        rW0:0
+    //    39  ADDSi          W0:936 d:134230838      ; ALokiAimingLaser::LaserProjectilePath  (+936)
+    //    41  RDSPtr
+    //    42  CALLSYS        q:0x26e7a3b2700         ; UMaterialInstanceDynamic@ ULokiProjectilePathComponent::GetMaterial(int) const
+    //    45  STOREOBJ       wW0:6
+    //    46  PshVPtr        rW0:6
+    //    47  CALLSYS        q:0x26e79b31580         ; void UMaterialInstanceDynamic::SetScalarParameterValue(FName, float)
+    //    50  RET            W0:3
+
+------------------------------------------------------------------------------
+~ALokiAimingLaser_Huntress()
+// 3 instr, 16 B bytecode, id=0xCA217A80, varspace=0
+------------------------------------------------------------------------------
+{
+    this.~ALokiAimingLaserRangeMarker();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALL           d:85481                 ; void ALokiAimingLaserRangeMarker::~ALokiAimingLaserRangeMarker()
+    //     3  RET            W0:2
+

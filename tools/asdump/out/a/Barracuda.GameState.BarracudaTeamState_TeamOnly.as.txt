@@ -1,0 +1,263 @@
+==============================================================================
+MODULE   Barracuda.GameState.BarracudaTeamState_TeamOnly
+SOURCE   Barracuda/GameState/BarracudaTeamState_TeamOnly.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+// statics class: Module_Barracuda_GameState_BarracudaTeamState_TeamOnlyStatics
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaTeamState_TeamOnly;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ABarracudaTeamState_TeamOnly@ ABarracudaTeamState_TeamOnly()
+// 4 instr, 28 B bytecode, id=0x7E05A6C0, varspace=2
+------------------------------------------------------------------------------
+{
+    ABarracudaTeamState_TeamOnly v2;
+
+    v2 = ABarracudaTeamState_TeamOnly();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84277 q:0x26e6865d000; new ABarracudaTeamState_TeamOnly   ctor=ABarracudaTeamState_TeamOnly::ABarracudaTeamState_TeamOnly
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+ABarracudaTeamState_TeamOnly@ GetBarracudaTeamStateTeamOnly(const int TeamIndex)
+// 21 instr, 124 B bytecode, id=0x942E480E, varspace=12
+------------------------------------------------------------------------------
+{
+    ABarracudaTeamState v4;
+    ABarracudaTeamState_TeamOnly v8;
+    ALokiTeamState_TeamOnly v12;
+
+    v4 = GetBarracudaTeamState(TeamIndex);
+    if (v4 != null) {
+        v12 = v4.GetTeamStateTeamOnly();
+        if (v12 == null) {
+            v8 = null;
+        } else {
+            v8 = cast<ABarracudaTeamState_TeamOnly>(v12);
+        }
+    } else {
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshV4          rW0:0
+    //     1  CALL           d:84271                 ; ABarracudaTeamState@ GetBarracudaTeamState(const int)
+    //     3  STOREOBJ       wW0:4
+    //     4  CmpPtrNull     rW0:4
+    //     5  JNZ            ->11
+    //     7  FreeNullV8     wW0:8
+    //     8  LOADOBJ        rW0:8
+    //     9  JMP            ->30
+    //    11  PshVPtr        rW0:4
+    //    12  CALLSYS        q:0x26e7a413180         ; ALokiTeamState_TeamOnly@ ALokiTeamState::GetTeamStateTeamOnly() const
+    //    15  STOREOBJ       wW0:12
+    //    16  CmpPtrNull     rW0:12
+    //    17  JZ             ->28
+    //    19  TYPEID         d:1207972616            ; ABarracudaTeamState_TeamOnly@
+    //    21  PSF            rW0:8
+    //    22  PshVPtr        rW0:12
+    //    23  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    26  JMP            ->29
+    //    28  ClrVPtr        wW0:8
+    //    29  LOADOBJ        rW0:8
+    //    30  RET            W0:1
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x726A6545, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ABarracudaTeamState_TeamOnly);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b4e58         ; __StaticType_ABarracudaTeamState_TeamOnly
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ABarracudaTeamState_TeamOnly@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0xB61F8D6B, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ABarracudaTeamState_TeamOnly v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ABarracudaTeamState_TeamOnly.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ABarracudaTeamState_TeamOnly>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6f1b4e58         ; __StaticType_ABarracudaTeamState_TeamOnly
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972616            ; ABarracudaTeamState_TeamOnly@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class ABarracudaTeamState_TeamOnly : ALokiTeamState_TeamOnly
+// base /Script/Loki.LokiTeamState_TeamOnly  ->  ../../../Loki/Source/Loki/LokiTeamState_TeamOnly.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) TMap<ABarracudaMinionSpawner@, float64> SpawnerToSpawnTime;
+
+}
+
+------------------------------------------------------------------------------
+ABarracudaTeamState_TeamOnly() const
+// 6 instr, 44 B bytecode, id=0x50CA3713, varspace=0
+------------------------------------------------------------------------------
+{
+    this.SpawnerToSpawnTime = TMap<ABarracudaMinionSpawner@, float64>();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:1024 d:134230792     ; ABarracudaTeamState_TeamOnly::SpawnerToSpawnTime  (+1024)
+    //     3  CALLSYS        q:0x26e6ef01200         ; void TMap<ABarracudaMinionSpawner@, float64>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  FinConstruct   q:0x26e6865d000         ; ABarracudaTeamState_TeamOnly
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(CanOverrideEvent)
+void SetSpawnerSpawnTime(ABarracudaMinionSpawner@ Spawner, const float64 NextSpawnTime)
+// 14 instr, 88 B bytecode, id=0xFC0FECEE, varspace=3
+------------------------------------------------------------------------------
+{
+    if (this.SpawnerToSpawnTime.Find(Spawner, v2)) {
+        if (v2 == NextSpawnTime) {
+            goto L21;
+        }
+    }
+    this.NetMulticastSpawnerNextSpawnTime(Spawner, NextSpawnTime);
+    L21:
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  PSF            rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:1024 d:134230792     ; ABarracudaTeamState_TeamOnly::SpawnerToSpawnTime  (+1024)
+    //     5  CALLSYS        q:0x26e6ef01580         ; bool TMap<ABarracudaMinionSpawner@, float64>::Find(const ABarracudaMinionSpawner@ const&, float64&) const
+    //     8  JLowZ          ->16
+    //    10  CMPd           rW0:2 rW1:-4
+    //    12  JNZ            ->16
+    //    14  JMP            ->21
+    //    16  PshV8          rW0:-4
+    //    17  PshVPtr        rW0:-2
+    //    18  PshVPtr        rW0:0
+    //    19  CALLINTF       d:84275                 ; void ABarracudaTeamState_TeamOnly::NetMulticastSpawnerNextSpawnTime(ABarracudaMinionSpawner@, const float64)
+    //    21  RET            W0:6
+
+------------------------------------------------------------------------------
+void NetMulticastSpawnerNextSpawnTime(ABarracudaMinionSpawner@ Spawner, const float64 NextSpawnTime)
+// 11 instr, 84 B bytecode, id=0x98FCDE13, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument(Spawner);
+    __Evt_PushArgument__float(NextSpawnTime);
+    __Evt_Execute(this, __STATIC_NAME(107));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:1207972617            ; ABarracudaMinionSpawner@
+    //     2  PSF            rW0:-2
+    //     3  CALLSYS        q:0x26e7861c640         ; void __Evt_PushArgument(const ?&)
+    //     6  PSF            rW0:-4
+    //     7  CALLSYS        q:0x26e77fcdb40         ; void __Evt_PushArgument__float(const float64&)
+    //    10  PshC4          d:107
+    //    12  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    15  PshRPtr
+    //    16  PshVPtr        rW0:0
+    //    17  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    20  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, NetMulticast)
+// UFunction name: NetMulticastSpawnerNextSpawnTime
+void NetMulticastSpawnerNextSpawnTime_Implementation(ABarracudaMinionSpawner@ Spawner, const float64 NextSpawnTime)
+// 6 instr, 36 B bytecode, id=0x3E6FA2D9, varspace=0
+------------------------------------------------------------------------------
+{
+    this.SpawnerToSpawnTime.Add(Spawner, NextSpawnTime);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-4
+    //     1  PSF            rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:1024 d:134230792     ; ABarracudaTeamState_TeamOnly::SpawnerToSpawnTime  (+1024)
+    //     5  CALLSYS        q:0x26e6ef013c0         ; void TMap<ABarracudaMinionSpawner@, float64>::Add(const ABarracudaMinionSpawner@ const&, const float64&)
+    //     8  RET            W0:6
+
+------------------------------------------------------------------------------
+~ABarracudaTeamState_TeamOnly()
+// 4 instr, 28 B bytecode, id=0xAED64E9B, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:1024 d:134230792     ; ABarracudaTeamState_TeamOnly::SpawnerToSpawnTime  (+1024)
+    //     3  CALLSYS        q:0x26e6e833c00         ; void TMap<ABarracudaMinionSpawner@, float64>::$beh2()
+    //     6  RET            W0:2
+

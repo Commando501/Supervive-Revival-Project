@@ -1,0 +1,956 @@
+// ============================================================================
+//  MODULE   Armory.LokiPlayerControllerArmoryComponent
+//  SOURCE   Armory/LokiPlayerControllerArmoryComponent.as
+//  CONTENT  1 class(es), 38 function(s), 0 enum(s), 1 global(s), 8684 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiPlayerControllerArmoryComponent;
+
+ULokiPlayerControllerArmoryComponent@ ULokiPlayerControllerArmoryComponent()   // traits=0x20
+{
+    ULokiPlayerControllerArmoryComponent v2;
+
+    v2 = ULokiPlayerControllerArmoryComponent();
+    return v2;
+}
+
+UClass@ ULokiPlayerControllerArmoryComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiPlayerControllerArmoryComponent);
+    return v2;
+}
+
+ULokiPlayerControllerArmoryComponent@ ULokiPlayerControllerArmoryComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiPlayerControllerArmoryComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiPlayerControllerArmoryComponent, v2, typeid(ULokiPlayerControllerArmoryComponent@), WithName);
+    return v2;
+}
+
+ULokiPlayerControllerArmoryComponent@ ULokiPlayerControllerArmoryComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiPlayerControllerArmoryComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerArmoryComponent, v2, typeid(ULokiPlayerControllerArmoryComponent@), WithName);
+    return v2;
+}
+
+ULokiPlayerControllerArmoryComponent@ ULokiPlayerControllerArmoryComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiPlayerControllerArmoryComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerArmoryComponent, v2, typeid(ULokiPlayerControllerArmoryComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ULokiPlayerControllerArmoryComponent : ULokiPlayerControllerArmoryComponentBase
+// unreal base : /Script/Loki.LokiPlayerControllerArmoryComponentBase
+// C++ header  : ../../../Loki/Source/Loki/Armory/LokiPlayerControllerArmoryComponent.h
+// static class global: __StaticType_ULokiPlayerControllerArmoryComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    const FName RelicSlotName;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    const FName PerkSlotName;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    const FName BootsSlotName;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    bool bLoadComplete;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    TArray<FString> PurchasedKits;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance, Transient)
+    TArray<UClass@> LoadedClasses;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    FPlayerArmory DefaultArmory;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance)
+    ULoadAssetHandle@ Handle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    TArray<TSubclassOf<AActor@>> DisabledItems;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    TArray<FPrimaryAssetId> DisabledItemAssetIDs;
+    FGameEventListenerHandle OnPlayerInitializedHandle;
+
+    ULokiPlayerControllerArmoryComponent()   // traits=0x21
+    {
+        auto v2;
+
+        this.PurchasedKits = TArray<FString>();
+        this.LoadedClasses = TArray<UClass@>();
+        this.DefaultArmory = FPlayerArmory();
+        this.DisabledItems = TArray<TSubclassOf<AActor@>>();
+        this.DisabledItemAssetIDs = TArray<FPrimaryAssetId>();
+        this.OnPlayerInitializedHandle = FGameEventListenerHandle();
+        this.RelicSlotName = FName(n"Utility");
+        this.PerkSlotName = FName(n"MinorUtility");
+        this.BootsSlotName = FName(n"Boots");
+        v2 = false;
+        this.bLoadComplete = v2;
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        UGameEventRouterComponent v2;
+        FGameEvent_GameReady_Controller v12;
+        auto v13;
+        FGameEventListenerHandle v26;
+
+        v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        v13 = false;
+        v12 = FGameEvent_GameReady_Controller();
+        v26 = v2.RegisterForEvent(this, v12, typeid(FGameEvent_GameReady_Controller), nullptr, n"OnPlayerInitialized", v13);
+        this.OnPlayerInitializedHandle = v26;
+        return;
+    }
+
+    UFUNCTION(UnrealName=EndPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void EndPlay_Implementation(const EEndPlayReason EndPlayReason)   // traits=0x20
+    {
+        ULoadAssetHandle v2;
+
+        v2 = this.Handle;
+        if (v2 != nullptr) {
+            this.Handle.Done();
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    bool IsArmoryEnabled()   // traits=0x20
+    {
+        auto v1;
+        ELokiGameFeatureToggle v2;
+
+        if (LokiGameplay::GetFeatureTogglesReady(__WorldContext)) {
+            v2 = ELokiGameFeatureToggle::Armory;
+            v1 = LokiGameplay::GetFeatureToggleValue(__WorldContext, v2);
+            return v1;
+        } else {
+            v1 = false;
+        }
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    TArray<FArmoryShopItem> GetArmoryItemsForShop()   // traits=0x20
+    {
+        TArray<FArmoryShopItem> v4;
+        FPlayerArmory v28;
+        TArrayIterator<FGameArmoryItem> v34;
+        auto v41;
+        auto v44;
+        TSubclassOf<ALokiBaseItem@> v46;
+        auto v49;
+        ALokiBaseItem v52;
+        ALokiBaseItem v54;
+        auto v55;
+        auto v56;
+        auto v57;
+        FName v59;
+        FArmoryShopItem v76;
+
+        v4 = TArray<FArmoryShopItem>();
+        v28 = this.GetArmory();
+        v34 = v28.ItemsCollection.Iterator();
+        while (true) {
+            v41 = v34.CanProceed;
+            if (!v41) break;
+            v44 = v34.Proceed();
+            v46 = this.GetClassFromPrimaryAssetId(v44.PrimaryAssetId);
+            if (!v46 == nullptr) {
+                if (!this.IsAssetIDEnabled(v44.PrimaryAssetId)) {
+                    v41 = 0;
+                } else {
+                    v49 = this.IsAssetEnabled(v46);
+                    v41 = v49;
+                }
+                if (v41) {
+                    v52 = v46.GetDefaultObject();
+                    if (v52 != nullptr) {
+                        v56 = false;
+                        v55 = v56;
+                        v59 = v52.GetSlotName();
+                        v41 = v59 == n"Boots";
+                        if (v41) {
+                            v56 = 3;
+                            v55 = v56;
+                        } else {
+                            v59 = v52.GetSlotName();
+                            v49 = v59 == n"MinorUtility";
+                            if (v49) {
+                                v56 = true;
+                                v55 = v56;
+                            } else {
+                                v59 = v52.GetSlotName();
+                                v49 = v59 == n"Utility";
+                                if (v49) {
+                                    v49 = true;
+                                } else {
+                                    v59 = v52.GetSlotName();
+                                    v41 = v59 == n"Inventory";
+                                    v49 = v41;
+                                }
+                                if (v49) {
+                                    v56 = 2;
+                                    v55 = v56;
+                                }
+                            }
+                        }
+                        v76 = FArmoryShopItem();
+                        v76.ItemClass = v46;
+                        v76.AssetId = v44.PrimaryAssetId;
+                        v76.ItemType = v55;
+                        v54 = v46.GetDefaultObject();
+                        v57 = v54.ShopkeeperGoldPrice;
+                        v76.Price = v57;
+                        v57 = v44.StarLevel;
+                        v57 = v57 - 1;
+                        v76.StarCount = v57;
+                        v41 = this.GetIsPrototypeItem(v44.PrimaryAssetId);
+                        v76.bPrototype = v41;
+                        v4.Add(v76);
+                    }
+                }
+            }
+        }
+        LokiGameplay::SortArmoryItems(v4);
+        __ret = TArray<FArmoryShopItem>();
+        __ret = v4;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    TArray<FArmoryShopItem> GetArmoryTrinkets()   // traits=0x20
+    {
+        TArray<FArmoryShopItem> v4;
+        FPlayerArmory v28;
+
+        v4 = TArray<FArmoryShopItem>();
+        v28 = this.GetArmory();
+        __ret = TArray<FArmoryShopItem>();
+        __ret = v4;
+        return;
+    }
+
+    void ServerSwapSlotAndBuyKit(const FArmoryShopItem& Item, const TSubclassOf<ALokiBaseItem@>& ItemClass, const int InventorySlotIndex)   // traits=0x20
+    {
+        __Evt_PushArgument__FArmoryShopItem(Item);
+        __Evt_PushArgument(ItemClass, typeid(TSubclassOf));
+        __Evt_PushArgument__int(InventorySlotIndex);
+        __Evt_Execute(this, n"ServerSwapSlotAndBuyKit");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ServerSwapSlotAndBuyKit, BlueprintCallable, BlueprintEvent, NetServer)
+    void ServerSwapSlotAndBuyKit_Implementation(const FArmoryShopItem& Item, const TSubclassOf<ALokiBaseItem@>& ItemClass, const int InventorySlotIndex)   // traits=0x20
+    {
+        auto v1;
+        ALokiBaseItem v4;
+        FName v6;
+
+        v1 = ItemClass.IsValid();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = ItemClass.GetDefaultObject();
+            v6 = v4.GetSlotName();
+            v1 = this.AuthDropPowerAtSlot(v6, InventorySlotIndex);
+            if (v1) {
+                this.AuthBuyItem(Item);
+            }
+        }
+        return;
+    }
+
+    void ServerSellSlotAndBuyItem(const FArmoryShopItem& Item, const TSubclassOf<ALokiBaseItem@>& ItemClass, const int InventorySlotIndex)   // traits=0x20
+    {
+        __Evt_PushArgument__FArmoryShopItem(Item);
+        __Evt_PushArgument(ItemClass, typeid(TSubclassOf));
+        __Evt_PushArgument__int(InventorySlotIndex);
+        __Evt_Execute(this, n"ServerSellSlotAndBuyItem");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ServerSellSlotAndBuyItem, BlueprintCallable, BlueprintEvent, NetServer)
+    void ServerSellSlotAndBuyItem_Implementation(const FArmoryShopItem& Item, const TSubclassOf<ALokiBaseItem@>& ItemClass, const int InventorySlotIndex)   // traits=0x20
+    {
+        auto v1;
+        ALokiBaseItem v4;
+        FName v6;
+
+        v1 = ItemClass.IsValid();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = ItemClass.GetDefaultObject();
+            v6 = v4.GetSlotName();
+            v1 = this.AuthSellItemAtSlot(v6, InventorySlotIndex);
+            if (v1) {
+                this.AuthBuyItem(Item);
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    bool AuthSellItemAtSlot(const FName& SlotName, const int SlotIndex)   // traits=0x20
+    {
+        auto v1;
+        ALokiPlayerState v6;
+        ULokiInventoryComponentComboItems v10;
+        ALokiBaseItem v14;
+
+        v1 = this.IsArmoryEnabled();
+        v1 = !v1;
+        if (v1) {
+            v1 = false;
+            return v1;
+        } else {
+            v6 = this.GetPlayerState();
+            if (v6 == nullptr) {
+                v1 = false;
+                return v1;
+            } else {
+                v10 = v6.GetInventory();
+                if (v10 == nullptr) {
+                    v1 = false;
+                    return v1;
+                } else {
+                    v14 = v10.GetItemFromSlot(SlotName, SlotIndex);
+                    if (v14 != nullptr) {
+                        v1 = this.AuthSellItem_BP(v14);
+                        return v1;
+                    } else {
+                        v1 = false;
+                    }
+                }
+            }
+        }
+        return v1;
+    }
+
+    bool AuthSellItem_BP(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+
+        __Evt_PushArgument__ALokiBaseItem(Item);
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"AuthSellItem_BP");
+        return v1;
+    }
+
+    UFUNCTION(UnrealName=AuthSellItem_BP, BlueprintEvent, CanOverrideEvent)
+    bool AuthSellItem_BP_Implementation(ALokiBaseItem@ Item)   // traits=0x20
+    {
+        auto v1;
+
+        v1 = false;
+        return v1;
+    }
+
+    bool ShouldShopSellItem_BP(const TSubclassOf<ALokiBaseItem@>& ItemClass, AActor@ SourceShopkeep)   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+
+        __Evt_PushArgument(ItemClass, typeid(TSubclassOf));
+        __Evt_PushArgument__AActor(SourceShopkeep);
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"ShouldShopSellItem_BP");
+        return v1;
+    }
+
+    UFUNCTION(UnrealName=ShouldShopSellItem_BP, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    bool ShouldShopSellItem_BP_Implementation(const TSubclassOf<ALokiBaseItem@>& ItemClass, AActor@ SourceShopkeep)   // traits=0x20
+    {
+        auto v1;
+
+        v1 = true;
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    bool AuthDropPowerAtSlot(const FName& SlotName, const int SlotIndex)   // traits=0x20
+    {
+        auto v1;
+        ALokiPlayerState v6;
+        ULokiInventoryComponentComboItems v10;
+        ALokiBaseItem v14;
+        ELokiRemoveFromInventoryReason v15;
+        auto v16;
+
+        v1 = this.IsArmoryEnabled();
+        v1 = !v1;
+        if (v1) {
+            v1 = false;
+            return v1;
+        } else {
+            v6 = this.GetPlayerState();
+            if (v6 == nullptr) {
+                v1 = false;
+                return v1;
+            } else {
+                v10 = v6.GetInventory();
+                if (v10 == nullptr) {
+                    v1 = false;
+                    return v1;
+                } else {
+                    v14 = v10.GetItemFromSlot(SlotName, SlotIndex);
+                    if (v14 != nullptr) {
+                        v16 = 2;
+                        v15 = v16;
+                        v1 = v10.TryRemoveFromInventory(v14, v15);
+                        return v1;
+                    } else {
+                        v1 = false;
+                    }
+                }
+            }
+        }
+        return v1;
+    }
+
+    void ServerBuyItem(const FArmoryShopItem& Item)   // traits=0x20
+    {
+        __Evt_PushArgument__FArmoryShopItem(Item);
+        __Evt_Execute(this, n"ServerBuyItem");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ServerBuyItem, BlueprintCallable, BlueprintEvent, NetServer)
+    void ServerBuyItem_Implementation(const FArmoryShopItem& Item)   // traits=0x20
+    {
+        this.AuthBuyItem(Item);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    void AuthBuyItem(const FArmoryShopItem& Item)   // traits=0x20
+    {
+        bool v1;
+        ALokiPlayerState v6;
+        UAbilitySystemComponent v8;
+        int v11;
+        int v12;
+        bool v13;
+        float64 v16;
+        auto v18;
+        ULokiInventoryComponentComboItems v22;
+        ALokiBaseItem v26;
+        ELokiAddToInventoryReason v27;
+        auto v28;
+        FGameEvent_OnItemPurchase_PlayerState v44;
+        UGameEventRouterComponent v46;
+        FString v52;
+        ALokiServerAnalyticsManager v54;
+        FAnalyticsItemPurchaseEvent v74;
+        UClass v76;
+        auto v77;
+        auto v78;
+
+        v1 = this.IsArmoryEnabled();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = this.GetPlayerState();
+            if (v6 == nullptr) {
+                return;
+            } else {
+                if (this.CanBuyItem(Item)) {
+                    v8 = AbilitySystem::GetAbilitySystemComponent(v6);
+                    v12 = Item.Price;
+                    v11 = v12;
+                    if (v8 == nullptr) {
+                        v1 = 0;
+                    } else {
+                        v13 = v8.HasMatchingGameplayTag(GameplayTags::Item_ShopDiscount_DiscountApplied)  /* UFunction Script_HasMatchingGameplayTag */;
+                        v1 = v13;
+                    }
+                    if (v1) {
+                        v16 = float64(v11);
+                        v18 = 0.8;
+                        v16 = v16 * v18;
+                        v12 = int(v16);
+                        v11 = v12;
+                    }
+                    v12 = v6.GetWalletGold();
+                    if (v12 >= v11) {
+                        v22 = v6.GetInventory();
+                        if (v22 == nullptr) {
+                            return;
+                        }
+                        if (Item.ItemClass.IsValid()) {
+                            v1 = true;
+                            v26 = SpawnActor(Item.ItemClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v1, nullptr);
+                            if (v26 != nullptr) {
+                                v12 = this.GetStarCountForItem(Item.ItemClass);
+                                v26.StarCount = v12;
+                                FinishSpawningActor(v26);
+                            }
+                            v13 = false;
+                            v1 = true;
+                            v27 = ELokiAddToInventoryReason::FromGround;
+                            v28 = v22.TryAddToInventory(v26, v27, NAME_None, -1, v1, v13);
+                            v28 = !v28;
+                            if (v28) {
+                                v26.DestroyActor()  /* UFunction K2_DestroyActor */;
+                            } else {
+                                v13 = false;
+                                v6.ConsumeWalletCurrency("Gold", v11, v13);
+                                v44 = FGameEvent_OnItemPurchase_PlayerState();
+                                v44.Item = v26;
+                                v44.GoldCost = v11;
+                                v44.PlayerState = v6;
+                                v46 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+                                v46.BroadcastEvent(v44, typeid(FGameEvent_OnItemPurchase_PlayerState), v6);
+                                v52 = FString();
+                                v52.Append("AuthBuyItem - Sent Purchase Event");
+                                Log::Log(v52.Append("AuthBuyItem - Sent Purchase Event"));
+                                v54 = ALokiServerAnalyticsManager::GetFromContext(__WorldContext);
+                                if (v54 != nullptr) {
+                                    v74 = FAnalyticsItemPurchaseEvent();
+                                    v52 = LokiAnalytics::GetMatchId(__WorldContext);
+                                    v74.Game_Id = v52;
+                                    v74.Player_Id = v6.PlatformPlayerID;
+                                    v76 = UClass@(Item.ItemClass);
+                                    v52 = System::GetClassDisplayName(v76);
+                                    v74.Item_Id = v52;
+                                    v12 = v6.GetWalletCurrencyAmount("Gold");
+                                    v74.Remaining_Gold = v12;
+                                    v74.Cost = v11;
+                                    v77 = Gameplay::GetServerTime(__WorldContext);
+                                    v74.Game_Time = v77;
+                                    v78 = 3;
+                                    v74.Source = v78;
+                                    v12 = Item.StarCount;
+                                    v12 = v12 + 1;
+                                    v74.StarLevel = v12;
+                                    v54.AddItemPurchaseEvent(v74);
+                                }
+                            }
+                        }
+                    }
+                    return;
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    TArray<TSubclassOf<ALokiBaseItem@>> GetArmoryEvolveChoices(ALokiBaseItem@ Item, const int InventorySlotIndex)   // traits=0x20
+    {
+        TArray<TSubclassOf<ALokiBaseItem@>> v4;
+
+        v4 = TArray<TSubclassOf<ALokiBaseItem@>>();
+        __ret = TArray<TSubclassOf<ALokiBaseItem@>>();
+        __ret = v4;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    int GetStarCountForItem(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        FPlayerArmory v26;
+        TArrayIterator<FGameArmoryItem> v32;
+        auto v40;
+        TSubclassOf<ALokiBaseItem@> v42;
+        auto v45;
+
+        if (ItemClass == nullptr) {
+            v2 = -1;
+            return v2;
+        } else {
+            v26 = this.GetArmory();
+            v32 = v26.ItemsCollection.Iterator();
+            while (true) {
+                v1 = v32.CanProceed;
+                if (!v1) break;
+                v40 = v32.Proceed();
+                v42 = this.GetClassFromPrimaryAssetId(v40.PrimaryAssetId);
+                if (v42 == ItemClass) {
+                    v2 = v40.StarLevel;
+                    v2 = v2 - 1;
+                    return v2;
+                }
+            }
+            v45 = -1;
+        }
+        return v45;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private ALokiPlayerState@ GetPlayerState()   // traits=0x28
+    {
+        AActor v2;
+        ALokiPlayerController v4;
+        ALokiPlayerController v6;
+        ALokiPlayerState v10;
+
+        v2 = this.GetOwner();
+        if (v2 != nullptr) {
+            v4 = cast<ALokiPlayerController@>(v2);
+        } else {
+            v4 = nullptr;
+        }
+        v6 = v4;
+        if (v6 == nullptr) {
+            return v10;
+        } else {
+            v10 = v6.GetLokiPlayerState();
+        }
+        return v10;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    TSubclassOf<ALokiBaseItem@> GetClassFromPrimaryAssetId(const FPrimaryAssetId& Asset)   // traits=0x20
+    {
+        TSubclassOf<UObject@> v2;
+        auto v5;
+        ULokiDataAsset_Power v8;
+        UObject v10;
+        ULokiDataAsset_Power v12;
+        TSubclassOf<ALokiBaseItem@> v14;
+        ULokiDataAsset_Equipment v16;
+        ULokiDataAsset_Equipment v18;
+
+        v2 = System::GetClassFromPrimaryAssetId(Asset);
+        v5 = v2 == nullptr;
+        v5 = !v5;
+        if (v5) {
+            v10 = v2.GetDefaultObject();
+            if (v10 != nullptr) {
+                v12 = cast<ULokiDataAsset_Power@>(v10);
+            } else {
+                v12 = nullptr;
+            }
+            v8 = v12;
+            if (v8 != nullptr) {
+                __ret = TSubclassOf<ALokiBaseItem@>();
+                v14 = v8.Power.Get();
+                __ret = v14;
+                return;
+            }
+            v10 = v2.GetDefaultObject();
+            if (v10 != nullptr) {
+                v18 = cast<ULokiDataAsset_Equipment@>(v10);
+            } else {
+                v18 = nullptr;
+            }
+            v16 = v18;
+            if (v16 != nullptr) {
+                __ret = TSubclassOf<ALokiBaseItem@>();
+                v14 = v16.Equipment.Get();
+                __ret = v14;
+                return;
+            }
+        }
+        __ret = TSubclassOf<ALokiBaseItem@>();
+        v14 = TSubclassOf<ALokiBaseItem@>(nullptr);
+        __ret = v14;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool GetIsPrototypeItem(const FPrimaryAssetId& Asset)   // traits=0x20
+    {
+        TSubclassOf<UObject@> v2;
+        auto v5;
+        ULokiDataAsset_Power v8;
+        UObject v10;
+        ULokiDataAsset_Power v12;
+        ULokiDataAsset_Equipment v14;
+        ULokiDataAsset_Equipment v16;
+
+        v2 = System::GetClassFromPrimaryAssetId(Asset);
+        v5 = v2 == nullptr;
+        v5 = !v5;
+        if (v5) {
+            v10 = v2.GetDefaultObject();
+            if (v10 != nullptr) {
+                v12 = cast<ULokiDataAsset_Power@>(v10);
+            } else {
+                v12 = nullptr;
+            }
+            v8 = v12;
+            if (v8 != nullptr) {
+                v5 = v8.Prototype;
+                return v5;
+            }
+            v10 = v2.GetDefaultObject();
+            if (v10 != nullptr) {
+                v16 = cast<ULokiDataAsset_Equipment@>(v10);
+            } else {
+                v16 = nullptr;
+            }
+            v14 = v16;
+            if (v14 != nullptr) {
+                v5 = v14.Prototype;
+                return v5;
+            }
+        }
+        v5 = false;
+        return v5;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnPlayerInitialized(const FGameEvent_GameReady_Controller& Event, const EGameEventStatefulEventType EventType, const AController@ Context)   // traits=0x28
+    {
+        UGameEventRouterComponent v2;
+
+        v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        v2.StopListeningToEvent(this.OnPlayerInitializedHandle);
+        if (this.ShouldUnlockFullArmory()) {
+            this.UnlockFullArmory();
+        }
+        this.AsyncLoadArmory();
+        return;
+    }
+
+    UFUNCTION(UnrealName=AsyncLoadArmory, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    private void AsyncLoadArmory_Implementation()   // traits=0x28
+    {
+        TArray<FPrimaryAssetId> v4;
+        FPlayerArmory v28;
+        TArrayIterator<FGameArmoryItem> v34;
+        auto v41;
+        auto v44;
+        FOnLoadComplete v48;
+        ULoadAssetHandle v52;
+
+        v4 = TArray<FPrimaryAssetId>();
+        v28 = this.GetArmory();
+        v34 = v28.ItemsCollection.Iterator();
+        while (true) {
+            v41 = v34.CanProceed;
+            if (!v41) break;
+            v44 = v34.Proceed();
+            v4.Add(v44.PrimaryAssetId);
+        }
+        v48 = FOnLoadComplete();
+        v48.BindUFunction(this, n"OnAssetLoadComplete");
+        v52 = ULokiAssetManager::AsyncLoadPrimaryAssets(__WorldContext, v4, v48);
+        this.Handle = v52;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnAssetLoadComplete()   // traits=0x28
+    {
+        bool v1;
+        ULokiAssetManager v6;
+        FPlayerArmory v30;
+        TArray<FPrimaryAssetId> v34;
+        TArrayIterator<FGameArmoryItem> v40;
+        auto v48;
+        ULokiDataAsset_Power v50;
+        ULokiDataAsset_Base v52;
+        ULokiDataAsset_Power v54;
+        FOnSoftClassLoaded v58;
+        ULokiDataAsset_Equipment v62;
+        ULokiDataAsset_Equipment v64;
+
+        v1 = true;
+        this.bLoadComplete = v1;
+        v6 = ULokiAssetManager::GetLokiAssetManager();
+        v30 = this.GetArmory();
+        v34 = TArray<FPrimaryAssetId>();
+        v40 = v30.ItemsCollection.Iterator();
+        while (true) {
+            v1 = v40.CanProceed;
+            if (!v1) break;
+            v48 = v40.Proceed();
+            if (Loki::LokiIsServer(__WorldContext)) {
+                v1 = LokiGameplay::IsAssetIDEnabled(__WorldContext, v48.PrimaryAssetId);
+                v1 = !v1;
+                if (v1) {
+                    v1 = true;
+                    this.SetIsReplicated(v1);
+                    this.DisabledItemAssetIDs.AddUnique(v48.PrimaryAssetId);
+                }
+            }
+            v52 = v6.GetLokiDataAsset(v48.PrimaryAssetId);
+            if (v52 != nullptr) {
+                v54 = cast<ULokiDataAsset_Power@>(v52);
+            } else {
+                v54 = nullptr;
+            }
+            v50 = v54;
+            if (v50 != nullptr) {
+                v58 = FOnSoftClassLoaded();
+                v58.BindUFunction(this, n"OnClassLoadComplete");
+                v50.Power.LoadAsync(v58);
+            } else {
+                v52 = v6.GetLokiDataAsset(v48.PrimaryAssetId);
+                if (v52 != nullptr) {
+                    v64 = cast<ULokiDataAsset_Equipment@>(v52);
+                } else {
+                    v64 = nullptr;
+                }
+                v62 = v64;
+                if (v62 != nullptr) {
+                    v58 = FOnSoftClassLoaded();
+                    v58.BindUFunction(this, n"OnClassLoadComplete");
+                    v62.Equipment.LoadAsync(v58);
+                }
+            }
+        }
+        v1 = this.bFullyUnlockedArmory;
+        if (v1) {
+            this.RemoveSeasonContentFromFullArmory();
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnClassLoadComplete(UClass@ LoadedClass)   // traits=0x28
+    {
+        bool v1;
+        TSubclassOf<AActor@> v4;
+
+        this.LoadedClasses.AddUnique(LoadedClass);
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v4 = TSubclassOf<AActor@>(LoadedClass);
+            v1 = LokiGameplay::IsAssetEnabled(__WorldContext, v4);
+            v1 = !v1;
+            if (v1) {
+                v1 = true;
+                this.SetIsReplicated(v1);
+                v4 = TSubclassOf<AActor@>(LoadedClass);
+                this.DisabledItems.AddUnique(v4);
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool IsAssetEnabled(const TSubclassOf<AActor@>& ItemClass)   // traits=0x20
+    {
+        auto v1;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = LokiGameplay::IsAssetEnabled(__WorldContext, ItemClass);
+            return v1;
+        } else {
+            v1 = this.DisabledItems.Contains(ItemClass);
+            v1 = !v1;
+        }
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool IsAssetIDEnabled(const FPrimaryAssetId& ItemAssetID)   // traits=0x20
+    {
+        auto v1;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = LokiGameplay::IsAssetIDEnabled(__WorldContext, ItemAssetID);
+            return v1;
+        } else {
+            v1 = this.DisabledItemAssetIDs.Contains(ItemAssetID);
+            v1 = !v1;
+        }
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool CanBuyItem(const FArmoryShopItem& Item)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        FPlayerArmory v26;
+        TArrayIterator<FGameArmoryItem> v32;
+        auto v40;
+        FPrimaryAssetId v44;
+        ALokiBaseItem v46;
+        FName v50;
+        ALokiPlayerState v54;
+        ULokiInventoryComponentComboItems v58;
+
+        v1 = this.IsAssetIDEnabled(Item.AssetId);
+        v1 = !v1;
+        if (v1) {
+            v1 = true;
+        } else {
+            v2 = this.IsAssetEnabled(Item.ItemClass);
+            v2 = !v2;
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = false;
+            return v2;
+        } else {
+            v26 = this.GetArmory();
+            v32 = v26.ItemsCollection.Iterator();
+            while (true) {
+                v1 = v32.CanProceed;
+                if (!v1) break;
+                v40 = v32.Proceed();
+                v44 = FPrimaryAssetId(v40.PrimaryAssetId);
+                v2 = v44 == Item.AssetId;
+                if (v2) {
+                    v46 = Item.ItemClass.GetDefaultObject();
+                    if (v46 != nullptr) {
+                        v50 = v46.GetSlotName();
+                        v2 = v50 == this.PerkSlotName;
+                        if (v2) {
+                            v54 = this.GetPlayerState();
+                            if (v54 != nullptr) {
+                                v58 = v54.GetInventory();
+                                if (v58 != nullptr) {
+                                    v1 = v58.HasItemByClass(Item.ItemClass);
+                                    v1 = !v1;
+                                    return v1;
+                                }
+                            }
+                        }
+                    }
+                    v2 = true;
+                    return v2;
+                }
+            }
+            v1 = false;
+        }
+        return v1;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.SetComponentTickEnabled(v1);
+        v1 = false;
+        this.SetbReplicates(v1);
+        return;
+    }
+
+    void ~ULokiPlayerControllerArmoryComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

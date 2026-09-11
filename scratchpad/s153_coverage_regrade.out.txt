@@ -1,0 +1,61 @@
+# S153 coverage re-grade — dumps/merged14.dump.exe (ImageBase 0x7FF608F40000, .text VA 0x1000, size 121124 KiB)
+# 18 FUNC_Exec entries that were COVERAGE-BLOCKED in tools/re/out/exec_chain_grade.txt
+# (S114 baseline: dumps/tutorial-hero/SUPERVIVE-Win64-Shipping.dump.exe)
+
+CONTROL: UCheatManager::God impl 0x35AFD70 -> REAL
+         impl 0x35AFD70: 48895c2410574883ec308b410c33ffc1
+         ==> tooling verified
+
+CONTROL: known fold 0x0F7EC20 -> FOLDED-STUB
+         impl 0xF7EC20 == fold: void_ret (c2 00 00)
+
+class                  verb                                   thunk RVA   was-dark impl thunk-page    impl-page   new-verdict      note
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+UPlayerInput           SetBind                                0x03F44FC0  THUNK-DARK    no            no          STILL-DARK       thunk page 0x3F44000 still all-zero
+ALokiPlayerController  ServerDebugEnsureAllowRepeat           0x0534BE80  THUNK-DARK    no            no          STILL-DARK       thunk page 0x534B000 still all-zero
+ALokiCharacter         CheatToggleCharacterDebugMode          0x052FE560  THUNK-DARK    no            no          STILL-DARK       thunk page 0x52FE000 still all-zero
+ALokiCharacter         DebugStatString                        0x052FED90  THUNK-DARK    no            no          STILL-DARK       thunk page 0x52FE000 still all-zero
+AHUD                   PreviousDebugTarget                    0x038ABD50  THUNK-DARK    no            no          STILL-DARK       thunk page 0x38AB000 still all-zero
+ALokiPlayerCheats      CheatChangeHero                        0x0534BE80  THUNK-DARK    no            no          STILL-DARK       thunk page 0x534B000 still all-zero
+ALokiPlayerCheats      CheatGetAllClientActorsByClassName     0x05421FA0  0x05422003    YES           no          STILL-DARK       impl page 0x5422000 still all-zero
+ALokiPlayerCheats      CheatMeasureCursor                     0x05422050  THUNK-DARK    no            no          STILL-DARK       thunk page 0x5422000 still all-zero
+ALokiPlayerCheats      CheatMuteAudio                         0x05422070  THUNK-DARK    no            no          STILL-DARK       thunk page 0x5422000 still all-zero
+ALokiPlayerCheats      CheatNoCooldowns                       0x05422100  THUNK-DARK    no            no          STILL-DARK       thunk page 0x5422000 still all-zero
+ALokiPlayerCheats      CheatSetEmote                          0x05422180  THUNK-DARK    no            no          STILL-DARK       thunk page 0x5422000 still all-zero
+ALokiPlayerCheats      CheatTeleportLocation                  0x05422360  THUNK-DARK    no            no          STILL-DARK       thunk page 0x5422000 still all-zero
+ALokiPlayerCheats      SetGamepadAimSettings                  0x05428180  0x055653E0    YES           YES         REAL             jmp-trampoline 0x55653E0 -> 0x338C990; impl 0x338C990: 40534883ec208b410c488bd9c1e804a8
+ULokiTimelineManager   DebugTimelineAddEvent                  0x054835B0  THUNK-DARK    no            no          STILL-DARK       thunk page 0x5483000 still all-zero
+ULokiTimelineManager   DebugTimelinePrintEvents               0x054836E0  THUNK-DARK    no            no          STILL-DARK       thunk page 0x5483000 still all-zero
+UCheatManager          ViewActor                              0x035CA710  0x035C5560    YES           no          STILL-DARK       impl page 0x35C5000 still all-zero
+UCheatManager          ViewClass                              0x035CA7A0  0x035C5940    YES           no          STILL-DARK       impl page 0x35C5000 still all-zero
+UCheatManager          ViewPlayer                             0x035CA850  0x035C5EB0    YES           no          STILL-DARK       impl page 0x35C5000 still all-zero
+
+==========================================================================================
+SUMMARY (18 previously COVERAGE-BLOCKED entries, re-graded against dumps/merged14.dump.exe):
+  thunk was dark in tutorial-hero, now readable: 0/13
+  impl page was dark in tutorial-hero, now readable: 1/5
+  NEW verdict FOLDED-STUB: 0
+  NEW verdict REAL:        1
+  STILL-DARK:              17
+
+=== NEW REAL entries (promoted from unknown to callable) ===
+  ALokiPlayerCheats::SetGamepadAimSettings  thunk=0x5428180  impl=0x55653E0
+
+=== STILL-DARK (not yet decrypted in the sweep corpus) ===
+  UPlayerInput::SetBind  thunk=0x3F44FC0  impl=THUNK-DARK
+  ALokiPlayerController::ServerDebugEnsureAllowRepeat  thunk=0x534BE80  impl=THUNK-DARK
+  ALokiCharacter::CheatToggleCharacterDebugMode  thunk=0x52FE560  impl=THUNK-DARK
+  ALokiCharacter::DebugStatString  thunk=0x52FED90  impl=THUNK-DARK
+  AHUD::PreviousDebugTarget  thunk=0x38ABD50  impl=THUNK-DARK
+  ALokiPlayerCheats::CheatChangeHero  thunk=0x534BE80  impl=THUNK-DARK
+  ALokiPlayerCheats::CheatGetAllClientActorsByClassName  thunk=0x5421FA0  impl=0x5422003
+  ALokiPlayerCheats::CheatMeasureCursor  thunk=0x5422050  impl=THUNK-DARK
+  ALokiPlayerCheats::CheatMuteAudio  thunk=0x5422070  impl=THUNK-DARK
+  ALokiPlayerCheats::CheatNoCooldowns  thunk=0x5422100  impl=THUNK-DARK
+  ALokiPlayerCheats::CheatSetEmote  thunk=0x5422180  impl=THUNK-DARK
+  ALokiPlayerCheats::CheatTeleportLocation  thunk=0x5422360  impl=THUNK-DARK
+  ULokiTimelineManager::DebugTimelineAddEvent  thunk=0x54835B0  impl=THUNK-DARK
+  ULokiTimelineManager::DebugTimelinePrintEvents  thunk=0x54836E0  impl=THUNK-DARK
+  UCheatManager::ViewActor  thunk=0x35CA710  impl=0x35C5560
+  UCheatManager::ViewClass  thunk=0x35CA7A0  impl=0x35C5940
+  UCheatManager::ViewPlayer  thunk=0x35CA850  impl=0x35C5EB0

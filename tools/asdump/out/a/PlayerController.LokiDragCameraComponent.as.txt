@@ -1,0 +1,863 @@
+==============================================================================
+MODULE   PlayerController.LokiDragCameraComponent
+SOURCE   PlayerController/LokiDragCameraComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiDragCameraComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiDragCameraComponent@ ULokiDragCameraComponent()
+// 4 instr, 28 B bytecode, id=0x620E969B, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiDragCameraComponent v2;
+
+    v2 = ULokiDragCameraComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:85251 q:0x26e6ed78b00; new ULokiDragCameraComponent   ctor=ULokiDragCameraComponent::ULokiDragCameraComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x8949E2E0, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiDragCameraComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6057cad8         ; __StaticType_ULokiDragCameraComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ULokiDragCameraComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x1FD6381B, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiDragCameraComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiDragCameraComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972722            ; ULokiDragCameraComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057cad8         ; __StaticType_ULokiDragCameraComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiDragCameraComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xE4EC041F, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiDragCameraComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiDragCameraComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972722            ; ULokiDragCameraComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057cad8         ; __StaticType_ULokiDragCameraComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiDragCameraComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x433545A1, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiDragCameraComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiDragCameraComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972722            ; ULokiDragCameraComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6057cad8         ; __StaticType_ULokiDragCameraComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class ULokiDragCameraComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 MinimumDragDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 CameraPickupRadius;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) bool bPanning;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) bool bResetting;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) float64 TimePressed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) FVector CursorScreenLocationWhenPressed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) FVector OffsetThisPress;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) FVector CumulativeOffset;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient) FVector LastPawnLocation;
+
+}
+
+------------------------------------------------------------------------------
+ULokiDragCameraComponent() const
+// 15 instr, 116 B bytecode, id=0xC9186F91, varspace=0
+------------------------------------------------------------------------------
+{
+    this.CursorScreenLocationWhenPressed = FVector();
+    this.OffsetThisPress = FVector();
+    this.CumulativeOffset = FVector();
+    this.LastPawnLocation = FVector();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:240 d:134230898      ; ULokiDragCameraComponent::CursorScreenLocationWhenPressed  (+240)
+    //     3  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:264 d:134230898      ; ULokiDragCameraComponent::OffsetThisPress  (+264)
+    //     9  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:288 d:134230898      ; ULokiDragCameraComponent::CumulativeOffset  (+288)
+    //    15  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:312 d:134230898      ; ULokiDragCameraComponent::LastPawnLocation  (+312)
+    //    21  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //    24  PshVPtr        rW0:0
+    //    25  FinConstruct   q:0x26e6ed78b00         ; ULokiDragCameraComponent
+    //    28  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void NotifyInputPressed()
+// 24 instr, 172 B bytecode, id=0xC148B999, varspace=10
+------------------------------------------------------------------------------
+{
+    auto v1;
+    FVector v10;
+
+    v1 = true;
+    this.bPanning = true;
+    v1 = false;
+    this.bResetting = false;
+    this.TimePressed = float64(Gameplay::GetServerTime(__WorldContext));
+    v10 = this.GetCursorScreenLocation();
+    this.CursorScreenLocationWhenPressed = v10;
+    this.OffsetThisPress = FVector::ZeroVector;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  LoadThisR      W0:224 d:134230898      ; ULokiDragCameraComponent::bPanning  (+224)
+    //     4  WRTV1          rW0:1
+    //     5  SetV1          wW0:1 d:0
+    //     7  LoadThisR      W0:225 d:134230898      ; ULokiDragCameraComponent::bResetting  (+225)
+    //     9  WRTV1          rW0:1
+    //    10  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    13  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    16  CpyRtoV4       wW0:2
+    //    17  fTOd           wW0:4 rW1:2
+    //    19  LoadThisR      W0:232 d:134230898      ; ULokiDragCameraComponent::TimePressed  (+232)
+    //    21  WRTV8          rW0:4
+    //    22  PSF            rW0:10
+    //    23  PshVPtr        rW0:0
+    //    24  CALLINTF       d:85248                 ; FVector ULokiDragCameraComponent::GetCursorScreenLocation()
+    //    26  PSF            rW0:10
+    //    27  PshVPtr        rW0:0
+    //    28  ADDSi          W0:240 d:134230898      ; ULokiDragCameraComponent::CursorScreenLocationWhenPressed  (+240)
+    //    30  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    33  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    36  PshVPtr        rW0:0
+    //    37  ADDSi          W0:264 d:134230898      ; ULokiDragCameraComponent::OffsetThisPress  (+264)
+    //    39  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    42  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void NotifyInputReleased()
+// 75 instr, 508 B bytecode, id=0xF3DF72F3, varspace=30
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+    float64 v8;
+    auto v10;
+    auto v12;
+    ULokiGameUserSettings v16;
+    FVector v24;
+    auto v25;
+    APawn v30;
+
+    v1 = false;
+    this.bPanning = false;
+    v8 = float64(Gameplay::GetServerTime(__WorldContext));
+    v4 = v8;
+    v8 = this.TimePressed;
+    v8 = v8 - v8;
+    v12 = Math::Abs(v8);
+    v16 = ULokiGameUserSettings::GetLokiGameUserSettings();
+    v24 = this.GetCursorScreenLocation();
+    v8 = this.CursorScreenLocationWhenPressed.Dist2D(v24);
+    v10 = this.MinimumDragDuration;
+    v1 = v12 < v10;
+    if (v1) {
+        v10 = 200;
+        v1 = v8 < 200;
+    } else {
+        v1 = 0;
+    }
+    if (!v16.IsDragToPanCameraResetOnRelease()) {
+        v25 = v1;
+    } else {
+        v25 = true;
+    }
+    this.bResetting = v25;
+    this.CumulativeOffset += this.OffsetThisPress;
+    this.OffsetThisPress = FVector::ZeroVector;
+    v25 = this.bResetting;
+    v25 = !v25;
+    if (v25) {
+        v30 = this.GetLocalPawn();
+        if (v30 != null) {
+            v24 = v30.GetActorLocation();
+            this.LastPawnLocation = v24;
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  LoadThisR      W0:224 d:134230898      ; ULokiDragCameraComponent::bPanning  (+224)
+    //     4  WRTV1          rW0:1
+    //     5  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     8  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    11  CpyRtoV4       wW0:5
+    //    12  fTOd           wW0:8 rW1:5
+    //    14  CpyVtoV8       wW0:4 rW1:8
+    //    16  LoadThisR      W0:232 d:134230898      ; ULokiDragCameraComponent::TimePressed  (+232)
+    //    18  RDR8           wW0:8
+    //    19  SUBd           wW0:8 rW1:4 rW2:8
+    //    21  PshV8          rW0:8
+    //    22  CALLSYS        q:0x26e70383500         ; float64 Math::Abs(float64)
+    //    25  CpyRtoV8       wW0:12
+    //    26  CALLSYS        q:0x26e7a277cc0         ; ULokiGameUserSettings@ ULokiGameUserSettings::GetLokiGameUserSettings()
+    //    29  STOREOBJ       wW0:16
+    //    30  PSF            rW0:24
+    //    31  PshVPtr        rW0:0
+    //    32  CALLINTF       d:85248                 ; FVector ULokiDragCameraComponent::GetCursorScreenLocation()
+    //    34  PSF            rW0:24
+    //    35  PshVPtr        rW0:0
+    //    36  ADDSi          W0:240 d:134230898      ; ULokiDragCameraComponent::CursorScreenLocationWhenPressed  (+240)
+    //    38  CALLSYS        q:0x26e69d07940         ; float64 FVector::Dist2D(const FVector&) const
+    //    41  CpyRtoV8       wW0:8
+    //    42  LoadThisR      W0:208 d:134230898      ; ULokiDragCameraComponent::MinimumDragDuration  (+208)
+    //    44  RDR8           wW0:10
+    //    45  CMPd           rW0:12 rW1:10
+    //    47  TS
+    //    48  CpyRtoV4       wW0:1
+    //    49  CpyVtoR1       rW0:1
+    //    50  JLowNZ         ->56
+    //    52  SetV4          wW0:1 d:0
+    //    54  JMP            ->65
+    //    56  SetV8          wW0:10 q:0x4069000000000000
+    //    59  CMPd           rW0:8 rW1:10
+    //    61  TS
+    //    62  CpyRtoV4       wW0:26
+    //    63  CpyVtoV4       wW0:1 rW1:26
+    //    65  PshVPtr        rW0:16
+    //    66  CALLSYS        q:0x26e7a27c640         ; bool ULokiGameUserSettings::IsDragToPanCameraResetOnRelease() const
+    //    69  JLowZ          ->75
+    //    71  SetV1          wW0:25 d:1
+    //    73  JMP            ->77
+    //    75  CpyVtoV4       wW0:25 rW1:1
+    //    77  LoadThisR      W0:225 d:134230898      ; ULokiDragCameraComponent::bResetting  (+225)
+    //    79  WRTV1          rW0:25
+    //    80  PshVPtr        rW0:0
+    //    81  ADDSi          W0:264 d:134230898      ; ULokiDragCameraComponent::OffsetThisPress  (+264)
+    //    83  PSF            rW0:24
+    //    84  PshVPtr        rW0:0
+    //    85  ADDSi          W0:288 d:134230898      ; ULokiDragCameraComponent::CumulativeOffset  (+288)
+    //    87  CALLSYS        q:0x26e69d06ec0         ; FVector FVector::opAddAssign(const FVector&)
+    //    90  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    93  PshVPtr        rW0:0
+    //    94  ADDSi          W0:264 d:134230898      ; ULokiDragCameraComponent::OffsetThisPress  (+264)
+    //    96  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    99  LoadThisR      W0:225 d:134230898      ; ULokiDragCameraComponent::bResetting  (+225)
+    //   101  RDR1           wW0:25
+    //   102  NOT            rW0:25
+    //   103  CpyVtoR1       rW0:25
+    //   104  JLowZ          ->126
+    //   106  PshVPtr        rW0:0
+    //   107  CALLINTF       d:85250                 ; APawn@ ULokiDragCameraComponent::GetLocalPawn()
+    //   109  STOREOBJ       wW0:30
+    //   110  CmpPtrNull     rW0:30
+    //   111  JZ             ->125
+    //   113  PSF            rW0:24
+    //   114  PshVPtr        rW0:30
+    //   115  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   118  PSF            rW0:24
+    //   119  PshVPtr        rW0:0
+    //   120  ADDSi          W0:312 d:134230898      ; ULokiDragCameraComponent::LastPawnLocation  (+312)
+    //   122  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //   125  FreeNullV8     wW0:30
+    //   126  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: Tick
+void Tick_Implementation(const float64 DeltaSeconds)
+// 211 instr, 1460 B bytecode, id=0x80657E56, varspace=74
+------------------------------------------------------------------------------
+{
+    auto v5;
+    APawn v10;
+    TSubclassOf<UActorComponent@> v14;
+    UActorComponent v16;
+    ULokiCharacterSpringArmComponent v18;
+    ULokiCharacterSpringArmComponent v20;
+    FVector v26;
+    FVector v32;
+    auto v33;
+    ULokiGameUserSettings v38;
+    auto v39;
+    float64 v42;
+    float64 v46;
+    FVector v52;
+    float64 v54;
+    auto v56;
+    FVector v62;
+    FVector v68;
+    FVector v74;
+
+    if (this.GetPlayerController() != null) {
+        v10 = this.GetLocalPawn();
+        if (v10 != null) {
+            v14 = TSubclassOf<UActorComponent@>(ULokiCharacterSpringArmComponent::StaticClass());
+            v16 = v10.GetComponentByClass(v14);
+            if (v16 == null) {
+                v18 = null;
+            } else {
+                v18 = cast<ULokiCharacterSpringArmComponent>(v16);
+            }
+            v20 = v18;
+            if (v18 != null) {
+                v32 = this.GetCursorScreenLocation();
+                v33 = this.bPanning;
+                if (v33) {
+                    v5 = v32 == FVector::ZeroVector;
+                    v33 = v5;
+                } else {
+                    v33 = 0;
+                }
+                if (v33) {
+                    this.NotifyInputReleased();
+                }
+                v5 = true;
+                v20.bDynamicCameraPanEnabled = true;
+                v33 = this.bPanning;
+                if (!v33) {
+                    v33 = this.bResetting;
+                    if (!v33) {
+                        v33 = this.CumulativeOffset.IsNearlyZero(0.0001);
+                        v33 = !v33;
+                        if (v33) {
+                            v39 = false;
+                            v20.bDynamicCameraPanEnabled = false;
+                            v26 = v10.GetActorLocation();
+                            v68 = FVector(1, 1, 0);
+                            this.LastPawnLocation = v26;
+                            this.CumulativeOffset -= v62;
+                            v46 = this.CameraPickupRadius;
+                            v56 = 0;
+                            if (v46 > 0) {
+                                v56 = this.CumulativeOffset.Size2D();
+                                v46 = this.CameraPickupRadius;
+                                v33 = v56 < v46;
+                                v39 = v33;
+                            } else {
+                                v39 = 0;
+                            }
+                            if (v39) {
+                                v33 = true;
+                                this.bResetting = true;
+                            }
+                        }
+                    } else {
+                        v62 = FVector(0.8, 0.8, 0);
+                        this.CumulativeOffset *= v62;
+                        v56 = this.CumulativeOffset.Size2D();
+                        v54 = 100;
+                        if (v56 < 100) {
+                            this.CumulativeOffset = FVector::ZeroVector;
+                            v33 = false;
+                            this.bResetting = false;
+                        }
+                    }
+                } else {
+                    v38 = ULokiGameUserSettings::GetLokiGameUserSettings();
+                    v5 = v38.IsDragToPanCameraInverted();
+                    v46 = float64(v38.GetDragToPanCameraSpeed());
+                    v42 = v46;
+                    v68 = FVector();
+                    if (!v5) {
+                        v62 = FVector(v42, v42, 0);
+                        v68 = v62;
+                    } else {
+                        v46 = v42;
+                        v46 = -v42;
+                        v54 = v42;
+                        v54 = -v42;
+                        v26 = FVector(v54, v46, 0);
+                        v68 = v26;
+                    }
+                    this.OffsetThisPress = v52;
+                }
+                v52 = FVector(this.CumulativeOffset);
+                v20.CameraManualPanOffset = v74;
+            } else {
+            }
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85249                 ; ALokiPlayerController@ ULokiDragCameraComponent::GetPlayerController()
+    //     3  STOREOBJ       wW0:4
+    //     4  CmpPtrNull     rW0:4
+    //     5  JNZ            ->9
+    //     7  JMP            ->364
+    //     9  PshVPtr        rW0:0
+    //    10  CALLINTF       d:85250                 ; APawn@ ULokiDragCameraComponent::GetLocalPawn()
+    //    12  STOREOBJ       wW0:10
+    //    13  CmpPtrNull     rW0:10
+    //    14  JNZ            ->18
+    //    16  JMP            ->364
+    //    18  CALLSYS        q:0x26e7ad79540         ; UClass@ ULokiCharacterSpringArmComponent::StaticClass()
+    //    21  STOREOBJ       wW0:12
+    //    22  PshVPtr        rW0:12
+    //    23  PSF            rW0:14
+    //    24  CALLSYS        q:0x26e6ee81900         ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+    //    27  PSF            rW0:14
+    //    28  PshVPtr        rW0:10
+    //    29  CALLSYS        q:0x26e7970dd00         ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+    //    32  STOREOBJ       wW0:16
+    //    33  CmpPtrNull     rW0:16
+    //    34  JZ             ->45
+    //    36  TYPEID         d:1140856833            ; ULokiCharacterSpringArmComponent@
+    //    38  PSF            rW0:18
+    //    39  PshVPtr        rW0:16
+    //    40  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    43  JMP            ->46
+    //    45  ClrVPtr        wW0:18
+    //    46  PshVPtr        rW0:18
+    //    47  RefCpyV        wW0:20
+    //    48  CmpPtrNull     rW0:20
+    //    49  JNZ            ->53
+    //    51  JMP            ->364
+    //    53  PSF            rW0:32
+    //    54  PshVPtr        rW0:0
+    //    55  CALLINTF       d:85248                 ; FVector ULokiDragCameraComponent::GetCursorScreenLocation()
+    //    57  LoadThisR      W0:224 d:134230898      ; ULokiDragCameraComponent::bPanning  (+224)
+    //    59  RDR1           wW0:33
+    //    60  CpyVtoR1       rW0:33
+    //    61  JLowNZ         ->67
+    //    63  SetV4          wW0:33 d:0
+    //    65  JMP            ->77
+    //    67  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    70  PSF            rW0:32
+    //    71  CALLSYS        q:0x26e69d067c0         ; bool FVector::opEquals(const FVector&) const
+    //    74  CpyRtoV4       wW0:5
+    //    75  CpyVtoV4       wW0:33 rW1:5
+    //    77  CpyVtoR1       rW0:33
+    //    78  JLowZ          ->83
+    //    80  PshVPtr        rW0:0
+    //    81  CALLINTF       d:85246                 ; void ULokiDragCameraComponent::NotifyInputReleased()
+    //    83  SetV1          wW0:5 d:1
+    //    85  LoadRObjR      rW0:20 W1:968 DW2:67115009; ULokiCharacterSpringArmComponent::bDynamicCameraPanEnabled  (+968)
+    //    88  WRTV1          rW0:5
+    //    89  LoadThisR      W0:224 d:134230898      ; ULokiDragCameraComponent::bPanning  (+224)
+    //    91  RDR1           wW0:33
+    //    92  CpyVtoR1       rW0:33
+    //    93  JLowZ          ->180
+    //    95  CALLSYS        q:0x26e7a277cc0         ; ULokiGameUserSettings@ ULokiGameUserSettings::GetLokiGameUserSettings()
+    //    98  STOREOBJ       wW0:38
+    //    99  PshVPtr        rW0:38
+    //   100  CALLSYS        q:0x26e7a27c800         ; bool ULokiGameUserSettings::IsDragToPanCameraInverted() const
+    //   103  CpyRtoV4       wW0:5
+    //   104  PshVPtr        rW0:38
+    //   105  CALLSYS        q:0x26e7a279000         ; float ULokiGameUserSettings::GetDragToPanCameraSpeed() const
+    //   108  CpyRtoV4       wW0:43
+    //   109  fTOd           wW0:46 rW1:43
+    //   111  CpyVtoV8       wW0:42 rW1:46
+    //   113  PSF            rW0:68
+    //   114  CALLSYS        q:0x26e69d01580         ; void FVector::$beh0()
+    //   117  CpyVtoR1       rW0:5
+    //   118  JLowZ          ->142
+    //   120  PshC8          q:0x0
+    //   123  CpyVtoV8       wW0:46 rW1:42
+    //   125  NEGd           rW0:46
+    //   126  PshV8          rW0:46
+    //   127  CpyVtoV8       wW0:54 rW1:42
+    //   129  NEGd           rW0:54
+    //   130  PshV8          rW0:54
+    //   131  PSF            rW0:26
+    //   132  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //   135  PSF            rW0:26
+    //   136  PSF            rW0:68
+    //   137  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //   140  JMP            ->156
+    //   142  PshC8          q:0x0
+    //   145  PshV8          rW0:42
+    //   146  PshV8          rW0:42
+    //   147  PSF            rW0:62
+    //   148  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //   151  PSF            rW0:62
+    //   152  PSF            rW0:68
+    //   153  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //   156  PshVPtr        rW0:0
+    //   157  ADDSi          W0:240 d:134230898      ; ULokiDragCameraComponent::CursorScreenLocationWhenPressed  (+240)
+    //   159  PSF            rW0:26
+    //   160  PSF            rW0:32
+    //   161  CALLSYS        q:0x26e69d00cc0         ; FVector FVector::opSub(const FVector&) const
+    //   164  PSF            rW0:68
+    //   165  PSF            rW0:52
+    //   166  PSF            rW0:26
+    //   167  CALLSYS        q:0x26e69d00b00         ; FVector FVector::opMul(const FVector&) const
+    //   170  PSF            rW0:52
+    //   171  PshVPtr        rW0:0
+    //   172  ADDSi          W0:264 d:134230898      ; ULokiDragCameraComponent::OffsetThisPress  (+264)
+    //   174  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //   177  FreeNullV8     wW0:38
+    //   178  JMP            ->342
+    //   180  LoadThisR      W0:225 d:134230898      ; ULokiDragCameraComponent::bResetting  (+225)
+    //   182  RDR1           wW0:33
+    //   183  CpyVtoR1       rW0:33
+    //   184  JLowZ          ->237
+    //   186  PshC8          q:0x0
+    //   189  PshC8          q:0x3fe999999999999a
+    //   192  PshC8          q:0x3fe999999999999a
+    //   195  PSF            rW0:62
+    //   196  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //   199  PSF            rW0:62
+    //   200  PSF            rW0:26
+    //   201  PshVPtr        rW0:0
+    //   202  ADDSi          W0:288 d:134230898      ; ULokiDragCameraComponent::CumulativeOffset  (+288)
+    //   204  CALLSYS        q:0x26e69d07240         ; FVector FVector::opMulAssign(const FVector&)
+    //   207  PshVPtr        rW0:0
+    //   208  ADDSi          W0:288 d:134230898      ; ULokiDragCameraComponent::CumulativeOffset  (+288)
+    //   210  CALLSYS        q:0x26e69d04840         ; float64 FVector::Size2D() const
+    //   213  CpyRtoV8       wW0:56
+    //   214  SetV8          wW0:54 q:0x4059000000000000
+    //   217  CMPd           rW0:56 rW1:54
+    //   219  JNS            ->235
+    //   221  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //   224  PshVPtr        rW0:0
+    //   225  ADDSi          W0:288 d:134230898      ; ULokiDragCameraComponent::CumulativeOffset  (+288)
+    //   227  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //   230  SetV1          wW0:33 d:0
+    //   232  LoadThisR      W0:225 d:134230898      ; ULokiDragCameraComponent::bResetting  (+225)
+    //   234  WRTV1          rW0:33
+    //   235  JMP            ->342
+    //   237  PshC8          q:0x3f1a36e2e0000000
+    //   240  PshVPtr        rW0:0
+    //   241  ADDSi          W0:288 d:134230898      ; ULokiDragCameraComponent::CumulativeOffset  (+288)
+    //   243  CALLSYS        q:0x26e69d044c0         ; bool FVector::IsNearlyZero(float64) const
+    //   246  CpyRtoV4       wW0:33
+    //   247  NOT            rW0:33
+    //   248  CpyVtoR1       rW0:33
+    //   249  JLowZ          ->342
+    //   251  SetV1          wW0:39 d:0
+    //   253  LoadRObjR      rW0:20 W1:968 DW2:67115009; ULokiCharacterSpringArmComponent::bDynamicCameraPanEnabled  (+968)
+    //   256  WRTV1          rW0:39
+    //   257  PSF            rW0:26
+    //   258  PshVPtr        rW0:10
+    //   259  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //   262  PshVPtr        rW0:0
+    //   263  ADDSi          W0:312 d:134230898      ; ULokiDragCameraComponent::LastPawnLocation  (+312)
+    //   265  PSF            rW0:52
+    //   266  PSF            rW0:26
+    //   267  CALLSYS        q:0x26e69d00cc0         ; FVector FVector::opSub(const FVector&) const
+    //   270  PshC8          q:0x0
+    //   273  PshC8          q:0x3ff0000000000000
+    //   276  PshC8          q:0x3ff0000000000000
+    //   279  PSF            rW0:68
+    //   280  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //   283  PSF            rW0:68
+    //   284  PSF            rW0:62
+    //   285  PSF            rW0:52
+    //   286  CALLSYS        q:0x26e69d00b00         ; FVector FVector::opMul(const FVector&) const
+    //   289  PSF            rW0:26
+    //   290  PshVPtr        rW0:0
+    //   291  ADDSi          W0:312 d:134230898      ; ULokiDragCameraComponent::LastPawnLocation  (+312)
+    //   293  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //   296  PSF            rW0:62
+    //   297  PSF            rW0:52
+    //   298  PshVPtr        rW0:0
+    //   299  ADDSi          W0:288 d:134230898      ; ULokiDragCameraComponent::CumulativeOffset  (+288)
+    //   301  CALLSYS        q:0x26e69d06d00         ; FVector FVector::opSubAssign(const FVector&)
+    //   304  LoadThisR      W0:216 d:134230898      ; ULokiDragCameraComponent::CameraPickupRadius  (+216)
+    //   306  RDR8           wW0:46
+    //   307  SetV8          wW0:56 q:0x0
+    //   310  CMPd           rW0:46 rW1:56
+    //   312  JP             ->318
+    //   314  SetV4          wW0:39 d:0
+    //   316  JMP            ->334
+    //   318  PshVPtr        rW0:0
+    //   319  ADDSi          W0:288 d:134230898      ; ULokiDragCameraComponent::CumulativeOffset  (+288)
+    //   321  CALLSYS        q:0x26e69d04840         ; float64 FVector::Size2D() const
+    //   324  CpyRtoV8       wW0:56
+    //   325  LoadThisR      W0:216 d:134230898      ; ULokiDragCameraComponent::CameraPickupRadius  (+216)
+    //   327  RDR8           wW0:46
+    //   328  CMPd           rW0:56 rW1:46
+    //   330  TS
+    //   331  CpyRtoV4       wW0:33
+    //   332  CpyVtoV4       wW0:39 rW1:33
+    //   334  CpyVtoR1       rW0:39
+    //   335  JLowZ          ->342
+    //   337  SetV1          wW0:33 d:1
+    //   339  LoadThisR      W0:225 d:134230898      ; ULokiDragCameraComponent::bResetting  (+225)
+    //   341  WRTV1          rW0:33
+    //   342  PshVPtr        rW0:0
+    //   343  ADDSi          W0:288 d:134230898      ; ULokiDragCameraComponent::CumulativeOffset  (+288)
+    //   345  PSF            rW0:52
+    //   346  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //   349  PshVPtr        rW0:0
+    //   350  ADDSi          W0:264 d:134230898      ; ULokiDragCameraComponent::OffsetThisPress  (+264)
+    //   352  PSF            rW0:74
+    //   353  PSF            rW0:52
+    //   354  CALLSYS        q:0x26e69d00e80         ; FVector FVector::opAdd(const FVector&) const
+    //   357  PSF            rW0:74
+    //   358  PshVPtr        rW0:20
+    //   359  ADDSi          W0:944 d:67115009       ; ULokiCharacterSpringArmComponent::CameraManualPanOffset  (+944)
+    //   361  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //   364  RET            W0:4
+
+------------------------------------------------------------------------------
+FVector GetCursorScreenLocation()
+// 31 instr, 224 B bytecode, id=0x3BD6EB01, varspace=20
+------------------------------------------------------------------------------
+{
+    ALokiPlayerController v4;
+    float v6;
+    float v8;
+    FVector v14;
+
+    v4 = this.GetPlayerController();
+    if (v4 != null) {
+        v6 = 0;
+        v8 = 0;
+        if (!v4.GetMousePosition(v6, v8)) {
+            __return = FVector(FVector::ZeroVector);
+        } else {
+            v14 = FVector(float64(v6), float64(v8), 0);
+            __return = FVector(v14);
+        }
+    } else {
+        __return = FVector(FVector::ZeroVector);
+    }
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85249                 ; ALokiPlayerController@ ULokiDragCameraComponent::GetPlayerController()
+    //     3  STOREOBJ       wW0:4
+    //     4  CmpPtrNull     rW0:4
+    //     5  JNZ            ->16
+    //     7  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    10  PshVPtr        rW0:-2
+    //    11  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    14  JMP            ->55
+    //    16  SetV4          wW0:6 d:0
+    //    18  SetV4          wW0:8 d:0
+    //    20  PSF            rW0:8
+    //    21  PSF            rW0:6
+    //    22  PshVPtr        rW0:4
+    //    23  CALLSYS        q:0x26e799dbf40         ; bool APlayerController::GetMousePosition(float&, float&) const
+    //    26  JLowZ          ->48
+    //    28  PshC8          q:0x0
+    //    31  fTOd           wW0:18 rW1:8
+    //    33  PshV8          rW0:18
+    //    34  fTOd           wW0:20 rW1:6
+    //    36  PshV8          rW0:20
+    //    37  PSF            rW0:14
+    //    38  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //    41  PSF            rW0:14
+    //    42  PshVPtr        rW0:-2
+    //    43  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    46  JMP            ->55
+    //    48  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    51  PshVPtr        rW0:-2
+    //    52  CALLSYS        q:0x26e69d01200         ; void FVector::$beh0(const FVector&)
+    //    55  RET            W0:4
+
+------------------------------------------------------------------------------
+ALokiPlayerController@ GetPlayerController()
+// 13 instr, 80 B bytecode, id=0xB37F4467, varspace=4
+------------------------------------------------------------------------------
+{
+    AActor v2;
+    ALokiPlayerController v4;
+
+    v2 = this.GetOwner();
+    if (v2 == null) {
+        v4 = null;
+    } else {
+        v4 = cast<ALokiPlayerController>(v2);
+    }
+    return v4;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857134            ; ALokiPlayerController@
+    //    10  PSF            rW0:4
+    //    11  PshVPtr        rW0:2
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:4
+    //    18  LOADOBJ        rW0:4
+    //    19  RET            W0:2
+
+------------------------------------------------------------------------------
+APawn@ GetLocalPawn()
+// 13 instr, 72 B bytecode, id=0x6E09B847, varspace=8
+------------------------------------------------------------------------------
+{
+    ALokiPlayerController v4;
+    APawn v8;
+
+    v4 = this.GetPlayerController();
+    if (v4 != null) {
+        v8 = v4.GetPawnOrSpectator();
+    } else {
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:85249                 ; ALokiPlayerController@ ULokiDragCameraComponent::GetPlayerController()
+    //     3  STOREOBJ       wW0:4
+    //     4  CmpPtrNull     rW0:4
+    //     5  JNZ            ->11
+    //     7  FreeNullV8     wW0:8
+    //     8  LOADOBJ        rW0:8
+    //     9  JMP            ->17
+    //    11  PshVPtr        rW0:4
+    //    12  CALLSYS        q:0x26e799dba00         ; APawn@ APlayerController::GetPawnOrSpectator() const
+    //    15  STOREOBJ       wW0:8
+    //    16  LOADOBJ        rW0:8
+    //    17  RET            W0:2
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 33 instr, 244 B bytecode, id=0x74497F83, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v4;
+
+    v1 = true;
+    this.SetbExcludeFromServer(true);
+    v1 = false;
+    this.PrimaryComponentTick.SetbAllowTickOnDedicatedServer(false);
+    v1 = true;
+    this.SetComponentTickEnabled(true);
+    v1 = false;
+    this.bPanning = false;
+    v1 = false;
+    this.bResetting = false;
+    this.CumulativeOffset = FVector::ZeroVector;
+    v4 = 0;
+    this.TimePressed = 0;
+    v4 = 0.15;
+    this.MinimumDragDuration = 0.15;
+    v4 = -1;
+    this.CameraPickupRadius = -1;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a62b840         ; void UActorComponent::SetbExcludeFromServer(bool)
+    //     7  SetV1          wW0:1 d:0
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:64 d:67111352        ; UActorComponent::PrimaryComponentTick  (+64)
+    //    13  CALLSYS        q:0x26e786b4bc0         ; void FActorComponentTickFunction::SetbAllowTickOnDedicatedServer(bool)
+    //    16  SetV1          wW0:1 d:1
+    //    18  PshV4          rW0:1
+    //    19  PshVPtr        rW0:0
+    //    20  CALLSYS        q:0x26e7973d440         ; void UActorComponent::SetComponentTickEnabled(bool)
+    //    23  SetV1          wW0:1 d:0
+    //    25  LoadThisR      W0:224 d:134230898      ; ULokiDragCameraComponent::bPanning  (+224)
+    //    27  WRTV1          rW0:1
+    //    28  SetV1          wW0:1 d:0
+    //    30  LoadThisR      W0:225 d:134230898      ; ULokiDragCameraComponent::bResetting  (+225)
+    //    32  WRTV1          rW0:1
+    //    33  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //    36  PshVPtr        rW0:0
+    //    37  ADDSi          W0:288 d:134230898      ; ULokiDragCameraComponent::CumulativeOffset  (+288)
+    //    39  CALLSYS        q:0x26e69d01040         ; FVector& FVector::opAssign(const FVector&)
+    //    42  SetV8          wW0:4 q:0x0
+    //    45  LoadThisR      W0:232 d:134230898      ; ULokiDragCameraComponent::TimePressed  (+232)
+    //    47  WRTV8          rW0:4
+    //    48  SetV8          wW0:4 q:0x3fc3333333333333
+    //    51  LoadThisR      W0:208 d:134230898      ; ULokiDragCameraComponent::MinimumDragDuration  (+208)
+    //    53  WRTV8          rW0:4
+    //    54  SetV8          wW0:4 q:0xbff0000000000000
+    //    57  LoadThisR      W0:216 d:134230898      ; ULokiDragCameraComponent::CameraPickupRadius  (+216)
+    //    59  WRTV8          rW0:4
+    //    60  RET            W0:2
+

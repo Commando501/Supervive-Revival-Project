@@ -1,0 +1,152 @@
+[cw] game pid=30436
+[cw] t=+  0.23s NEW CHILD pid=7712  name=conhost.exe  path=C:\Windows\System32\conhost.exe
+[cw]     kill_process(7712) -> True
+[cw] t=+  0.23s NEW CHILD pid=18740  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(18740) -> True
+[cw] t=+  0.23s NEW CHILD pid=37352  name=crashpad_handler.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Plugins\SentrySDK\Binaries\Win64\crashpad_handler.exe
+[cw]     kill_process(37352) -> True
+[cw] t=+  0.23s NEW CHILD pid=37312  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(37312) -> True
+[cw] t=+  0.23s NEW CHILD pid=33048  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(33048) -> True
+[cw] t=+  0.45s NEW CHILD pid=4180  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(4180) -> True
+[cw] t=+  0.45s NEW CHILD pid=25712  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(25712) -> True
+[cw] t=+  0.46s NEW CHILD pid=24464  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(24464) -> True
+[cw] t=+  0.46s CHILD EXITED pid=7712 name=conhost.exe
+[cw] t=+  0.46s CHILD EXITED pid=18740 name=EpicWebHelper.exe
+[cw] t=+  0.46s CHILD EXITED pid=37352 name=crashpad_handler.exe
+[cw] t=+  0.46s CHILD EXITED pid=37312 name=EpicWebHelper.exe
+[cw] t=+  0.46s CHILD EXITED pid=33048 name=EpicWebHelper.exe
+[cw] t=+  0.68s NEW CHILD pid=25120  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(25120) -> True
+[cw] t=+  0.68s NEW CHILD pid=23104  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(23104) -> True
+[cw] t=+  0.68s NEW CHILD pid=32640  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(32640) -> True
+[cw] t=+  0.68s CHILD EXITED pid=4180 name=EpicWebHelper.exe
+[cw] t=+  0.68s CHILD EXITED pid=25712 name=EpicWebHelper.exe
+[cw] t=+  0.68s CHILD EXITED pid=24464 name=EpicWebHelper.exe
+[cw] t=+  0.91s NEW CHILD pid=16292  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(16292) -> True
+[cw] t=+  0.91s NEW CHILD pid=18612  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(18612) -> True
+[cw] t=+  0.91s CHILD EXITED pid=25120 name=EpicWebHelper.exe
+[cw] t=+  0.91s CHILD EXITED pid=23104 name=EpicWebHelper.exe
+[cw] t=+  0.91s CHILD EXITED pid=32640 name=EpicWebHelper.exe
+[cw] t=+  1.14s NEW CHILD pid=20320  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(20320) -> True
+[cw] t=+  1.14s NEW CHILD pid=18600  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(18600) -> True
+[cw] t=+  1.14s CHILD EXITED pid=16292 name=EpicWebHelper.exe
+[cw] t=+  1.14s CHILD EXITED pid=18612 name=EpicWebHelper.exe
+[cw] t=+  1.36s NEW CHILD pid=25504  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(25504) -> True
+[cw] t=+  1.36s NEW CHILD pid=29496  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(29496) -> True
+[cw] t=+  1.36s CHILD EXITED pid=20320 name=EpicWebHelper.exe
+[cw] t=+  1.36s CHILD EXITED pid=18600 name=EpicWebHelper.exe
+[cw] t=+  1.59s NEW CHILD pid=35252  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(35252) -> True
+[cw] t=+  1.59s NEW CHILD pid=28032  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(28032) -> True
+[cw] t=+  1.59s CHILD EXITED pid=25504 name=EpicWebHelper.exe
+[cw] t=+  1.59s CHILD EXITED pid=29496 name=EpicWebHelper.exe
+[cw] t=+  1.82s NEW CHILD pid=5436  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(5436) -> True
+[cw] t=+  1.82s NEW CHILD pid=9332  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(9332) -> True
+[cw] t=+  1.82s CHILD EXITED pid=35252 name=EpicWebHelper.exe
+[cw] t=+  1.82s CHILD EXITED pid=28032 name=EpicWebHelper.exe
+[cw] t=+  2.05s NEW CHILD pid=7600  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(7600) -> True
+[cw] t=+  2.05s NEW CHILD pid=8816  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(8816) -> True
+[cw] t=+  2.05s CHILD EXITED pid=5436 name=EpicWebHelper.exe
+[cw] t=+  2.05s CHILD EXITED pid=9332 name=EpicWebHelper.exe
+[cw] t=+  2.28s NEW CHILD pid=37272  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(37272) -> True
+[cw] t=+  2.28s NEW CHILD pid=34516  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(34516) -> True
+[cw] t=+  2.28s CHILD EXITED pid=7600 name=EpicWebHelper.exe
+[cw] t=+  2.28s CHILD EXITED pid=8816 name=EpicWebHelper.exe
+[cw] t=+  2.50s NEW CHILD pid=18748  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(18748) -> True
+[cw] t=+  2.50s NEW CHILD pid=35280  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(35280) -> True
+[cw] t=+  2.50s CHILD EXITED pid=37272 name=EpicWebHelper.exe
+[cw] t=+  2.50s CHILD EXITED pid=34516 name=EpicWebHelper.exe
+[cw] t=+  2.73s NEW CHILD pid=36816  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(36816) -> True
+[cw] t=+  2.73s NEW CHILD pid=18916  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(18916) -> True
+[cw] t=+  2.73s CHILD EXITED pid=18748 name=EpicWebHelper.exe
+[cw] t=+  2.73s CHILD EXITED pid=35280 name=EpicWebHelper.exe
+[cw] t=+  2.95s NEW CHILD pid=14424  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(14424) -> True
+[cw] t=+  2.95s NEW CHILD pid=30564  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(30564) -> True
+[cw] t=+  2.96s CHILD EXITED pid=36816 name=EpicWebHelper.exe
+[cw] t=+  2.96s CHILD EXITED pid=18916 name=EpicWebHelper.exe
+[cw] t=+  3.18s NEW CHILD pid=21336  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(21336) -> True
+[cw] t=+  3.18s NEW CHILD pid=18764  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(18764) -> True
+[cw] t=+  3.18s CHILD EXITED pid=14424 name=EpicWebHelper.exe
+[cw] t=+  3.18s CHILD EXITED pid=30564 name=EpicWebHelper.exe
+[cw] t=+  3.41s NEW CHILD pid=2748  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(2748) -> True
+[cw] t=+  3.41s NEW CHILD pid=32364  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(32364) -> True
+[cw] t=+  3.41s CHILD EXITED pid=21336 name=EpicWebHelper.exe
+[cw] t=+  3.41s CHILD EXITED pid=18764 name=EpicWebHelper.exe
+[cw] t=+  3.64s NEW CHILD pid=17712  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(17712) -> True
+[cw] t=+  3.64s NEW CHILD pid=7328  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(7328) -> True
+[cw] t=+  3.64s CHILD EXITED pid=2748 name=EpicWebHelper.exe
+[cw] t=+  3.64s CHILD EXITED pid=32364 name=EpicWebHelper.exe
+[cw] t=+  3.86s NEW CHILD pid=33140  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(33140) -> True
+[cw] t=+  3.86s NEW CHILD pid=19804  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(19804) -> True
+[cw] t=+  3.86s CHILD EXITED pid=17712 name=EpicWebHelper.exe
+[cw] t=+  3.86s CHILD EXITED pid=7328 name=EpicWebHelper.exe
+[cw] t=+  4.09s NEW CHILD pid=7176  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(7176) -> True
+[cw] t=+  4.09s NEW CHILD pid=27360  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(27360) -> True
+[cw] t=+  4.09s CHILD EXITED pid=33140 name=EpicWebHelper.exe
+[cw] t=+  4.09s CHILD EXITED pid=19804 name=EpicWebHelper.exe
+[cw] t=+  4.32s NEW CHILD pid=21232  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(21232) -> True
+[cw] t=+  4.32s NEW CHILD pid=25300  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(25300) -> True
+[cw] t=+  4.32s CHILD EXITED pid=7176 name=EpicWebHelper.exe
+[cw] t=+  4.32s CHILD EXITED pid=27360 name=EpicWebHelper.exe
+[cw] t=+  4.55s NEW CHILD pid=25304  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(25304) -> True
+[cw] t=+  4.55s NEW CHILD pid=35020  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(35020) -> True
+[cw] t=+  4.55s CHILD EXITED pid=21232 name=EpicWebHelper.exe
+[cw] t=+  4.55s CHILD EXITED pid=25300 name=EpicWebHelper.exe
+[cw] t=+  4.77s NEW CHILD pid=37008  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(37008) -> True
+[cw] t=+  4.77s NEW CHILD pid=22784  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(22784) -> True
+[cw] t=+  4.77s CHILD EXITED pid=25304 name=EpicWebHelper.exe
+[cw] t=+  4.77s CHILD EXITED pid=35020 name=EpicWebHelper.exe
+[cw] t=+  5.00s NEW CHILD pid=3452  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(3452) -> True
+[cw] t=+  5.00s NEW CHILD pid=37376  name=EpicWebHelper.exe  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Engine\Binaries\Win64\EpicWebHelper.exe
+[cw]     kill_process(37376) -> True
+[cw] t=+  5.00s NEW CHILD pid=26504  name=runtime.dll  path=G:\git\GAME BACKUPS FOR REVERSE ENGINEERING\SUPERVIVE\Loki\Binaries\Win64\runtime.dll
+[cw]     kill_process(26504) -> True
+[cw] t=+  5.00s CHILD EXITED pid=37008 name=EpicWebHelper.exe
+[cw] t=+  5.00s CHILD EXITED pid=22784 name=EpicWebHelper.exe
+[cw] t=+  5.22s CHILD EXITED pid=3452 name=EpicWebHelper.exe
+[cw] t=+  5.22s CHILD EXITED pid=37376 name=EpicWebHelper.exe
+[cw] t=+  5.22s CHILD EXITED pid=26504 name=runtime.dll
+[cw] --duration reached, stopping cleanly. polls=1095, children_seen=0

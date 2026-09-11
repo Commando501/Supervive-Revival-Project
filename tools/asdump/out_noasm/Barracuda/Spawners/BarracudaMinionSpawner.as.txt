@@ -1,0 +1,1283 @@
+// ============================================================================
+//  MODULE   Barracuda.Spawners.BarracudaMinionSpawner
+//  SOURCE   Barracuda/Spawners/BarracudaMinionSpawner.as
+//  CONTENT  4 class(es), 34 function(s), 1 enum(s), 1 global(s), 10236 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+enum EBarracudaRespawnBehaviorType
+{
+    AlwaysSpawn = 0,
+    ReplaceSpawns = 1,
+    SkipSpawnWhenOldExists = 2,
+    StartRespawnTimerAfterDeath = 3,
+    AliveAtNight = 4,
+    AliveDuringDay = 5,
+}
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaMinionSpawner;
+
+ABarracudaMinionSpawner@ ABarracudaMinionSpawner()   // traits=0x20
+{
+    ABarracudaMinionSpawner v2;
+
+    v2 = ABarracudaMinionSpawner();
+    return v2;
+}
+
+UClass@ ABarracudaMinionSpawner::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ABarracudaMinionSpawner);
+    return v2;
+}
+
+ABarracudaMinionSpawner@ ABarracudaMinionSpawner::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ABarracudaMinionSpawner v8;
+
+    v2 = __StaticType_ABarracudaMinionSpawner.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ABarracudaMinionSpawner@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FGametimeToLevel
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 Gametime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int Level;
+
+    FGametimeToLevel()   // traits=0x21
+    {
+        auto v2;
+        auto v3;
+
+        v2 = 0;
+        this.Gametime = v2;
+        v3 = 0;
+        this.Level = v3;
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FMinionWaveEntry
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSubclassOf<ALokiMinionCharacter@> MinionClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int Count;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int MinimumMatchTime;
+
+    FMinionWaveEntry()   // traits=0x21
+    {
+        auto v1;
+
+        this.MinionClass = TSubclassOf<ALokiMinionCharacter@>();
+        v1 = 0;
+        this.Count = v1;
+        v1 = 0;
+        this.MinimumMatchTime = v1;
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FMinionWave
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<FMinionWaveEntry> Entries;
+
+    FMinionWave()   // traits=0x21
+    {
+        this.Entries = TArray<FMinionWaveEntry>();
+        return;
+    }
+
+    void ~FMinionWave()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ABarracudaMinionSpawner : ALokiActor
+// unreal base : /Script/Engine.LokiActor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/LokiActor.h
+// static class global: __StaticType_ABarracudaMinionSpawner
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    int InitialTeam;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 SpawnPeriod;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    EBarracudaPhaseType MinimumBarracudaPhaseType;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.EditCondition=RespawnType != EBarracudaRespawnBehaviorType::AliveAtNight && RespawnType != EBarracudaRespawnBehaviorType::AliveDuringDay)
+    float64 InitialSpawnDelay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bStaggerSpawn;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bSpawnAtAveragePlayerLevel;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<FGametimeToLevel> LevelThresholdsByGametime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    EBarracudaRespawnBehaviorType RespawnType;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FMinionWave Wave;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bShowTimer;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bTimerRequiresVision;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient, Replicated, ReplicationCondition=0)
+    bool bSpawnLoopHasStarted;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    float64 LastSpawnTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    float64 SpawnLoopStartTime;
+    UPROPERTY(BlueprintReadable, Transient)
+    private float64 NextSpawnTime;
+    UPROPERTY(BlueprintReadable, Transient)
+    bool bHasLivingMinion;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True, meta.RootComponent)
+    UCapsuleComponent@ CapsuleCollision;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    ULokiTeamComponent@ TeamComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UBarracudaLaneComponent@ LaneComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UMapIconComponent@ MapIconComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    UVisibilityReceiver@ VisibilityReceiver;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<TSubclassOf<UGameplayEffect@>> StartingEffects;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient)
+    TArray<ALokiMinionCharacter@> MinionInstances;
+    int CurrentWaveBufferIndex;
+    TArray<TSubclassOf<ALokiMinionCharacter@>> WaveBuffer;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    UAkAudioEvent@ SpawnAudioEvent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    FGameplayTag SpawnPilotVO;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Barracks)
+    TSubclassOf<UGameplayEffect@> BarracksDownEffect;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=Barracks)
+    TSubclassOf<AActor@> BarracksClass;
+
+    ABarracudaMinionSpawner()   // traits=0x21
+    {
+        auto v1;
+
+        this.LevelThresholdsByGametime = TArray<FGametimeToLevel>();
+        this.Wave.FMinionWave();
+        this.StartingEffects = TArray<TSubclassOf<UGameplayEffect@>>();
+        this.MinionInstances = TArray<ALokiMinionCharacter@>();
+        this.WaveBuffer = TArray<TSubclassOf<ALokiMinionCharacter@>>();
+        this.SpawnPilotVO = FGameplayTag();
+        this.BarracksDownEffect = TSubclassOf<UGameplayEffect@>();
+        this.BarracksClass = TSubclassOf<AActor@>();
+        v1 = 0;
+        this.CurrentWaveBufferIndex = v1;
+        return;
+    }
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        bool v1;
+        ULokiTeamComponent v4;
+        int v5;
+        ALokiGameState v8;
+        UVisibilityReceiver v12;
+        UGameEventRouterComponent v16;
+        FGameEvent_BarracudaPhaseChanged v20;
+        auto v21;
+        FGameEventListenerHandle v34;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v4 = this.TeamComponent;
+            if (v4 != nullptr) {
+                v5 = this.InitialTeam;
+                this.TeamComponent.AuthSetTeamIndex(v5);
+            }
+            v8 = Loki::GetLokiGameState(__WorldContext);
+            v8.OnRoundPhaseChanged.AddUFunction(this, n"AuthOnNewRoundPhase");
+            v8.OnNewDayNightStateDelegate.AddUFunction(this, n"AuthOnNewDayNightState");
+            v12 = this.VisibilityReceiver;
+            if (v12 != nullptr) {
+                this.VisibilityReceiver.OnVisibilityEvaluated.AddUFunction(this, n"HandleVisibilityEvaluated");
+            }
+            v16 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+            if (v16 != nullptr) {
+                v21 = false;
+                v20 = FGameEvent_BarracudaPhaseChanged();
+                v34 = v16.RegisterForEvent(this, v20, typeid(FGameEvent_BarracudaPhaseChanged), nullptr, n"AuthHandleBarracudaPhaseChanged", v21);
+            }
+            this.AuthTryEnablingSpawnLoop();
+        }
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v1 = this.bShowTimer;
+            this.MapIconComponent.SetIconVisible(v1);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ClientGetMapIconState(bool&out bShowLivingIcon, float64&out SecondsRemaining)   // traits=0x20
+    {
+        bool v1;
+        float64 v4;
+        int v5;
+        int v6;
+        ABarracudaTeamState_TeamOnly v10;
+        float64 v12;
+        auto v14;
+        auto v15;
+        auto v16;
+        int v17;
+        ALokiGameState v22;
+        UBarracudaGameStateComponent v26;
+        auto v27;
+        auto v28;
+
+        v1 = true;
+        bShowLivingIcon = v1;
+        v4 = 0;
+        SecondsRemaining = v4;
+        v1 = false;
+        v6 = Loki::GetLocalTeamIndex(__WorldContext, v1);
+        v10 = GetBarracudaTeamStateTeamOnly(v6);
+        if (v10 == nullptr) {
+            return;
+        } else {
+            v12 = 0;
+            v1 = v10.SpawnerToSpawnTime.Find(this, v12);
+            v1 = !v1;
+            if (v1) {
+                return;
+            } else {
+                v15 = Gameplay::GetServerTime(__WorldContext);
+                v4 = float64(v15);
+                v14 = v4;
+                v16 = this.RespawnType;
+                v5 = int(v16);
+                if (v5 == 4) {
+                    v22 = Loki::GetLokiGameState(__WorldContext);
+                    v26 = GetBarracudaGameStateComponent();
+                    if (v22 == nullptr) {
+                        v1 = 0;
+                    } else {
+                        v27 = v26 != nullptr;
+                        v1 = v27;
+                    }
+                    if (v1) {
+                        v28 = v22.DayNightState;
+                        v17 = int(v28);
+                        if (v17 == 0) {
+                            v27 = false;
+                            bShowLivingIcon = v27;
+                            v4 = v26.SecondsUntilNextDayNightSwap();
+                            SecondsRemaining = v4;
+                        }
+                    }
+                    return;
+                } else {
+                    v16 = this.RespawnType;
+                    v5 = int(v16);
+                    if (v5 == 5) {
+                        v22 = Loki::GetLokiGameState(__WorldContext);
+                        v26 = GetBarracudaGameStateComponent();
+                        if (v22 == nullptr) {
+                            v27 = 0;
+                        } else {
+                            v1 = v26 != nullptr;
+                            v27 = v1;
+                        }
+                        if (v27) {
+                            v28 = v22.DayNightState;
+                            v5 = int(v28);
+                            if (v5 == 1) {
+                                v1 = false;
+                                bShowLivingIcon = v1;
+                                v4 = v26.SecondsUntilNextDayNightSwap();
+                                SecondsRemaining = v4;
+                            }
+                        }
+                        return;
+                    } else {
+                        if (v14 > v12) {
+                            return;
+                        } else {
+                            v1 = false;
+                            bShowLivingIcon = v1;
+                            v4 = v12 - v14;
+                            SecondsRemaining = v4;
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    void AuthSetNextSpawnTime(const float64 NewTime)   // traits=0x20
+    {
+        auto v1;
+
+        this.NextSpawnTime = NewTime;
+        v1 = this.bTimerRequiresVision;
+        v1 = !v1;
+        if (v1) {
+            this.GrantTimerToAllTeams();
+        }
+        return;
+    }
+
+    UFUNCTION(CanOverrideEvent)
+    void AuthOnNewRoundPhase(const ERoundPhase NewPhase)   // traits=0x20
+    {
+        this.AuthTryEnablingSpawnLoop();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void AuthHandleBarracudaPhaseChanged(const FGameEvent_BarracudaPhaseChanged& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.AuthTryEnablingSpawnLoop();
+        return;
+    }
+
+    private void AuthTryEnablingSpawnLoop()   // traits=0x28
+    {
+        auto v1;
+        ALokiGameState v4;
+        auto v7;
+        int v8;
+        int v9;
+        auto v10;
+        auto v11;
+        auto v12;
+        float64 v14;
+        auto v16;
+
+        v1 = this.bSpawnLoopHasStarted;
+        if (v1) {
+            return;
+        } else {
+            v4 = Loki::GetLokiGameState(__WorldContext);
+            if (v4 == nullptr) {
+                return;
+            } else {
+                v7 = v4.GetCurrentPhase();
+                v8 = int(v7);
+                if (v8 != 7) {
+                    return;
+                } else {
+                    v11 = GetCurrentBarracudaPhaseType();
+                    v9 = int(v11);
+                    v10 = this.MinimumBarracudaPhaseType;
+                    v8 = int(v10);
+                    if (v9 < v8) {
+                        return;
+                    } else {
+                        v1 = true;
+                        this.bSpawnLoopHasStarted = v1;
+                        v12 = Gameplay::GetServerTime(__WorldContext);
+                        v14 = float64(v12);
+                        this.SpawnLoopStartTime = v14;
+                        if (this.IsClockBasedSpawning()) {
+                            v14 = this.SpawnLoopStartTime;
+                            v16 = this.InitialSpawnDelay;
+                            v14 = v14 + v16;
+                            this.AuthSetNextSpawnTime(v14);
+                        } else {
+                            this.AuthCheckDayNightSpawn();
+                        }
+                        this.GrantTimerToAllTeams();
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(CanOverrideEvent)
+    void AuthOnNewDayNightState(const ELokiDayNightState NewState, const ELokiDayNightState OldState)   // traits=0x20
+    {
+        this.AuthCheckDayNightSpawn();
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+        int v3;
+        int v4;
+        float64 v6;
+        auto v8;
+        auto v9;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = this.IsSpawningAllowed();
+            v1 = !v1;
+            if (v1) {
+                return;
+            }
+            this.AuthCleanMinionReferences();
+            this.AuthTryUpdatingNextSpawnTime();
+            if (this.AuthShouldSpawnWave()) {
+                v2 = this.RespawnType;
+                v3 = int(v2);
+                if (v3 == 1) {
+                    this.AuthCleanupMinions();
+                }
+                this.AuthSpawnWave();
+                v2 = this.RespawnType;
+                v4 = int(v2);
+                if (v4 == 3) {
+                    this.AuthSetNextSpawnTime(-1.0);
+                } else {
+                    v6 = this.NextSpawnTime;
+                    v8 = this.SpawnPeriod;
+                    v6 = v6 + v8;
+                    this.AuthSetNextSpawnTime(v6);
+                }
+            }
+            return;
+        } else {
+            v1 = this.bShowTimer;
+            if (!v1) {
+                v1 = 0;
+            } else {
+                v9 = this.bSpawnLoopHasStarted;
+                v1 = v9;
+            }
+            this.MapIconComponent.SetIconVisible(v1);
+        }
+        return;
+    }
+
+    private bool IsSpawningAllowed()   // traits=0x28
+    {
+        auto v1;
+        ALokiGameState v4;
+        auto v5;
+        int v6;
+        UBarracudaGameStateComponent v10;
+
+        v1 = this.bSpawnLoopHasStarted;
+        v1 = !v1;
+        if (v1) {
+            v1 = false;
+            return v1;
+        } else {
+            v4 = Loki::GetLokiGameState(__WorldContext);
+            v5 = v4.GetCurrentPhase();
+            v6 = int(v5);
+            if (v6 != 7) {
+                v1 = false;
+                return v1;
+            } else {
+                v10 = GetBarracudaGameStateComponent();
+                if (v10 == nullptr) {
+                    v1 = false;
+                    return v1;
+                } else {
+                    if (Loki::HasAnyMatchingGameplayTags(this, v10.DisabledSpawnerTypes)) {
+                        v1 = false;
+                        return v1;
+                    } else {
+                        v1 = true;
+                    }
+                }
+            }
+        }
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod)
+    bool HasNextRespawnTime() const   // traits=0x24
+    {
+        auto v2;
+        auto v4;
+        auto v5;
+
+        v2 = this.NextSpawnTime;
+        v4 = 0;
+        v5 = v2 >= v4;
+        return v5;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    void AuthSpawnWave()   // traits=0x20
+    {
+        auto v1;
+        float64 v4;
+        bool v5;
+        auto v6;
+        auto v7;
+        int v8;
+        TArrayIterator<FMinionWaveEntry> v14;
+        auto v22;
+        TSubclassOf<ALokiMinionCharacter@> v24;
+        int v25;
+        auto v26;
+        int v27;
+        FVector v34;
+        ALokiMinionCharacter v36;
+        ALokiMinionCharacter v38;
+        UBarracudaLaneComponent v40;
+        UBarracudaLaneComponent v42;
+        UClass v44;
+        TSubclassOf<UActorComponent@> v46;
+        UActorComponent v48;
+        auto v49;
+        auto v50;
+        ULokiAbilitySystemComponent v52;
+        FGameplayEffectContextHandle v66;
+        FActiveGameplayEffectHandle v68;
+
+        v1 = Gameplay::GetServerTime(__WorldContext);
+        v4 = float64(v1);
+        this.LastSpawnTime = v4;
+        v5 = this.bStaggerSpawn;
+        if (v5) {
+            this.BeginStaggerSpawn();
+            return;
+        } else {
+            v5 = false;
+            v6 = v5;
+            v8 = LokiTeam::GetTeamFromActor(this);
+            v14 = this.Wave.Entries.Iterator();
+            while (true) {
+                v5 = v14.CanProceed;
+                if (!v5) break;
+                v22 = v14.Proceed();
+                v24 = TSubclassOf<ALokiMinionCharacter@>();
+                v24 = v22.MinionClass;
+                v5 = v24 == nullptr;
+                v5 = !v5;
+                if (!v5) {
+                    v5 = 0;
+                } else {
+                    v7 = v22.Count;
+                    v26 = v7 > 0;
+                    v5 = v26;
+                }
+                if (v5) {
+                    v27 = 0;
+                    while (true) {
+                        v25 = v22.Count;
+                        if (v27 >= v25) break;
+                        v5 = true;
+                        v34 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                        v36 = SpawnActor(v22.MinionClass, v34, FRotator::ZeroRotator, NAME_None, v5, nullptr);
+                        v38 = v36;
+                        if (v38 != nullptr) {
+                            v5 = true;
+                            v6 = v5;
+                            if (this.LaneComponent.HasLaneIndex()) {
+                                v40 = UBarracudaLaneComponent::Get(v38, NAME_None);
+                                if (v40 == nullptr) {
+                                    v44 = UBarracudaLaneComponent::StaticClass();
+                                    v46 = TSubclassOf<UActorComponent@>(v44);
+                                    v48 = v38.CreateComponent(v46, NAME_None);
+                                    if (v48 != nullptr) {
+                                        v42 = cast<UBarracudaLaneComponent@>(v48);
+                                    } else {
+                                        v42 = nullptr;
+                                    }
+                                    v40 = v42;
+                                }
+                                v25 = this.LaneComponent.LaneIndex;
+                                v40.SetLaneIndex(v25);
+                            }
+                            LokiTeam::SetTeamForActor(v38, v8);
+                            FinishSpawningActor(v38);
+                            v49 = 0;
+                            while (true) {
+                                v50 = this.StartingEffects.Num();
+                                if (v49 >= v50) break;
+                                v52 = v38.GetLokiAbilitySystem_BP();
+                                v66 = v52.MakeEffectContext();
+                                v5 = false;
+                                v68 = v52.ApplyGameplayEffectToSelf(this.StartingEffects[v27], 0, v66, v5)  /* UFunction BP_ApplyGameplayEffectToSelf */;
+                                v49++;
+                            }
+                            LokiTeam::SetTeamForActor(v38, v8);
+                            this.SetMinionLevel(v38);
+                            this.MinionInstances.Add(v38);
+                            v5 = true;
+                            this.bHasLivingMinion = v5;
+                        }
+                        v27++;
+                    }
+                }
+            }
+            if (v6) {
+                this.PlaySpawnAudioEvent();
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetMinionLevel(ALokiCharacter@ Minion)   // traits=0x20
+    {
+        auto v1;
+        auto v4;
+        float64 v6;
+        auto v7;
+        auto v8;
+        int v9;
+        int v10;
+        TArray<ALokiPlayerState@> v14;
+        TArrayConstIterator<ALokiPlayerState@> v20;
+        ALokiPlayerState v28;
+        int v29;
+        ALokiGameState v32;
+        auto v35;
+        float64 v38;
+        TArrayIterator<FGametimeToLevel> v44;
+        auto v52;
+        auto v53;
+
+        v1 = this.bSpawnAtAveragePlayerLevel;
+        if (v1) {
+            v4 = 0;
+            v7 = 0;
+            v9 = 0;
+            while (true) {
+                if (v9 > 1) break;
+                v14 = LokiGameplay::GetPlayerStatesOnTeam(__WorldContext, v9);
+                v20 = v14.Iterator();
+                while (true) {
+                    v1 = v20.CanProceed;
+                    if (!v1) break;
+                    v28 = v20.Proceed();
+                    v20.Proceed();
+                    v10 = v28.GetPlayerLevel();
+                    v6 = float64(v10);
+                    v4 = v4 + v6;
+                    v7++;
+                }
+                v9++;
+            }
+            v6 = float64(v7);
+            v6 = v4 / v6;
+            v10 = Math::RoundToInt(v6);
+            v29 = Math::Max(1, v10);
+            Minion.AuthGrantLevel(v29);
+            return;
+        } else {
+            v32 = Loki::GetLokiGameState(__WorldContext);
+            if (v32 != nullptr) {
+                v6 = v32.GetServerWorldTimeSeconds();
+                v35 = v32.GameStartWorldTime;
+                v38 = float64(v35);
+                v6 = v6 - v38;
+                v9 = -1;
+                v44 = this.LevelThresholdsByGametime.Iterator();
+                while (true) {
+                    v1 = v44.CanProceed;
+                    if (!v1) break;
+                    v52 = v44.Proceed();
+                    v4 = v52.Gametime;
+                    if (v6 <= v4) {
+                        v1 = 0;
+                    } else {
+                        v8 = v52.Level;
+                        v53 = v8 > v9;
+                        v1 = v53;
+                    }
+                    if (v1) {
+                        v10 = v52.Level;
+                        v9 = v10;
+                    }
+                }
+                if (v9 > 0) {
+                    Minion.AuthGrantLevel(v9);
+                }
+            }
+        }
+        return;
+    }
+
+    void BeginStaggerSpawn()   // traits=0x20
+    {
+        auto v1;
+        TArray<TSubclassOf<ALokiMinionCharacter@>> v6;
+        auto v8;
+        auto v9;
+        float64 v12;
+        TArrayIterator<FMinionWaveEntry> v18;
+        auto v25;
+        auto v28;
+        TSubclassOf<ALokiMinionCharacter@> v30;
+        auto v31;
+        auto v32;
+        auto v33;
+
+        this.WaveBuffer.Empty(0);
+        v6 = TArray<TSubclassOf<ALokiMinionCharacter@>>();
+        v9 = Gameplay::GetServerTime(__WorldContext);
+        v12 = float64(v9);
+        v8 = v12;
+        v18 = this.Wave.Entries.Iterator();
+        while (true) {
+            v25 = v18.CanProceed;
+            if (!v25) break;
+            v28 = v18.Proceed();
+            v30 = TSubclassOf<ALokiMinionCharacter@>();
+            v30 = v28.MinionClass;
+            v25 = v30 == nullptr;
+            v25 = !v25;
+            if (!v25) {
+                v25 = 0;
+            } else {
+                v1 = v28.Count;
+                v32 = v1 > 0;
+                v25 = v32;
+            }
+            if (v25) {
+                v33 = 0;
+                while (true) {
+                    v31 = v28.Count;
+                    if (v33 >= v31) break;
+                    v31 = v28.MinimumMatchTime;
+                    v12 = float64(v31);
+                    if (v8 >= v12) {
+                        this.WaveBuffer.Add(v28.MinionClass);
+                    }
+                    v33++;
+                }
+            }
+        }
+        v31 = 0;
+        this.CurrentWaveBufferIndex = v31;
+        this.StaggerSpawn();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void StaggerSpawn()   // traits=0x20
+    {
+        auto v1;
+        int v2;
+        int v3;
+        bool v4;
+        FVector v10;
+        ALokiMinionCharacter v12;
+        ALokiMinionCharacter v14;
+        UBarracudaLaneComponent v16;
+        UBarracudaLaneComponent v18;
+        UClass v20;
+        TSubclassOf<UActorComponent@> v22;
+        UActorComponent v24;
+        int v25;
+        ULokiAbilitySystemComponent v28;
+        FGameplayEffectContextHandle v36;
+        FGameplayEffectContextHandle v42;
+        FActiveGameplayEffectHandle v45;
+        TSubclassOf<UGameplayEffect@> v48;
+        TSubclassOf<AActor@> v50;
+        bool v51;
+        TArray<AActor@> v56;
+        auto v57;
+        TArrayIterator<AActor@> v64;
+        AActor v72;
+        FTimerHandle v76;
+
+        v2 = LokiTeam::GetTeamFromActor(this);
+        v3 = this.CurrentWaveBufferIndex;
+        v1 = this.WaveBuffer.Num();
+        if (v3 < v1) {
+            v4 = true;
+            v10 = this.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v3 = this.CurrentWaveBufferIndex;
+            v12 = SpawnActor(this.WaveBuffer[v3], v10, FRotator::ZeroRotator, NAME_None, v4, nullptr);
+            v14 = v12;
+            if (v14 != nullptr) {
+                if (this.LaneComponent.HasLaneIndex()) {
+                    v16 = UBarracudaLaneComponent::Get(v14, NAME_None);
+                    if (v16 == nullptr) {
+                        v20 = UBarracudaLaneComponent::StaticClass();
+                        v22 = TSubclassOf<UActorComponent@>(v20);
+                        v24 = v14.CreateComponent(v22, NAME_None);
+                        if (v24 != nullptr) {
+                            v18 = cast<UBarracudaLaneComponent@>(v24);
+                        } else {
+                            v18 = nullptr;
+                        }
+                        v16 = v18;
+                    }
+                    v3 = this.LaneComponent.LaneIndex;
+                    v16.SetLaneIndex(v3);
+                }
+                LokiTeam::SetTeamForActor(v14, v2);
+                FinishSpawningActor(v14);
+                v25 = 0;
+                while (true) {
+                    v3 = this.StartingEffects.Num();
+                    if (v25 >= v3) break;
+                    v28 = v14.GetLokiAbilitySystem_BP();
+                    v42 = v28.MakeEffectContext();
+                    v4 = false;
+                    v45 = v28.ApplyGameplayEffectToSelf(this.StartingEffects[v25], 0, v42, v4)  /* UFunction BP_ApplyGameplayEffectToSelf */;
+                    v25++;
+                }
+                v48 = TSubclassOf<UGameplayEffect@>();
+                v48 = this.BarracksDownEffect;
+                v4 = v48 == nullptr;
+                v4 = !v4;
+                if (!v4) {
+                    v4 = 0;
+                } else {
+                    v50 = TSubclassOf<AActor@>();
+                    v50 = this.BarracksClass;
+                    v51 = v50 == nullptr;
+                    v51 = !v51;
+                    v4 = v51;
+                }
+                if (v4) {
+                    v56 = TArray<AActor@>();
+                    v20 = UClass@(this.BarracksClass);
+                    GetAllActorsOfClass(v20, v56, typeid(TArray));
+                    v4 = false;
+                    v57 = v4;
+                    v64 = v56.Iterator();
+                    while (true) {
+                        v51 = v64.CanProceed;
+                        if (!v51) break;
+                        v72 = v64.Proceed();
+                        v64.Proceed();
+                        v20 = UBarracudaLaneComponent::StaticClass();
+                        v22 = TSubclassOf<UActorComponent@>(v20);
+                        v24 = v72.GetComponentByClass(v22);
+                        if (v24 != nullptr) {
+                            v18 = cast<UBarracudaLaneComponent@>(v24);
+                        } else {
+                            v18 = nullptr;
+                        }
+                        v16 = v18;
+                        if (v16 != nullptr) {
+                            v3 = v16.LaneIndex;
+                            v1 = this.LaneComponent.LaneIndex;
+                            if (v3 == v1) {
+                                v4 = true;
+                                v57 = v4;
+                                break;
+                            }
+                        }
+                    }
+                    v51 = v57;
+                    v51 = !v51;
+                    v4 = false;
+                    v4 = !v4;
+                    if (v51 == v4) {
+                        v28 = v14.GetLokiAbilitySystem_BP();
+                        v36 = v28.MakeEffectContext();
+                        v4 = false;
+                        v45 = v28.ApplyGameplayEffectToSelf(this.BarracksDownEffect, 0, v36, v4)  /* UFunction BP_ApplyGameplayEffectToSelf */;
+                    }
+                }
+                LokiTeam::SetTeamForActor(v14, v2);
+                this.SetMinionLevel(v14);
+                this.MinionInstances.Add(v14);
+                v4 = true;
+                this.bHasLivingMinion = v4;
+            }
+            this.CurrentWaveBufferIndex++;
+            v4 = false;
+            v51 = false;
+            v76 = System::SetTimer(this, n"StaggerSpawn", 0.5, v51, v4, 0, 0);
+        }
+        return;
+    }
+
+    void AuthCleanupMinions()   // traits=0x20
+    {
+        auto v2;
+        int v4;
+        auto v5;
+        ALokiMinionCharacter v8;
+        UBarracudaMinionRewardComponent v12;
+
+        v2 = this.MinionInstances.Num();
+        v4 = v2 - 1;
+        while (true) {
+            if (v4 < 0) break;
+            v8 = this.MinionInstances[v4];
+            if (v8 != nullptr) {
+                v12 = UBarracudaMinionRewardComponent::Get(v8, NAME_None);
+                if (v12 != nullptr) {
+                    v12.DisableAllRewards();
+                }
+                v8.DestroyActor()  /* UFunction K2_DestroyActor */;
+            }
+            this.MinionInstances.RemoveAt(v4);
+            v4--;
+        }
+        this.MinionInstances.Empty(0);
+        v5 = false;
+        this.bHasLivingMinion = v5;
+        return;
+    }
+
+    void AuthCleanMinionReferences()   // traits=0x20
+    {
+        auto v2;
+        int v4;
+        auto v5;
+        ALokiMinionCharacter v8;
+
+        v2 = this.MinionInstances.Num();
+        v4 = v2 - 1;
+        while (true) {
+            if (v4 < 0) break;
+            v8 = this.MinionInstances[v4];
+            v5 = LokiGameplay::IsAlive(v8);
+            v5 = !v5;
+            if (v5) {
+                this.MinionInstances.RemoveAt(v4);
+            }
+            v4--;
+        }
+        if (this.MinionInstances.IsEmpty()) {
+            v5 = false;
+            this.bHasLivingMinion = v5;
+        }
+        return;
+    }
+
+    bool AuthShouldSpawnWave()   // traits=0x20
+    {
+        auto v1;
+        auto v4;
+        auto v5;
+        float64 v8;
+        auto v9;
+        int v10;
+        auto v12;
+
+        v1 = this.HasNextRespawnTime();
+        v1 = !v1;
+        if (v1) {
+            v1 = false;
+            return v1;
+        } else {
+            v5 = Gameplay::GetServerTime(__WorldContext);
+            v8 = float64(v5);
+            v4 = v8;
+            v8 = this.NextSpawnTime;
+            if (v4 < v8) {
+                v1 = false;
+                return v1;
+            } else {
+                v9 = this.RespawnType;
+                v10 = int(v9);
+                if (v10 != 2) {
+                    v1 = 0;
+                } else {
+                    v12 = this.MinionInstances.IsEmpty();
+                    v12 = !v12;
+                    v1 = v12;
+                }
+                if (v1) {
+                    v12 = false;
+                    return v12;
+                } else {
+                    v1 = true;
+                }
+            }
+        }
+        return v1;
+    }
+
+    void AuthTryUpdatingNextSpawnTime()   // traits=0x20
+    {
+        auto v1;
+        auto v4;
+        auto v5;
+        float64 v8;
+        auto v9;
+        int v10;
+        auto v12;
+
+        if (this.HasNextRespawnTime()) {
+            return;
+        } else {
+            v5 = Gameplay::GetServerTime(__WorldContext);
+            v8 = float64(v5);
+            v4 = v8;
+            v9 = this.RespawnType;
+            v10 = int(v9);
+            if (v10 != 3) {
+                v1 = 0;
+            } else {
+                v12 = this.MinionInstances.IsEmpty();
+                v1 = v12;
+            }
+            if (v1) {
+                v8 = this.SpawnPeriod;
+                v8 = v4 + v8;
+                this.AuthSetNextSpawnTime(v8);
+            }
+        }
+        return;
+    }
+
+    bool IsClockBasedSpawning()   // traits=0x20
+    {
+        auto v1;
+        int v2;
+        int v3;
+        auto v4;
+        auto v5;
+
+        v1 = this.RespawnType;
+        v2 = int(v1);
+        if (v2 == 4) {
+            v4 = 0;
+            return this.RespawnType;
+        } else {
+            v1 = this.RespawnType;
+            v3 = int(v1);
+            v5 = v3 != 5;
+            v4 = v5;
+        }
+        return v4;
+    }
+
+    void AuthCheckDayNightSpawn()   // traits=0x20
+    {
+        auto v1;
+        ALokiGameState v4;
+        auto v7;
+        auto v8;
+        auto v9;
+        int v10;
+        int v11;
+
+        v1 = this.bSpawnLoopHasStarted;
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v4 = Loki::GetLokiGameState(__WorldContext);
+            if (v4 == nullptr) {
+                return;
+            } else {
+                v8 = v4.DayNightState;
+                v7 = v8;
+                v9 = this.RespawnType;
+                v10 = int(v9);
+                if (v10 == 4) {
+                    v11 = int(v7);
+                    if (v11 == 1) {
+                        this.AuthSpawnWave();
+                    } else {
+                        this.AuthCleanupMinions();
+                    }
+                    return;
+                } else {
+                    v9 = this.RespawnType;
+                    v10 = int(v9);
+                    if (v10 == 5) {
+                        v11 = int(v7);
+                        if (v11 == 0) {
+                            this.AuthSpawnWave();
+                            return;
+                        } else {
+                            this.AuthCleanupMinions();
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void HandleVisibilityEvaluated(UVisibilityReceiver@ EvaluatedVisibilityReceiver, const TArray<int>&in TeamsIndicesWithVision)   // traits=0x28
+    {
+        TArrayConstIterator<int> v6;
+        auto v13;
+        int v14;
+        auto v15;
+
+        v6 = TeamsIndicesWithVision.Iterator();
+        while (true) {
+            v13 = v6.CanProceed;
+            if (!v13) break;
+            v15 = *refReg;
+            v14 = v15;
+            v6.Proceed();
+            this.GrantTimerToTeam(v14);
+        }
+        return;
+    }
+
+    private void GrantTimerToTeam(const int TeamIndex)   // traits=0x28
+    {
+        ABarracudaTeamState_TeamOnly v4;
+        float64 v8;
+        auto v10;
+
+        v4 = GetBarracudaTeamStateTeamOnly(TeamIndex);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v8 = 0;
+            if (this.HasNextRespawnTime()) {
+                v10 = this.NextSpawnTime;
+                v8 = v10;
+            }
+            v4.SetSpawnerSpawnTime(this, v8);
+        }
+        return;
+    }
+
+    private void GrantTimerToAllTeams()   // traits=0x28
+    {
+        ALokiGameState v4;
+        bool v5;
+        bool v6;
+        TArray<ALokiTeamState@> v10;
+        TArrayIterator<ALokiTeamState@> v20;
+        ALokiTeamState v28;
+        int v29;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v5 = true;
+            v6 = true;
+            v10 = v4.GetTeamStates(v6, v5);
+            v20 = v10.Iterator();
+            while (true) {
+                v5 = v20.CanProceed;
+                if (!v5) break;
+                v28 = v20.Proceed();
+                v20.Proceed();
+                v29 = v28.GetIndex();
+                this.GrantTimerToTeam(v29);
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void PlaySpawnAudioEvent()   // traits=0x20
+    {
+        UAkAudioEvent v2;
+        FString v8;
+
+        v2 = this.SpawnAudioEvent;
+        if (v2 != nullptr) {
+            LokiAudio::PostEventActor(__WorldContext, this.SpawnAudioEvent, this);
+        }
+        if (this.SpawnPilotVO.IsValid()) {
+            v8 = FString();
+            ULokiBarkUtilities::RequestVOPilot(__WorldContext, this.SpawnPilotVO, v8);
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        ENetDormancy v2;
+        auto v3;
+        auto v4;
+        auto v6;
+        auto v7;
+        auto v8;
+
+        v1 = true;
+        this.SetbReplicates(v1);
+        v1 = true;
+        this.SetbAlwaysRelevant(v1);
+        v2 = ENetDormancy::DORM_Awake;
+        this.SetNetDormancy(v2);
+        v3 = true;
+        this.LokiReplicationStrategy.CustomReplicationStrategy = v3;
+        v1 = false;
+        this.LokiReplicationStrategy.bDistanceBased = v1;
+        v4 = 0;
+        this.InitialTeam = v4;
+        v6 = 30.0;
+        this.SpawnPeriod = v6;
+        v7 = false;
+        this.MinimumBarracudaPhaseType = v7;
+        v6 = 0;
+        this.InitialSpawnDelay = v6;
+        v8 = false;
+        this.RespawnType = v8;
+        v1 = false;
+        this.bSpawnLoopHasStarted = v1;
+        v6 = 0;
+        this.LastSpawnTime = v6;
+        v1 = false;
+        this.bStaggerSpawn = v1;
+        v1 = true;
+        this.bShowTimer = v1;
+        v1 = true;
+        this.bTimerRequiresVision = v1;
+        v6 = -1.0;
+        this.NextSpawnTime = v6;
+        v1 = false;
+        this.bHasLivingMinion = v1;
+        v1 = true;
+        this.CapsuleCollision.SetCapsuleHalfHeight(145.0, v1);
+        v1 = true;
+        this.CapsuleCollision.SetCapsuleRadius(50.0, v1);
+        v1 = true;
+        this.CapsuleCollision.SetCollisionProfileName(n"Trigger", v1);
+        v1 = true;
+        this.CapsuleCollision.SetNotifyRigidBodyCollision(v1);
+        v1 = true;
+        this.VisibilityReceiver.bVisibilityNotificationsEnabled = v1;
+        v1 = true;
+        this.VisibilityReceiver.bUsedOutsideOfReplication = v1;
+        v1 = false;
+        this.bSpawnAtAveragePlayerLevel = v1;
+        return;
+    }
+
+    void ~ABarracudaMinionSpawner()   // traits=0x22
+    {
+        this.Wave.~FMinionWave();
+        return;
+    }
+
+}
+

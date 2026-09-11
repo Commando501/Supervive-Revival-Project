@@ -1,0 +1,443 @@
+# Asset:         Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Shared/HeroComboBox/WBP_UI_ComboBox_Heroes.uasset
+# UFunction:     ExecuteUbergraph_WBP_UI_ComboBox_Heroes
+# FunctionFlags: FUNC_Final, FUNC_UbergraphFunction, FUNC_HasDefaults
+# Outer class:   WBP_UI_ComboBox_Heroes_C
+# ScriptBytecode entries: 49
+# ChildProperties: 15
+# --- Parameters / locals (FField chain) ---
+#   [0] FIntProperty  ?
+#   [1] FDelegateProperty  ?
+#   [2] FIntProperty  ?
+#   [3] FIntProperty  ?
+#   [4] FIntProperty  ?
+#   [5] FObjectProperty  ?
+#   [6] FObjectProperty  ?
+#   [7] FStrProperty  ?
+#   [8] FBoolProperty  ?
+#   [9] FArrayProperty  ?
+#   [10] FStructProperty  ?
+#   [11] FIntProperty  ?
+#   [12] FStrProperty  ?
+#   [13] FBoolProperty  ?
+#   [14] FObjectProperty  ?
+
+# --- ScriptBytecode tree ---
+[  0] EX_PushExecutionFlow
+  PushingAddress: 905
+  StatementIndex: 0
+[  1] EX_ComputedJump
+  CodeOffsetExpression:
+    EX_LocalVariable
+      Variable: EntryPoint
+      StatementIndex: 6
+  StatementIndex: 5
+[  2] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_InstanceVariable
+      Variable: bEnableAllHunters
+      StatementIndex: 16
+  StatementIndex: 15
+[  3] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_AddOption_ReturnValue
+      StatementIndex: 26
+  Assignment:
+    EX_LocalVirtualFunction
+      VirtualFunctionName: AddOption
+      Parameters: [1]
+        [  0] EX_StringConst
+          Value: hero:all
+          StatementIndex: 48
+      StatementIndex: 35
+  StatementIndex: 25
+[  4] EX_PopExecutionFlow
+  StatementIndex: 59
+[  5] EX_PushExecutionFlow
+  PushingAddress: 244
+  StatementIndex: 60
+[  6] EX_Context
+  ObjectExpression:
+    EX_ObjectConst
+      Value: Default__BPFL_LokiAssets_C
+      StatementIndex: 66
+  Offset: 27
+  RValuePointer: 0
+  ContextExpression:
+    EX_LocalVirtualFunction
+      VirtualFunctionName: Get Heroes Asset List Sorted
+      Parameters: [4]
+        [  0] EX_ByteConst
+          Value: 1
+          StatementIndex: 100
+        [  1] EX_False
+          StatementIndex: 102
+        [  2] EX_Self
+          StatementIndex: 103
+        [  3] EX_LocalVariable
+          Variable: CallFunc_Get_Heroes_Asset_List_Sorted_Hero_IDs
+          StatementIndex: 104
+      StatementIndex: 87
+  StatementIndex: 65
+[  7] EX_Context
+  ObjectExpression:
+    EX_ObjectConst
+      Value: Default__KismetArrayLibrary
+      StatementIndex: 115
+  Offset: 37
+  RValuePointer: 0
+  ContextExpression:
+    EX_FinalFunction
+      StackNode: Array_Get
+      Parameters: [3]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_Get_Heroes_Asset_List_Sorted_Hero_IDs
+          StatementIndex: 145
+        [  1] EX_LocalVariable
+          Variable: Temp_int_Array_Index_Variable
+          StatementIndex: 154
+        [  2] EX_LocalVariable
+          Variable: CallFunc_Array_Get_Item
+          StatementIndex: 163
+      StatementIndex: 136
+  StatementIndex: 114
+[  8] EX_Let
+  Property: CallFunc_Conv_PrimaryAssetIdToString_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Conv_PrimaryAssetIdToString_ReturnValue
+      StatementIndex: 182
+  Assignment:
+    EX_CallMath
+      StackNode: Conv_PrimaryAssetIdToString
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_Array_Get_Item
+          StatementIndex: 200
+      StatementIndex: 191
+  StatementIndex: 173
+[  9] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_AddOption_ReturnValue_1
+      StatementIndex: 211
+  Assignment:
+    EX_LocalVirtualFunction
+      VirtualFunctionName: AddOption
+      Parameters: [1]
+        [  0] EX_LocalVariable
+          Variable: CallFunc_Conv_PrimaryAssetIdToString_ReturnValue
+          StatementIndex: 233
+      StatementIndex: 220
+  StatementIndex: 210
+[ 10] EX_PopExecutionFlow
+  StatementIndex: 243
+[ 11] EX_Let
+  Property: CallFunc_Add_IntInt_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Add_IntInt_ReturnValue
+      StatementIndex: 253
+  Assignment:
+    EX_CallMath
+      StackNode: Add_IntInt
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: Temp_int_Loop_Counter_Variable
+          StatementIndex: 271
+        [  1] EX_IntConst
+          Value: 1
+          StatementIndex: 280
+      StatementIndex: 262
+  StatementIndex: 244
+[ 12] EX_Let
+  Property: Temp_int_Loop_Counter_Variable
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Loop_Counter_Variable
+      StatementIndex: 295
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_Add_IntInt_ReturnValue
+      StatementIndex: 304
+  StatementIndex: 286
+[ 13] EX_Context
+  ObjectExpression:
+    EX_ObjectConst
+      Value: Default__BPFL_LokiAssets_C
+      StatementIndex: 314
+  Offset: 27
+  RValuePointer: 0
+  ContextExpression:
+    EX_LocalVirtualFunction
+      VirtualFunctionName: Get Heroes Asset List Sorted
+      Parameters: [4]
+        [  0] EX_ByteConst
+          Value: 1
+          StatementIndex: 348
+        [  1] EX_False
+          StatementIndex: 350
+        [  2] EX_Self
+          StatementIndex: 351
+        [  3] EX_LocalVariable
+          Variable: CallFunc_Get_Heroes_Asset_List_Sorted_Hero_IDs
+          StatementIndex: 352
+      StatementIndex: 335
+  StatementIndex: 313
+[ 14] EX_Let
+  Property: CallFunc_Array_Length_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Array_Length_ReturnValue
+      StatementIndex: 371
+  Assignment:
+    EX_Context
+      ObjectExpression:
+        EX_ObjectConst
+          Value: Default__KismetArrayLibrary
+          StatementIndex: 381
+      Offset: 19
+      RValuePointer: CallFunc_Array_Length_ReturnValue
+      ContextExpression:
+        EX_FinalFunction
+          StackNode: Array_Length
+          Parameters: [1]
+            [  0] EX_LocalVariable
+              Variable: CallFunc_Get_Heroes_Asset_List_Sorted_Hero_IDs
+              StatementIndex: 411
+          StatementIndex: 402
+      StatementIndex: 380
+  StatementIndex: 362
+[ 15] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_Less_IntInt_ReturnValue
+      StatementIndex: 422
+  Assignment:
+    EX_CallMath
+      StackNode: Less_IntInt
+      Parameters: [2]
+        [  0] EX_LocalVariable
+          Variable: Temp_int_Loop_Counter_Variable
+          StatementIndex: 440
+        [  1] EX_LocalVariable
+          Variable: CallFunc_Array_Length_ReturnValue
+          StatementIndex: 449
+      StatementIndex: 431
+  StatementIndex: 421
+[ 16] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: CallFunc_Less_IntInt_ReturnValue
+      StatementIndex: 460
+  StatementIndex: 459
+[ 17] EX_Let
+  Property: Temp_int_Array_Index_Variable
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Array_Index_Variable
+      StatementIndex: 478
+  Assignment:
+    EX_LocalVariable
+      Variable: Temp_int_Loop_Counter_Variable
+      StatementIndex: 487
+  StatementIndex: 469
+[ 18] EX_Jump
+  CodeOffset: 60
+  StatementIndex: 496
+[ 19] EX_Let
+  Property: Temp_int_Array_Index_Variable
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Array_Index_Variable
+      StatementIndex: 510
+  Assignment:
+    EX_IntConst
+      Value: 0
+      StatementIndex: 519
+  StatementIndex: 501
+[ 20] EX_Jump
+  CodeOffset: 313
+  StatementIndex: 524
+[ 21] EX_Let
+  Property: Temp_int_Loop_Counter_Variable
+  Variable:
+    EX_LocalVariable
+      Variable: Temp_int_Loop_Counter_Variable
+      StatementIndex: 538
+  Assignment:
+    EX_IntConst
+      Value: 0
+      StatementIndex: 547
+  StatementIndex: 529
+[ 22] EX_Jump
+  CodeOffset: 501
+  StatementIndex: 552
+[ 23] EX_PushExecutionFlow
+  PushingAddress: 572
+  StatementIndex: 557
+[ 24] EX_PushExecutionFlow
+  PushingAddress: 529
+  StatementIndex: 562
+[ 25] EX_Jump
+  CodeOffset: 15
+  StatementIndex: 567
+[ 26] EX_LetBool
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_IsEmpty_ReturnValue
+      StatementIndex: 573
+  Assignment:
+    EX_CallMath
+      StackNode: IsEmpty
+      Parameters: [1]
+        [  0] EX_InstanceVariable
+          Variable: SelectedItemKey
+          StatementIndex: 591
+      StatementIndex: 582
+  StatementIndex: 572
+[ 27] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_LocalVariable
+      Variable: CallFunc_IsEmpty_ReturnValue
+      StatementIndex: 602
+  StatementIndex: 601
+[ 28] EX_PopExecutionFlowIfNot
+  BooleanExpression:
+    EX_InstanceVariable
+      Variable: bEnableAllHunters
+      StatementIndex: 612
+  StatementIndex: 611
+[ 29] EX_Let
+  Property: CallFunc_MakeLiteralString_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_MakeLiteralString_ReturnValue
+      StatementIndex: 630
+  Assignment:
+    EX_CallMath
+      StackNode: MakeLiteralString
+      Parameters: [1]
+        [  0] EX_StringConst
+          Value: hero:all
+          StatementIndex: 648
+      StatementIndex: 639
+  StatementIndex: 621
+[ 30] EX_LocalVirtualFunction
+  VirtualFunctionName: SelectOption
+  Parameters: [1]
+    [  0] EX_LocalVariable
+      Variable: CallFunc_MakeLiteralString_ReturnValue
+      StatementIndex: 672
+  StatementIndex: 659
+[ 31] EX_Let
+  Property: CallFunc_MakeLiteralString_ReturnValue
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_MakeLiteralString_ReturnValue
+      StatementIndex: 691
+  Assignment:
+    EX_CallMath
+      StackNode: MakeLiteralString
+      Parameters: [1]
+        [  0] EX_StringConst
+          Value: hero:all
+          StatementIndex: 709
+      StatementIndex: 700
+  StatementIndex: 682
+[ 32] EX_CallMulticastDelegate
+  StackNode: OnOptionSelected__DelegateSignature
+  Delegate:
+    EX_InstanceVariable
+      Variable: OnOptionSelected
+      StatementIndex: 729
+  Parameters: [2]
+    [  0] EX_NoObject
+      StatementIndex: 738
+    [  1] EX_LocalVariable
+      Variable: CallFunc_MakeLiteralString_ReturnValue
+      StatementIndex: 739
+  StatementIndex: 720
+[ 33] EX_PopExecutionFlow
+  StatementIndex: 749
+[ 34] EX_LocalVirtualFunction
+  VirtualFunctionName: ClearOptions
+  Parameters: [0]
+  StatementIndex: 750
+[ 35] EX_Jump
+  CodeOffset: 557
+  StatementIndex: 764
+[ 36] EX_Jump
+  CodeOffset: 750
+  StatementIndex: 769
+[ 37] EX_LocalVirtualFunction
+  VirtualFunctionName: On Catalog Updated
+  Parameters: [0]
+  StatementIndex: 774
+[ 38] EX_PopExecutionFlow
+  StatementIndex: 788
+[ 39] EX_BindDelegate
+  FunctionName: On Catalog Updated
+  Delegate:
+    EX_LocalVariable
+      Variable: K2Node_CreateDelegate_OutputDelegate
+      StatementIndex: 802
+  ObjectTerm:
+    EX_Self
+      StatementIndex: 811
+  StatementIndex: 789
+[ 40] EX_LetObj
+  Variable:
+    EX_LocalVariable
+      Variable: CallFunc_GetCatalogManager_ReturnValue
+      StatementIndex: 813
+  Assignment:
+    EX_CallMath
+      StackNode: GetCatalogManager
+      Parameters: [1]
+        [  0] EX_Self
+          StatementIndex: 831
+      StatementIndex: 822
+  StatementIndex: 812
+[ 41] EX_AddMulticastDelegate
+  Delegate:
+    EX_Context
+      ObjectExpression:
+        EX_LocalVariable
+          Variable: CallFunc_GetCatalogManager_ReturnValue
+          StatementIndex: 835
+      Offset: 9
+      RValuePointer: OnUpdatedPostManifest
+      ContextExpression:
+        EX_InstanceVariable
+          Variable: OnUpdatedPostManifest
+          StatementIndex: 856
+      StatementIndex: 834
+  DelegateToAdd:
+    EX_LocalVariable
+      Variable: K2Node_CreateDelegate_OutputDelegate
+      StatementIndex: 865
+  StatementIndex: 833
+[ 42] EX_PopExecutionFlow
+  StatementIndex: 874
+[ 43] EX_FinalFunction
+  StackNode: OnInitialized
+  Parameters: [0]
+  StatementIndex: 875
+[ 44] EX_Jump
+  CodeOffset: 789
+  StatementIndex: 885
+[ 45] EX_FinalFunction
+  StackNode: Construct
+  Parameters: [0]
+  StatementIndex: 890
+[ 46] EX_Jump
+  CodeOffset: 774
+  StatementIndex: 900
+[ 47] EX_Return
+  ReturnExpression:
+    EX_Nothing
+      StatementIndex: 906
+  StatementIndex: 905
+[ 48] EX_EndOfScript
+  StatementIndex: 907

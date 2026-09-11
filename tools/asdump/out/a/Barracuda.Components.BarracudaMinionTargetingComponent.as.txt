@@ -1,0 +1,502 @@
+==============================================================================
+MODULE   Barracuda.Components.BarracudaMinionTargetingComponent
+SOURCE   Barracuda/Components/BarracudaMinionTargetingComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaMinionTargetingComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaMinionTargetingComponent@ UBarracudaMinionTargetingComponent()
+// 4 instr, 28 B bytecode, id=0x9A9F224C, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionTargetingComponent v2;
+
+    v2 = UBarracudaMinionTargetingComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84092 q:0x26e6e874300; new UBarracudaMinionTargetingComponent   ctor=UBarracudaMinionTargetingComponent::UBarracudaMinionTargetingComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x197CAC38, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaMinionTargetingComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b7958         ; __StaticType_UBarracudaMinionTargetingComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UBarracudaMinionTargetingComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x0C1FC867, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionTargetingComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaMinionTargetingComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972598            ; UBarracudaMinionTargetingComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7958         ; __StaticType_UBarracudaMinionTargetingComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaMinionTargetingComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x5C0E6CD1, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionTargetingComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaMinionTargetingComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972598            ; UBarracudaMinionTargetingComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7958         ; __StaticType_UBarracudaMinionTargetingComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaMinionTargetingComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x46C53B76, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionTargetingComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaMinionTargetingComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972598            ; UBarracudaMinionTargetingComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7958         ; __StaticType_UBarracudaMinionTargetingComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS(Abstract)
+class UBarracudaMinionTargetingComponent : ULokiMinionTargetingComponent
+// base /Script/Loki.LokiMinionTargetingComponent  ->  ../../../Loki/Source/Loki/Character/Minion/LokiMinionTargetingComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) ALokiCharacter@ HighPriorityEnemyCharacter;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) AActor@ CurrentTargetEnemy;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 ReleaseHighPriorityEnemyTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) float64 HighPriorityEnemyMemory;
+
+}
+
+------------------------------------------------------------------------------
+UBarracudaMinionTargetingComponent() const
+// 9 instr, 68 B bytecode, id=0xB6FC9C24, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = -1;
+    this.ReleaseHighPriorityEnemyTime = -1;
+    v2 = 5;
+    this.HighPriorityEnemyMemory = 5;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV8          wW0:2 q:0xbff0000000000000
+    //     3  LoadThisR      W0:224 d:134230774      ; UBarracudaMinionTargetingComponent::ReleaseHighPriorityEnemyTime  (+224)
+    //     5  WRTV8          rW0:2
+    //     6  SetV8          wW0:2 q:0x4014000000000000
+    //     9  LoadThisR      W0:232 d:134230774      ; UBarracudaMinionTargetingComponent::HighPriorityEnemyMemory  (+232)
+    //    11  WRTV8          rW0:2
+    //    12  PshVPtr        rW0:0
+    //    13  FinConstruct   q:0x26e6e874300         ; UBarracudaMinionTargetingComponent
+    //    16  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void NotifyEnemyHeroHitAlliedHero(ALokiCharacter@ EnemyCharacter)
+// 42 instr, 256 B bytecode, id=0x55A4E543, varspace=16
+------------------------------------------------------------------------------
+{
+    auto v5;
+    ALokiCharacter v8;
+    auto v11;
+    auto v16;
+
+    if (this.IsActorInEnemyList(EnemyCharacter)) {
+        if (this.HighPriorityEnemyCharacter != null) {
+            v8 = EnemyCharacter;
+            v11 = EnemyCharacter == this.HighPriorityEnemyCharacter;
+            v5 = v11;
+        } else {
+            v5 = true;
+        }
+        v11 = v5;
+    } else {
+        v11 = 0;
+    }
+    if (v11) {
+        v16 = float64(Gameplay::GetServerTime(__WorldContext));
+        v16 = v16 + this.HighPriorityEnemyMemory;
+        this.ReleaseHighPriorityEnemyTime = v16;
+        this.HighPriorityEnemyCharacter = EnemyCharacter;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALLINTF       d:84091                 ; bool UBarracudaMinionTargetingComponent::IsActorInEnemyList(AActor@) const
+    //     4  JLowNZ         ->10
+    //     6  SetV4          wW0:11 d:0
+    //     8  JMP            ->37
+    //    10  PshVPtr        rW0:0
+    //    11  ADDSi          W0:208 d:134230774      ; UBarracudaMinionTargetingComponent::HighPriorityEnemyCharacter  (+208)
+    //    13  RDSPtr
+    //    14  RefCpyV        wW0:4
+    //    15  CmpPtrNull     rW0:4
+    //    16  JNZ            ->22
+    //    18  SetV1          wW0:5 d:1
+    //    20  JMP            ->35
+    //    22  PshVPtr        rW0:-2
+    //    23  RefCpyV        wW0:8
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:208 d:134230774      ; UBarracudaMinionTargetingComponent::HighPriorityEnemyCharacter  (+208)
+    //    27  RDSPtr
+    //    28  RefCpyV        wW0:10
+    //    29  CmpPtr         rW0:8 rW1:10
+    //    31  TZ
+    //    32  CpyRtoV4       wW0:11
+    //    33  CpyVtoV4       wW0:5 rW1:11
+    //    35  CpyVtoV4       wW0:11 rW1:5
+    //    37  CpyVtoR1       rW0:11
+    //    38  JLowZ          ->63
+    //    40  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    43  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    46  CpyRtoV4       wW0:12
+    //    47  fTOd           wW0:16 rW1:12
+    //    49  LoadThisR      W0:232 d:134230774      ; UBarracudaMinionTargetingComponent::HighPriorityEnemyMemory  (+232)
+    //    51  RDR8           wW0:14
+    //    52  ADDd           wW0:16 rW1:16 rW2:14
+    //    54  LoadThisR      W0:224 d:134230774      ; UBarracudaMinionTargetingComponent::ReleaseHighPriorityEnemyTime  (+224)
+    //    56  WRTV8          rW0:16
+    //    57  PshVPtr        rW0:-2
+    //    58  PshVPtr        rW0:0
+    //    59  ADDSi          W0:208 d:134230774      ; UBarracudaMinionTargetingComponent::HighPriorityEnemyCharacter  (+208)
+    //    61  REFCPY
+    //    62  PopPtr
+    //    63  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: UpdateTargetEnemy
+AActor@ UpdateTargetEnemy_Implementation()
+// 8 instr, 40 B bytecode, id=0x2F7EFC16, varspace=2
+------------------------------------------------------------------------------
+{
+    AActor v2;
+
+    this.UpdateCurrentTargetEnemy();
+    v2 = this.CurrentTargetEnemy;
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84088                 ; void UBarracudaMinionTargetingComponent::UpdateCurrentTargetEnemy()
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:216 d:134230774      ; UBarracudaMinionTargetingComponent::CurrentTargetEnemy  (+216)
+    //     6  RDSPtr
+    //     7  RefCpyV        wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:2
+
+------------------------------------------------------------------------------
+void UpdateCurrentTargetEnemy()
+// 6 instr, 44 B bytecode, id=0x19D9D7F7, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_Execute(this, __STATIC_NAME(99));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshC4          d:99
+    //     2  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     5  PshRPtr
+    //     6  PshVPtr        rW0:0
+    //     7  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    10  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent, NoOp)
+// UFunction name: UpdateCurrentTargetEnemy
+void UpdateCurrentTargetEnemy_Implementation()
+// 1 instr, 4 B bytecode, id=0xD54270DB, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  RET            W0:2
+
+------------------------------------------------------------------------------
+void DrawTargetingDebug()
+// 60 instr, 388 B bytecode, id=0xA9F0FEE1, varspace=48
+------------------------------------------------------------------------------
+{
+    ALokiMinionCharacter v2;
+    AActor v4;
+    ALokiMinionCharacter v6;
+    FVector v14;
+    FVector v20;
+    FVector v26;
+    FVector v32;
+    FVector v38;
+    FVector v48;
+
+    v4 = this.GetOwner();
+    if (v4 == null) {
+        v6 = null;
+    } else {
+        v6 = cast<ALokiMinionCharacter>(v4);
+    }
+    v2 = v6;
+    if (v6 != null) {
+        v4 = this.CurrentTargetEnemy;
+        if (v4 != null) {
+            v20 = this.CurrentTargetEnemy.GetActorLocation();
+            v4 = this.GetOwner();
+            v14 = v4.GetActorLocation();
+            v32 = v26.GetClampedToMaxSize2D(float64(v2.AggroRange));
+            v4 = this.GetOwner();
+            v38 = v4.GetActorLocation();
+            LokiGameplay::ServerDrawDebugLine(__WorldContext, v38, v48, FColor::Red, 0.1);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857087            ; ALokiMinionCharacter@
+    //    10  PSF            rW0:6
+    //    11  PshVPtr        rW0:4
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:6
+    //    18  PshVPtr        rW0:6
+    //    19  RefCpyV        wW0:2
+    //    20  CmpPtrNull     rW0:2
+    //    21  JZ             ->96
+    //    23  PshVPtr        rW0:0
+    //    24  ADDSi          W0:216 d:134230774      ; UBarracudaMinionTargetingComponent::CurrentTargetEnemy  (+216)
+    //    26  RDSPtr
+    //    27  RefCpyV        wW0:4
+    //    28  CmpPtrNull     rW0:4
+    //    29  JZ             ->96
+    //    31  PSF            rW0:20
+    //    32  PshVPtr        rW0:0
+    //    33  ADDSi          W0:216 d:134230774      ; UBarracudaMinionTargetingComponent::CurrentTargetEnemy  (+216)
+    //    35  RDSPtr
+    //    36  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    39  PSF            rW0:14
+    //    40  PshVPtr        rW0:0
+    //    41  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    44  STOREOBJ       wW0:4
+    //    45  PshVPtr        rW0:4
+    //    46  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    49  PSF            rW0:14
+    //    50  PSF            rW0:26
+    //    51  PSF            rW0:20
+    //    52  CALLSYS        q:0x26e69d00cc0         ; FVector FVector::opSub(const FVector&) const
+    //    55  LoadRObjR      rW0:2 W1:6592 DW2:67115263; ALokiMinionCharacter::AggroRange  (+6592)
+    //    58  RDR4           wW0:39
+    //    59  fTOd           wW0:42 rW1:39
+    //    61  PshV8          rW0:42
+    //    62  PSF            rW0:32
+    //    63  PSF            rW0:26
+    //    64  CALLSYS        q:0x26e69d09e00         ; FVector FVector::GetClampedToMaxSize2D(float64) const
+    //    67  PSF            rW0:32
+    //    68  PSF            rW0:48
+    //    69  PSF            rW0:14
+    //    70  CALLSYS        q:0x26e69d00e80         ; FVector FVector::opAdd(const FVector&) const
+    //    73  PshC4          d:1036831949
+    //    75  PshGPtr        q:0x26e7065a748         ; FColor::Red
+    //    78  PSF            rW0:48
+    //    79  PSF            rW0:38
+    //    80  PshVPtr        rW0:0
+    //    81  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //    84  STOREOBJ       wW0:4
+    //    85  PshVPtr        rW0:4
+    //    86  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    89  PSF            rW0:38
+    //    90  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    93  CALLSYS        q:0x26e7a258200         ; void LokiGameplay::ServerDrawDebugLine(UObject@, const FVector&, const FVector&, FColor, float)
+    //    96  RET            W0:2
+
+------------------------------------------------------------------------------
+bool IsActorInEnemyList(AActor@ TargetActor)
+// 51 instr, 324 B bytecode, id=0xF8A9AFE7, varspace=34
+------------------------------------------------------------------------------
+{
+    ALokiMinionCharacter v2;
+    AActor v4;
+    ALokiMinionCharacter v6;
+    auto v7;
+    TArray<FMinionEnemyListEntry> v12;
+    TArrayIterator<FMinionEnemyListEntry> v22;
+    AActor v32;
+
+    v4 = this.GetOwner();
+    if (v4 == null) {
+        v6 = null;
+    } else {
+        v6 = cast<ALokiMinionCharacter>(v4);
+    }
+    v2 = v6;
+    if (v6 != null) {
+        v12 = v2.GetEnemyList();
+        v22 = v12.Iterator();
+        while (true) {
+            v7 = v22.CanProceed;
+            if (!v7) break;
+            v32 = v22.Proceed().Actor;
+            if (v32 == TargetActor) {
+                v7 = true;
+                goto L80;
+            }
+        }
+        v7 = false;
+    } else {
+        v7 = false;
+    }
+    L80:
+    return v7;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857087            ; ALokiMinionCharacter@
+    //    10  PSF            rW0:6
+    //    11  PshVPtr        rW0:4
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:6
+    //    18  PshVPtr        rW0:6
+    //    19  RefCpyV        wW0:2
+    //    20  CmpPtrNull     rW0:2
+    //    21  JNZ            ->28
+    //    23  SetV1          wW0:7 d:0
+    //    25  CpyVtoR4       rW0:7
+    //    26  JMP            ->80
+    //    28  PSF            rW0:12
+    //    29  PshVPtr        rW0:2
+    //    30  CALLSYS        q:0x26e7a313dc0         ; TArray<FMinionEnemyListEntry> ALokiMinionCharacter::GetEnemyList() const
+    //    33  PSF            rW0:22
+    //    34  PSF            rW0:12
+    //    35  CALLSYS        q:0x26e6ee87400         ; TArrayIterator<FMinionEnemyListEntry> TArray<FMinionEnemyListEntry>::Iterator()
+    //    38  JMP            ->66
+    //    40  SUSPEND
+    //    41  PSF            rW0:22
+    //    42  CALLSYS        q:0x26e6ee8e400         ; FMinionEnemyListEntry& TArrayIterator<FMinionEnemyListEntry>::Proceed()
+    //    45  CpyRtoV8       wW0:30
+    //    46  PshVPtr        rW0:30
+    //    47  ADDSi          W0:0 d:67121158         ; FMinionEnemyListEntry::Actor  (+0)
+    //    49  RDSPtr
+    //    50  RefCpyV        wW0:32
+    //    51  PshVPtr        rW0:-2
+    //    52  RefCpyV        wW0:34
+    //    53  CmpPtr         rW0:32 rW1:34
+    //    55  JNZ            ->66
+    //    57  SetV1          wW0:7 d:1
+    //    59  PSF            rW0:12
+    //    60  CALLSYS        q:0x26e7a313c00         ; void TArray<FMinionEnemyListEntry>::$beh2()
+    //    63  CpyVtoR4       rW0:7
+    //    64  JMP            ->80
+    //    66  LoadVObjR      rW0:22 W1:16 DW2:268448503; TArrayIterator::CanProceed  (+16)
+    //    69  RDR1           wW0:7
+    //    70  CpyVtoR1       rW0:7
+    //    71  JLowNZ         ->40
+    //    73  SetV1          wW0:7 d:0
+    //    75  PSF            rW0:12
+    //    76  CALLSYS        q:0x26e7a313c00         ; void TArray<FMinionEnemyListEntry>::$beh2()
+    //    79  CpyVtoR4       rW0:7
+    //    80  RET            W0:4
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 10 instr, 56 B bytecode, id=0x12231E5B, varspace=1
+------------------------------------------------------------------------------
+{
+    this.SetbExcludeFromClient(true);
+    this.HighPriorityEnemyCharacter = null;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a62bbc0         ; void UActorComponent::SetbExcludeFromClient(bool)
+    //     7  PshNull
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:208 d:134230774      ; UBarracudaMinionTargetingComponent::HighPriorityEnemyCharacter  (+208)
+    //    11  REFCPY
+    //    12  PopPtr
+    //    13  RET            W0:2
+

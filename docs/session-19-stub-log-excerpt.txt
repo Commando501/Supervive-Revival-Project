@@ -1,0 +1,24 @@
+26:LogCsvProfiler: Display: Metadata set : commandline="" "G:\git\Supervive Revival Project\unreal-stub\Loki.uproject" /Engine/Maps/Entry?listen -game -server -log -Port=7777 -nullrhi -NoSplash -Unattended -LogCmds="LogHandshake Verbose, LogNet Verbose, LogLokiNet Verbose, LogLokiStateless Verbose, LogLokiIpConnection Verbose, LogLokiGameInstance Verbose, LogLokiStub Verbose" -abslog=C:\Users\eastr\AppData\Local\Temp\claude\G--git-Supervive-Revival-Project\5b4acdf2-d9b7-4354-9798-58d8015eafa3\scratchpad\stub-s19c.log""
+229:LogHAL: Log category LogLokiGameInstance verbosity has been raised to Verbose.
+272:LogInit: Command Line: /Engine/Maps/Entry?listen -game -server -log -Port=7777 -nullrhi -NoSplash -Unattended -LogCmds="LogHandshake Verbose, LogNet Verbose, LogLokiNet Verbose, LogLokiStateless Verbose, LogLokiIpConnection Verbose, LogLokiGameInstance Verbose, LogLokiStub Verbose" -abslog=C:\Users\eastr\AppData\Local\Temp\claude\G--git-Supervive-Revival-Project\5b4acdf2-d9b7-4354-9798-58d8015eafa3\scratchpad\stub-s19c.log
+689:[2026.07.01-01.54.31:256][  0]LogLokiStub: Display: Loki stub: NetCL overrides bound. Local checksum forced to 3716198887; IsNetworkCompatible accepts any remote.
+705:[2026.07.01-01.54.31:871][  0]LogLokiStub: Display: Renaming game world package: /Temp/Untitled_0 -> /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent
+706:[2026.07.01-01.54.31:871][  0]LogLokiStub: Display: Renaming world object: Untitled -> LVL_LobbyV2_Persistent
+723:[2026.07.01-01.54.31:921][  0]LogLokiStub: Display: Renaming game world package: /Engine/Maps/Entry -> /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent
+724:[2026.07.01-01.54.31:921][  0]LogLokiStub: Display: Renaming world object: Entry -> LVL_LobbyV2_Persistent
+798:[2026.07.01-01.54.31:945][  0]LogWorld: Bringing World /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent up for play (max tick rate 30) at 2026.06.30-20.54.31
+812:[2026.07.01-01.54.59:320][822]LogLokiStub: Verbose: IsNetworkCompatible(local=3716198887, remote=3716198887) -> true (override)
+818:[2026.07.01-01.54.59:355][823]LogLokiStub: Verbose: IsNetworkCompatible(local=3716198887, remote=3716198887) -> true (override)
+820:[2026.07.01-01.54.59:355][823]LogNet: Server accepting post-challenge connection from: 127.0.0.1:54720
+824:[2026.07.01-01.54.59:356][823]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from Invalid to LoggingIn
+830:[2026.07.01-01.54.59:387][824]LogNet: NotifyAcceptingChannel Control 0 server World /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent: Accepted
+834:[2026.07.01-01.54.59:388][824]LogLokiStub: Verbose: IsNetworkCompatible(local=3716198887, remote=3716198887) -> true (override)
+838:[2026.07.01-01.54.59:420][825]LogNet: Login request: ?Name=9b9d2c887e2524f918e383a895f2f1c2 userId: NULL:9b9d2c887e2524f918e383a895f2f1c2 platform: NULL
+839:[2026.07.01-01.54.59:421][825]LogLokiGameInstance: Display: ModifyClientTravelLevelURL: /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent -> /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent
+840:[2026.07.01-01.54.59:421][825]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from LoggingIn to Welcomed
+847:[2026.07.01-01.55.00:417][855]LogNet: Join request: /Engine/Maps/Entry?Name=9b9d2c887e2524f918e383a895f2f1c2?SplitscreenCount=1
+848:[2026.07.01-01.55.00:420][855]LogNet: Join succeeded: 9b9d2c887e2524f918e3
+849:[2026.07.01-01.55.00:420][855]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from Welcomed to ReceivedJoin
+853:[2026.07.01-01.55.00:749][865]LogNet: Server connection received: ActorChannelFailure 3 [UChannel] ChIndex: 0, Closing: 0 [UNetConnection] RemoteAddr: 127.0.0.1:54720, Name: LokiIpConnection_0, Driver: Name:GameNetDriver Def:GameNetDriver LokiNetDriver_0, IsServer: YES, PC: PlayerController_0, Owner: PlayerController_0, UniqueId: NULL:9b9d2c887e2524f918e383a895f2f1c2
+854:[2026.07.01-01.55.00:751][865]LogNet: Actor channel failed: [UActorChannel] Actor: PlayerController /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0, Role: 3, RemoteRole: 2 [UChannel] ChIndex: 3, Closing: 0 [UNetConnection] RemoteAddr: 127.0.0.1:54720, Name: LokiIpConnection_0, Driver: Name:GameNetDriver Def:GameNetDriver LokiNetDriver_0, IsServer: YES, PC: PlayerController_0, Owner: PlayerController_0, UniqueId: NULL:9b9d2c887e2524f918e383a895f2f1c2
+860:[2026.07.01-01.55.00:784][866]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from ReceivedJoin to CleanedUp

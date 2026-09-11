@@ -1,0 +1,78 @@
+﻿[auto] ================ ATTEMPT 1 / 5 ================
+[crashdump] no pending crash reports to archive (and no crashpad handoff in Loki.log).
+[auto] launching...
+Building community backend...
+Starting community backend (:8080 HTTP + :443 HTTPS)...
+Server up; cert chain generated.
+Backend serving HTTP (probe http://127.0.0.1:8080/revival/missions/progress -> 200).
+Appending Root CA to game cacert.pem...
+Hosts entries added:
+  127.0.0.1  accounts.projectloki.theorycraftgames.com
+  127.0.0.1  client-config-jx-prod.prodcluster.awsinfra.theorycraftgames.com
+bVerifyPeer override already present.
+  (Engine.ini set read-only)
+[crashdump] no pending crash reports to archive (and no crashpad handoff in Loki.log).
+Crash-capture armed: dumps/crash-20260823-234129 (log: docs/crashwatch.out.log)
+  idle until the game crashes; then suspends it and dumps before it exits.
+Launching SUPERVIVE (PostAuth -> http://localhost:8080)...
+[auto] PID=25800 BASE=0x7FF704F00000 started=08/23/2026 23:41:29
+[auto] SETTLE PASSED up=127s ui=2 lob=14
+[auto] joinQueue -> 200
+[auto] ARMED MatchID=match-9b9d2c887e2524f918e383a895f2f1c2
+[auto] staging (gft -> fo -> sp)...
+[stage] pre-flight: is ags serving an armed match?
+[stage]   /core-game/players -> MatchID='match-9b9d2c887e2524f918e383a895f2f1c2' Version=1787546624
+[stage] waiting for game process...
+[stage] game process -> OK (0s)
+[stage] game PID=25800 started=08/23/2026 23:41:29
+[stage] parked match model (uiready + match fetched + uptime) -> OK (0s)
+[stage] uptime=136s
+[stage] >>> inject gft
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\gft_ready_fix.dll into PID 25800
+[stage]       remote image base: 0x1A312E20000 (size 0x25000)
+[stage]       relocations applied (delta 0x1A192E20000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x17D entries at 0x1A312E42000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x1A312E20000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     marker -> fk24-stage-s141-a1-1-gft.txt
+[stage] force-open DLL: tutorial_launch_fo.dll
+[stage]     spacing: 5s since last inject, waiting 15s more (min gap 20s)
+[stage] WARNING - STALE DEPLOYED SHIM: tutorial_launch_fo.dll
+           deployed .text fa184b20934cc4b0
+           build\   .text e364680f864d19e9
+           build.ps1 wrote a newer binary than the one about to be injected.
+[stage]            (-AllowStale given; injecting the deployed copy anyway)
+[stage] >>> inject fo
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\tutorial_launch_fo.dll into PID 25800
+[stage]       remote image base: 0x1A2C4AE0000 (size 0x2C000)
+[stage]       relocations applied (delta 0x1A144AE0000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x196 entries at 0x1A2C4B09000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x1A2C4AE0000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     marker -> fk24-stage-s141-a1-2-fo.txt
+[stage] LVL_Tutorial load complete -> OK (9s)
+[stage]     spacing: 19s since last inject, waiting 1s more (min gap 20s)
+[stage] WARNING - STALE DEPLOYED SHIM: tutorial_launch_sp.dll
+           deployed .text 4285c0dd22ae9976
+           build\   .text ca41af46d5770b4b
+           build.ps1 wrote a newer binary than the one about to be injected.
+[stage]            (-AllowStale given; injecting the deployed copy anyway)
+[stage] >>> inject sp
+[stage]     Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\tutorial_launch_sp.dll into PID 25800
+[stage]       remote image base: 0x1A38A800000 (size 0x36000)
+[stage]       relocations applied (delta 0x1A20A800000)
+[stage]       import: KERNEL32.dll
+[stage]       exception table: 0x1AA entries at 0x1A38A833000 (will RtlAddFunctionTable)
+[stage]       DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+[stage]       verify: MZ at 0x1A38A800000 ✓
+[stage]     OK: manual-map complete (DllMain returned).
+[stage]     marker -> fk24-stage-s141-a1-3-sp.txt
+[stage] SkipProbe: world staged, nothing further injected
+[stage] stage complete
+[auto] [SP] done step=4 observed after 12s
+[auto] ***** STAGED OK on attempt 1 *****
+[auto] PID=25800  BASE=0x7FF704F00000

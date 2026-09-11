@@ -1,0 +1,152 @@
+﻿pid=24252 base=0x7FF7BFF50000
+FUObjectArray: objects=0x2696B1199A0 numElements=207719
+
+################################################################################################
+PASS 1/1   live=200397 free=7322   sweep took 0.22 s   current reachability bit = bit1
+################################################################################################
+
+CONTROLS (each can fail; a failure voids negative conclusions)
+  C1 live-object count in a plausible range : PASS    (live=200397)
+  C2 a dominant low reachability bit exists : PASS    (bit1 at 80.4%)
+  C3 UClass objects carry bit 30            : PASS    (3894/3894 = 100.0% of sampled UClasses)
+  C4 FName resolution works                 : PASS    (40/40 names resolved)
+
+================================================================================================
+1. GLOBAL CONTINGENCY  (full resolution -- S110 sampled 1-in-8 and got 4915 / 17237)
+================================================================================================
+  bit30 SET   :  39307 objects,     32 (  0.1%) carry the current reachability value
+  bit30 CLEAR : 161090 objects, 161070 (100.0%) carry it
+
+================================================================================================
+2. THE NEW MEASUREMENT -- INDEX DISTRIBUTION OF bit30
+================================================================================================
+  bit30 objects   : n=39307   index min=0       max=186681   median=19653
+  other objects  : n=161090  index min=32257   max=207718   median=125556
+
+  index bucket (width 5193)          live   bit30   %rooted
+    [       0 ..     5193)     5193   5193   100.00%
+    [    5193 ..    10386)     5193   5193   100.00%
+    [   10386 ..    15579)     5193   5193   100.00%
+    [   15579 ..    20772)     5193   5193   100.00%
+    [   20772 ..    25965)     5193   5193   100.00%
+    [   25965 ..    31158)     5193   5193   100.00%
+    [   31158 ..    36351)     5193   5189    99.92%
+    [   36351 ..    41544)     2944   2928    99.46%
+    [   41544 ..    46737)     1737     15     0.86%
+    [   46737 ..    51930)     5193      0     0.00%
+    [   51930 ..    57123)     5193      8     0.15%
+    [   57123 ..    62316)     5193      1     0.02%
+    [   62316 ..    67509)     5193      0     0.00%
+    [   67509 ..    72702)     5193      0     0.00%
+    [   72702 ..    77895)     5193      0     0.00%
+    [   77895 ..    83088)     5193      0     0.00%
+    [   83088 ..    88281)     5193      1     0.02%
+    [   88281 ..    93474)     5193      0     0.00%
+    [   93474 ..    98667)     5193      6     0.12%
+    [   98667 ..   103860)     5193      0     0.00%
+    [  103860 ..   109053)     5193      0     0.00%
+    [  109053 ..   114246)     5193      0     0.00%
+    [  114246 ..   119439)     5193      0     0.00%
+    [  119439 ..   124632)     5193      0     0.00%
+    [  124632 ..   129825)     5193      0     0.00%
+    [  129825 ..   135018)     5193      0     0.00%
+    [  135018 ..   140211)     5193      0     0.00%
+    [  140211 ..   145404)     5193      0     0.00%
+    [  145404 ..   150597)     5193      0     0.00%
+    [  150597 ..   155790)     5193      0     0.00%
+    [  155790 ..   160983)     5193      0     0.00%
+    [  160983 ..   166176)     5193      0     0.00%
+    [  166176 ..   171369)     5193      0     0.00%
+    [  171369 ..   176562)     5185      0     0.00%
+    [  176562 ..   181755)     5193      0     0.00%
+    [  181755 ..   186948)     5193      1     0.02%
+    [  186948 ..   192141)     5193      0     0.00%
+    [  192141 ..   197334)     3821      0     0.00%
+    [  197334 ..   202527)     5193      0     0.00%
+    [  202527 ..   207720)     4955      0     0.00%
+
+================================================================================================
+3. THE DISCRIMINATOR -- do bit30 objects exist at HIGH index, and are they marked?
+================================================================================================
+  last index bucket where bit30 density > 50%  -> boundary estimate = 41544
+  bit30 objects at index >= 41544 : 32
+      carrying the CURRENT reachability value : 32 (100.0%)
+      carrying a STALE  reachability value    : 0
+      carrying NO reachability value at all   : 0
+
+  sample of high-index bit30 objects (index, flags, class, name):
+      186681   40000002  ImageCache                         ImageCache
+      94517    40000002  PCGGenSourcePlayer                 PCGGenSourcePlayer
+      94472    40000002  CrowdManager                       CrowdManager
+      93866    40000002  BP_MainMenu_SceneRotator_C         BP_MainMenu_SceneRotator_C
+      93865    40000002  BP_MainMenu_SceneRotator_C         BP_MainMenu_SceneRotator_C
+      93843    40000002  World                              LVL_LobbyV2_Persistent
+      93740    40000002  BP_MainMenu_SceneRotator_C         BP_MainMenu_SceneRotator_C
+      86592    40000002  BP_MainMenu_SceneRotator_C         BP_MainMenu_SceneRotator_C
+      61508    40000002  LokiInternalAbilitySystemGlobals   LokiInternalAbilitySystemGlobals
+      57092    40000002  Texture2D                          STBlueNoise_vec2_128x128x64
+      57090    40000002  Texture2D                          STBlueNoise_scalar_128x128x64
+      57088    40000002  Canvas                             DebugCanvasObject
+      57087    40000002  Canvas                             CanvasObject
+      56100    40000002  BodySetup                          BodySetup
+      56091    40000002  BodySetup                          BodySetup
+      55370    40000002  CommonInputPlatformSettings        CommonInputPlatformSettings_Windows
+      55368    40000002  BlueprintGeneratedClass            BP_InputData_C
+      45136    40000002  SoundSubmix                        MasterReverbSubmixDefault
+      45135    40000002  SoundSubmix                        MasterSubmixDefault
+      45134    40000002  SoundSubmix                        MasterEQSubmixDefault
+      45120    40000002  SoundClass                         Master
+      45118    40000002  SoundClass                         SC_Master
+      45070    40000002  Texture2D                          PreintegratedSkinBRDF
+      45068    40000002  Texture2D                          DefaultWhiteGrid
+      45066    40000002  Texture2DArray                     WeightMapArrayPlaceholderTexture
+
+  READING:
+    every high-index bit30 object IS marked => bit 30 does not exclude anything.
+    FK-27 would be misnamed: the honest claim is 'we never set RootSet'.
+
+================================================================================================
+4. CLUSTER FIELD (ClusterRootIndex@0x0C) -- competing hypothesis (c)
+================================================================================================
+  across all live objects: {'zero': 133576, 'nonzero': 66820, 'minus1': 1}
+  across bit30 objects   : {'zero': 39307}
+
+================================================================================================
+5. CLASS COMPOSITION of the bit30 population (top 20, sampled)
+================================================================================================
+    Class                                      5305
+    Function                                    236
+    ScriptStruct                                163
+    Package                                     162
+    DelegateFunction                             97
+    Enum                                         27
+    SparseDelegateFunction                        3
+    GCObjectReferencer                            2
+    Object                                        1
+    SlateThemeManager                             1
+    AssetRegistryImpl                             1
+    Field                                         1
+    Struct                                        1
+
+================================================================================================
+2b. THE DISREGARD BOUNDARY -- two independent signatures
+================================================================================================
+  first FREE slot                         : 39295
+  first LIVE object without bit30          : 32257
+  last  LIVE object with    bit30          : 186681
+  the two boundaries differ by            : 7038 slots   <-- DISAGREE: do not call this a pool boundary
+  prefix [0..39295): 39295 slots, 39295 live, 39275 rooted (99.949%)
+
+================================================================================================
+6. TRACKING ACROSS GC PASSES  (150 s, sampling every 3.0 s)
+================================================================================================
+  boundary=39295   high-index rooted=32   ordinary controls=40   permanent-pool controls=40
+  NOTE the GC period at rest is ~61.1 s, so a 150 s run should cross 2.5 passes.
+  [t=    0.4] *** reachability value rotated -> bit1 ***
+  [t=   51.1] *** reachability value rotated -> bit0 ***
+  [t=  112.5] *** reachability value rotated -> bit2 ***
+
+  distinct reachability values observed: [1, 0, 2]
+  HI-ROOTED (real AddToRoot)   n=32   always-carried-current=32   missed-at-least-once=0    disappeared=0
+  ORDINARY  (control)          n=40   always-carried-current=21   missed-at-least-once=19   disappeared=0
+  PERMANENT (control)          n=40   always-carried-current=0    missed-at-least-once=40   disappeared=0

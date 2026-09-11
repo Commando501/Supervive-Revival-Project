@@ -1,0 +1,88 @@
+// ============================================================================
+//  MODULE   Barracuda.Minion.Waypoints.BTService_UpdateMinionWaypoint
+//  SOURCE   Barracuda/Minion/Waypoints/BTService_UpdateMinionWaypoint.as
+//  CONTENT  1 class(es), 6 function(s), 0 enum(s), 1 global(s), 352 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBTService_BarracudaUpdateMinionWaypoint;
+
+UBTService_BarracudaUpdateMinionWaypoint@ UBTService_BarracudaUpdateMinionWaypoint()   // traits=0x20
+{
+    UBTService_BarracudaUpdateMinionWaypoint v2;
+
+    v2 = UBTService_BarracudaUpdateMinionWaypoint();
+    return v2;
+}
+
+UClass@ UBTService_BarracudaUpdateMinionWaypoint::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBTService_BarracudaUpdateMinionWaypoint);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBTService_BarracudaUpdateMinionWaypoint : UBTService_BlueprintBase
+// unreal base : /Script/AIModule.BTService_BlueprintBase
+// C++ header  : ../../../Engine/Source/Runtime/AIModule/Classes/BehaviorTree/Services/BTService_BlueprintBase.h
+// static class global: __StaticType_UBTService_BarracudaUpdateMinionWaypoint
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FBlackboardKeySelector WaypointLocationKey;
+
+    UBTService_BarracudaUpdateMinionWaypoint()   // traits=0x21
+    {
+        this.WaypointLocationKey = FBlackboardKeySelector();
+        return;
+    }
+
+    UFUNCTION(UnrealName=TickAI, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void TickAI_Implementation(AAIController@ OwnerController, APawn@ ControlledPawn, const float64 DeltaSeconds)   // traits=0x20
+    {
+        UBarracudaMinionWaypointFollowerComponent v4;
+        UBlackboardComponent v10;
+        FVector v16;
+
+        v4 = UBarracudaMinionWaypointFollowerComponent::Get(ControlledPawn, NAME_None);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v10 = AIHelper::GetBlackboard(ControlledPawn);
+            if (v10 == nullptr) {
+                return;
+            } else {
+                if (v4.HasCurrentWaypoint()) {
+                    v16 = v4.GetTargetLocationForCurrentWaypoint();
+                    v10.SetValueAsVector(this.WaypointLocationKey.SelectedKeyName, v16);
+                }
+            }
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = 0.009999999776482582;
+        this.Interval = v1;
+        v1 = 0;
+        this.RandomDeviation = v1;
+        return;
+    }
+
+    void ~UBTService_BarracudaUpdateMinionWaypoint()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

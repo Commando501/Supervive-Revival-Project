@@ -1,0 +1,416 @@
+SESSION 49 — SELECTED-HUNTER CLICK→CENTER: the definitive offline model + the one live experiment left
+=======================================================================================================
+Date: 2026-07-04 (branch dedicated-server-stub; continuous with sessions 47/48).
+Method: OFFLINE Blueprint bytecode read (bpdump) completed to the leaf + live read-only RPM (usmapdump,
+        no injection) + live ags capture-log inspection. NO injection, NO relaunch — the running client
+        (PID 62212) + ags (PID 47676) were NOT disrupted (per CLAUDE.md).
+
+*** RESULT: the owned-vs-unowned click divergence is now fully resolved FROM BYTECODE, and two new live
+    static-RE findings reframe the fix:
+      (1) The Theorycraft party surface has NO hero-pick REST route — the hero is sent only as `&hero=` on
+          /startSoloMode when queuing. So implementing a member-write route in ags (the handoff's R1) is a
+          DEAD END. The pick is a LOCAL native state mutation, which is why no HTTP is ever seen on a click.
+      (2) The native PartyManager::TryPickMyHeroAndCosmetics loops party members and only writes the hero
+          into members whose byte at struct offset +0x40 is non-zero. If our synthesized solo-party member
+          lacks that flag, the pick skips it and never sets the local HeroAssetID -> center stays inert.
+    The center update for an OWNED hunter depends on that LOCAL pick writing member.HeroAssetID ->
+    OnHeroAssetIDChanged -> RefreshContentPreview. Every leaf-predicate route (Route B: IsPreviewable /
+    IsPreviewSelection) remains a confirmed dead end. The remaining work is ONE live experiment (needs a
+    real owned-hero click = the user's mouse): confirm whether the pick is even reached on a TileView click,
+    then either satisfy the member+0x40 gate (backend JSON, low-risk) or instrument the CommonUI selection
+    path. See the decision tree at the bottom. ***
+
+=========================== THE DEFINITIVE CLICK→CENTER CHAIN (read to the leaf) =====================
+Tile-click routing (all from bytecode, offline):
+  1. Grid = WBP_HeroPicker / TileView_Hunters. Each tile's data item is a BP_HunterPicker_ListObject_C
+     whose OnClicked delegate is bound to WBP_HeroPicker::OnPortraitClicked (ubergraph stmt [23-24]).
+  2. OnPortraitClicked(HeroAssetID)  [bpdump_OnPortraitClicked.txt]:
+        sets CustomEvent HeroAssetID_1 = HeroAssetID; calls ExecuteUbergraph_WBP_HeroPicker(offset 5768).
+     => offset 5768 is HandlePortraitClicked's entry.
+  3. HandlePortraitClicked(HeroAssetID)  [bpdump_HandlePortraitClicked.txt]:
+        if NOT (ClearSelectionOnReselect AND already-selected):  Update Hero Selection(HeroAssetID, TRUE)
+        else: Update Hero Selection(<None>, TRUE)          (bNotify is ALWAYS TRUE here)
+  4. Update Hero Selection(hero, bNotify)  [bpdump_Update Hero Selection.txt]:
+        [1]      SelectedHeroAsset = hero
+        [2..21]  loop AllHunters: per-tile Selected/Previewed flags + OnStateUpdated  <-- THE PURPLE HIGHLIGHT
+        [28]     if NOT bNotify: RETURN   (bNotify is TRUE from the click, so continue)
+        [31]     IsPreview_1 = IsPreviewSelection()
+        [33]     broadcast OnHeroSelected(SelectedHeroAsset, <bShowRandom&...>, IsPreview_1)
+     => The purple tile highlight happens in step [2..21], BEFORE the OnHeroSelected broadcast, so it
+        ALWAYS occurs regardless of ownership. That is exactly the user's symptom for owned tiles:
+        "purple highlight, but the center doesn't change."
+
+IsPreviewSelection()  [bpdump_IsPreviewSelection.txt] — the ownership switch, now read to the leaf:
+        entry = AllHunters[SelectedHeroAsset].HeroPickSelectable
+        IsPreview = (NOT entry.IsUseable()) AND entry.IsPreviewable()
+   with (from bpdump_IsUseable.txt / bpdump_IsPreviewable.txt):
+        IsUseable    = IsValid(Entry) AND  Entry.CanUse()                       (TRUE  when OWNED)
+        IsPreviewable= IsValid(Entry) AND NOT CanUse() AND NOT IsDisabled()     (TRUE  only UNOWNED)
+   => IsPreviewSelection == IsPreviewable == (IsValid AND NOT CanUse AND NOT IsDisabled).
+      OWNED hero  -> CanUse=TRUE  -> IsPreviewSelection = FALSE.
+      UNOWNED     -> CanUse=FALSE -> IsPreviewSelection = TRUE.
+
+The receiver — WBP_UI_PartyHeroSelect, bound to HeroPicker.OnHeroSelected
+[bpdump_ExecuteUbergraph_WBP_UI_PartyHeroSelect.txt, stmts 56-64 + 133-137 + 161-165]:
+   OnHeroSelected(HeroAssetSelected, _, IsPreview):
+     [56/57] if IsPreview == TRUE  (UNOWNED):
+                -> PREVIEW branch (OnHeroPreviewed / ContentPreview_GotoScene) -> CENTER UPDATES.  << works
+     else (IsPreview == FALSE, OWNED):
+                if HeroAssetSelected != GetSelf().HeroAssetID:
+                   cos = GetDefaultOrFirstEnabledCosmeticId(HeroAssetSelected)
+                   TryPick(HeroAssetSelected, cos)                              << virtual -> custom event
+   TryPick custom event (stmt 161-165):
+                BindDelegate(OnTryPickComplete)
+                PartyManager::TryPickMyHeroAndCosmetics(hero, cos, OnTryPickComplete)   << NATIVE, ASYNC
+   Separately (stmt 133-137, bound at construct):
+                GetSelf().OnHeroAssetIDChanged  ->  "OnHeroSelected Changed"  ->  RefreshContentPreview
+                                                                              (+ CheckCanUseSelection)
+   => For an OWNED hero the ONLY path that moves the center is:
+        native TryPickMyHeroAndCosmetics succeeds -> it sets local member.HeroAssetID
+          -> fires OnHeroAssetIDChanged -> RefreshContentPreview -> center re-renders.
+      The native pick is ASYNC (it takes an OnTryPickComplete callback). If it never completes success
+      (server write not accepted / not even sent), member.HeroAssetID never changes and the center is inert.
+
+=========================== WHY ROUTE B (S49 first half) WAS INERT — now fully explained =============
+Route B tried to force owned tiles "previewable" by Func-swapping IsPreviewable/IsPreviewSelection to
+true. Given the chain above, that premise was SOUND (true IsPreviewSelection would route owned clicks to
+the working PREVIEW branch). It was inert because:
+  (a) The Func-swap mechanism was never verified to actually redirect (the S49 handoff flagged this) — the
+      counter stayed 0 even where IsPreviewSelection MUST be called (Update Hero Selection stmt 31/33 calls
+      it on every notified click). Offline bytecode PROVES IsPreviewSelection is on the click path, so a
+      0-count means the instrumentation did not fire, not that the code path is dead.
+  (b) CommonUI TileView pools entry widgets; IsPreviewable is computed at first build and the pooled entry
+      is reused, so a late heap patch of the predicate is not re-evaluated on click/refilter.
+CONCLUSION: leaf-predicate patching is the wrong lever. Do not re-grind it.
+
+=========================== LIVE EVIDENCE GATHERED THIS SESSION (no disruption) =====================
+* ags capture log for the CURRENT live session (ags-s48b.log, the running ags PID 47676):
+  ZERO POST/PUT to /party this session — no setIsOpen, no /members, no startSoloMode/joinQueue/reconcile,
+  no hero/cosmetic/pick write. (Only party GET polling + a POST /postauth/reconcileRoles.) CONSISTENT
+  with the native pick emitting no HTTP (see the route-table + impl findings below). Inconclusive on its
+  own (unknown whether the user clicked a hunter this session), but the static RE now explains it.
+
+*** THE PARTY SURFACE HAS NO HERO-PICK REST ROUTE (usmapdump wstrings, live RPM, read-only) ***
+  The full Theorycraft party route-template table (UTF-16 FStrings, clustered at heap ~0x26B88B4Cxxx) is:
+    /party/                         /join?joinSecret=            /members/            /joinQueue
+    /setIsOpen/                     /setFillTeam/                /refreshRanks        /refreshRankedEligibility
+    /refreshLevel                   /refreshMastery              /refreshXPBoosts     /setTargetQueues
+    /setExcludedRegions             /latencies                   /referral            /leaveQueue
+    /startSoloMode?mode=  (+ appended query: &soloModeStartPosition=  &hero=)
+    /owner    /reconcile    /setDiscordUserID/    /voiceToken    /custom/voiceToken
+    /party/matchmaking/info    /party/matchmaking/customGameModes
+    /sendInvite/   /declineRequest/   /requestInvite   /declineInvite   /custom?cu...
+  There is NO /setHero, /pickHero, /setMyHeroAndCosmetics, or per-member hero-write verb. The selected
+  hero is transmitted ONLY as a QUERY PARAM `&hero=<id>` appended to
+    POST /party/parties/{partyId}/startSoloMode?mode=<mode>&soloModeStartPosition=<pos>&hero=<heroId>
+  i.e. the hero is sent to the server when you START A MODE/QUEUE, never on the tile click itself.
+  (Nearby model strings: field "InitialHero"; validation msgs "Disabled heroes list exceeds maximum
+  length of %d", "Cannot modify disabled assets while game is in progress"; keys tooManyHeroesDisabled/
+  tooManyItemsDisabled/tooManyPerksDisabled.)
+
+*** THE NATIVE PICK IS LOCAL-ONLY, GATED ON A PER-MEMBER BOOL (disasm of impl +0x58467E0) ***
+  TryPickMyHeroAndCosmetics(this=PartyManager, &HeroAssetId, ...):
+    rcx = [this+0xF8]                    ; members container
+    call +0x5840730                      ; members getter -> data @[rsp+0x40], count @[rsp+0x48]
+    for each member m in [data..data+8*count):
+        rax = m
+        if  byte [m+0x40] == 0 : continue    ; <-- ONLY members with the +0x40 bool set are processed
+        rdi = &m[+0x110]                      ; per-member string/array field
+        ... build the hero id (from r15) into the member ...   ; sets local member state, NO HTTP call
+  So the pick does NOT emit HTTP; it mutates LOCAL member state, and only members whose byte at struct
+  offset +0x40 is non-zero are touched. member+0x110 is where the picked hero is written. member+0x40:
+  PartyMemberModel (UClass:Object) starts UPROPERTYs at ~+0x30 (UObject header ends Outer@+0x28); by rough
+  declared-order layout +0x40 aligns with DisplayName (FString), so `cmp byte [m+0x40],0` is likely a
+  DisplayName.Data null/empty check, NOT a bool — the struct's only bools (bIsReady, bIsOwner,
+  bIsRankedEligible) sit at much higher offsets. buildSoloParty DOES send displayName (from the JWT); if
+  the JWT display name is empty for this player, the gate would skip our member. RESOLVE LIVE: findptr the
+  local PartyMemberModel and `peek +0x40` / `peek +0x110` to read actual values rather than trusting
+  offset math. PartyMemberModel prop order (usmap): ID, DisplayName, Tag, DiscordUserID, PlayerModel,
+  HeroAssetID, CosmeticsAssetID, bIsReady, bIsOwner, ..., bIsRankedEligible (34 props total).
+
+=========================== THE FIX — REVISED ranking (R1 backend-route is OUT) =====================
+!! CORRECTION vs the S49 handoff: there is NO member-write REST route for the pick, so "implement the
+   captured hero-pick route in ags" is a DEAD END. The pick is a LOCAL native state mutation. Do not add
+   speculative /setHero-style routes.
+
+R1' (BACKEND-adjacent, low-risk, try FIRST) — make the LOCAL native pick actually run against our
+   synthesized party by satisfying the member+0x40 gate. buildSoloParty currently sets id/userId/memberId/
+   leader/isLeader/ready/isReady/inQueue/region + heroAssetId. If member+0x40 maps to a PartyMemberModel
+   bool we are NOT populating (or populating with the wrong value), the pick's loop skips our member and
+   never writes the hero -> center inert. ACTION: resolve member+0x40's field from the PartyMemberModel
+   usmap layout, then set it in buildSoloParty. Harmless if wrong (UE ignores unmatched keys); if right,
+   the pick runs locally on click and the center updates. STILL needs a live click to confirm the pick is
+   even reached (see experiment).
+
+R2 (native, force preview branch) — patch IsPreviewSelection to return TRUE so owned clicks take the
+   working PREVIEW branch. Needs a VERIFIED heap patch mechanism (UFunction Func-swap or Script-bytecode
+   patch — heap data, no integrity wall) AND a forced TileView rebuild so pooled entries re-evaluate.
+   Downside: the preview branch may present purchase/preview affordances meant for unowned heroes.
+
+R3 (native, hijack the pick) — patch the OWNED branch / TryPick (or member+0x40 at runtime) so the local
+   pick writes member.HeroAssetID, firing OnHeroAssetIDChanged. Most robust client-side guarantee of a
+   center update on click; persist separately via the S48 write-back. Needs the heap patch mechanism
+   verified + the right function/flag located.
+
+=========================== *** THE ONE LIVE EXPERIMENT (needs a real owned-hero click) *** ==========
+Precondition (S49 handoff, unchanged): a REAL owned tile activation needs the USER's physical mouse
+(synthetic input only hovers; computer-use needs the game genuinely foreground + approval). Instrument
+first, then have the USER click, then read.
+
+Step 0 — VERIFY the instrumentation mechanism on a KNOWN-HOT function before trusting any 0-count
+         (this was the fatal ambiguity of Route B). Counter-instrument something that fires on hover/every
+         frame; confirm the counter moves. Only then are 0-counts meaningful.
+
+Step 1 — Inject a probe on TryPickMyHeroAndCosmetics IMPL entry (+0x58467E0) that logs: hit count, the
+         HeroAssetId arg (r15=&HeroAssetId per prior RE), and whether execution reaches the request-body
+         serialize (+0x5846BE0). (Intra-jmp capture pattern, unpatch ~45s to dodge the .text integrity
+         wall — see pick_probe.cpp / hero_resolve_probe.cpp.)  Inject into the RUNNING client via
+         `inject mmap <PID>` (no relaunch; the pick page is decrypted once HUNTERS has been opened).
+
+Step 2 — USER clicks an OWNED hunter (different from the current center hero) while ags capture + Loki.log
+         + the probe log are being tailed.
+
+Step 3 — DECISION TREE (note: NO new ags request is expected — the pick is local-only. Do NOT wait for
+         an HTTP capture; watch the PROBE + Loki.log instead):
+   (A) probe HIT and it reaches the member loop / writes member+0x110 -> the pick runs; if the center
+       still doesn't update, the write target or OnHeroAssetIDChanged fire is the issue -> inspect whether
+       member+0x40 was set for our member (R1'). If member+0x40 was 0 for all members, the loop skipped
+       everything -> set that field in buildSoloParty (R1') and re-test.
+   (B) probe HIT but the loop finds NO member with +0x40 set (skips all) -> CONFIRMS R1': our synthesized
+       party member lacks the +0x40 bool. Resolve its field name from the PartyMemberModel usmap and set
+       it in buildSoloParty; the local pick then writes the hero -> center updates. DURABLE-ish (backend
+       JSON only; still needs catalog_ready_fix per launch for the grid).
+   (C) probe does NOT hit -> the CommonUI TileView click does NOT reach OnHeroSelected/TryPick for owned
+       tiles (OnPortraitClicked is the legacy portrait path, not the live TileView selection). Instrument
+       the CommonUI selection path: UTileView OnItemSelectionChanged / the entry widget's
+       NativeOnItemSelectionChanged, and find where owned vs unowned diverge there. Then R2/R3.
+   Cross-check: pick_probe.cpp (intra-jmp .text capture — the RELIABLE mechanism, same class as
+   catalog_ready_fix) already reported hits=0 on click in the handoff. If Step 0 re-confirms that probe
+   class fires on a hot fn, (C) is the most likely branch and the CommonUI selection path is the target.
+
+=========================== *** LIVE CONFIRMATION (2026-07-04, user drove real clicks) *** ===========
+Injected pick_probe.dll into the RUNNING client (PID 62212) via `inject mmap` (no relaunch). It armed
+cleanly (verified the exact bytes 48 8B 5C 24 40 at +0x584680D, patched, self-restored at 45s — the
+proven intra-jmp class, same as catalog_ready_fix). The USER clicked OWNED hunters during the armed
+window and reported the center did NOT change.
+  RESULT: TryPickMyHeroAndCosmetics hits = 0.  => an OWNED-tile click does NOT call the native pick.
+  This is BRANCH (C), now CONFIRMED with a real click (not the earlier synthetic/uncertain input): the
+  visible TileView click never reaches TryPick. So EVERY fix hanging off that BP chain is dead — the
+  native pick (R1'/R3) AND the BP leaf-predicate Route B — because that chain doesn't run on the click.
+
+WHERE THE SELECTION LOGIC ACTUALLY LIVES (offline, this session): dumped BOTH picker-tile BP classes:
+  - HeroPickerSelectable_CatalogEntryWithPreview_C (derived, the TileView entry): only IsPremiumBenefit/
+    IsPreviewable/IsUseable/OnCanUseUpdated/OnDisabled/OnHidden/SetAssetID/ShouldHideHero + a small
+    ubergraph that just BINDS delegates. No click/selection handler.
+  - HeroPickerSelectable_C (base): only IsPremiumBenefit/IsPreviewable/IsUseable/ShouldHideHero/SetAssetID
+    + delegate signatures. NO ubergraph at all. No click handler.
+  Also re-confirmed WBP_HeroPicker has NO TileView OnItemSelectionChanged/OnItemClicked binding anywhere
+  in its graph. => the tile-click/selection handler is 100% NATIVE C++ (the widgets' native base — a
+  CommonUI selectable-button class). That native handler decides preview-vs-select by CALLING the BP
+  predicates IsPreviewable()/IsUseable() on the entry (they exist precisely to be queried from native).
+
+REVISED LEADING FIX (supersedes the earlier R1'/R2/R3 ranking): **Route B's premise is correct** — make
+owned heroes report IsPreviewable=true so the native handler routes an owned click into the WORKING
+preview path (center updates, exactly like unowned). Route B was inert only because: (a) its UFunction
+Func-swap mechanism was NEVER verified to redirect, and (b) CommonUI TileView likely CACHES the
+preview/select role at entry-build time (pooling), so a post-build predicate patch isn't re-read on click.
+THE ONE EXPERIMENT LEFT (needs the user's click; tooling: a VERIFIED passthrough Func-swap counter =
+count + `jmp ProcessInternal (base+0x13454A0)` so the patched fn still runs): instrument IsPreviewable +
+IsUseable on the entry class, then (1) navigate to HUNTERS FRESH and confirm the counters move at BUILD
+(this VERIFIES the swap mechanism — they MUST be queried when the grid builds), and (2) click owned/unowned
+heroes and see if they move again at CLICK. If they move on click => the predicate is queried per-click =>
+patching IsPreviewable->true routes owned clicks to preview (the FIX). If they move only on build => the
+role is cached => the fix must patch the per-entry cached flag OR the native branch, and/or force a real
+TileView rebuild. Cheaper alternative that sidesteps native RE entirely: make ONE hero UNOWNED in the
+backend inventory (menu.go handleInventory, CanUse=false), relaunch, and have the user click it — if its
+click now previews into the center, the preview-path-is-the-fix hypothesis is confirmed end-to-end via a
+pure backend change (then decide owned-appearance tradeoff).
+
+=========================== *** LIVE SESSION 2 (2026-07-04 eve, user drove clicks) — FUNC-SWAP IS DEAD *** ==
+Ran the passthrough-Func-swap experiment on the live client (PID 62212, read-only+heap patches, restored
+clean after). Located the tile-class UFunctions live (same process route-B used, objects still valid):
+  IsPreviewable @0x26D001D6F00 (slot +0xE0 =0x26D001D6FE0), IsUseable @0x26D001D6E00 (0x26D001D6EE0),
+  ShouldHideHero @0x26D001D6900 (0x26D001D69E0)  — Outer=HeroPickerSelectable_CatalogEntryWithPreview_C.
+  Tools: tools/re/scan_ufunc_local.py (cluster-scan by FName id), tools/re/patch_passthrough.py
+  (count + jmp ProcessInternal, so the fn still runs).
+EXPERIMENT: patched ShouldHideHero (the MECHANISM CONTROL — it is called for every hero by UpdateFilteredList
+on any role-filter change) across ALL 6 selectable variants (_CatalogEntryWithPreview_C, _CatalogEntry_C,
+_CatalogEntryAll_C, _HeroUnlock_C, _WithCustomGameFilter_C, _C base). USER filtered repeatedly; the roster
+VISIBLY narrowed by role (so UpdateFilteredList + ShouldHideHero DEFINITELY ran). RESULT: **every counter = 0.**
+CONCLUSION: patching UFunction+0xE0 (Func) does NOT redirect these calls. STRUCTURAL REASON: for a BP->BP
+call (EX_CallMath/EX_FinalFunction/EX_LocalVirtualFunction) this build's VM executes the callee's **Script
+bytecode directly** inside ProcessInternal; it only dispatches through Func when NATIVE code calls a BP fn via
+ProcessEvent. So Route B's "counter stayed 0" was NEVER a valid negative — the Func-swap just has no effect on
+BP->BP calls. **Do not use the Func-swap technique again for BP-invoked functions.**
+  NOTE: the native selection handler's OWN calls to IsPreviewable/IsUseable (native->BP, at grid BUILD) would
+  go through Func — but the grid was already built (client up for hours), so no build happened in the test
+  window; a Func-swap applied EARLY (before first build) MIGHT still catch build-time native->BP calls. Untested
+  (needs a relaunch). The Script-bytecode patch works for BOTH paths and is the robust choice.
+
+=========================== *** RELIABLE FIX PATHS (all need a relaunch to VALIDATE) *** =============
+The preview-path fix mechanism is ALREADY PROVEN (unowned heroes' clicks update the center). The whole fix =
+make OWNED heroes previewable AT BUILD TIME (or otherwise drive the center on an owned click). Reliable ways:
+  P1 (keep owned, reliable) — patch IsPreviewable's SCRIPT BYTECODE to return true (heap data, no integrity
+     wall; the VM executes Script directly so this ALWAYS takes effect, unlike Func-swap). Inject EARLY like
+     catalog_ready_fix so the grid builds all tiles as previewable -> owned click -> preview path -> center
+     updates. Craft: Script[0..] = LetBool(Previewable=EX_True); Return. Needs UFunction Script TArray offset
+     (near +0x68 Data/+0x70 Num) + the out-param FField ptr from the live bytecode. Validate on relaunch.
+  P2 (keep owned, most correct) — a native SELECTION-WATCHER shim (intra-jmp/RPM, the PROVEN-reliable class):
+     poll TileView_Hunters' selected item (selection works — the purple highlight proves it), and on change
+     write the selected hero into the local PartyMemberModel.HeroAssetID + fire OnHeroAssetIDChanged so
+     RefreshContentPreview updates the center. Most work (find TileView selection + party member + delegate
+     broadcast) but actually reflects the pick and keeps heroes owned.
+  P3 (quick, backend, DURABLE) — mark heroes not-owned (menu.go handleInventory CanUse=false) so IsPreviewable
+     is true at build -> owned click previews. NO injection, survives relaunch. DOWNSIDE: roster shows heroes
+     as unlockable/purchasable (reverts S48's owned look) — assess whether that appearance is acceptable
+     (unknown; there are currently no unowned heroes to look at — would need a relaunch to see one).
+RECOMMENDATION: P1 (Script-patch, keep owned) is the reliable technique that preserves the owned roster;
+de-risk it by first verifying the Script-patch technique on ShouldHideHero (patch its Script->return-true on
+the LIVE client; if the grid empties on a filter, the technique works) before building the early-inject mod.
+
+=========================== *** LIVE SESSION 3 (2026-07-04 late) — SCRIPT-PATCH WORKS; PREVIEW FIX LIVE-CONFIRMED *** ==
+BREAKTHROUGH: the SCRIPT-BYTECODE patch technique is reliable (Func-swap is dead). Proof: patched
+ShouldHideHero's Script (jump Script[0]->the existing Hide=TRUE branch @off109) on the live client -> the
+USER filtered and the roster VISIBLY EMPTIED (all hunters hidden). Restored -> roster returned. So writing
+the UFunction's Script bytecode (heap, no .text integrity wall) DOES redirect behavior (the VM runs Script
+directly). Tool: tools/re/script_patch.py (locate Script TArray @UFunc+0x68, dump, jump0<off>, pokebyte,
+restore). NOTE the Script Data ptr is per-run (re-locate via the tool).
+THE PREVIEW FIX (live-confirmed by the user + screenshot): patch the tile class
+(HeroPickerSelectable_CatalogEntryWithPreview_C) so
+  IsPreviewable @0x26D001D6F00 -> always TRUE  (pokebyte off257 28->27 [EX_False->EX_True] + jump0 247)
+  IsUseable     @0x26D001D6E00 -> always FALSE (jump0 109 -> the existing Selectable=EX_False branch)
+Then re-navigate to HUNTERS (fresh grid build) and CLICK an owned hunter -> the CENTER PREVIEW UPDATES to the
+clicked hunter (Bishop shown). Roster still looks OWNED (zoomed: full-color portraits, NO locks/prices). So
+making the tile previewable+not-useable routes the owned click into the WORKING preview path.
+  *** LIMITATION (why this is not the full fix): the preview path is VISUAL-ONLY. It updates the HUNTERS-screen
+  center but does NOT set the local PartyMemberModel.HeroAssetID (that was the native pick's job). So backing
+  out to the main menu REVERTS the center to the seed (Mercury/alchemist) — user-confirmed — and it is not the
+  hero PLAY would queue. Also IsUseable=false may affect the PLAY/queue path (untested). Good for BROWSING,
+  not for SELECTING. ***
+
+=========================== *** THE SELECTION-WATCHER SHIM (P2) — the complete fix, DESIGN + anchors *** ==
+GOAL: clicking a hunter sets it as the PERSISTED selected hero (center everywhere + sticks + keeps owned look).
+The reliable way = a native DLL (intra-jmp/RPM class, like catalog_ready_fix) that:
+  1. locate GUObjectArray; find the live WBP_HeroPicker_C instance (UClass=0x26CFB2644F0 this run — re-derive:
+     it's the Outer of the IsPreviewSelection UFunction @0x26CFB237400, Name id 0x0079339D) and the local
+     PartyMemberModel instance.  (usmapdump `objects` is too heavy/histogram — iterate GUObjectArray in the DLL.)
+  2. READ the selected hero from WBP_HeroPicker.SelectedHeroAsset (offset TBD — a PrimaryAssetId in the widget
+     instance; find by reading the instance after a click and matching the clicked hero's id).
+  3. On change, WRITE it to PartyMemberModel.HeroAssetID (PrimaryAssetId; member field order per usmap:
+     ID,DisplayName,Tag,DiscordUserID,PlayerModel,HeroAssetID,... so HeroAssetID ~6th prop; find live by
+     matching the current Hero:alchemist value) and TRIGGER THE REFRESH.
+  FIRST DE-RISK (do this in the DLL before building the delegate path): after writing member.HeroAssetID, does
+  the main-menu center update on nav-back? If YES -> the shim is just poll+write (trivial). If NO -> also fire
+  member.OnHeroAssetIDChanged (a MulticastInlineDelegate) — read its invocation list, ProcessEvent each bound
+  fn on the GAME THREAD (hook a per-frame game-thread fn to do the write/broadcast safely). OR call the native
+  TryPickMyHeroAndCosmetics (+0x58467E0) on the game thread (it does member-set + refresh + &hero= memory
+  correctly) — but needs the PartyManager `this` + game-thread context.
+  PERSIST ACROSS RELAUNCH: the client sends the hero only as &hero= on /startSoloMode (queue time) — the shim's
+  live member-write does NOT persist server-side. To survive relaunch, also POST the pick to ags
+  (handleSetPartyMember) from the shim (WinHTTP + token) OR accept that the seed resets to alchemist on relaunch.
+NOTE: current live patches (IsPreviewable/IsUseable) LEFT INSTALLED at user's request — they revert on relaunch
+(heap patches, not persistent). If building the shim, RESTORE them first (they conflict: they force preview mode).
+
+=========================== *** LIVE SESSION 4 (2026-07-04 very late) — SHIM RE COMPLETE *** =========
+All read-only RPM on the live client (PID 62212). Every offset the selection-watcher shim needs is now
+reverse-engineered + validated. Tools: find_guobjectarray.py, obj_iter.py (iterate GUObjectArray by class),
+find_pa.py (find PrimaryAssetId fields).
+COMPLETE OFFSET MAP (base 0x7FF682A80000 constant; heap addrs per-run):
+  UObject layout THIS build: vtable@+0, ObjectFlags@+0x08, **InternalIndex@+0x10**, Class@+0x18,
+    Name(FName)@+0x20, Outer@+0x28.  (Non-standard: shifted +0x8 vs stock UE5.)
+  GUObjectArray.ObjObjects (FChunkedFixedUObjectArray) @ **base+0x9E38930**: Objects(FUObjectItem**)@+0x00,
+    NumElements(int32)@+0x14. PerChunk=65536, FUObjectItem stride=0x18 (Object ptr @ item+0). Iterate:
+    chunk=Objects[i/65536]; obj=*(chunk + (i%65536)*0x18). Resolve class name via *(obj+0x18)+0x20 (FName)
+    -> FNamePool @ base+0x9D81450. VALIDATED (found HeroPicker InternalIndex 86931 -> located the array).
+  PartyMemberModel (class name "PartyMemberModel"; live instance = the non-CDO): props start +0x30
+    (ID FString@+0x30, DisplayName@+0x40, Tag@+0x50, DiscordUserID@+0x60, PlayerModel@+0x70),
+    **HeroAssetID (PrimaryAssetId, 16B) @ +0x78** (type FName@+0x78 = "Hero" 0x1A568, name FName@+0x80),
+    **OnHeroAssetIDChanged (MulticastInlineDelegate) @ +0x88** (invocation list Data@+0x88, Num@+0x90 = 3
+    bound handlers), CosmeticsAssetID follows.
+  WBP_HeroPicker_C: **SelectedHeroAsset (PrimaryAssetId) @ +0x10D8** (type@+0x10D8, name@+0x10E0). LIVE-
+    CONFIRMED it tracks the click: user clicked Beebo on HUNTERS -> the active picker (@0x26CFE1EDD20) read
+    SelectedHeroAsset = Hero:Beebo. NOTE: 7 WBP_HeroPicker instances exist (main-menu / hunter-select / swap
+    / etc.); the ACTIVE one is the instance whose SelectedHeroAsset is a valid (non-None) hero != member.
+  Hero FName type id = 0x1A568 (constant). Hero name FNames are stable this session (alchemist=0x32397C,
+    Beebo=0xA1DC2) but derive live (nameid) to be safe.
+*** DE-RISK RESULT (decisive): writing member.HeroAssetID (+0x78/+0x80) directly does NOT update the center.
+  Wrote member = Hero:Beebo, navigated to the main menu -> STILL showed Mercury/alchemist (user-confirmed).
+  => a plain memory write is NOT enough; the shim MUST FIRE A REFRESH. The main-menu party slot binds
+  OnPartyUpdated/OnCosmeticUpdated (S48), the HUNTERS preview binds member.OnHeroAssetIDChanged — so writing
+  the member must be followed by BROADCASTING the change delegate(s), which is a NATIVE call that must run on
+  the GAME THREAD. (Confirms S48: the slot is applied at menu-load / on a broadcast, not on a bare member diff.)
+
+=========================== *** SHIM — FINAL DESIGN (the remaining build) *** ========================
+The shim is a DLL (inject `mmap <PID>` into the running client, or `watch` at launch). ALL reads/writes use
+the offset map above. Core loop (on a WORKER thread, memory ops only): iterate GUObjectArray -> find the live
+PartyMemberModel + the ACTIVE WBP_HeroPicker (SelectedHeroAsset valid & != member.HeroAssetID); when the
+picker's SelectedHeroAsset changes, WRITE it into member.HeroAssetID (+0x78/+0x80).
+THE HARD PART (needs the GAME THREAD): after the write, FIRE the refresh so the UI updates. Options (ranked):
+  (A) Call native **TryPickMyHeroAndCosmetics** (+0x58467E0) with the picked hero — it does member-set +
+      broadcast + &hero= memory CORRECTLY (the game's own path). Needs the UPartyManager `this` (find via
+      GUObjectArray class "PartyManager", or member.Outer chain) + game-thread context + args (heroId,
+      cosmeticId, completion delegate). This is the CLEANEST (no manual broadcast) if callable safely.
+  (B) Manually BROADCAST member.OnHeroAssetIDChanged (+0x88) AND the PartyModel's OnPartyUpdated: for each
+      FScriptDelegate {TWeakObjectPtr Object(8B: ObjectIndex+Serial), FName Fn} in the invocation list,
+      resolve Object via GUObjectArray and ProcessEvent(FindFunction(Fn)). Needs ProcessEvent addr + game thread.
+  GAME-THREAD SAFETY: do NOT call native fns from the worker thread (past off-thread calls crashed — see
+  CLAUDE.md). Instead HOOK a per-frame game-thread native fn (intra-jmp, the PROVEN class) and, when a
+  "pending pick" flag is set by the worker, do the TryPick/broadcast FROM the hook (on the game thread).
+PERSIST across relaunch: the client sends the hero only as &hero= on /startSoloMode at queue time; the shim's
+  live write doesn't persist server-side. To survive relaunch, POST the pick to ags handleSetPartyMember from
+  the shim (WinHTTP + the client's bearer token) OR accept the seed resets to alchemist on relaunch.
+STILL OPEN (build+validate): the game-thread hook point; ProcessEvent addr / the TryPick call ABI + PartyManager
+  `this`; whether firing OnHeroAssetIDChanged alone updates the HUNTERS center while OnPartyUpdated updates the
+  main-menu slot. Restore the IsPreviewable/IsUseable patches before building (they force preview mode).
+
+=========================== *** LIVE SESSION 5 (2026-07-05) — SHIM PHASE 1/2 WORKING + ProcessEvent FOUND *** ==
+PHASE 1/2 SHIM (tools/sigbypass-mod/shim_watch.cpp -> shim_mirror.dll) WORKS + validated live:
+  - Iterates GUObjectArray in-process to find the live PartyMemberModel + the 8 WBP_HeroPicker instances.
+  - Active picker = the one whose SelectedHeroAsset (+0x10D8) is a valid (non-None) hero.
+  - Input signal CONFIRMED reliable: click Crysta -> Hero:BurstCaster, Beebo->Beebo, Brall->Ronin (codenames).
+  - MIRROR: continuously writes member.HeroAssetID (+0x78) = the active picker's SelectedHeroAsset, holding
+    the pick against resets. LIVE RESULT: HUNTERS center shows the pick AND it PERSISTS on HUNTERS re-entry
+    (user-confirmed). The party member now tracks the pick, so PLAY/&hero= use it.
+  - GAP: the MAIN-MENU party-slot portrait does NOT refresh from the member write (it binds OnPartyUpdated,
+    applied at menu-load; a bare write / REST poll doesn't retrigger it — S48). Needs a game-thread broadcast.
+*** ProcessEvent FOUND: UObject::ProcessEvent @ **0x7FF683D45A10** (RVA +0x12C5A10, UObject vtable SLOT 56). ***
+  Identified by cross-referencing the picker (UUserWidget) vtable 0x7FF68B2F7020 and member (PartyMemberModel)
+  vtable 0x7FF68B544698 for SHARED slots (UObject base virtuals), then disasm: slot 56 reads gs:[0x58]
+  (FUObjectThreadContext TLS) + manages the script-callstack recursion guard, r14=Function, rdi=this — the
+  canonical ProcessEvent. (Rejected: slot 41=AddReferencedObjects, slot 47=4-arg fn, slot 25=GC collector.)
+  So to invoke a UFunction from the shim: obj->[vtable+56*8](obj, UFunction*, Params) — call via the object's
+  OWN vtable slot 56 (works for any UObject type). MUST run on the GAME THREAD (thread-local script stack).
+
+=========================== *** SHIM PHASE 3 — the final build (game-thread refresh) *** ================
+GOAL: on a pick, replicate the original game exactly -> the MAIN-MENU slot updates live too. Options:
+  (A, cleanest = original behavior) call native **TryPickMyHeroAndCosmetics** via ProcessEvent: find the
+     UPartyManager instance (GUObjectArray class "PartyManager") + the TryPick UFunction (FName 0x005904F7,
+     Outer=PartyManager class) + build the 48-byte param struct {FPrimaryAssetId Hero(16), FPrimaryAssetId
+     Cosmetic(16), FScriptDelegate OnComplete(16)}; ProcessEvent(partyManager, tryPickUFunc, &params). This
+     does member-set + OnHeroAssetIDChanged + OnPartyUpdated + &hero= — everything the original does.
+  (B) manual broadcast: ProcessEvent each handler of member.OnHeroAssetIDChanged (+0x88, 3 handlers) AND the
+     PartyModel's OnPartyUpdated. Needs each delegate-signature UFunction + params. More pieces than (A).
+GAME-THREAD EXECUTION (required): hook ProcessEvent itself (intra-jmp at 0x7FF683D45A10 — it runs on the game
+  thread constantly). Worker detects a pick -> sets g_pending + installs the hook briefly. The hook (game
+  thread), guarded by g_inHook (reentrancy: the refresh's own ProcessEvent calls must not re-trigger), does
+  the TryPick/broadcast, clears g_pending, worker uninstalls the hook (keep the .text patch < the ~3min
+  integrity wall — it fires within ~1 BP event since ProcessEvent is called every frame).
+RISK: this is the crash-prone finale — wrong param layout / off-thread call / bad PartyManager corrupts the
+  script stack. Build incrementally (verify each object find read-only first) and test with the client
+  recoverable. Restore the IsPreviewable/IsUseable Script patches + stop the mirror before/when this lands
+  (TryPick replaces both: it sets the member AND, being the real pick, drives the preview).
+Anchors this run (per-run heap; re-derive): member 0x26C72BCE400, active picker 0x26CFE1EDD20; GUObjectArray
+  ObjObjects base+0x9E38930; ProcessEvent 0x7FF683D45A10; member HeroAssetID+0x78 / OnHeroAssetIDChanged+0x88;
+  picker SelectedHeroAsset+0x10D8; TryPick impl +0x58467E0 / exec +0x54B5380 / FName 0x005904F7.
+
+=========================== FILES / OFFSETS ========================================================
+Bytecode (tools/extractor/out/, gitignored): bpdump_OnPortraitClicked.txt, bpdump_HandlePortraitClicked.txt,
+  "bpdump_Update Hero Selection.txt", bpdump_IsPreviewSelection.txt, bpdump_IsPreviewable.txt,
+  bpdump_IsUseable.txt, bpdump_ExecuteUbergraph_WBP_UI_PartyHeroSelect.txt (TryPick native @ stmt 163,
+  RefreshContentPreview @ 134, OnHeroAssetIDChanged bind @ 133), bpdump_ExecuteUbergraph_WBP_HeroPicker.txt.
+Offsets (base 0x7FF682A80000 constant): TryPickMyHeroAndCosmetics FName id 0x005904F7; exec +0x54B5380,
+  impl +0x58467E0, request-serialize action +0x5846BE0, members-getter +0x5840730. IsPreviewSelection id
+  0x0079339D (Outer WBP_HeroPicker_C). IsPreviewable id 0x00777E46. Browse gate 0x3EC57D0.
+Backend: server/internal/interactive/interactive.go (handleSetPartyMember + buildSoloParty seed).
+Prior: docs/session-48-selected-hunter-flow.txt (seed + center chain), docs/session-47-tile-widget-FOUND.txt
+  (grid fix), docs/session-49-pickup-selected-hunter-click-routing.txt (the handoff this continues).

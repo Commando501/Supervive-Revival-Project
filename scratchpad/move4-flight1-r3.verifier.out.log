@@ -1,0 +1,6 @@
+﻿PID=41816 base=0x7FF632800000 hero=0x15FF153D560
+live ASC-shaped objects (excluding CDOs): 427
+=> AvatarActor bind LIVE on 1 ASC(s):
+     ASC 0x15FA0D19A00 LokiAbilitySystemComponent               AvatarActor@0x410 = 0x15FF153D560 (=hero)
+     ASC 0x15FA0D19A00 SpawnedAttributes@0x168: Data=0x15FB0400960 Num=2
+VERDICT: PASS -- 1 bound ASC(s) also have SpawnedAttributes populated. S148 preflight should clear.

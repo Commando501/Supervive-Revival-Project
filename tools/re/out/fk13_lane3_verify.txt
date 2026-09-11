@@ -1,0 +1,502 @@
+
+====================================================================================================
+0. IMAGE / COVERAGE  (report this with every negative)
+====================================================================================================
+  primary   : G:\git\Supervive Revival Project\dumps\tutorial-hero\SUPERVIVE-Win64-Shipping.dump.exe
+  ImageBase : 0x7ff6505c0000   file-offset == RVA
+  .text   rva 0x00001000 size 0x07649000   NON-ZERO pages  16604/30281  (54.8%)
+  .rdata  rva 0x0764a000 size 0x0237d000   NON-ZERO pages   9052/9085   (99.6%)
+  .data   rva 0x099c7000 size 0x006f0000   NON-ZERO pages   1449/1776   (81.6%)
+  .pdata  rva 0x0a0b7000 size 0x005fe000   NON-ZERO pages      0/1534   (0.0%)
+  .text union: {'src': 'cache', 'conflicts': -1, 'pages_before': 16112, 'pages_after': 16604, 'pages_total': 30281}
+  ⚠ .pdata is 0.0% NON-ZERO although the dump manifest calls it "100.0%"
+    (that figure counts READABLE pages).  Function bounds therefore come
+    from tools/strxref/index/pdata_union.csv -- 382282 ranges recovered from
+    68 crash minidumps.  Control: .rdata/.reloc in the same file are 99.6%/100%.
+
+====================================================================================================
+1. CONTROLS  (a failure here voids every result below)
+====================================================================================================
+
+  1a. GRADER -- fold vs real must NOT be a size threshold
+    0x00f7ec20  want FOLD              got FOLD                 16 B  OK     universal /OPT:ICF void fold  (c2 00 00 = ret 0)
+    0x00f7eb60  want FOLD              got FOLD                208 B  OK     universal bool-false fold     (32 c0 c3)
+    0x035b4760  want REAL              got REAL                 16 B  OK     UCheatManager::OnlyLoadLevel  -- REAL but only 16 B
+    0x035b1e60  want REAL              got REAL                 16 B  OK     UCheatManager::IsDebugCameraActive -- REAL, 16 B
+    0x035a7ce0  want REAL              got REAL                 16 B  OK     UCheatManager::DebugCapsuleSweepSize -- REAL, 16 B
+    0x035b7430  want REAL              got REAL                154 B  OK     UCheatManager::ProcessConsoleExec, 154 B
+    0x0395d790  want REAL              got REAL                469 B  OK     UKismetSystemLibrary::execExecuteConsoleCommand, 469 B
+    => the discriminator is the BYTES, not the size: 16-B REAL bodies are
+       graded REAL while 3-B folds are graded FOLD.
+
+  1b. UHT decoder -- flags against 4 ground-truth functions
+    APlayerController    ServerVerifyViewTarget   want 0x80220cc2 got 0x80220cc2   OK
+    APlayerController    ClientSetHUD             want 0x05020cc2 got 0x05020cc2   OK
+    UCheatManager        God                      want 0x04020602 got 0x04020602   OK
+    UCheatManager        ToggleDebugCamera        want 0x00020602 got 0x00020602   OK
+    (uht_funcflags.py's docstring attributes ToggleDebugCamera to
+     ADebugCameraController; MEASURED owner is UCheatManager.  Flags agree.)
+
+  1c. native-registration decoder -- self-validating, 0 stray / 0 missing
+    UCheatManager          array=0x09a70990 count=55   decoded=55   FUNC_Native=55   OK
+    UGameplayStatics       array=0x09a940d0 count=146  decoded=146  FUNC_Native=146  OK
+    UKismetSystemLibrary   array=0x09ac1810 count=274  decoded=274  FUNC_Native=274  OK
+
+  1d. rip-relative xref -- two known code literals
+    0x07f9b622 -> 1 site(s), contains 0x03555096 : OK     L"CheatManager" <- GetPrivateStaticClass
+    0x0773dbe0 -> 1353 site(s), contains 0x035550a5 : OK     L"/Script/Engine" <- GetPrivateStaticClass
+
+  1e. NEGATIVE control that must stay negative
+    UCheatManagerExtension vtable slot 81 = 0x011ef9c0 (19 B) -- the plain
+    UObject::ProcessConsoleExec wrapper, i.e. the class that does NOT
+    override it reads differently from the one that does.
+
+  controls: 16 ok / 0 fail
+
+====================================================================================================
+2. UGameplayStatics::SpawnObject  (task 1)
+====================================================================================================
+  registrar StaticRegisterNativesUGameplayStatics = 0x037f3590
+  FNameNativePtr array = 0x09a940d0, 146 entries, stride 0x48
+  exec thunk  execSpawnObject                    0x0380ff40  REAL                218 B  pdata  (claim was 0x0380FF40 / 218 B)
+  first call in thunk        = 0x012f3fc0  <-- FFrame param-step helper, NOT the impl
+  P_FINISH anchor agrees     = True
+  IMPL  UGameplayStatics::SpawnObject            0x037f0710  REAL               1014 B  pdata
+
+  FFunctionParams @0x09a93e90   flags 0x04022403  Final|RequiredAPI|Native|Static|Public|BlueprintCallable
+  NumProperties = 3   StructureSize = 24   PropertyArray = 0x0806a5a0
+
+  *** PARAMS BUFFER (24 bytes, zero-init before the call) ***
+  off    name           type        size  flags
+  +0x00  ObjectClass    Class       8     Parm|UObjectWrapper|NativeAccessSpecifierPublic
+  +0x08  Outer          Object      8     Parm|NativeAccessSpecifierPublic
+  +0x10  ReturnValue    Object      8     Parm|OutParm|ReturnParm|NativeAccessSpecifierPublic
+
+  Interior of the impl (bounded disassembly):
+    calls StaticConstructObject_Internal = 0x01373e90
+      StaticConstructObject_Internal             0x01373e90  REAL                632 B  pdata
+    guard strings referenced: 0x76EE460 "NewObject with empty name ..."
+
+  ★★★ SpawnObject ENFORCES ClassWithin AT RUNTIME -- this is NOT a check()
+      stock UE 5.4 Private/GameplayStatics.cpp:813-834 reads:
+        if (*ObjectClass == nullptr)                       -> warn, return nullptr
+        if (!Outer)                                        -> warn, return nullptr
+        if (ObjectClass->ClassWithin &&
+            !Outer->IsA(ObjectClass->ClassWithin))         -> warn, return nullptr
+        return NewObject<UObject>(Outer, ObjectClass, NAME_None, RF_StrongRefOnFrame);
+      CORROBORATED IN THIS BINARY, byte-level:
+        * three `call 0x011A5FA0` (UObject::StaticClass) + class-hierarchy
+          walks == TSubclassOf<UObject>::operator* and the two IsA tests
+        * `cmp qword ptr [rax + 0xe8], rdi ; je ...` at 0x037F0817 == the
+          `ObjectClass->ClassWithin != nullptr` test  ⇒ UClass::ClassWithin
+          is at UClass+0xE8 in this build  [I, from that being the only such
+          null-test on ObjectClass in a function whose stock source has one]
+        * `mov dword ptr [rsp+0x58], 0x1000000` == RF_StrongRefOnFrame
+          (EObjectFlags 0x01000000) passed into the FStaticConstructObjectParameters
+      ⇒ THE OUTER MUST BE AN APlayerController.  Passing anything else makes
+        SpawnObject return nullptr SILENTLY (the warning is verbosity-gated).
+      ⇒ RF_StrongRefOnFrame means the object is only frame-rooted.  Store the
+        pointer into PlayerController+0x520 (a real UPROPERTY, so the GC token
+        stream reaches it) IN THE SAME game-thread call, or it can be collected.
+        This project has already been bitten by exactly that (S110 anim asset).
+
+  ⚠ the impl returns nullptr on a null ObjectClass / null Outer and logs
+    through 0x106B650; those log calls are gated on a verbosity byte, so a
+    silent nullptr is possible.  The shim must null-check the RETURN.
+
+====================================================================================================
+3. UCheatManager -- registered, constructible, Within=PlayerController  (task 2)
+====================================================================================================
+  FClassRegisterCompiledInInfo @ .rdata 0x07f9bcc8
+    +0x00 OuterRegister  Z_Construct_UClass_UCheatManager = 0x03555ed0
+    +0x08 InnerRegister  UCheatManager::GetPrivateStaticClass = 0x03555050
+    +0x10 Name (UTF-16) = 'UCheatManager'
+    +0x18 FClassRegistrationInfo @ .data 0x09f84f38
+          { InnerSingleton = 0x2a1c5115100 ; OuterSingleton = 0x2a1c5115100 }   <-- the LIVE UClass*
+          (both read 0 in a cold dump only if the class never registered;
+           values here are whatever the dumped process had)
+
+  GetPrivateStaticClassBody call decoded out of 0x03555050 :
+    [rsp+0x20] InSize            (sizeof)     = 0x90         
+    [rsp+0x28] InAlignment                    = 0x8          
+    [rsp+0x30] InClassFlags                   = 0x10000000   Intrinsic
+    [rsp+0x38] InClassCastFlags               = 0x0          
+    [rsp+0x40] InConfigName                   = 0x76ba258    'Engine'
+    [rsp+0x48] InClassConstructor             = 0x3567c60    REAL 169 B
+    [rsp+0x50] InClassVTableHelperCtorCaller  = 0xf7eb50     FOLD 16 B
+    [rsp+0x58] InCppClassStaticFunctions      = 0x11a5fa0    
+    [rsp+0x60] InSuperClassFn                 = 0x11a5fa0    REAL 167 B   == UObject::StaticClass  [that class InnerRegister]
+    [rsp+0x68] InWithinClassFn                = 0x35bf1a0    REAL 1776 B   == APlayerController::StaticClass  [that class InnerRegister]
+
+  ★ ClassWithin  = APlayerController  (arg14, byte-level)
+  ★ PropertiesSize / allocation size = 0x90 (144) bytes, align 8
+  POSITIVE CONTROL for the arg14 slot: UCheatManagerExtension, whose stock
+  UCLASS is Within=CheatManager, decodes to:
+    InWithinClassFn = 0x03555050  == UCheatManager::StaticClass   InSize = 0x30
+  ⚠ 0x035BF1A0 is a 5-byte `jmp 0x03C3CA30` thunk (APlayerController::StaticClass
+    -> ::GetPrivateStaticClass).  The identification here is POINTER-EQUALITY
+    with the APlayerController registration record, not a name match, so the
+    thunk indirection does not weaken it.  (The "1776 B" this tool prints for it
+    is a sweep artifact: that RVA has no recovered .pdata entry.)
+
+  ★★ THE PREMISE, CONFIRMED BYTE-LEVEL AND INDEPENDENTLY OF THE LIVE RUN:
+    vtbl 0x081a82f8 +0xee8 (slot 477)  APlayerController::AddCheats           0x00f7ec20 FOLD     16 B
+    vtbl 0x081a82f8 +0xc10 (slot 386)  APlayerController::EnableCheats        0x03c35480 REAL     16 B
+    vtbl 0x081a82f8 +0x288 (slot  81)  APlayerController::ProcessConsoleExec  0x011ef9c0 REAL     19 B
+    EnableCheats body = `mov rax,[rcx]; xor edx,edx; jmp [rax+0xEE8]`
+      i.e. literally `this->AddCheats(false)` -- a REAL function whose only
+      action is a virtual call to the folded stub.  So the engine-supplied
+      construction path is severed at EXACTLY ONE function and everything
+      downstream of it is intact.  This reproduces the live finding in
+      docs/fk13-live-run-2026-08-12.md from the cold image alone.
+    APlayerController does NOT override ProcessConsoleExec (slot 81 is the
+      plain UObject wrapper 0x011EF9C0); ALokiPlayerController does.
+
+  FClassParams @0x07f9bc00  NumFunctions=57 NumProperties=4 ClassFlags=0x800a0
+    MatchedSerializers|Native|MinimalAPI
+    ★ CLASS_Abstract is CLEAR => the class is instantiable
+
+  Constructor  InternalConstructor<UCheatManager> = 0x03567c60
+    REAL, 169 B -- it stores the vtable and initialises real defaults
+    vtable  = 0x07fa7e28 (.rdata)   [read out of `mov [rbx], rax`]
+    zeroes  +0x30 +0x38 +0x58 +0x60 +0x68 +0x70 +0x80 +0x88
+    writes  +0x44=10000.0f  +0x48=23.0f  +0x4C=21.0f  +0x50=30.0f  +0x54=2
+            (DebugTraceDistance / CapsuleHalfHeight / CapsuleRadius /
+             TraceDrawNormalLength / DebugTraceChannel=ECC_Pawn -- stock)
+    calls   0x0373a620 and stores the result at +0x38 (DebugCameraControllerClass)
+
+  vtable 0x07fa7e28 : 152 contiguous .text slots
+  ★ slot 81 / disp 0x288 = 0x035b7430  == UCheatManager::ProcessConsoleExec  MATCH
+      UCheatManager::ProcessConsoleExec          0x035b7430  REAL                154 B  pdata
+    body (measured):
+      rbx = [this+0x80]              ; CheatManagerExtensions.Data
+      eax = (int32)[this+0x88]       ; CheatManagerExtensions.ArrayNum (movsxd)
+      for each non-null element: call [elem->vtbl + 0x288](Cmd, Ar, Executor)
+                                 -> early-return true on success
+      fallback: call 0x01343420  == UObject::ProcessConsoleExec
+        UObject::ProcessConsoleExec (FUNC_Exec router) 0x01343420  REAL               2182 B  pdata
+    ⇒ with CheatManagerExtensions EMPTY (the ctor zeroes it) the loop is
+      skipped and every command goes straight to the FUNC_Exec name router.
+      No extension is needed for Route B.
+
+====================================================================================================
+4. UCheatManager::InitCheatManager  (task 3)
+====================================================================================================
+  Is it a UFUNCTION?  NO -- it is a PLAIN VIRTUAL (57 UCheatManager UFunctions, none named it)
+  (`ReceiveInitCheatManager` IS a UFUNCTION but carries
+   RequiredAPI|Event|Public|BlueprintEvent with NO FUNC_Native, so it has no
+   native thunk and is not in the 55-entry registrar array.)
+
+  vtable alignment -- own-virtual block base derived from MEASURED dispatch
+  displacements in the exec thunks (`mov rax,[rcx]; jmp [rax+disp]`):
+    verb                             thunk        disp     slot     stock idx  match
+    FreezeFrame                      0x035c7940  0x2d0   90       0          OK
+    Teleport                         0x0207bde0  0x2d8   91       1          OK
+    ChangeSize                       0x035c6ed0  0x2e0   92       2          OK
+    Fly                              0x035c7920  0x2e8   93       3          OK
+    Walk                             0x0207be00  0x2f0   94       4          OK
+    Ghost                            0x033ac270  0x2f8   95       5          OK
+    God                              0x035c7fd0  0x300   96       6          OK
+    Slomo                            0x035ca280  0x308   97       7          OK
+    DamageTarget                     0x035c7110  0x310   98       8          OK
+    DestroyTarget                    0x035c75a0  0x318   99       9          OK
+    DestroyAll                       0x035c7400  0x320   100      10         OK
+    DestroyAllPawnsExceptTarget      0x035c74b0  0x328   101      11         OK
+    DestroyPawns                     0x035c74d0  0x330   102      12         OK
+    Summon                           0x035ca510  0x338   103      13         OK
+    PlayersOnly                      0x035c8770  0x340   104      14         OK
+    ViewSelf                         0x035ca8f0  0x348   105      15         OK
+    ViewPlayer                       0x035ca850  0x350   106      16         OK
+    ViewActor                        0x035ca710  0x358   107      17         OK
+    ViewClass                        0x035ca7a0  0x360   108      18         OK
+    StreamLevelIn                    0x035ca3f0  0x368   109      19         OK
+    OnlyLoadLevel                    0x035c8300  0x370   110      20         OK
+    StreamLevelOut                   0x035ca480  0x378   111      21         OK
+    ToggleDebugCamera                0x035ca5d0  0x380   112      22         OK
+    ToggleAILogging                  0x033aac90  0x390   114      24         OK
+    ServerToggleAILogging            0x035c88b0  (Net RPC -- dispatches to the generated _Validate/_Implementation pair at slots 88/89; excluded)
+    DebugCapsuleSweep                0x035c71a0  0x3a0   116      26         OK
+    DebugCapsuleSweepSize            0x035c7330  0x3a8   117      27         OK
+    DebugCapsuleSweepChannel         0x035c71e0  0x3b0   118      28         OK
+    DebugCapsuleSweepComplex         0x035c7280  0x3b8   119      29         OK
+    DebugCapsuleSweepCapture         0x035c71c0  0x3c0   120      30         OK
+    DebugCapsuleSweepPawn            0x035c7310  0x3c8   121      31         OK
+    DebugCapsuleSweepClear           0x035c7260  0x3d0   122      32         OK
+    TestCollisionDistance            0x035ca5b0  0x3d8   123      33         OK
+    DumpOnlineSessionState           0x035c7600  0x3e0   124      34         OK
+    DumpPartyState                   0x035c7620  0x3e8   125      35         OK
+    DumpChatState                    0x035c75e0  0x3f0   126      36         OK
+    DumpVoiceMutingState             0x035c7640  0x3f8   127      37         OK
+    BugItGo                          0x035c6b10  0x400   128      38         OK
+    BugIt                            0x035c6a70  0x410   130      40         OK
+    BugItStringCreator               0x035c6d00  0x418   131      41         OK
+    FlushLog                         0x035c7900  0x420   132      42         OK
+    LogLoc                           0x035c8210  0x428   133      43         OK
+    SetMouseSensitivityToDefault     0x035c9830  0x430   134      44         OK
+    InvertMouse                      0x035c8090  0x438   135      45         OK
+    EnableDebugCamera                0x035c7660  0x468   141      51         OK
+    DisableDebugCamera               0x035c75c0  0x470   142      52         OK
+    => 45 measured anchors, 0 mismatches; own-virtual block base = slot 90
+
+  ★ InitCheatManager -> stock own index 49 -> VTABLE SLOT 139, disp 0x458
+      UCheatManager::InitCheatManager            0x035b19b0  REAL                650 B  pdata
+    NOT a folded stub.
+
+  Independent confirmation FROM THE BODY (not from the slot alignment):
+      0x07fa8740  '&UCheatManager::OnPlayerEndPlayed'
+    - `mov rax,[rcx]; mov rbx,[rax+0x270]; call rbx` after a FindFunction
+      => this->ProcessEvent(Func, nullptr)  == ReceiveInitCheatManager()
+        (so UObject::ProcessEvent is vtable disp 0x270 / slot 78)
+    - a global multicast-delegate Broadcast over .data 0x9A6F990
+      == OnCheatManagerCreatedDelegate.Broadcast(this)
+    - the L"&UCheatManager::OnPlayerEndPlayed" / L"::" / L"OnEndPlay" trio
+      == GetOuterAPlayerController()->OnEndPlay.AddDynamic(this, ...)
+    That is stock UCheatManager::InitCheatManager, statement for statement.
+
+  ⚠ INSTRUMENT NOTE: searching .rdata for the substring "OnPlayerEndPlayed"
+    finds 0x07fa8760, which has ZERO rip-references, because the code loads the
+    START of the longer literal at 0x07fa8740.  A substring search plus a null
+    xref would have read as "the AddDynamic is compiled out".  It is not.
+
+  DOES THE SHIM HAVE TO CALL IT?  Everything it does is optional for exec:
+    it fires a BP event (no BP subclass exists), broadcasts a delegate, and
+    registers an OnEndPlay handler.  It does NOT populate
+    CheatManagerExtensions and does NOT touch anything ProcessConsoleExec
+    reads.  [I -- from the measured body; lane 1 owns the decision.]
+
+====================================================================================================
+5. EXEC VERB GRADING  (task 4)
+====================================================================================================
+  UCheatManager UFunctions: 57   with FUNC_Exec: 50   natively registered: 55
+  (FK-13 §3D recorded 48 exec fns for UCheatManager; MEASURED here: 50)
+
+  verb                                       thunk       thk B  | impl        impl grade        imp B  | how
+  BugIt                                      0x035c6a70    157 | 0x0359e750  REAL                 626 | vtbl+0x410
+  BugItGo                                    0x035c6b10    488 | 0x0359e9d0  REAL                 118 | vtbl+0x400
+  BugItStringCreator                         0x035c6d00    458 | 0x0359ebf0  REAL                 594 | vtbl+0x418
+  ChangeSize                                 0x035c6ed0    131 | 0x035a40d0  REAL                 752 | vtbl+0x2e0
+  CheatScript                                0x035c6f60    228 | 0x035a4310  REAL                 176 | rel32
+  DamageTarget                               0x035c7110    131 | 0x035a7720  REAL                 625 | vtbl+0x310
+  DebugCapsuleSweep                          0x035c71a0     32 | 0x035a7b10  REAL                 135 | vtbl+0x3a0
+  DebugCapsuleSweepCapture                   0x035c71c0     32 | 0x035a7ba0  REAL                  32 | vtbl+0x3c0
+  DebugCapsuleSweepChannel                   0x035c71e0    127 | 0x035a7bc0  REAL                 192 | vtbl+0x3b0
+  DebugCapsuleSweepClear                     0x035c7260     32 | 0x035a7bd0  REAL                 161 | vtbl+0x3d0
+  DebugCapsuleSweepComplex                   0x035c7280    139 | 0x035a7c80  REAL                 112 | vtbl+0x3b8
+  DebugCapsuleSweepPawn                      0x035c7310     32 | 0x035a7ca0  REAL                  80 | vtbl+0x3c8
+  DebugCapsuleSweepSize                      0x035c7330    204 | 0x035a7ce0  REAL                  16 | vtbl+0x3a8
+  DestroyAll                                 0x035c7400    169 | 0x035a7fc0  REAL                 859 | vtbl+0x320
+  DestroyAllPawnsExceptTarget                0x035c74b0     32 | 0x035a8320  REAL                 272 | vtbl+0x328
+  DestroyPawns                               0x035c74d0    169 | 0x035a8a70  REAL                 940 | vtbl+0x330
+  DestroyServerStatReplicator                0x035c7580     64 | 0x035a8f80  REAL                 269 | vtbl+0x318
+  DestroyTarget                              0x035c75a0     32 | 0x035a8f80  REAL                 269 | vtbl+0x318
+  DumpChatState                              0x035c75e0     32 | 0x035a9d70  REAL                  75 | vtbl+0x3f0
+  DumpOnlineSessionState                     0x035c7600     32 | 0x035a9dc0  REAL                  75 | vtbl+0x3e0
+  DumpPartyState                             0x035c7620     32 | 0x035a9e10  REAL                  75 | vtbl+0x3e8
+  DumpVoiceMutingState                       0x035c7640     32 | 0x035a9e60  REAL                 242 | vtbl+0x3f8
+  FlushLog                                   0x035c7900     32 | 0x035ab310  REAL                  36 | vtbl+0x420
+  Fly                                        0x035c7920     32 | 0x035ab340  REAL                 185 | vtbl+0x2e8
+  FreezeFrame                                0x035c7940    131 | 0x035ab400  REAL                 406 | vtbl+0x2d0
+  Ghost                                      0x033ac270     32 | 0x035afcb0  REAL                 185 | vtbl+0x2f8
+  God                                        0x035c7fd0     32 | 0x035afd70  REAL                 221 | vtbl+0x300
+  InvertMouse                                0x035c8090     32 | 0x035b1dc0  REAL                  94 | vtbl+0x438
+  LogLoc                                     0x035c8210     32 | 0x035b3680  REAL                 307 | vtbl+0x428
+  OnlyLoadLevel                              0x035c8300    137 | 0x035b4760  REAL                  16 | vtbl+0x370
+  PlayersOnly                                0x035c8770     32 | 0x035b6df0  REAL                 170 | vtbl+0x340
+  SetMouseSensitivityToDefault               0x035c9830     32 | 0x035bd410  REAL                 192 | vtbl+0x430
+  SetWorldOrigin                             0x035ca260    240 | 0x035afba0  AMBIGUOUS              0 | AMBIGUOUS vtbl+0x188(base slot 49) or rel32 0x035a8ea0
+  Slomo                                      0x035ca280    131 | 0x035bec10  REAL                  60 | vtbl+0x308
+  SpawnServerStatReplicator                  0x035ca310     53 | 0x035afba0  AMBIGUOUS              0 | AMBIGUOUS vtbl+0x188(base slot 49) or rel32 0x035a8ea0
+  StreamLevelIn                              0x035ca3f0    137 | 0x035c2ad0  REAL                  48 | vtbl+0x368
+  StreamLevelOut                             0x035ca480    137 | 0x035c2af0  REAL                  16 | vtbl+0x378
+  Summon                                     0x035ca510    157 | 0x035c2b00  REAL                1093 | vtbl+0x338
+  Teleport                                   0x0207bde0     32 | 0x035c3e20  REAL                1353 | vtbl+0x2d8
+  TestCollisionDistance                      0x035ca5b0     32 | 0x00f7ec20  FOLD                  16 | vtbl+0x3d8
+  ToggleAILogging                            0x033aac90     32 | 0x00f7ec20  FOLD                  16 | vtbl+0x390
+  ToggleDebugCamera                          0x035ca5d0     32 | 0x00f7ec20  FOLD                  16 | vtbl+0x380
+  ToggleServerStatReplicatorClientOverwrite  0x035ca5f0    114 | --          UNRESOLVED             0 | rel32
+  ToggleServerStatReplicatorUpdateStatNet    0x035ca670    114 | --          UNRESOLVED             0 | rel32
+  UpdateSafeArea                             0x035ca6f0     32 | 0x00fbe430  REAL                 134 | rel32
+  ViewActor                                  0x035ca710    137 | 0x035c5560  COVERAGE-BLOCKED       0 | vtbl+0x358
+  ViewClass                                  0x035ca7a0    169 | 0x035c5940  COVERAGE-BLOCKED       0 | vtbl+0x360
+  ViewPlayer                                 0x035ca850    157 | 0x035c5eb0  COVERAGE-BLOCKED       0 | vtbl+0x350
+  ViewSelf                                   0x035ca8f0     32 | 0x035c6220  REAL                 367 | vtbl+0x348
+  Walk                                       0x0207be00     32 | 0x035c64d0  REAL                  96 | vtbl+0x2f0
+
+  IMPLEMENTATION VERDICT TALLY over the 50 exec verbs:
+    REAL               42
+    FOLD               3
+    COVERAGE-BLOCKED   3
+    UNRESOLVED         2
+  ⚠ UNRESOLVED = the thunk dispatches by rel32 into a body this tool did not
+    prove is the impl (parameterised thunks with teardown calls).  It is NOT
+    a claim that the verb is stubbed.
+
+  ★ THE VERBS THAT MATTER FOR SIMULATION (enemies / damage / view):
+    BugItGo                        thunk 0x035c6b10  impl 0x0359e9d0  REAL                118 B
+    ChangeSize                     thunk 0x035c6ed0  impl 0x035a40d0  REAL                752 B
+    CheatScript                    thunk 0x035c6f60  impl 0x035a4310  REAL                176 B
+    DamageTarget                   thunk 0x035c7110  impl 0x035a7720  REAL                625 B
+    DestroyAll                     thunk 0x035c7400  impl 0x035a7fc0  REAL                859 B
+    DestroyAllPawnsExceptTarget    thunk 0x035c74b0  impl 0x035a8320  REAL                272 B
+    DestroyPawns                   thunk 0x035c74d0  impl 0x035a8a70  REAL                940 B
+    DestroyTarget                  thunk 0x035c75a0  impl 0x035a8f80  REAL                269 B
+    Fly                            thunk 0x035c7920  impl 0x035ab340  REAL                185 B
+    FreezeFrame                    thunk 0x035c7940  impl 0x035ab400  REAL                406 B
+    Ghost                          thunk 0x033ac270  impl 0x035afcb0  REAL                185 B
+    God                            thunk 0x035c7fd0  impl 0x035afd70  REAL                221 B
+    LogLoc                         thunk 0x035c8210  impl 0x035b3680  REAL                307 B
+    PlayersOnly                    thunk 0x035c8770  impl 0x035b6df0  REAL                170 B
+    SetWorldOrigin                 thunk 0x035ca260  impl 0x035afba0  AMBIGUOUS             0 B
+    Slomo                          thunk 0x035ca280  impl 0x035bec10  REAL                 60 B
+    Summon                         thunk 0x035ca510  impl 0x035c2b00  REAL               1093 B
+    Teleport                       thunk 0x0207bde0  impl 0x035c3e20  REAL               1353 B
+    ViewActor                      thunk 0x035ca710  impl 0x035c5560  COVERAGE-BLOCKED      0 B
+    ViewClass                      thunk 0x035ca7a0  impl 0x035c5940  COVERAGE-BLOCKED      0 B
+    ViewPlayer                     thunk 0x035ca850  impl 0x035c5eb0  COVERAGE-BLOCKED      0 B
+    ViewSelf                       thunk 0x035ca8f0  impl 0x035c6220  REAL                367 B
+    Walk                           thunk 0x0207be00  impl 0x035c64d0  REAL                 96 B
+
+  ⚠ EXEC VERBS THAT ARE PRESENT BUT EMPTY (impl folds to `ret 0`) --
+    do not plan around these:
+    TestCollisionDistance          vtbl+0x3d8 -> 0x00f7ec20
+    ToggleAILogging                vtbl+0x390 -> 0x00f7ec20
+    ToggleDebugCamera              vtbl+0x380 -> 0x00f7ec20
+
+  ⚠ COVERAGE-BLOCKED (page never executed in any of the 10 dumps) --
+    these are UNKNOWN, not stubs:
+    ViewActor                      impl 0x035c5560  page 0x035c5000 is all-zero
+    ViewClass                      impl 0x035c5940  page 0x035c5000 is all-zero
+    ViewPlayer                     impl 0x035c5eb0  page 0x035c5000 is all-zero
+
+  --- APlayerController exec verbs (branch 7 is not the only branch) ---
+    Camera                             thunk 0x03c5e2a0  REAL                137 B
+    ConsoleKey                         thunk 0x03c61570  REAL                245 B
+    EnableCheats                       thunk 0x03c61920  REAL                 32 B
+    FOV                                thunk 0x03c61cc0  REAL                131 B
+    LocalTravel                        thunk 0x03c64600  REAL                157 B
+    Pause                              thunk 0x03c64730  REAL                 32 B
+    RestartLevel                       thunk 0x03c652b0  REAL                 32 B
+    SendToConsole                      thunk 0x03c652d0  REAL                157 B
+    ServerExec                         thunk (unlocated) -                     0 B
+    SetName                            thunk 0x03c693b0  REAL                157 B
+    StartFire                          thunk 0x03c69d60  REAL                127 B
+    SwitchLevel                        thunk 0x03c69ed0  REAL                157 B
+    TestServerLevelVisibilityChange    thunk 0x03c69f70  REAL                170 B
+    ToggleSpeaking                     thunk 0x03c6a020  REAL                139 B
+
+  --- ALokiCharacter exec verbs: reachable on the POSSESSED PAWN with NO
+      CheatManager at all (UPlayer::Exec branch 4) ---
+    CheatExperience                    flags 0x00020601 Final|Exec|Native|Public
+    CheatToggleCharacterDebugMode      flags 0x00020601 Final|Exec|Native|Public
+    DebugStatString                    flags 0x00020601 Final|Exec|Native|Public
+    InfiniteHealth                     flags 0x00020601 Final|Exec|Native|Public
+    InfiniteMana                       flags 0x00020601 Final|Exec|Native|Public
+    InfiniteStamina                    flags 0x00020601 Final|Exec|Native|Public
+    ResetCooldowns                     flags 0x00020601 Final|Exec|Native|Public
+    TeleportAlly                       flags 0x00020601 Final|Exec|Native|Public
+    TeleportEnemy                      flags 0x00020601 Final|Exec|Native|Public
+    TeleportNear                       flags 0x00020601 Final|Exec|Native|Public
+
+====================================================================================================
+6. PROPERTY OFFSETS, BY REFLECTION  (task 5)
+====================================================================================================
+
+  APlayerController   FClassParams @0x081a2670  NumProperties=62
+    CheatManager                 reflected +0x520   expected +0x520   MATCH
+    CheatClass                   reflected +0x528   expected +0x528   MATCH
+    Player                       reflected +0x458   expected +0x458   MATCH
+    MyHUD                        reflected +0x468   expected +0x468   MATCH
+    PlayerCameraManager          reflected +0x470   expected +0x470   MATCH
+    AcknowledgedPawn             reflected +0x460   expected +0x460   MATCH
+    PlayerInput                  reflected +0x530   expected +0x530   MATCH
+    SpectatorPawn                reflected +0x7d8   expected +0x7d8   MATCH
+
+  UCheatManager   FClassParams @0x07f9bc00  NumProperties=4
+    CheatManagerExtensions       reflected +0x080   expected +0x080   MATCH
+    DebugCameraControllerRef     reflected +0x030   expected +0x030   MATCH
+    DebugCameraControllerClass   reflected +0x038   expected +0x038   MATCH
+
+  ★ CheatManager +0x520 and CheatClass +0x528 agree with the LIVE RPM
+    readings in docs/fk13-live-run-2026-08-12.md, as do Player/MyHUD/
+    PlayerCameraManager/AcknowledgedPawn/PlayerInput/SpectatorPawn -- 8/8
+    cross-instrument agreement between offline UHT reflection and live RPM.
+
+  ★ UCheatManager PropertiesSize = 0x90 (144) bytes  [InSize arg of
+    GetPrivateStaticClassBody].  Corroborated: CheatManagerExtensions is a
+    16-byte TArray at +0x80, i.e. it ends exactly at 0x90, and the ctor
+    zeroes [+0x80] and [+0x88] (Data, then Num+Max as one qword).
+
+  UObject in THIS build is 0x30 (48) bytes -- measured as
+  UCheatManagerExtension's InSize, and consistent with CLAUDE.md's
+  non-stock layout (ObjectFlags@0x0C, InternalIndex@0x10, Class@0x18,
+  Name@0x20, Outer@0x28).  Stock UE5 UObject is 0x28.
+
+====================================================================================================
+7. ICF FOLD SANITY  (task 6)
+====================================================================================================
+  the two universal folds:
+    0x00f7ec20  bytes c20000   ret 0 [ret 0 (void)]
+    0x00f7eb60  bytes 32c0c3   xor al,al; ret [xor al,al; ret (false)]
+  neither has a recovered .pdata entry (a 3-byte leaf needs no unwind data)
+  -- which is itself a discriminator against a real body.
+
+    UGameplayStatics::execSpawnObject                0x0380ff40 REAL     218 B  not a fold
+    UGameplayStatics::SpawnObject (impl)             0x037f0710 REAL    1014 B  not a fold
+    StaticConstructObject_Internal                   0x01373e90 REAL     632 B  not a fold
+    UCheatManager::GetPrivateStaticClass             0x03555050 REAL     174 B  not a fold
+    InternalConstructor<UCheatManager>               0x03567c60 REAL     169 B  not a fold
+    UCheatManager::ProcessConsoleExec                0x035b7430 REAL     154 B  not a fold
+    UObject::ProcessConsoleExec                      0x01343420 REAL    2182 B  not a fold
+    UCheatManager::InitCheatManager                  0x035b19b0 REAL     650 B  not a fold
+    UKismetSystemLibrary::execExecuteConsoleCommand  0x0395d790 REAL     469 B  not a fold
+    APlayerController::execLocalTravel               0x03c64600 REAL     157 B  not a fold
+  => 0 of 10 shim targets resolve to a universal fold.
+
+  DO_CHECK probe (does shipping still enforce ClassWithin in NewObject?):
+    wide=False ansi=False  checkf in StaticAllocateObject
+    wide=False ansi=False  checkf in StaticAllocateObject
+    wide=False ansi=False  WITH_EDITOR Within fatal log
+    wide=True  POSITIVE CONTROL 'LogUObjectGlobals'
+    wide=True  POSITIVE CONTROL 'SpawnObject'
+  => the check()/checkf() literals from that exact TU are absent while a
+     same-TU control literal is present ⇒ DO_CHECK == 0 there ⇒ the
+     `check(InOuter->IsA(InClass->ClassWithin))` is COMPILED OUT.
+     [M for the literals; [I] for the inference.  Pass the PlayerController
+     as Outer anyway -- many verbs call GetOuterAPlayerController().]
+
+====================================================================================================
+8. THE ADDRESS TABLE THE SHIM WILL USE  (all RVAs; add the live module base)
+====================================================================================================
+  what                                                 rva/value    kind   note
+  DATA  live UClass* UCheatManager                     0x0009f84f38 data   Z_Registration_Info_UClass_UCheatManager.InnerSingleton; +8 = OuterSingleton 
+  DATA  APlayerController::CheatManager                0x0000000520 off    ObjectProperty, write target 
+  DATA  APlayerController::CheatClass                  0x0000000528 off    ClassProperty, already populated 
+  DATA  UCheatManager::CheatManagerExtensions          0x0000000080 off    TArray, 16 B, ends at 0x90 
+  CONST sizeof(UCheatManager)                          0x0000000090 const  align 8 
+  CODE  UCheatManager::GetPrivateStaticClass           0x0003555050 text   returns the UClass* REAL 174 B
+  CODE  InternalConstructor<UCheatManager>             0x0003567c60 text   ClassConstructor REAL 169 B
+  CODE  UGameplayStatics::execSpawnObject              0x000380ff40 text   FFrame thunk, 3 params REAL 218 B
+  CODE  UGameplayStatics::SpawnObject                  0x00037f0710 text   direct C++ (UClass*, UObject*) REAL 1014 B
+  CODE  StaticConstructObject_Internal                 0x0001373e90 text   lowest-level option REAL 632 B
+  CODE  UCheatManager::ProcessConsoleExec              0x00035b7430 text   vtable slot 81 / +0x288 REAL 154 B
+  CODE  UObject::ProcessConsoleExec                    0x0001343420 text   the FUNC_Exec name router REAL 2182 B
+  CODE  UCheatManager::InitCheatManager                0x00035b19b0 text   vtable slot 139 / +0x458 REAL 650 B
+  CODE  UKismetSystemLibrary::execExecuteConsoleCommand 0x000395d790 text   the S55-callable entry point REAL 469 B
+  VT    UCheatManager vtable                           0x0007fa7e28 rdata  152 slots 
+  VT    UObject::ProcessEvent displacement             0x0000000270 off    slot 78 
+  VT    ProcessConsoleExec displacement                0x0000000288 off    slot 81 
+
+  ★ TWO INDEPENDENT WAYS TO GET THE UClass*, neither needing a GUObjectArray scan:
+     (a) read the global at .data 0x09f84f38  (the registration singleton)
+     (b) read PlayerController + 0x528 (CheatClass) -- MEASURED non-null live in
+         BOTH the menu and the staged tutorial world (fk13-live-run-2026-08-12.md)
+     (c) call 0x03555050 (GetPrivateStaticClass) -- but that is a CALL, and it
+         lazily constructs on first use; (a) and (b) are pure reads.
+     The dumped process had 0x2a1c5115100 in slot (a).
+
+  ⚠ NOTHING here requires a `.text` write.  Every address above is either
+    READ, or CALLED, or is a heap/data offset.  The only write the route
+    needs is the 8-byte DATA store to PlayerController+0x520.
+
+====================================================================================================
+controls passed: True

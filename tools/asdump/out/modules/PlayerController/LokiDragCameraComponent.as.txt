@@ -1,0 +1,889 @@
+// ============================================================================
+//  MODULE   PlayerController.LokiDragCameraComponent
+//  SOURCE   PlayerController/LokiDragCameraComponent.as
+//  CONTENT  1 class(es), 13 function(s), 0 enum(s), 1 global(s), 3112 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiDragCameraComponent;
+
+ULokiDragCameraComponent@ ULokiDragCameraComponent()   // traits=0x20
+{
+    ULokiDragCameraComponent v2;
+
+    v2 = ULokiDragCameraComponent();
+    return v2;
+}
+/* ---- ULokiDragCameraComponent: 7 dwords / 4 instructions (cache offset 0xa9c3c) ----
+    0000  PSF           v2
+    0004  ALLOC         85251 ULokiDragCameraComponent                ; new ULokiDragCameraComponent  ctor=void ULokiDragCameraComponent::ULokiDragCameraComponent()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ ULokiDragCameraComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiDragCameraComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0xa9d01) ----
+    0000  PshGPtr       __StaticType_ULokiDragCameraComponent
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+ULokiDragCameraComponent@ ULokiDragCameraComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiDragCameraComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiDragCameraComponent, v2, typeid(ULokiDragCameraComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0xa9e43) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972722                                    ; ULokiDragCameraComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiDragCameraComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetComponentByClass                   ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+ULokiDragCameraComponent@ ULokiDragCameraComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiDragCameraComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiDragCameraComponent, v2, typeid(ULokiDragCameraComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0xa9f9d) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972722                                    ; ULokiDragCameraComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiDragCameraComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass           ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+ULokiDragCameraComponent@ ULokiDragCameraComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiDragCameraComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiDragCameraComponent, v2, typeid(ULokiDragCameraComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0xaa0f2) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972722                                    ; ULokiDragCameraComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiDragCameraComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_CreateComponentByClass                ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiDragCameraComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiDragCameraComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 MinimumDragDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 CameraPickupRadius;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bPanning;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bResetting;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    float64 TimePressed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    FVector CursorScreenLocationWhenPressed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    FVector OffsetThisPress;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    FVector CumulativeOffset;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    FVector LastPawnLocation;
+
+    ULokiDragCameraComponent()   // traits=0x21
+    {
+        this.CursorScreenLocationWhenPressed = FVector();
+        this.OffsetThisPress = FVector();
+        this.CumulativeOffset = FVector();
+        this.LastPawnLocation = FVector();
+        return;
+    }
+    /* ---- ULokiDragCameraComponent: 29 dwords / 15 instructions (cache offset 0xabbd5) ----
+        0000  PshVPtr       this
+        0004  ADDSi         240 134230898                                 ; .CursorScreenLocationWhenPressed
+        000C  CALLSYS       FVector::$beh0                                ; void FVector::$beh0()
+        0018  PshVPtr       this
+        001C  ADDSi         264 134230898                                 ; .OffsetThisPress
+        0024  CALLSYS       FVector::$beh0                                ; void FVector::$beh0()
+        0030  PshVPtr       this
+        0034  ADDSi         288 134230898                                 ; .CumulativeOffset
+        003C  CALLSYS       FVector::$beh0                                ; void FVector::$beh0()
+        0048  PshVPtr       this
+        004C  ADDSi         312 134230898                                 ; .LastPawnLocation
+        0054  CALLSYS       FVector::$beh0                                ; void FVector::$beh0()
+        0060  PshVPtr       this
+        0064  FinConstruct  ULokiDragCameraComponent
+        0070  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void NotifyInputPressed()   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        float64 v4;
+        FVector v10;
+
+        v1 = true;
+        this.bPanning = v1;
+        v1 = false;
+        this.bResetting = v1;
+        v2 = Gameplay::GetServerTime(__WorldContext);
+        v4 = float64(v2);
+        this.TimePressed = v4;
+        v10 = this.GetCursorScreenLocation();
+        this.CursorScreenLocationWhenPressed = v10;
+        this.OffsetThisPress = FVector::ZeroVector;
+        return;
+    }
+    /* ---- NotifyInputPressed: 43 dwords / 24 instructions (cache offset 0xaa6e7) ----
+        0000  SetV1         v1 1
+        0008  LoadThisR     224 134230898                                 ; this.bPanning
+        0010  WRTV1         v1
+        0014  SetV1         v1 0
+        001C  LoadThisR     225 134230898                                 ; this.bResetting
+        0024  WRTV1         v1
+        0028  PshGPtr       __WorldContext
+        0034  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        0040  CpyRtoV4      v2
+        0044  fTOd          v4 v2
+        004C  LoadThisR     232 134230898                                 ; this.TimePressed
+        0054  WRTV8         v4
+        0058  PSF           v10
+        005C  PshVPtr       this
+        0060  CALLINTF      85248                                         ; FVector ULokiDragCameraComponent::GetCursorScreenLocation()
+        0068  PSF           v10
+        006C  PshVPtr       this
+        0070  ADDSi         240 134230898                                 ; .CursorScreenLocationWhenPressed
+        0078  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        0084  PshGPtr       FVector::ZeroVector
+        0090  PshVPtr       this
+        0094  ADDSi         264 134230898                                 ; .OffsetThisPress
+        009C  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        00A8  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void NotifyInputReleased()   // traits=0x20
+    {
+        auto v1;
+        auto v4;
+        auto v5;
+        float64 v8;
+        auto v10;
+        auto v12;
+        ULokiGameUserSettings v16;
+        FVector v24;
+        auto v25;
+        auto v26;
+        APawn v30;
+
+        v1 = false;
+        this.bPanning = v1;
+        v5 = Gameplay::GetServerTime(__WorldContext);
+        v8 = float64(v5);
+        v4 = v8;
+        v8 = this.TimePressed;
+        v8 = v4 - v8;
+        v12 = Math::Abs(v8);
+        v16 = ULokiGameUserSettings::GetLokiGameUserSettings();
+        v24 = this.GetCursorScreenLocation();
+        v8 = this.CursorScreenLocationWhenPressed.Dist2D(v24);
+        v10 = this.MinimumDragDuration;
+        v1 = v12 < v10;
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v10 = 200.0;
+            v26 = v8 < v10;
+            v1 = v26;
+        }
+        if (v16.IsDragToPanCameraResetOnRelease()) {
+            v25 = true;
+        } else {
+            v25 = v1;
+        }
+        this.bResetting = v25;
+        this.CumulativeOffset += this.OffsetThisPress;
+        this.OffsetThisPress = FVector::ZeroVector;
+        v25 = this.bResetting;
+        v25 = !v25;
+        if (v25) {
+            v30 = this.GetLocalPawn();
+            if (v30 != nullptr) {
+                v24 = v30.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                this.LastPawnLocation = v24;
+            }
+        }
+        return;
+    }
+    /* ---- NotifyInputReleased: 127 dwords / 75 instructions (cache offset 0xaa8aa) ----
+        0000  SetV1         v1 0
+        0008  LoadThisR     224 134230898                                 ; this.bPanning
+        0010  WRTV1         v1
+        0014  PshGPtr       __WorldContext
+        0020  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+        002C  CpyRtoV4      v5
+        0030  fTOd          v8 v5
+        0038  CpyVtoV8      v4 v8
+        0040  LoadThisR     232 134230898                                 ; this.TimePressed
+        0048  RDR8          v8
+        004C  SUBd          v8 v4 v8
+        0054  PshV8         v8
+        0058  CALLSYS       Abs                                           ; float64 Math::Abs(float64)
+        0064  CpyRtoV8      v12
+        0068  CALLSYS       GetLokiGameUserSettings                       ; ULokiGameUserSettings@ ULokiGameUserSettings::GetLokiGameUserSettings()
+        0074  STOREOBJ      v16
+        0078  PSF           v24
+        007C  PshVPtr       this
+        0080  CALLINTF      85248                                         ; FVector ULokiDragCameraComponent::GetCursorScreenLocation()
+        0088  PSF           v24
+        008C  PshVPtr       this
+        0090  ADDSi         240 134230898                                 ; .CursorScreenLocationWhenPressed
+        0098  CALLSYS       FVector::Dist2D                               ; float64 FVector::Dist2D(const FVector&) const
+        00A4  CpyRtoV8      v8
+        00A8  LoadThisR     208 134230898                                 ; this.MinimumDragDuration
+        00B0  RDR8          v10
+        00B4  CMPd          v12 v10
+        00BC  TS
+        00C0  CpyRtoV4      v1
+        00C4  CpyVtoR1      v1
+        00C8  JLowNZ        4                                             -> L00E0
+        00D0  SetV4         v1 0
+        00D8  JMP           9                                             -> L0104
+      L00E0:
+        00E0  SetV8         v10 0x4069000000000000
+        00EC  CMPd          v8 v10
+        00F4  TS
+        00F8  CpyRtoV4      v26
+        00FC  CpyVtoV4      v1 v26
+      L0104:
+        0104  PshVPtr       v16
+        0108  CALLSYS       ULokiGameUserSettings::IsDragToPanCameraResetOnRelease  ; bool ULokiGameUserSettings::IsDragToPanCameraResetOnRelease() const
+        0114  JLowZ         4                                             -> L012C
+        011C  SetV1         v25 1
+        0124  JMP           2                                             -> L0134
+      L012C:
+        012C  CpyVtoV4      v25 v1
+      L0134:
+        0134  LoadThisR     225 134230898                                 ; this.bResetting
+        013C  WRTV1         v25
+        0140  PshVPtr       this
+        0144  ADDSi         264 134230898                                 ; .OffsetThisPress
+        014C  PSF           v24
+        0150  PshVPtr       this
+        0154  ADDSi         288 134230898                                 ; .CumulativeOffset
+        015C  CALLSYS       FVector::opAddAssign                          ; FVector FVector::opAddAssign(const FVector&)
+        0168  PshGPtr       FVector::ZeroVector
+        0174  PshVPtr       this
+        0178  ADDSi         264 134230898                                 ; .OffsetThisPress
+        0180  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        018C  LoadThisR     225 134230898                                 ; this.bResetting
+        0194  RDR1          v25
+        0198  NOT           v25
+        019C  CpyVtoR1      v25
+        01A0  JLowZ         20                                            -> L01F8
+        01A8  PshVPtr       this
+        01AC  CALLINTF      85250                                         ; APawn@ ULokiDragCameraComponent::GetLocalPawn()
+        01B4  STOREOBJ      v30
+        01B8  CmpPtrNull    v30
+        01BC  JZ            12                                            -> L01F4
+        01C4  PSF           v24
+        01C8  PshVPtr       v30
+        01CC  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        01D8  PSF           v24
+        01DC  PshVPtr       this
+        01E0  ADDSi         312 134230898                                 ; .LastPawnLocation
+        01E8  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+      L01F4:
+        01F4  FreeNullV8    v30
+      L01F8:
+        01F8  RET           2
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        ALokiPlayerController v4;
+        auto v5;
+        APawn v10;
+        UClass v12;
+        TSubclassOf<UActorComponent@> v14;
+        UActorComponent v16;
+        ULokiCharacterSpringArmComponent v18;
+        ULokiCharacterSpringArmComponent v20;
+        FVector v26;
+        FVector v32;
+        auto v33;
+        ULokiGameUserSettings v38;
+        auto v39;
+        float64 v42;
+        auto v43;
+        float64 v46;
+        FVector v52;
+        float64 v54;
+        auto v56;
+        FVector v62;
+        FVector v68;
+        FVector v74;
+
+        v4 = this.GetPlayerController();
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v10 = this.GetLocalPawn();
+            if (v10 == nullptr) {
+                return;
+            } else {
+                v12 = ULokiCharacterSpringArmComponent::StaticClass();
+                v14 = TSubclassOf<UActorComponent@>(v12);
+                v16 = v10.GetComponentByClass(v14);
+                if (v16 != nullptr) {
+                    v18 = cast<ULokiCharacterSpringArmComponent@>(v16);
+                } else {
+                    v18 = nullptr;
+                }
+                v20 = v18;
+                if (v20 == nullptr) {
+                    return;
+                } else {
+                    v32 = this.GetCursorScreenLocation();
+                    v33 = this.bPanning;
+                    if (!v33) {
+                        v33 = 0;
+                    } else {
+                        v5 = v32 == FVector::ZeroVector;
+                        v33 = v5;
+                    }
+                    if (v33) {
+                        this.NotifyInputReleased();
+                    }
+                    v5 = true;
+                    v20.bDynamicCameraPanEnabled = v5;
+                    v33 = this.bPanning;
+                    if (v33) {
+                        v38 = ULokiGameUserSettings::GetLokiGameUserSettings();
+                        v5 = v38.IsDragToPanCameraInverted();
+                        v43 = v38.GetDragToPanCameraSpeed();
+                        v46 = float64(v43);
+                        v42 = v46;
+                        v68 = FVector();
+                        if (v5) {
+                            v46 = v42;
+                            v46 = -v46;
+                            v54 = v42;
+                            v54 = -v54;
+                            v26 = FVector(v54, v46, 0);
+                            v68 = v26;
+                        } else {
+                            v62 = FVector(v42, v42, 0);
+                            v68 = v62;
+                        }
+                        v26 = v32 - this.CursorScreenLocationWhenPressed;
+                        v52 = v26 * v68;
+                        this.OffsetThisPress = v52;
+                    } else {
+                        v33 = this.bResetting;
+                        if (v33) {
+                            v62 = FVector(0.8, 0.8, 0);
+                            this.CumulativeOffset *= v62;
+                            v56 = this.CumulativeOffset.Size2D();
+                            v54 = 100.0;
+                            if (v56 < v54) {
+                                this.CumulativeOffset = FVector::ZeroVector;
+                                v33 = false;
+                                this.bResetting = v33;
+                            }
+                        } else {
+                            v33 = this.CumulativeOffset.IsNearlyZero(9.999999747378752e-05);
+                            v33 = !v33;
+                            if (v33) {
+                                v39 = false;
+                                v20.bDynamicCameraPanEnabled = v39;
+                                v26 = v10.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                                v52 = v26 - this.LastPawnLocation;
+                                v68 = FVector(1.0, 1.0, 0);
+                                v62 = v52 * v68;
+                                this.LastPawnLocation = v26;
+                                this.CumulativeOffset -= v62;
+                                v46 = this.CameraPickupRadius;
+                                v56 = 0;
+                                if (v46 <= v56) {
+                                    v39 = 0;
+                                } else {
+                                    v56 = this.CumulativeOffset.Size2D();
+                                    v46 = this.CameraPickupRadius;
+                                    v33 = v56 < v46;
+                                    v39 = v33;
+                                }
+                                if (v39) {
+                                    v33 = true;
+                                    this.bResetting = v33;
+                                }
+                            }
+                        }
+                    }
+                    v52 = FVector(this.CumulativeOffset);
+                    v74 = v52 + this.OffsetThisPress;
+                    v20.CameraManualPanOffset = v74;
+                }
+            }
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 365 dwords / 211 instructions (cache offset 0xaac8b) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      85249                                         ; ALokiPlayerController@ ULokiDragCameraComponent::GetPlayerController()
+        000C  STOREOBJ      v4
+        0010  CmpPtrNull    v4
+        0014  JNZ           2                                             -> L0024
+        001C  JMP           355                                           -> L05B0
+      L0024:
+        0024  PshVPtr       this
+        0028  CALLINTF      85250                                         ; APawn@ ULokiDragCameraComponent::GetLocalPawn()
+        0030  STOREOBJ      v10
+        0034  CmpPtrNull    v10
+        0038  JNZ           2                                             -> L0048
+        0040  JMP           346                                           -> L05B0
+      L0048:
+        0048  CALLSYS       StaticClass                                   ; UClass@ ULokiCharacterSpringArmComponent::StaticClass()
+        0054  STOREOBJ      v12
+        0058  PshVPtr       v12
+        005C  PSF           v14
+        0060  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<UActorComponent@>::$beh0(UClass@)
+        006C  PSF           v14
+        0070  PshVPtr       v10
+        0074  CALLSYS       AActor::GetComponentByClass                   ; UActorComponent@ AActor::GetComponentByClass(TSubclassOf<UActorComponent@>) const
+        0080  STOREOBJ      v16
+        0084  CmpPtrNull    v16
+        0088  JZ            9                                             -> L00B4
+        0090  TYPEID        1140856833                                    ; ULokiCharacterSpringArmComponent@
+        0098  PSF           v18
+        009C  PshVPtr       v16
+        00A0  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        00AC  JMP           1                                             -> L00B8
+      L00B4:
+        00B4  ClrVPtr       v18
+      L00B8:
+        00B8  PshVPtr       v18
+        00BC  RefCpyV       v20
+        00C0  CmpPtrNull    v20
+        00C4  JNZ           2                                             -> L00D4
+        00CC  JMP           311                                           -> L05B0
+      L00D4:
+        00D4  PSF           v32
+        00D8  PshVPtr       this
+        00DC  CALLINTF      85248                                         ; FVector ULokiDragCameraComponent::GetCursorScreenLocation()
+        00E4  LoadThisR     224 134230898                                 ; this.bPanning
+        00EC  RDR1          v33
+        00F0  CpyVtoR1      v33
+        00F4  JLowNZ        4                                             -> L010C
+        00FC  SetV4         v33 0
+        0104  JMP           10                                            -> L0134
+      L010C:
+        010C  PshGPtr       FVector::ZeroVector
+        0118  PSF           v32
+        011C  CALLSYS       FVector::opEquals                             ; bool FVector::opEquals(const FVector&) const
+        0128  CpyRtoV4      v5
+        012C  CpyVtoV4      v33 v5
+      L0134:
+        0134  CpyVtoR1      v33
+        0138  JLowZ         3                                             -> L014C
+        0140  PshVPtr       this
+        0144  CALLINTF      85246                                         ; void ULokiDragCameraComponent::NotifyInputReleased()
+      L014C:
+        014C  SetV1         v5 1
+        0154  LoadRObjR     v20 968 67115009                              ; .bDynamicCameraPanEnabled
+        0160  WRTV1         v5
+        0164  LoadThisR     224 134230898                                 ; this.bPanning
+        016C  RDR1          v33
+        0170  CpyVtoR1      v33
+        0174  JLowZ         85                                            -> L02D0
+        017C  CALLSYS       GetLokiGameUserSettings                       ; ULokiGameUserSettings@ ULokiGameUserSettings::GetLokiGameUserSettings()
+        0188  STOREOBJ      v38
+        018C  PshVPtr       v38
+        0190  CALLSYS       ULokiGameUserSettings::IsDragToPanCameraInverted  ; bool ULokiGameUserSettings::IsDragToPanCameraInverted() const
+        019C  CpyRtoV4      v5
+        01A0  PshVPtr       v38
+        01A4  CALLSYS       ULokiGameUserSettings::GetDragToPanCameraSpeed  ; float32 ULokiGameUserSettings::GetDragToPanCameraSpeed() const
+        01B0  CpyRtoV4      v43
+        01B4  fTOd          v46 v43
+        01BC  CpyVtoV8      v42 v46
+        01C4  PSF           v68
+        01C8  CALLSYS       FVector::$beh0                                ; void FVector::$beh0()
+        01D4  CpyVtoR1      v5
+        01D8  JLowZ         22                                            -> L0238
+        01E0  PshC8         0x0
+        01EC  CpyVtoV8      v46 v42
+        01F4  NEGd          v46
+        01F8  PshV8         v46
+        01FC  CpyVtoV8      v54 v42
+        0204  NEGd          v54
+        0208  PshV8         v54
+        020C  PSF           v26
+        0210  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        021C  PSF           v26
+        0220  PSF           v68
+        0224  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        0230  JMP           14                                            -> L0270
+      L0238:
+        0238  PshC8         0x0
+        0244  PshV8         v42
+        0248  PshV8         v42
+        024C  PSF           v62
+        0250  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        025C  PSF           v62
+        0260  PSF           v68
+        0264  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+      L0270:
+        0270  PshVPtr       this
+        0274  ADDSi         240 134230898                                 ; .CursorScreenLocationWhenPressed
+        027C  PSF           v26
+        0280  PSF           v32
+        0284  CALLSYS       FVector::opSub                                ; FVector FVector::opSub(const FVector&) const
+        0290  PSF           v68
+        0294  PSF           v52
+        0298  PSF           v26
+        029C  CALLSYS       FVector::opMul                                ; FVector FVector::opMul(const FVector&) const
+        02A8  PSF           v52
+        02AC  PshVPtr       this
+        02B0  ADDSi         264 134230898                                 ; .OffsetThisPress
+        02B8  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        02C4  FreeNullV8    v38
+        02C8  JMP           162                                           -> L0558
+      L02D0:
+        02D0  LoadThisR     225 134230898                                 ; this.bResetting
+        02D8  RDR1          v33
+        02DC  CpyVtoR1      v33
+        02E0  JLowZ         51                                            -> L03B4
+        02E8  PshC8         0x0
+        02F4  PshC8         0x3fe999999999999a
+        0300  PshC8         0x3fe999999999999a
+        030C  PSF           v62
+        0310  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        031C  PSF           v62
+        0320  PSF           v26
+        0324  PshVPtr       this
+        0328  ADDSi         288 134230898                                 ; .CumulativeOffset
+        0330  CALLSYS       FVector::opMulAssign                          ; FVector FVector::opMulAssign(const FVector&)
+        033C  PshVPtr       this
+        0340  ADDSi         288 134230898                                 ; .CumulativeOffset
+        0348  CALLSYS       FVector::Size2D                               ; float64 FVector::Size2D() const
+        0354  CpyRtoV8      v56
+        0358  SetV8         v54 0x4059000000000000
+        0364  CMPd          v56 v54
+        036C  JNS           14                                            -> L03AC
+        0374  PshGPtr       FVector::ZeroVector
+        0380  PshVPtr       this
+        0384  ADDSi         288 134230898                                 ; .CumulativeOffset
+        038C  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        0398  SetV1         v33 0
+        03A0  LoadThisR     225 134230898                                 ; this.bResetting
+        03A8  WRTV1         v33
+      L03AC:
+        03AC  JMP           105                                           -> L0558
+      L03B4:
+        03B4  PshC8         0x3f1a36e2e0000000
+        03C0  PshVPtr       this
+        03C4  ADDSi         288 134230898                                 ; .CumulativeOffset
+        03CC  CALLSYS       FVector::IsNearlyZero                         ; bool FVector::IsNearlyZero(float64) const
+        03D8  CpyRtoV4      v33
+        03DC  NOT           v33
+        03E0  CpyVtoR1      v33
+        03E4  JLowZ         91                                            -> L0558
+        03EC  SetV1         v39 0
+        03F4  LoadRObjR     v20 968 67115009                              ; .bDynamicCameraPanEnabled
+        0400  WRTV1         v39
+        0404  PSF           v26
+        0408  PshVPtr       v10
+        040C  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0418  PshVPtr       this
+        041C  ADDSi         312 134230898                                 ; .LastPawnLocation
+        0424  PSF           v52
+        0428  PSF           v26
+        042C  CALLSYS       FVector::opSub                                ; FVector FVector::opSub(const FVector&) const
+        0438  PshC8         0x0
+        0444  PshC8         0x3ff0000000000000
+        0450  PshC8         0x3ff0000000000000
+        045C  PSF           v68
+        0460  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        046C  PSF           v68
+        0470  PSF           v62
+        0474  PSF           v52
+        0478  CALLSYS       FVector::opMul                                ; FVector FVector::opMul(const FVector&) const
+        0484  PSF           v26
+        0488  PshVPtr       this
+        048C  ADDSi         312 134230898                                 ; .LastPawnLocation
+        0494  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        04A0  PSF           v62
+        04A4  PSF           v52
+        04A8  PshVPtr       this
+        04AC  ADDSi         288 134230898                                 ; .CumulativeOffset
+        04B4  CALLSYS       FVector::opSubAssign                          ; FVector FVector::opSubAssign(const FVector&)
+        04C0  LoadThisR     216 134230898                                 ; this.CameraPickupRadius
+        04C8  RDR8          v46
+        04CC  SetV8         v56 0x0
+        04D8  CMPd          v46 v56
+        04E0  JP            4                                             -> L04F8
+        04E8  SetV4         v39 0
+        04F0  JMP           16                                            -> L0538
+      L04F8:
+        04F8  PshVPtr       this
+        04FC  ADDSi         288 134230898                                 ; .CumulativeOffset
+        0504  CALLSYS       FVector::Size2D                               ; float64 FVector::Size2D() const
+        0510  CpyRtoV8      v56
+        0514  LoadThisR     216 134230898                                 ; this.CameraPickupRadius
+        051C  RDR8          v46
+        0520  CMPd          v56 v46
+        0528  TS
+        052C  CpyRtoV4      v33
+        0530  CpyVtoV4      v39 v33
+      L0538:
+        0538  CpyVtoR1      v39
+        053C  JLowZ         5                                             -> L0558
+        0544  SetV1         v33 1
+        054C  LoadThisR     225 134230898                                 ; this.bResetting
+        0554  WRTV1         v33
+      L0558:
+        0558  PshVPtr       this
+        055C  ADDSi         288 134230898                                 ; .CumulativeOffset
+        0564  PSF           v52
+        0568  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+        0574  PshVPtr       this
+        0578  ADDSi         264 134230898                                 ; .OffsetThisPress
+        0580  PSF           v74
+        0584  PSF           v52
+        0588  CALLSYS       FVector::opAdd                                ; FVector FVector::opAdd(const FVector&) const
+        0594  PSF           v74
+        0598  PshVPtr       v20
+        059C  ADDSi         944 67115009                                  ; .CameraManualPanOffset
+        05A4  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+      L05B0:
+        05B0  RET           4
+    */
+
+    private FVector GetCursorScreenLocation()   // traits=0x28
+    {
+        ALokiPlayerController v4;
+        float32 v6;
+        float32 v8;
+        FVector v14;
+        float64 v18;
+        float64 v20;
+
+        v4 = this.GetPlayerController();
+        if (v4 == nullptr) {
+            __ret = FVector(FVector::ZeroVector);
+            return;
+        } else {
+            v6 = 0;
+            v8 = 0;
+            if (v4.GetMousePosition(v6, v8)) {
+                v18 = float64(v8);
+                v20 = float64(v6);
+                v14 = FVector(v20, v18, 0);
+                __ret = FVector(v14);
+                return;
+            } else {
+                __ret = FVector(FVector::ZeroVector);
+            }
+        }
+        return;
+    }
+    /* ---- GetCursorScreenLocation: 56 dwords / 31 instructions (cache offset 0xab64c) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      85249                                         ; ALokiPlayerController@ ULokiDragCameraComponent::GetPlayerController()
+        000C  STOREOBJ      v4
+        0010  CmpPtrNull    v4
+        0014  JNZ           9                                             -> L0040
+        001C  PshGPtr       FVector::ZeroVector
+        0028  PshVPtr       __ret
+        002C  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+        0038  JMP           39                                            -> L00DC
+      L0040:
+        0040  SetV4         v6 0
+        0048  SetV4         v8 0
+        0050  PSF           v8
+        0054  PSF           v6
+        0058  PshVPtr       v4
+        005C  CALLSYS       APlayerController::GetMousePosition           ; bool APlayerController::GetMousePosition(float32&, float32&) const
+        0068  JLowZ         20                                            -> L00C0
+        0070  PshC8         0x0
+        007C  fTOd          v18 v8
+        0084  PshV8         v18
+        0088  fTOd          v20 v6
+        0090  PshV8         v20
+        0094  PSF           v14
+        0098  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(float64, float64, float64)
+        00A4  PSF           v14
+        00A8  PshVPtr       __ret
+        00AC  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+        00B8  JMP           7                                             -> L00DC
+      L00C0:
+        00C0  PshGPtr       FVector::ZeroVector
+        00CC  PshVPtr       __ret
+        00D0  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+      L00DC:
+        00DC  RET           4
+    */
+
+    private ALokiPlayerController@ GetPlayerController()   // traits=0x28
+    {
+        AActor v2;
+        ALokiPlayerController v4;
+
+        v2 = this.GetOwner();
+        if (v2 != nullptr) {
+            v4 = cast<ALokiPlayerController@>(v2);
+            return v4;
+        } else {
+            v4 = nullptr;
+        }
+        return v4;
+    }
+    /* ---- GetPlayerController: 20 dwords / 13 instructions (cache offset 0xab824) ----
+        0000  PshVPtr       this
+        0004  CALLSYS       UActorComponent::GetOwner                     ; AActor@ UActorComponent::GetOwner() const
+        0010  STOREOBJ      v2
+        0014  CmpPtrNull    v2
+        0018  JZ            9                                             -> L0044
+        0020  TYPEID        1140857134                                    ; ALokiPlayerController@
+        0028  PSF           v4
+        002C  PshVPtr       v2
+        0030  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        003C  JMP           1                                             -> L0048
+      L0044:
+        0044  ClrVPtr       v4
+      L0048:
+        0048  LOADOBJ       v4
+        004C  RET           2
+    */
+
+    private APawn@ GetLocalPawn()   // traits=0x28
+    {
+        ALokiPlayerController v4;
+        APawn v8;
+
+        v4 = this.GetPlayerController();
+        if (v4 == nullptr) {
+            return v8;
+        } else {
+            v8 = v4.GetPawnOrSpectator();
+        }
+        return v8;
+    }
+    /* ---- GetLocalPawn: 18 dwords / 13 instructions (cache offset 0xab911) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      85249                                         ; ALokiPlayerController@ ULokiDragCameraComponent::GetPlayerController()
+        000C  STOREOBJ      v4
+        0010  CmpPtrNull    v4
+        0014  JNZ           4                                             -> L002C
+        001C  FreeNullV8    v8
+        0020  LOADOBJ       v8
+        0024  JMP           6                                             -> L0044
+      L002C:
+        002C  PshVPtr       v4
+        0030  CALLSYS       APlayerController::GetPawnOrSpectator         ; APawn@ APlayerController::GetPawnOrSpectator() const
+        003C  STOREOBJ      v8
+        0040  LOADOBJ       v8
+      L0044:
+        0044  RET           2
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+        auto v4;
+
+        v1 = true;
+        this.SetbExcludeFromServer(v1);
+        v1 = false;
+        this.PrimaryComponentTick.SetbAllowTickOnDedicatedServer(v1);
+        v1 = true;
+        this.SetComponentTickEnabled(v1);
+        v1 = false;
+        this.bPanning = v1;
+        v1 = false;
+        this.bResetting = v1;
+        this.CumulativeOffset = FVector::ZeroVector;
+        v4 = 0;
+        this.TimePressed = v4;
+        v4 = 0.15;
+        this.MinimumDragDuration = v4;
+        v4 = -1.0;
+        this.CameraPickupRadius = v4;
+        return;
+    }
+    /* ---- __InitDefaults: 61 dwords / 33 instructions (cache offset 0xaba1c) ----
+        0000  SetV1         v1 1
+        0008  PshV4         v1
+        000C  PshVPtr       this
+        0010  CALLSYS       UActorComponent::SetbExcludeFromServer        ; void UActorComponent::SetbExcludeFromServer(bool)
+        001C  SetV1         v1 0
+        0024  PshV4         v1
+        0028  PshVPtr       this
+        002C  ADDSi         64 67111352                                   ; .PrimaryComponentTick
+        0034  CALLSYS       FActorComponentTickFunction::SetbAllowTickOnDedicatedServer  ; void FActorComponentTickFunction::SetbAllowTickOnDedicatedServer(bool)
+        0040  SetV1         v1 1
+        0048  PshV4         v1
+        004C  PshVPtr       this
+        0050  CALLSYS       UActorComponent::SetComponentTickEnabled      ; void UActorComponent::SetComponentTickEnabled(bool)
+        005C  SetV1         v1 0
+        0064  LoadThisR     224 134230898                                 ; this.bPanning
+        006C  WRTV1         v1
+        0070  SetV1         v1 0
+        0078  LoadThisR     225 134230898                                 ; this.bResetting
+        0080  WRTV1         v1
+        0084  PshGPtr       FVector::ZeroVector
+        0090  PshVPtr       this
+        0094  ADDSi         288 134230898                                 ; .CumulativeOffset
+        009C  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        00A8  SetV8         v4 0x0
+        00B4  LoadThisR     232 134230898                                 ; this.TimePressed
+        00BC  WRTV8         v4
+        00C0  SetV8         v4 0x3fc3333333333333
+        00CC  LoadThisR     208 134230898                                 ; this.MinimumDragDuration
+        00D4  WRTV8         v4
+        00D8  SetV8         v4 0xbff0000000000000
+        00E4  LoadThisR     216 134230898                                 ; this.CameraPickupRadius
+        00EC  WRTV8         v4
+        00F0  RET           2
+    */
+
+}
+

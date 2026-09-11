@@ -1,0 +1,30 @@
+== Q8a  FK-31 fault register identities (unit: reports, n=108) ==
+   r9==rbx: False     108
+   rbx==r10: True     108
+   rdi==rsp: True     108
+   rdx==r8: False     108
+   (rbp, r11) distinct tuples: {('0x537ac9e1', '0x95654773b3bc'): 108}
+
+   3 sample full register sets:
+   2026-08-04T14:02:13 41cdafa3
+      rax=0x0  rbx=0xF17175D21AD37204  rcx=0x0  rdx=0x7378BF7888CA3EAA  rsi=0x0  rdi=0x15F813F9B8  rbp=0x537AC9E1  rsp=0x15F813F9B8  r8=0xAAD340C414200EA8  r9=0xF5422C22166F00F1  r10=0xF17175D21AD37204  r11=0x95654773B3BC  r12=0x0  r13=0x0  r14=0x0  r15=0x0
+   2026-08-06T23:48:35 455fe74e
+      rax=0x0  rbx=0x55595139D9CFC987  rcx=0x0  rdx=0x18E848E95C07E035  rsi=0x0  rdi=0xD6A651F878  rbp=0x537AC9E1  rsp=0xD6A651F878  r8=0x7ED1BA66E01ACBB  r9=0x63E60D9E6A5D701E  r10=0x55595139D9CFC987  r11=0x95654773B3BC  r12=0x0  r13=0x0  r14=0x0  r15=0x0
+   2026-08-20T14:28:58 4c2b7a2d
+      rax=0x0  rbx=0xBB720A1A4753729B  rcx=0x0  rdx=0x7576D523674F8F0E  rsi=0x0  rdi=0xDB3B13FDE8  rbp=0x537AC9E1  rsp=0xDB3B13FDE8  r8=0xCEA756B59C08536  r9=0xD018B691B220A84D  r10=0xBB720A1A4753729B  r11=0x95654773B3BC  r12=0x0  r13=0x0  r14=0x0  r15=0x0
+
+== Q8b  reports ranked by .text pages they decrypted that merged6.dump.exe lacks ==
+   novel  pages   when                guid      archive dir
+   39     16130   2026-08-04T14:02:13 41cdafa3  crashpad-20260804-151455-s109-positive-control
+   36     16175   2026-08-05T02:50:25 b726dea8  crashpad-20260805-025508-tutr1-DEATH
+   36     16208   2026-08-05T18:14:06 2432183f  crashpad-20260805-182113-animref-SUCCESS
+   35     16189   2026-08-07T15:56:58 55cc813f  crashpad-20260807-160235-s112c-ctl-01
+   34     16203   2026-08-05T01:36:27 89a0d1aa  crashpad-20260805-014523-tut1-DEATH
+   34     16191   2026-08-05T02:01:52 e744eeea  crashpad-20260805-020627-tut4-DEATH
+   34     16191   2026-08-05T02:18:52 f6b5e184  crashpad-20260805-022400-tuta1-DEATH
+   34     16182   2026-08-05T02:28:45 1fa9d51c  crashpad-20260805-023322-tuta3-DEATH
+   34     16184   2026-08-05T03:00:27 c9a85003  crashpad-20260805-030527-tutr3-DEATH
+   34     16180   2026-08-05T14:20:55 b869ecda  crashpad-20260805-143222-s110itemwatch
+   34     16214   2026-08-07T15:39:11 92eec4e0  crashpad-20260807-154458-s112-ctl-02
+   34     16192   2026-08-07T16:21:52 2820dd71  crashpad-20260807-162715-s112c-ctl-06
+   ... reports with ZERO novel pages: 101 of 124

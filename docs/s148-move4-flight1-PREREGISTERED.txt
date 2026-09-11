@@ -1,0 +1,213 @@
+S148 MOVE 4 FLIGHT 1 — PRE-REGISTERED PREDICTIONS
+==================================================
+Written BEFORE launch, per the Move-4 workflow's design report.
+Do NOT edit after the flight; add a post-flight results section instead.
+
+Purpose
+-------
+Produce the first live AdjustHealth receipt on the force-open route (WALL E
+Phase 1a). S148 flight 4 refused (issues=0x3EC13F) because the freshly
+selected ASC read `AvatarActor@0x410 = 0x0` -- no bind step ran in front of
+it (docs/s148-self-damage-flight4.md:187-189). Move 4 stages the S149 bind-
+only DLL FIRST to force the AvatarActor bind via the S143-proven path, runs
+a READ-ONLY verifier to confirm the bind is live and the ASC has attribute
+sets, and only then injects the frozen S148 self-damage DLL.
+
+Architecture: 5 injections + 1 verifier step, single sitting. Uses the S149-
+fix capture-gen gate (previous session's commit e8e757f) via
+launch-redirect.ps1 -ResetCapture. Zero code changes to the arms themselves
+-- both DLLs are pre-built in the codex worktree and used verbatim.
+
+Artifacts (from the codex worktree)
+-----------------------------------
+S149 bind-only DLL:
+  path : C:\Users\eastr\.codex\worktrees\78d0\Supervive Revival Project\tools\sigbypass-mod\build\s149-bind-flight1-b2\tutorial_launch_botfight_bind_only.dll
+  sha256 (whole file) : 5B743B307116003B474E7566EB5734A0E789E2BD78A70C77A7BCCA70AECDC626
+  verify_dll.py       : PASS (KERNEL32.dll only, no C++ EH, no CRT)
+  provenance          : S149 flight 1 attempt (which refused at
+                        capture-generation admission before this DLL ran);
+                        source unchanged from S143's proven bind path
+                        (tutorial_launch.cpp:20041-20073 in codex source)
+
+S148 self-damage DLL (frozen artifact):
+  path : C:\Users\eastr\.codex\worktrees\78d0\Supervive Revival Project\tools\sigbypass-mod\build\s148-flight4-a\tutorial_launch_botfight_damage_self_cal.dll
+  sha256 (whole file) : C7204964B896E376B3E0FBFBBFCD7ACC7146FFBE9D0BF320ADDDE5DF0D78421E
+  verify_dll.py       : PASS (KERNEL32.dll only, no C++ EH, no CRT)
+  provenance          : the exact "Build A" of S148 flight 4 -- the
+                        artifact that produced the docs/s148-self-damage-
+                        flight4.md refusal on a route where no bind step
+                        ran. Frozen. Same code will succeed IFF the
+                        AvatarActor precondition it needs is satisfied.
+
+⚠ NEITHER DLL is rebuildable from the dedicated-server-stub HEAD source --
+their compile-time dependencies (S148ClassChainRenderEnabled +
+S148ClassChainRenderCapacityRefuses) live only in the codex worktree source.
+The DLLs are used AS-IS. The pre-registration pins them by sha256 so any
+substitution is caught by the flight helper.
+
+Move 4 verifier tool
+--------------------
+Path: tools/re/move4_bind_verify.py (this session, new).
+Read-only RPM. Enumerates every live AbilitySystemComponent-shaped UObject,
+resolves the AvatarActor property offset BY NAME per class (never
+hardcoded), and:
+  * Reports PASS (exit 0) when some ASC has AvatarActor==<hero> AND
+    SpawnedAttributes.Num >= 1.
+  * FAIL_BIND_LOST (exit 3) when no ASC has AvatarActor==<hero>.
+  * FAIL_NO_ATTRSET (exit 4) when bind is live but SpawnedAttributes is empty
+    (skips S148 injection -- preserves the FK-32 draw for a targeted follow-up).
+  * FAIL_NO_ASC (exit 5) when no ASC objects exist at all.
+The flight helper branches on exit code.
+
+Move 4 flight helper
+--------------------
+Path: configs/s148-move4.ps1 (this session, new).
+Chains fk24-stage.ps1 -SkipProbe (steps 1-3) + manual injections of the bind-
+only + frozen S148 DLLs, with the verifier gating between them. Sha256 pins
+on both target DLLs. See its block comment.
+
+Flight prerequisites
+--------------------
+* ELEVATED PowerShell.
+* Steam running before launch.
+* server/internal/interactive/interactive.go `forceTutorialMatch = true`
+  (already set from prior sessions; verify with grep before launch).
+* Fresh docs/capture.log -- launch backend with:
+      .\configs\launch-redirect.ps1 -NoHook -ResetCapture
+  This applies the S149-fix capture-gen gate BEFORE ags opens. Confirmed
+  from an earlier session's sanity test.
+
+Flight recipe
+-------------
+    # Terminal 1 (elevated PowerShell). Steam must be running.
+    cd "G:\git\Supervive Revival Project"
+    $env:AGS_CAPTURE_LABEL = 'move4-flight1'
+    .\configs\launch-redirect.ps1 -NoHook -ResetCapture
+
+    # Wait until the game process is up (SUPERVIVE-Win64-Shipping in Task Manager).
+
+    # Terminal 2 (elevated PowerShell), once the game is up:
+    $bind = 'C:\Users\eastr\.codex\worktrees\78d0\Supervive Revival Project\tools\sigbypass-mod\build\s149-bind-flight1-b2\tutorial_launch_botfight_bind_only.dll'
+    $s148 = 'C:\Users\eastr\.codex\worktrees\78d0\Supervive Revival Project\tools\sigbypass-mod\build\s148-flight4-a\tutorial_launch_botfight_damage_self_cal.dll'
+    .\configs\s148-move4.ps1 `
+        -BindDll $bind `
+        -S148Dll $s148 `
+        -ExpectedBindSha256 '5B743B307116003B474E7566EB5734A0E789E2BD78A70C77A7BCCA70AECDC626' `
+        -ExpectedS148Sha256 'C7204964B896E376B3E0FBFBBFCD7ACC7146FFBE9D0BF320ADDDE5DF0D78421E' `
+        -Label move4-flight1
+
+The helper handles the rest end-to-end: staging, bind-only injection, marker
+wait, verifier gate, S148 injection, RESULT wait, evidence archival.
+
+Per-step wait gates (as emitted by the helper)
+----------------------------------------------
+Step 1-3 (gft/fo/sp): fk24-stage.ps1 -SkipProbe owns these; ~30-60 s total.
+Step 4 (bind-only):   wait <=60 s for
+                        '[GAS] PLAYER-POST-BIND ... Avatar@0x410=0x<hex> *** BOUND ***'
+                      in docs/tutorial-launch-marker.txt (emitted by
+                      ReportAscActorInfo in the bind-only DLL).
+Step 5 (verifier):    external RPM read, ~1-3 s.
+Step 6 (S148):        wait <=180 s for 'RESULT=' in the marker.
+
+Pre-registered outcome mapping
+------------------------------
+
+CASE H (headline) -- MOVE 4 SUCCESS.
+  [S148] RESULT=HEALTH_APPLIED ... (or equivalent success shape from
+  the S148 arm's own vocabulary)
+  Helper exits 0.
+  ==> First live AdjustHealth receipt on the force-open route. WALL E
+      Phase 1a proved: the damage pipeline runs client-side with no
+      server authority. Independent of any WALL P activation work.
+
+CASE R -- S148 armed and refused.
+  [S148] RESULT=PREFLIGHT_REFUSED issues=0x<mask> ...
+  Helper exits 2.
+  ==> Bind was live enough to pass the verifier but S148 still refused.
+      Read the issue bitmask. If it does NOT include bit 17
+      (AVATAR_BINDING), the bind persisted; the refusal is a DIFFERENT
+      precondition we haven't accounted for. If it DOES include bit 17,
+      the bind died between the verifier and S148 injection (~20 s
+      window) -- diagnose GC or hero re-possession as candidates.
+
+CASE B -- bind lost between S149 and verifier.
+  Helper exits 3 (verifier FAIL_BIND_LOST).
+  ==> S149 bind-only produced a receipt, but by the time the verifier
+      read the ASC set, no ASC had AvatarActor==<hero>. S148 was NOT
+      injected (draw preserved). Two possibilities:
+        (i) the bind was written to a DIFFERENT ASC than the one the
+            verifier looked at -- multiple ASCs may coexist, and S143's
+            persistence claim was on the exact ASC S149 chose.
+        (ii) GC or a game-side re-init cleared the bind between the two
+             reads.
+      Diagnose by re-running with a wider verifier (list all ASCs +
+      AvatarActor values, not just matches).
+
+CASE A -- bind live but no attribute sets.
+  Helper exits 4 (verifier FAIL_NO_ATTRSET).
+  ==> The load-bearing open item from the design. AvatarActor is bound
+      but the ASC's SpawnedAttributes is empty, so S148 would refuse on
+      HEALTH_COUNT. S148 was NOT injected. Design implication: bind
+      alone is insufficient; a preceding step must populate the
+      attribute set. That's a real WALL E finding -- the next flight
+      would design an attribute-set-populating step (possibly via
+      WireAbilitySystem's TryUpdateAbilitySystem path, tutorial_launch.cpp
+      :20053 in the codex source).
+
+CASE V -- verifier itself failed to run.
+  Helper exits 5, 6, or 9 (FAIL_NO_ASC / FAIL_HERO_MALFORMED / FAIL_INSTRUMENT).
+  ==> Instrument fault. Diagnose the verifier's stdout in
+      docs/s148-move4-flight1-<UTC>/move4_bind_verify-*.out.txt.
+
+CASE S -- no bind receipt.
+  Helper exits 22 (bind-only marker never emitted PLAYER-POST-BIND).
+  ==> Either bind-only DLL failed to inject (unlikely; sha256 pinned) or
+      the ReportAscActorInfo path was gated out. Read the marker's
+      after-bind snapshot in the evidence dir.
+
+CASE F -- FK-32 kill.
+  Process dies mid-sequence with no RESULT and no crashpad.
+  ==> Historical hazard. Move 4 is 5 injections vs the modal FK-32
+      count of 4 (per S141 series). ZERO precedent for a 5-injection
+      sequence surviving to RESULT. The exit-4 short-circuit saves the
+      draw when SpawnedAttributes is empty, so an actual 5-injection
+      run only happens on the design's success case.
+
+Load-bearing risk (from the workflow's design report)
+-----------------------------------------------------
+"S149 bind-only leaves SpawnedAttributes empty" -- if this is TRUE,
+Move 4 always lands in CASE A (helper exit 4), producing an
+INFORMATIVE partial result but not the AdjustHealth receipt. The
+verifier design pre-empts this by skipping the S148 injection when
+SpawnedAttributes is empty -- so the FK-32 draw is preserved for a
+targeted follow-up rather than spent producing an already-predicted
+refusal.
+
+Mitigation IF CASE A lands: the next arm would need to run
+`WireAbilitySystem` (tutorial_launch.cpp:20053 in codex source) as
+part of the bind-only DLL's flow, or add a separate attribute-set-
+populating step between bind and S148. That's a next-session
+implementation, not a flight.
+
+After-flight actions
+--------------------
+CASE H (SUCCESS): preserve marker + late dumpimage, update
+docs/coop-vs-ai-roadmap-s142.md WALL E block with "Phase 1a proved",
+commit results.
+
+CASE R / A: preserve marker + all verifier stdout + a late dumpimage.
+Both are INFORMATIVE partial results. The evidence dir at
+docs/s148-move4-<label>-<UTC>/ collects everything the helper copied.
+
+CASE B / V / S / F: preserve marker; diagnose from the archived
+snapshots + verifier output. Do NOT re-fly without addressing the
+root cause.
+
+Budget
+------
+5 injections in one sitting. FK-32 mode is 4 (S141 series). Exit-4
+short-circuit skips the 5th injection when the verifier predicts a
+guaranteed refusal, so an actual 5-injection sequence only happens
+in the design's success case.
+
+--- end of pre-registration ---

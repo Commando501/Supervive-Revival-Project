@@ -1,0 +1,165 @@
+// ============================================================================
+//  MODULE   Barracuda.GameState.BarracudaTeamState
+//  SOURCE   Barracuda/GameState/BarracudaTeamState.as
+//  CONTENT  1 class(es), 6 function(s), 0 enum(s), 1 global(s), 424 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Barracuda_GameState_BarracudaTeamStateStatics
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaTeamState;
+
+ABarracudaTeamState@ ABarracudaTeamState()   // traits=0x20
+{
+    v2 = ABarracudaTeamState();
+    return v2;
+}
+/* ---- ABarracudaTeamState: 7 dwords / 4 instructions (cache offset 0x280a3) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84268 ABarracudaTeamState                   
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UFUNCTION(BlueprintCallable, CanOverrideEvent, Static)
+ABarracudaTeamState@ GetBarracudaTeamState(const int TeamIndex)   // traits=0x20
+{
+    v4 = Loki::GetLokiGameState(__WorldContext);
+    if (v4 == nullptr) {
+        return v8;
+    } else {
+        v12 = v4.GetTeamState(TeamIndex);
+        if (v12 != nullptr) {
+            v8 = cast<ABarracudaTeamState@>(v12);
+        } else {
+            v8 = nullptr;
+        }
+    }
+    return v8;
+}
+/* ---- GetBarracudaTeamState: 35 dwords / 22 instructions (cache offset 0x28193) ----
+    0000  PshGPtr       __WorldContext                              
+    000C  CALLSYS       GetLokiGameState                            
+    0018  STOREOBJ      v4                                          
+    001C  CmpPtrNull    v4                                          
+    0020  JNZ           4                                             -> L0038
+    0028  FreeNullV8    v8                                          
+    002C  LOADOBJ       v8                                          
+    0030  JMP           20                                            -> L0088
+  L0038:
+    0038  PshV4         TeamIndex                                   
+    003C  PshVPtr       v4                                          
+    0040  CALLSYS       ALokiGameState::GetTeamState                
+    004C  STOREOBJ      v12                                         
+    0050  CmpPtrNull    v12                                         
+    0054  JZ            9                                             -> L0080
+    005C  TYPEID        1207972615                                    ; ABarracudaTeamState@
+    0064  PSF           v8                                          
+    0068  PshVPtr       v12                                         
+    006C  CALLSYS       UObject::opCast                             
+    0078  JMP           1                                             -> L0084
+  L0080:
+    0080  ClrVPtr       v8                                          
+  L0084:
+    0084  LOADOBJ       v8                                          
+  L0088:
+    0088  RET           1                                           
+*/
+
+UClass@ ABarracudaTeamState::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ABarracudaTeamState);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x28375) ----
+    0000  PshGPtr       __StaticType_ABarracudaTeamState            
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ABarracudaTeamState@ ABarracudaTeamState::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    v2 = __StaticType_ABarracudaTeamState.Get();
+    v4 = TSubclassOf(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ABarracudaTeamState@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x2859d) ----
+    0000  PshVPtr       Level                                       
+    0004  PshV4         bDeferredSpawn                              
+    0008  PshVPtr       Name                                        
+    000C  PshVPtr       Rotation                                    
+    0010  PshVPtr       Location                                    
+    0014  PshGPtr       __StaticType_ABarracudaTeamState            
+    0020  CHKREF                                                    
+    0024  CALLSYS       TSubclassOf::Get                            
+    0030  STOREOBJ      v2                                          
+    0034  PshVPtr       v2                                          
+    0038  PSF           v4                                          
+    003C  CALLSYS       TSubclassOf::$beh0                          
+    0048  PSF           v4                                          
+    004C  CALLSYS       SpawnActor                                  
+    0058  STOREOBJ      v6                                          
+    005C  CmpPtrNull    v6                                          
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972615                                    ; ABarracudaTeamState@
+    0070  PSF           v8                                          
+    0074  PshVPtr       v6                                          
+    0078  CALLSYS       UObject::opCast                             
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8                                          
+  L0090:
+    0090  LOADOBJ       v8                                          
+    0094  RET           9                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ABarracudaTeamState : ALokiTeamState
+// unreal base : /Script/Loki.LokiTeamState
+// C++ header  : ../../../Loki/Source/Loki/LokiTeamState.h
+// static class global: __StaticType_ABarracudaTeamState
+{
+    ABarracudaTeamState()   // traits=0x21
+    {
+        return;
+    }
+    /* ---- ABarracudaTeamState: 5 dwords / 3 instructions (cache offset 0x28810) ----
+        0000  PshVPtr       this                                        
+        0004  FinConstruct  ABarracudaTeamState                         
+        0010  RET           2                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v2 = ABarracudaTeamState_TeamOnly::StaticClass();
+        this.TeamStateTeamOnlyClass = v2;
+        return;
+    }
+    /* ---- __InitDefaults: 11 dwords / 7 instructions (cache offset 0x28730) ----
+        0000  CALL          84280                                         ; StaticClass
+        0008  STOREOBJ      v2                                          
+        000C  PshVPtr       v2                                          
+        0010  PshVPtr       this                                        
+        0014  ADDSi         960 67115442                                  ; .TeamStateTeamOnlyClass
+        001C  CALLSYS       TSubclassOf::opAssign                       
+        0028  RET           2                                           
+    */
+
+}
+

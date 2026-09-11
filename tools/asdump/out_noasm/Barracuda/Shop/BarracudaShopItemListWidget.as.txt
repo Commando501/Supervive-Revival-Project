@@ -1,0 +1,282 @@
+// ============================================================================
+//  MODULE   Barracuda.Shop.BarracudaShopItemListWidget
+//  SOURCE   Barracuda/Shop/BarracudaShopItemListWidget.as
+//  CONTENT  1 class(es), 15 function(s), 0 enum(s), 1 global(s), 2280 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaShopItemListWidget;
+
+UBarracudaShopItemListWidget@ UBarracudaShopItemListWidget()   // traits=0x20
+{
+    UBarracudaShopItemListWidget v2;
+
+    v2 = UBarracudaShopItemListWidget();
+    return v2;
+}
+
+UClass@ UBarracudaShopItemListWidget::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaShopItemListWidget);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaShopItemListWidget : UUserWidget
+// unreal base : /Script/UMG.UserWidget
+// C++ header  : ../../../Engine/Source/Runtime/UMG/Public/Blueprint/UserWidget.h
+// static class global: __StaticType_UBarracudaShopItemListWidget
+{
+    UBarracudaShopItemListWidget()   // traits=0x21
+    {
+        return;
+    }
+
+    void ClearItemContainer()   // traits=0x20
+    {
+        __Evt_Execute(this, n"ClearItemContainer");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClearItemContainer, BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+    void ClearItemContainer_Implementation()   // traits=0x20
+    {
+        return;
+    }
+
+    void AddItemToContainer(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        __Evt_PushArgument(ItemClass, typeid(TSubclassOf));
+        __Evt_Execute(this, n"AddItemToContainer");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AddItemToContainer, BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+    void AddItemToContainer_Implementation(const TSubclassOf<ALokiBaseItem@>& ItemClass)   // traits=0x20
+    {
+        return;
+    }
+
+    void EventFinishedAddingItems()   // traits=0x20
+    {
+        __Evt_Execute(this, n"EventFinishedAddingItems");
+        return;
+    }
+
+    UFUNCTION(UnrealName=EventFinishedAddingItems, BlueprintCallable, BlueprintEvent, CanOverrideEvent, NoOp)
+    void EventFinishedAddingItems_Implementation()   // traits=0x20
+    {
+        return;
+    }
+
+    UFUNCTION(UnrealName=Construct, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Construct_Implementation()   // traits=0x20
+    {
+        UGameEventRouterComponent v4;
+        FUIEvent_Barracuda_Shop_ToggleVisibility v10;
+        auto v11;
+        FGameEventListenerHandle v24;
+        FUIEvent_Barracuda_Shop_FilterUpdated v26;
+
+        v4 = UGameEventRouterSubsystem::GetUIGameEventRouter(__WorldContext);
+        if (v4 != nullptr) {
+            v11 = false;
+            v10 = FUIEvent_Barracuda_Shop_ToggleVisibility();
+            v24 = v4.RegisterForEvent(this, v10, typeid(FUIEvent_Barracuda_Shop_ToggleVisibility), nullptr, n"OnToggleVisibility", v11);
+            v11 = false;
+            v26 = FUIEvent_Barracuda_Shop_FilterUpdated();
+            v24 = v4.RegisterForEvent(this, v26, typeid(FUIEvent_Barracuda_Shop_FilterUpdated), nullptr, n"OnFilterUpdated", v11);
+        }
+        this.UpdateVisuals();
+        return;
+    }
+
+    void UpdateVisuals()   // traits=0x20
+    {
+        UBarracudaGameStateComponent v2;
+        ALokiGameState v4;
+        auto v7;
+        ABarracudaShop v10;
+        TArray<UBarracudaShopItemGraphNode@> v14;
+        TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@> v22;
+        auto v32;
+        UBarracudaShopItemGraphNode v34;
+        TArray<UBarracudaShopItemGraphNode@> v42;
+        TArrayIterator<UBarracudaShopItemGraphNode@> v48;
+
+        this.ClearItemContainer();
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        v2 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+        if (v2 == nullptr) {
+            return;
+        } else {
+            v10 = v2.Shop;
+            if (v10 == nullptr) {
+                return;
+            } else {
+                v14 = TArray<UBarracudaShopItemGraphNode@>();
+                v22 = v10.ItemGraphNodes.Iterator();
+                while (true) {
+                    v7 = v22.CanProceed;
+                    if (!v7) break;
+                    v32 = v22.Proceed();
+                    v34 = v32.GetValue();
+                    v32.GetValue();
+                    if (this.DoesItemPassFilter(v10, v34)) {
+                        v14.Add(v34);
+                    }
+                }
+                v42 = this.SortItemNodesByTotalCost(v14);
+                v48 = v42.Iterator();
+                while (true) {
+                    v7 = v48.CanProceed;
+                    if (!v7) break;
+                    v34 = v48.Proceed();
+                    v48.Proceed();
+                    this.AddItemToContainer(v34.Item);
+                }
+                this.EventFinishedAddingItems();
+            }
+        }
+        return;
+    }
+
+    TArray<UBarracudaShopItemGraphNode@> SortItemNodesByTotalCost(const TArray<UBarracudaShopItemGraphNode@>& ItemNodes)   // traits=0x20
+    {
+        TArray<UBarracudaShopItemGraphNode@> v4;
+        TArray<UBarracudaShopItemGraphNode@> v8;
+        auto v9;
+        int v10;
+        auto v12;
+        int v13;
+        auto v14;
+        auto v15;
+
+        v4 = TArray<UBarracudaShopItemGraphNode@>();
+        v4 = ItemNodes;
+        v8 = TArray<UBarracudaShopItemGraphNode@>();
+        v9 = v4.IsEmpty();
+        v9 = !v9;
+        while (v9) {
+            v10 = 0;
+            v12 = 0;
+            v13 = 0;
+            while (true) {
+                v14 = v4.Num();
+                if (v13 >= v14) break;
+                v14 = v4[v13].TotalCost;
+                v15 = v14;
+                if (v15 > v12) {
+                    v10 = v13;
+                    v12 = v15;
+                }
+                v13++;
+            }
+            v8.Add(v4[v10]);
+            v4.RemoveAtSwap(v10);
+            continue;
+        }
+        __ret = TArray<UBarracudaShopItemGraphNode@>();
+        __ret = v8;
+        return;
+    }
+
+    bool DoesItemPassFilter(ABarracudaShop@ Shop, UBarracudaShopItemGraphNode@ ItemNode)   // traits=0x20
+    {
+        ALokiBaseItem v4;
+        auto v5;
+        FString v10;
+        FString v14;
+        FText v18;
+        FString v22;
+        auto v23;
+        ESearchDir v24;
+        ESearchCase v25;
+        auto v26;
+        TArrayIterator<FText> v32;
+        auto v40;
+        auto v45;
+        FGameplayTagContainer v62;
+
+        v4 = ItemNode.Item.GetDefaultObject();
+        if (v4 == nullptr) {
+            v5 = false;
+            return v5;
+        } else {
+            v10 = FString(Shop.ClientNameFilterString);
+            v5 = v10.IsEmpty();
+            v5 = !v5;
+            if (v5) {
+                v18 = v4.GetPlayerFacingName();
+                v22 = v18.ToString();
+                v24 = ESearchDir::FromStart;
+                v25 = ESearchCase::IgnoreCase;
+                v5 = v22.Contains(v10, v25, v24);
+                v23 = false;
+                v26 = v23;
+                v32 = v4.ShopMetaData.MetaTags.Iterator();
+                while (true) {
+                    v23 = v32.CanProceed;
+                    if (!v23) break;
+                    v40 = v32.Proceed();
+                    v14 = v40.ToString();
+                    v24 = ESearchDir::FromStart;
+                    v25 = ESearchCase::IgnoreCase;
+                    v23 = v14.Contains(v10, v25, v24);
+                    v26 = v23;
+                    if (v26) {
+                        break;
+                    }
+                }
+                v23 = v5;
+                v23 = !v23;
+                if (!v23) {
+                    v23 = 0;
+                } else {
+                    v45 = v26;
+                    v45 = !v45;
+                    v23 = v45;
+                }
+                if (v23) {
+                    v45 = false;
+                    return v45;
+                }
+            }
+            v62 = FGameplayTagContainer();
+            v62.GameplayTags.Append(Shop.ClientTagFilters);
+            v23 = Loki::HasAllMatchingGameplayTags(v4, v62);
+            v23 = !v23;
+            if (v23) {
+                v45 = false;
+                return v45;
+            } else {
+                v23 = true;
+            }
+        }
+        return v23;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnToggleVisibility(const FUIEvent_Barracuda_Shop_ToggleVisibility& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.UpdateVisuals();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnFilterUpdated(const FUIEvent_Barracuda_Shop_FilterUpdated& Event, const AActor@ Context)   // traits=0x20
+    {
+        this.UpdateVisuals();
+        return;
+    }
+
+}
+

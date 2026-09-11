@@ -1,0 +1,27 @@
+S138 FLIGHT 9b -- PRE-REGISTRATION, written BEFORE the poke, same live client (PID 46044).
+
+MEASURED SO FAR THIS FLIGHT:
+  bot pawn 0x27B3EAE8020, CMC 0x27B3598AAB0: MovementMode=3 (MOVE_Falling), GravityScale=1.0,
+  Velocity=(0,0,0) for 8 s, location frozen for 97 s, while ControlInputVector receives a fresh
+  wander direction every ~2 s. A MOVE_Falling body with gravity 1.0 and exactly zero velocity is
+  not being simulated.
+  The PLAYER hero is in the SAME state (MOVE_Falling, Velocity 0) and only moves when the `play`
+  shim is injected -- which CLAUDE.md records sets KFLYMODE=5 = MOVE_Flying explicitly, "to bypass
+  the Walking-mode ground-mantle chain", and notes the result "hovers; it passes anywhere".
+
+THE POKE: write CMC+0x231 = 5 (MOVE_Flying) on the BOT's component. One aligned DATA byte, the
+same class as every other poke this session. MovementMode was resolved BY NAME at +0x231.
+
+  R1  readback of CMC+0x231 returns 5.
+  R2  the PLAYER's CMC is NOT written and must still read 3 (specificity control).
+  R3  Velocity becomes non-zero within a few seconds.
+  R4  ★ the pawn's LOCATION CHANGES. That would be the first bot motion in this project.
+  R5  restoring 3 stops it.
+
+HONEST ALTERNATIVES, stated now:
+  * If R3/R4 fail with R1 holding, MovementMode is NOT the blocker either, and the remaining
+    candidate is that the component (or the actor) does not TICK at all -- which no poke fixes.
+  * `play` does more than set the mode (it also drives input and teleports); matching only the
+    mode may not be sufficient. A null here does NOT show that flying is irrelevant.
+  * The bot already HAS input (ControlInputVector non-zero), which the player did not -- so if the
+    mode is the only missing piece, this should move.

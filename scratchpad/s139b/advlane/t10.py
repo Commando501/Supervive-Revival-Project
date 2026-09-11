@@ -1,0 +1,10 @@
+import io,sys
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+exec(open('H.py').read())
+print("engine slot412(+0xCE0) =", hex(v2r(qq(0x07FBED58+0xCE0))))
+print("loki   slot412(+0xCE0) =", hex(v2r(qq(0x088F8570+0xCE0))))
+print("engine vt slot 244(+0x7A0) =", hex(v2r(qq(0x07FBED58+0x7A0))))
+print("loki   vt slot 244(+0x7A0) =", hex(v2r(qq(0x088F8570+0x7A0))))
+print("engine vt slot 262(+0x830) =", hex(v2r(qq(0x07FBED58+0x830))))
+print("engine vt slot 228(+0x720) =", hex(v2r(qq(0x07FBED58+0x720))))
+print("engine vt slot 122(+0x3D0) =", hex(v2r(qq(0x07FBED58+0x3D0))))

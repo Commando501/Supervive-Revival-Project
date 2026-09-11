@@ -1,0 +1,122 @@
+SESSION 44 — *** THE EMPTY GRID AND THE D3D12/RENDER CRASH ARE THE SAME WALL ***
+The ALL HUNTERS grid's DATA PATH is now solved end-to-end (heroes enumerate, resolve,
+and LOAD). Doing so trips the long-standing hero-content-load crash — which was never a
+separate problem. This overturns BOTH the "empty grid = AssetManager" framing AND the
+session-43 "scan_on_browse fix works/stable" verdict.
+==============================================================================
+Date: 2026-07-03  (branch dedicated-server-stub; continuous with session 43)
+
+READ THIS BEFORE ANYTHING ELSE IN THE ROSTER SAGA. It supersedes the
+session-42/43 conclusions where they conflict.
+
+=========================== THE ONE-PARAGRAPH TRUTH ===========================
+The "empty ALL HUNTERS grid" (~11 sessions, blamed on the AssetManager) and the
+"D3D12/RHI rendering crash" (~sessions 39-42, blamed on the dedicated-server path)
+are ONE wall. The empty grid was MASKING the crash. Two fixes together make the
+roster's data path work — the AssetManager enumeration (a runtime scan) and the
+backend content-manifest "enabled" flag — and the instant the heroes actually
+resolve and load, the client crashes loading their content (hero GameplayCues +
+InvalidateAllWidgets, ~5s after "Unlockable heroes fetched: 25"). That crash is
+EXACTLY the one session 42 saw under early injection and misattributed to
+"early-init fragility."
+
+=========================== HOW WE GOT HERE (the trace) =======================
+Session 43 built scan_on_browse (hook UEngine::Browse, run ScanPathsForPrimaryAssets
+to populate the per-type AssetMap). It DID populate the Hero AssetMap to 25 (RPM-
+verified: keys = "Alchemist","Wukong",... under /Game/Loki/Characters/Heroes/<H>/
+BP_HeroAsset_<H>). BUT the grid stayed empty. The session-43 doc's "FIX COMPLETE /
+stable" verdict was WRONG — it was inferred from crash behavior, never from a tile.
+
+Then, via vtable-slot hooks on the LokiAssetManager query virtuals (slots counted
+from AssetManager.h: ScanPaths=88, AddDynamicAsset=94 [verified], GetPrimaryAssetObject
+=101, GetPrimaryAssetPath=103, GetPrimaryAssetIdList=110, ChangeBundleState=119):
+  - The grid DOES enumerate heroes via GetPrimaryAssetIdList(Hero) — 209 calls at
+    menu-load. With a DEMAND-DRIVEN scan (populate on the first GetIdList call), it
+    returns Num=25 (logged from inside the hook). Enumeration = SOLVED.
+  - Yet the grid still rendered 0 tiles, and did NOT call GetPrimaryAssetObject(Hero)
+    (0) or GetPrimaryAssetDataList(Hero) (0). So the grid isn't turning the 25 ids
+    into tiles via the standard getters — a downstream filter/gate was dropping them.
+  - The client requests /content-service/manifest/<v>?nonEnabledOnly=true. Our
+    handler returned all 25 heroes REGARDLESS of the param — i.e. it told the client
+    "these 25 heroes are NON-enabled" -> the grid hid them. (Prior sessions tested
+    manifest changes but with enumeration EMPTY, so this interaction was invisible.)
+
+=========================== THE TWO FIXES ====================================
+1. RUNTIME: scan_on_enum.dll (tools/sigbypass-mod/scan_on_enum.cpp) — hooks
+   GetPrimaryAssetIdList (LokiAssetManager vtable slot 110) and, on the FIRST call,
+   runs ScanPathsForPrimaryAssets for all 30 types (rcx IS the manager) BEFORE
+   tail-jumping to the original, so the enumeration returns the populated list by
+   construction. Then un-hooks (restore the slot) so a code-integrity check finds the
+   vtable pristine (session-43: a left-in-place patch crashes ~3-5 min in). Inject
+   early: tools/inject watch SUPERVIVE-Win64-Shipping.exe scan_on_enum.dll
+   0x3EC57D0 40555356574154415541564157.
+2. BACKEND: server/internal/menu/menu.go handleContentManifest — for the
+   nonEnabledOnly=true query, return an EMPTY Heroes map (so NO hero is marked
+   non-enabled -> all heroes stay ENABLED and the grid stops filtering them out).
+
+=========================== THE MEASURED BREAKTHROUGH =========================
+Baseline / partial vs. BOTH fixes (scan_on_enum + all-enabled manifest), from Loki.log:
+   SIGNAL                                   baseline   BOTH FIXES
+   RequestAsyncLoad() null assets             8          0
+   ChangeBundleState failed to find NameData   2          0
+   hero content loading                       none       real hero ability GameplayCues
+                                                          (ShieldBot.DashAttack, Flash.OffCD,
+                                                           Hook.Impact.HookGuy, HookGuy.ChargeBlast)
+=> the heroes RESOLVE and the client LOADS their content. The grid data path works.
+
+Then, ~5s after "Unlockable heroes fetched: 25", during hero-cue loading:
+   LogSlate: InvalidateAllWidgets triggered
+   LogAudio: Audio Device unregistered from world 'None'
+   LogUObjectHash: Compacting FUObjectHashTables
+   LogSentrySdk: flushing session and queue before crashpad handler   <-- CRASH
+
+=========================== HONEST CAVEATS ===================================
+- NO visual tile confirmation yet: the client crashes during the load, before you can
+  navigate to HUNTERS (hero content loads automatically for the lobby/party previews).
+  The proof it's working is the measurable behavior change above, not a screenshot.
+- Crash-isolation was INCONCLUSIVE: enabling only 3 heroes via the manifest did NOT
+  cleanly resolve just 3 (grid stayed empty, null-loads returned to 8). So we could not
+  separate "bulk-load crash" from "render-any-multiple-heroes crash." One hero loads
+  fine (the detail-panel preview = Frontline Pyromaniac), so it's a multiple/bulk-hero
+  issue, not a single bad asset.
+- No crash dump: SUPERVIVE routes crashes through Sentry (no UECC minidump written), so
+  the faulting module/RIP is unknown. It is PLAUSIBLY the S40/41 D3D12/RHI family
+  (rendering hero content) but that is unconfirmed.
+
+=========================== WHAT'S NOW SETTLED / UNSETTLED ====================
+SETTLED: the grid enumerates via GetPrimaryAssetIdList(Hero); a runtime scan makes it
+  return 25; the content-manifest nonEnabledOnly flag gates whether the grid shows them;
+  with both, heroes resolve + load. The AssetManager-registration route (session 42/43)
+  is fully explored: necessary but not sufficient. The empty grid and the crash are one.
+UNSETTLED (the remaining wall): loading the hero roster's content crashes the client.
+  This is the project's real blocker now — reproducible ON COMMAND (much better than the
+  intermittent version). Next: get a real callstack (disable/bypass Sentry so UE writes a
+  UECC minidump, or VEH-log the faulting address) to decide D3D12/RHI vs. memory/streaming
+  spike; and find whether the load can be throttled/staged so the grid renders without the
+  bulk crash.
+
+=========================== OFFSETS / TOOLING (this build) ====================
+  LokiAssetManager vtable        = RVA +0x888CB78
+  ScanPathsForPrimaryAssets      = RVA +0x34CF9F0   (slot 88)
+  GetPrimaryAssetObject          = RVA +0x34BFB50   (slot 101)
+  GetPrimaryAssetPath            = RVA +0x34BFF20   (slot 103)
+  GetPrimaryAssetIdList          = RVA +0x34BF320   (slot 110)   <-- scan_on_enum hooks this
+  ChangeBundleStateForPrimaryAssets = RVA +0x34AF2A0 (slot 119; arg-read still unverified)
+  GGameThreadId slot             = RVA +0x9D49158
+  &FNamePool.Blocks[0]           = RVA +0x9D81450   (FName id = (block<<16)|(off>>1); Len10)
+  UEngine::AssetManager          = UEngine + 0x340  (for GEngine->AssetManager finds)
+  Hero FName id 0x1A568; AssetTypeMap mgr+0x478 (stride 0x20); FPrimaryAssetTypeData
+  Type@0/BaseClass@0x30/paths@0x70; Hero AssetMap @ td+0x178.
+  Tooling built this session: scan_on_enum.cpp (fix), trace_hooks.cpp + trace_resolve.cpp
+  (vtable-slot tracers — the technique that cracked this). markers in docs/*-marker.txt.
+
+=========================== REPRODUCE ========================================
+  1. Steam running; hosts entries intact; certs present (server/certs, reused by EnsureCert).
+  2. Rebuild ags (has the manifest fix): go build -C server -o ags.exe ./cmd/ags ; run it
+     from server/ (working dir; certs relative). Confirm: curl
+     "http://localhost:8080/content-service/manifest/x?nonEnabledOnly=true" -> Heroes: {} (0).
+  3. Start the gated injector, then launch the normal client (launch-recon.bat):
+     tools/inject watch SUPERVIVE-Win64-Shipping.exe
+       tools/sigbypass-mod/scan_on_enum.dll 0x3EC57D0 40555356574154415541564157
+  4. Watch Loki.log: RequestAsyncLoad-null and NameData-fail drop to 0; hero GameplayCues
+     load; ~5s later Sentry crash. That crash is the remaining wall.

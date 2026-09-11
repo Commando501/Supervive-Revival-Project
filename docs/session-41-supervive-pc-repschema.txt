@@ -1,0 +1,123 @@
+SESSION 41 — SUPERVIVE's APlayerController REPLICATED SCHEMA (GROUND TRUTH)
+===========================================================================
+Date: 2026-07-01 22:33 (local)
+Method: extended tools/usmapdump/extract.go to emit CPF_* flags (CPF_Net at
+        bit 0x20, read from FField::PropertyFlags @+0x38 — already read, now
+        emitted), rebuilt usmapdump.exe, ran `extract` ELEVATED against the
+        LIVE game (PID 38768) sitting at the login screen (native reflection
+        is fully registered by then; no stub/redirect/injection needed).
+Full dump preserved at scratchpad/schema-cpfnet-full.txt (4.46 MB). The tool
+writes the full schema to schema.txt in its CWD (was C:\Windows\System32 for
+the elevated run — copied out).
+
+HEADLINE RESULT
+---------------
+SUPERVIVE's APlayerController replicated (CPF_Net) schema differs from stock
+UE 5.4 by EXACTLY ONE property:
+
+    AActor.ServerState : StructProperty(PoolableActorServerState)
+                         CPF_Net | CPF_RepNotify, flags=0x40001100002020
+                         appended AFTER Instigator -> RepIndex 10
+
+Everything else in the hierarchy matches stock counts AND names.
+
+FULL PC-HIERARCHY COMPARISON (client vs our stub)
+-------------------------------------------------
+SUPERVIVE inheritance chain (from the dump):
+    Object -> Actor -> LokiActor -> Controller -> PlayerController
+Stock UE 5.4 chain (our stub):
+    Object -> Actor -> Controller -> PlayerController
+(SUPERVIVE inserts LokiActor between Actor and Controller, but LokiActor adds
+ 0 replicated properties, so it does NOT shift any net index.)
+
+Per-level replicated (CPF_Net) properties, IN ORDER:
+
+  Actor  (client: 11 replicated | stock: 10) *** THE DIFFERENCE ***
+    0  bReplicateMovement      Bool    NET,RepNotify   (stock)
+    1  bHidden                 Bool    NET             (stock)
+    2  bTearOff                Bool    NET             (stock)
+    3  bCanBeDamaged           Bool    NET             (stock)
+    4  RemoteRole              Byte    NET             (stock)
+    5  AttachmentReplication   Struct  NET,RepNotify   (stock)
+    6  ReplicatedMovement      Struct  NET,RepNotify   (stock)
+    7  Owner                   Object  NET,RepNotify   (stock)
+    8  Role                    Byte    NET             (stock)
+    9  Instigator              Object  NET,RepNotify   (stock)
+   10  ServerState             Struct  NET,RepNotify   <<< LOKI ADDITION >>>
+
+  LokiActor  (0 replicated) — adds 1 non-replicated prop; no net-index impact.
+
+  Controller  (2 replicated — IDENTICAL to stock)
+    PlayerState   Object  NET,RepNotify
+    Pawn          Object  NET,RepNotify
+
+  PlayerController  (3 replicated — IDENTICAL to stock)
+    TargetViewRotation                    Struct(Rotator)  NET
+    AsyncPhysicsDataComponent_DEPRECARED  Object           NET,RepNotify
+    SpawnLocation                         Struct(Vector)   NET
+
+  Totals: client 16 replicated, stub 15. Delta = ServerState.
+
+Note: LokiReplicationStrategy (StructProperty on AActor) is NOT replicated
+(no CPF_Net) — it is a config struct only. Earlier sessions listed it as a
+candidate; the CPF_Net dump rules it OUT. ServerState is the sole target.
+
+WHY THIS EXPLAINS N=0
+---------------------
+The client's AActor RepLayout has 11 replicated cmds; our stub's has 10.
+The RepLayout property block our stub sends is therefore a different
+size/shape than the client's RepLayout expects, desyncing the read cursor.
+By the time the client reaches the post-RepLayout field loop
+(DataReplication.cpp ~1050), its cursor is misframed and the first field
+header decodes to net index 0 -> a scalar (bReplicateMovement) that is not a
+valid struct/function target -> "Invalid replicated field 0". One missing
+replicated property at the AActor level is sufficient to cause this.
+
+THE STRUCT: PoolableActorServerState  (2 members, simple)
+---------------------------------------------------------
+    State    : EnumProperty<UInt32Property>   (enum backed by uint32; 32 bits)
+    Version  : UInt32Property                 (32 bits)
+=> An 8-byte POD-ish struct. If it replicates member-wise (standard), the
+   RepLayout expands ServerState into State (32b) + Version (32b) = 64 bits.
+   OPEN QUESTION: whether PoolableActorServerState has a custom NetSerialize
+   (WithNetSerializer), in which case RepLayout treats it as one opaque cmd.
+   The CPF_RepNotify + no-CPF_RepSkip flags suggest standard member-wise
+   replication, but confirm empirically in step 2 (inject, test, adjust if
+   the wire size is off).
+
+STEP 2 — now precisely scoped (was "8-15h", now much smaller)
+-------------------------------------------------------------
+The ordering worry from the N=0 analysis is RESOLVED: ServerState is a
+TAIL-append on AActor (RepIndex 10, right after Instigator) on BOTH sides, so
+appending it to our stub's AActor ClassReps lands at the identical index. No
+mid-list insertion needed.
+
+Plan:
+  1. Register/construct a UScriptStruct "PoolableActorServerState" on the stub
+     with members { State: uint32 (enum ok as plain uint32 for wire), Version:
+     uint32 }. Runtime construction analogous to the sessions 27-32 UFunction
+     work, OR a UHT'd mirror struct in the stub module.
+  2. AppendReplicatedPropertyToClass(AActor::StaticClass(), ServerStateProp):
+       - new FStructProperty "ServerState", Struct = the above.
+       - PropertyFlags |= CPF_Net | CPF_RepNotify.
+       - link into AActor->ChildProperties (tail).
+       - append to AActor->ClassReps, set RepIndex = 10.
+       - (RepNotify handler not needed server-side; it only affects client.)
+  3. Invalidate caches: AActor is base, so clearing the FClassNetCache for the
+     whole PC chain is required. Force SetUpRuntimeReplicationData re-run
+     (clear CLASS_ReplicationDataIsSetUp) or clear NetDriver->NetCache.
+  4. Keep the DumpClassNetCacheLayout diagnostic — after injection it should
+     show AActor with 11 reps and ServerState at [10], and PlayerController's
+     net indices all shifted +1 vs the stock table (session-41-netcache-stock-
+     table.txt).
+  5. Re-run the live probe (docs/session-41-probe-result-N0.txt recipe). Expect
+     the client to ACCEPT the PC bunch (or N to move/connection to survive past
+     ReceivedJoin). If the wire size is wrong (custom NetSerialize), adjust the
+     struct's member layout / add a NetSerialize shim.
+
+TOOLING CHANGE (keep — general improvement)
+-------------------------------------------
+tools/usmapdump/extract.go now captures FField::PropertyFlags and emits
+"<<NET[,RepNotify][,RepSkip] flags=0x..>>" plus a per-class "(N props, M
+replicated)" count. Reusable for any future replication-schema RE.
+Rebuilt: tools/usmapdump/usmapdump.exe.

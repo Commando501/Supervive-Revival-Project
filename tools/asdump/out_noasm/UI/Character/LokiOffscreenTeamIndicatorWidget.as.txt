@@ -1,0 +1,127 @@
+// ============================================================================
+//  MODULE   UI.Character.LokiOffscreenTeamIndicatorWidget
+//  SOURCE   UI/Character/LokiOffscreenTeamIndicatorWidget.as
+//  CONTENT  1 class(es), 7 function(s), 0 enum(s), 1 global(s), 904 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiOffscreenTeamIndicatorWidget_AS;
+
+ULokiOffscreenTeamIndicatorWidget_AS@ ULokiOffscreenTeamIndicatorWidget_AS()   // traits=0x20
+{
+    ULokiOffscreenTeamIndicatorWidget_AS v2;
+
+    v2 = ULokiOffscreenTeamIndicatorWidget_AS();
+    return v2;
+}
+
+UClass@ ULokiOffscreenTeamIndicatorWidget_AS::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiOffscreenTeamIndicatorWidget_AS);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiOffscreenTeamIndicatorWidget_AS : ULokiOffscreenTeamIndicatorWidget
+// unreal base : /Script/Loki.LokiOffscreenTeamIndicatorWidget
+// C++ header  : ../../../Loki/Source/Loki/UI/Character/LokiOffscreenTeamIndicatorWidget.h
+// static class global: __StaticType_ULokiOffscreenTeamIndicatorWidget_AS
+{
+    private const FText Meters;
+    private const FText Kilometers;
+
+    ULokiOffscreenTeamIndicatorWidget_AS()   // traits=0x21
+    {
+        FText v4;
+
+        v4 = FText::FromString("m");
+        this.Meters = FText(v4);
+        v4 = FText::FromString("km");
+        this.Kilometers = FText(v4);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent, meta.BlueprintProtected)
+    protected void GetHeroLocations(FVector&out LocalPlayerLocation, FVector&out AllyLocation, bool&out bLocationsValid)   // traits=0x30
+    {
+        auto v1;
+        ALokiCharacter v4;
+        FVector v12;
+        ALokiCharacter v14;
+
+        v1 = false;
+        bLocationsValid = v1;
+        v4 = Loki::GetLocalLokiCharacter(__WorldContext);
+        if (IsValid(v4)) {
+            v12 = v4.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            LocalPlayerLocation = v12;
+        }
+        if (IsValid(this.AllyPlayerState)) {
+            v14 = this.AllyPlayerState.GetLokiCharacter();
+            if (IsValid(v14)) {
+                v12 = v14.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                AllyLocation = v12;
+            }
+        }
+        v1 = true;
+        bLocationsValid = v1;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent, ConstMethod, meta.BlueprintProtected)
+    protected void CalculateImageAngle(const FVector& LocalPlayerLocation, const FVector& AllyLocation, float32&out ImageAngle) const   // traits=0x34
+    {
+        FVector v6;
+        FRotator v12;
+        auto v14;
+        float32 v15;
+
+        v6 = AllyLocation - LocalPlayerLocation;
+        v12 = FRotator::MakeFromX(v6);
+        v14 = v12.Yaw;
+        v15 = float32(v14);
+        ImageAngle = v15;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent, ConstMethod, meta.BlueprintProtected)
+    protected void CalculateAnchors(const FVector& LocalPlayerLocation, const FVector& AllyLocation, const float64 InsetMultiplier, FVector2D&out Anchors) const   // traits=0x34
+    {
+        float64 v2;
+        float64 v4;
+        float64 v6;
+        FVector2D v10;
+        FVector2D v14;
+
+        v2 = LocalPlayerLocation.Y;
+        v4 = AllyLocation.Y;
+        v2 = v2 - v4;
+        v4 = LocalPlayerLocation.X;
+        v6 = AllyLocation.X;
+        v4 = v4 - v6;
+        v10 = FVector2D(v4, v2);
+        Anchors = v10;
+        Anchors.Normalize(9.99999993922529e-09);
+        v2 = -0.5;
+        v6 = InsetMultiplier * v2;
+        Anchors *= v6;
+        v10 = FVector2D(0.5, 0.5);
+        Anchors += v10;
+        return;
+    }
+
+    void ~ULokiOffscreenTeamIndicatorWidget_AS()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

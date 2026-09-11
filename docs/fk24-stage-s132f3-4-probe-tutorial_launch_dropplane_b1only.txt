@@ -1,0 +1,12 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[DP] drop-plane mode (S125/FK-22): resolve the live DropPlane component -> BEFORE census ->
+[DP] B0c POSITIVE CONTROL (GetAutoDropLocation, 0 push/0 pop) -> SpawnPlane() -> both phase
+[DP] handlers direct -> AFTER census + delta table.
+[DP] Inject into the STAGED TUTORIAL WORLD (gft -> fo -> sp -> this). Not meaningful at the menu.
+[DP] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[DP] FFrame preparation: KFRAMEINIT=1 (ZEROONLY -- zeroes, strictly inside the [M] 0x48..0x80 bracket). This is the single variable the S93 reproduction A/B turns.
+[DP] dp-cand[00] 0x21DEFF9A020 'Default__LokiDropPlane' cls=LokiDropPlane  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=LokiDropPlane<-Actor<-Object
+[DP] dp-cand[01] 0x21DEFFA2FA0 'Default__LokiGameModeDropPlaneComponent' cls=LokiGameModeDropPlaneComponent  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=LokiGameModeDropPlaneComponent<-ActorComponent<-Object
+[DP] dp-cand[02] 0x21DEFFDD710 'Default__LokiPlayerControllerDropPlaneComponent' cls=LokiPlayerControllerDropPlaneComponent  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=LokiPlayerControllerDropPlaneComponent<-LokiPlayerControllerComponent<-ActorComponent<-Object
+[DP] dp-cand[03] 0x21DEFFDD7F0 'Default__LokiPlayerDropPlaneComponent' cls=LokiPlayerDropPlaneComponent  [EXCLUDED: archetype/_GEN_VARIABLE]  chain=LokiPlayerDropPlaneComponent<-ActorComponent<-Object

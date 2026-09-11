@@ -1,0 +1,83 @@
+# Asset: Loki/Content/Loki/Core/GameModes/Objectives/Tutorial/Basics/BP_DropPod_Tutorial.uasset
+# 23 exports total
+
+## [USceneComponent] Ak_DropPod_Audio_GEN_VARIABLE  (ExportType=AkComponent)
+   (no properties)
+## [UBlueprintGeneratedClass] BP_DropPod_Tutorial_C  (ExportType=BlueprintGeneratedClass)
+   - bHasCookedComponentInstancingData (BoolProperty) = True (BoolProperty)
+   - SimpleConstructionScript (ObjectProperty) = SimpleConstructionScript'/Game/Loki/Core/GameModes/Objectives/Tutorial/Basics/BP_DropPod_Tutorial.BP_DropPod_Tutorial_C:SimpleConstructionScript_0' (ObjectProperty)
+   - InheritableComponentHandler (ObjectProperty) = InheritableComponentHandler'/Game/Loki/Core/GameModes/Objectives/Tutorial/Basics/BP_DropPod_Tutorial.BP_DropPod_Tutorial_C:InheritableComponentHandler' (ObjectProperty)
+
+## [UObject] Default__BP_DropPod_Tutorial_C  (ExportType=BP_DropPod_Tutorial_C)
+   - MaxSteerDistance (DoubleProperty) = 2000 (DoubleProperty)
+   - MaxNonLeaderSteerDistance (DoubleProperty) = 2000 (DoubleProperty)
+
+## [UCameraComponent] Camera_GEN_VARIABLE  (ExportType=CameraComponent)
+   (no properties)
+## [UCapsuleComponent] Capsule_GEN_VARIABLE  (ExportType=CapsuleComponent)
+   (no properties)
+## [UCapsuleComponent] Capsule_Tree_Collision_GEN_VARIABLE  (ExportType=CapsuleComponent)
+   (no properties)
+## [UObject] InheritableComponentHandler  (ExportType=InheritableComponentHandler)
+   - Records (ArrayProperty):
+       [0] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [1] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [2] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [3] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [4] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [5] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [6] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [7] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [8] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [9] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [10] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [11] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [12] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [13] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [14] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [15] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+       [16] CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+
+## [UActorComponent] LokiRideable_GEN_VARIABLE  (ExportType=LokiRideableComponent)
+   (no properties)
+## [UActorComponent] LokiTeam_GEN_VARIABLE  (ExportType=LokiTeamComponent)
+   (no properties)
+## [UBillboardComponent] MapIcon_GEN_VARIABLE  (ExportType=MapIconComponent)
+   (no properties)
+## [UBoxComponent] MapView_GEN_VARIABLE  (ExportType=MapViewComponent)
+   (no properties)
+## [UPrimitiveComponent] Niagara Thruster System_GEN_VARIABLE  (ExportType=NiagaraComponent)
+   - OverrideParameters (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+
+## [UPrimitiveComponent] NS_Drop_Clouds_GEN_VARIABLE  (ExportType=NiagaraComponent)
+   - OverrideParameters (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+
+## [UPrimitiveComponent] NS_Drop_CloudsParting_GEN_VARIABLE  (ExportType=NiagaraComponent)
+   - OverrideParameters (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+
+## [UPrimitiveComponent] NS_Drop_CloudTunnel_GEN_VARIABLE  (ExportType=NiagaraComponent)
+   - OverrideParameters (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+
+## [UPrimitiveComponent] NS_Drop_Thruster_Center_GEN_VARIABLE  (ExportType=NiagaraComponent)
+   - OverrideParameters (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+
+## [UPrimitiveComponent] NS_DropPod_Separate_Burst1_GEN_VARIABLE  (ExportType=NiagaraComponent)
+   - OverrideParameters (StructProperty) = CUE4Parse.UE4.Assets.Objects.FStructFallback (FStructFallback, StructProperty)
+
+## [UActorComponent] ProjectileMovement_GEN_VARIABLE  (ExportType=ProjectileMovementComponent)
+   (no properties)
+## [USceneComponent] DefaultSceneRoot_GEN_VARIABLE  (ExportType=SceneComponent)
+   (no properties)
+## [UObject] SCS_Node_0  (ExportType=SCS_Node)
+   - ComponentClass (ObjectProperty) = Class'/Script/Engine.SceneComponent' (ObjectProperty)
+   - ComponentTemplate (ObjectProperty) = SceneComponent'/Game/Loki/Core/GameModes/Objectives/Tutorial/Basics/BP_DropPod_Tutorial.BP_DropPod_Tutorial_C:DefaultSceneRoot_GEN_VARIABLE' (ObjectProperty)
+   - VariableGuid (StructProperty) = 16FA3FDC4B09EB476AE4979917FEC103 (FGuid, StructProperty)
+   - InternalVariableName (NameProperty) = DefaultSceneRoot (NameProperty)
+
+## [UObject] SimpleConstructionScript_0  (ExportType=SimpleConstructionScript)
+   - DefaultSceneRootNode (ObjectProperty) = SCS_Node'/Game/Loki/Core/GameModes/Objectives/Tutorial/Basics/BP_DropPod_Tutorial.BP_DropPod_Tutorial_C:SimpleConstructionScript_0.SCS_Node_0' (ObjectProperty)
+
+## [USkeletalMeshComponent] SkeletalMesh_GEN_VARIABLE  (ExportType=SkeletalMeshComponent)
+   (no properties)
+## [UPrimitiveComponent] Emote Widget_GEN_VARIABLE  (ExportType=WidgetComponent)
+   (no properties)

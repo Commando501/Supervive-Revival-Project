@@ -1,0 +1,1001 @@
+// ============================================================================
+//  MODULE   Content.Train.TrainMovableBaseComponent
+//  SOURCE   Content/Train/TrainMovableBaseComponent.as
+//  CONTENT  4 class(es), 31 function(s), 0 enum(s), 4 global(s), 3260 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UTrainAnchor;
+const TSubclassOf<UObject@> __StaticType_UBackTrainAnchor;
+const TSubclassOf<UObject@> __StaticType_UFrontTrainAnchor;
+const TSubclassOf<UObject@> __StaticType_UTrainMovableBaseComponent;
+
+UTrainAnchor@ UTrainAnchor()   // traits=0x20
+{
+    v4 = UTrainAnchor();
+    return v4;
+}
+/* ---- UTrainAnchor: 7 dwords / 4 instructions (cache offset 0x4bb7e) ----
+    0000  PSF           v4                                          
+    0004  ALLOC         84535 UTrainAnchor                          
+    0014  LOADOBJ       v4                                          
+    0018  RET           0                                           
+*/
+
+UBackTrainAnchor@ UBackTrainAnchor()   // traits=0x20
+{
+    v4 = UBackTrainAnchor();
+    return v4;
+}
+/* ---- UBackTrainAnchor: 7 dwords / 4 instructions (cache offset 0x4bc2f) ----
+    0000  PSF           v4                                          
+    0004  ALLOC         84538 UBackTrainAnchor                      
+    0014  LOADOBJ       v4                                          
+    0018  RET           0                                           
+*/
+
+UFrontTrainAnchor@ UFrontTrainAnchor()   // traits=0x20
+{
+    v4 = UFrontTrainAnchor();
+    return v4;
+}
+/* ---- UFrontTrainAnchor: 7 dwords / 4 instructions (cache offset 0x4bce1) ----
+    0000  PSF           v4                                          
+    0004  ALLOC         84540 UFrontTrainAnchor                     
+    0014  LOADOBJ       v4                                          
+    0018  RET           0                                           
+*/
+
+UTrainMovableBaseComponent@ UTrainMovableBaseComponent()   // traits=0x20
+{
+    v2 = UTrainMovableBaseComponent();
+    return v2;
+}
+/* ---- UTrainMovableBaseComponent: 7 dwords / 4 instructions (cache offset 0x4bd9c) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84547 UTrainMovableBaseComponent            
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ UTrainAnchor::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UTrainAnchor);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x4be55) ----
+    0000  PshGPtr       __StaticType_UTrainAnchor                   
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UClass@ UBackTrainAnchor::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UBackTrainAnchor);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x4bf1e) ----
+    0000  PshGPtr       __StaticType_UBackTrainAnchor               
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UClass@ UFrontTrainAnchor::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UFrontTrainAnchor);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x4bfe8) ----
+    0000  PshGPtr       __StaticType_UFrontTrainAnchor              
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UClass@ UTrainMovableBaseComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UTrainMovableBaseComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x4c0bb) ----
+    0000  PshGPtr       __StaticType_UTrainMovableBaseComponent     
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UTrainAnchor@ UTrainAnchor::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UTrainAnchor, v2, typeid(UTrainAnchor@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x4c1f1) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972659                                    ; UTrainAnchor@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UTrainAnchor                   
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UTrainAnchor@ UTrainAnchor::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UTrainAnchor, v2, typeid(UTrainAnchor@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x4c33f) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972659                                    ; UTrainAnchor@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UTrainAnchor                   
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UTrainAnchor@ UTrainAnchor::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UTrainAnchor, v2, typeid(UTrainAnchor@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x4c488) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972659                                    ; UTrainAnchor@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UTrainAnchor                   
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBackTrainAnchor@ UBackTrainAnchor::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UBackTrainAnchor, v2, typeid(UBackTrainAnchor@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x4c5d2) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972656                                    ; UBackTrainAnchor@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBackTrainAnchor               
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBackTrainAnchor@ UBackTrainAnchor::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBackTrainAnchor, v2, typeid(UBackTrainAnchor@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x4c724) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972656                                    ; UBackTrainAnchor@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBackTrainAnchor               
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBackTrainAnchor@ UBackTrainAnchor::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBackTrainAnchor, v2, typeid(UBackTrainAnchor@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x4c871) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972656                                    ; UBackTrainAnchor@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBackTrainAnchor               
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UFrontTrainAnchor@ UFrontTrainAnchor::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UFrontTrainAnchor, v2, typeid(UFrontTrainAnchor@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x4c9bc) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972657                                    ; UFrontTrainAnchor@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UFrontTrainAnchor              
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UFrontTrainAnchor@ UFrontTrainAnchor::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UFrontTrainAnchor, v2, typeid(UFrontTrainAnchor@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x4cb0f) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972657                                    ; UFrontTrainAnchor@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UFrontTrainAnchor              
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UFrontTrainAnchor@ UFrontTrainAnchor::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UFrontTrainAnchor, v2, typeid(UFrontTrainAnchor@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x4cc5d) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972657                                    ; UFrontTrainAnchor@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UFrontTrainAnchor              
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UTrainMovableBaseComponent@ UTrainMovableBaseComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UTrainMovableBaseComponent, v2, typeid(UTrainMovableBaseComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x4cdb1) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972658                                    ; UTrainMovableBaseComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UTrainMovableBaseComponent     
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UTrainMovableBaseComponent@ UTrainMovableBaseComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UTrainMovableBaseComponent, v2, typeid(UTrainMovableBaseComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x4cf0d) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972658                                    ; UTrainMovableBaseComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UTrainMovableBaseComponent     
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UTrainMovableBaseComponent@ UTrainMovableBaseComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UTrainMovableBaseComponent, v2, typeid(UTrainMovableBaseComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x4d064) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972658                                    ; UTrainMovableBaseComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UTrainMovableBaseComponent     
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class UTrainAnchor : USceneComponent
+// unreal base : /Script/Engine.SceneComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/SceneComponent.h
+// static class global: __StaticType_UTrainAnchor
+{
+    UTrainAnchor()   // traits=0x21
+    {
+        return;
+    }
+    /* ---- UTrainAnchor: 5 dwords / 3 instructions (cache offset 0x4d215) ----
+        0000  PshVPtr       this                                        
+        0004  FinConstruct  UTrainAnchor                                
+        0010  RET           2                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = true;
+        this.SetbHiddenInGame(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 8 dwords / 5 instructions (cache offset 0x4d154) ----
+        0000  SetV1         v1 1                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       USceneComponent::SetbHiddenInGame           
+        001C  RET           2                                           
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class UBackTrainAnchor : UTrainAnchor
+// static class global: __StaticType_UBackTrainAnchor
+{
+    UBackTrainAnchor()   // traits=0x21
+    {
+        this.UTrainAnchor();
+        return;
+    }
+    /* ---- UBackTrainAnchor: 8 dwords / 5 instructions (cache offset 0x4d403) ----
+        0000  PshVPtr       this                                        
+        0004  CALL          84535                                         ; UTrainAnchor::UTrainAnchor
+        000C  PshVPtr       this                                        
+        0010  FinConstruct  UBackTrainAnchor                            
+        001C  RET           2                                           
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class UFrontTrainAnchor : UTrainAnchor
+// static class global: __StaticType_UFrontTrainAnchor
+{
+    UFrontTrainAnchor()   // traits=0x21
+    {
+        this.UTrainAnchor();
+        return;
+    }
+    /* ---- UFrontTrainAnchor: 8 dwords / 5 instructions (cache offset 0x4d600) ----
+        0000  PshVPtr       this                                        
+        0004  CALL          84535                                         ; UTrainAnchor::UTrainAnchor
+        000C  PshVPtr       this                                        
+        0010  FinConstruct  UFrontTrainAnchor                           
+        001C  RET           2                                           
+    */
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class UTrainMovableBaseComponent : UMovableBaseComponent
+// unreal base : /Script/Engine.MovableBaseComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/CharacterMovementComponent.h
+// static class global: __StaticType_UTrainMovableBaseComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    float64 InitialOffset;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    float64 Speed;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    USplineComponent@ TrackSpline;
+
+    UTrainMovableBaseComponent()   // traits=0x21
+    {
+        return;
+    }
+    /* ---- UTrainMovableBaseComponent: 5 dwords / 3 instructions (cache offset 0x4ed80) ----
+        0000  PshVPtr       this                                        
+        0004  FinConstruct  UTrainMovableBaseComponent                  
+        0010  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, ConstMethod)
+    float64 GetLength() const   // traits=0x24
+    {
+        v6 = UBackTrainAnchor::StaticClass();
+        v8 = TSubclassOf(v6);
+        v4 = this.GetOwner();
+        v10 = v4.GetComponentByClass(v8);
+        if (v10 != nullptr) {
+            v12 = cast<UBackTrainAnchor@>(v10);
+        } else {
+            v12 = nullptr;
+        }
+        v2 = v12;
+        v6 = UFrontTrainAnchor::StaticClass();
+        v8 = TSubclassOf(v6);
+        v4 = this.GetOwner();
+        v10 = v4.GetComponentByClass(v8);
+        if (v10 != nullptr) {
+            v16 = cast<UFrontTrainAnchor@>(v10);
+        } else {
+            v16 = nullptr;
+        }
+        v14 = v16;
+        if (v2 == nullptr) {
+            v17 = true;
+        } else {
+            v18 = v14 == nullptr;
+            v17 = v18;
+        }
+        if (v17) {
+            v20 = 0;
+            return v20;
+        } else {
+            v26 = v14.GetRelativeLocation();
+            v20 = v26.X;
+            v32 = v2.GetRelativeLocation();
+            v34 = v32.X;
+            v20 = v20 - v34;
+        }
+        return v20;
+    }
+    /* ---- GetLength: 111 dwords / 70 instructions (cache offset 0x4d987) ----
+        0000  CALL          84551                                         ; StaticClass
+        0008  STOREOBJ      v6                                          
+        000C  PshVPtr       v6                                          
+        0010  PSF           v8                                          
+        0014  CALLSYS       TSubclassOf::$beh0                          
+        0020  PSF           v8                                          
+        0024  PshVPtr       this                                        
+        0028  CALLSYS       UActorComponent::GetOwner                   
+        0034  STOREOBJ      v4                                          
+        0038  PshVPtr       v4                                          
+        003C  CALLSYS       AActor::GetComponentByClass                 
+        0048  STOREOBJ      v10                                         
+        004C  CmpPtrNull    v10                                         
+        0050  JZ            9                                             -> L007C
+        0058  TYPEID        1207972656                                    ; UBackTrainAnchor@
+        0060  PSF           v12                                         
+        0064  PshVPtr       v10                                         
+        0068  CALLSYS       UObject::opCast                             
+        0074  JMP           1                                             -> L0080
+      L007C:
+        007C  ClrVPtr       v12                                         
+      L0080:
+        0080  PshVPtr       v12                                         
+        0084  RefCpyV       v2                                          
+        0088  CALL          84552                                         ; StaticClass
+        0090  STOREOBJ      v6                                          
+        0094  PshVPtr       v6                                          
+        0098  PSF           v8                                          
+        009C  CALLSYS       TSubclassOf::$beh0                          
+        00A8  PSF           v8                                          
+        00AC  PshVPtr       this                                        
+        00B0  CALLSYS       UActorComponent::GetOwner                   
+        00BC  STOREOBJ      v4                                          
+        00C0  PshVPtr       v4                                          
+        00C4  CALLSYS       AActor::GetComponentByClass                 
+        00D0  STOREOBJ      v10                                         
+        00D4  CmpPtrNull    v10                                         
+        00D8  JZ            9                                             -> L0104
+        00E0  TYPEID        1207972657                                    ; UFrontTrainAnchor@
+        00E8  PSF           v16                                         
+        00EC  PshVPtr       v10                                         
+        00F0  CALLSYS       UObject::opCast                             
+        00FC  JMP           1                                             -> L0108
+      L0104:
+        0104  ClrVPtr       v16                                         
+      L0108:
+        0108  PshVPtr       v16                                         
+        010C  RefCpyV       v14                                         
+        0110  CmpPtrNull    v2                                          
+        0114  JNZ           4                                             -> L012C
+        011C  SetV1         v17 1                                       
+        0124  JMP           5                                             -> L0140
+      L012C:
+        012C  CmpPtrNull    v14                                         
+        0130  TZ                                                        
+        0134  CpyRtoV4      v18                                         
+        0138  CpyVtoV4      v17 v18                                     
+      L0140:
+        0140  CpyVtoR1      v17                                         
+        0144  JLowZ         6                                             -> L0164
+        014C  SetV8         v20 0x0                                     
+        0158  CpyVtoR8      v20                                         
+        015C  JMP           21                                            -> L01B8
+      L0164:
+        0164  PSF           v26                                         
+        0168  PshVPtr       v14                                         
+        016C  CALLSYS       USceneComponent::GetRelativeLocation        
+        0178  LoadVObjR     v26 0 67117444                                ; .X
+        0184  RDR8          v20                                         
+        0188  PSF           v32                                         
+        018C  PshVPtr       v2                                          
+        0190  CALLSYS       USceneComponent::GetRelativeLocation        
+        019C  LoadVObjR     v32 0 67117444                                ; .X
+        01A8  RDR8          v34                                         
+        01AC  SUBd          v20 v20 v34                                 
+        01B4  CpyVtoR8      v20                                         
+      L01B8:
+        01B8  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=GetRootTransformAtTime, BlueprintOverride, BlueprintEvent, CanOverrideEvent, ConstMethod)
+    bool GetRootTransformAtTime_Implementation(const float64 Timestamp, FTransform&inout OutTransform) const   // traits=0x24
+    {
+        v4 = this.TrackSpline;
+        if (v4 != nullptr) {
+            v6 = this.TrackSpline.GetSplineLength();
+            v7 = v6;
+        } else {
+            v7 = 0;
+        }
+        v10 = float64(v7);
+        v2 = v10;
+        v10 = 0;
+        if (v2 <= v10) {
+            v12 = this.GetOwner();
+            v12.GetActorTransform()  /* UFunction GetTransform */;
+            OutTransform = v12.GetActorTransform()  /* UFunction GetTransform */;
+            v5 = true;
+            return v5;
+        } else {
+            v16 = UBackTrainAnchor::StaticClass();
+            v18 = TSubclassOf(v16);
+            v12 = this.GetOwner();
+            v20 = v12.GetComponentByClass(v18);
+            if (v20 != nullptr) {
+                v22 = cast<UBackTrainAnchor@>(v20);
+            } else {
+                v22 = nullptr;
+            }
+            v14 = v22;
+            v16 = UFrontTrainAnchor::StaticClass();
+            v18 = TSubclassOf(v16);
+            v12 = this.GetOwner();
+            v20 = v12.GetComponentByClass(v18);
+            if (v20 != nullptr) {
+                v26 = cast<UFrontTrainAnchor@>(v20);
+            } else {
+                v26 = nullptr;
+            }
+            v24 = v26;
+            if (v14 == nullptr) {
+                v5 = true;
+            } else {
+                v27 = v24 == nullptr;
+                v5 = v27;
+            }
+            if (v5) {
+                v12 = this.GetOwner();
+                v12.GetActorTransform()  /* UFunction GetTransform */;
+                OutTransform = v12.GetActorTransform()  /* UFunction GetTransform */;
+                v5 = true;
+                return v5;
+            } else {
+                v40 = v24.GetRelativeLocation();
+                v44 = this.GetDistanceAlongSpline(Timestamp, 0);
+                v51 = true;
+                v6 = float32(v44);
+                v34 = this.TrackSpline.GetLocationAtDistanceAlongSpline(v6, v51);
+                v10 = this.GetLength();
+                v10 = -v10;
+                v42 = this.GetDistanceAlongSpline(Timestamp, v10);
+                v51 = true;
+                v6 = float32(v42);
+                v50 = this.TrackSpline.GetLocationAtDistanceAlongSpline(v6, v51);
+                v60 = v34 - v50;
+                v78 = FRotator::MakeFromX(v60);
+                v128 = FTransform(v78, v34, FVector::OneVector);
+                v104 = v24.GetRelativeTransform();
+                v152 = v104.Inverse();
+                v104 = v152 * v128;
+                OutTransform = v104;
+                v27 = true;
+            }
+        }
+        return v27;
+    }
+    /* ---- GetRootTransformAtTime_Implementation: 251 dwords / 158 instructions (cache offset 0x4dda6) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         232 134230834                                 ; .TrackSpline
+        000C  RDSPtr                                                    
+        0010  RefCpyV       v4                                          
+        0014  CmpPtrNull    v4                                          
+        0018  JZ            12                                            -> L0050
+        0020  PshVPtr       this                                        
+        0024  ADDSi         232 134230834                                 ; .TrackSpline
+        002C  RDSPtr                                                    
+        0030  CALLSYS       USplineComponent::GetSplineLength           
+        003C  CpyRtoV4      v6                                          
+        0040  CpyVtoV4      v7 v6                                       
+        0048  JMP           2                                             -> L0058
+      L0050:
+        0050  SetV4         v7 0                                        
+      L0058:
+        0058  fTOd          v10 v7                                      
+        0060  CpyVtoV8      v2 v10                                      
+        0068  SetV8         v10 0x0                                     
+        0074  CMPd          v2 v10                                      
+        007C  JP            19                                            -> L00D0
+        0084  PshVPtr       this                                        
+        0088  CALLSYS       UActorComponent::GetOwner                   
+        0094  STOREOBJ      v12                                         
+        0098  PshVPtr       v12                                         
+        009C  CALLSYS       AActor::GetActorTransform                   
+        00A8  PshRPtr                                                   
+        00AC  PshVPtr       OutTransform                                
+        00B0  CALLSYS       FTransform::opAssign                        
+        00BC  SetV1         v5 1                                        
+        00C4  CpyVtoR4      v5                                          
+        00C8  JMP           198                                           -> L03E8
+      L00D0:
+        00D0  CALL          84551                                         ; StaticClass
+        00D8  STOREOBJ      v16                                         
+        00DC  PshVPtr       v16                                         
+        00E0  PSF           v18                                         
+        00E4  CALLSYS       TSubclassOf::$beh0                          
+        00F0  PSF           v18                                         
+        00F4  PshVPtr       this                                        
+        00F8  CALLSYS       UActorComponent::GetOwner                   
+        0104  STOREOBJ      v12                                         
+        0108  PshVPtr       v12                                         
+        010C  CALLSYS       AActor::GetComponentByClass                 
+        0118  STOREOBJ      v20                                         
+        011C  CmpPtrNull    v20                                         
+        0120  JZ            9                                             -> L014C
+        0128  TYPEID        1207972656                                    ; UBackTrainAnchor@
+        0130  PSF           v22                                         
+        0134  PshVPtr       v20                                         
+        0138  CALLSYS       UObject::opCast                             
+        0144  JMP           1                                             -> L0150
+      L014C:
+        014C  ClrVPtr       v22                                         
+      L0150:
+        0150  PshVPtr       v22                                         
+        0154  RefCpyV       v14                                         
+        0158  CALL          84552                                         ; StaticClass
+        0160  STOREOBJ      v16                                         
+        0164  PshVPtr       v16                                         
+        0168  PSF           v18                                         
+        016C  CALLSYS       TSubclassOf::$beh0                          
+        0178  PSF           v18                                         
+        017C  PshVPtr       this                                        
+        0180  CALLSYS       UActorComponent::GetOwner                   
+        018C  STOREOBJ      v12                                         
+        0190  PshVPtr       v12                                         
+        0194  CALLSYS       AActor::GetComponentByClass                 
+        01A0  STOREOBJ      v20                                         
+        01A4  CmpPtrNull    v20                                         
+        01A8  JZ            9                                             -> L01D4
+        01B0  TYPEID        1207972657                                    ; UFrontTrainAnchor@
+        01B8  PSF           v26                                         
+        01BC  PshVPtr       v20                                         
+        01C0  CALLSYS       UObject::opCast                             
+        01CC  JMP           1                                             -> L01D8
+      L01D4:
+        01D4  ClrVPtr       v26                                         
+      L01D8:
+        01D8  PshVPtr       v26                                         
+        01DC  RefCpyV       v24                                         
+        01E0  CmpPtrNull    v14                                         
+        01E4  JNZ           4                                             -> L01FC
+        01EC  SetV1         v5 1                                        
+        01F4  JMP           5                                             -> L0210
+      L01FC:
+        01FC  CmpPtrNull    v24                                         
+        0200  TZ                                                        
+        0204  CpyRtoV4      v27                                         
+        0208  CpyVtoV4      v5 v27                                      
+      L0210:
+        0210  CpyVtoR1      v5                                          
+        0214  JLowZ         19                                            -> L0268
+        021C  PshVPtr       this                                        
+        0220  CALLSYS       UActorComponent::GetOwner                   
+        022C  STOREOBJ      v12                                         
+        0230  PshVPtr       v12                                         
+        0234  CALLSYS       AActor::GetActorTransform                   
+        0240  PshRPtr                                                   
+        0244  PshVPtr       OutTransform                                
+        0248  CALLSYS       FTransform::opAssign                        
+        0254  SetV1         v5 1                                        
+        025C  CpyVtoR4      v5                                          
+        0260  JMP           96                                            -> L03E8
+      L0268:
+        0268  PSF           v40                                         
+        026C  PshVPtr       v24                                         
+        0270  CALLSYS       USceneComponent::GetRelativeLocation        
+        027C  PshC8         0x0                                         
+        0288  PshV8         Timestamp                                   
+        028C  PshVPtr       this                                        
+        0290  CALLINTF      84545                                         ; UTrainMovableBaseComponent::GetDistanceAlongSpline
+        0298  CpyRtoV8      v44                                         
+        029C  SetV1         v51 1                                       
+        02A4  PshV4         v51                                         
+        02A8  dTOf          v6 v44                                      
+        02B0  PshV4         v6                                          
+        02B4  PSF           v34                                         
+        02B8  PshVPtr       this                                        
+        02BC  ADDSi         232 134230834                                 ; .TrackSpline
+        02C4  RDSPtr                                                    
+        02C8  CALLSYS       USplineComponent::GetLocationAtDistanceAlongSpline
+        02D4  PshVPtr       this                                        
+        02D8  CALLINTF      84542                                         ; UTrainMovableBaseComponent::GetLength
+        02E0  CpyRtoV8      v10                                         
+        02E4  NEGd          v10                                         
+        02E8  PshV8         v10                                         
+        02EC  PshV8         Timestamp                                   
+        02F0  PshVPtr       this                                        
+        02F4  CALLINTF      84545                                         ; UTrainMovableBaseComponent::GetDistanceAlongSpline
+        02FC  CpyRtoV8      v42                                         
+        0300  SetV1         v51 1                                       
+        0308  PshV4         v51                                         
+        030C  dTOf          v6 v42                                      
+        0314  PshV4         v6                                          
+        0318  PSF           v50                                         
+        031C  PshVPtr       this                                        
+        0320  ADDSi         232 134230834                                 ; .TrackSpline
+        0328  RDSPtr                                                    
+        032C  CALLSYS       USplineComponent::GetLocationAtDistanceAlongSpline
+        0338  PSF           v50                                         
+        033C  PSF           v60                                         
+        0340  PSF           v34                                         
+        0344  CALLSYS       FVector::opSub                              
+        0350  PSF           v60                                         
+        0354  PSF           v78                                         
+        0358  CALLSYS       MakeFromX                                   
+        0364  PshGPtr       FVector::OneVector                          
+        0370  PSF           v34                                         
+        0374  PSF           v78                                         
+        0378  PSF           v128                                        
+        037C  CALLSYS       FTransform::$beh0                           
+        0388  PSF           v152                                        
+        038C  PSF           v104                                        
+        0390  PshVPtr       v24                                         
+        0394  CALLSYS       USceneComponent::GetRelativeTransform       
+        03A0  PSF           v104                                        
+        03A4  CALLSYS       FTransform::Inverse                         
+        03B0  PSF           v128                                        
+        03B4  PSF           v104                                        
+        03B8  PSF           v152                                        
+        03BC  CALLSYS       FTransform::opMul                           
+        03C8  PSF           v104                                        
+        03CC  PshVPtr       OutTransform                                
+        03D0  CALLSYS       FTransform::opAssign                        
+        03DC  SetV1         v27 1                                       
+        03E4  CpyVtoR4      v27                                         
+      L03E8:
+        03E8  RET           6                                           
+    */
+
+    UFUNCTION(UnrealName=GetRootVelocityAtTime, BlueprintOverride, BlueprintEvent, CanOverrideEvent, ConstMethod)
+    bool GetRootVelocityAtTime_Implementation(const float64 Timestamp, FVector&inout OutVelocity) const   // traits=0x24
+    {
+        v24 = FTransform(FTransform::Identity);
+        v25 = float32(Timestamp);
+        v26 = this.GetRootTransformAtTime(v25, v24);
+        v26 = !v26;
+        if (v26) {
+            OutVelocity = FVector::ZeroVector;
+            v26 = false;
+            return v26;
+        } else {
+            v40 = v24.GetRotation();
+            v46 = v40.GetForwardVector();
+            v32 = FVector(v46);
+            v48 = this.Speed;
+            v46 = v32 * v48;
+            OutVelocity = v46;
+            v26 = true;
+        }
+        return v26;
+    }
+    /* ---- GetRootVelocityAtTime_Implementation: 65 dwords / 39 instructions (cache offset 0x4e544) ----
+        0000  PshGPtr       FTransform::Identity                        
+        000C  PSF           v24                                         
+        0010  CALLSYS       FTransform::$beh0                           
+        001C  PSF           v24                                         
+        0020  dTOf          v25 Timestamp                               
+        0028  PshV4         v25                                         
+        002C  PshVPtr       this                                        
+        0030  CALLSYS       UMovableBaseComponent::GetRootTransformAtTime
+        003C  CpyRtoV4      v26                                         
+        0040  NOT           v26                                         
+        0044  CpyVtoR1      v26                                         
+        0048  JLowZ         12                                            -> L0080
+        0050  PshGPtr       FVector::ZeroVector                         
+        005C  PshVPtr       OutVelocity                                 
+        0060  CALLSYS       FVector::opAssign                           
+        006C  SetV1         v26 0                                       
+        0074  CpyVtoR4      v26                                         
+        0078  JMP           32                                            -> L0100
+      L0080:
+        0080  PSF           v46                                         
+        0084  PSF           v40                                         
+        0088  PSF           v24                                         
+        008C  CALLSYS       FTransform::GetRotation                     
+        0098  PSF           v40                                         
+        009C  CALLSYS       FQuat::GetForwardVector                     
+        00A8  PSF           v46                                         
+        00AC  PSF           v32                                         
+        00B0  CALLSYS       FVector::$beh0                              
+        00BC  LoadThisR     224 134230834                                 ; this.Speed
+        00C4  RDR8          v48                                         
+        00C8  PshV8         v48                                         
+        00CC  PSF           v46                                         
+        00D0  PSF           v32                                         
+        00D4  CALLSYS       FVector::opMul                              
+        00E0  PSF           v46                                         
+        00E4  PshVPtr       OutVelocity                                 
+        00E8  CALLSYS       FVector::opAssign                           
+        00F4  SetV1         v26 1                                       
+        00FC  CpyVtoR4      v26                                         
+      L0100:
+        0100  RET           6                                           
+    */
+
+    private float64 GetDistanceAlongSpline(const float64 Timestamp, const float64 OffsetDistance = 0) const   // traits=0x2c
+    {
+        v2 = this.TrackSpline;
+        if (v2 == nullptr) {
+            v6 = 0;
+            return v6;
+        } else {
+            v9 = this.TrackSpline.GetSplineLength();
+            v6 = float64(v9);
+            v8 = v6;
+            v6 = 0;
+            if (v8 <= v6) {
+                v6 = 0;
+                return v6;
+            } else {
+                v6 = this.InitialOffset;
+                v6 = v6 + OffsetDistance;
+                v12 = this.Speed;
+                v12 = Timestamp * v12;
+                v6 = v6 + v12;
+                v12 = v6 % v8;
+            }
+        }
+        return v12;
+    }
+    /* ---- GetDistanceAlongSpline: 55 dwords / 32 instructions (cache offset 0x4e8b8) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         232 134230834                                 ; .TrackSpline
+        000C  RDSPtr                                                    
+        0010  RefCpyV       v2                                          
+        0014  CmpPtrNull    v2                                          
+        0018  JNZ           6                                             -> L0038
+        0020  SetV8         v6 0x0                                      
+        002C  CpyVtoR8      v6                                          
+        0030  JMP           40                                            -> L00D8
+      L0038:
+        0038  PshVPtr       this                                        
+        003C  ADDSi         232 134230834                                 ; .TrackSpline
+        0044  RDSPtr                                                    
+        0048  CALLSYS       USplineComponent::GetSplineLength           
+        0054  CpyRtoV4      v9                                          
+        0058  fTOd          v6 v9                                       
+        0060  CpyVtoV8      v8 v6                                       
+        0068  SetV8         v6 0x0                                      
+        0074  CMPd          v8 v6                                       
+        007C  JP            6                                             -> L009C
+        0084  SetV8         v6 0x0                                      
+        0090  CpyVtoR8      v6                                          
+        0094  JMP           15                                            -> L00D8
+      L009C:
+        009C  LoadThisR     216 134230834                                 ; this.InitialOffset
+        00A4  RDR8          v6                                          
+        00A8  ADDd          v6 v6 OffsetDistance                        
+        00B0  LoadThisR     224 134230834                                 ; this.Speed
+        00B8  RDR8          v12                                         
+        00BC  MULd          v12 Timestamp v12                           
+        00C4  ADDd          v6 v6 v12                                   
+        00CC  MODd          v12 v6 v8                                   
+        00D4  CpyVtoR8      v12                                         
+      L00D8:
+        00D8  RET           6                                           
+    */
+
+    bool GetBackAnchorLocation(FVector&inout OutBackLocation) const   // traits=0x24
+    {
+        v6 = UBackTrainAnchor::StaticClass();
+        v8 = TSubclassOf(v6);
+        v4 = this.GetOwner();
+        v10 = v4.GetComponentByClass(v8);
+        if (v10 != nullptr) {
+            v12 = cast<UBackTrainAnchor@>(v10);
+        } else {
+            v12 = nullptr;
+        }
+        v2 = v12;
+        if (v2 == nullptr) {
+            v13 = false;
+            return v13;
+        } else {
+            v20 = v2.GetRelativeLocation();
+            OutBackLocation = v20;
+            v13 = true;
+        }
+        return v13;
+    }
+    /* ---- GetBackAnchorLocation: 56 dwords / 36 instructions (cache offset 0x4ea9e) ----
+        0000  CALL          84551                                         ; StaticClass
+        0008  STOREOBJ      v6                                          
+        000C  PshVPtr       v6                                          
+        0010  PSF           v8                                          
+        0014  CALLSYS       TSubclassOf::$beh0                          
+        0020  PSF           v8                                          
+        0024  PshVPtr       this                                        
+        0028  CALLSYS       UActorComponent::GetOwner                   
+        0034  STOREOBJ      v4                                          
+        0038  PshVPtr       v4                                          
+        003C  CALLSYS       AActor::GetComponentByClass                 
+        0048  STOREOBJ      v10                                         
+        004C  CmpPtrNull    v10                                         
+        0050  JZ            9                                             -> L007C
+        0058  TYPEID        1207972656                                    ; UBackTrainAnchor@
+        0060  PSF           v12                                         
+        0064  PshVPtr       v10                                         
+        0068  CALLSYS       UObject::opCast                             
+        0074  JMP           1                                             -> L0080
+      L007C:
+        007C  ClrVPtr       v12                                         
+      L0080:
+        0080  PshVPtr       v12                                         
+        0084  RefCpyV       v2                                          
+        0088  CmpPtrNull    v2                                          
+        008C  JNZ           5                                             -> L00A8
+        0094  SetV1         v13 0                                       
+        009C  CpyVtoR4      v13                                         
+        00A0  JMP           13                                            -> L00DC
+      L00A8:
+        00A8  PSF           v20                                         
+        00AC  PshVPtr       v2                                          
+        00B0  CALLSYS       USceneComponent::GetRelativeLocation        
+        00BC  PSF           v20                                         
+        00C0  PshVPtr       OutBackLocation                             
+        00C4  CALLSYS       FVector::opAssign                           
+        00D0  SetV1         v13 1                                       
+        00D8  CpyVtoR4      v13                                         
+      L00DC:
+        00DC  RET           4                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v2 = 4652007308841189376;
+        this.Speed = v2;
+        return;
+    }
+    /* ---- __InitDefaults: 7 dwords / 4 instructions (cache offset 0x4eca1) ----
+        0000  SetV8         v2 0x408f400000000000                       
+        000C  LoadThisR     224 134230834                                 ; this.Speed
+        0014  WRTV8         v2                                          
+        0018  RET           2                                           
+    */
+
+}
+

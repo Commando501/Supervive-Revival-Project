@@ -1,0 +1,213 @@
+// ============================================================================
+//  MODULE   Barracuda.GameState.BarracudaGameStateGlobals
+//  SOURCE   Barracuda/GameState/BarracudaGameStateGlobals.as
+//  CONTENT  0 class(es), 5 function(s), 0 enum(s), 0 global(s), 624 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+// statics class: Module_Barracuda_GameState_BarracudaGameStateGlobalsStatics
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()   // traits=0x20
+{
+    ALokiGameState v4;
+    UBarracudaGameStateComponent v8;
+
+    v4 = Loki::GetLokiGameState(__WorldContext);
+    if (v4 == nullptr) {
+        return v8;
+    } else {
+        v8 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+    }
+    return v8;
+}
+/* ---- GetBarracudaGameStateComponent: 23 dwords / 14 instructions (cache offset 0x27677) ----
+    0000  PshGPtr       __WorldContext
+    000C  CALLSYS       GetLokiGameState                              ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    0018  STOREOBJ      v4
+    001C  CmpPtrNull    v4
+    0020  JNZ           4                                             -> L0038
+    0028  FreeNullV8    v8
+    002C  LOADOBJ       v8
+    0030  JMP           8                                             -> L0058
+  L0038:
+    0038  PshGPtr       NAME_None
+    0044  PshVPtr       v4
+    0048  CALL          84255                                         ; UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Get(const AActor@, const FName&)
+    0050  STOREOBJ      v8
+    0054  LOADOBJ       v8
+  L0058:
+    0058  RET           0
+*/
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+FBarracudaPhase GetCurrentBarracudaPhase()   // traits=0x20
+{
+    UBarracudaGameStateComponent v4;
+    int v6;
+    FBarracudaPhase v8;
+
+    v4 = GetBarracudaGameStateComponent();
+    if (v4 != nullptr) {
+        v6 = v4.CurrentPhaseIndex;
+        if (v4.BarracudaPhases.IsValidIndex(v6)) {
+            v6 = v4.CurrentPhaseIndex;
+            __ret = FBarracudaPhase(v4.BarracudaPhases[v6]);
+            return;
+        }
+    } else {
+        v8 = FBarracudaPhase();
+        __ret = FBarracudaPhase(v8);
+    }
+    return;
+}
+/* ---- GetCurrentBarracudaPhase: 51 dwords / 29 instructions (cache offset 0x27813) ----
+    0000  CALL          84263                                         ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    0008  STOREOBJ      v4
+    000C  CmpPtrNull    v4
+    0010  JZ            31                                            -> L0094
+    0018  LoadRObjR     v4 448 134230778                              ; .CurrentPhaseIndex
+    0024  RDR4          v6
+    0028  PshV4         v6
+    002C  PshVPtr       v4
+    0030  ADDSi         432 134230778                                 ; .BarracudaPhases
+    0038  CALLSYS       TArray::IsValidIndex                          ; bool TArray<FBarracudaPhase>::IsValidIndex(int) const
+    0044  JLowZ         18                                            -> L0094
+    004C  LoadRObjR     v4 448 134230778                              ; .CurrentPhaseIndex
+    0058  RDR4          v6
+    005C  PshV4         v6
+    0060  PshVPtr       v4
+    0064  ADDSi         432 134230778                                 ; .BarracudaPhases
+    006C  Thiscall1     TArray::opIndex                               ; FBarracudaPhase& TArray<FBarracudaPhase>::opIndex(int)
+    0078  PshRPtr
+    007C  PshVPtr       __ret
+    0080  CALLSYS       FBarracudaPhase::$beh0                        ; void FBarracudaPhase::$beh0(const FBarracudaPhase&)
+    008C  JMP           13                                            -> L00C8
+  L0094:
+    0094  PSF           v8
+    0098  CALLSYS       FBarracudaPhase::$beh0                        ; void FBarracudaPhase::$beh0()
+    00A4  PSF           v8
+    00A8  PshVPtr       __ret
+    00AC  CALLSYS       FBarracudaPhase::$beh0                        ; void FBarracudaPhase::$beh0(const FBarracudaPhase&)
+    00B8  PSF           v8
+    00BC  CALLSYS       FBarracudaPhase::$beh2                        ; void FBarracudaPhase::$beh2()
+  L00C8:
+    00C8  RET           2
+*/
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+EBarracudaPhaseType GetCurrentBarracudaPhaseType()   // traits=0x20
+{
+    FBarracudaPhase v4;
+    auto v5;
+
+    v4 = GetCurrentBarracudaPhase();
+    v5 = v4.Type;
+    return v5;
+}
+/* ---- GetCurrentBarracudaPhaseType: 13 dwords / 8 instructions (cache offset 0x27a4d) ----
+    0000  PSF           v4
+    0004  CALL          84264                                         ; FBarracudaPhase GetCurrentBarracudaPhase()
+    000C  LoadVObjR     v4 0 67120849                                 ; .Type
+    0018  RDR1          v5
+    001C  PSF           v4
+    0020  CALLSYS       FBarracudaPhase::$beh2                        ; void FBarracudaPhase::$beh2()
+    002C  CpyVtoR4      v5
+    0030  RET           0
+*/
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+float64 GetCurrentBarracudaPhaseTime()   // traits=0x20
+{
+    UBarracudaGameStateComponent v4;
+    float64 v8;
+    auto v10;
+    auto v11;
+
+    v4 = GetBarracudaGameStateComponent();
+    if (v4 == nullptr) {
+        v8 = 0;
+        return v8;
+    } else {
+        v11 = Gameplay::GetServerTime(__WorldContext);
+        v8 = float64(v11);
+        v10 = v8;
+        v8 = v4.CurrentPhaseStartTime;
+        v8 = v10 - v8;
+    }
+    return v8;
+}
+/* ---- GetCurrentBarracudaPhaseTime: 31 dwords / 17 instructions (cache offset 0x27bcf) ----
+    0000  CALL          84263                                         ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    0008  STOREOBJ      v4
+    000C  CmpPtrNull    v4
+    0010  JNZ           6                                             -> L0030
+    0018  SetV8         v8 0x0
+    0024  CpyVtoR8      v8
+    0028  JMP           18                                            -> L0078
+  L0030:
+    0030  PshGPtr       __WorldContext
+    003C  CALLSYS       GetServerTime                                 ; float32 Gameplay::GetServerTime(const UObject@)
+    0048  CpyRtoV4      v11
+    004C  fTOd          v8 v11
+    0054  CpyVtoV8      v10 v8
+    005C  LoadRObjR     v4 456 134230778                              ; .CurrentPhaseStartTime
+    0068  RDR8          v8
+    006C  SUBd          v8 v10 v8
+    0074  CpyVtoR8      v8
+  L0078:
+    0078  RET           0
+*/
+
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+float64 GetCurrentBarracudaPhaseTimeReminaing()   // traits=0x20
+{
+    FBarracudaPhase v4;
+    auto v5;
+    auto v10;
+    float64 v12;
+
+    v4 = GetCurrentBarracudaPhase();
+    v5 = v4.Duration;
+    if (v5 <= 0.0) {
+        v10 = 0;
+        return v10;
+    } else {
+        v10 = GetCurrentBarracudaPhaseTime();
+        v5 = v4.Duration;
+        v12 = float64(v5);
+        v12 = v12 - v10;
+    }
+    return v12;
+}
+/* ---- GetCurrentBarracudaPhaseTimeReminaing: 38 dwords / 21 instructions (cache offset 0x27d8a) ----
+    0000  PSF           v4
+    0004  CALL          84264                                         ; FBarracudaPhase GetCurrentBarracudaPhase()
+    000C  LoadVObjR     v4 4 67120849                                 ; .Duration
+    0018  RDR4          v5
+    001C  CMPIf         v5 0
+    0024  JP            10                                            -> L0054
+    002C  SetV8         v10 0x0
+    0038  PSF           v4
+    003C  CALLSYS       FBarracudaPhase::$beh2                        ; void FBarracudaPhase::$beh2()
+    0048  CpyVtoR8      v10
+    004C  JMP           16                                            -> L0094
+  L0054:
+    0054  CALL          84266                                         ; float64 GetCurrentBarracudaPhaseTime()
+    005C  CpyRtoV8      v10
+    0060  LoadVObjR     v4 4 67120849                                 ; .Duration
+    006C  RDR4          v5
+    0070  fTOd          v12 v5
+    0078  SUBd          v12 v12 v10
+    0080  PSF           v4
+    0084  CALLSYS       FBarracudaPhase::$beh2                        ; void FBarracudaPhase::$beh2()
+    0090  CpyVtoR8      v12
+  L0094:
+    0094  RET           0
+*/
+

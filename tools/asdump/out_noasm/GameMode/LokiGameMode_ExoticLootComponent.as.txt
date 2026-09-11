@@ -1,0 +1,234 @@
+// ============================================================================
+//  MODULE   GameMode.LokiGameMode_ExoticLootComponent
+//  SOURCE   GameMode/LokiGameMode_ExoticLootComponent.as
+//  CONTENT  2 class(es), 14 function(s), 0 enum(s), 1 global(s), 1760 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiExoticLootComponent;
+
+ULokiExoticLootComponent@ ULokiExoticLootComponent()   // traits=0x20
+{
+    ULokiExoticLootComponent v2;
+
+    v2 = ULokiExoticLootComponent();
+    return v2;
+}
+
+UClass@ ULokiExoticLootComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiExoticLootComponent);
+    return v2;
+}
+
+ULokiExoticLootComponent@ ULokiExoticLootComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiExoticLootComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiExoticLootComponent, v2, typeid(ULokiExoticLootComponent@), WithName);
+    return v2;
+}
+
+ULokiExoticLootComponent@ ULokiExoticLootComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiExoticLootComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiExoticLootComponent, v2, typeid(ULokiExoticLootComponent@), WithName);
+    return v2;
+}
+
+ULokiExoticLootComponent@ ULokiExoticLootComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiExoticLootComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiExoticLootComponent, v2, typeid(ULokiExoticLootComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiExoticLootComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiExoticLootComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, meta.Category=Loot)
+    TMap<int, TSubclassOf<ULokiLootTable@>> DayToLootTable;
+    TMap<int, FExoticItemList> DayToExotics;
+    private FRandomStream RandomSeed;
+
+    ULokiExoticLootComponent()   // traits=0x21
+    {
+        this.DayToLootTable = TMap<int, TSubclassOf<ULokiLootTable@>>();
+        this.DayToExotics = TMap<int, FExoticItemList>();
+        this.RandomSeed = FRandomStream();
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        ALokiGameState v6;
+        ELokiRandomStreamType v7;
+        FRandomStream v9;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v6 = Loki::GetLokiGameState(__WorldContext);
+            if (v6 == nullptr) {
+                return;
+            } else {
+                v7 = ELokiRandomStreamType::NonDeterministic;
+                v9 = v6.GetRandomStream(v7);
+                this.RandomSeed = v9;
+                this.GenerateExotics();
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    TSubclassOf<AActor@> GetOneExoticForCurrentDay()   // traits=0x20
+    {
+        ALokiGameState v4;
+        TSubclassOf<AActor@> v8;
+        int v9;
+        auto v10;
+        FExoticItemList v14;
+        auto v15;
+        TSubclassOf<AActor@> v18;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 == nullptr) {
+            __ret = TSubclassOf<AActor@>();
+            v8 = TSubclassOf<AActor@>(nullptr);
+            __ret = v8;
+            return;
+        } else {
+            v9 = v4.GetCurrentDay();
+            v14.FExoticItemList();
+            if (this.DayToExotics.Find(v9, v14)) {
+                v10 = v14.Exotics.Num();
+                if (v10 == 0) {
+                    this.GenerateLootForDay(v9);
+                }
+                v15 = v14.Exotics.Num();
+                if (v15 > 0) {
+                    v18 = TSubclassOf<AActor@>(v14.Exotics[0]);
+                    v14.Exotics.RemoveAt(0);
+                    this.DayToExotics.Add(v9, v14);
+                    __ret = TSubclassOf<AActor@>();
+                    __ret = v18;
+                    v14.~FExoticItemList();
+                    return;
+                }
+            } else {
+                __ret = TSubclassOf<AActor@>();
+                v8 = TSubclassOf<AActor@>(nullptr);
+                __ret = v8;
+                v14.~FExoticItemList();
+            }
+        }
+        return;
+    }
+
+    private void GenerateExotics()   // traits=0x28
+    {
+        TArray<int> v4;
+        TArrayIterator<int> v10;
+        auto v17;
+        int v18;
+        auto v19;
+
+        v4 = TArray<int>();
+        this.DayToLootTable.GetKeys(v4);
+        v10 = v4.Iterator();
+        while (true) {
+            v17 = v10.CanProceed;
+            if (!v17) break;
+            v19 = *refReg;
+            v18 = v19;
+            v10.Proceed();
+            this.GenerateLootForDay(v18);
+        }
+        return;
+    }
+
+    private void GenerateLootForDay(const int Day)   // traits=0x28
+    {
+        ALokiGameState v4;
+        TSubclassOf<ULokiLootTable@> v8;
+        TArray<TSubclassOf<ULokiLootTable@>> v12;
+        TArray<TSubclassOf<AActor@>> v16;
+        TArray<TSubclassOf<AActor@>> v20;
+        int v21;
+        FExoticItemList v30;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v8 = TSubclassOf<ULokiLootTable@>();
+            if (this.DayToLootTable.Find(Day, v8)) {
+                if (v8 == nullptr) {
+                    return;
+                } else {
+                    v12 = TArray<TSubclassOf<ULokiLootTable@>>();
+                    v12.Add(v8);
+                    v16 = LokiGameplay::GetAllLootFromLootTables(__WorldContext, v12);
+                    v21 = v16.Num();
+                    v20 = ULokiLootTable::GenerateFromClassWithStream(__WorldContext, v8, this.RandomSeed, v21);
+                    v30.FExoticItemList();
+                    v30.Exotics = v20;
+                    this.DayToExotics.Add(Day, v30);
+                    v30.~FExoticItemList();
+                }
+            }
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.SetComponentTickEnabled(v1);
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        return;
+    }
+
+    void ~ULokiExoticLootComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FExoticItemList
+{
+    UPROPERTY()
+    TArray<TSubclassOf<AActor@>> Exotics;
+
+    FExoticItemList()   // traits=0x21
+    {
+        this.Exotics = TArray<TSubclassOf<AActor@>>();
+        return;
+    }
+
+    void ~FExoticItemList()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

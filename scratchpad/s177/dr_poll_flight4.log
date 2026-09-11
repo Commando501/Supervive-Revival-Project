@@ -1,0 +1,34 @@
+[MoveI4] target pid=37192  interval=3.0s  reinstall=False
+[MoveI4] targets:
+  Dr0 = 0x7FFCA1C0F7F0
+  Dr1 = 0x7FFCA10CDB80
+  Dr2 = 0x0
+  Dr3 = 0x0
+  Dr7 = 0x5
+[MoveI4] install: ok=139 fail=0 on 139 threads
+[MoveI4] entering poll loop @ t=0 (install complete)
+[MoveI4] t=+   3.0s poll#1: 139 clean, 0 drifted this poll, 0 read-fail, thread_count=139
+[MoveI4] t=+  33.4s poll#11: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+  63.8s poll#21: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+  94.2s poll#31: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 124.7s poll#41: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] t=+ 155.3s poll#51: 0 clean, 0 drifted this poll, 0 read-fail, thread_count=0
+[MoveI4] --duration reached; stopping cleanly.
+
+============================================================
+[MoveI4] SESSION SUMMARY
+============================================================
+  polls: 60
+  reads_ok: 139
+  reads_fail: 0
+  threads_clean: 139
+  threads_drifted: 0
+  threads_new_no_dr: 0
+  reinstall_ok: 0
+  reinstall_fail: 0
+  drifted_tids_ever: 0
+
+VERDICT: NO DR DRIFT observed over the poll window.
+  If FK-32 fired during this session and no BP was hit, Candidate C is
+  refuted for this poll interval. Kill mechanism is B (kernel-side) or an
+  as-yet-unmodeled path. Reduce --interval and re-fly before publishing.

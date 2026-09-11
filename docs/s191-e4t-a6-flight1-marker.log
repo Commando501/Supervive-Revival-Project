@@ -1,0 +1,146 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[BF] RM_BOTFIGHT (S147): minimum bot-fight loop. Read-only recon always; WALL P (bind/
+[BF] grant/eligibility/natural input) and WALL E (spawn/team/damage) each gated by a KBFARMS bit. Grade the
+[BF] decision-critical bot-team read + the InitAbilityActorInfo bind (never called in 31
+[BF] sessions). Stage into a TUTORIAL WORLD (gft -> fo -> sp -> this).
+[BF] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF66C5754A0 stub=0x2FF10D96420 funcCls=0x2FDCD8DB000 gameTid=51124
+[BF] ===== RM_BOTFIGHT: minimum bot-fight loop (roadmap-s142) =====
+[BF] KBFARMS=0xC6 (bit0 spawn, bit1 bind, bit2 grant, bit3 activate, bit4 damage, bit5 wirebot, bit6 alive, bit7 GAS attrs)
+[FS] arm: swapped=17563 BP UFunctions  (scan 3578 ms over 154800 objects, 34253 UFunctions total) -- NO .text WRITE
+[BF] PC=0x2FD97E36280 hero=0x2FDA98ED560(BP_HERO_Ronin_C) PlayerState=0x2FDD6070010(BP_LokiPlayerState_C)
+[BF] player ASC (hero+0xF00) = 0x2FF1123E680 (present -- WireAbilitySystem already ran, e.g. via play)
+[GAS] PLAYER-PRE ASC 0x2FF1123E680 Owner@0x408=0x2FDA96832B0(LokiPlayerState_HeroAffiliated) Avatar@0x410=0x0(NULL)
+[BF] player ActivatableAbilities Num = 0
+[BF] player teamOff=0xE88 teamIndex=-1
+[BF] hero.Ability1         @0x1F00 = 0x2FF048D8200 (GS_Ronin_LMB_Selector_C)
+[BF] hero.Ability2         @0x1F08 = 0x2FF77116670 (GS_Ronin_Special_Selector_C)
+[BF] hero.Ability3         @0x1F10 = 0x2FF048DA180 (GS_Ronin_MiniDash_Charges_C)
+[BF] hero.AbilityDodgeRoll @0x1F18 = 0x2FD9823E470 (GS_TetherHook_Swapper_C)
+[FS] hot: 0 distinct UFunctions dispatched on the GAME THREAD in the first 4000 ms
+[FS]   (none -- the swapped functions are not being dispatched on the game thread)
+[BS] census BF-A0    BotOrAIController-chain=0  LokiHeroCharacter-chain=2  (136393 objects, 1024 classes memoised, 3641 ms)
+[BF] baseline census: botOrAIControllers=0 heroCharacters=2
+[BF] ---- K_BIND: WireAbilitySystem + InitAbilityActorInfo (the S111 never-run bind) ----
+[GAS] ===== S101: driving LokiPlayerState's own ability-system wiring chain =====
+[GAS] PlayerState @0x3C0 = 0x2FDD6070010 (BP_LokiPlayerState_C)
+[GAS] BEFORE AbilitySystemComponentStorage  @0xF00 = 0x2FF1123E680 (LokiAbilitySystemComponent)
+[GAS] BEFORE AttributeSetStorage            @0xF08 = 0x0 (NULL)
+[GAS] BEFORE AttributeSetHealthStorage      @0xF10 = 0x0 (NULL)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[GAS] BEFORE IsAbilitySystemInitialized -> parm@0x0=0 res=0
+[GAS] HeroAffiliatedObject@0x4F8 = 0x2FDA96832B0
+[GAS] BEFORE ASC 0x2FF1123E680 Owner@0x408=0x2FDA96832B0(LokiPlayerState_HeroAffiliated) Avatar@0x410=0x0(NULL)
+[GAS] cache: already populated (0x2FF1123E680) -> leaving it alone
+[GAS] step1 heroClass(BP_HERO_Ronin_C)=0x2FF77117A20
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[GAS] step1 ServerSetHeroClass(NewClass@0x0) ok
+[GAS] step1 HeroClass@0x620 = 0x2FF77117A20 (already set)
+[GAS] PlayerState Role@0x160=3 RemoteRole@0x72=1  (3=ROLE_Authority)
+[GAS] hero Role@0x160=3
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[GAS] GetHeroAsset -> 0x2FE8598FC40 (BP_HeroAsset_Ronin_C)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[FOW] GAS step2: OnRep_HeroClass (native) ok
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[FOW] GAS step3: TryUpdateAbilitySystem (native) ok
+[GAS] AFTER  AbilitySystemComponentStorage  @0xF00 = 0x2FF1123E680 (LokiAbilitySystemComponent)
+[GAS] AFTER  AttributeSetStorage            @0xF08 = 0x0 (NULL)
+[GAS] AFTER  AttributeSetHealthStorage      @0xF10 = 0x0 (NULL)
+[GAS] AFTER  ASC 0x2FF1123E680 Owner@0x408=0x2FDA96832B0(LokiPlayerState_HeroAffiliated) Avatar@0x410=0x0(NULL)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[GAS] AFTER  IsAbilitySystemInitialized -> parm@0x0=0 res=0
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[GAS] GetLokiAbilitySystem_BP -> 0x2FF1123E680 (LokiAbilitySystemComponent)
+[GAS] ===== RESULT: initialised 0 -> 0  *** STILL NOT INITIALISED *** =====
+[BF] InitAbilityActorInfo(ASC=0x2FF1123E680, Owner=0x2FDA96832B0(LokiPlayerState_HeroAffiliated,mode=0), Avatar=hero=0x2FDA98ED560)
+[BF] InitAbilityActorInfo returned ok
+[GAS] PLAYER-POST-BIND ASC 0x2FF1123E680 Owner@0x408=0x2FDA96832B0(LokiPlayerState_HeroAffiliated) Avatar@0x410=0x2FDA98ED560(BP_HERO_Ronin_C)   *** AVATAR IS THE HERO -- BOUND ***
+[BF] ---- K_GRANT (native GiveAbility): ability=0x2FF048DA180(GS_Ronin_MiniDash_Charges_C) CDO=0x2FF2D5B3340(Default__GS_Ronin_MiniDash_Charges_C) ----
+[BF] spec built=ok Ability@+0x10=0x2FF2D5B3340(== CDO) Handle@+0xC=1 Level@+0x20=1 InputID@+0x24=5 Source@+0x30=0x2FDA98ED560
+[BF] auth gate bCachedIsNetSimulated@+0x800=0 (0 => IsOwnerActorAuthoritative==true => grant proceeds)
+[BF] grant virtual [vtbl+0x778] = 0x7FF67075DC80 (expect base+0x552DC80 = 0x7FF67075DC80) MATCH
+[BF] grant(native) ok ; ActivatableAbilities(Items.Num@0x540) 0 -> 1 ; outHandle=1 *** ABILITY GRANTED (engine GiveAbility, committed in-hook) ***
+[BF] ---- K_ALIVE: hero LivingState@+0x1090 = 0 (0=Dead 1=Alive 2=Knocked) ----
+[BF] K_ALIVE: poked hero LivingState 0x0 -> 1 (Alive) readback=1 OK
+[BF] ---- K_GASATTR APPLY: borrow player AttributeSets + write the complete movement block ----
+[FS] *** ARMED AND LIVE: hitsGT=1 allThreadCalls=1 after 8000 ms (~0 game-thread dispatches/s) ***
+[BF] K_GASATTR source CDO=0x2FDDD0EFB00 class=LokiPlayerState_HeroAffiliated (default subobjects only; never spawned)
+[BF] K_GASATTR src AttributeSet       @0x3F0 = 0x2FDDD0F1710 class=LokiAttributeSet
+[BF] K_GASATTR src AttributeSetHealth @0x3F8 = 0x2FDDD0F1F20 class=LokiAttributeSetHealth
+[BF] K_GASATTR APPLY dst AttributeSetStorage          @0xF08 before=0x0 after=0x2FDDD0F1710 expected=0x2FDDD0F1710 OK
+[BF] K_GASATTR APPLY dst AttributeSetHealthStorage    @0xF10 before=0x0 after=0x2FDDD0F1F20 expected=0x2FDDD0F1F20 OK
+[BF] K_GASATTR APPLY attr MoveSpeed                    @0xF0 Base@+0x8=500 Current@+0xC=500 expected=500 OK
+[BF] K_GASATTR APPLY attr MaxMoveSpeed                 @0x100 Base@+0x8=500 Current@+0xC=500 expected=500 OK
+[BF] K_GASATTR APPLY attr MaxAcceleration              @0x120 Base@+0x8=50000 Current@+0xC=50000 expected=50000 OK
+[BF] K_GASATTR APPLY attr GroundFriction               @0x130 Base@+0x8=8 Current@+0xC=8 expected=8 OK
+[BF] K_GASATTR APPLY attr BrakingDecelerationWalking   @0x140 Base@+0x8=2048 Current@+0xC=2048 expected=2048 OK
+[BF] K_GASATTR APPLY attr Mass                         @0x170 Base@+0x8=100 Current@+0xC=100 expected=100 OK
+[BF] K_GASATTR APPLY summary: destination readbacks 2/2 (required 2/2) ; attribute readbacks 6/6 (required 6/6)
+[E4] ================ S191 E4: SPAWN + SEED THE HOSTILE TARGET MINION ================
+[E4] hero loc=(0.0,0.0,13240.0) rot(P/Y/R)=(0.0,-78.3,0.0) haveRot=yes forward=(0.203,-0.979) -> target loc=(40.6,-195.8,13240.0) (200 uu forward)
+[FS] t=+15s hitsGT=1 called=0 allThreadCalls=1 swapped=17563
+[SEQ] seqClass=0x2FF1B256280 gm=0x2FF024B2E20 gsCDO=0x2FDDCF3A140 begin=0x7FF66EA2EEC0 finish=0x7FF66EA32CC0 vol=(283,277,-250)
+[SEQ] BEFORE: TrainingQuest=0  Sequencer=0
+[E4] target candidate BP_Minion_TargetBot_TTK_C                      -> not loaded
+[E4] target candidate BP_Minion_KaijuAxeLeader_Stagger_Tutorial_C    -> RESIDENT
+[E4] target candidate BP_Minion_SquadLeader_C                        -> RESIDENT
+[E4] target candidate BP_Minion_KaijuAxeLeader_C                     -> RESIDENT
+[FS] t=+30s hitsGT=1 called=0 allThreadCalls=1 swapped=17563
+[E4] target candidate BP_Minion_Ghost_C                              -> RESIDENT
+[E4] target candidate BP_Minion_VaultGuardShooter_C                  -> RESIDENT
+[E4] target candidate BP_Minion_C                                    -> RESIDENT
+[E4] selected target class = BP_Minion_KaijuAxeLeader_Stagger_Tutorial_C @0x2FF7DAF6670
+[BS] census E4-pre   BotOrAIController-chain=0  LokiHeroCharacter-chain=2  (136406 objects, 1024 classes memoised, 3547 ms)
+[XF] KXFORMFIX=1  Scale3D@0x40  copy=0x60 bytes  (B.xform@0x10 coll@0x70)  scale=(1.00,1.00,1.00)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[QST] e4-target FinishSpawning -> res=0x2FF20FF4930 par=0x0 | proxy(root)=null
+[E4] TARGET_SPAWNED minion=0x2FF20FF4930(BP_Minion_KaijuAxeLeader_Stagger_Tutorial_C) loc=(40.6,-195.8,13240.0) dxyFromHero=(40.6,-195.8)
+[E4] minion PlayerState=0x0 MinionTeamID=100 (100 => enemy of the player; do NOT poke -- WALL E [M] favorable)
+[E4] minion ASC(minion+AbilitySystemComponentStorage)=0x2FF7B790100(LokiAbilitySystemComponent)
+[E4] InitAbilityActorInfo ok ; netsim@+0x800 0->0 ; AvatarActor@+0x410=0x2FF20FF4930 == minion (BOUND)
+[E4] TARGET_SET_RESOLVE set=0x2FE146F8E60(LokiAttributeSetHealth) healthOff=0x70 maxOff=0x80
+[E4] TARGET_SET_REGISTER setInSpawned=yes spawnedNum=2 (constructor-registered; no append needed)
+[E4] pre-seed Health(Base/Curr)=00000000/00000000 Max(Base/Curr)=00000000/00000000
+[E4] TARGET_SEEDED result=ok seedBits=42C80000 Health=42C80000/42C80000 Max=42C80000/42C80000 wr(h=1,m=1) exact=yes
+[E4T] pre-activate: pASC=0x2FF1123E680 minionPreHP=100.00
+[E4T] Items header: Data=0x2FE7C9E4ED0 Num=1
+[E4T] target instance @0x2FF823C3340 class=GS_Ronin_MiniDash_Charges_C Handle=1 (via Items[?].Rep.Data[0])
+[E4T] instance vtable=0x7FF673B9EF28 ProcessEvent@+0x270=0x7FF66C574E10
+[E4T] scanning class chain for 17 candidate functions...
+[E4T]   candidate 'DetermineCurrentSpellIndex': not found (fn=0x0)
+[E4T]   candidate 'GetCurrentSpell': not found (fn=0x0)
+[E4T]   candidate 'GetCurrentSpellIndex': not found (fn=0x0)
+[E4T]   candidate 'GetCurrentSpellInstance': not found (fn=0x0)
+[E4T]   candidate 'GetSpellInstance': not found (fn=0x0)
+[E4T]   candidate 'GetSpellAtIndex': not found (fn=0x0)
+[E4T]   candidate 'OnRep_SubSpellHandles': not found (fn=0x0)
+[E4T]   candidate 'Invoke': FOUND (fn=0x2FF33D62A00)
+[E4T]   candidate 'BP_AuthBeginWarmup': FOUND (fn=0x2FF33D63200)
+[E4T]   candidate 'DashHit': FOUND (fn=0x2FF33D62F00)
+[E4T]   candidate 'ChannelingPhase': not found (fn=0x0)
+[E4T]   candidate 'Character Hit': FOUND (fn=0x2FF33D63100)
+[E4T]   candidate 'DashEndHitBox': FOUND (fn=0x2FF33D63000)
+[E4T]   candidate 'K2_ActivateAbility': not found (fn=0x0)
+[E4T]   candidate 'ActivateAbility': not found (fn=0x0)
+[E4T]   candidate 'K2_CommitExecute': FOUND (fn=0x2FDDCC5C910)
+[E4T]   candidate 'K2_CanActivateAbility': FOUND (fn=0x2FDDCC5C550)
+[E4T-A6] PRE  phaseByte@0xF58=0 lastPhase@0xF59=0 curPhase@0xF48=0x0 effHandle@0xF50=0xFFFFFFFF specHandle@0x3B0=1 actorInfo@0x3A8=0x2FDB07C45C0 bIsActive@0x408=0
+[E4T-A6] PRE  ReplicatedPhaseData@0xC18[12]= 00 00 00 00 00 00 00 00 00 00 00 00
+[E4T-A6] POKE  wrote=2@0xF58 readback=2 pokeOK=YES
+[E4T] SELECTED: Invoke (first match) — calling this one
+[E4T] resolved K2AA fn=0x2FF33D62A00 flags=0x8020800 PropsSize=0 ScriptNum=18 Func(+0xE0)=0x2FF10D96420
+[E4T] E4T_CALL_ISSUE: ProcessEvent(instance=0x2FF823C3340, K2AA_fn=0x2FF33D62A00, parms=g_bplocals[zeroed]) ; tStart=670236703
+[E4T] E4T_RESULT faulted=no elapsedMs=0 minPreHP=100.00 minPostHP=100.00 dHP=+0.00 preBits=42C80000/42C80000 postBits=42C80000/42C80000  clean-fast return (<10ms): BP body ran quickly OR ProcessEvent silently short-circuited; check Loki.log for Warmup/Channeling/Fireblast/Dash
+[E4T-A6] POST phaseByte@0xF58=2 lastPhase@0xF59=0 curPhase@0xF48=0x0 effHandle@0xF50=0xFFFFFFFF specHandle@0x3B0=1 actorInfo@0x3A8=0x2FDB07C45C0 bIsActive@0x408=0 minionHP=100.00
+[E4T-A6] POST ReplicatedPhaseData@0xC18[12]= 00 00 00 00 00 00 00 00 00 00 00 00
+[E4T-A6] VERDICT identityOK=yes minionHP 100.00→100.00 phase 0→2  poke held: phase byte still reads our value, but no damage (Dash body may need additional state or target arg)
+[E4T-A6] RESTORE phaseByte@0xF58=0 (from prePhase=0)
+[E4] E4_COMPLETE RESULT=TARGET_READY -- after the shim disarms, send a SHORT LMB tap (<240ms) and watch the minion Health -> 0
+[BS] census BF-A2    BotOrAIController-chain=1  LokiHeroCharacter-chain=2  (136518 objects, 1024 classes memoised, 3656 ms)
+[BF] post census: botOrAIControllers 0 -> 1 ; heroCharacters 2 -> 2
+[BF] ===== RM_BOTFIGHT done =====
+[FS] disarm: restored=17563 of 17563 swapped (scan 3515 ms, 34394 UFunctions live)
+[BF] worker done (hits=1 hitsGT=1)

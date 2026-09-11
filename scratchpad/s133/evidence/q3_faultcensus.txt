@@ -1,0 +1,69 @@
+====================================================================================================
+Q3  FAULT CENSUS
+====================================================================================================
+minidump FILES on disk under dumps/crashpad-*/reports/ : 395
+parsed OK: 393   parse failures: 2 [('dumps\\crashpad-20260806-001244-s111ab-B4r5\\reports\\f053db6e-082f-4628-9cb9-759f9240d7fe.dmp', "ValueError: not a minidump (magic b'\\x00\\x00\\x00\\x00')"), ('dumps\\crashpad-20260806-001253\\reports\\f053db6e-082f-4628-9cb9-759f9240d7fe.dmp', "ValueError: not a minidump (magic b'\\x00\\x00\\x00\\x00')")]
+
+--- exception CODE census (unit: files) ---
+   0xC0000005  393
+
+--- ExceptionInformation[0] census for 0xC0000005 (unit: files) ---
+   8 (EXECUTE)  361
+   0 (READ)  32
+
+====================================================================================================
+THE S131 FILTER {0xC0000005, ExcInfo[0]==8, addr&0xFFF==1}
+====================================================================================================
+MATCHING FILES                : 361      (S131 recorded 31)
+MATCHING DISTINCT REPORTS     : 108
+
+by faulting address (unit: FILES  |  unit: DISTINCT REPORTS):
+   0x00007FFA42600001   files=11   reports=4      archive-dir dates 20260812 .. 20260815
+   0x00007FFB57400001   files=8    reports=5      archive-dir dates 20260819 .. 20260820
+   0x00007FFD3B400001   files=342  reports=99     archive-dir dates 20260804 .. 20260809
+
+S131 recorded: 0x7FFD3B400001 13 / 0x7FFA42600001 11 / 0x7FFB57400001 7  (files)
+
+====================================================================================================
+FILES-vs-CRASHES: quantifying the archiver's -DEATH / untagged duplication
+====================================================================================================
+distinct report GUIDs: 124   from 393 files
+copies-per-GUID histogram (unit: GUIDs): {1: 6, 2: 106, 3: 3, 4: 4, 6: 2, 12: 1, 28: 1, 98: 1}
+mean files per distinct report: 3.169
+
+per-GUID archive-dir tag pattern (unit: GUIDs):
+   plain x2             93
+   DEATH+plain x2       13
+   plain x1             6
+   plain x4             3
+   plain x3             2
+   plain x6             2
+   DEATH+plain x4       1
+   DEATH+plain x3       1
+   plain x12            1
+   plain x98            1
+   plain x28            1
+
+=> S131's 'roughly half' is measured at 3.169 files per distinct crash.
+
+====================================================================================================
+NON-FAMILY 0xC0000005 reports (unit: distinct reports)
+====================================================================================================
+distinct reports: 16
+addr & 0xFFFF histogram: {'0x205d': 14, '0x18e2': 1, '0x19f2': 1}
+   590cfd83  0x01C835EC205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260804-182004-shimrun3-DEATH
+   e7d14df5  0x014BA020205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260804-230329-sub-NoMissions-1-DEATH
+   5e4cce11  0x01830F7C205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260804-230408-sub-NoMissions-2-DEATH
+   2b109408  0x02154F6C205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260804-231115-sub-NoPasses-2-DEATH
+   3fa0b7d3  0x0202FAF8205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260805-010927-knee-g30-2-DEATH
+   40d6100a  0x024F44DC205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260805-011023-knee-g30-3-DEATH
+   27b26cae  0x022A4945205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260805-230519-s111-oldNM3
+   c3b1b52c  0x01ECC170205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260805-234559-s111ab-B2r2
+   702ee15a  0x023C5C40205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260805-234850-s111ab-B2r5
+   06d4cd2c  0x02A36E7E205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260805-235648-s111ab-B3r1
+   a62a2996  0x0242ADAF205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260806-000010-s111ab-B3r5
+   105ad569  0x01747765205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260806-001132-s111ab-B4r4
+   f053db6e  0x0142AB8F205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260806-001359-s111ab-B4r6
+   dc056ebe  0x0181BAD5205D  p0=READ  ntdll=0x7FFD3B150000  dir=crashpad-20260806-002847-s111ab-B5r6
+   bf1d39c0  0x02B2839218E2  p0=READ  ntdll=0x7FFA422D0000  dir=crashpad-20260814-155319
+   271d081e  0x01D5D5B419F2  p0=READ  ntdll=0x7FFA422D0000  dir=crashpad-20260814-155530

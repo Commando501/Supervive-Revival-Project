@@ -1,0 +1,309 @@
+==============================================================================
+MODULE   Barracuda.Minion.Waypoints.BarracudaMinionWaypoint
+SOURCE   Barracuda/Minion/Waypoints/BarracudaMinionWaypoint.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ABarracudaMinionWaypoint;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ABarracudaMinionWaypoint@ ABarracudaMinionWaypoint()
+// 4 instr, 28 B bytecode, id=0x23DB03F8, varspace=2
+------------------------------------------------------------------------------
+{
+    ABarracudaMinionWaypoint v2;
+
+    v2 = ABarracudaMinionWaypoint();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84299 q:0x26e6865d900; new ABarracudaMinionWaypoint   ctor=ABarracudaMinionWaypoint::ABarracudaMinionWaypoint
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x492DC3C6, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ABarracudaMinionWaypoint);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b52d8         ; __StaticType_ABarracudaMinionWaypoint
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ABarracudaMinionWaypoint@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0x3617D920, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ABarracudaMinionWaypoint v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ABarracudaMinionWaypoint.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ABarracudaMinionWaypoint>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6f1b52d8         ; __StaticType_ABarracudaMinionWaypoint
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972620            ; ABarracudaMinionWaypoint@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS(meta=(IsBlueprintBase=true, Blueprintable=true))
+class ABarracudaMinionWaypoint : AActor
+// base /Script/Engine.Actor  ->  ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) int InitialLaneIndex;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) ABarracudaMinionWaypoint@ WaypointTowardTeam0;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) ABarracudaMinionWaypoint@ WaypointTowardTeam1;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True, RootComponent)) UBoxComponent@ TriggerComponent;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta=(EditInlineDefaults=true, DefaultComponent=True)) UBarracudaLaneComponent@ LaneComponent;
+
+}
+
+------------------------------------------------------------------------------
+ABarracudaMinionWaypoint() const
+// 3 instr, 20 B bytecode, id=0xED2EF16A, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  FinConstruct   q:0x26e6865d900         ; ABarracudaMinionWaypoint
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: LokiBeginPlay
+void LokiBeginPlay_Implementation()
+// 30 instr, 204 B bytecode, id=0x7032BAE8, varspace=9
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v4;
+
+    this.LaneComponent.SetLaneIndex(this.InitialLaneIndex);
+    this.TriggerComponent.OnComponentBeginOverlap.AddUFunction(this, __STATIC_NAME(13));
+    v4 = UBarracudaGameStateComponent::Get(Loki::GetLokiGameState(__WorldContext), NAME_None);
+    if (v4 != null) {
+        v4.MinionWaypoints.Add(this);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  LoadThisR      W0:912 d:134230796      ; ABarracudaMinionWaypoint::InitialLaneIndex  (+912)
+    //     2  RDR4           wW0:1
+    //     3  PshV4          rW0:1
+    //     4  PshVPtr        rW0:0
+    //     5  ADDSi          W0:944 d:134230796      ; ABarracudaMinionWaypoint::LaneComponent  (+944)
+    //     7  RDSPtr
+    //     8  CALLINTF       d:84100                 ; void UBarracudaLaneComponent::SetLaneIndex(const int)
+    //    10  PshC4          d:13
+    //    12  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    15  PshRPtr
+    //    16  PshVPtr        rW0:0
+    //    17  PshVPtr        rW0:0
+    //    18  ADDSi          W0:936 d:134230796      ; ABarracudaMinionWaypoint::TriggerComponent  (+936)
+    //    20  RDSPtr
+    //    21  ADDSi          W0:1633 d:67111354      ; UPrimitiveComponent::OnComponentBeginOverlap  (+1633)
+    //    23  CALLSYS        q:0x26e7721f580         ; void FComponentBeginOverlapSignature::AddUFunction(UObject@, const FName&)
+    //    26  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    29  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    32  CALLSYS        q:0x26e7a11d280         ; ALokiGameState@ Loki::GetLokiGameState(UObject@)
+    //    35  STOREOBJ       wW0:6
+    //    36  PshVPtr        rW0:6
+    //    37  CALL           d:84255                 ; UBarracudaGameStateComponent@ UBarracudaGameStateComponent::Get(const AActor@, const FName&)
+    //    39  STOREOBJ       wW0:4
+    //    40  CmpPtrNull     rW0:4
+    //    41  JZ             ->50
+    //    43  PSF            rW0:0
+    //    44  PshVPtr        rW0:4
+    //    45  ADDSi          W0:304 d:134230778      ; UBarracudaGameStateComponent::MinionWaypoints  (+304)
+    //    47  CALLSYS        q:0x26e6ef01040         ; void TSet<ABarracudaMinionWaypoint@>::Add(const ABarracudaMinionWaypoint@ const&)
+    //    50  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void HandleTriggerOverlap(UPrimitiveComponent@ OverlappedComponent, AActor@ OtherActor, UPrimitiveComponent@ OtherComp, const int OtherBodyIndex, const bool bFromSweep, const FHitResult&in SweepResult)
+// 10 instr, 60 B bytecode, id=0x79F79AA0, varspace=5
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionWaypointFollowerComponent v4;
+
+    v4 = UBarracudaMinionWaypointFollowerComponent::Get(OtherActor, NAME_None);
+    if (v4 != null) {
+        v4.ReachedWaypoint(this);
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //     3  PshVPtr        rW0:-4
+    //     4  CALL           d:84316                 ; UBarracudaMinionWaypointFollowerComponent@ UBarracudaMinionWaypointFollowerComponent::Get(const AActor@, const FName&)
+    //     6  STOREOBJ       wW0:4
+    //     7  CmpPtrNull     rW0:4
+    //     8  JZ             ->14
+    //    10  PshVPtr        rW0:0
+    //    11  PshVPtr        rW0:4
+    //    12  CALLINTF       d:84308                 ; void UBarracudaMinionWaypointFollowerComponent::ReachedWaypoint(ABarracudaMinionWaypoint@)
+    //    14  RET            W0:12
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+ABarracudaMinionWaypoint@ GetNextWaypoint(AActor@ Actor)
+// 17 instr, 96 B bytecode, id=0x9808DCA9, varspace=6
+------------------------------------------------------------------------------
+{
+    ABarracudaMinionWaypoint v6;
+
+    if (LokiTeam::GetTeamFromActor(Actor) != 0) {
+        v6 = this.WaypointTowardTeam0;
+    } else {
+        v6 = this.WaypointTowardTeam1;
+    }
+    return v6;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e7a4113c0         ; int LokiTeam::GetTeamFromActor(const AActor@)
+    //     4  CpyRtoV4       wW0:2
+    //     5  CMPIi          rW0:2 d:0
+    //     7  JNZ            ->17
+    //     9  PshVPtr        rW0:0
+    //    10  ADDSi          W0:928 d:134230796      ; ABarracudaMinionWaypoint::WaypointTowardTeam1  (+928)
+    //    12  RDSPtr
+    //    13  RefCpyV        wW0:6
+    //    14  LOADOBJ        rW0:6
+    //    15  JMP            ->23
+    //    17  PshVPtr        rW0:0
+    //    18  ADDSi          W0:920 d:134230796      ; ABarracudaMinionWaypoint::WaypointTowardTeam0  (+920)
+    //    20  RDSPtr
+    //    21  RefCpyV        wW0:6
+    //    22  LOADOBJ        rW0:6
+    //    23  RET            W0:4
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 43 instr, 308 B bytecode, id=0x29A91829, varspace=14
+------------------------------------------------------------------------------
+{
+    auto v1;
+    FVector v8;
+
+    v1 = false;
+    this.SetbReplicates(false);
+    this.InitialLaneIndex = -1;
+    v1 = true;
+    this.SetActorHiddenInGame(true);
+    v1 = false;
+    this.SetbNetLoadOnClient(false);
+    v1 = true;
+    v8 = FVector(200, 200, 200);
+    this.TriggerComponent.SetBoxExtent(v8, true);
+    v1 = true;
+    this.TriggerComponent.SetCollisionProfileName(__STATIC_NAME(12), true);
+    v1 = true;
+    this.TriggerComponent.SetNotifyRigidBodyCollision(true);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a6291c0         ; void AActor::SetbReplicates(bool)
+    //     7  SetV4          wW0:2 d:-1
+    //     9  LoadThisR      W0:912 d:134230796      ; ABarracudaMinionWaypoint::InitialLaneIndex  (+912)
+    //    11  WRTV4          rW0:2
+    //    12  SetV1          wW0:1 d:1
+    //    14  PshV4          rW0:1
+    //    15  PshVPtr        rW0:0
+    //    16  CALLSYS        q:0x26e79715640         ; void AActor::SetActorHiddenInGame(bool)
+    //    19  SetV1          wW0:1 d:0
+    //    21  PshV4          rW0:1
+    //    22  PshVPtr        rW0:0
+    //    23  CALLSYS        q:0x26e7a623f80         ; void AActor::SetbNetLoadOnClient(bool)
+    //    26  SetV1          wW0:1 d:1
+    //    28  PshV4          rW0:1
+    //    29  PshC8          q:0x4069000000000000
+    //    32  PshC8          q:0x4069000000000000
+    //    35  PshC8          q:0x4069000000000000
+    //    38  PSF            rW0:8
+    //    39  CALLSYS        q:0x26e69d01740         ; void FVector::$beh0(float64, float64, float64)
+    //    42  PSF            rW0:8
+    //    43  PshVPtr        rW0:0
+    //    44  ADDSi          W0:936 d:134230796      ; ABarracudaMinionWaypoint::TriggerComponent  (+936)
+    //    46  RDSPtr
+    //    47  CALLSYS        q:0x26e799fc100         ; void UBoxComponent::SetBoxExtent(FVector, bool)
+    //    50  SetV1          wW0:1 d:1
+    //    52  PshV4          rW0:1
+    //    53  PshC4          d:12
+    //    55  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    58  PshRPtr
+    //    59  PshVPtr        rW0:0
+    //    60  ADDSi          W0:936 d:134230796      ; ABarracudaMinionWaypoint::TriggerComponent  (+936)
+    //    62  RDSPtr
+    //    63  CALLSYS        q:0x26e7975c800         ; void UPrimitiveComponent::SetCollisionProfileName(FName, bool)
+    //    66  SetV1          wW0:1 d:1
+    //    68  PshV4          rW0:1
+    //    69  PshVPtr        rW0:0
+    //    70  ADDSi          W0:936 d:134230796      ; ABarracudaMinionWaypoint::TriggerComponent  (+936)
+    //    72  RDSPtr
+    //    73  CALLSYS        q:0x26e797736c0         ; void UPrimitiveComponent::SetNotifyRigidBodyCollision(bool)
+    //    76  RET            W0:2
+

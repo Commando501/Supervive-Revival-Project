@@ -1,0 +1,392 @@
+SESSION 61 — Tutorial match-setup phase (make the force-launched tutorial PLAYABLE)
+====================================================================================
+Date: 2026-07-10. Continues S60 (force-launch of LVL_Tutorial works; map loads+renders,
+but no hero / no game state / spectator-at-origin). Goal: a controllable, drop-in hero.
+
+STATE AT START
+--------------
+- Game was NOT running (last session exited cleanly at 20:44 — verified via Loki.log
+  "LogExit: Exiting" + Get-Process). ags (PID 68616) + Steam up.
+- A live retest is UAC-gated (launch-redirect.ps1 self-elevates), so this session did
+  the STATIC analysis + staged the shim; live Login-sweep is left for the next session.
+
+KEY FINDINGS (static — correct the S60 premise)
+-----------------------------------------------
+Extractor `dump` of the two GameMode CDOs + the tutorial map WorldSettings:
+
+1. BP_GameMode_BasicTraining is a STOCK GameModeBase stub.
+   - SuperStruct = /Script/Engine.GameModeBase (NOT ALokiGameMode).
+   - CDO has ZERO property overrides (no GameStateClass/DefaultPawnClass/PCClass/HUDClass).
+   - => it uses stock AGameStateBase + APlayerController + ADefaultPawn. That is EXACTLY
+     why ?game=BasicTraining loads but shows a spectator pawn at origin and logs
+     "ALokiGameState::IsBattleRoyaleBP failed to find game state" (there is no LokiGameState).
+   - BasicTraining carries NONE of the tutorial machinery. It is a dead-end for a playable
+     tutorial, not a viable base.
+   - CORRECTS S60: S60 believed "both modes inherit ALokiGameMode::Login, yet BasicTraining's
+     succeeds." FALSE. BasicTraining's Login succeeds because it is the ENGINE's permissive
+     AGameModeBase::Login — a class-hierarchy fact, not a per-gamemode flag.
+
+2. LVL_Tutorial's intended GameMode IS the full machinery mode.
+   - Dumped Loki/Content/Loki/Maps/Tutorial/LVL_Tutorial.umap:
+     WorldSettings.DefaultGameMode = BlueprintGeneratedClass'BP_LokiGameMode_Tutorial_C'.
+   - The map has NO PlayerStart (only BP_CapturePoint_Tutorial_C + BP_LokiRespawnBeacon_Tutorial_C).
+     The hero drops in via Comp_GameMode_DropPlane_Tutorial — "NO PLAYERSTART" is BY DESIGN.
+   - So bare `open LVL_Tutorial` (map default) = BP_LokiGameMode_Tutorial, which is why the
+     bare open crashed at ALokiGameMode::Login. The playable tutorial is unavoidably this mode.
+
+3. BP_LokiGameMode_Tutorial does NOT override Login/PreLogin in Blueprint.
+   - Its 49 exports include ChoosePlayerStart, K2_PostLogin, GetDefaultPawnClassForController,
+     SpawnDefaultPawnAtTransform/For, FindSafeTeamIndex, GetTeamIndexForPIEPlayer — but NOT
+     Login or PreLogin. => the "ALokiGameMode::Login failed to Login" rejection is NATIVE
+     (ALokiGameMode / ALokiRoundGameMode), which the packer commits on-demand only during the
+     crashing travel, so it is not statically disassemblable (S60 confirmed xrefstr/findptr = 0
+     at the menu). The extractor also does not serialize CDO default overrides in this build,
+     so GameStateClass/GameSessionClass/PCClass could not be read from the pak.
+
+CONCLUSION / REFRAME
+--------------------
+The ONLY path to a playable tutorial is BP_LokiGameMode_Tutorial (the map's own default),
+gated by native ALokiGameMode::Login. BasicTraining is a stub and cannot host a hero. The
+drop-in trigger (DropPlane component) is downstream of Login, so it can't be reached
+independently — Login must pass first.
+
+Why native Login rejects on a force-open (hypotheses, ranked; UNVERIFIED — need live RE):
+  a) ALokiGameSession::ApproveLogin or an ALokiGameMode::Login override rejects because the
+     joining local player is not registered in a valid match/session (the thing the native
+     front-end TryStartSoloMode sets up before travel, which we bypass). MOST LIKELY.
+  b) SpawnPlayerController fails because the tutorial PlayerControllerClass expects a
+     NetConnection/session standalone-open doesn't provide.
+  c) InitNewPlayer/hero-loadout deref (no selected hero) — but this launch had -NoHook (no
+     roster fix) so no hero resolves regardless.
+A URL option (?Name= etc.) is UNLIKELY to satisfy a session-registration gate, but it is
+cheap to rule out first.
+
+WHAT WAS STAGED (compile + parse verified this session)
+-------------------------------------------------------
+tools/sigbypass-mod/tutorial_launch.cpp now reads its console command from an external file
+at inject time, so the next live session can sweep Login-satisfy candidates WITHOUT rebuilding
+the DLL (edit file -> reinject):
+  - File: docs/tutorial-launch-cmd.txt (first non-comment/non-blank line; '#'/'//' ignored; UTF-8).
+  - Absent/empty file -> compiled fallback = KNOWN-GOOD BasicTraining render (never crashes).
+  - New markers log which command was used ([0] command from ...: '<cmd>').
+  - Rebuilt tutorial_launch.dll (clang++ exit 0). Parser unit-tested against the real file:
+    correctly skips comments, picks the active full-mode+?Name=Player line, converts to wide;
+    falls back to default when path missing. (scratchpad/cmdparse_test.cpp.)
+Active first experiment in the cmd file:
+  open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C?Name=Player
+
+NEXT SESSION (live; needs the user to approve elevation)
+--------------------------------------------------------
+1. Relaunch -NoHook (no pi8, which would block tutorial_launch's PI hook). Steam first.
+2. At a STABLE menu, inject tutorial_launch.dll; watch Loki.log + docs/tutorial-launch-marker.txt.
+3. Sweep docs/tutorial-launch-cmd.txt candidates (edit + reinject). If all crash identically
+   at "ALokiGameMode::Login failed to Login", URL options are ruled out -> pursue the NATIVE
+   route:
+   - Native Login-approve: with the game at the tutorial-loading moment, find ALokiGameMode's
+     CDO vtable, identify the Login slot (differs from a stock AGameModeBase-derived CDO's slot
+     AND references the "failed to Login" .rdata string), then either swap the instance vtable
+     slot to engine AGameModeBase::Login or patch Login's prologue to jump to Super. Build on
+     tools/re/*.py RPM scaffolds + usmapdump `objects`.
+   - OR root-cause why native PartyManager.TryStartSoloMode bails (S60 left it unrooted): making
+     the official solo-start proceed would set up the session so Login passes naturally.
+4. Inject catalog_store_fix (roster) so a hero resolves once Login passes.
+
+Artifacts: tools/extractor/out/{BP_GameMode_BasicTraining,BP_LokiGameMode_Tutorial,LVL_Tutorial}.json
+(re-dumped with the current usmap this session).
+
+=====================================================================================
+LIVE RESULTS (S61, 2026-07-10 — game launched -NoHook, tutorial_launch.dll injected at menu)
+=====================================================================================
+The file-driven shim worked end-to-end every time (reads docs/tutorial-launch-cmd.txt, resolves
+worldCtx/kslCDO/ExecuteConsoleCommand, installs the transient PI hook, fires on the game thread:
+[4] CALLED, called=1 hitsGT=1). eccThunk rva 0x395D790, offWCO=0x0 offCmd=0x8 offSP=0x18 — stable
+across all three launches.
+
+URL-OPTION SWEEP — ALL THREE CANDIDATES RULED OUT (identical failure):
+  ?Name=Player                    -> Browse LVL_Tutorial -> LoadMap -> Game class BP_LokiGameMode_Tutorial_C
+                                     -> "Bringing World LVL_Tutorial up for play" -> FATAL
+                                     "ALokiGameMode::Login failed to Login" (UnrealEngine.cpp:15551).
+  ?Name=Player?Team=0             -> IDENTICAL (same line, same fatal).
+  ?Name=Player?SplitscreenCount=1 -> IDENTICAL.
+KEY OBSERVATION (new, decisive): the GameMode's InitGame + world-up ALWAYS SUCCEED; the fatal is
+specifically at the LOCAL PLAYER LOGIN — UEngine::SpawnPlayActor calling GameMode->Login() which the
+native ALokiGameMode::Login override rejects (returns null). The rejection is INVARIANT to URL options,
+so it's a native session/registration gate, not something a launch option satisfies. URL door CLOSED.
+
+CONFIRMED NEXT STEP = native Login-approve. Plan (build on tools/re/*.py RPM + a new shim):
+  1. Relaunch -NoHook, reach the menu. SpawnPlayActor runs at EVERY map load (incl. the menu player),
+     so it IS committed at the menu — disassemble its `call [reg+off]` to GameMode->Login to recover
+     Login's C++ vtable OFFSET (no symbols needed).
+  2. Find ALokiGameMode's UClass/CDO in the live object array; read the CDO's C++ vtable pointer
+     (first 8 bytes of the UObject); vtable[off] = native ALokiGameMode::Login.
+  3. Neutralize the rejection: EITHER overwrite that shared-vtable slot with a permissive login (engine
+     AGameModeBase::Login — locate via ALokiGameMode::Login's tail Super-call, committed during travel,
+     or via another stock-GameModeBase vtable), OR patch ALokiGameMode::Login's prologue to jump to
+     Super. Prefer the vtable-slot swap (data write, no need for the target code page to be committed;
+     BP gamemode instances share the native parent's C++ vtable, so this covers BP_LokiGameMode_Tutorial).
+  4. With login approved, re-fire the force-open (full mode); expect DropPlane drop-in + tutorial systems.
+  5. Then inject catalog_store_fix so a hero resolves for the drop-in.
+Caution (packer/anti-tamper): ALokiGameMode::Login's failure-branch page was NOT committed at the menu
+in S60 (string xref = 0), so read the vtable slot rather than relying on disassembling Login itself
+pre-travel. A vtable-slot swap must be reverted or made self-restoring if the ~3-5min integrity check
+covers .rdata vtables (verify; if it only covers .text, the data swap is safe).
+
+=====================================================================================
+NATIVE LOGIN-APPROVE ATTEMPT (S61 cont.) — vtable slot-176 route FAILED; deep packer wall
+=====================================================================================
+Live RE at the menu (usmapdump objects/vtdump/vtslot/peek/disasm + scratchpad/gm_probe.py). Base stable
+0x7FF6B54F0000. All gamemode CDO C++ vtables recovered, e.g.:
+  stock AGameModeBase  = 0x7FF6BD55EDD8 (rva 0x806EDD8)
+  ALokiGameMode        = 0x7FF6BDE41FA0    ALokiGameModeBase   = 0x7FF6BDE415A0
+  ALokiRoundGameMode   = 0x7FF6BDF42A98    ALokiTutorialGameMode = 0x7FF6BDF84C48 (rva 0x8A94C48)
+  ALokiBattleRoyale    = 0x7FF6BDDA7CB0    ALokiDropIn/FFA     = 0x7FF6BDE26948
+vtdump diff (stock GameModeBase vs LokiGameMode, 190 slots): the ONLY real C++ override is SLOT 176
+(slots 119/170 are jmp-thunks to the stock fn = behaviorally stock; slot 0 = dtor). Slot-176 value:
+  match modes (ALokiGameMode/Round/Tutorial/BattleRoyale/DropIn) = 0x7FF6BAAFAFE0 (rva 0x560AFE0)
+  stock + MENU modes (LokiLoginGameMode/LokiStandbyGameMode)     = 0x7FF6B8CD5C80 (rva 0x37E5C80)
+This menu-vs-match correlation *looked* like Login (menu login works, match login rejects) so the fix tried
+= write the stock ptr into slot 176 of the match-mode vtables (permissive login). Mechanized in the shim as
+PatchLoginVtables() (transient: patch right before force-open, hold through travel, restore) after an
+external persistent 10-vtable patch HARD-CRASHED the game at the menu in ~30s (Sentry crashpad) — proving
+the code-integrity check ALSO covers .rdata vtables, not just .text.
+
+*** RESULT: the slot-176 patch does NOT fix the login. *** Diagnostic shim (reads slot 176 through the hold):
+  [VT] PATCH slot176 on 5/5 vtables ... [4] slot176[Tut] after force-open = base+0x37E5C80 (stock)
+  [4b] hold done: revertObserved=0 ... finalSlot176[Tut]=base+0x37E5C80
+  -> the slot stayed STOCK the entire time, yet the tutorial STILL Fatal-crashed in "ALokiGameMode::Login
+     failed to Login". So the login is NOT dispatched through slot 176 of these vtables. The menu-vs-match
+     slot-176 correlation was coincidental (slot 176 is some other overridden virtual, NOT Login), OR the
+     instance dispatches through a packer-shadowed vtable copy (vtslot also found HEAP structures with
+     0x7FF6BAAFAFE0 at +0x580 — 0x19E8xxxxxxx range — possibly shadow vtables or coincidental UObject fields).
+
+PACKER WALL on capturing the real strict Login:
+  - The strict fn page (base+0x560AFE0) is packer-uncommitted at the menu.
+  - A shim dump-loop over the 6-7s hold NEVER saw it readable — not even during travel while the GAME's own
+    thread was executing it. => the packer appears to re-encrypt/re-hide the page immediately after use, so it
+    is never observable cross-thread. The process Fatal-crashes ~2s after force-open, so external capture
+    (usmapdump) also loses the race (process GONE before RPM can read).
+  - Net: neither vtable-slot swap nor code capture/patch of the strict Login works with the current approach.
+
+REUSABLE ARTIFACTS (this session):
+  - tools/sigbypass-mod/tutorial_launch.cpp now has PatchLoginVtables() + a hold-window code-dump loop + the
+    file-driven command (docs/tutorial-launch-cmd.txt). Rebuilt clean.
+  - scratchpad (NON-persistent — key values copied here): gm_probe.py (walk GUObjectArray, print gamemode CDO
+    C++ vtables), patch_login_vt2.py (VirtualProtectEx+WPM slot-176 patch across vtable bases).
+  - usmapdump vtdump/vtslot/peek/disasm/objects are the right instruments; `poke` alone fails on .rdata
+    (needs VirtualProtectEx first).
+
+CANDIDATE NEXT STRATEGIES (all uncertain — this is a virtualizing-packer problem):
+  1. Find the REAL Login vtable slot via UEngine::SpawnPlayActor's `call [reg+off]` — requires locating
+     SpawnPlayActor (its "Login failed:"/"Couldn't spawn player" strings are packer-uncommitted at the menu;
+     try other committed anchors, or a callxref from a committed engine fn).
+  2. Reconsider that the reject may be in a DIFFERENT object's virtual — AGameSession::ApproveLogin (called by
+     stock AGameModeBase::Login for the local player) overridden by ALokiGameSession — not a GameMode vtable
+     slot at all. Recover the GameSessionClass + its vtable and test patching ApproveLogin.
+  3. If instances use packer-shadow vtables: find the LIVE tutorial GameMode instance during travel (walk
+     objects for the authority gamemode) and patch ITS vtable ptr / the shadow copy, not the .rdata CDO vtable.
+  4. Hook at a higher level that doesn't touch the hidden page: intercept SpawnPlayActor's fatal path, or
+     supply the session/registration state the strict Login actually checks (still unknown).
+This is a multi-session packer-RE effort; parked here with full state captured.
+
+=====================================================================================
+★★★ LOGIN CRACKED (S61 cont.) — Login = GameMode C++ vtable SLOT 285 (not 176) ★★★
+=====================================================================================
+Corrections to the "FAILED" section above:
+  - Shadow-vtable theory RULED OUT: inst_vt.py walked live gamemode INSTANCES — they use REAL-MODULE .rdata
+    vtables (0x7FF6BD..). BP_MainMenuGameMode instance vtable = 0x7FF6BD55EDD8 = the STOCK AGameModeBase vtable
+    (that's why menu login is permissive). So patching the real .rdata vtable DOES affect dispatch.
+  - Slot 176 was simply the WRONG slot (a different overridden virtual). A 300-slot vtdump diff (stock
+    GameModeBase 0x7FF6BD55EDD8 rva 0x806EDD8 vs LokiGameMode) shows ALokiGameMode overrides slots
+    {176, 236, 259(a getter stub), 283, 285, 288, 294}.
+METHOD THAT WORKED — "de-override" instead of "swap to a guessed stock Login value": for each match-mode
+vtable and each override slot, copy the STOCK AGameModeBase vtable's value at that slot (gmb[slot]) into the
+match vtable. Shim PatchLoginVtables() now does this transiently (patch before force-open, hold 8s, restore),
+kOverrideSlots configurable. Match-vtable RVAs: Tutorial 0x8A94C48, Round 0x8A52A98, ALokiGameMode 0x8951FA0,
+BattleRoyale 0x88B7CB0, DropIn 0x8936948; slot address = vtRva + slot*8.
+RESULTS:
+  - De-override ALL 7 slots  -> error changed "ALokiGameMode::Login failed to Login" -> "PlayerState is null".
+  - De-override ONLY slot 285 -> SAME "PlayerState is null".  => SLOT 285 = Login (offset 0x8E8).
+  - (slot 176 alone earlier -> no change, confirming 176 != Login.)
+So the strict ALokiGameMode::Login lives at match-vtable slot 285; the stock permissive AGameModeBase::Login =
+gmb[285]. De-overriding slot 285 BYPASSES the login reject cleanly.
+
+NEW GATE (login reject now bypassed): "Login failed: PlayerState is null" (UEngine::SpawnPlayActor, Line
+15551) — after stock Login returns the PlayerController, its ->PlayerState is null and this Loki-modified
+SpawnPlayActor treats that as fatal. Identical with 1 or 7 slots de-overridden, so it is a GENUINE next gate,
+not an over-patch side effect. Hypotheses: (a) the Loki Login override also performed custom PlayerState
+setup that stock Login skips; (b) GameMode->PlayerStateClass / AController::InitPlayerState doesn't create the
+PlayerState in this standalone force-open; (c) a Loki PC-class / bWantsPlayerState issue.
+NEXT: (1) check the tutorial GameMode's PlayerStateClass (extractor dump or live read); (2) test de-overriding
+the OTHER candidate slots (236/283/288/294 — likely SpawnPlayerController/InitNewPlayer/GetPlayerControllerClass)
+TOGETHER with 285 to see if any restores PlayerState creation; (3) if the PC just needs a PlayerState, consider
+creating/assigning one via the native-call primitive or ensuring PlayerStateClass is valid. Shim kOverrideSlots
+currently = {285}. New probe: scratchpad/inst_vt.py (walk instances, print C++ vtable ptr).
+
+----- "PlayerState is null" gate — investigated, it's the match-setup/session layer (not a quick patch) -----
+- PlayerStateClass IS SET (not the problem): scratchpad/gm_config.py read the GameMode class-config members
+  (AGameModeBase property offsets: GameSessionClass@+0x3C8, GameStateClass@+0x3D0, PlayerControllerClass@+0x3D8,
+  PlayerStateClass@+0x3E0, HUDClass@+0x3E8, DefaultPawnClass@+0x3F0, SpectatorClass@+0x3F8; ChildProperties walk
+  @UStruct+0x58). Native Default__LokiTutorialGameMode / Default__LokiGameMode CDOs: GameSessionClass=
+  LokiGameSession, but GameStateClass=GameStateBase, PlayerControllerClass=PlayerController, PlayerStateClass=
+  PlayerState, DefaultPawnClass=DefaultPawn (all STOCK on the native CDO; the BP tutorial class overrides some
+  at runtime). So PlayerStateClass is non-null.
+- The crash is a LOKI check in SpawnPlayActor ("Login failed: PlayerState is null"): stock Login returns a PC,
+  but PC->PlayerState is null. Confirmed SpawnPlayActor-level (same with 1 or 7 slots de-overridden; stock
+  InitNewPlayer wouldn't set that string).
+- Crash is NEAR-INSTANT: ~14ms after "Game class is BP_LokiGameMode_Tutorial_C" (03.28.06.939 -> .953). An
+  in-shim DumpTutorialState() object-array walk (188k objs) is FAR too slow to sample live state before the
+  process dies — got zero [DIAG] samples. So live sampling of the tutorial's PC/PlayerState during travel is
+  not viable with a full walk.
+- INTERPRETATION: the console-`open` force-open skips the front-end's player-join/session/connection setup that
+  normally creates (and, in the networked match, replicates) the PlayerState — OR the strict Loki Login (which
+  we replaced WHOLESALE with stock to bypass the reject) also created/assigned the PlayerState, and stock Login
+  doesn't. Either way this is the MATCH-SETUP/SESSION layer, the "substantial game-logic phase" flagged since
+  S60 — not a one-line patch. Ruled out this session: de-overriding more slots (7-slot=all-stock still null);
+  in-shim live sampling (too slow vs 14ms crash); patching SpawnPlayActor (packer-hidden .text).
+- POSSIBLE NEXT ANGLES (all non-trivial): (a) hook a precise game-thread point during travel (e.g. right after
+  the PC spawns) via a ProcessInternal-style hook and CREATE+assign a PlayerState (native-call primitive:
+  spawn PlayerStateClass, set PC->PlayerState) before SpawnPlayActor's check; (b) find + neutralize the Loki
+  "PlayerState is null" check in SpawnPlayActor if/when its page can be committed+patched; (c) reconsider making
+  the REAL front-end solo-start (TryStartSoloMode) proceed so the whole session is set up properly (S60 native
+  dead-end, but now that login is understood it may be worth another look); (d) accept the tutorial needs the
+  session layer and scope that as its own multi-session effort.
+STATE: login is CRACKED (slot 285 de-override bypasses it) — the S60/S61 login wall is broken. The tutorial now
+reaches a new, deeper gate (PlayerState/session). Shim kOverrideSlots={285}; DumpTutorialState + gm_config.py +
+inst_vt.py are reusable.
+
+----- OPTION 3 (make the REAL front-end TryStartSoloMode proceed, so the session sets up + creates PlayerState) -----
+Computer-use to drive the menu was DENIED by the user; user did not click START in ~30min. Did read-only RPM
+instead (scratchpad/find_tssm.py + tssm_params.py). FINDINGS:
+- native PartyManager::TryStartSoloMode UFunction found; nativeFunc @ rva 0x54B5F70 (0x7FF6BA9A5F70 this launch).
+  Its code page is UNCOMMITTED at the menu (packer) — it only commits when it RUNS (START clicked or called),
+  so disasm of its bail branch requires triggering it first (and it bails WITHOUT crashing per S60, so once
+  triggered the page stays readable — clean disasm target).
+- SIGNATURE (corrects S60's vague "PrimaryAssetId"): TryStartSoloMode(
+    Mode: FString @ off 0x0,
+    HeroId: Struct(FPrimaryAssetId, 0x10 bytes) @ off 0x10,   <-- param 2 IS THE SELECTED HERO
+    StartPosition: Int @ off 0x20,
+    OnComplete: Delegate @ off 0x24,
+    ReturnValue: Bool @ off 0x34 ).  Total parm buffer ~0x38.
+- LIKELY BAIL = the HERO GATE: S60 saw HeroId passed as None (that run was -NoHook, no hero resolvable), and
+  the Track-B note recorded "no valid/owned/selected hunter => cannot queue" as a hard client-side gate. So the
+  most probable reason START/TryStartSoloMode bails silently (no /startSoloMode HTTP) is that no valid hero is
+  selected. THIS LAUNCH HAS THE ROSTER FIX (default launch: catalog_store_fix + secondaries), so a hero can now
+  be selected — this is the UNTESTED scenario.
+NEXT (needs a live trigger):
+  (A) [cleanest] User selects a HERO in the roster, then Practice/Tutorials -> Basic Training -> START. If it
+      now fires /startSoloMode, the hero gate was it -> implement /startSoloMode on ags (see docs/trackb-notes.md;
+      party REST surface) + report a local match so the client travels WITH a proper session (which creates the
+      PlayerState, solving the S61 PlayerState-null gate). Needs the user (computer-use denied) OR
+  (B) shim-call TryStartSoloMode via the ProcessInternal primitive with a VALID HeroId: build FPrimaryAssetId
+      {Type=FName("Hero"), Name=FName(<a real hero, e.g. Alchemist>)} at param off 0x10, Mode="tutorialNew"@0x0,
+      StartPosition=0@0x20, OnComplete/ReturnValue zeroed. Reuse the tutorial_launch primitive + missions
+      probe param-building (FName indices via a name-pool search). If it proceeds -> same ags work as (A); if it
+      still bails -> its page is now committed, disasm rva 0x54B5F70 to find the real precondition.
+Probes: scratchpad/find_tssm.py (find func + commit test), tssm_params.py (param enum). nativeFunc rva 0x54B5F70.
+
+----- TryStartSoloMode BAIL FULLY MAPPED (user clicked START -> code committed -> disassembled live) -----
+User clicked START: TryStartSoloMode RAN, BAILED (no /startSoloMode HTTP, no travel — just menu widget
+refresh), NO crash -> its code committed and stayed readable. Traced it:
+- The UFunction exec thunk (rva 0x54B5F70) marshals the 5 params from the FFrame, then calls the real C++
+  impl at 0x54B6123: `mov rcx,r12(this=PartyManager); call 0x7FF6BAD6A980`; stores the returned bool to Result.
+- IMPL = UPartyManager::TryStartSoloMode @ 0x7FF6BAD6A980 (rva 0x587A980). Every bail path = `xor al,al`
+  (return false) at 0x587AA62, then epilogue — no HTTP. Early precondition GATES:
+  GATE 1 @0x587A9BB: `mov rdx,[this+0xF8]; cmp byte[rdx+0x550],0; jz bail`. [this+0xF8]=UPartyModel;
+     [PartyModel+0x550] read LIVE = 1 (non-zero) -> GATE 1 PASSES.
+  GATE 2 @0x587A9D3..0x587AA3A: `call 0x7FF6BACF5F10(rcx=&local, rdx=PartyModel+0x558)` copies an FString/array
+     from PartyModel+0x558 (its Num@+0x10, Data@+0x18) into a local; ecx=[local Num] is then compared against
+     two globals: A=0x7FF6BF52A830 (first dword = 8) and B=0x7FF6BF52A590 (first dword = 12=0xC), plus `cmp
+     ecx,1; jle gate3`. Routes to GATE 3 or to the bail (0x587AA4C). *** This is the LIKELY BAIL *** — a
+     PartyModel-state check (the selected mode/region/queue string on PartyModel+0x558; 8 & 12 may be string
+     lengths, e.g. Num=12 == "tutorialNew"+null, or enum values). NOT yet fully decoded.
+  GATE 3 @0x587AA3C: `mov rcx,[this+0x148](ClientConfigManager); call 0x7FF6BACAB7D0; test al; jnz PROCEED`.
+     That fn is the VERSION CHECK — config keys "SkipVersionCheck"/"versioncheck" (@0x7FF6BE02FA50/..FA78);
+     returns true if version valid or SkipVersionCheck configured. S60 already served clientVersions, so this
+     likely PASSES. Reachable only if GATE 2 routes here.
+  PROCEED path @0x587AA69: the real solo-start work (builds request -> would fire /startSoloMode). Bail never
+     reaches it.
+=> To make it proceed: decode GATE 2 (read PartyModel+0x558 live to see the selected-mode string/value + what
+   value 8/12 it must be — set PartyModel+0x558 appropriately, likely by selecting the right activity/hero or
+   via a memory poke), OR transient-patch the GATE-2 branch to jump to 0x587AA69 (self-restoring .text patch,
+   like the login work; the impl page is committed post-click). Then /startSoloMode fires -> implement it on ags
+   (party REST, docs/trackb-notes.md) + report a local match -> client travels WITH a real session (creates the
+   PlayerState, clearing the S61 gate). Multi-step but the bail is now precisely located.
+New probes: scratchpad/pm_flags.py (read PartyManager/PartyModel gate flags). Impl 0x587A980; gates as above.
+GATE-2 refinement: PartyModel+0x558 = the party-id FString ("party-9b9d2c887e2524f918e383a895f2f1c2", Num=39)
+followed by a field/array (Num@+0x10=1). fn 0x7FF6BACF5F10 copies from PartyModel+0x558+0x18 into a local and
+ecx becomes a derived value compared against 8 and 12 — a PARTY-STATE / member/queue check, not a plain mode
+string. Exact required value not yet decoded (needs tracing fn 5F10 + the two `call 0x7FF6B64C8790` lookups).
+Fastest way to unblock next time: transient-patch the GATE-2 bail branch (at 0x587AA0B / 0x587AA3A, or force the
+`jz`/`jnz` so control reaches PROCEED @0x587AA69) — self-restoring .text patch like the login work — then observe
+the /startSoloMode HTTP + implement it on ags. (The impl page 0x587A980 is committed after a START click.)
+
+----- GATE 2 FULLY DECODED (values + live state + poke) -----
+Helper fns: 0x7FF6B64C8790 = case-insensitive WIDE-string compare (returns 0 if equal); 0x7FF6BACF5F10 =
+copies the big struct at PartyModel+0x558 into a local (FStrings @+0x18,+0x28,+0x40,+0x50, bytes @+0x38/39,
+count @+0x10). ecx (compared to 8 and 12) = the Num (length) of FString1 @ PartyModel+0x558+0x18; [rbp-0x38] =
+its Data ptr. GATE-2 LOGIC = (FString1 == "default"[len7,Num8]) OR (FString1 == "Matchmaking"[len11,Num12]) ->
+proceed toward GATE 3; else BAIL. The two accepted literals: "default" @0x1AF32AF7D10 (globalA, cmp Num==8),
+"Matchmaking" @0x1AF32C0C620 (globalB, cmp Num==12). *** LIVE: FString1 @ PartyModel+0x558+0x18 was EMPTY
+(Data=null,Num=0) -> ecx=0 -> matches neither -> BAIL. *** So this party-state string field (the party's
+mode/matchmaking-status; struct also holds the party-id @+0x0 and near .rdata keys "matchID"/"role") is not
+populated by the ags /party response.
+VERIFIED (poke): wrote FString1 = {Data=L"default"(0x1AF32AF7D10), Num=8, Max=8} to PartyModel+0x558+0x18 (heap,
+writable, no VirtualProtect needed); it PERSISTS (not overwritten by /party polls while idle at menu). With this
+set, GATE 2 should pass on the next START click (end-to-end re-click verification was pending the user).
+DURABLE FIX: populate this field in the ags /party response so the client sets PartyModel+0x558+0x18 =
+"default". Need the JSON field name -> trace the /party-parse -> PartyModel population (the struct at +0x558 with
+party-id + this mode string; likely a "mode"/"matchmakingStatus"/"queueState" field in the party or its
+current-match sub-object). Until then, the live poke (address is per-launch: PartyModel+0x558+0x18) unblocks it.
+Probe pm_flags.py finds the live PartyManager/PartyModel; PartyModel this launch = 0x1B01683E680.
+
+===== ★★★ CLIENT-SIDE SOLO-START UNBLOCKED — /startSoloMode NOW FIRES ★★★ =====
+With the gate-2 poke in place ("default"), the user re-clicked START and TryStartSoloMode PROCEEDED past all
+gates and fired the REAL call (capture.log):
+  POST /party/parties/party-9b9d.../startSoloMode?mode=tutorialNew&hero=&soloModeStartPosition=0   -> 200
+(note hero= is EMPTY — no hero was selected; may matter later for the drop-in hero.) ags returned 200 via its
+catch-all, but reports NO active match, so the client just resumes polling GET /core-game/players/{id} ("do I
+have a match to rejoin?") and does NOT travel. So the ENTIRE remaining problem is now BACKEND (ags), no more
+native RE for the launch trigger:
+REMAINING (backend):
+  1. Handle POST /party/parties/{id}/startSoloMode?mode=&hero=&soloModeStartPosition= on ags: record that this
+     player has started a solo tutorial match. (Currently unhandled -> catch-all 200.)
+  2. Make the client TRAVEL to the local tutorial WITH a session. Two candidate triggers to RE:
+     (a) the /startSoloMode RESPONSE body (client's TryStartSoloMode BP: BeginAction -> OnStartSoloMode
+         broadcast -> Delay -> success/error; the 200 body likely must carry match/session info), and/or
+     (b) GET /core-game/players/{id} returning an active match (handleCoreGamePlayer exists; interactive.go
+         ~L361-410 has the CoreGamePlayer/MatchInfo model). CAVEAT (docs/dedicated-server-stub.md probes #1/#2,
+         S53): returning hasActiveMatch=true from /core-game/players alone did NOT trigger travel THEN — but the
+         client is now in a DIFFERENT state (mid solo-start, having POSTed /startSoloMode), so re-test.
+  3. Because the tutorial is LOCAL, the "travel" should be a local map load (LVL_Tutorial) WITH the session
+     context (not a dedicated-server connect) — which is what creates the PlayerState (clearing the S61 gate).
+This connects to the "server-as-activation-layer" vision. The gate-2 poke is per-launch (PartyModel addr
+changes); the durable fix is the /party mode field. Live poke recipe: pm_flags.py -> PartyModel -> poke
+PartyModel+0x558+0x18 = {Data=L"default" literal, Num=8, Max=8}.
+
+===== AGS SIDE STARTED — /startSoloMode implemented; match-report is INERT for travel =====
+Implemented (server/internal/interactive/, builds clean, hot-swapped live):
+  - POST /party/parties/{partyId}/startSoloMode?mode=&hero=&soloModeStartPosition= -> handleStartSoloMode:
+    records playerState.SoloMode=<mode>, logs it, echoes buildSoloParty as the 200 body.
+  - handleCoreGamePlayer now per-player: if SoloMode!="" it reports an active match (State="InProgress",
+    MatchInfo GameMap=DA_Tutorial_Basics, 127.0.0.1:7777) instead of "no active match".
+LIVE TEST (user clicked START, gate-2 poke in place): /startSoloMode fired -> ags logged
+"startSoloMode player=... mode=tutorialNew hero= pos=0" -> /core-game/players then served the InProgress
+tutorial match. *** CLIENT REACTION = NOTHING: no Browse/LoadMap, no LogNet/NetConnection, no ShowErrorMessage,
+no Deserialization failure, no travel. Just Vivox + Messenger keepalive. *** => the /core-game/players match
+report is INERT for triggering travel EVEN inside the solo-start flow (confirms + extends S53 probes #1/#2).
+No NetConnection attempt at all, so the client is NOT trying to connect to the phantom DS either.
+CONCLUSION: the travel trigger is NOT /core-game/players. Candidates, in priority order, for next session:
+  (1) The /startSoloMode RESPONSE SHAPE. We echoed the PARTY object; the client's native TryStartSoloMode HTTP
+      callback likely parses the body into a specific match/session descriptor that drives OnStartSoloModeComplete
+      (bSuccess/MessageID/QueryContext) AND the travel. bSuccess appeared true (no error shown) but no travel ->
+      QueryContext/response probably lacks the travel/map/session info. RE the response model: disasm the native
+      TryStartSoloMode PROCEED path (impl 0x7FF6BAD6A980, from 0x587AA69) to find the request URL build + the
+      response-parse struct type + what field(s) it uses to travel. The response page is committed post-click.
+  (2) A WEBSOCKET push (the /lobby or /notifications WS) may deliver the "match ready, travel now" event — watch
+      the WS frames right after /startSoloMode.
+  (3) A dedicated-server connection may be mandatory for the menu-route (unlike the local force-open). If so,
+      this needs the S53 DS-stub. But the client made ZERO NetConnection attempts, which argues AGAINST a DS
+      connect being auto-initiated — favoring (1)/(2).
+GOTCHA: playerState.SoloMode now PERSISTS in state/interactive.json, so /core-game/players will report the
+phantom match at every future boot (inert per S53, but not clean — consider clearing SoloMode on match-end or
+not persisting it). ags PID this run 93656; reuses certs on restart (no cacert re-append needed).

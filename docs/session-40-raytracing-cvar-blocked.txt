@@ -1,0 +1,147 @@
+=== SESSION 40 — r.RayTracing=0 CVar OVERRIDE ALSO TRIGGERS ANTI-CHEAT ===
+
+After `-noraytracing` was blocked by SUPERVIVE's anti-cheat cmdline
+check, the recommendation was to use `-ini:Engine:[RendererSettings]:r.RayTracing=0`
+which sets the same effect via CVar override (a path used extensively
+already for AccelByte URL overrides in `launch-sv-open.bat`).
+
+**Result: CVar-level raytracing disable ALSO triggers the anti-cheat
+fail-fast. Same hardcoded `Rbp`/`R11`/`Rip` signature.**
+
+--- Test setup ---
+
+New batch `scratchpad/launch-sv-open-noRT-ini.bat` adds:
+    -ini:Engine:[/Script/Engine.RendererSettings]:r.RayTracing=0
+    -ini:Engine:[/Script/Engine.RendererSettings]:r.RayTracing.Enable=0
+
+on top of the working `launch-sv-open.bat` (which already uses `-ini:`
+for AccelByte + Loki URL overrides — those work fine and don't trigger
+the anti-cheat).
+
+--- Result: raytracing IS disabled, then anti-cheat fires ---
+
+Client log confirms raytracing off:
+
+    [00:41:40:549] LogConfig: Set CVar [[r.RayTracing:0]]
+    [00:41:42:771] LogRendererCore: Ray tracing is disabled. Reason:
+                    disabled through project setting (r.RayTracing=0).
+
+Menu load progressed (25 heroes fetched twice — presumably one at
+Login stage, one at LobbyV2 stage). Client reached ReceivedJoin at
+00:41:56.608.
+
+Crash: Sentry HandleBeforeCrash at 00:42:59.575 — **~63 seconds
+post-Join, MUCH LATER than -noraytracing (42s) or DX11 (24s), and
+closest to the natural D3D12 crash timing (~64s)**.
+
+Crash dump: `.sentry-native/reports/1dfbc53a-e353-40df-b376-919dee5513e6.dmp`
+
+Crash context:
+    Rip = 0x00007FF8F0400001  (ntdll.dll + 0x230001)
+    Rax = Rcx = Rsi = R12-R15 = 0
+    Rbx = 0x5C3466BA98554807 (garbage)
+    Rdx, R8, R9, R10 = garbage
+    **Rbp = 0x00000000537AC9E1**  (SAME hardcoded value)
+    **R11 = 0x000095654773B3BC**  (SAME hardcoded value)
+
+D3D12Core.dll IS loaded (0x7FF810770000-0x7FF810D21000). Raytracing IS
+disabled per CVar.
+
+**This is the SAME anti-cheat fail-fast signature.** SUPERVIVE detects
+raytracing being disabled, regardless of whether via cmdline (`-noraytracing`)
+or CVar (`r.RayTracing=0`), and hard-aborts.
+
+--- Comprehensive anti-cheat matrix ---
+
+| Test config                    | Rbp        | R11              | Rip
+|--------------------------------|------------|------------------|------------
+| DX11                           | 0x537AC9E1 | 0x95654773B3BC   | 0xF0400001
+| nullrhi                        | 0x537AC9E1 | 0x95654773B3BC   | 0xF0400001
+| -noraytracing                  | 0x537AC9E1 | 0x95654773B3BC   | 0xF0400001
+| **r.RayTracing=0 (via -ini:)** | 0x537AC9E1 | 0x95654773B3BC   | 0xF0400001
+
+Four separate test configurations produce **identical hardcoded fail-fast
+signatures**. Definitively an anti-cheat mechanism.
+
+--- Implications ---
+
+1. **Raytracing subsystem is anti-cheat-guarded.** SUPERVIVE requires
+   raytracing to be enabled and detects its absence via multiple paths
+   (cmdline flag, CVar setting, and probably in-game feature checks).
+2. **`-ini:` CVar overrides ARE NOT safe from anti-cheat** — the
+   anti-cheat's integrity check apparently examines actual runtime
+   CVar state, not just cmdline parsing.
+3. **We CANNOT disable raytracing to test whether it's the crash-holding
+   subsystem** via any user-space method. Doing so triggers the fail-fast.
+4. Timing of the fail-fast varies by trigger: 24s (DX11), 32s (nullrhi),
+   42s (-noraytracing), 63s (r.RayTracing=0). This variability suggests
+   different anti-cheat check points fire at different phases of init.
+5. **The D3D12 mode natural crash (RVA +0x2976FF0, target class) may
+   ALSO be an anti-cheat fail-fast** — we should re-examine that. In
+   session 40 A1's dump, the crash was in target class with a real
+   `this` pointer. But it's possible the anti-cheat check happens at
+   the moment we're executing that class's method for other reasons,
+   and BOTH cause the same crash signature. Need more careful analysis.
+
+--- What we CAN'T tell from these tests ---
+
+- Whether the FD3D12CommandContext crash at RVA +0x2976FF0 IS itself
+  triggered by the anti-cheat (i.e., the anti-cheat corrupts the state
+  that this method later reads, causing the natural-looking crash)
+- Whether the specific D3D12 subsystem holding the uninit TArray is
+  raytracing, or something else
+- Whether any renderer/subsystem cmdline / CVar tweak is safe from
+  the anti-cheat
+
+--- What we CAN tell ---
+
+- The renderer test matrix is fully compromised by anti-cheat
+- All 4 "flag tests" produce IDENTICAL hardcoded fail-fast signatures
+- Only unmodified D3D12 (default renderer, no CVar changes) reaches
+  the target class crash
+- Path B-lite (schema-inject replicated fields, un-suppress PC)
+  becomes the remaining primary hypothesis
+
+--- Path forward for session 41+ (revised again) ---
+
+Cmdline/CVar workarounds are dead. Real remaining options:
+
+- **Path B-lite** — schema-inject SUPERVIVE's expected replicated PC
+  fields, un-suppress APlayerController. Multi-hour engineering with
+  no cmdline/CVar detour possible. If the D3D12 subsystem's uninit
+  TArray is populated via UE Actor RenderProxy registration callbacks
+  (typical for scene renderer subsystems), replicating PC state
+  properly might restore the init sequence.
+- **Anti-cheat bypass investigation** — identify the anti-cheat
+  mechanism, see if it can be neutralized. Historically expensive and
+  the packer's anti-debug (documented in CLAUDE.md) makes this hard.
+  Not recommended unless committing significant time.
+- **Investigate whether the D3D12 crash IS the anti-cheat in disguise**
+  — re-analyze the session-40 A1 D3D12 dump specifically checking if
+  the "this pointer at Rbx" is legitimate or if the crash-instruction
+  target is coincidentally the same as our target class's method.
+  If the D3D12 crash is ACTUALLY anti-cheat, then Path A1's class
+  identification was wrong.
+
+Recommendation for session 41+: verify Path A1's class identification
+was real (not anti-cheat masquerading), then commit to Path B-lite if
+still needed.
+
+--- Chapter state (end of session 40 raytracing-CVar test) ---
+
+- Full suppression keeps connection stable through Join: DONE (S39)
+- Client reaches menu, fetches 25 heroes: DONE (S39)
+- Crash class D3D12-related identification: CONFIRMED (S40 minidump)
+- Anti-cheat fail-fast on cmdline renderer flags: CONFIRMED
+- Anti-cheat fail-fast on r.RayTracing CVar: CONFIRMED (this doc)
+- Any renderer/subsystem cmdline OR CVar workaround: RULED OUT
+- Menu-data replication: TODO
+
+--- DO NOT for session 41+ ---
+
+- Don't try any more renderer / subsystem cmdline flags or CVar tweaks
+  aimed at disabling D3D12 subsystems — anti-cheat blocks them all.
+- Don't assume Path A1's class identification is safe from being an
+  anti-cheat trigger — verify by re-examining the D3D12 dump against
+  the anti-cheat signature.
+- DO consider Path B-lite as the primary remaining path.

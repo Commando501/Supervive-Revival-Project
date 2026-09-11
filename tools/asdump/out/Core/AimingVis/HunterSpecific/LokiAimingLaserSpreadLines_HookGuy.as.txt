@@ -1,0 +1,226 @@
+// ============================================================================
+//  MODULE   Core.AimingVis.HunterSpecific.LokiAimingLaserSpreadLines_HookGuy
+//  SOURCE   Core/AimingVis/HunterSpecific/LokiAimingLaserSpreadLines_HookGuy.as
+//  CONTENT  1 class(es), 6 function(s), 0 enum(s), 1 global(s), 604 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiAimingLaserSpreadLines_HookGuy;
+
+ALokiAimingLaserSpreadLines_HookGuy@ ALokiAimingLaserSpreadLines_HookGuy()   // traits=0x20
+{
+    ALokiAimingLaserSpreadLines_HookGuy v2;
+
+    v2 = ALokiAimingLaserSpreadLines_HookGuy();
+    return v2;
+}
+/* ---- ALokiAimingLaserSpreadLines_HookGuy: 7 dwords / 4 instructions (cache offset 0x65d18) ----
+    0000  PSF           v2
+    0004  ALLOC         84733 ALokiAimingLaserSpreadLines_HookGuy     ; new ALokiAimingLaserSpreadLines_HookGuy  ctor=void ALokiAimingLaserSpreadLines_HookGuy::ALokiAimingLaserSpreadLines_HookGuy()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ ALokiAimingLaserSpreadLines_HookGuy::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiAimingLaserSpreadLines_HookGuy);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x65de8) ----
+    0000  PshGPtr       __StaticType_ALokiAimingLaserSpreadLines_HookGuy
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+ALokiAimingLaserSpreadLines_HookGuy@ ALokiAimingLaserSpreadLines_HookGuy::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiAimingLaserSpreadLines_HookGuy v8;
+
+    v2 = __StaticType_ALokiAimingLaserSpreadLines_HookGuy.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiAimingLaserSpreadLines_HookGuy@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x66020) ----
+    0000  PshVPtr       Level
+    0004  PshV4         bDeferredSpawn
+    0008  PshVPtr       Name
+    000C  PshVPtr       Rotation
+    0010  PshVPtr       Location
+    0014  PshGPtr       __StaticType_ALokiAimingLaserSpreadLines_HookGuy
+    0020  CHKREF
+    0024  CALLSYS       TSubclassOf::Get                              ; UClass@ TSubclassOf<UObject@>::Get() const
+    0030  STOREOBJ      v2
+    0034  PshVPtr       v2
+    0038  PSF           v4
+    003C  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    0048  PSF           v4
+    004C  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    0058  STOREOBJ      v6
+    005C  CmpPtrNull    v6
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972670                                    ; ALokiAimingLaserSpreadLines_HookGuy@
+    0070  PSF           v8
+    0074  PshVPtr       v6
+    0078  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8
+  L0090:
+    0090  LOADOBJ       v8
+    0094  RET           9
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class ALokiAimingLaserSpreadLines_HookGuy : ALokiAimingLaserSpreadLines
+// static class global: __StaticType_ALokiAimingLaserSpreadLines_HookGuy
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 RangeMin;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 RangeMax;
+
+    ALokiAimingLaserSpreadLines_HookGuy()   // traits=0x21
+    {
+        auto v2;
+
+        this.ALokiAimingLaserSpreadLines();
+        v2 = 650.0;
+        this.RangeMin = v2;
+        v2 = 725.0;
+        this.RangeMax = v2;
+        return;
+    }
+    /* ---- ALokiAimingLaserSpreadLines_HookGuy: 20 dwords / 11 instructions (cache offset 0x6660c) ----
+        0000  PshVPtr       this
+        0004  CALL          84637                                         ; void ALokiAimingLaserSpreadLines::ALokiAimingLaserSpreadLines()
+        000C  SetV8         v2 0x4084500000000000
+        0018  LoadThisR     1224 134230846                                ; this.RangeMin
+        0020  WRTV8         v2
+        0024  SetV8         v2 0x4086a80000000000
+        0030  LoadThisR     1232 134230846                                ; this.RangeMax
+        0038  WRTV8         v2
+        003C  PshVPtr       this
+        0040  FinConstruct  ALokiAimingLaserSpreadLines_HookGuy
+        004C  RET           2
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v1;
+        float64 v4;
+        auto v5;
+        auto v6;
+        float64 v8;
+        auto v10;
+        auto v12;
+        auto v14;
+
+        v1 = this.ValidateOwner();
+        v1 = !v1;
+        if (v1) {
+            this.OwnerAimingVisComponent.DestroyLaser();
+            return;
+        } else {
+            v5 = this.OwnerHero.GetCurrentBloomAngle();
+            v6 = this.OwnerHero.MaxBloom;
+            v5 = v5 / v6;
+            v8 = float64(v5);
+            v4 = v8;
+            v8 = Math::Lerp(this.RangeMax, this.RangeMin, v4);
+            v14 = 1.0;
+            v12 = this.PrimaryAttackDistance;
+            v14 = v14 + v12;
+            v12 = v8 * v14;
+            v14 = this.ProjectileSourceOffsetDistanceXY;
+            v10 = v12 + v14;
+            this.MaxDistance = v10;
+            this.Tick_Implementation(DeltaSeconds);
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 72 dwords / 46 instructions (cache offset 0x6630f) ----
+        0000  PshVPtr       this
+        0004  CALLINTF      84575                                         ; bool ALokiAimingLaser::ValidateOwner()
+        000C  CpyRtoV4      v1
+        0010  NOT           v1
+        0014  CpyVtoR1      v1
+        0018  JLowZ         8                                             -> L0040
+        0020  PshVPtr       this
+        0024  ADDSi         952 134230838                                 ; .OwnerAimingVisComponent
+        002C  RDSPtr
+        0030  CALLINTF      84666                                         ; void ULokiAimingVisComponentScript::DestroyLaser()
+        0038  JMP           55                                            -> L011C
+      L0040:
+        0040  PshVPtr       this
+        0044  ADDSi         944 134230838                                 ; .OwnerHero
+        004C  RDSPtr
+        0050  CALLSYS       ALokiHeroCharacter::GetCurrentBloomAngle      ; float32 ALokiHeroCharacter::GetCurrentBloomAngle() const
+        005C  CpyRtoV4      v5
+        0060  PshVPtr       this
+        0064  ADDSi         944 134230838                                 ; .OwnerHero
+        006C  RDSPtr
+        0070  ADDSi         6664 67115176                                 ; .MaxBloom
+        0078  PopRPtr
+        007C  RDR4          v6
+        0080  DIVf          v5 v5 v6
+        0088  fTOd          v8 v5
+        0090  CpyVtoV8      v4 v8
+        0098  PSF           v4
+        009C  LoadThisR     1224 134230846                                ; this.RangeMin
+        00A4  PshRPtr
+        00A8  LoadThisR     1232 134230846                                ; this.RangeMax
+        00B0  PshRPtr
+        00B4  CALLSYS       Lerp                                          ; float64 Math::Lerp(const float64&, const float64&, const float64&)
+        00C0  CpyRtoV8      v8
+        00C4  SetV8         v14 0x3ff0000000000000
+        00D0  LoadThisR     1072 134230838                                ; this.PrimaryAttackDistance
+        00D8  RDR8          v12
+        00DC  ADDd          v14 v14 v12
+        00E4  MULd          v12 v8 v14
+        00EC  LoadThisR     992 134230838                                 ; this.ProjectileSourceOffsetDistanceXY
+        00F4  RDR8          v14
+        00F8  ADDd          v10 v12 v14
+        0100  LoadThisR     984 134230838                                 ; this.MaxDistance
+        0108  WRTV8         v10
+        010C  PshV8         DeltaSeconds
+        0110  PshVPtr       this
+        0114  CALL          84634                                         ; void ALokiAimingLaserSpreadLines::Tick_Implementation(const float64)
+      L011C:
+        011C  RET           4
+    */
+
+    void ~ALokiAimingLaserSpreadLines_HookGuy()   // traits=0x22
+    {
+        this.~ALokiAimingLaserSpreadLines();
+        return;
+    }
+    /* ---- ~ALokiAimingLaserSpreadLines_HookGuy: 4 dwords / 3 instructions (cache offset 0x66745) ----
+        0000  PshVPtr       this
+        0004  CALL          85482                                         ; void ALokiAimingLaserSpreadLines::~ALokiAimingLaserSpreadLines()
+        000C  RET           2
+    */
+
+}
+

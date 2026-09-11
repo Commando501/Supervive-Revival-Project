@@ -1,0 +1,100 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[RD] RM_RIDEABLE (S131): AuthPlayerEnterWorldAttachedToRidable, called DIRECTLY.
+[RD] S131's Route-E flight handed it a NULL PlayerState, so it returned at instruction
+[RD] #1 (`test rdx,rdx; je`) and its silence said NOTHING about the wall. The obvious
+[RD] fix -- poke [TeamState+0x688] -- is BLOCKED: zero live TeamState actors exist in
+[RD] this world (MEASURED). So both arguments are resolved live, BY NAME, instead.
+[RD] Inject into a STAGED TUTORIAL WORLD that already contains an INITIALISED pod
+[RD] (gft -> fo -> sp -> dropplane_b1only -> droppod-pe-cdopoke -> this).
+[RD] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[RD] resolve: 4 pod actor(s), 2 live ALokiPlayerState(s), one GUObjectArray pass, 3219 ms
+[RD] pod-cand[0] 0x2BDA97A0200 cls=BP_DropPod_Tutorial_C PodTeamIndex@0x460=0 LokiRideable@0x6C8=0x2BDCFA4FA00(LokiRideableComponent)
+[RD] pod-cand[1] 0x2BD375119D0 cls=BP_DropPod_Tutorial_C PodTeamIndex@0x460=-1 LokiRideable@0x6C8=0x2BD42A2CC00(LokiRideableComponent)
+[RD] pod-cand[2] 0x2BD2B2DB0A0 cls=BP_DropPod_Tutorial_C PodTeamIndex@0x460=-1 LokiRideable@0x6C8=0x2BDC266AA00(LokiRideableComponent)
+[RD] pod-cand[3] 0x2BD2B2DA8B0 cls=BP_DropPod_Tutorial_C PodTeamIndex@0x460=-1 LokiRideable@0x6C8=0x0(-)
+[RD] ps-cand[0] 0x2BDCFA012C0 'LokiPlayerState_HeroAffiliated' cls=LokiPlayerState_HeroAffiliated
+[RD] ps-cand[1] 0x2BDBC6199A0 'BP_LokiPlayerState_C' cls=BP_LokiPlayerState_C
+[RD] 2 PlayerState candidates -> the wall is called ONCE PER CANDIDATE, each labelled.
+[RD] resolve: pod=0x2BDA97A0200(BP_DropPod_Tutorial_C) comp=0x2BDCFA4FA00(LokiRideableComponent) ps=0x2BDCFA012C0(LokiPlayerState_HeroAffiliated) | wallFn=0x2BC05891EA0 ctlFn=0x2BC05892440
+[RD] pod pick reason: the ONLY pod whose PodTeamIndex reads 0 (written by InitializeDropPod) AND has a non-null LokiRideable
+[RD] LandingLocation taken from the pod's own CurrPodDestination = (-3206.4, 5070.5, 100.0) -- the value InitializeDropPod stored, so the wall is handed the same vector the game would.
+[RD] hero for the reposition readout: 0x2BDC2315580 cls=BP_HERO_Ronin_C
+[FS] cfg KFUNCSWAP=1 max=0 name='' profileMs=4000 watchMs=8000 reportMs=15000 rearmMs=60000 | pi=0x7FF6321D54A0 stub=0x2BDC1381140 funcCls=0x2BC71A0B000 gameTid=38276
+[RD] ============ RM_RIDEABLE: the FIFTH WALL, called DIRECTLY ============
+[RD] cfg arms=0x3F stepMs=600 podIdx=-1
+[RD] WHY: S131's Route-E flight handed this function a NULL PlayerState, so it returned at instruction #1 and its silence said nothing about the wall. The natural fix (poke [TeamState+0x688]) is BLOCKED: zero live TeamState actors in this world. So the wall is called directly, with both of its arguments live and resolved BY NAME.
+[FS] arm: swapped=17563 BP UFunctions  (scan 3656 ms over 154998 objects, 34253 UFunctions total) -- NO .text WRITE
+[RD] --- R0c (POSITIVE CONTROL + BASELINE): ContainsPlayer(PlayerState) on the SAME component through the SAME primitive. A non-faulting bool proves dispatch and object-param marshalling HERE; the value is R1's before-reading. ---
+[PD] sig R0c ContainsPlayer(before): 2 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig R0c ContainsPlayer(before) [0] PlayerState            @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[PD] sig R0c ContainsPlayer(before) [1] ReturnValue            @0x8    size=1   BoolProperty     struct=-          flags=0x0018001040000780  RETURN
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[RD] R0c ContainsPlayer(before): fault=no  paramsSlot=0  g_rbuf=0  USED=0 (native path reads g_rbuf)
+[RD] --- pre-call readout: the two preconditions the wall tests before it can reach the round-game-mode bail ---
+[RD] PlayerState 0x2BDCFA012C0 ObjectFlags@+0xC=0x00000008 (>>30 = 0) -> the wall's IsValid test at 0x55CD535 PASSES
+[RD] component   0x2BDCFA4FA00 ObjectFlags@+0xC=0x00000000 (>>30 = 0) -> the wall's IsValid test at 0x55CD535 PASSES
+[RD] (the third precondition, the predicate call at 0x55CD54E, is not readable from here -- if R1 is silent AND both tests above PASS, that predicate is the remaining explanation and it is NOT the wall.)
+[RD] --- R1 (HEADLINE): AuthPlayerEnterWorldAttachedToRidable(PlayerState, Landing) via the S55 direct UFunction.Func thunk. EXPECTED: it reaches 0x55CD572, gets 0 from the stripped round-game-mode getter, and logs 'failed to get the round game mode'. THAT LOG LINE IS THE RESULT. ---
+[PD] sig AuthPlayerEnterWorldAttachedToRidable(R1): 2 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig AuthPlayerEnterWorldAttachedToRidable(R1) [0] PlayerState            @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[PD] sig AuthPlayerEnterWorldAttachedToRidable(R1) [1] SpawnLocation          @0x8    size=24  StructProperty   struct=Vector     flags=0x3018001048000382  IN (const-ref: value lives INLINE in the param block)
+[RD] PlayerState(cand) 0x2BDCFA012C0 ObjectFlags@+0xC=0x00000008 (>>30 = 0) -> the wall's IsValid test at 0x55CD535 PASSES
+[RD] R1 LAYOUT: PlayerState slot[0]@0x0 = 0x2BDCFA012C0 | Landing slot[1]@0x8 size=24 = (-3206.4, 5070.5, 100.0)
+[RD] R1 CALL: fn=0x2BC05891EA0 thunk=0x7FF6362E6380 obj=0x2BDCFA4FA00 'LokiRideableComponent'
+[RD] R1 CALL cand[0] ps=0x2BDCFA012C0 cls=LokiPlayerState_HeroAffiliated
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[RD] R1 AFTER cand[0] (LokiPlayerState_HeroAffiliated): fault=no. ⚠ 'returned without fault' IS NOT A RESULT -- the Loki.log line is.
+[RD] PlayerState(cand) 0x2BDBC6199A0 ObjectFlags@+0xC=0x00000048 (>>30 = 0) -> the wall's IsValid test at 0x55CD535 PASSES
+[RD] R1 LAYOUT: PlayerState slot[0]@0x0 = 0x2BDBC6199A0 | Landing slot[1]@0x8 size=24 = (-3206.4, 5070.5, 100.0)
+[RD] R1 CALL: fn=0x2BC05891EA0 thunk=0x7FF6362E6380 obj=0x2BDCFA4FA00 'LokiRideableComponent'
+[RD] R1 CALL cand[1] ps=0x2BDBC6199A0 cls=BP_LokiPlayerState_C
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[RD] R1 AFTER cand[1] (BP_LokiPlayerState_C): fault=no. ⚠ 'returned without fault' IS NOT A RESULT -- the Loki.log line is.
+[RD] --- R2: ContainsPlayer(PlayerState) again. false->true would mean a rider really attached; false->false is the expected wall outcome and is only interpretable because R0c proved the call dispatches here. ---
+[PD] sig R2 ContainsPlayer(after): 2 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig R2 ContainsPlayer(after) [0] PlayerState            @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[PD] sig R2 ContainsPlayer(after) [1] ReturnValue            @0x8    size=1   BoolProperty     struct=-          flags=0x0018001040000780  RETURN
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[RD] R2 ContainsPlayer(after): fault=no  paramsSlot=0  g_rbuf=0  USED=0 (native path reads g_rbuf)
+[RD] state after R1/R2            PlayersInsideCount@0x11C=0  bCanExit=0
+[RD] state after R1/R2            HERO 'BP_HERO_Ronin_C' 0x2BDC2315580 loc=(0.0, 0.0, 13240.0)
+[RD] --- R3: AuthPlayerPreSpawnOnAddToPlane(PlayerState). It has its OWN bail string, so the log separates it from R1 unambiguously. EXPECTED: the same round-game-mode failure, which would show the wall is a SHARED dependency and not one function's bug. ---
+[PD] sig AuthPlayerPreSpawnOnAddToPlane(R3): 1 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig AuthPlayerPreSpawnOnAddToPlane(R3) [0] PlayerState            @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[RD] R3 cand[0] ps=0x2BDCFA012C0: fault=no
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[RD] R3 cand[1] ps=0x2BDBC6199A0: fault=no
+[RD] state after R3               PlayersInsideCount@0x11C=0  bCanExit=0
+[RD] state after R3               HERO 'BP_HERO_Ronin_C' 0x2BDC2315580 loc=(0.0, 0.0, 13240.0)
+[RD] --- R4 (THE INTERESTING ONE): AuthPlayerEnterWorld(PlayerState, Location, EffectClass=null, bRepositionPlayer=1). REAL body, never called by anything this project runs, and NO round-game-mode bail string was found for it [I]. If it works, THE HERO MOVES -- watch the RdState hero location, not the log. ---
+[PD] sig AuthPlayerEnterWorld(R4): 4 parameter slot(s) read from the LIVE FProperty chain (declaration order)
+[PD] sig AuthPlayerEnterWorld(R4) [0] PlayerState            @0x0    size=8   ObjectProperty   struct=-          flags=0x0018001000000280  IN
+[PD] sig AuthPlayerEnterWorld(R4) [1] Location               @0x8    size=24  StructProperty   struct=Vector     flags=0x3018001048000382  IN (const-ref: value lives INLINE in the param block)
+[PD] sig AuthPlayerEnterWorld(R4) [2] EffectWhenEnteringWorld @0x20   size=8   ClassProperty    struct=-          flags=0x001C001000000280  IN
+[PD] sig AuthPlayerEnterWorld(R4) [3] bRepositionPlayer      @0x28   size=1   BoolProperty     struct=-          flags=0x0018001040000280  IN
+[RD] R4 BIND: ps=slot[0]@0x0 vec=slot[1]@0x8 size=24 cls=slot[2] bool=slot[3] (the two optionals are written only if they bound; a slot left at 0 IS the declared default: nullptr / false)
+[RD] state R4 BEFORE              PlayersInsideCount@0x11C=0  bCanExit=0
+[RD] state R4 BEFORE              HERO 'BP_HERO_Ronin_C' 0x2BDC2315580 loc=(0.0, 0.0, 13240.0)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[RD] R4 cand[0] ps=0x2BDCFA012C0 bRepositionPlayer=1: fault=no
+[RD] state R4 AFTER               PlayersInsideCount@0x11C=0  bCanExit=0
+[RD] state R4 AFTER               HERO 'BP_HERO_Ronin_C' 0x2BDC2315580 loc=(0.0, 0.0, 13240.0)
+[RD] state R4 BEFORE              PlayersInsideCount@0x11C=0  bCanExit=0
+[RD] state R4 BEFORE              HERO 'BP_HERO_Ronin_C' 0x2BDC2315580 loc=(0.0, 0.0, 13240.0)
+[FF] CallNative frame=ZEROONLY (0x48..0x80 zeroed)
+[RD] R4 cand[1] ps=0x2BDBC6199A0 bRepositionPlayer=1: fault=no
+[RD] state R4 AFTER               PlayersInsideCount@0x11C=0  bCanExit=0
+[RD] state R4 AFTER               HERO 'BP_HERO_Ronin_C' 0x2BDC2315580 loc=(0.0, 0.0, 13240.0)
+[RD] ============ game-thread arms COMPLETE ============
+[FS] disarm: restored=17563 of 17563 swapped (scan 4250 ms, 34253 UFunctions live)
+[RD] ---------------- RM_RIDEABLE SUMMARY ----------------
+[RD] resolved=1 pod=0x2BDA97A0200 comp=0x2BDCFA4FA00 ps=0x2BDBC6199A0 | R0c ran=1 before=0 | R1 ran=2 fault=0 | R2 after=0
+[RD] VERDICT: the call dispatched (R0c proves the primitive reaches this component) and no rider attached. ⇒ NOW GREP Loki.log:
+       'AuthPlayerEnterWorldAttachedToRidable failed to get the round game mode'
+     PRESENT  => the fifth wall is CONFIRMED [M], measured rather than graded offline.
+     ABSENT   => the body bailed EARLIER (IsValid at 0x55CD548, or the predicate at
+                 0x55CD54E). Read the two validity lines above: if both PASS, that
+                 predicate is the remaining explanation and it is NOT the wall.
+[RD] done (step=7 resolved=1 r0c=1 r1=2 called=1480 hitsGT=1480)

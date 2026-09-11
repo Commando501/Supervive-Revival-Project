@@ -1,0 +1,102 @@
+﻿======================================================================================================================
+cmc_earlyout_readout (S139 ranked plan)   PID=47412 BASE=0x7FF704F00000   2026-08-23 22:21:01
+  bot pawn=0x2700CA75580 ctl=0x26F94BBC080 | player pawn=0x26FA011D560 ctl=0x26E16852770
+======================================================================================================================
+field                                          | BOT                         | PLAYER (control)           
+----------------------------------------------------------------------------------------------------------------------
+pawn                                           | 0x2700CA75580               | 0x26FA011D560              
+ctl                                            | 0x26F94BBC080               | 0x26E16852770              
+pawn.class                                     | BP_HERO_Ronin_C             | BP_HERO_Ronin_C            
+ctl.class                                      | LokiBotController           | BP_LokiPlayerController_Dev
+cmc                                            | 0x26FE70671D0               | 0x26FE443E390              
+cmc.off                                        | 1112                        | 1112                       
+cmc.class                                      | LokiCharacterMovementCompon | LokiCharacterMovementCompon
+CTRL.CharacterOwner==pawn                      | YES                         | YES                        
+cmc.CharacterOwner                             | 0x2700CA75580               | 0x26FA011D560              
+CTRL.tickTarget==cmc                           | YES                         | YES                        
+cmc.tickTarget                                 | 0x26FE70671D0               | 0x26FE443E390              
+R1.latch@0x16C8                                | 0                           | 0                          
+R1.velsnap@0x16B0                              | (0.000,0.000,0.000)         | (0.000,0.000,0.000)        
+R2.TimeSinceFallingStart@0x12B0                | 59.1135                     | 75.0146                    
+R3.ControlInputVector@0x418                    | (-0.069,-0.998,0.000)       | (0.000,0.000,0.000)        
+R3.LastControlInputVector@0x430                | (-0.069,-0.998,0.000)       | (0.000,0.000,0.000)        
+R4.UpdatedComponent                            | 0x26F9D368100               | 0x26F94BB5160              
+R4.UpdatedComponent.byname                     | @0xD0 agrees                | @0xD0 agrees               
+R4.pawn RF_Garbage(bit30)                      | 0                           | 0                          
+R4.UpdatedComponent.class                      | CapsuleComponent            | CapsuleComponent           
+R4.Mobility@0x1BB                              | 2                           | 2                          
+R6.BodyInstance.off                            | @+0x3F0                     | @+0x3F0                    
+R6.bSimulatePhysics                            | 0                           | 0                          
+R6.bSimulatePhysics.how                        | byte@+0x10 mask 0x01 raw 0x | byte@+0x10 mask 0x01 raw 0x
+R6.bEnableGravity                              | 1                           | 1                          
+R6.bEnableGravity.how                          | byte@+0x10 mask 0x04 raw 0x | byte@+0x10 mask 0x04 raw 0x
+R6.bNotifyRigidBodyCollision                   | 0                           | 0                          
+R6.bNotifyRigidBodyCollision.how               | byte@+0x12B mask 0x08 raw 0 | byte@+0x12B mask 0x08 raw 0
+R5.Role@0x160                                  | 3                           | 3                          
+R5.RemoteRole@0x72                             | 1                           | 1                          
+R5.Controller@0x400                            | 0x26F94BBC080               | 0x26E16852770              
+R5.bRunPhysicsWithNoController(0x2E9&4)        | 0                           | 0                          
+R7.Acceleration@0x328                          | (-3472.732,-49879.256,0.000 | (0.000,0.000,0.000)        
+R7.AnalogInputModifier@0x3D0                   | 1                           | 0                          
+R7.MaxAcceleration@0x28C                       | 50000                       | 50000                      
+R8.AbilitySystemComponentStorage@0xF00         | 0x26E4DD4FF10               | 0x26F9183CD00              
+R8.AttributeSetStorage@0xF08                   | 0x26E4DD51710               | 0                          
+R8.bCharacterMovementEnabled@0xB59             | 1                           | 1                          
+R10.TickState@0x4B                             | 1                           | 1                          
+R10.bCanEverTick(0x4A&2)                       | 1                           | 1                          
+R10.InternalData@0x60                          | 0x26FEFD7BB00               | 0x26FDE7C6460              
+R10.bRegistered(*InternalData bit0)            | 0                           | 0                          
+S140.payload@0x16B0 RAW                        | 0000000000000000|0000000000 | 0000000000000000|0000000000
+S140.Velocity@0xE8 RAW                         | 0000000000000000|0000000000 | 0000000000000000|0000000000
+S140.WorldPrivate@0xC0                         | 0x26FDDFDE020               | 0x26FDDFDE020              
+S140.NumJumpApexAttempts@0x3DC                 | 0                           | 0                          
+S140.MaxSimulationTimeStep@0x3E0               | 0.2                         | 0.2                        
+S140.MaxSimulationIterations@0x3E4             | 1                           | 1                          
+S140.vptr                                      | 0x7FF70D7F8570              | 0x7FF70D7F8570             
+S140.vptr is ULokiCMC                          | YES                         | YES                        
+S140.vptr is engine UCMC                       | *** NO ***                  | *** NO ***                 
+MovementMode@0x231                             | 3                           | 3                          
+Velocity@0xE8 (CONTAMINATED on player)         | (0.000,0.000,0.000)         | (0.000,0.000,0.000)        
+location                                       | (600.000,0.000,13240.000)   | (0.000,0.000,13240.000)    
+ctl.gate@0x6A0(CONTROLLER)                     | 1                           | None                       
+ctl.RandomMoveDirection@0x658                  | (-0.069,-0.998,0.000)       | None                       
+----------------------------------------------------------------------------------------------------------------------
+  bot: MovementMode=MOVE_Falling  Role=ROLE_Authority  Mobility=Movable
+  plr: MovementMode=MOVE_Falling  Role=ROLE_Authority  Mobility=Movable
+
+### RANK-1 -- RETRACTED (S140 Tier 1). THE LATCH IS NOT AN INSTRUMENT. ###
+  CMC+0x16C8 is NOT a sticky latch. It is a per-frame TOptional<FVector> validity flag: SET by
+  ULokiCMC::StartNewPhysics at 0x055C2469 and CLEARED later in the SAME engine PerformMovement
+  call by ULokiCMC vtable disp 0xA50 (0x0530ABF0), on a path the StartNewPhysics call site
+  DOMINATES. An off-thread reader sees 0 whether the step runs every frame or never runs at
+  all. Named from its own consumer GetRecentVelocity (.data 0x09BC9AD0 -> impl 0x0530AC10).
+  See docs/s140-tier1-cfg.md 4.2-4.7.
+  ==> latch == 0 proves NOTHING. The S139 verdict this probe used to print here rested on it
+      and is WITHDRAWN. Raw values only:
+      bot latch=0   player latch=0   (0 is expected in EVERY world)
+
+### S140 TIER 2 -- THE PAYLOAD RECOGNISER (the durable receipt) ###
+  The PAYLOAD at CMC+0x16B0 IS durable: disp 0xA50 clears only the flag byte, and the only
+  CMC-side writer of the payload is 0x055C244F inside StartNewPhysics. ARM H
+  (build.ps1 -Variant gasattr-sentinel) POISONS it first, so never-written and written-with-
+  zeros are DIFFERENT BYTES -- the degeneracy docs/s140-tier1-cfg.md 7 warns about.
+  BOT     payload  = (0.000,0.000,0.000)          RAW 0000000000000000|0000000000000000|0000000000000000
+  BOT     Velocity = (0.000,0.000,0.000)          RAW 0000000000000000|0000000000000000|0000000000000000
+  BOT     -> payload is EXACT ZERO. If ARM H poisoned this object -> StartNewPhysics RAN and snapshotted a zero Velocity. If ARM H did NOT run -> UNINTERPRETABLE: a never-written buffer is also zero. CHECK THE MARKER FOR [SNP] FIRST.
+  PLAYER  payload  = (0.000,0.000,0.000)          RAW 0000000000000000|0000000000000000|0000000000000000
+  PLAYER  Velocity = (0.000,0.000,0.000)          RAW 0000000000000000|0000000000000000|0000000000000000
+  PLAYER  -> payload is EXACT ZERO. If ARM H poisoned this object -> StartNewPhysics RAN and snapshotted a zero Velocity. If ARM H did NOT run -> UNINTERPRETABLE: a never-written buffer is also zero. CHECK THE MARKER FOR [SNP] FIRST.
+
+### S140 TIER 2 -- THE THREE FREE READS (Tier 1 7, ranks 2/3/4; never taken live) ###
+  BOT     WorldPrivate@0xC0 = 0x26FDDFDE020        -> non-null; engine PerformMovement exit 2 input is satisfied
+  BOT     MaxSimulationIterations@0x3E4 = 1      -> > 0; the 4th engine-StartNewPhysics early-out 0x036009B5 does NOT bail
+  BOT     MaxSimulationTimeStep@0x3E0 = 0.2        NumJumpApexAttempts@0x3DC = 0
+  BOT     vptr = 0x7FF70D7F8570       isULokiCMC=YES isEngineUCMC=*** NO ***
+  PLAYER  WorldPrivate@0xC0 = 0x26FDDFDE020        -> non-null; engine PerformMovement exit 2 input is satisfied
+  PLAYER  MaxSimulationIterations@0x3E4 = 1      -> > 0; the 4th engine-StartNewPhysics early-out 0x036009B5 does NOT bail
+  PLAYER  MaxSimulationTimeStep@0x3E0 = 0.2        NumJumpApexAttempts@0x3DC = 0
+  PLAYER  vptr = 0x7FF70D7F8570       isULokiCMC=YES isEngineUCMC=*** NO ***
+
+  ⚠ Acceleration == 0 is UNINTERPRETABLE (3 independent zero-writers). Only non-zero AND
+    collinear with RandomMoveDirection is informative.
+  ⚠ Velocity/Acceleration on the PLAYER are CONTAMINATED if `play` is injected.

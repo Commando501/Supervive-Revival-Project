@@ -1,0 +1,127 @@
+SESSION 42 — STEP 1: the lobby crash is a D3D12/RHI-thread crash, but it MOVED
+from session 40 (different site + fault type). It is a FAMILY of RHI crashes,
+not one deterministic instruction.
+==============================================================================
+Date: 2026-07-02
+Branch: dedicated-server-stub
+Method: parsed the on-disk crash minidumps with the session-40 tooling
+(scratchpad/parse-any-dump.py + the Python `minidump` pkg). NO live cycle
+needed — session 41's final lobby run already left a fresh dump on disk.
+
+HEADLINE
+--------
+The session-41 lobby crash is CONFIRMED as a legitimate D3D12/RHI-thread crash
+(NOT the anti-cheat fail-fast). But it is NOT the same crash session 40 fixated
+on (+0x2976FF0, a WRITE to .rdata during D3D12 command recording). With the PC
+now replicating and the client progressing all the way into the lobby's render
+graph, the crash has MOVED to a null-pointer READ inside FRDGBuilder::Execute.
+And across the whole dump corpus the crash RIP is NOT stable run-to-run — it is
+a FAMILY of RHI-thread rendering crashes, not a single fixable instruction. This
+materially changes the Step-2 plan (session 40's "NOP the one TArray::Add"
+approach is unlikely to work).
+
+THE DEFINITIVE DUMP (session-41 lobby crash)
+--------------------------------------------
+Crashes/UECC-Windows-7AE9830F497A53DAC0CFF48F528FAE09_0000/  (2026-07-02 09:17)
+- Embedded Loki.log ends EXACTLY at the S41 breakthrough state:
+    LogLoad: Took 0.66s to LoadMap(/Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent)
+    LogGlobalStatus: LoadMap complete .../LVL_LobbyV2_Persistent
+    LogGlobalStatus: UPendingNetGame::TravelCompleted Pending net game travel completed
+    LogLokiClientAnalytics: Sending performance snapshot (Map: LVL_LobbyV2_Persistent, Mode: BP_LoginGameMode_C)
+  ...then it dies. Reached via the STUB path (stateless handshake + GameNetDriver
+  + net travel), so this is our run, not a vanilla launch.
+- ErrorMessage: EXCEPTION_ACCESS_VIOLATION *reading* address 0x0000000000000028
+    => a null-pointer + 0x28 field read (deref of a null base, grabbing a member
+       at offset 0x28). NOT a write to read-only memory.
+- Breadcrumbs_RHIThread_0.txt: Context 1/2 -> "00 FRDGBuilder_Execute"
+    => crash is on the RHI thread, inside Render Dependency Graph execution.
+- Registers: Rip = SUPERVIVE +0x296F591, Rbx = 0, Rax = 0. D3D12Core.dll +
+  full NVIDIA UMD stack (nvwgf2umx/nvgpucomp64/nvapi64/...) loaded => real D3D12.
+- Stack walk: SUPERVIVE frames + KERNELBASE/kernel32/ntdll at the base. It does
+  NOT show the deep D3D12Core.dll interleave the S40 crash had.
+- A SECOND lobby run at 09:35 (live client log) reached the same lobby (ToxMod +
+  Vivox lobby audio init) and also crashed on the RHI thread ~5s after load
+  (LogSentrySdk crash flush). => the lobby crash is REPRODUCIBLE.
+
+SESSION 40 vs SESSION 41-lobby (side by side)
+---------------------------------------------
+                    | S40 (D06CC55E, 07-01 15:10)  | S41 lobby (7AE9830F, 07-02)
+  Fault             | AV WRITING .rdata            | AV READING null+0x28
+  Fault addr        | 0x7FF68A55B368 (const dflt)  | 0x0000000000000028
+  RIP RVA           | +0x2976FF0                   | +0x296F591
+  Rbx               | vtable (heap) 0x22424310040  | 0
+  Stack             | deep D3D12Core.dll interleave| SUPERVIVE + OS only
+  Breadcrumb        | (D3D12 cmd recording)        | RHIThread FRDGBuilder_Execute
+  Client progress   | full-suppression, pre-lobby  | lobby map + net travel done
+  Both: D3D12Core.dll loaded, NVIDIA UMD loaded, NOT anti-cheat fail-fast.
+
+The two RIPs are ~0x7A5F apart, both in the ~0x2960000-0x2980000 RHI/RDG code
+band of the SUPERVIVE binary — same broad subsystem, different instruction.
+
+CRASH-RIP IS NOT STABLE (the key new fact)
+------------------------------------------
+Parsing more dumps from the corpus:
+  Dump (date)                | RIP RVA    | fault                     | last map
+  7AE9830F (07-02 09:17)     | +0x296F591 | read null+0x28            | LobbyV2   <- S41 lobby
+  D06CC55E (07-01 15:10)     | +0x2976FF0 | write .rdata              | (S40 ref)
+  CD25F035 (07-01 23:07)     | +0x207D11D | write 0x7ff68a1258d0      | LVL_Login
+  A84A3CA0 (07-01 15:04)     | +0xFD1754  | read 0x1e3010020          | LobbyV2
+  9B00C588 (07-01 02:25)     | +0xFE1746  | read 0x1e3010020          | LVL_Login
+All are RHI-thread crashes with D3D12Core loaded. The RIP wanders across at
+least four distinct code sites. (Some of the older ones are session-40 renderer
+experiments — DX11/nullrhi/etc — so not all are the same config; but even the
+two LobbyV2 dumps differ: +0x296F591 vs +0xFD1754.)
+
+INTERPRETATION: this is not one bad instruction we can NOP. It is a cascade
+from a missing / uninitialized render subsystem: the render graph runs with a
+null or garbage resource, and WHERE it faults depends on timing/allocation
+layout. Session 40's "guard the single TArray::Add at +0x2976FF0" plan would
+patch one crash site and immediately hit the next.
+
+WHY MIGHT RENDER STATE BE MISSING? (leads for Step 2, unconfirmed)
+-----------------------------------------------------------------
+1. ViewTarget suppression (STRONGEST lead, and cheap+safe to test):
+   In session 41 we SUPPRESSED the server->client ClientSetViewTarget RPC to
+   clear blocker A. That RPC tells the client PlayerController which actor to
+   view (the camera/view target). A PlayerController with a null/absent view
+   target can leave the scene renderer's view null -> FRDGBuilder::Execute
+   dereferences a null view/scene and reads garbage at a small offset (0x28
+   fits a view/scene member). We ASSUMED "the lobby drives its own camera" —
+   that assumption is now suspect. TEST: instead of suppressing CSVT, inject
+   its SUPERVIVE-modified signature the ServerVerifyViewTarget way (we already
+   have that machinery — see supervive-rpc-signature-solved) so the client
+   receives a valid view target. This is a NATIVE-STUB change: no injection, no
+   anti-cheat exposure. Much cheaper/safer than a D3D12 injection patch.
+   CAVEAT: the S40 full-suppression crash (no CSVT at all, different site)
+   predates this suppression, so CSVT is not the sole cause — but it may be
+   what shifted the S41 manifestation to a null-view read, and giving the client
+   a real view target is a legitimate shot at unwedging it.
+2. -nullrhi server <-> real-D3D12 client asymmetry: the server is headless, the
+   client renders. A resource the client expects the server (or the normal
+   client join flow) to have set up may be absent. Deeper RE.
+
+NOT the anti-cheat fail-fast
+----------------------------
+Anti-cheat fail-fast signature is Rip=0xF0400001 / Rbp=0x537AC9E1 /
+R11=0x95654773B3BC and only appears with a forbidden renderer flag/CVar. None of
+these dumps match it; all crash inside SUPERVIVE's own RHI code with the real
+D3D12 device + NVIDIA UMD loaded. We set NO renderer flags on the client.
+
+STEP-1 VERDICT
+--------------
+- Confirmed: the S41 lobby crash is a real D3D12/RHI-thread crash, reproducible,
+  independent of networking (no net error precedes it). CONSISTENT with the S41
+  breakthrough doc's blocker B.
+- Reframed: it is NOT session 40's single +0x2976FF0 instruction. It is a family
+  of RHI-thread rendering crashes; the client now dies inside FRDGBuilder::Execute
+  on a null+0x28 read after fully loading the lobby.
+- Consequence for Step 2: the "NOP one instruction" plan is out. The realistic
+  native routes are (a) restore the client's view target (cheap, safe, native-
+  stub) and (b) deep RE of the missing render-init cascade (expensive, and the
+  renderer-config knobs around it are anti-cheat-walled).
+
+TOOLING
+-------
+- scratchpad/parse-any-dump.py (from session 40, still works; Python `minidump`
+  pkg at F:\Program Files\Tools\Python313).
+- Dumps under C:\Users\eastr\AppData\Local\SUPERVIVE\Saved\Crashes\.

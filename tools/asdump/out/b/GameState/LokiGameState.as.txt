@@ -1,0 +1,105 @@
+// ============================================================================
+//  MODULE   GameState.LokiGameState
+//  SOURCE   GameState/LokiGameState.as
+//  CONTENT  1 class(es), 4 function(s), 0 enum(s), 1 global(s), 240 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiGameState_AS;
+
+ALokiGameState_AS@ ALokiGameState_AS()   // traits=0x20
+{
+    v2 = ALokiGameState_AS();
+    return v2;
+}
+/* ---- ALokiGameState_AS: 7 dwords / 4 instructions (cache offset 0x94c94) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         85092 ALokiGameState_AS                     
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ALokiGameState_AS::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ALokiGameState_AS);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x94d52) ----
+    0000  PshGPtr       __StaticType_ALokiGameState_AS              
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ALokiGameState_AS@ ALokiGameState_AS::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    v2 = __StaticType_ALokiGameState_AS.Get();
+    v4 = TSubclassOf(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiGameState_AS@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0x94f78) ----
+    0000  PshVPtr       Level                                       
+    0004  PshV4         bDeferredSpawn                              
+    0008  PshVPtr       Name                                        
+    000C  PshVPtr       Rotation                                    
+    0010  PshVPtr       Location                                    
+    0014  PshGPtr       __StaticType_ALokiGameState_AS              
+    0020  CHKREF                                                    
+    0024  CALLSYS       TSubclassOf::Get                            
+    0030  STOREOBJ      v2                                          
+    0034  PshVPtr       v2                                          
+    0038  PSF           v4                                          
+    003C  CALLSYS       TSubclassOf::$beh0                          
+    0048  PSF           v4                                          
+    004C  CALLSYS       SpawnActor                                  
+    0058  STOREOBJ      v6                                          
+    005C  CmpPtrNull    v6                                          
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972706                                    ; ALokiGameState_AS@
+    0070  PSF           v8                                          
+    0074  PshVPtr       v6                                          
+    0078  CALLSYS       UObject::opCast                             
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8                                          
+  L0090:
+    0090  LOADOBJ       v8                                          
+    0094  RET           9                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ALokiGameState_AS : ALokiGameState
+// unreal base : /Script/Loki.LokiGameState
+// C++ header  : ../../../Loki/Source/Loki/LokiGameState.h
+// static class global: __StaticType_ALokiGameState_AS
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, InstancedReference, meta.EditInlineDefaults=true, meta.DefaultComponent=True)
+    ULokiGameStateUAVComponent@ UAVComponent;
+
+    ALokiGameState_AS()   // traits=0x21
+    {
+        return;
+    }
+    /* ---- ALokiGameState_AS: 5 dwords / 3 instructions (cache offset 0x951eb) ----
+        0000  PshVPtr       this                                        
+        0004  FinConstruct  ALokiGameState_AS                           
+        0010  RET           2                                           
+    */
+
+}
+

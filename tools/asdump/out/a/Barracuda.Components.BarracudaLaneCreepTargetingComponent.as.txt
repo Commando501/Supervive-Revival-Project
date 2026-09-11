@@ -1,0 +1,333 @@
+==============================================================================
+MODULE   Barracuda.Components.BarracudaLaneCreepTargetingComponent
+SOURCE   Barracuda/Components/BarracudaLaneCreepTargetingComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaLaneCreepTargetingComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaLaneCreepTargetingComponent@ UBarracudaLaneCreepTargetingComponent()
+// 4 instr, 28 B bytecode, id=0xA231C3ED, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaLaneCreepTargetingComponent v2;
+
+    v2 = UBarracudaLaneCreepTargetingComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84118 q:0x26e6e874600; new UBarracudaLaneCreepTargetingComponent   ctor=UBarracudaLaneCreepTargetingComponent::UBarracudaLaneCreepTargetingComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x4540494F, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaLaneCreepTargetingComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b3558         ; __StaticType_UBarracudaLaneCreepTargetingComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UBarracudaLaneCreepTargetingComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xF4229C9E, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaLaneCreepTargetingComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaLaneCreepTargetingComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972597            ; UBarracudaLaneCreepTargetingComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3558         ; __StaticType_UBarracudaLaneCreepTargetingComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaLaneCreepTargetingComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xC9959E43, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaLaneCreepTargetingComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaLaneCreepTargetingComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972597            ; UBarracudaLaneCreepTargetingComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3558         ; __StaticType_UBarracudaLaneCreepTargetingComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaLaneCreepTargetingComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xF0706E49, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaLaneCreepTargetingComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaLaneCreepTargetingComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972597            ; UBarracudaLaneCreepTargetingComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b3558         ; __StaticType_UBarracudaLaneCreepTargetingComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS()
+class UBarracudaLaneCreepTargetingComponent : UBarracudaMinionTargetingComponent
+==============================================================================
+{
+}
+
+------------------------------------------------------------------------------
+UBarracudaLaneCreepTargetingComponent() const
+// 5 instr, 32 B bytecode, id=0x4ADD8D12, varspace=0
+------------------------------------------------------------------------------
+{
+    this.UBarracudaMinionTargetingComponent();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALL           d:84092                 ; void UBarracudaMinionTargetingComponent::UBarracudaMinionTargetingComponent()
+    //     3  PshVPtr        rW0:0
+    //     4  FinConstruct   q:0x26e6e874600         ; UBarracudaLaneCreepTargetingComponent
+    //     7  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: UpdateCurrentTargetEnemy
+void UpdateCurrentTargetEnemy_Implementation()
+// 121 instr, 708 B bytecode, id=0x2C718B71, varspace=27
+------------------------------------------------------------------------------
+{
+    ALokiMinionCharacter v2;
+    AActor v4;
+    ALokiMinionCharacter v6;
+    auto v7;
+    auto v12;
+    auto v13;
+    FVector v26;
+    auto v27;
+
+    v4 = this.GetOwner();
+    if (v4 == null) {
+        v6 = null;
+    } else {
+        v6 = cast<ALokiMinionCharacter>(v4);
+    }
+    v2 = v6;
+    if (v6 != null) {
+        if (LokiGameplay::IsAlive(this.HighPriorityEnemyCharacter)) {
+            v12 = float64(Gameplay::GetServerTime(__WorldContext));
+            v13 = v12 < this.ReleaseHighPriorityEnemyTime;
+            v7 = v13;
+        } else {
+            v7 = 0;
+        }
+        if (!v7) {
+            this.HighPriorityEnemyCharacter = null;
+            this.CurrentTargetEnemy = null;
+            v26 = v2.GetActorLocation();
+            v13 = false;
+            v7 = true;
+            v27 = 5;
+            v4 = v2.GetClosestEnemyOnList(v26, 5, true, false);
+            this.CurrentTargetEnemy = v4;
+            v4 = this.CurrentTargetEnemy;
+            if (v4 == null) {
+                v7 = false;
+                v13 = true;
+                v27 = 6;
+                v4 = v2.GetClosestEnemyOnList(v26, 6, true, false);
+                this.CurrentTargetEnemy = v4;
+                v4 = this.CurrentTargetEnemy;
+                if (v4 == null) {
+                    v13 = false;
+                    v7 = true;
+                    v27 = 4;
+                    v4 = v2.GetClosestEnemyOnList(v26, 4, true, false);
+                    this.CurrentTargetEnemy = v4;
+                } else {
+                }
+            } else {
+            }
+        } else {
+            this.CurrentTargetEnemy = this.HighPriorityEnemyCharacter;
+        }
+    } else {
+        this.CurrentTargetEnemy = null;
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857087            ; ALokiMinionCharacter@
+    //    10  PSF            rW0:6
+    //    11  PshVPtr        rW0:4
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:6
+    //    18  PshVPtr        rW0:6
+    //    19  RefCpyV        wW0:2
+    //    20  CmpPtrNull     rW0:2
+    //    21  JNZ            ->31
+    //    23  PshNull
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:216 d:134230774      ; UBarracudaMinionTargetingComponent::CurrentTargetEnemy  (+216)
+    //    27  REFCPY
+    //    28  PopPtr
+    //    29  JMP            ->176
+    //    31  PshVPtr        rW0:0
+    //    32  ADDSi          W0:208 d:134230774      ; UBarracudaMinionTargetingComponent::HighPriorityEnemyCharacter  (+208)
+    //    34  RDSPtr
+    //    35  CALLSYS        q:0x26e7a254d80         ; bool LokiGameplay::IsAlive(const AActor@)
+    //    38  JLowNZ         ->44
+    //    40  SetV4          wW0:7 d:0
+    //    42  JMP            ->62
+    //    44  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    47  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //    50  CpyRtoV4       wW0:8
+    //    51  fTOd           wW0:12 rW1:8
+    //    53  LoadThisR      W0:224 d:134230774      ; UBarracudaMinionTargetingComponent::ReleaseHighPriorityEnemyTime  (+224)
+    //    55  RDR8           wW0:10
+    //    56  CMPd           rW0:12 rW1:10
+    //    58  TS
+    //    59  CpyRtoV4       wW0:13
+    //    60  CpyVtoV4       wW0:7 rW1:13
+    //    62  CpyVtoR1       rW0:7
+    //    63  JLowZ          ->76
+    //    65  PshVPtr        rW0:0
+    //    66  ADDSi          W0:208 d:134230774      ; UBarracudaMinionTargetingComponent::HighPriorityEnemyCharacter  (+208)
+    //    68  RDSPtr
+    //    69  PshVPtr        rW0:0
+    //    70  ADDSi          W0:216 d:134230774      ; UBarracudaMinionTargetingComponent::CurrentTargetEnemy  (+216)
+    //    72  REFCPY
+    //    73  PopPtr
+    //    74  JMP            ->176
+    //    76  PshNull
+    //    77  PshVPtr        rW0:0
+    //    78  ADDSi          W0:208 d:134230774      ; UBarracudaMinionTargetingComponent::HighPriorityEnemyCharacter  (+208)
+    //    80  REFCPY
+    //    81  PopPtr
+    //    82  PshNull
+    //    83  PshVPtr        rW0:0
+    //    84  ADDSi          W0:216 d:134230774      ; UBarracudaMinionTargetingComponent::CurrentTargetEnemy  (+216)
+    //    86  REFCPY
+    //    87  PopPtr
+    //    88  PSF            rW0:26
+    //    89  PshVPtr        rW0:2
+    //    90  CALLSYS        q:0x26e79712e00         ; FVector AActor::GetActorLocation() const   [UFunction K2_GetActorLocation]
+    //    93  SetV1          wW0:13 d:0
+    //    95  PshV4          rW0:13
+    //    96  SetV1          wW0:7 d:1
+    //    98  PshV4          rW0:7
+    //    99  SetV1          wW0:27 d:5
+    //   101  PshV4          rW0:27
+    //   102  PSF            rW0:26
+    //   103  PshVPtr        rW0:2
+    //   104  CALLSYS        q:0x26e7a314140         ; AActor@ ALokiMinionCharacter::GetClosestEnemyOnList(const FVector&, ELokiMinionEnemyFilter, const bool, const bool) const
+    //   107  STOREOBJ       wW0:4
+    //   108  PshVPtr        rW0:4
+    //   109  PshVPtr        rW0:0
+    //   110  ADDSi          W0:216 d:134230774      ; UBarracudaMinionTargetingComponent::CurrentTargetEnemy  (+216)
+    //   112  REFCPY
+    //   113  PopPtr
+    //   114  PshVPtr        rW0:0
+    //   115  ADDSi          W0:216 d:134230774      ; UBarracudaMinionTargetingComponent::CurrentTargetEnemy  (+216)
+    //   117  RDSPtr
+    //   118  RefCpyV        wW0:4
+    //   119  CmpPtrNull     rW0:4
+    //   120  JZ             ->124
+    //   122  JMP            ->176
+    //   124  SetV1          wW0:7 d:0
+    //   126  PshV4          rW0:7
+    //   127  SetV1          wW0:13 d:1
+    //   129  PshV4          rW0:13
+    //   130  SetV1          wW0:27 d:6
+    //   132  PshV4          rW0:27
+    //   133  PSF            rW0:26
+    //   134  PshVPtr        rW0:2
+    //   135  CALLSYS        q:0x26e7a314140         ; AActor@ ALokiMinionCharacter::GetClosestEnemyOnList(const FVector&, ELokiMinionEnemyFilter, const bool, const bool) const
+    //   138  STOREOBJ       wW0:4
+    //   139  PshVPtr        rW0:4
+    //   140  PshVPtr        rW0:0
+    //   141  ADDSi          W0:216 d:134230774      ; UBarracudaMinionTargetingComponent::CurrentTargetEnemy  (+216)
+    //   143  REFCPY
+    //   144  PopPtr
+    //   145  PshVPtr        rW0:0
+    //   146  ADDSi          W0:216 d:134230774      ; UBarracudaMinionTargetingComponent::CurrentTargetEnemy  (+216)
+    //   148  RDSPtr
+    //   149  RefCpyV        wW0:4
+    //   150  CmpPtrNull     rW0:4
+    //   151  JZ             ->155
+    //   153  JMP            ->176
+    //   155  SetV1          wW0:13 d:0
+    //   157  PshV4          rW0:13
+    //   158  SetV1          wW0:7 d:1
+    //   160  PshV4          rW0:7
+    //   161  SetV1          wW0:27 d:4
+    //   163  PshV4          rW0:27
+    //   164  PSF            rW0:26
+    //   165  PshVPtr        rW0:2
+    //   166  CALLSYS        q:0x26e7a314140         ; AActor@ ALokiMinionCharacter::GetClosestEnemyOnList(const FVector&, ELokiMinionEnemyFilter, const bool, const bool) const
+    //   169  STOREOBJ       wW0:4
+    //   170  PshVPtr        rW0:4
+    //   171  PshVPtr        rW0:0
+    //   172  ADDSi          W0:216 d:134230774      ; UBarracudaMinionTargetingComponent::CurrentTargetEnemy  (+216)
+    //   174  REFCPY
+    //   175  PopPtr
+    //   176  RET            W0:2
+

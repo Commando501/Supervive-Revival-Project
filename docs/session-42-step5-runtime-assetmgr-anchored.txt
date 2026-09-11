@@ -1,0 +1,125 @@
+SESSION 42 — STEP 5 (runtime AssetManager route, foundation): live LokiAssetManager
+fully anchored (CDO / UClass / vtable / override structure). Deep function-ID hits
+the packer wall (strings decrypt to heap only). KEY next question isolated:
+is the config scan skipped by EMPTY CONFIG (cheap -ini: fix) or by BYPASSING CODE
+(native fix)? Plus the exact read that decides it.
+==============================================================================
+Date: 2026-07-02
+Branch: dedicated-server-stub
+Method: usmapdump read-only RPM against the live normal-client process (PID 70960,
+module base 0x7FF682A80000), non-elevated. No injection, no anti-cheat.
+
+WHY: user chose to pursue runtime manipulation of the live LokiAssetManager (the
+enumeration blocker confirmed in step 4: ChangeBundleStateForPrimaryAssets "failed
+to find NameData" => manager's primary-asset type map is empty; it never scans).
+
+LIVE ANCHORS (heap addrs are THIS-launch only; re-find via findptr on the name ids.
+RVAs are stable across launches — ASLR only moves the module base.)
+- FName ids: "LokiAssetManager"=0x586455, "Default__LokiAssetManager"=0x6B05AD,
+  "LokiAssetManagerSettings"=0x5864C7, "Default__LokiAssetManagerSettings"=0x6B05DC,
+  "GetLokiAssetManager"=0x586483.  (UObject layout r2-findings: Class@+0x18,
+  Name@+0x20, Outer@+0x28. Find an object: findptr <nameId> -> hit is at obj+0x20.)
+- LokiAssetManager CDO (Default__LokiAssetManager) = 0x1C66CA5A120 (this launch).
+  Verified: +0x18 ClassPrivate = 0x1C6723B6280, +0x20 Name = 0x6B05AD,
+  +0x28 Outer = 0x1C66C2F3AB0 (/Script/Loki package).
+- LokiAssetManager UClass = 0x1C6723B6280 (this launch). Name 0x586455, same outer.
+- **LokiAssetManager vtable RVA = +0x88CB78** (VA 0x7FF68B30CB78). STABLE across
+  launches. (= *(CDO+0x00).)
+- To get the singleton INSTANCE (not the CDO): findptr <UClassAddr> -> hits at
+  instance+0x18; filter out the CDO. (Instance holds the live NameData type map.)
+
+VTABLE STRUCTURE (usmapdump vtdump, 140 slots)
+- Slots 0..~87: UObject + UAssetManager BASE virtuals. Mix of SHARED-STUB (pure/
+  empty ret stubs @RVA 0xF7EC20/0xF7EB60), SHARED trivial (0xB9E1F0 = `mov al,1;ret`),
+  and Loki OVERRIDES in code regions 0x11Exxxx / 0x12Cxxxx / 0x135xxxx / 0x136xxxx.
+  The scan virtuals (StartInitialLoading, ScanPrimaryAssetTypesFromConfig,
+  ScanPathsForPrimaryAssets — all UAssetManager base virtuals) live HERE, as Loki
+  overrides (0x12Cxxxx cluster) or inherited base impls.
+- Slots 88..139: a tight cluster of LokiAssetManager's OWN added virtuals
+  (0x34AA5D0..0x34D60E0). Loki-specific API (likely the manifest-registration path).
+- 91 unique fn ptrs / 95 distinct fns total.
+
+THE PACKER WALL (why deeper static ID stalls)
+- Cannot identify which slot is StartInitialLoading/the scan by string reference:
+  this build's packer decrypts .rdata strings to the HEAP on use and leaves the
+  module .rdata copy encrypted, so rip-relative LEA -> string xref is defeated
+  (confirmed in step 4: "Toc signature hash"/"signature" only found as heap copies;
+  MountPaksInDirectory etc. = 0 in-module hits). CODE pages ARE decrypted once run,
+  so disasm works — but mapping slots to names needs a stock-UAssetManager vtable
+  to diff against (dump one from the UE 5.4 LokiEditor stub next session).
+
+THE KEY QUESTION (decides whether the fix is CHEAP or native)
+Why is the config scan skipped? Two possibilities with very different fixes:
+  (i)  LokiAssetManager DOES call the stock ScanPrimaryAssetTypesFromConfig, but
+       the settings' PrimaryAssetTypesToScan array is EMPTY (Loki relies on the
+       content-service manifest instead). => FIX could be a CHEAP, anti-cheat-SAFE
+       `-ini:` override adding PrimaryAssetTypesToScan entries (same mechanism as
+       the backend redirects — CLAUDE.md confirms -ini: is not anti-cheat-touched).
+  (ii) LokiAssetManager OVERRIDES StartInitialLoading to NOT call the config scan
+       at all. => config won't help; needs a native intervention.
+NOTE the prior native-shim tried CALLING ScanPrimaryAssetTypesFromConfig with
+"empty config arrays" and it __report_gsfailure'd — consistent with (i) (empty
+config) but tested in a forced off-thread context. The natural startup call may
+behave differently.
+
+UPDATE — LokiAssetManagerSettings is NOT the holder of PrimaryAssetTypesToScan.
+Read its CDO (Default__LokiAssetManagerSettings = 0x1C66CA5A680 this launch): it is
+a SMALL ~0x50-byte custom UDeveloperSettings (UObject header 0x30 + ~0x20 data;
++0x30 is 16 zero bytes, then the next CDO begins at +0x50). Too small to be the
+engine UAssetManagerSettings (which has ~10 array/bool props). So PrimaryAssetTypes
+ToScan lives on the ENGINE class Default__AssetManagerSettings
+([/Script/Engine.AssetManagerSettings]), not this Loki class. Re-target the read
+there (find its CDO via its name id; get the property offset by walking the live
+UClass ChildProperties chain at UClass+0x58 — each FProperty carries NamePrivate
+@+0x20 and Offset_Internal — OR from `usmapdump extract`). LokiAssetManagerSettings
+likely holds the manifest/asset-manager-class config instead.
+
+*** RESULT (read this launch) — the config is POPULATED, so the cheap -ini: path
+is MOOT; the scan is CONFIGURED but not producing a populated manager map => native
+case (ii). ***
+Read engine Default__AssetManagerSettings CDO = 0x1C66C89DEF0 (name id 0x65F84F).
+Arrays in the config-property region:
+  +0x30: EMPTY TArray {null,0,0}   (a property before/around PrimaryAssetTypesToScan)
+  +0x40: TArray {Data=0x1C672124450, Num=32, Max=32}  <-- PrimaryAssetTypesToScan
+  +0x50: TArray {Data=0x1C6E1B706C0, Num=2, Max=2}     (e.g. MetaDataTags: "/Game/Loki")
+The +0x40 elements are FPrimaryAssetTypeInfo-shaped: element0 = FName type (id 0x2FF)
++ soft-class ptr + a nested Directories TArray {Num=1,Max=4}. => PrimaryAssetTypesTo
+Scan is POPULATED with 32 types. The config is NOT empty.
+CONSEQUENCE: a -ini: PrimaryAssetTypesToScan override is MOOT (already 32 types). The
+game is CONFIGURED to scan 32 primary-asset types at startup, yet the live manager's
+type map comes up empty (step-4 ChangeBundleState "failed to find NameData"). => The
+standard config scan is NOT effectively registering into the live manager — i.e.
+LokiAssetManager bypasses/short-circuits ScanPrimaryAssetTypesFromConfig (native
+case ii). A fix must force/restore that scan. usmapdump poke (WPM) works non-elevated
+so a native intervention needs no injection — BUT the prior native-shim CALLED
+ScanPrimaryAssetTypesFromConfig and it __report_gsfailure'd (CLAUDE.md do-not), so
+"just call the scan" is fraught; the real target is WHY LokiAssetManager skips it.
+
+TRULY DECISIVE NEXT READ (confirms case ii precisely):
+1. Find the LokiAssetManager INSTANCE (not CDO): findptr <LokiAssetManager UClass>
+   -> hits at instance+0x18; the non-CDO hit is the singleton.
+2. Read the instance's live primary-asset TYPE MAP (native member; get its offset by
+   RE'ing UAssetManager layout / diffing a stock UE5.4 UAssetManager). Count entries:
+   0 => scan fully bypassed; ~32 => scan ran (grid-empty is a DIFFERENT issue, e.g.
+   the UI wants manifest-only hero SKUs not among the 32); ~11 => only manifest types.
+3. Resolve the 32 configured type FNames (element[i].PrimaryAssetType, stride ~0x70)
+   and check whether Hero/Mission/StoreOffer are among them — tells us if the grid's
+   types are even in the scan set.
+
+(Superseded) earlier hypothesis — read PrimaryAssetTypesToScan to see if empty:
+   - Get the property's byte offset from `usmapdump extract` -> mappings.usmap ->
+     tools/extractor schema for LokiAssetManagerSettings (or UAssetManagerSettings).
+   - peek CDO+<offset>: read TArray {Data ptr, Num i32, Max i32}. Num>0 => config
+     IS populated (=> case ii, code bypasses scan) ; Num==0 => config empty
+     (=> case i, try the -ini: override).
+3. If case (i): relaunch with -ini: [/Script/Loki.LokiAssetManagerSettings]
+   (or [/Script/Engine.AssetManagerSettings]) +PrimaryAssetTypesToScan=(...) for
+   Hero/Mission/StoreOffer/etc. (class names + dirs in docs/trackb-assetregistry-
+   route.md + r2-findings.md) and watch whether the "Invalid Primary Asset"
+   warnings clear and the grid populates. Cheap, safe, reversible.
+
+STATE
+- Normal client left RUNNING at the menu (PID 70960; addresses above are its ASLR).
+- usmapdump confirmed read+write capable non-elevated (poke = WPM) — a native
+  runtime intervention (case ii) is feasible without injection if it comes to that.
+- No process modified, no files deployed. Read-only recon.

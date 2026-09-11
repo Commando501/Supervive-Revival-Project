@@ -1,0 +1,206 @@
+// ============================================================================
+//  MODULE   Barracuda.Components.BarracudaLaneComponent
+//  SOURCE   Barracuda/Components/BarracudaLaneComponent.as
+//  CONTENT  2 class(es), 20 function(s), 0 enum(s), 1 global(s), 996 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+event FOnLaneIndexUpdated;
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaLaneComponent;
+
+UBarracudaLaneComponent@ UBarracudaLaneComponent()   // traits=0x20
+{
+    UBarracudaLaneComponent v2;
+
+    v2 = UBarracudaLaneComponent();
+    return v2;
+}
+
+UClass@ UBarracudaLaneComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaLaneComponent);
+    return v2;
+}
+
+UBarracudaLaneComponent@ UBarracudaLaneComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaLaneComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaLaneComponent, v2, typeid(UBarracudaLaneComponent@), WithName);
+    return v2;
+}
+
+UBarracudaLaneComponent@ UBarracudaLaneComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaLaneComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaLaneComponent, v2, typeid(UBarracudaLaneComponent@), WithName);
+    return v2;
+}
+
+UBarracudaLaneComponent@ UBarracudaLaneComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaLaneComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaLaneComponent, v2, typeid(UBarracudaLaneComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaLaneComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaLaneComponent
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    int LaneIndex;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FOnLaneIndexUpdated OnLaneIndexUpdated;
+
+    UBarracudaLaneComponent()   // traits=0x21
+    {
+        this.OnLaneIndexUpdated.FOnLaneIndexUpdated();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    bool HasLaneIndex()   // traits=0x20
+    {
+        auto v1;
+        auto v3;
+
+        v1 = this.LaneIndex;
+        v3 = v1 != -1;
+        return v3;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    void SetLaneIndex(const int NewValue)   // traits=0x20
+    {
+        auto v1;
+        int v3;
+
+        v1 = this.LaneIndex;
+        if (v1 != NewValue) {
+            v1 = this.LaneIndex;
+            v3 = v1;
+            this.LaneIndex = NewValue;
+            this.OnLaneIndexUpdated.Broadcast(this, v3, NewValue);
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        auto v1;
+        bool v2;
+
+        v1 = -1;
+        this.LaneIndex = v1;
+        v2 = false;
+        this.SetbReplicates(v2);
+        v2 = true;
+        this.SetbExcludeFromClient(v2);
+        return;
+    }
+
+    void ~UBarracudaLaneComponent()   // traits=0x22
+    {
+        this.OnLaneIndexUpdated.~FOnLaneIndexUpdated();
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+class FOnLaneIndexUpdated
+{
+    _FMulticastScriptDelegate _Inner;
+
+    FOnLaneIndexUpdated()   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        return;
+    }
+
+    FOnLaneIndexUpdated(const FOnLaneIndexUpdated& Other)   // traits=0x42021
+    {
+        this._Inner = _FMulticastScriptDelegate();
+        this = Other;
+        return;
+    }
+
+    FOnLaneIndexUpdated& opAssign(const FOnLaneIndexUpdated& Other)   // traits=0x40020
+    {
+        this._Inner = Other._Inner;
+        return this._Inner;
+    }
+
+    void Broadcast(UBarracudaLaneComponent@ LaneComponent, const int OldIndex, const int NewIndex) const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            __Evt_PushArgument(LaneComponent, typeid(UBarracudaLaneComponent@));
+            __Evt_PushArgument__int32(OldIndex);
+            __Evt_PushArgument__int32(NewIndex);
+            __Evt_ExecuteDelegate(this._Inner);
+        }
+        return;
+    }
+
+    void AddUFunction(const UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        UDelegateFunction v2;
+
+        v2 = __DelegateSignature(this, typeid(FOnLaneIndexUpdated));
+        this._Inner.AddUFunction(Object, FunctionName, v2);
+        return;
+    }
+
+    void Unbind(UObject@ Object, const FName& FunctionName)   // traits=0x40020
+    {
+        this._Inner.Unbind(Object, FunctionName);
+        return;
+    }
+
+    void UnbindObject(UObject@ Object)   // traits=0x40020
+    {
+        this._Inner.UnbindObject(Object);
+        return;
+    }
+
+    bool IsBound() const   // traits=0x40024
+    {
+        auto v1;
+
+        v1 = this._Inner.IsBound();
+        return v1;
+    }
+
+    void Clear()   // traits=0x40020
+    {
+        this._Inner.Clear();
+        return;
+    }
+
+    void ~FOnLaneIndexUpdated()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

@@ -1,0 +1,147 @@
+found 133 live instances of class ~'ClientConfigVisbilityToggleWidget'
+resolved UClass @0x1CF2D459710 = WBP_UI_ClientConfigVisbilityToggleWidget_C  (via instance, NOT via a name lookup)
+
+  prop featurekey             +0x0450 StrProperty
+  prop configkey              +0x0460 StrProperty
+  prop isenabledbydefault     +0x0470 BoolProperty  bool(fieldSize=1 byteOff=0 byteMask=0x01 fieldMask=0xFF)
+  prop is content enabled     +0x0473 BoolProperty  bool(fieldSize=1 byteOff=0 byteMask=0x01 fieldMask=0xFF)
+  prop enabledvisibility      +0x0471 EnumProperty
+  prop disabledvisibility     +0x0472 EnumProperty
+
+FeatureKey                         instance                                       dflt  ENABLED ConfigKey  verdict
+---------------------------------------------------------------------------------------------------------------------------------------
+                                   ArmoryWithProgressionHelper                    False False   enabled    GATE OFF
+                                   ArmoryWithProgressionHelper                    False False   enabled    GATE OFF
+                                   Default__WBP_UI_ClientConfigVisbilityToggleWid False False   enabled    GATE OFF
+Airships                           WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+Airships                           WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+ArmoryItemProgression              ArmoryNoProgression                            False False   enabled    GATE OFF
+ArmoryItemProgression              ArmoryProgressionToggle                        False False   enabled    GATE OFF
+ArmoryItemProgression              ArmoryWithProgressionNav                       False False   enabled    GATE OFF
+ArmoryItemProgression              ArmoryWithProgressionNav                       False True    enabled    *** SERVED VALUE READ ***
+ArmoryItemProgression              PrismaShopToggle                               False False   enabled    GATE OFF
+ArmoryItemProgression              ArmoryForgeToggle                              False False   enabled    GATE OFF
+ArmoryItemProgression              ArmoryForgeToggle                              False True    enabled    *** SERVED VALUE READ ***
+ArmoryItemProgression              ArmoryHJUnlock                                 False False   enabled    GATE OFF
+ArmoryItemProgression              ArmoryHeader                                   False False   enabled    GATE OFF
+ArmoryItemProgression              ArmoryHeader                                   False True    enabled    *** SERVED VALUE READ ***
+ArmoryItemProgression              ArmoryHeaderWithProgression                    False False   enabled    GATE OFF
+ArmoryItemProgression              ArmoryHeaderWithProgression                    False True    enabled    *** SERVED VALUE READ ***
+ChatDropPhase                      ClientConfigToggle_ChatContainer               True  False   enabled    GATE OFF
+ChatLobby                          ClientConfigToggle_ChatContainer               True  False   enabled    GATE OFF
+ChatLobby                          ClientConfigToggle_ChatContainer               True  True    enabled    on by default (uninformative)
+ChatLobbyV2                        ClientConfigToggle_ChatContainerV2             True  False   enabled    GATE OFF
+ChatLobbyV2                        ClientConfigToggle_ChatContainerV2             True  True    enabled    on by default (uninformative)
+chuseokboostui                     WBP_UI_ClientConfigVisbilityToggleWidget       False False   enabled    GATE OFF
+chuseokboostui                     WBP_UI_ClientConfigVisbilityToggleWidget       False False   enabled    GATE OFF
+CosmeticEffectsOverride            WBP_UI_ClientConfigVisbilityToggleWidget       False False   enabled    GATE OFF
+CosmeticEffectsOverride            WBP_UI_ClientConfigVisbilityToggleWidget       False True    enabled    *** SERVED VALUE READ ***
+CosmeticEffectsOverride            WBP_UI_ClientConfigVisbilityToggleWidget       False True    enabled    *** SERVED VALUE READ ***
+CustomGameList                     ClientCustomGameListToggleOff                  True  False   enabled    GATE OFF
+CustomGameList                     ClientCustomGameListToggleOn                   True  False   enabled    GATE OFF
+DebugBattlepass                    WBP_UI_ClientConfigVisbilityToggleWidget       False False   enabled    GATE OFF
+DebugBattlepass                    WBP_UI_ClientConfigVisbilityToggleWidget       False True    enabled    *** SERVED VALUE READ ***
+DebugNav                           WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+DebugNav                           WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+discord                            WBP_UI_ClientConfigVisbilityToggleWidget       False False   enabled    GATE OFF
+discord                            WBP_UI_ClientConfigVisbilityToggleWidget       False False   enabled    GATE OFF
+discord                            WBP_UI_ClientConfigVisbilityToggleWidget       False False   enabled    GATE OFF
+discord                            WBP_UI_ClientConfigVisbilityToggleWidget       False True    enabled    *** SERVED VALUE READ ***
+discord                            WBP_UI_ClientConfigVisbilityToggleWidget       False True    enabled    *** SERVED VALUE READ ***
+DiscordButton                      ClientConfigVisbility_Discord                  True  False   enabled    GATE OFF
+DiscordButton                      ClientConfigVisbility_Discord                  True  True    enabled    on by default (uninformative)
+dropin                             WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+dropin                             WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+dropin                             WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+dropin                             WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+DropScreenTitles                   CallSignVisibilityToggle                       False False   enabled    GATE OFF
+EmoteSFX                           WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+EmoteSFX                           WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+EmoteWheelCheer                    WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+EventHub                           WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+EventHub                           WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+exchangetokens                     StorageConfigToggle                            False False   enabled    GATE OFF
+exchangetokens                     StorageConfigToggle                            False True    enabled    *** SERVED VALUE READ ***
+GameVersion                        WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+GameVersion                        WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+GameVersion                        WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+GameVersion                        WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+Hudbar5toggle                      WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+Hudbar5toggle                      WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+KeybindCheats                      WBP_UI_ClientConfigVisbilityToggleWidget_Barra True  False   enabled    GATE OFF
+KeybindCheats                      WBP_UI_ClientConfigVisbilityToggleWidget_Barra True  True    enabled    on by default (uninformative)
+KeybindCheats                      WBP_UI_ClientConfigVisbilityToggleWidget_Cheat True  False   enabled    GATE OFF
+KeybindCheats                      WBP_UI_ClientConfigVisbilityToggleWidget_Cheat True  True    enabled    on by default (uninformative)
+KeybindCheats                      WBP_UI_ClientConfigVisbilityToggleWidget_MenuA True  False   enabled    GATE OFF
+KeybindCheats                      WBP_UI_ClientConfigVisbilityToggleWidget_MenuA True  True    enabled    on by default (uninformative)
+LanguageChange                     WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+LanguageChange                     WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+leaderboards                       LeaderboardScreen_ConfigToggle                 False False   enabled    GATE OFF
+leaderboards                       LeaderboardScreen_ConfigToggle                 False True    enabled    *** SERVED VALUE READ ***
+leaderboards                       NavLeaderboard_ConfigToggle                    False False   enabled    GATE OFF
+leaderboards                       NavLeaderboard_ConfigToggle                    False True    enabled    *** SERVED VALUE READ ***
+lobby_survey_menu                  ClientConfigVisibility_Survey                  False False   enabled    GATE OFF
+lobby_survey_menu                  ClientConfigVisibility_Survey                  False False   enabled    GATE OFF
+mailbox                            WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+mailbox                            WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+mastery                            Mastery_ConfigToggle                           True  False   enabled    GATE OFF
+mastery                            Mastery_ConfigToggle                           True  True    enabled    on by default (uninformative)
+mastery                            WBP_UI_ClientConfigVisbilityToggleWidget       False False   enabled    GATE OFF
+mastery                            WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+mastery                            WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+mastery                            WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+MetaCurrenciesTopUp                WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+MetaCurrenciesTopUp                WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+NeHighlightMoments                 HighlightMoments_ClientConfigVisbilityToggleWi True  False   enabled    GATE OFF
+NeHighlightMoments                 HighlightMoments_ClientConfigVisbilityToggleWi True  True    enabled    on by default (uninformative)
+NeHighlightMoments                 WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+NeHighlightMoments                 WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+NeLobbyEventBtn                    WBP_UI_ClientConfigVisbilityToggleWidget       False False   enabled    GATE OFF
+NeLobbyEventBtn                    WBP_UI_ClientConfigVisbilityToggleWidget       False True    enabled    *** SERVED VALUE READ ***
+NeMenuDialogOptions                WBP_UI_ClientConfigVisbility_NE_Options        True  False   enabled    GATE OFF
+NeMenuDialogOptions                WBP_UI_ClientConfigVisbility_NE_Options        True  True    enabled    on by default (uninformative)
+NeMinorProtection                  WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+NeMinorProtection                  WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+OBSButton                          ClientConfigVisbility_OBS                      True  False   enabled    GATE OFF
+OBSButton                          ClientConfigVisbility_OBS                      True  True    enabled    on by default (uninformative)
+party.fill                         WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+party.fill                         WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+party.fill                         WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+PartyInviteButton                  ClientConfigVisbilityToggle_InviteToParty      True  False   enabled    GATE OFF
+PlayerArmoryV2                     CategoryButton_ArmoryMissionTestConfig         True  False   enabled    GATE OFF
+PlayerArmoryV2                     MissionModalCategory_ArmoryMissionTestConfig   True  False   enabled    GATE OFF
+prisma_boost                       ClientConfigVisibilityToggle_PrismaBoost       False False   enabled    GATE OFF
+prisma_boost                       ClientConfigVisibilityToggle_PrismaBoost       False False   enabled    GATE OFF
+RankedDisplay                      WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+RankedDisplay                      WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+RankedDisplay                      WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+RankedDisplay                      WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+RankedDisplay                      WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+RankedDisplay                      WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+RankedDisplay                      WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+RankedDisplay                      WBP_UI_ClientConfigVisbilityToggleWidget       True  True    enabled    on by default (uninformative)
+redeemcode                         RedeemConfigToggle                             True  False   enabled    GATE OFF
+redeemcode                         RedeemConfigToggle                             True  True    enabled    on by default (uninformative)
+ReferAFriend                       ReferAFriend_ConfigToggle_V2                   True  False   enabled    GATE OFF
+ReferAFriend                       ReferAFriend_ConfigToggle_V2                   True  True    enabled    on by default (uninformative)
+ReferAFriend                       WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+ReportPlayerContextMenu            ClientConfigToggle_ReportPlayer                True  False   enabled    GATE OFF
+SeasonalBattlepass                 Battlepass_ConfigToggle                        False False   enabled    GATE OFF
+SeasonalBattlepass                 Battlepass_ConfigToggle                        False False   enabled    GATE OFF
+SeasonalBattlepass                 Battlepass_ConfigToggle_V2                     False False   enabled    GATE OFF
+SeasonalBattlepass                 Battlepass_ConfigToggle_V2                     False False   enabled    GATE OFF
+SeasonalBattlepass                 ClientConfigVisibilityToggle_CatchupXP         False False   enabled    GATE OFF
+SeasonalBattlepass                 ClientConfigVisibilityToggle_CatchupXP         False False   enabled    GATE OFF
+SeasonalBattlepass                 WBP_UI_ClientConfigVisbilityToggleWidget_BP    False False   enabled    GATE OFF
+SeasonalBattlepass                 WBP_UI_ClientConfigVisbilityToggleWidget_BP    False False   enabled    GATE OFF
+ServerSelectCheckbox               WBP_UI_ClientConfigVisbilityToggleWidget       True  False   enabled    GATE OFF
+ServerSelectNetworkAcceleration    WBP_UI_ClientConfigVisbilityToggleWidget       False False   enabled    GATE OFF
+ServerSelectRegionRoutes           WBP_UI_ClientConfigVisbilityToggleWidget       False False   enabled    GATE OFF
+storefrontcheats                   WBP_UI_ClientConfigVisbilityToggleWidget       False False   enabled    GATE OFF
+storefrontcheats                   WBP_UI_ClientConfigVisbilityToggleWidget       False True    enabled    *** SERVED VALUE READ ***
+supporterpacks                     PacksConfigToggle                              True  False   enabled    GATE OFF
+supporterpacks                     PacksConfigToggle                              True  True    enabled    on by default (uninformative)
+XPBoosts                           ClientConfigVisbilityToggle_XPBoosts           True  False   enabled    GATE OFF
+XPBoosts                           ClientConfigVisbilityToggle_XPBoosts           True  True    enabled    on by default (uninformative)
+
+summary: total=133  served-value-read=14  gate-off=85  on-by-default=34

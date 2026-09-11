@@ -1,0 +1,21 @@
+# Heap addresses captured during 2026-06-29 session (PID 26892)
+# These are invalidated on game restart — kept here for reference only.
+
+LokiAssetManager singleton: 0x16AF849E8C0
+UMissionsModel #1 (empty, owned by UEndOfGameModel):  0x16B77E50100
+UMissionsModel #2 (3 TArrays at +0x120..+0x14F):       0x16B7C654A80
+UMissionsModel CDO:                                     0x16AC8BFA600
+UProgressionManager live instance:                      0x16AC4957A20
+LokiPlayerState_Missions CDO:                           0x16AC8BD2250
+
+WBP_UI_MissionModal_C_2147458383 (live modal):          0x16B8E267480
+Default__WBP_UI_MissionModal_C (modal CDO):             0x16B987CE2F0
+DynamicMissionPools data (36 SeasonalArmory entries):  0x16BF4C95080 (live) / 0x16B6552E080 (CDO)
+
+GetActiveMissionModel native Func:                       0x7FF664B75A20
+GetClaimableMissionModel:                                sibling, +0xF0
+Inner impl (called by both):                             0x7FF664DB5E30
+TArray-filling helper:                                   0x7FF664DBA410
+
+Module base (stable per launch):                         0x7FF65F6D0000
+

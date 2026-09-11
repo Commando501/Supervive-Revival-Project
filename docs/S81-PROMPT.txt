@@ -1,0 +1,62 @@
+Continue the SUPERVIVE revival project — session 81 (dedicated-server-stub branch).
+
+READ FIRST, IN THIS ORDER:
+  1. docs/next-session-prompt-s81.md   <- the full handoff. Everything below is a summary of it.
+  2. Memory: supervive-dedicated-server-status  (S80 sections at the bottom)
+  3. Memory: supervive-never-bank-directive     (working style: push, don't bank; question your own tools)
+
+WHERE WE ARE
+S80 root-caused and FIXED the hero-movement wall: a NULL GAS attribute set made
+LokiCharacterMovementComponent::GetMaxSpeed() return 0, so CalcVelocity clamped Velocity to zero every
+tick (gravity still worked because PhysFalling is outside that clamp). Fix = borrow the
+Default__LokiPlayerState_HeroAffiliated CDO's ASC/AttributeSet into the hero's storages (@+0xF00/+0xF08/
++0xF10) and write the movement attribute block; GetMaxSpeed went 0 -> 500 and THE HERO PHYSICALLY MOVED
+(velocity 500) in a genuinely live tutorial session. That is implemented as MODE_PLAYABLE(36) in
+tools/sigbypass-mod/ds_hybrid.cpp, which also polls real WASD per-frame (the user's keypresses DO reach
+AddMovementInput — 720 inputs fed).
+
+THE BLOCKER (do this before anything else)
+The client DISCONNECTS from the DS stub ~2 minutes after every join, and S80 discovered this only at the
+very end — which means most of S80's later "null results" were measured in a MAIN-MENU session, not the
+tutorial. Signature: "UNetConnection::Tick: Connection TIMED OUT ... Elapsed: 0.00, Real: 19.99" = a ~20s
+CLIENT-side game-thread stall -> ControlChannelClose -> LVL_Login?closed -> lobby.
+
+  ★ FIRST TASK (cheap, decisive, ~6 min, no code): fresh stub + client, join, then INJECT NOTHING and
+    watch ~5 minutes.
+      - stays connected => S80's injections caused the stall (every ds_hybrid mode does multiple ~175k
+        ForEachObject sweeps ON THE GAME THREAD, and S80 injected constantly). Fix: discovery off-thread,
+        cache handles at setup.
+      - drops anyway    => the DS route itself cannot hold a connection; THAT is the real wall and
+        everything downstream (hero/drop/WASD) is unreachable until it is fixed.
+
+THE TRAP THAT BURNED S80 — DO NOT REPEAT
+The "BRALL / DROP LEADER / EMOTE WHEEL" screen is the MAIN MENU (proven: LocalPlayer->PC = PC_MainMenu_C,
+PC->Pawn = BP_HERO_Ronin_C, GameState = BP_MainMenuGameState_C, World = LVL_LobbyV2_Persistent). SUPERVIVE
+poses your hunter there, so it LOOKS like a pre-drop screen. Seeing it means YOU ARE DISCONNECTED.
+Before believing ANY live result, assert: PC == LokiPlayerController (native), World == LVL_Tutorial,
+a live LokiGameState exists.
+
+HARD-WON "NEVER DO THIS" (each is live-refuted; details in the handoff doc)
+  * Never null the native PC's Player@+0x458 — it owns the NetConnection (killed a 23-hour session).
+  * Never walk CurrentPhase 4->5->6->7 — the loading screen then NEVER clears (verified with NO shim).
+    The loading dismiss is phase-gated to EGP_SpawnSelect(4) specifically. REVERTED in the stub.
+  * Never do file I/O or full-object walks on the GAME THREAD (caused the 20s stall AND visible lag).
+  * Never trust an N/N count when N == a cap ("48/48 widgets collapsed" was a 48-slot array being full).
+  * Never spawn LokiPlayerState_HeroAffiliated — it crashes the client instantly. Use its CDO's subobjects.
+
+USE THE READ-ONLY TOOLS BEFORE THEORISING (all no-injection, seconds each):
+  tools/re/comp_census.py (state by reflection) | ufunc_survey.py (is it runnable?) |
+  script_dump.py + ubergraph_dump.py (what does the BP actually DO — always follow the entry's Jump) |
+  disasm_live.py (what does the native fn do) | find_func.py (who owns a UFunction) |
+  usmapdump nameid (FNamePool substring search)
+
+METHOD: S80 investigated 8 "walls" and ALL 8 were measurement/tool bugs — zero were the game. Read state
+by reflection, behaviour by disassembly, check runnability first, and verify the MEASUREMENT before
+believing any "X is missing". When a live observation (the user's screen) contradicts a memory read,
+BELIEVE THE OBSERVATION — it was right every single time in S80.
+
+NOTE ON DRIVING THE GAME: the user cannot navigate the UI once we force-load them into the DS session, so
+the agent must drive the whole cycle (kill/relaunch stub + client) itself. The client is launched by
+running the exe directly with the -ini overrides (NOT launch-redirect.ps1: it needs UAC and would start a
+second ags). Steam must be running first or login dies with Auth Failure 14005. Ask the user only for
+screen checks — that is the one instrument we don't have.

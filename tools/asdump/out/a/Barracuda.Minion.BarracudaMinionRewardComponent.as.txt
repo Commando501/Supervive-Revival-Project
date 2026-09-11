@@ -1,0 +1,393 @@
+==============================================================================
+MODULE   Barracuda.Minion.BarracudaMinionRewardComponent
+SOURCE   Barracuda/Minion/BarracudaMinionRewardComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+enum EBarracudaMinionGoldRewardMethod
+{
+    LastHitterOnly = 0,
+    SplitBetweenLastHitterTeam = 1,
+}
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaMinionRewardComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaMinionRewardComponent@ UBarracudaMinionRewardComponent()
+// 4 instr, 28 B bytecode, id=0xDA54F1EA, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionRewardComponent v2;
+
+    v2 = UBarracudaMinionRewardComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84289 q:0x26e6865d600; new UBarracudaMinionRewardComponent   ctor=UBarracudaMinionRewardComponent::UBarracudaMinionRewardComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x72B2C475, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaMinionRewardComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b5058         ; __StaticType_UBarracudaMinionRewardComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UBarracudaMinionRewardComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0xD081BFEE, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionRewardComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaMinionRewardComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972619            ; UBarracudaMinionRewardComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b5058         ; __StaticType_UBarracudaMinionRewardComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaMinionRewardComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x16DB64E4, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionRewardComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaMinionRewardComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972619            ; UBarracudaMinionRewardComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b5058         ; __StaticType_UBarracudaMinionRewardComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaMinionRewardComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x2003CC2D, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaMinionRewardComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaMinionRewardComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972619            ; UBarracudaMinionRewardComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b5058         ; __StaticType_UBarracudaMinionRewardComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS(meta=(IsBlueprintBase=true, Blueprintable=true))
+class UBarracudaMinionRewardComponent : UActorComponent
+// base /Script/Engine.ActorComponent  ->  ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults) EBarracudaMinionGoldRewardMethod GoldRewardMethod;
+    UPROPERTY(BlueprintReadable) bool bGrantLoot;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) int LastHitGoldBonus;
+
+}
+
+------------------------------------------------------------------------------
+UBarracudaMinionRewardComponent() const
+// 3 instr, 20 B bytecode, id=0xAE21AF61, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  FinConstruct   q:0x26e6865d600         ; UBarracudaMinionRewardComponent
+    //     4  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void DisableAllRewards()
+// 4 instr, 24 B bytecode, id=0x7BCAEEF7, varspace=1
+------------------------------------------------------------------------------
+{
+    this.bGrantLoot = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  LoadThisR      W0:209 d:134230795      ; UBarracudaMinionRewardComponent::bGrantLoot  (+209)
+    //     4  WRTV1          rW0:1
+    //     5  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+int GetGoldBounty(AController@ KillerController)
+// 36 instr, 232 B bytecode, id=0xF9C8215A, varspace=17
+------------------------------------------------------------------------------
+{
+    ALokiMinionCharacter v2;
+    AActor v4;
+    ALokiMinionCharacter v6;
+    FMinionRewards v14;
+    auto v15;
+
+    v4 = this.GetOwner();
+    if (v4 == null) {
+        v6 = null;
+    } else {
+        v6 = cast<ALokiMinionCharacter>(v4);
+    }
+    v2 = v6;
+    if (v6 == null) {
+        v15 = 0;
+    } else {
+        v14 = FMinionRewards();
+        v2.GetRewardsForLevel(Math::RoundToInt(v2.GetLevel()), v14);
+        v15 = v14.Gold;
+    }
+    return v15;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857087            ; ALokiMinionCharacter@
+    //    10  PSF            rW0:6
+    //    11  PshVPtr        rW0:4
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:6
+    //    18  PshVPtr        rW0:6
+    //    19  RefCpyV        wW0:2
+    //    20  CmpPtrNull     rW0:2
+    //    21  JZ             ->54
+    //    23  PSF            rW0:14
+    //    24  CALLSYS        q:0x26e7948e240         ; void FMinionRewards::$beh0()
+    //    27  PshVPtr        rW0:2
+    //    28  CALLSYS        q:0x26e7a188e40         ; float ALokiCharacter::GetLevel() const
+    //    31  CpyRtoV4       wW0:16
+    //    32  PshV4          rW0:16
+    //    33  CALLSYS        q:0x26e70358900         ; int Math::RoundToInt(float)
+    //    36  CpyRtoV4       wW0:17
+    //    37  PSF            rW0:14
+    //    38  PshV4          rW0:17
+    //    39  PshVPtr        rW0:2
+    //    40  CALLSYS        q:0x26e7a31a6c0         ; void ALokiMinionCharacter::GetRewardsForLevel(int, FMinionRewards&) const
+    //    43  LoadVObjR      rW0:14 W1:4 DW2:67121161; FMinionRewards::Gold  (+4)
+    //    46  RDR4           wW0:15
+    //    47  PSF            rW0:14
+    //    48  CALLSYS        q:0x26e7948e080         ; void FMinionRewards::$beh2()
+    //    51  CpyVtoR4       rW0:15
+    //    52  JMP            ->57
+    //    54  SetV4          wW0:15 d:0
+    //    56  CpyVtoR4       rW0:15
+    //    57  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+int GetXPBounty(AController@ KillerController)
+// 36 instr, 232 B bytecode, id=0x83F7D0DE, varspace=16
+------------------------------------------------------------------------------
+{
+    ALokiMinionCharacter v2;
+    AActor v4;
+    ALokiMinionCharacter v6;
+    FMinionRewards v14;
+    int v16;
+
+    v4 = this.GetOwner();
+    if (v4 == null) {
+        v6 = null;
+    } else {
+        v6 = cast<ALokiMinionCharacter>(v4);
+    }
+    v2 = v6;
+    if (v6 == null) {
+        v16 = 0;
+    } else {
+        v14 = FMinionRewards();
+        v16 = Math::RoundToInt(v2.GetLevel());
+        v2.GetRewardsForLevel(v16, v14);
+        v16 = v14.XP;
+    }
+    return v16;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857087            ; ALokiMinionCharacter@
+    //    10  PSF            rW0:6
+    //    11  PshVPtr        rW0:4
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:6
+    //    18  PshVPtr        rW0:6
+    //    19  RefCpyV        wW0:2
+    //    20  CmpPtrNull     rW0:2
+    //    21  JZ             ->54
+    //    23  PSF            rW0:14
+    //    24  CALLSYS        q:0x26e7948e240         ; void FMinionRewards::$beh0()
+    //    27  PSF            rW0:14
+    //    28  PshVPtr        rW0:2
+    //    29  CALLSYS        q:0x26e7a188e40         ; float ALokiCharacter::GetLevel() const
+    //    32  CpyRtoV4       wW0:15
+    //    33  PshV4          rW0:15
+    //    34  CALLSYS        q:0x26e70358900         ; int Math::RoundToInt(float)
+    //    37  CpyRtoV4       wW0:16
+    //    38  PshV4          rW0:16
+    //    39  PshVPtr        rW0:2
+    //    40  CALLSYS        q:0x26e7a31a6c0         ; void ALokiMinionCharacter::GetRewardsForLevel(int, FMinionRewards&) const
+    //    43  LoadVObjR      rW0:14 W1:0 DW2:67121161; FMinionRewards::XP  (+0)
+    //    46  RDR4           wW0:16
+    //    47  PSF            rW0:14
+    //    48  CALLSYS        q:0x26e7948e080         ; void FMinionRewards::$beh2()
+    //    51  CpyVtoR4       rW0:16
+    //    52  JMP            ->57
+    //    54  SetV4          wW0:16 d:0
+    //    56  CpyVtoR4       rW0:16
+    //    57  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+int GetLastHitGoldBounty(AController@ KillerController)
+// 36 instr, 232 B bytecode, id=0x454163B0, varspace=16
+------------------------------------------------------------------------------
+{
+    ALokiMinionCharacter v2;
+    AActor v4;
+    ALokiMinionCharacter v6;
+    FMinionRewards v14;
+    int v16;
+
+    v4 = this.GetOwner();
+    if (v4 == null) {
+        v6 = null;
+    } else {
+        v6 = cast<ALokiMinionCharacter>(v4);
+    }
+    v2 = v6;
+    if (v6 == null) {
+        v16 = 0;
+    } else {
+        v14 = FMinionRewards();
+        v16 = Math::RoundToInt(v2.GetLevel());
+        v2.GetRewardsForLevel(v16, v14);
+        v16 = v14.Gold;
+    }
+    return v16;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:4
+    //     5  CmpPtrNull     rW0:4
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857087            ; ALokiMinionCharacter@
+    //    10  PSF            rW0:6
+    //    11  PshVPtr        rW0:4
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:6
+    //    18  PshVPtr        rW0:6
+    //    19  RefCpyV        wW0:2
+    //    20  CmpPtrNull     rW0:2
+    //    21  JZ             ->54
+    //    23  PSF            rW0:14
+    //    24  CALLSYS        q:0x26e7948e240         ; void FMinionRewards::$beh0()
+    //    27  PSF            rW0:14
+    //    28  PshVPtr        rW0:2
+    //    29  CALLSYS        q:0x26e7a188e40         ; float ALokiCharacter::GetLevel() const
+    //    32  CpyRtoV4       wW0:15
+    //    33  PshV4          rW0:15
+    //    34  CALLSYS        q:0x26e70358900         ; int Math::RoundToInt(float)
+    //    37  CpyRtoV4       wW0:16
+    //    38  PshV4          rW0:16
+    //    39  PshVPtr        rW0:2
+    //    40  CALLSYS        q:0x26e7a31a6c0         ; void ALokiMinionCharacter::GetRewardsForLevel(int, FMinionRewards&) const
+    //    43  LoadVObjR      rW0:14 W1:4 DW2:67121161; FMinionRewards::Gold  (+4)
+    //    46  RDR4           wW0:16
+    //    47  PSF            rW0:14
+    //    48  CALLSYS        q:0x26e7948e080         ; void FMinionRewards::$beh2()
+    //    51  CpyVtoR4       rW0:16
+    //    52  JMP            ->57
+    //    54  SetV4          wW0:16 d:0
+    //    56  CpyVtoR4       rW0:16
+    //    57  RET            W0:4
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 10 instr, 64 B bytecode, id=0x51E4AB95, varspace=3
+------------------------------------------------------------------------------
+{
+    this.bGrantLoot = true;
+    this.LastHitGoldBonus = 0;
+    this.GoldRewardMethod = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  LoadThisR      W0:209 d:134230795      ; UBarracudaMinionRewardComponent::bGrantLoot  (+209)
+    //     4  WRTV1          rW0:1
+    //     5  SetV4          wW0:2 d:0
+    //     7  LoadThisR      W0:212 d:134230795      ; UBarracudaMinionRewardComponent::LastHitGoldBonus  (+212)
+    //     9  WRTV4          rW0:2
+    //    10  SetV1          wW0:3 d:0
+    //    12  LoadThisR      W0:208 d:134230795      ; UBarracudaMinionRewardComponent::GoldRewardMethod  (+208)
+    //    14  WRTV1          rW0:3
+    //    15  RET            W0:2
+

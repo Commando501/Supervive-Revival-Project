@@ -1,0 +1,1855 @@
+==============================================================================
+MODULE   Barracuda.Shop.BarracudaShop
+SOURCE   Barracuda/Shop/BarracudaShop.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+// statics class: Module_Barracuda_Shop_BarracudaShopStatics
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaShopItemGraphNode;
+const TSubclassOf<UObject@> __StaticType_ABarracudaShop;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+UBarracudaShopItemGraphNode@ UBarracudaShopItemGraphNode()
+// 4 instr, 28 B bytecode, id=0xD73633D4, varspace=2
+------------------------------------------------------------------------------
+{
+    UBarracudaShopItemGraphNode v2;
+
+    v2 = UBarracudaShopItemGraphNode();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84324 q:0x26e6865e200; new UBarracudaShopItemGraphNode   ctor=UBarracudaShopItemGraphNode::UBarracudaShopItemGraphNode
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+ABarracudaShop@ ABarracudaShop()
+// 4 instr, 28 B bytecode, id=0x5642E793, varspace=2
+------------------------------------------------------------------------------
+{
+    ABarracudaShop v2;
+
+    v2 = ABarracudaShop();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84348 q:0x26e6865e800; new ABarracudaShop   ctor=ABarracudaShop::ABarracudaShop
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent, Static)
+ABarracudaShop@ GetBarracudaShop()
+// 13 instr, 68 B bytecode, id=0x99660A48, varspace=8
+------------------------------------------------------------------------------
+{
+    UBarracudaGameStateComponent v4;
+    ABarracudaShop v8;
+
+    v4 = GetBarracudaGameStateComponent();
+    if (v4 != null) {
+        v8 = v4.Shop;
+    } else {
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  CALL           d:84263                 ; UBarracudaGameStateComponent@ GetBarracudaGameStateComponent()
+    //     2  STOREOBJ       wW0:4
+    //     3  CmpPtrNull     rW0:4
+    //     4  JNZ            ->10
+    //     6  FreeNullV8     wW0:8
+    //     7  LOADOBJ        rW0:8
+    //     8  JMP            ->16
+    //    10  PshVPtr        rW0:4
+    //    11  ADDSi          W0:392 d:134230778      ; UBarracudaGameStateComponent::Shop  (+392)
+    //    13  RDSPtr
+    //    14  RefCpyV        wW0:8
+    //    15  LOADOBJ        rW0:8
+    //    16  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0x78984C55, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_UBarracudaShopItemGraphNode);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b5dd8         ; __StaticType_UBarracudaShopItemGraphNode
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xA228AFAD, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ABarracudaShop);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b5e58         ; __StaticType_ABarracudaShop
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ABarracudaShop@ Spawn(const FVector&inout Location = FVector::ZeroVector, const FRotator&inout Rotation = FRotator::ZeroRotator, const FName&inout Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)
+// 25 instr, 152 B bytecode, id=0x858AAB82, varspace=8
+------------------------------------------------------------------------------
+{
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ABarracudaShop v8;
+
+    v4 = TSubclassOf<AActor@>(__StaticType_ABarracudaShop.Get());
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 == null) {
+        v8 = null;
+    } else {
+        v8 = cast<ABarracudaShop>(v6);
+    }
+    return v8;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-7
+    //     1  PshV4          rW0:-6
+    //     2  PshVPtr        rW0:-4
+    //     3  PshVPtr        rW0:-2
+    //     4  PshVPtr        rW0:0
+    //     5  PshGPtr        q:0x26e6f1b5e58         ; __StaticType_ABarracudaShop
+    //     8  CHKREF
+    //     9  CALLSYS        q:0x26e6ee86b40         ; UClass@ TSubclassOf<UObject@>::Get() const
+    //    12  STOREOBJ       wW0:2
+    //    13  PshVPtr        rW0:2
+    //    14  PSF            rW0:4
+    //    15  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //    22  STOREOBJ       wW0:6
+    //    23  CmpPtrNull     rW0:6
+    //    24  JZ             ->35
+    //    26  TYPEID         d:1207972626            ; ABarracudaShop@
+    //    28  PSF            rW0:8
+    //    29  PshVPtr        rW0:6
+    //    30  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    33  JMP            ->36
+    //    35  ClrVPtr        wW0:8
+    //    36  LOADOBJ        rW0:8
+    //    37  RET            W0:9
+
+==============================================================================
+UCLASS()
+class UBarracudaShopItemGraphNode : UObject
+// base /Script/CoreUObject.Object  ->  ../../../Engine/Source/Runtime/CoreUObject/Public/UObject/NoExportTypes.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TSubclassOf<ALokiBaseItem@> Item;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) int RecipeCost;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) int TotalCost;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TArray<UBarracudaShopItemGraphNode@> Inputs;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TSet<UBarracudaShopItemGraphNode@> Outputs;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) bool bHasTotalCost;
+
+}
+
+------------------------------------------------------------------------------
+UBarracudaShopItemGraphNode() const
+// 21 instr, 152 B bytecode, id=0xFC498D53, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    this.Item = TSubclassOf<ALokiBaseItem@>();
+    this.Inputs = TArray<UBarracudaShopItemGraphNode@>();
+    this.Outputs = TSet<UBarracudaShopItemGraphNode@>();
+    v1 = 0;
+    this.RecipeCost = 0;
+    v1 = 0;
+    this.TotalCost = 0;
+    this.bHasTotalCost = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:48 d:134230800       ; UBarracudaShopItemGraphNode::Item  (+48)
+    //     3  CALLSYS        q:0x26e6ee891c0         ; void TSubclassOf<ALokiBaseItem@>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:64 d:134230800       ; UBarracudaShopItemGraphNode::Inputs  (+64)
+    //     9  CALLSYS        q:0x26e6ef00240         ; void TArray<UBarracudaShopItemGraphNode@>::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:80 d:134230800       ; UBarracudaShopItemGraphNode::Outputs  (+80)
+    //    15  CALLSYS        q:0x26e6ef00080         ; void TSet<UBarracudaShopItemGraphNode@>::$beh0()
+    //    18  SetV4          wW0:1 d:0
+    //    20  LoadThisR      W0:56 d:134230800       ; UBarracudaShopItemGraphNode::RecipeCost  (+56)
+    //    22  WRTV4          rW0:1
+    //    23  SetV4          wW0:1 d:0
+    //    25  LoadThisR      W0:60 d:134230800       ; UBarracudaShopItemGraphNode::TotalCost  (+60)
+    //    27  WRTV4          rW0:1
+    //    28  SetV1          wW0:2 d:0
+    //    30  LoadThisR      W0:160 d:134230800      ; UBarracudaShopItemGraphNode::bHasTotalCost  (+160)
+    //    32  WRTV1          rW0:2
+    //    33  PshVPtr        rW0:0
+    //    34  FinConstruct   q:0x26e6865e200         ; UBarracudaShopItemGraphNode
+    //    37  RET            W0:2
+
+------------------------------------------------------------------------------
+~UBarracudaShopItemGraphNode()
+// 7 instr, 52 B bytecode, id=0x8C5A7099, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:64 d:134230800       ; UBarracudaShopItemGraphNode::Inputs  (+64)
+    //     3  CALLSYS        q:0x26e7b1aa180         ; void TArray<UBarracudaShopItemGraphNode@>::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:80 d:134230800       ; UBarracudaShopItemGraphNode::Outputs  (+80)
+    //     9  CALLSYS        q:0x26e7b1a9e00         ; void TSet<UBarracudaShopItemGraphNode@>::$beh2()
+    //    12  RET            W0:2
+
+==============================================================================
+UCLASS()
+class FBarracudaShopPurchasePlan
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) int Gold;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance) TSet<ALokiBaseItem@> ItemsToConsume;
+
+}
+
+------------------------------------------------------------------------------
+FBarracudaShopPurchasePlan() const
+// 7 instr, 48 B bytecode, id=0x72AA2ED6, varspace=1
+------------------------------------------------------------------------------
+{
+    this.ItemsToConsume = TSet<ALokiBaseItem@>();
+    this.Gold = 0;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:8 d:134230801        ; FBarracudaShopPurchasePlan::ItemsToConsume  (+8)
+    //     3  CALLSYS        q:0x26e6ef07240         ; void TSet<ALokiBaseItem@>::$beh0()
+    //     6  SetV4          wW0:1 d:0
+    //     8  LoadThisR      W0:0 d:134230801        ; FBarracudaShopPurchasePlan::Gold  (+0)
+    //    10  WRTV4          rW0:1
+    //    11  RET            W0:2
+
+------------------------------------------------------------------------------
+~FBarracudaShopPurchasePlan()
+// 4 instr, 28 B bytecode, id=0x0E439E78, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:8 d:134230801        ; FBarracudaShopPurchasePlan::ItemsToConsume  (+8)
+    //     3  CALLSYS        q:0x26e7a0ebbc0         ; void TSet<ALokiBaseItem@>::$beh2()
+    //     6  RET            W0:2
+
+==============================================================================
+UCLASS(meta=(IsBlueprintBase=true, Blueprintable=true))
+class ABarracudaShop : AActor
+// base /Script/Engine.Actor  ->  ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) float64 SellValueCoefficient;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) TArray<TSubclassOf<ULokiLootTableFull@>> ItemLootTables;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@> ItemGraphNodes;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) FString ClientNameFilterString;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) TArray<FGameplayTag> ClientTagFilters;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, Transient) TSubclassOf<ALokiBaseItem@> ClientCurrentFocus;
+    TArray<TSubclassOf<AActor@>> AllItems;
+    bool bDebugLogGraph;
+
+}
+
+------------------------------------------------------------------------------
+ABarracudaShop() const
+// 24 instr, 188 B bytecode, id=0xD4529214, varspace=2
+------------------------------------------------------------------------------
+{
+    this.ItemLootTables = TArray<TSubclassOf<ULokiLootTableFull@>>();
+    this.ItemGraphNodes = TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>();
+    this.ClientNameFilterString = FString();
+    this.ClientTagFilters = TArray<FGameplayTag>();
+    this.ClientCurrentFocus = TSubclassOf<ALokiBaseItem@>();
+    this.AllItems = TArray<TSubclassOf<AActor@>>();
+    this.SellValueCoefficient = 0.9;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:920 d:134230802      ; ABarracudaShop::ItemLootTables  (+920)
+    //     3  CALLSYS        q:0x26e6ef07cc0         ; void TArray<TSubclassOf<ULokiLootTableFull@>>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:936 d:134230802      ; ABarracudaShop::ItemGraphNodes  (+936)
+    //     9  CALLSYS        q:0x26e6ef07b00         ; void TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:1016 d:134230802     ; ABarracudaShop::ClientNameFilterString  (+1016)
+    //    15  CALLSYS        q:0x26e628a8c80         ; void FString::$beh0()
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:1032 d:134230802     ; ABarracudaShop::ClientTagFilters  (+1032)
+    //    21  CALLSYS        q:0x26e6ef07940         ; void TArray<FGameplayTag>::$beh0()
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:1048 d:134230802     ; ABarracudaShop::ClientCurrentFocus  (+1048)
+    //    27  CALLSYS        q:0x26e6ee891c0         ; void TSubclassOf<ALokiBaseItem@>::$beh0()
+    //    30  PshVPtr        rW0:0
+    //    31  ADDSi          W0:1056 d:134230802     ; ABarracudaShop::AllItems  (+1056)
+    //    33  CALLSYS        q:0x26e6ee88040         ; void TArray<TSubclassOf<AActor@>>::$beh0()
+    //    36  SetV8          wW0:2 q:0x3feccccccccccccd
+    //    39  LoadThisR      W0:912 d:134230802      ; ABarracudaShop::SellValueCoefficient  (+912)
+    //    41  WRTV8          rW0:2
+    //    42  PshVPtr        rW0:0
+    //    43  FinConstruct   q:0x26e6865e800         ; ABarracudaShop
+    //    46  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: LokiBeginPlay
+void LokiBeginPlay_Implementation()
+// 92 instr, 636 B bytecode, id=0x3236E3BA, varspace=38
+------------------------------------------------------------------------------
+{
+    auto v1;
+    UGameEventRouterComponent v6;
+    FUIEvent_Barracuda_Shop_FilterByName v14;
+    auto v15;
+    FGameEventListenerHandle v28;
+    FUIEvent_Barracuda_Shop_ResetFilters v30;
+    FUIEvent_Barracuda_Shop_FilterToggleTag v34;
+    FUIEvent_Barracuda_Shop_FocusItem v38;
+
+    this.BuildGraph();
+    this.CalculateTotalCostsForAllItems();
+    v1 = this.bDebugLogGraph;
+    if (v1) {
+        this.DebugLogGraph();
+    }
+    if (Loki::LokiIsClient(__WorldContext)) {
+        v6 = UGameEventRouterSubsystem::GetUIGameEventRouter(__WorldContext);
+        if (v6 != null) {
+            v15 = false;
+            v14 = FUIEvent_Barracuda_Shop_FilterByName();
+            v28 = v6.RegisterForEvent(this, v14, null, __STATIC_NAME(14), false);
+            v15 = false;
+            v30 = FUIEvent_Barracuda_Shop_ResetFilters();
+            v28 = v6.RegisterForEvent(this, v30, null, __STATIC_NAME(15), false);
+            v15 = false;
+            v34 = FUIEvent_Barracuda_Shop_FilterToggleTag();
+            v28 = v6.RegisterForEvent(this, v34, null, __STATIC_NAME(16), false);
+            v15 = false;
+            v38 = FUIEvent_Barracuda_Shop_FocusItem();
+            v28 = v6.RegisterForEvent(this, v38, null, __STATIC_NAME(17), false);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84335                 ; void ABarracudaShop::BuildGraph()
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:84336                 ; void ABarracudaShop::CalculateTotalCostsForAllItems()
+    //     6  LoadThisR      W0:1072 d:134230802     ; ABarracudaShop::bDebugLogGraph  (+1072)
+    //     8  RDR1           wW0:1
+    //     9  CpyVtoR1       rW0:1
+    //    10  JLowZ          ->15
+    //    12  PshVPtr        rW0:0
+    //    13  CALLINTF       d:84339                 ; void ABarracudaShop::DebugLogGraph()
+    //    15  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    18  CALLSYS        q:0x26e7a132c40         ; bool Loki::LokiIsClient(const UObject@)
+    //    21  JLowZ          ->158
+    //    23  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    26  CALLSYS        q:0x26e79fa1200         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetUIGameEventRouter(const UObject@)
+    //    29  STOREOBJ       wW0:6
+    //    30  CmpPtrNull     rW0:6
+    //    31  JZ             ->157
+    //    33  SetV1          wW0:15 d:0
+    //    35  PshV4          rW0:15
+    //    36  PshC4          d:14
+    //    38  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    41  PshRPtr
+    //    42  PshNull
+    //    43  TYPEID         d:67121333              ; FUIEvent_Barracuda_Shop_FilterByName
+    //    45  PSF            rW0:14
+    //    46  CALLSYS        q:0x26e79561900         ; void FUIEvent_Barracuda_Shop_FilterByName::$beh0()
+    //    49  PSF            rW0:14
+    //    50  PshVPtr        rW0:0
+    //    51  PSF            rW0:28
+    //    52  PshVPtr        rW0:6
+    //    53  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    56  PSF            rW0:14
+    //    57  CALLSYS        q:0x26e79561740         ; void FUIEvent_Barracuda_Shop_FilterByName::$beh2()
+    //    60  PSF            rW0:28
+    //    61  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    64  SetV1          wW0:15 d:0
+    //    66  PshV4          rW0:15
+    //    67  PshC4          d:15
+    //    69  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    72  PshRPtr
+    //    73  PshNull
+    //    74  TYPEID         d:67121334              ; FUIEvent_Barracuda_Shop_ResetFilters
+    //    76  PSF            rW0:30
+    //    77  CALLSYS        q:0x26e79561200         ; void FUIEvent_Barracuda_Shop_ResetFilters::$beh0()
+    //    80  PSF            rW0:30
+    //    81  PshVPtr        rW0:0
+    //    82  PSF            rW0:28
+    //    83  PshVPtr        rW0:6
+    //    84  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    87  PSF            rW0:30
+    //    88  CALLSYS        q:0x26e79561040         ; void FUIEvent_Barracuda_Shop_ResetFilters::$beh2()
+    //    91  PSF            rW0:28
+    //    92  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    95  SetV1          wW0:15 d:0
+    //    97  PshV4          rW0:15
+    //    98  PshC4          d:16
+    //   100  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   103  PshRPtr
+    //   104  PshNull
+    //   105  TYPEID         d:67121336              ; FUIEvent_Barracuda_Shop_FilterToggleTag
+    //   107  PSF            rW0:34
+    //   108  CALLSYS        q:0x26e79560400         ; void FUIEvent_Barracuda_Shop_FilterToggleTag::$beh0()
+    //   111  PSF            rW0:34
+    //   112  PshVPtr        rW0:0
+    //   113  PSF            rW0:28
+    //   114  PshVPtr        rW0:6
+    //   115  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //   118  PSF            rW0:34
+    //   119  CALLSYS        q:0x26e79560240         ; void FUIEvent_Barracuda_Shop_FilterToggleTag::$beh2()
+    //   122  PSF            rW0:28
+    //   123  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //   126  SetV1          wW0:15 d:0
+    //   128  PshV4          rW0:15
+    //   129  PshC4          d:17
+    //   131  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   134  PshRPtr
+    //   135  PshNull
+    //   136  TYPEID         d:67121337              ; FUIEvent_Barracuda_Shop_FocusItem
+    //   138  PSF            rW0:38
+    //   139  CALLSYS        q:0x26e79567080         ; void FUIEvent_Barracuda_Shop_FocusItem::$beh0()
+    //   142  PSF            rW0:38
+    //   143  PshVPtr        rW0:0
+    //   144  PSF            rW0:28
+    //   145  PshVPtr        rW0:6
+    //   146  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //   149  PSF            rW0:38
+    //   150  CALLSYS        q:0x26e79566ec0         ; void FUIEvent_Barracuda_Shop_FocusItem::$beh2()
+    //   153  PSF            rW0:28
+    //   154  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //   157  FreeNullV8     wW0:6
+    //   158  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+int GetItemTotalCost(const TSubclassOf<ALokiBaseItem@>&inout Item)
+// 5 instr, 28 B bytecode, id=0xCEA263F0, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v2;
+
+    v2 = ALokiBaseItem::GetTotalCostForItem(Item);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e7a0ef900         ; int ALokiBaseItem::GetTotalCostForItem(TSubclassOf<ALokiBaseItem@>)
+    //     4  CpyRtoV4       wW0:2
+    //     5  CpyVtoR4       rW0:2
+    //     6  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+int GetItemSellValue(const TSubclassOf<ALokiBaseItem@>&inout Item)
+// 13 instr, 76 B bytecode, id=0x6F0FB166, varspace=8
+------------------------------------------------------------------------------
+{
+    auto v1;
+    float64 v8;
+
+    v8 = float64(this.GetItemTotalCost(Item));
+    v8 = v8 * this.SellValueCoefficient;
+    v1 = Math::FloorToInt(v8);
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALLINTF       d:84328                 ; int ABarracudaShop::GetItemTotalCost(const TSubclassOf<ALokiBaseItem@>&)
+    //     4  CpyRtoV4       wW0:2
+    //     5  iTOd           wW0:8 rW1:2
+    //     7  LoadThisR      W0:912 d:134230802      ; ABarracudaShop::SellValueCoefficient  (+912)
+    //     9  RDR8           wW0:6
+    //    10  MULd           wW0:8 rW1:8 rW2:6
+    //    12  PshV8          rW0:8
+    //    13  CALLSYS        q:0x26e70358200         ; int Math::FloorToInt(float64)
+    //    16  CpyRtoV4       wW0:1
+    //    17  CpyVtoR4       rW0:1
+    //    18  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+int GetIncrementalCost(const TSubclassOf<ALokiBaseItem@>&inout Item)
+// 12 instr, 84 B bytecode, id=0x340653CE, varspace=6
+------------------------------------------------------------------------------
+{
+    int v1;
+    TArray<ALokiBaseItem@> v6;
+
+    v1 = 0;
+    v6 = TArray<ALokiBaseItem@>();
+    ALokiBaseItem::GetRecipeCostForLocalPlayerBP(__WorldContext, Item, v1, v6);
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV4          wW0:1 d:0
+    //     2  PSF            rW0:6
+    //     3  CALLSYS        q:0x26e6ef07080         ; void TArray<ALokiBaseItem@>::$beh0()
+    //     6  PSF            rW0:6
+    //     7  PSF            rW0:1
+    //     8  PshVPtr        rW0:-2
+    //     9  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    12  CALLSYS        q:0x26e7a0eb840         ; void ALokiBaseItem::GetRecipeCostForLocalPlayerBP(UObject@, TSubclassOf<ALokiBaseItem@>, int&, TArray<ALokiBaseItem@>&)
+    //    15  PSF            rW0:6
+    //    16  CALLSYS        q:0x26e7a0eb680         ; void TArray<ALokiBaseItem@>::$beh2()
+    //    19  CpyVtoR4       rW0:1
+    //    20  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintAuthorityOnly, CanOverrideEvent)
+void AuthBuyItem(ALokiPlayerState@ PlayerState, const TSubclassOf<ALokiBaseItem@>&inout ItemClass)
+// 25 instr, 148 B bytecode, id=0x2D26A89D, varspace=51
+------------------------------------------------------------------------------
+{
+    ULokiInventoryComponentComboItems v4;
+    FBarracudaShopPurchasePlan v48;
+    auto v50;
+
+    v4 = PlayerState.GetInventory();
+    v48.FBarracudaShopPurchasePlan();
+    this.TryGeneratePurchasePlan(v48, v4, ItemClass);
+    v50 = PlayerState.GetWalletGold();
+    if (v50 >= v48.Gold) {
+        this.ExecutePurchasePlan(v48, PlayerState, ItemClass);
+    }
+    v48.~FBarracudaShopPurchasePlan();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e7a391900         ; ULokiInventoryComponentComboItems@ ALokiPlayerState::GetInventory() const
+    //     4  STOREOBJ       wW0:4
+    //     5  PSF            rW0:48
+    //     6  CALL           d:84326                 ; void FBarracudaShopPurchasePlan::FBarracudaShopPurchasePlan()
+    //     8  PshVPtr        rW0:-4
+    //     9  PshVPtr        rW0:4
+    //    10  PSF            rW0:48
+    //    11  PshVPtr        rW0:0
+    //    12  CALLINTF       d:84346                 ; void ABarracudaShop::TryGeneratePurchasePlan(FBarracudaShopPurchasePlan&, ULokiInventoryComponentComboItems@, const TSubclassOf<ALokiBaseItem@>&)
+    //    14  PshVPtr        rW0:-2
+    //    15  CALLSYS        q:0x26e7a395f00         ; int ALokiPlayerState::GetWalletGold() const
+    //    18  CpyRtoV4       wW0:50
+    //    19  LoadVObjR      rW0:48 W1:0 DW2:134230801; FBarracudaShopPurchasePlan::Gold  (+0)
+    //    22  RDR4           wW0:49
+    //    23  CMPi           rW0:50 rW1:49
+    //    25  JS             ->33
+    //    27  PshVPtr        rW0:-4
+    //    28  PshVPtr        rW0:-2
+    //    29  PSF            rW0:48
+    //    30  PshVPtr        rW0:0
+    //    31  CALLINTF       d:84347                 ; void ABarracudaShop::ExecutePurchasePlan(const FBarracudaShopPurchasePlan&, ALokiPlayerState@, const TSubclassOf<ALokiBaseItem@>&)
+    //    33  PSF            rW0:48
+    //    34  CALL           d:85470                 ; void FBarracudaShopPurchasePlan::~FBarracudaShopPurchasePlan()
+    //    36  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintAuthorityOnly, CanOverrideEvent)
+void AuthSellItem(ALokiPlayerState@ PlayerState, ALokiBaseItem@ Item)
+// 44 instr, 284 B bytecode, id=0xEB5D0698, varspace=22
+------------------------------------------------------------------------------
+{
+    ULokiInventoryComponentBase v6;
+    ULokiInventoryComponentComboItems v12;
+    auto v13;
+    TSubclassOf<ALokiBaseItem@> v20;
+    int v21;
+
+    if (Item != null) {
+        v6 = Item.GetCurrentInventoryComponent();
+        v12 = PlayerState.GetInventory();
+        if (v6 == v12) {
+            v13 = v12.TryRemoveFromInventory(Item, false);
+            v13 = !v13;
+            if (!v13) {
+                Item.DestroyActor();
+                v20 = TSubclassOf<ALokiBaseItem@>(Item.GetClass());
+                v21 = this.GetItemSellValue(v20);
+                PlayerState.GrantWalletCurrency("Gold", v21, 5);
+            } else {
+            }
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  RefCpyV        wW0:2
+    //     2  CmpPtrNull     rW0:2
+    //     3  JNZ            ->7
+    //     5  JMP            ->70
+    //     7  PshVPtr        rW0:-4
+    //     8  CALLSYS        q:0x26e7a0e9c40         ; ULokiInventoryComponentBase@ ALokiBaseItem::GetCurrentInventoryComponent() const
+    //    11  STOREOBJ       wW0:6
+    //    12  PshVPtr        rW0:-2
+    //    13  CALLSYS        q:0x26e7a391900         ; ULokiInventoryComponentComboItems@ ALokiPlayerState::GetInventory() const
+    //    16  STOREOBJ       wW0:12
+    //    17  CmpPtr         rW0:6 rW1:12
+    //    19  JZ             ->23
+    //    21  JMP            ->70
+    //    23  SetV1          wW0:14 d:0
+    //    25  PshV4          rW0:14
+    //    26  PshVPtr        rW0:-4
+    //    27  PshVPtr        rW0:12
+    //    28  CALLSYS        q:0x26e7a2a8c80         ; bool ULokiInventoryComponentBase::TryRemoveFromInventory(ALokiBaseItem@, ELokiRemoveFromInventoryReason)
+    //    31  CpyRtoV4       wW0:3
+    //    32  CpyVtoV4       wW0:13 rW1:3
+    //    34  NOT            rW0:13
+    //    35  CpyVtoR1       rW0:13
+    //    36  JLowZ          ->40
+    //    38  JMP            ->70
+    //    40  PshVPtr        rW0:-4
+    //    41  CALLSYS        q:0x26e79712fc0         ; void AActor::DestroyActor()   [UFunction K2_DestroyActor]
+    //    44  PshVPtr        rW0:-4
+    //    45  CALLSYS        q:0x26e70394bc0         ; UClass@ UObject::GetClass() const
+    //    48  STOREOBJ       wW0:18
+    //    49  PshVPtr        rW0:18
+    //    50  PSF            rW0:20
+    //    51  CALLSYS        q:0x26e6ee84d80         ; void TSubclassOf<ALokiBaseItem@>::$beh0(UClass@)
+    //    54  PSF            rW0:20
+    //    55  PshVPtr        rW0:0
+    //    56  CALLINTF       d:84329                 ; int ABarracudaShop::GetItemSellValue(const TSubclassOf<ALokiBaseItem@>&)
+    //    58  CpyRtoV4       wW0:21
+    //    59  SetV1          wW0:22 d:5
+    //    61  PshV4          rW0:22
+    //    62  PshV4          rW0:21
+    //    63  PGA            q:0x26e6e67f520         ; "Gold"
+    //    66  PshVPtr        rW0:-2
+    //    67  CALLSYS        q:0x26e7a395800         ; void ALokiPlayerState::GrantWalletCurrency(const FString&, int, ECurrencyGrantReason)
+    //    70  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+TArray<TSubclassOf<ALokiBaseItem@>> GetOutputItems(const TSubclassOf<ALokiBaseItem@>&inout ItemClass)
+// 36 instr, 240 B bytecode, id=0xF011B9BA, varspace=26
+------------------------------------------------------------------------------
+{
+    TArray<TSubclassOf<ALokiBaseItem@>> v4;
+    UBarracudaShopItemGraphNode v6;
+    auto v7;
+    TSetIterator<UBarracudaShopItemGraphNode@> v16;
+
+    v4 = TArray<TSubclassOf<ALokiBaseItem@>>();
+    if (this.ItemGraphNodes.Find(ItemClass, v6)) {
+        v16 = v6.Outputs.Iterator();
+        while (true) {
+            v7 = v16.CanProceed;
+            if (!v7) break;
+            v4.Add(v16.Proceed().Item);
+        }
+    }
+    __return = TArray<TSubclassOf<ALokiBaseItem@>>();
+    __return = v4;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e6ee89a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh0()
+    //     4  PSF            rW0:6
+    //     5  PshVPtr        rW0:-4
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:936 d:134230802      ; ABarracudaShop::ItemGraphNodes  (+936)
+    //     9  CALLSYS        q:0x26e6ef06ec0         ; bool TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>::Find(const TSubclassOf<ALokiBaseItem@>&, UBarracudaShopItemGraphNode@&) const
+    //    12  JLowZ          ->46
+    //    14  PSF            rW0:16
+    //    15  PshVPtr        rW0:6
+    //    16  ADDSi          W0:80 d:134230800       ; UBarracudaShopItemGraphNode::Outputs  (+80)
+    //    18  CALLSYS        q:0x26e6ef06980         ; TSetIterator<UBarracudaShopItemGraphNode@> TSet<UBarracudaShopItemGraphNode@>::Iterator()
+    //    21  JMP            ->39
+    //    23  SUSPEND
+    //    24  PSF            rW0:16
+    //    25  CALLSYS        q:0x26e6ef06600         ; UBarracudaShopItemGraphNode@ const& TSetIterator<UBarracudaShopItemGraphNode@>::Proceed()
+    //    28  PshRPtr
+    //    29  RDSPtr
+    //    30  RefCpyV        wW0:26
+    //    31  PshVPtr        rW0:26
+    //    32  ADDSi          W0:48 d:134230800       ; UBarracudaShopItemGraphNode::Item  (+48)
+    //    34  PSF            rW0:4
+    //    35  CALLSYS        q:0x26e6ef06440         ; void TArray<TSubclassOf<ALokiBaseItem@>>::Add(const TSubclassOf<ALokiBaseItem@>&)
+    //    38  FreeNullV8     wW0:26
+    //    39  LoadVObjR      rW0:16 W1:24 DW2:268448531; TSetIterator::CanProceed  (+24)
+    //    42  RDR1           wW0:7
+    //    43  CpyVtoR1       rW0:7
+    //    44  JLowNZ         ->23
+    //    46  PshVPtr        rW0:-2
+    //    47  CALLSYS        q:0x26e6ee89a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh0()
+    //    50  PSF            rW0:4
+    //    51  PshVPtr        rW0:-2
+    //    52  CALLSYS        q:0x26e793c98c0         ; TArray<TSubclassOf<ALokiBaseItem@>>& TArray<TSubclassOf<ALokiBaseItem@>>::opAssign(const TArray<TSubclassOf<ALokiBaseItem@>>&)
+    //    55  PSF            rW0:4
+    //    56  CALLSYS        q:0x26e793c9a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh2()
+    //    59  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+TArray<TSubclassOf<AActor@>> GetAllShopItems()
+// 46 instr, 324 B bytecode, id=0x2F030A37, varspace=38
+------------------------------------------------------------------------------
+{
+    auto v1;
+    TArrayIterator<TSubclassOf<ULokiLootTableFull@>> v8;
+    TArray<TSubclassOf<AActor@>> v20;
+    TArrayIterator<TSubclassOf<AActor@>> v30;
+
+    if (this.AllItems.IsEmpty()) {
+        v8 = this.ItemLootTables.Iterator();
+        while (true) {
+            v1 = v8.CanProceed;
+            if (!v1) break;
+            v20 = ULokiLootTable::GetAllPossibleActorsFromLootTable(__WorldContext, v8.Proceed());
+            v30 = v20.Iterator();
+            L51:
+            v1 = v30.CanProceed;
+            if (v1) {
+                while (true) {
+                    v30.Proceed();
+                    this.AllItems.AddUnique(v30.Proceed());
+                    goto L51;
+                }
+            }
+        }
+    }
+    __return = TArray<TSubclassOf<AActor@>>();
+    __return = this.AllItems;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:1056 d:134230802     ; ABarracudaShop::AllItems  (+1056)
+    //     3  CALLSYS        q:0x26e6ef06280         ; bool TArray<TSubclassOf<AActor@>>::IsEmpty() const
+    //     6  JLowZ          ->69
+    //     8  PSF            rW0:8
+    //     9  PshVPtr        rW0:0
+    //    10  ADDSi          W0:920 d:134230802      ; ABarracudaShop::ItemLootTables  (+920)
+    //    12  CALLSYS        q:0x26e6ef05d40         ; TArrayIterator<TSubclassOf<ULokiLootTableFull@>> TArray<TSubclassOf<ULokiLootTableFull@>>::Iterator()
+    //    15  JMP            ->62
+    //    17  SUSPEND
+    //    18  PSF            rW0:8
+    //    19  CALLSYS        q:0x26e6ef059c0         ; TSubclassOf<ULokiLootTableFull@>& TArrayIterator<TSubclassOf<ULokiLootTableFull@>>::Proceed()
+    //    22  CpyRtoV8       wW0:16
+    //    23  PshVPtr        rW0:16
+    //    24  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    27  PSF            rW0:20
+    //    28  CALLSYS        q:0x26e7a2d3c00         ; TArray<TSubclassOf<AActor@>> ULokiLootTable::GetAllPossibleActorsFromLootTable(UObject@, TSubclassOf<ULokiLootTable@>)
+    //    31  PSF            rW0:30
+    //    32  PSF            rW0:20
+    //    33  CALLSYS        q:0x26e6ef05480         ; TArrayIterator<TSubclassOf<AActor@>> TArray<TSubclassOf<AActor@>>::Iterator()
+    //    36  JMP            ->51
+    //    38  SUSPEND
+    //    39  PSF            rW0:30
+    //    40  CALLSYS        q:0x26e6ef05100         ; TSubclassOf<AActor@>& TArrayIterator<TSubclassOf<AActor@>>::Proceed()
+    //    43  CpyRtoV8       wW0:38
+    //    44  PshVPtr        rW0:38
+    //    45  PshVPtr        rW0:0
+    //    46  ADDSi          W0:1056 d:134230802     ; ABarracudaShop::AllItems  (+1056)
+    //    48  CALLSYS        q:0x26e6ee88740         ; bool TArray<TSubclassOf<AActor@>>::AddUnique(const TSubclassOf<AActor@>&)
+    //    51  LoadVObjR      rW0:30 W1:16 DW2:268448533; TArrayIterator::CanProceed  (+16)
+    //    54  RDR1           wW0:1
+    //    55  CpyVtoR1       rW0:1
+    //    56  JLowNZ         ->38
+    //    58  PSF            rW0:20
+    //    59  CALLSYS        q:0x26e7a110cc0         ; void TArray<TSubclassOf<AActor@>>::$beh2()
+    //    62  LoadVObjR      rW0:8 W1:16 DW2:268448532; TArrayIterator::CanProceed  (+16)
+    //    65  RDR1           wW0:1
+    //    66  CpyVtoR1       rW0:1
+    //    67  JLowNZ         ->17
+    //    69  PshVPtr        rW0:-2
+    //    70  CALLSYS        q:0x26e6ee88040         ; void TArray<TSubclassOf<AActor@>>::$beh0()
+    //    73  PshVPtr        rW0:0
+    //    74  ADDSi          W0:1056 d:134230802     ; ABarracudaShop::AllItems  (+1056)
+    //    76  PshVPtr        rW0:-2
+    //    77  CALLSYS        q:0x26e7a110b00         ; TArray<TSubclassOf<AActor@>>& TArray<TSubclassOf<AActor@>>::opAssign(const TArray<TSubclassOf<AActor@>>&)
+    //    80  RET            W0:4
+
+------------------------------------------------------------------------------
+void BuildGraph()
+// 138 instr, 900 B bytecode, id=0x9F31E045, varspace=98
+------------------------------------------------------------------------------
+{
+    TArrayIterator<TSubclassOf<ULokiLootTableFull@>> v6;
+    auto v13;
+    ULokiLootTableFull v20;
+    TSet<UBarracudaShopItemGraphNode@> v40;
+    TArrayIterator<FLokiLootTableItemEntry> v46;
+    TSoftClassPtr<AActor@> v64;
+    UClass v66;
+    UObject v70;
+    ALokiBaseItem v72;
+    ALokiBaseItem v74;
+    TSubclassOf<ALokiBaseItem@> v76;
+    UBarracudaShopItemGraphNode v80;
+    TArrayIterator<TSubclassOf<ALokiBaseItem@>> v88;
+    TSubclassOf<ALokiBaseItem@> v96;
+    UBarracudaShopItemGraphNode v98;
+
+    v6 = this.ItemLootTables.Iterator();
+    while (true) {
+        v13 = v6.CanProceed;
+        if (!v13) break;
+        v20 = v6.Proceed().GetDefaultObject();
+        if (v20 == null) {
+            continue;
+        }
+        v40 = TSet<UBarracudaShopItemGraphNode@>();
+        v46 = v20.GuaranteedItems.Iterator();
+        while (true) {
+            v13 = v46.CanProceed;
+            if (!v13) break;
+            v64 = TSoftClassPtr<AActor@>(v46.Proceed().ItemClassToSpawn);
+            if (v64.IsNull()) {
+                continue;
+            }
+            v66 = System::LoadClassAsset_Blocking(v64);
+            if (v66 == null) {
+                continue;
+            }
+            v70 = v66.GetDefaultObject();
+            if (v70 == null) {
+                v72 = null;
+            } else {
+                v72 = cast<ALokiBaseItem>(v70);
+            }
+            v74 = v72;
+            if (v72 == null) {
+                continue;
+            }
+            v76 = TSubclassOf<ALokiBaseItem@>(v66);
+            v80 = this.GetOrCreateItemGraphNode(v76);
+            if (v40.Contains(v80)) {
+                continue;
+            }
+            v40.Add(v80);
+            v88 = v74.ShopRecipe.ComponentItems.Iterator();
+            while (true) {
+                v13 = v88.CanProceed;
+                if (!v13) break;
+                v96 = v88.Proceed();
+                if (v96 == null) {
+                    continue;
+                }
+                v98 = this.GetOrCreateItemGraphNode(v96);
+                v80.Inputs.Add(v98);
+                v98.Outputs.Add(v80);
+            }
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:6
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:920 d:134230802      ; ABarracudaShop::ItemLootTables  (+920)
+    //     4  CALLSYS        q:0x26e6ef05d40         ; TArrayIterator<TSubclassOf<ULokiLootTableFull@>> TArray<TSubclassOf<ULokiLootTableFull@>>::Iterator()
+    //     7  JMP            ->217
+    //     9  SUSPEND
+    //    10  PSF            rW0:6
+    //    11  CALLSYS        q:0x26e6ef059c0         ; TSubclassOf<ULokiLootTableFull@>& TArrayIterator<TSubclassOf<ULokiLootTableFull@>>::Proceed()
+    //    14  CpyRtoV8       wW0:16
+    //    15  PshVPtr        rW0:16
+    //    16  CALLSYS        q:0x26e6ef04f40         ; ULokiLootTableFull@ TSubclassOf<ULokiLootTableFull@>::GetDefaultObject() const
+    //    19  STOREOBJ       wW0:20
+    //    20  CmpPtrNull     rW0:20
+    //    21  JNZ            ->26
+    //    23  FreeNullV8     wW0:20
+    //    24  JMP            ->217
+    //    26  PSF            rW0:40
+    //    27  CALLSYS        q:0x26e6ef00080         ; void TSet<UBarracudaShopItemGraphNode@>::$beh0()
+    //    30  PSF            rW0:46
+    //    31  PshVPtr        rW0:20
+    //    32  ADDSi          W0:64 d:67115230        ; ULokiLootTableFull::GuaranteedItems  (+64)
+    //    34  CALLSYS        q:0x26e6ef04a00         ; TArrayIterator<FLokiLootTableItemEntry> TArray<FLokiLootTableItemEntry>::Iterator()
+    //    37  JMP            ->205
+    //    39  SUSPEND
+    //    40  PSF            rW0:46
+    //    41  CALLSYS        q:0x26e6ef04680         ; FLokiLootTableItemEntry& TArrayIterator<FLokiLootTableItemEntry>::Proceed()
+    //    44  CpyRtoV8       wW0:54
+    //    45  PshVPtr        rW0:54
+    //    46  ADDSi          W0:16 d:67121144        ; FLokiLootTableItemEntry::ItemClassToSpawn  (+16)
+    //    48  PSF            rW0:64
+    //    49  CALLSYS        q:0x26e6ef03f80         ; void TSoftClassPtr<AActor@>::$beh0(const TSoftClassPtr<AActor@>&)
+    //    52  PSF            rW0:64
+    //    53  CALLSYS        q:0x26e6ef03c00         ; bool TSoftClassPtr<AActor@>::IsNull() const
+    //    56  JLowZ          ->64
+    //    58  PSF            rW0:64
+    //    59  CALLSYS        q:0x26e789e9700         ; void TSoftClassPtr<AActor@>::$beh2()
+    //    62  JMP            ->205
+    //    64  PSF            rW0:64
+    //    65  CALLSYS        q:0x26e79b1fac0         ; UClass@ System::LoadClassAsset_Blocking(TSoftClassPtr<UObject@>)
+    //    68  STOREOBJ       wW0:66
+    //    69  CmpPtrNull     rW0:66
+    //    70  JNZ            ->79
+    //    72  FreeNullV8     wW0:66
+    //    73  PSF            rW0:64
+    //    74  CALLSYS        q:0x26e789e9700         ; void TSoftClassPtr<AActor@>::$beh2()
+    //    77  JMP            ->205
+    //    79  PshVPtr        rW0:66
+    //    80  CALLSYS        q:0x26e70396600         ; UObject@ UClass::GetDefaultObject() const
+    //    83  STOREOBJ       wW0:70
+    //    84  CmpPtrNull     rW0:70
+    //    85  JZ             ->96
+    //    87  TYPEID         d:1140856782            ; ALokiBaseItem@
+    //    89  PSF            rW0:72
+    //    90  PshVPtr        rW0:70
+    //    91  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    94  JMP            ->97
+    //    96  ClrVPtr        wW0:72
+    //    97  PshVPtr        rW0:72
+    //    98  RefCpyV        wW0:74
+    //    99  CmpPtrNull     rW0:74
+    //   100  JNZ            ->110
+    //   102  FreeNullV8     wW0:74
+    //   103  FreeNullV8     wW0:66
+    //   104  PSF            rW0:64
+    //   105  CALLSYS        q:0x26e789e9700         ; void TSoftClassPtr<AActor@>::$beh2()
+    //   108  JMP            ->205
+    //   110  PshVPtr        rW0:66
+    //   111  PSF            rW0:76
+    //   112  CALLSYS        q:0x26e6ee84d80         ; void TSubclassOf<ALokiBaseItem@>::$beh0(UClass@)
+    //   115  PSF            rW0:76
+    //   116  PshVPtr        rW0:0
+    //   117  CALLINTF       d:84338                 ; UBarracudaShopItemGraphNode@ ABarracudaShop::GetOrCreateItemGraphNode(const TSubclassOf<ALokiBaseItem@>&)
+    //   119  STOREOBJ       wW0:78
+    //   120  PshVPtr        rW0:78
+    //   121  RefCpyV        wW0:80
+    //   122  PSF            rW0:80
+    //   123  PSF            rW0:40
+    //   124  CALLSYS        q:0x26e6ef03a40         ; bool TSet<UBarracudaShopItemGraphNode@>::Contains(const UBarracudaShopItemGraphNode@ const&) const
+    //   127  JLowZ          ->138
+    //   129  FreeNullV8     wW0:80
+    //   130  FreeNullV8     wW0:74
+    //   131  FreeNullV8     wW0:66
+    //   132  PSF            rW0:64
+    //   133  CALLSYS        q:0x26e789e9700         ; void TSoftClassPtr<AActor@>::$beh2()
+    //   136  JMP            ->205
+    //   138  PSF            rW0:80
+    //   139  PSF            rW0:40
+    //   140  CALLSYS        q:0x26e6ef0ac00         ; void TSet<UBarracudaShopItemGraphNode@>::Add(const UBarracudaShopItemGraphNode@ const&)
+    //   143  LoadRObjR      rW0:74 W1:1136 DW2:67114958; ALokiBaseItem::ShopRecipe  (+1136)
+    //   146  CpyRtoV8       wW0:82
+    //   147  PSF            rW0:88
+    //   148  PshVPtr        rW0:82
+    //   149  ADDSi          W0:0 d:67121023         ; FLokiItemRecipe::ComponentItems  (+0)
+    //   151  CALLSYS        q:0x26e6ef0a6c0         ; TArrayIterator<TSubclassOf<ALokiBaseItem@>> TArray<TSubclassOf<ALokiBaseItem@>>::Iterator()
+    //   154  JMP            ->191
+    //   156  SUSPEND
+    //   157  PSF            rW0:88
+    //   158  CALLSYS        q:0x26e6ef0a340         ; TSubclassOf<ALokiBaseItem@>& TArrayIterator<TSubclassOf<ALokiBaseItem@>>::Proceed()
+    //   161  CpyRtoV8       wW0:96
+    //   162  PshNull
+    //   163  PshVPtr        rW0:96
+    //   164  CALLSYS        q:0x26e6ee83a40         ; bool TSubclassOf<ALokiBaseItem@>::opEquals(UClass@) const
+    //   167  JLowZ          ->171
+    //   169  JMP            ->191
+    //   171  PshVPtr        rW0:96
+    //   172  PshVPtr        rW0:0
+    //   173  CALLINTF       d:84338                 ; UBarracudaShopItemGraphNode@ ABarracudaShop::GetOrCreateItemGraphNode(const TSubclassOf<ALokiBaseItem@>&)
+    //   175  STOREOBJ       wW0:98
+    //   176  PSF            rW0:98
+    //   177  PshVPtr        rW0:80
+    //   178  ADDSi          W0:64 d:134230800       ; UBarracudaShopItemGraphNode::Inputs  (+64)
+    //   180  CALLSYS        q:0x26e6ef0a180         ; void TArray<UBarracudaShopItemGraphNode@>::Add(const UBarracudaShopItemGraphNode@ const&)
+    //   183  PSF            rW0:80
+    //   184  PshVPtr        rW0:98
+    //   185  ADDSi          W0:80 d:134230800       ; UBarracudaShopItemGraphNode::Outputs  (+80)
+    //   187  CALLSYS        q:0x26e6ef0ac00         ; void TSet<UBarracudaShopItemGraphNode@>::Add(const UBarracudaShopItemGraphNode@ const&)
+    //   190  FreeNullV8     wW0:98
+    //   191  LoadVObjR      rW0:88 W1:16 DW2:268448535; TArrayIterator::CanProceed  (+16)
+    //   194  RDR1           wW0:13
+    //   195  CpyVtoR1       rW0:13
+    //   196  JLowNZ         ->156
+    //   198  FreeNullV8     wW0:80
+    //   199  FreeNullV8     wW0:74
+    //   200  FreeNullV8     wW0:66
+    //   201  PSF            rW0:64
+    //   202  CALLSYS        q:0x26e789e9700         ; void TSoftClassPtr<AActor@>::$beh2()
+    //   205  LoadVObjR      rW0:46 W1:16 DW2:268448534; TArrayIterator::CanProceed  (+16)
+    //   208  RDR1           wW0:13
+    //   209  CpyVtoR1       rW0:13
+    //   210  JLowNZ         ->39
+    //   212  PSF            rW0:40
+    //   213  CALLSYS        q:0x26e7b1a9e00         ; void TSet<UBarracudaShopItemGraphNode@>::$beh2()
+    //   216  FreeNullV8     wW0:20
+    //   217  LoadVObjR      rW0:6 W1:16 DW2:268448532; TArrayIterator::CanProceed  (+16)
+    //   220  RDR1           wW0:13
+    //   221  CpyVtoR1       rW0:13
+    //   222  JLowNZ         ->9
+    //   224  RET            W0:2
+
+------------------------------------------------------------------------------
+void CalculateTotalCostsForAllItems()
+// 23 instr, 140 B bytecode, id=0x2B73265A, varspace=22
+------------------------------------------------------------------------------
+{
+    TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@> v8;
+    auto v17;
+
+    v8 = this.ItemGraphNodes.Iterator();
+    while (true) {
+        v17 = v8.CanProceed;
+        if (!v17) break;
+        this.CalculateItemTotalCost(v8.Proceed().GetValue());
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:8
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:936 d:134230802      ; ABarracudaShop::ItemGraphNodes  (+936)
+    //     4  CALLSYS        q:0x26e6ef09c40         ; TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@> TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>::Iterator()
+    //     7  JMP            ->27
+    //     9  SUSPEND
+    //    10  PSF            rW0:8
+    //    11  CALLSYS        q:0x26e6ef098c0         ; TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>& TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>::Proceed()
+    //    14  CpyRtoV8       wW0:20
+    //    15  PshVPtr        rW0:20
+    //    16  CALLSYS        q:0x26e6ef09700         ; UBarracudaShopItemGraphNode@& TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>::GetValue() const
+    //    19  PshRPtr
+    //    20  RDSPtr
+    //    21  RefCpyV        wW0:22
+    //    22  PshVPtr        rW0:22
+    //    23  PshVPtr        rW0:0
+    //    24  CALLINTF       d:84337                 ; void ABarracudaShop::CalculateItemTotalCost(UBarracudaShopItemGraphNode@)
+    //    26  FreeNullV8     wW0:22
+    //    27  LoadVObjR      rW0:8 W1:24 DW2:268448536; TMapIterator::CanProceed  (+24)
+    //    30  RDR1           wW0:17
+    //    31  CpyVtoR1       rW0:17
+    //    32  JLowNZ         ->9
+    //    34  RET            W0:2
+
+------------------------------------------------------------------------------
+void CalculateItemTotalCost(UBarracudaShopItemGraphNode@ Node)
+// 47 instr, 312 B bytecode, id=0x82BFE606, varspace=20
+------------------------------------------------------------------------------
+{
+    auto v3;
+    auto v4;
+    auto v5;
+    auto v6;
+    TArrayIterator<UBarracudaShopItemGraphNode@> v12;
+    UBarracudaShopItemGraphNode v20;
+
+    if (Node != null) {
+        v4 = Node.bHasTotalCost;
+        v3 = v4;
+    } else {
+        v3 = true;
+    }
+    if (!v3) {
+        v6 = Node.RecipeCost;
+        v5 = Node.TotalCost;
+        v5 = v5 + v6;
+        Node.TotalCost = v5;
+        v12 = Node.Inputs.Iterator();
+        while (true) {
+            v4 = v12.CanProceed;
+            if (!v4) break;
+            v20 = v12.Proceed();
+            this.CalculateItemTotalCost(v20);
+            v5 = v20.TotalCost;
+            v6 = Node.TotalCost;
+            v6 = v6 + v5;
+            Node.TotalCost = v6;
+        }
+        v3 = true;
+        Node.bHasTotalCost = true;
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  RefCpyV        wW0:2
+    //     2  CmpPtrNull     rW0:2
+    //     3  JNZ            ->9
+    //     5  SetV1          wW0:3 d:1
+    //     7  JMP            ->15
+    //     9  LoadRObjR      rW0:-2 W1:160 DW2:134230800; UBarracudaShopItemGraphNode::bHasTotalCost  (+160)
+    //    12  RDR1           wW0:4
+    //    13  CpyVtoV4       wW0:3 rW1:4
+    //    15  CpyVtoR1       rW0:3
+    //    16  JLowZ          ->20
+    //    18  JMP            ->77
+    //    20  LoadRObjR      rW0:-2 W1:56 DW2:134230800; UBarracudaShopItemGraphNode::RecipeCost  (+56)
+    //    23  RDR4           wW0:6
+    //    24  LoadRObjR      rW0:-2 W1:60 DW2:134230800; UBarracudaShopItemGraphNode::TotalCost  (+60)
+    //    27  RDR4           wW0:5
+    //    28  ADDi           wW0:5 rW1:5 rW2:6
+    //    30  WRTV4          rW0:5
+    //    31  PSF            rW0:12
+    //    32  PshVPtr        rW0:-2
+    //    33  ADDSi          W0:64 d:134230800       ; UBarracudaShopItemGraphNode::Inputs  (+64)
+    //    35  CALLSYS        q:0x26e6ef09000         ; TArrayIterator<UBarracudaShopItemGraphNode@> TArray<UBarracudaShopItemGraphNode@>::Iterator()
+    //    38  JMP            ->64
+    //    40  SUSPEND
+    //    41  PSF            rW0:12
+    //    42  CALLSYS        q:0x26e6ef08c80         ; UBarracudaShopItemGraphNode@& TArrayIterator<UBarracudaShopItemGraphNode@>::Proceed()
+    //    45  PshRPtr
+    //    46  RDSPtr
+    //    47  RefCpyV        wW0:20
+    //    48  PshVPtr        rW0:20
+    //    49  PshVPtr        rW0:0
+    //    50  CALLINTF       d:84337                 ; void ABarracudaShop::CalculateItemTotalCost(UBarracudaShopItemGraphNode@)
+    //    52  LoadRObjR      rW0:20 W1:60 DW2:134230800; UBarracudaShopItemGraphNode::TotalCost  (+60)
+    //    55  RDR4           wW0:5
+    //    56  LoadRObjR      rW0:-2 W1:60 DW2:134230800; UBarracudaShopItemGraphNode::TotalCost  (+60)
+    //    59  RDR4           wW0:6
+    //    60  ADDi           wW0:6 rW1:6 rW2:5
+    //    62  WRTV4          rW0:6
+    //    63  FreeNullV8     wW0:20
+    //    64  LoadVObjR      rW0:12 W1:16 DW2:268448537; TArrayIterator::CanProceed  (+16)
+    //    67  RDR1           wW0:4
+    //    68  CpyVtoR1       rW0:4
+    //    69  JLowNZ         ->40
+    //    71  SetV1          wW0:3 d:1
+    //    73  LoadRObjR      rW0:-2 W1:160 DW2:134230800; UBarracudaShopItemGraphNode::bHasTotalCost  (+160)
+    //    76  WRTV1          rW0:3
+    //    77  RET            W0:4
+
+------------------------------------------------------------------------------
+UBarracudaShopItemGraphNode@ GetOrCreateItemGraphNode(const TSubclassOf<ALokiBaseItem@>&inout ItemClass)
+// 51 instr, 328 B bytecode, id=0xE0B4AFAB, varspace=17
+------------------------------------------------------------------------------
+{
+    UBarracudaShopItemGraphNode v2;
+    TSubclassOf<UObject@> v8;
+    UObject v10;
+    UBarracudaShopItemGraphNode v12;
+    ALokiBaseItem v16;
+
+    if (!this.ItemGraphNodes.Find(ItemClass, v2)) {
+        v8 = TSubclassOf<UObject@>(UBarracudaShopItemGraphNode::StaticClass());
+        v10 = NewObject(this, v8, NAME_None, false);
+        if (v10 == null) {
+            v12 = null;
+        } else {
+            v12 = cast<UBarracudaShopItemGraphNode>(v10);
+        }
+        v2 = v12;
+        v12.Item = ItemClass;
+        v16 = ItemClass.GetDefaultObject();
+        if (v16 != null) {
+            v2.RecipeCost = v16.GetGoldValue();
+        }
+        this.ItemGraphNodes.Add(ItemClass, v2);
+    } else {
+    }
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  PshVPtr        rW0:-2
+    //     2  PshVPtr        rW0:0
+    //     3  ADDSi          W0:936 d:134230802      ; ABarracudaShop::ItemGraphNodes  (+936)
+    //     5  CALLSYS        q:0x26e6ef06ec0         ; bool TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>::Find(const TSubclassOf<ALokiBaseItem@>&, UBarracudaShopItemGraphNode@&) const
+    //     8  JLowZ          ->13
+    //    10  LOADOBJ        rW0:2
+    //    11  JMP            ->81
+    //    13  SetV1          wW0:3 d:0
+    //    15  PshV4          rW0:3
+    //    16  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //    19  CALL           d:84352                 ; UClass@ UBarracudaShopItemGraphNode::StaticClass()
+    //    21  STOREOBJ       wW0:6
+    //    22  PshVPtr        rW0:6
+    //    23  PSF            rW0:8
+    //    24  CALLSYS        q:0x26e6ee89540         ; void TSubclassOf<UObject@>::$beh0(UClass@)
+    //    27  PSF            rW0:8
+    //    28  PshVPtr        rW0:0
+    //    29  CALLSYS        q:0x26e70399c40         ; UObject@ NewObject(UObject@, const TSubclassOf<UObject@>&, FName, bool)
+    //    32  STOREOBJ       wW0:10
+    //    33  CmpPtrNull     rW0:10
+    //    34  JZ             ->45
+    //    36  TYPEID         d:1207972624            ; UBarracudaShopItemGraphNode@
+    //    38  PSF            rW0:12
+    //    39  PshVPtr        rW0:10
+    //    40  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    43  JMP            ->46
+    //    45  ClrVPtr        wW0:12
+    //    46  PshVPtr        rW0:12
+    //    47  RefCpyV        wW0:2
+    //    48  PshVPtr        rW0:-2
+    //    49  PshVPtr        rW0:2
+    //    50  ADDSi          W0:48 d:134230800       ; UBarracudaShopItemGraphNode::Item  (+48)
+    //    52  CALLSYS        q:0x26e79312380         ; TSubclassOf<ALokiBaseItem@>& TSubclassOf<ALokiBaseItem@>::opAssign(const TSubclassOf<ALokiBaseItem@>&)
+    //    55  PshVPtr        rW0:-2
+    //    56  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //    59  STOREOBJ       wW0:16
+    //    60  CmpPtrNull     rW0:16
+    //    61  JZ             ->72
+    //    63  PshVPtr        rW0:16
+    //    64  CALLSYS        q:0x26e7a0e8040         ; int ALokiBaseItem::GetGoldValue() const
+    //    67  CpyRtoV4       wW0:17
+    //    68  LoadRObjR      rW0:2 W1:56 DW2:134230800; UBarracudaShopItemGraphNode::RecipeCost  (+56)
+    //    71  WRTV4          rW0:17
+    //    72  PSF            rW0:2
+    //    73  PshVPtr        rW0:-2
+    //    74  PshVPtr        rW0:0
+    //    75  ADDSi          W0:936 d:134230802      ; ABarracudaShop::ItemGraphNodes  (+936)
+    //    77  CALLSYS        q:0x26e6ef08ac0         ; void TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>::Add(const TSubclassOf<ALokiBaseItem@>&, const UBarracudaShopItemGraphNode@ const&)
+    //    80  LOADOBJ        rW0:2
+    //    81  RET            W0:4
+
+------------------------------------------------------------------------------
+void DebugLogGraph()
+// 54 instr, 396 B bytecode, id=0xB82B2554, varspace=28
+------------------------------------------------------------------------------
+{
+    FString v4;
+    auto v5;
+    int v7;
+    TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@> v16;
+
+    v5 = true;
+    v4 = FString();
+    System::LogString(v4.Append("BarracudaShop - DebugLogGraph"), true);
+    v7 = this.ItemGraphNodes.Num();
+    v5 = true;
+    v4 = FString();
+    System::LogString(v4.Append("Found ").Append(v7).Append(" unique items"), true);
+    v16 = this.ItemGraphNodes.Iterator();
+    while (true) {
+        v5 = v16.CanProceed;
+        if (!v5) break;
+        this.DebugPrintNode(v16.Proceed().GetValue(), "");
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:5 d:1
+    //     2  PshV4          rW0:5
+    //     3  PGA            q:0x26e6f112750         ; "BarracudaShop - DebugLogGraph"
+    //     6  PSF            rW0:4
+    //     7  CALLSYS        q:0x26e628a8c80         ; void FString::$beh0()
+    //    10  PSF            rW0:4
+    //    11  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //    14  PshRPtr
+    //    15  CALLSYS        q:0x26e79b1f740         ; void System::LogString(const FString&, bool)
+    //    18  PSF            rW0:4
+    //    19  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //    22  PshVPtr        rW0:0
+    //    23  ADDSi          W0:936 d:134230802      ; ABarracudaShop::ItemGraphNodes  (+936)
+    //    25  CALLSYS        q:0x26e6ef08900         ; int TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>::Num() const
+    //    28  CpyRtoV4       wW0:7
+    //    29  SetV1          wW0:5 d:1
+    //    31  PshV4          rW0:5
+    //    32  PGA            q:0x26e6f1127b0         ; " unique items"
+    //    35  PSF            rW0:7
+    //    36  PGA            q:0x26e6f112790         ; "Found "
+    //    39  PSF            rW0:4
+    //    40  CALLSYS        q:0x26e628a8c80         ; void FString::$beh0()
+    //    43  PSF            rW0:4
+    //    44  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //    47  PshRPtr
+    //    48  CALLSYS        q:0x26e796af3c0         ; FString& FString::Append(const int&)
+    //    51  PshRPtr
+    //    52  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //    55  PshRPtr
+    //    56  CALLSYS        q:0x26e79b1f740         ; void System::LogString(const FString&, bool)
+    //    59  PSF            rW0:4
+    //    60  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //    63  PSF            rW0:16
+    //    64  PshVPtr        rW0:0
+    //    65  ADDSi          W0:936 d:134230802      ; ABarracudaShop::ItemGraphNodes  (+936)
+    //    67  CALLSYS        q:0x26e6ef09c40         ; TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@> TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>::Iterator()
+    //    70  JMP            ->91
+    //    72  SUSPEND
+    //    73  PSF            rW0:16
+    //    74  CALLSYS        q:0x26e6ef098c0         ; TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>& TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>::Proceed()
+    //    77  CpyRtoV8       wW0:26
+    //    78  PshVPtr        rW0:26
+    //    79  CALLSYS        q:0x26e6ef09700         ; UBarracudaShopItemGraphNode@& TMapIterator<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>::GetValue() const
+    //    82  CpyRtoV8       wW0:28
+    //    83  PGA            q:0x26e6f1127d0         ; ""
+    //    86  PshVPtr        rW0:28
+    //    87  RDSPtr
+    //    88  PshVPtr        rW0:0
+    //    89  CALLINTF       d:84340                 ; void ABarracudaShop::DebugPrintNode(UBarracudaShopItemGraphNode@, const FString&)
+    //    91  LoadVObjR      rW0:16 W1:24 DW2:268448536; TMapIterator::CanProceed  (+24)
+    //    94  RDR1           wW0:5
+    //    95  CpyVtoR1       rW0:5
+    //    96  JLowNZ         ->72
+    //    98  RET            W0:2
+
+------------------------------------------------------------------------------
+void DebugPrintNode(UBarracudaShopItemGraphNode@ Node, const FString&inout Indentation)
+// 92 instr, 660 B bytecode, id=0xDB1FC75E, varspace=34
+------------------------------------------------------------------------------
+{
+    TSubclassOf<ALokiBaseItem@> v2;
+    auto v3;
+    ALokiBaseItem v8;
+    FString v12;
+    FText v16;
+    FString v20;
+    TArrayIterator<UBarracudaShopItemGraphNode@> v26;
+
+    v2 = TSubclassOf<ALokiBaseItem@>();
+    v2 = Node.Item;
+    v3 = v2 == null;
+    if (!v3) {
+        v8 = Node.Item.GetDefaultObject();
+        if (v8 != null) {
+            v3 = true;
+            v16 = v8.GetPlayerFacingName();
+            v12 = FString();
+            System::LogString(v12.Append(Indentation).Append(v16).Append(" - [Recipe: ").Append(Node.RecipeCost).Append("][Total Cost: ").Append(Node.TotalCost).Append("]"), true);
+            v12 = FString();
+            v20 = FString(v12.Append(Indentation).Append("    "));
+            v26 = Node.Inputs.Iterator();
+            while (true) {
+                v3 = v26.CanProceed;
+                if (!v3) break;
+                this.DebugPrintNode(v26.Proceed(), v20);
+            }
+        } else {
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  CALLSYS        q:0x26e6ee891c0         ; void TSubclassOf<ALokiBaseItem@>::$beh0()
+    //     4  PshVPtr        rW0:-2
+    //     5  ADDSi          W0:48 d:134230800       ; UBarracudaShopItemGraphNode::Item  (+48)
+    //     7  PSF            rW0:2
+    //     8  CALLSYS        q:0x26e79312380         ; TSubclassOf<ALokiBaseItem@>& TSubclassOf<ALokiBaseItem@>::opAssign(const TSubclassOf<ALokiBaseItem@>&)
+    //    11  PshNull
+    //    12  PSF            rW0:2
+    //    13  CALLSYS        q:0x26e6ee83a40         ; bool TSubclassOf<ALokiBaseItem@>::opEquals(UClass@) const
+    //    16  CpyRtoV4       wW0:3
+    //    17  CpyVtoR1       rW0:3
+    //    18  JLowZ          ->22
+    //    20  JMP            ->164
+    //    22  PshVPtr        rW0:-2
+    //    23  ADDSi          W0:48 d:134230800       ; UBarracudaShopItemGraphNode::Item  (+48)
+    //    25  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //    28  STOREOBJ       wW0:8
+    //    29  CmpPtrNull     rW0:8
+    //    30  JNZ            ->34
+    //    32  JMP            ->164
+    //    34  SetV1          wW0:3 d:1
+    //    36  PshV4          rW0:3
+    //    37  PGA            q:0x26e6f1127f0         ; "]"
+    //    40  LoadRObjR      rW0:-2 W1:60 DW2:134230800; UBarracudaShopItemGraphNode::TotalCost  (+60)
+    //    43  PshRPtr
+    //    44  PGA            q:0x26e6f1123c0         ; "][Total Cost: "
+    //    47  LoadRObjR      rW0:-2 W1:56 DW2:134230800; UBarracudaShopItemGraphNode::RecipeCost  (+56)
+    //    50  PshRPtr
+    //    51  PGA            q:0x26e6f1123d0         ; " - [Recipe: "
+    //    54  PSF            rW0:16
+    //    55  PshVPtr        rW0:8
+    //    56  CALLSYS        q:0x26e7a0ecd40         ; FText ALokiBaseItem::GetPlayerFacingName() const
+    //    59  PSF            rW0:16
+    //    60  PshVPtr        rW0:-4
+    //    61  PSF            rW0:12
+    //    62  CALLSYS        q:0x26e628a8c80         ; void FString::$beh0()
+    //    65  PSF            rW0:12
+    //    66  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //    69  PshRPtr
+    //    70  CALLSYS        q:0x26e796b44c0         ; FString& FString::Append(const FText&)
+    //    73  PshRPtr
+    //    74  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //    77  PshRPtr
+    //    78  CALLSYS        q:0x26e796af3c0         ; FString& FString::Append(const int&)
+    //    81  PshRPtr
+    //    82  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //    85  PshRPtr
+    //    86  CALLSYS        q:0x26e796af3c0         ; FString& FString::Append(const int&)
+    //    89  PshRPtr
+    //    90  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //    93  PshRPtr
+    //    94  CALLSYS        q:0x26e79b1f740         ; void System::LogString(const FString&, bool)
+    //    97  PSF            rW0:12
+    //    98  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //   101  PSF            rW0:16
+    //   102  CALLSYS        q:0x26e69d0cf00         ; void FText::$beh2()
+    //   105  PGA            q:0x26e6f1123b0         ; "    "
+    //   108  PshVPtr        rW0:-4
+    //   109  PSF            rW0:12
+    //   110  CALLSYS        q:0x26e628a8c80         ; void FString::$beh0()
+    //   113  PSF            rW0:12
+    //   114  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //   117  PshRPtr
+    //   118  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //   121  PshRPtr
+    //   122  PSF            rW0:20
+    //   123  CALLSYS        q:0x26e628a8ac0         ; void FString::$beh0(const FString&)
+    //   126  PSF            rW0:12
+    //   127  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //   130  PSF            rW0:26
+    //   131  PshVPtr        rW0:-2
+    //   132  ADDSi          W0:64 d:134230800       ; UBarracudaShopItemGraphNode::Inputs  (+64)
+    //   134  CALLSYS        q:0x26e6ef09000         ; TArrayIterator<UBarracudaShopItemGraphNode@> TArray<UBarracudaShopItemGraphNode@>::Iterator()
+    //   137  JMP            ->153
+    //   139  SUSPEND
+    //   140  PSF            rW0:26
+    //   141  CALLSYS        q:0x26e6ef08c80         ; UBarracudaShopItemGraphNode@& TArrayIterator<UBarracudaShopItemGraphNode@>::Proceed()
+    //   144  PshRPtr
+    //   145  RDSPtr
+    //   146  RefCpyV        wW0:34
+    //   147  PSF            rW0:20
+    //   148  PshVPtr        rW0:34
+    //   149  PshVPtr        rW0:0
+    //   150  CALLINTF       d:84340                 ; void ABarracudaShop::DebugPrintNode(UBarracudaShopItemGraphNode@, const FString&)
+    //   152  FreeNullV8     wW0:34
+    //   153  LoadVObjR      rW0:26 W1:16 DW2:268448537; TArrayIterator::CanProceed  (+16)
+    //   156  RDR1           wW0:3
+    //   157  CpyVtoR1       rW0:3
+    //   158  JLowNZ         ->139
+    //   160  PSF            rW0:20
+    //   161  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //   164  RET            W0:6
+
+------------------------------------------------------------------------------
+void BroadcastFilterUpdated()
+// 16 instr, 116 B bytecode, id=0xF263A257, varspace=10
+------------------------------------------------------------------------------
+{
+    UGameEventRouterComponent v4;
+    FUIEvent_Barracuda_Shop_FilterUpdated v10;
+
+    v4 = UGameEventRouterSubsystem::GetUIGameEventRouter(__WorldContext);
+    if (v4 != null) {
+        v10 = FUIEvent_Barracuda_Shop_FilterUpdated();
+        v4.BroadcastEvent(v10, null);
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79fa1200         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetUIGameEventRouter(const UObject@)
+    //     6  STOREOBJ       wW0:4
+    //     7  CmpPtrNull     rW0:4
+    //     8  JNZ            ->12
+    //    10  JMP            ->28
+    //    12  PSF            rW0:10
+    //    13  CALLSYS        q:0x26e79560b00         ; void FUIEvent_Barracuda_Shop_FilterUpdated::$beh0()
+    //    16  PshNull
+    //    17  TYPEID         d:67121335              ; FUIEvent_Barracuda_Shop_FilterUpdated
+    //    19  PSF            rW0:10
+    //    20  PshVPtr        rW0:4
+    //    21  CALLSYS        q:0x26e7968b4c0         ; void UGameEventRouterComponent::BroadcastEvent(const ?&, UObject@)
+    //    24  PSF            rW0:10
+    //    25  CALLSYS        q:0x26e79560940         ; void FUIEvent_Barracuda_Shop_FilterUpdated::$beh2()
+    //    28  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnFilterByName(const FUIEvent_Barracuda_Shop_FilterByName&inout Event, const AActor@ Context)
+// 8 instr, 52 B bytecode, id=0xEF72A6D6, varspace=0
+------------------------------------------------------------------------------
+{
+    this.ClientNameFilterString = Event.Query;
+    this.BroadcastFilterUpdated();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:8 d:67121333         ; FUIEvent_Barracuda_Shop_FilterByName::Query  (+8)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:1016 d:134230802     ; ABarracudaShop::ClientNameFilterString  (+1016)
+    //     6  CALLSYS        q:0x26e628a8740         ; FString& FString::opAssign(const FString&)
+    //     9  PshVPtr        rW0:0
+    //    10  CALLINTF       d:84341                 ; void ABarracudaShop::BroadcastFilterUpdated()
+    //    12  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnResetFilters(const FUIEvent_Barracuda_Shop_ResetFilters&inout Event, const AActor@ Context)
+// 11 instr, 84 B bytecode, id=0x79B0FA68, varspace=1
+------------------------------------------------------------------------------
+{
+    this.ClientNameFilterString = "";
+    this.ClientTagFilters.Empty(0);
+    this.BroadcastFilterUpdated();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PGA            q:0x26e6f112b40         ; ""
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:1016 d:134230802     ; ABarracudaShop::ClientNameFilterString  (+1016)
+    //     6  CALLSYS        q:0x26e628a8740         ; FString& FString::opAssign(const FString&)
+    //     9  PshC4          d:0
+    //    11  PshVPtr        rW0:0
+    //    12  ADDSi          W0:1032 d:134230802     ; ABarracudaShop::ClientTagFilters  (+1032)
+    //    14  CALLSYS        q:0x26e6ef08580         ; void TArray<FGameplayTag>::Empty(int)
+    //    17  PshVPtr        rW0:0
+    //    18  CALLINTF       d:84341                 ; void ABarracudaShop::BroadcastFilterUpdated()
+    //    20  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnFilterToggleTag(const FUIEvent_Barracuda_Shop_FilterToggleTag&inout Event, const AActor@ Context)
+// 17 instr, 120 B bytecode, id=0xCCD8DB37, varspace=3
+------------------------------------------------------------------------------
+{
+    FGameplayTag v2;
+
+    v2 = FGameplayTag(Event.Tag);
+    this.ClientTagFilters.Empty(0);
+    this.ClientTagFilters.Add(v2);
+    this.BroadcastFilterUpdated();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:8 d:67121336         ; FUIEvent_Barracuda_Shop_FilterToggleTag::Tag  (+8)
+    //     3  PSF            rW0:2
+    //     4  CALLSYS        q:0x26e78762000         ; void FGameplayTag::$beh0(const FGameplayTag&)
+    //     7  PshC4          d:0
+    //     9  PshVPtr        rW0:0
+    //    10  ADDSi          W0:1032 d:134230802     ; ABarracudaShop::ClientTagFilters  (+1032)
+    //    12  CALLSYS        q:0x26e6ef08580         ; void TArray<FGameplayTag>::Empty(int)
+    //    15  PSF            rW0:2
+    //    16  PshVPtr        rW0:0
+    //    17  ADDSi          W0:1032 d:134230802     ; ABarracudaShop::ClientTagFilters  (+1032)
+    //    19  CALLSYS        q:0x26e6ef083c0         ; void TArray<FGameplayTag>::Add(const FGameplayTag&)
+    //    22  PshVPtr        rW0:0
+    //    23  CALLINTF       d:84341                 ; void ABarracudaShop::BroadcastFilterUpdated()
+    //    25  PSF            rW0:2
+    //    26  CALLSYS        q:0x26e787621c0         ; void FGameplayTag::$beh2()
+    //    29  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnFocusItem(const FUIEvent_Barracuda_Shop_FocusItem&inout Event, const AActor@ Context)
+// 6 instr, 40 B bytecode, id=0x06A81988, varspace=0
+------------------------------------------------------------------------------
+{
+    this.ClientCurrentFocus = Event.Item;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:8 d:67121337         ; FUIEvent_Barracuda_Shop_FocusItem::Item  (+8)
+    //     3  PshVPtr        rW0:0
+    //     4  ADDSi          W0:1048 d:134230802     ; ABarracudaShop::ClientCurrentFocus  (+1048)
+    //     6  CALLSYS        q:0x26e79312380         ; TSubclassOf<ALokiBaseItem@>& TSubclassOf<ALokiBaseItem@>::opAssign(const TSubclassOf<ALokiBaseItem@>&)
+    //     9  RET            W0:6
+
+------------------------------------------------------------------------------
+void TryGeneratePurchasePlan(FBarracudaShopPurchasePlan&inout PurchasePlan, ULokiInventoryComponentComboItems@ PlayerInventory, const TSubclassOf<ALokiBaseItem@>&inout ItemClass)
+// 9 instr, 56 B bytecode, id=0xB9FC0440, varspace=1
+------------------------------------------------------------------------------
+{
+    PurchasePlan.Gold = ALokiBaseItem::GetRecipeCostForInventory(PlayerInventory, ItemClass, PurchasePlan.ItemsToConsume);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:8 d:134230801        ; FBarracudaShopPurchasePlan::ItemsToConsume  (+8)
+    //     3  PshVPtr        rW0:-6
+    //     4  PshVPtr        rW0:-4
+    //     5  CALLSYS        q:0x26e7a0ebd80         ; int ALokiBaseItem::GetRecipeCostForInventory(ULokiInventoryComponentComboItems@, TSubclassOf<ALokiBaseItem@>, TSet<ALokiBaseItem@>&)
+    //     8  CpyRtoV4       wW0:1
+    //     9  LoadRObjR      rW0:-2 W1:0 DW2:134230801; FBarracudaShopPurchasePlan::Gold  (+0)
+    //    12  WRTV4          rW0:1
+    //    13  RET            W0:8
+
+------------------------------------------------------------------------------
+void ExecutePurchasePlan(const FBarracudaShopPurchasePlan&in PurchasePlan, ALokiPlayerState@ PlayerState, const TSubclassOf<ALokiBaseItem@>&inout ItemClass)
+// 98 instr, 664 B bytecode, id=0xB9B7A874, varspace=38
+------------------------------------------------------------------------------
+{
+    ULokiInventoryComponentComboItems v4;
+    ALokiBaseItem v6;
+    auto v9;
+    FName v11;
+    FName v13;
+    auto v16;
+    TSetConstIterator<ALokiBaseItem@> v24;
+    TSetConstIterator<ALokiBaseItem@> v32;
+    ALokiBaseItem v34;
+    auto v35;
+
+    v4 = PlayerState.GetInventory();
+    v6 = ItemClass.GetDefaultObject();
+    if (v6 != null) {
+        v13 = v6.GetSlotName();
+        if (v4.GetEmptySlotsByName(v13) == 0) {
+            v16 = 0;
+            v24 = PurchasePlan.ItemsToConsume.Iterator();
+            while (true) {
+                v9 = v24.CanProceed;
+                if (!v9) break;
+                v34 = v24.Proceed();
+                v11 = v34.GetSlotName();
+                v9 = v11 == v13;
+                if (v9) {
+                    v16 = v16 + 1;
+                }
+            }
+            if (v16 == 0) {
+                goto L165;
+            }
+        }
+        v9 = false;
+        v32 = PurchasePlan.ItemsToConsume.Iterator();
+        PlayerState.ConsumeWalletCurrency("Gold", PurchasePlan.Gold, false);
+        while (true) {
+            v35 = v32.CanProceed;
+            if (!v35) break;
+            v34 = v32.Proceed();
+            v4.TryRemoveFromInventory(v34, false);
+        }
+        v9 = false;
+        v34 = SpawnActor(ItemClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, false, null);
+        v9 = false;
+        v35 = true;
+        v4.TryAddToInventory(v34, true, NAME_None, -1, true, false);
+    } else {
+    }
+    L165:
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  CALLSYS        q:0x26e7a391900         ; ULokiInventoryComponentComboItems@ ALokiPlayerState::GetInventory() const
+    //     4  STOREOBJ       wW0:4
+    //     5  PshVPtr        rW0:-6
+    //     6  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //     9  STOREOBJ       wW0:6
+    //    10  CmpPtrNull     rW0:6
+    //    11  JNZ            ->15
+    //    13  JMP            ->165
+    //    15  PSF            rW0:13
+    //    16  PshVPtr        rW0:6
+    //    17  CALLSYS        q:0x26e7a0eaf80         ; FName ALokiBaseItem::GetSlotName() const
+    //    20  PSF            rW0:13
+    //    21  PshVPtr        rW0:4
+    //    22  CALLSYS        q:0x26e7a2a75c0         ; int ULokiInventoryComponentComboItems::GetEmptySlotsByName(FName) const
+    //    25  CpyRtoV4       wW0:15
+    //    26  CMPIi          rW0:15 d:0
+    //    28  JNZ            ->80
+    //    30  SetV4          wW0:16 d:0
+    //    32  PSF            rW0:24
+    //    33  PshVPtr        rW0:-2
+    //    34  ADDSi          W0:8 d:134230801        ; FBarracudaShopPurchasePlan::ItemsToConsume  (+8)
+    //    36  CALLSYS        q:0x26e6ef08200         ; TSetConstIterator<ALokiBaseItem@> TSet<ALokiBaseItem@>::Iterator() const
+    //    39  JMP            ->67
+    //    41  SUSPEND
+    //    42  PSF            rW0:24
+    //    43  CALLSYS        q:0x26e6ef07e80         ; ALokiBaseItem@ const& TSetConstIterator<ALokiBaseItem@>::Proceed()
+    //    46  PshRPtr
+    //    47  RDSPtr
+    //    48  RefCpyV        wW0:34
+    //    49  PSF            rW0:11
+    //    50  PshVPtr        rW0:34
+    //    51  CALLSYS        q:0x26e7a0eaf80         ; FName ALokiBaseItem::GetSlotName() const
+    //    54  PSF            rW0:13
+    //    55  PSF            rW0:11
+    //    56  CALLSYS        q:0x26e69d22000         ; bool FName::opEquals(const FName&) const
+    //    59  CpyRtoV4       wW0:9
+    //    60  CpyVtoR1       rW0:9
+    //    61  JLowZ          ->66
+    //    63  ADDIi          wW0:16 rW1:16 DW2:1
+    //    66  FreeNullV8     wW0:34
+    //    67  LoadVObjR      rW0:24 W1:24 DW2:268448538; TSetConstIterator::CanProceed  (+24)
+    //    70  RDR1           wW0:9
+    //    71  CpyVtoR1       rW0:9
+    //    72  JLowNZ         ->41
+    //    74  CMPIi          rW0:16 d:0
+    //    76  JNZ            ->80
+    //    78  JMP            ->165
+    //    80  SetV1          wW0:9 d:0
+    //    82  PshV4          rW0:9
+    //    83  LoadRObjR      rW0:-2 W1:0 DW2:134230801; FBarracudaShopPurchasePlan::Gold  (+0)
+    //    86  RDR4           wW0:14
+    //    87  PshV4          rW0:14
+    //    88  PGA            q:0x26e6f112c90         ; "Gold"
+    //    91  PshVPtr        rW0:-4
+    //    92  CALLSYS        q:0x26e7a35f200         ; bool ALokiPlayerState::ConsumeWalletCurrency(const FString&, int, bool)
+    //    95  PSF            rW0:32
+    //    96  PshVPtr        rW0:-2
+    //    97  ADDSi          W0:8 d:134230801        ; FBarracudaShopPurchasePlan::ItemsToConsume  (+8)
+    //    99  CALLSYS        q:0x26e6ef08200         ; TSetConstIterator<ALokiBaseItem@> TSet<ALokiBaseItem@>::Iterator() const
+    //   102  JMP            ->121
+    //   104  SUSPEND
+    //   105  PSF            rW0:32
+    //   106  CALLSYS        q:0x26e6ef07e80         ; ALokiBaseItem@ const& TSetConstIterator<ALokiBaseItem@>::Proceed()
+    //   109  PshRPtr
+    //   110  RDSPtr
+    //   111  RefCpyV        wW0:34
+    //   112  SetV1          wW0:36 d:0
+    //   114  PshV4          rW0:36
+    //   115  PshVPtr        rW0:34
+    //   116  PshVPtr        rW0:4
+    //   117  CALLSYS        q:0x26e7a2a8c80         ; bool ULokiInventoryComponentBase::TryRemoveFromInventory(ALokiBaseItem@, ELokiRemoveFromInventoryReason)
+    //   120  FreeNullV8     wW0:34
+    //   121  LoadVObjR      rW0:32 W1:24 DW2:268448538; TSetConstIterator::CanProceed  (+24)
+    //   124  RDR1           wW0:35
+    //   125  CpyVtoR1       rW0:35
+    //   126  JLowNZ         ->104
+    //   128  PshNull
+    //   129  SetV1          wW0:9 d:0
+    //   131  PshV4          rW0:9
+    //   132  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   135  PshGPtr        q:0x26e76817c48         ; FRotator::ZeroRotator
+    //   138  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //   141  PshVPtr        rW0:-6
+    //   142  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //   145  STOREOBJ       wW0:34
+    //   146  SetV1          wW0:9 d:0
+    //   148  PshV4          rW0:9
+    //   149  SetV1          wW0:35 d:1
+    //   151  PshV4          rW0:35
+    //   152  PshC4          d:-1
+    //   154  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   157  SetV1          wW0:37 d:1
+    //   159  PshV4          rW0:37
+    //   160  PshVPtr        rW0:34
+    //   161  PshVPtr        rW0:4
+    //   162  CALLSYS        q:0x26e7a2a8e40         ; bool ULokiInventoryComponentBase::TryAddToInventory(ALokiBaseItem@, ELokiAddToInventoryReason, FName, int, bool, bool)
+    //   165  RET            W0:8
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 24 instr, 152 B bytecode, id=0xA37CFD24, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = true;
+    this.SetbAlwaysRelevant(true);
+    v1 = true;
+    this.SetbReplicates(true);
+    v1 = false;
+    this.LokiReplicationStrategy.bDistanceBased = false;
+    this.LokiReplicationStrategy.CustomReplicationStrategy = true;
+    v1 = true;
+    this.bDebugLogGraph = true;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7a624a00         ; void AActor::SetbAlwaysRelevant(bool)
+    //     7  SetV1          wW0:1 d:1
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7a6291c0         ; void AActor::SetbReplicates(bool)
+    //    14  SetV1          wW0:1 d:0
+    //    16  PshVPtr        rW0:0
+    //    17  ADDSi          W0:904 d:67111343       ; AActor::LokiReplicationStrategy  (+904)
+    //    19  ADDSi          W0:2 d:67118017         ; FLokiReplicationStrategy::bDistanceBased  (+2)
+    //    21  PopRPtr
+    //    22  WRTV1          rW0:1
+    //    23  SetV1          wW0:2 d:1
+    //    25  PshVPtr        rW0:0
+    //    26  ADDSi          W0:904 d:67111343       ; AActor::LokiReplicationStrategy  (+904)
+    //    28  ADDSi          W0:0 d:67118017         ; FLokiReplicationStrategy::CustomReplicationStrategy  (+0)
+    //    30  PopRPtr
+    //    31  WRTV1          rW0:2
+    //    32  SetV1          wW0:1 d:1
+    //    34  LoadThisR      W0:1072 d:134230802     ; ABarracudaShop::bDebugLogGraph  (+1072)
+    //    36  WRTV1          rW0:1
+    //    37  RET            W0:2
+
+------------------------------------------------------------------------------
+~ABarracudaShop()
+// 16 instr, 124 B bytecode, id=0x18E4B6D1, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:920 d:134230802      ; ABarracudaShop::ItemLootTables  (+920)
+    //     3  CALLSYS        q:0x26e7b1a98c0         ; void TArray<TSubclassOf<ULokiLootTableFull@>>::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:936 d:134230802      ; ABarracudaShop::ItemGraphNodes  (+936)
+    //     9  CALLSYS        q:0x26e7b1a9540         ; void TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>::$beh2()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:1016 d:134230802     ; ABarracudaShop::ClientNameFilterString  (+1016)
+    //    15  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:1032 d:134230802     ; ABarracudaShop::ClientTagFilters  (+1032)
+    //    21  CALLSYS        q:0x26e711e7240         ; void TArray<FGameplayTag>::$beh2()
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:1056 d:134230802     ; ABarracudaShop::AllItems  (+1056)
+    //    27  CALLSYS        q:0x26e7a110cc0         ; void TArray<TSubclassOf<AActor@>>::$beh2()
+    //    30  RET            W0:2
+

@@ -1,0 +1,1122 @@
+// ============================================================================
+//  MODULE   Items.LokiTeamElimBoxComponent
+//  SOURCE   Items/LokiTeamElimBoxComponent.as
+//  CONTENT  1 class(es), 16 function(s), 0 enum(s), 1 global(s), 4000 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiTeamElimBoxComponent;
+
+ULokiTeamElimBoxComponent@ ULokiTeamElimBoxComponent()   // traits=0x20
+{
+    ULokiTeamElimBoxComponent v2;
+
+    v2 = ULokiTeamElimBoxComponent();
+    return v2;
+}
+/* ---- ULokiTeamElimBoxComponent: 7 dwords / 4 instructions (cache offset 0xa32bc) ----
+    0000  PSF           v2
+    0004  ALLOC         85205 ULokiTeamElimBoxComponent               ; new ULokiTeamElimBoxComponent  ctor=void ULokiTeamElimBoxComponent::ULokiTeamElimBoxComponent()
+    0014  LOADOBJ       v2
+    0018  RET           0
+*/
+
+UClass@ ULokiTeamElimBoxComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiTeamElimBoxComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0xa3382) ----
+    0000  PshGPtr       __StaticType_ULokiTeamElimBoxComponent
+    000C  CHKREF
+    0010  CALLSYS       TSubclassOf::opImplConv                       ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    001C  STOREOBJ      v2
+    0020  LOADOBJ       v2
+    0024  RET           0
+*/
+
+ULokiTeamElimBoxComponent@ ULokiTeamElimBoxComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiTeamElimBoxComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiTeamElimBoxComponent, v2, typeid(ULokiTeamElimBoxComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0xa34c5) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972719                                    ; ULokiTeamElimBoxComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiTeamElimBoxComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetComponentByClass                   ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+ULokiTeamElimBoxComponent@ ULokiTeamElimBoxComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiTeamElimBoxComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiTeamElimBoxComponent, v2, typeid(ULokiTeamElimBoxComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0xa3620) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972719                                    ; ULokiTeamElimBoxComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiTeamElimBoxComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass           ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+ULokiTeamElimBoxComponent@ ULokiTeamElimBoxComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiTeamElimBoxComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiTeamElimBoxComponent, v2, typeid(ULokiTeamElimBoxComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0xa3776) ----
+    0000  PshVPtr       WithName
+    0004  TYPEID        1207972719                                    ; ULokiTeamElimBoxComponent@
+    000C  PSF           v2
+    0010  PshGPtr       __StaticType_ULokiTeamElimBoxComponent
+    001C  CHKREF
+    0020  PshVPtr       Actor
+    0024  CALLSYS       __Actor_CreateComponentByClass                ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    0030  LOADOBJ       v2
+    0034  RET           4
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiTeamElimBoxComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiTeamElimBoxComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TArray<FName> InventorySlots;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TSubclassOf<ALokiSearchableBox@> TeamElimBoxClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TSubclassOf<ALokiBaseItem@> GoldDropClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TArray<FName> T0SlotsToDestroy;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    int MinimumInsuredGoldValue;
+    TMap<int, ALokiSearchableBox@> TeamIndexToBoxMap;
+    TArray<ALokiPlayerState@> PlayersQueue;
+    private FTimerHandle UpdateTimerHandle;
+
+    ULokiTeamElimBoxComponent()   // traits=0x21
+    {
+        auto v1;
+
+        this.InventorySlots = TArray<FName>();
+        this.T0SlotsToDestroy = TArray<FName>();
+        this.TeamIndexToBoxMap = TMap<int, ALokiSearchableBox@>();
+        this.PlayersQueue = TArray<ALokiPlayerState@>();
+        this.UpdateTimerHandle = FTimerHandle();
+        this.TeamElimBoxClass = TSubclassOf<ALokiSearchableBox@>();
+        this.TeamElimBoxClass = nullptr;
+        this.GoldDropClass = TSubclassOf<ALokiBaseItem@>();
+        this.GoldDropClass = nullptr;
+        v1 = 0;
+        this.MinimumInsuredGoldValue = v1;
+        return;
+    }
+    /* ---- ULokiTeamElimBoxComponent: 66 dwords / 35 instructions (cache offset 0xa5d05) ----
+        0000  PshVPtr       this
+        0004  ADDSi         208 134230895                                 ; .InventorySlots
+        000C  CALLSYS       TArray::$beh0                                 ; void TArray<FName>::$beh0()
+        0018  PshVPtr       this
+        001C  ADDSi         240 134230895                                 ; .T0SlotsToDestroy
+        0024  CALLSYS       TArray::$beh0                                 ; void TArray<FName>::$beh0()
+        0030  PshVPtr       this
+        0034  ADDSi         264 134230895                                 ; .TeamIndexToBoxMap
+        003C  CALLSYS       TMap::$beh0                                   ; void TMap<int, ALokiSearchableBox@>::$beh0()
+        0048  PshVPtr       this
+        004C  ADDSi         344 134230895                                 ; .PlayersQueue
+        0054  CALLSYS       TArray::$beh0                                 ; void TArray<ALokiPlayerState@>::$beh0()
+        0060  PshVPtr       this
+        0064  ADDSi         360 134230895                                 ; .UpdateTimerHandle
+        006C  CALLSYS       FTimerHandle::$beh0                           ; void FTimerHandle::$beh0()
+        0078  PshNull
+        007C  PshVPtr       this
+        0080  ADDSi         224 134230895                                 ; .TeamElimBoxClass
+        0088  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ALokiSearchableBox@>::$beh0()
+        0094  PshVPtr       this
+        0098  ADDSi         224 134230895                                 ; .TeamElimBoxClass
+        00A0  CALLSYS       TSubclassOf::opAssign                         ; void TSubclassOf<ALokiSearchableBox@>::opAssign(UClass@)
+        00AC  PshNull
+        00B0  PshVPtr       this
+        00B4  ADDSi         232 134230895                                 ; .GoldDropClass
+        00BC  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ALokiBaseItem@>::$beh0()
+        00C8  PshVPtr       this
+        00CC  ADDSi         232 134230895                                 ; .GoldDropClass
+        00D4  CALLSYS       TSubclassOf::opAssign                         ; void TSubclassOf<ALokiBaseItem@>::opAssign(UClass@)
+        00E0  SetV4         v1 0
+        00E8  LoadThisR     256 134230895                                 ; this.MinimumInsuredGoldValue
+        00F0  WRTV4         v1
+        00F4  PshVPtr       this
+        00F8  FinConstruct  ULokiTeamElimBoxComponent
+        0104  RET           2
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    AActor@ DropWipedTeamInventories(AActor@ LastVictimActor, APawn@ WipeInstigator, const int TeamIndex)   // traits=0x20
+    {
+        bool v1;
+        AActor v4;
+        TSubclassOf<ALokiSearchableBox@> v6;
+        ALokiHeroCharacter v8;
+        ALokiHeroCharacter v10;
+        FVector v16;
+        FVector v22;
+        ALokiHeightMap v26;
+        bool v27;
+        ALokiHeroCharacter v30;
+        ULokiCharacterMovementComponent v32;
+        ULokiCharacterMovementComponent v34;
+        FVector v40;
+        FName v42;
+        ALokiSearchableBox v50;
+        FRotator v56;
+        ESpawnActorCollisionHandlingMethod v57;
+        ALokiSearchableBox v60;
+        TArray<ALokiPlayerState@> v64;
+        ULokiInventoryComponentBase v72;
+        TArray<ALokiBaseItem@> v76;
+        TArrayIterator<ALokiPlayerState@> v82;
+        ALokiPlayerState v90;
+
+        v1 = IsValid(LastVictimActor);
+        v1 = !v1;
+        if (v1) {
+            return v4;
+        } else {
+            v6 = TSubclassOf<ALokiSearchableBox@>();
+            v6 = this.TeamElimBoxClass;
+            v1 = v6 == nullptr;
+            if (v1) {
+                return v4;
+            } else {
+                if (LastVictimActor != nullptr) {
+                    v10 = cast<ALokiHeroCharacter@>(LastVictimActor);
+                } else {
+                    v10 = nullptr;
+                }
+                v8 = v10;
+                if (v8 == nullptr) {
+                    return v4;
+                } else {
+                    v22 = v8.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v26 = ALokiHeightMap::GetInstance(__WorldContext);
+                    if (v26 != nullptr) {
+                        v1 = true;
+                        if (v26.IsAbyss(v22, v1)) {
+                            if (WipeInstigator != nullptr) {
+                                v10 = cast<ALokiHeroCharacter@>(WipeInstigator);
+                            } else {
+                                v10 = nullptr;
+                            }
+                            v30 = v10;
+                            if (IsValid(v30)) {
+                                v32 = v30.GetLokiCharacterMovement();
+                                if (v32 != nullptr) {
+                                    v22 = v32.LastWalkingLocation;
+                                }
+                            } else {
+                                v34 = v8.GetLokiCharacterMovement();
+                                v22 = v34.LastWalkingLocation;
+                            }
+                        }
+                    }
+                    v40 = FVector();
+                    v42 = FName("");
+                    v27 = false;
+                    v1 = LokiProjection::SimpleProjectToUnobstructedTerrain(__WorldContext, v22, v40, 1000.0, 5000.0, v8, v27, 0, 10, v42);
+                    if (!v1) {
+                        v1 = 0;
+                    } else {
+                        v27 = ALokiBaseItem::IsValidItemLocation(__WorldContext, v8, v22);
+                        v1 = v27;
+                    }
+                    if (v1) {
+                        v22 = v40;
+                    } else {
+                        v16 = this.FindLocationForBox(v22, v8);
+                        v22 = v16;
+                    }
+                    v57 = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+                    v56 = FRotator();
+                    v60 = LokiGameplay::SpawnActorFromClass(__WorldContext, this.TeamElimBoxClass, v40, v56, nullptr, v57, nullptr);
+                    v50 = v60;
+                    v64 = LokiGameplay::GetPlayerStatesOnTeam(__WorldContext, TeamIndex);
+                    v72 = ULokiInventoryComponentBase::GetInventoryComponent(v50);
+                    v76 = TArray<ALokiBaseItem@>();
+                    v82 = v64.Iterator();
+                    while (true) {
+                        v1 = v82.CanProceed;
+                        if (!v1) break;
+                        v90 = v82.Proceed();
+                        v82.Proceed();
+                        this.TransferInventoryItems(v90, v72, v76);
+                    }
+                    this.TransferKilledPlayerGold(v8, v72);
+                    this.PostTransferToTeamElimBox(v72, v76);
+                }
+            }
+        }
+        return v50;
+    }
+    /* ---- DropWipedTeamInventories: 298 dwords / 185 instructions (cache offset 0xa3cc6) ----
+        0000  PshVPtr       LastVictimActor
+        0004  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0010  CpyRtoV4      v1
+        0014  NOT           v1
+        0018  CpyVtoR1      v1
+        001C  JLowZ         4                                             -> L0034
+        0024  FreeNullV8    v4
+        0028  LOADOBJ       v4
+        002C  JMP           284                                           -> L04A4
+      L0034:
+        0034  PSF           v6
+        0038  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<ALokiSearchableBox@>::$beh0()
+        0044  PshVPtr       this
+        0048  ADDSi         224 134230895                                 ; .TeamElimBoxClass
+        0050  PSF           v6
+        0054  CALLSYS       TSubclassOf::opAssign                         ; TSubclassOf<ALokiSearchableBox@>& TSubclassOf<ALokiSearchableBox@>::opAssign(const TSubclassOf<ALokiSearchableBox@>&)
+        0060  PshNull
+        0064  PSF           v6
+        0068  CALLSYS       TSubclassOf::opEquals                         ; bool TSubclassOf<ALokiSearchableBox@>::opEquals(UClass@) const
+        0074  CpyRtoV4      v1
+        0078  CpyVtoR1      v1
+        007C  JLowZ         4                                             -> L0094
+        0084  FreeNullV8    v4
+        0088  LOADOBJ       v4
+        008C  JMP           260                                           -> L04A4
+      L0094:
+        0094  CmpPtrNull    LastVictimActor
+        0098  JZ            9                                             -> L00C4
+        00A0  TYPEID        1140857000                                    ; ALokiHeroCharacter@
+        00A8  PSF           v10
+        00AC  PshVPtr       LastVictimActor
+        00B0  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        00BC  JMP           1                                             -> L00C8
+      L00C4:
+        00C4  ClrVPtr       v10
+      L00C8:
+        00C8  PshVPtr       v10
+        00CC  RefCpyV       v8
+        00D0  CmpPtrNull    v8
+        00D4  JNZ           4                                             -> L00EC
+        00DC  FreeNullV8    v4
+        00E0  LOADOBJ       v4
+        00E4  JMP           238                                           -> L04A4
+      L00EC:
+        00EC  PSF           v22
+        00F0  PshVPtr       v8
+        00F4  CALLSYS       AActor::GetActorLocation                      ; FVector AActor::GetActorLocation() const
+        0100  PshGPtr       __WorldContext
+        010C  CALLSYS       GetInstance                                   ; ALokiHeightMap@ ALokiHeightMap::GetInstance(const UObject@)
+        0118  STOREOBJ      v26
+        011C  CmpPtrNull    v26
+        0120  JZ            62                                            -> L0220
+        0128  SetV1         v1 1
+        0130  PshV4         v1
+        0134  PSF           v22
+        0138  PshVPtr       v26
+        013C  CALLSYS       ALokiHeightMap::IsAbyss                       ; bool ALokiHeightMap::IsAbyss(const FVector, const bool)
+        0148  JLowZ         52                                            -> L0220
+        0150  CmpPtrNull    WipeInstigator
+        0154  JZ            9                                             -> L0180
+        015C  TYPEID        1140857000                                    ; ALokiHeroCharacter@
+        0164  PSF           v10
+        0168  PshVPtr       WipeInstigator
+        016C  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0178  JMP           1                                             -> L0184
+      L0180:
+        0180  ClrVPtr       v10
+      L0184:
+        0184  PshVPtr       v10
+        0188  RefCpyV       v30
+        018C  PshVPtr       v30
+        0190  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        019C  JLowZ         18                                            -> L01EC
+        01A4  PshVPtr       v30
+        01A8  CALLSYS       ALokiCharacter::GetLokiCharacterMovement      ; ULokiCharacterMovementComponent@ ALokiCharacter::GetLokiCharacterMovement() const
+        01B4  STOREOBJ      v32
+        01B8  CmpPtrNull    v32
+        01BC  JZ            7                                             -> L01E0
+        01C4  PshVPtr       v32
+        01C8  ADDSi         4432 67115005                                 ; .LastWalkingLocation
+        01D0  PSF           v22
+        01D4  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+      L01E0:
+        01E0  FreeNullV8    v32
+        01E4  JMP           12                                            -> L021C
+      L01EC:
+        01EC  PshVPtr       v8
+        01F0  CALLSYS       ALokiCharacter::GetLokiCharacterMovement      ; ULokiCharacterMovementComponent@ ALokiCharacter::GetLokiCharacterMovement() const
+        01FC  STOREOBJ      v34
+        0200  PshVPtr       v34
+        0204  ADDSi         4432 67115005                                 ; .LastWalkingLocation
+        020C  PSF           v22
+        0210  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+      L021C:
+        021C  FreeNullV8    v30
+      L0220:
+        0220  PSF           v40
+        0224  CALLSYS       FVector::$beh0                                ; void FVector::$beh0()
+        0230  PGA           ""
+        023C  PSF           v42
+        0240  CALLSYS       FName::$beh0                                  ; void FName::$beh0(const FString&)
+        024C  PSF           v42
+        0250  PshC4         10
+        0258  PshC8         0x0
+        0264  SetV1         v27 0
+        026C  PshV4         v27
+        0270  PshVPtr       v8
+        0274  PshC4         1167867904
+        027C  PshC4         1148846080
+        0284  PSF           v40
+        0288  PSF           v22
+        028C  PshGPtr       __WorldContext
+        0298  CALLSYS       SimpleProjectToUnobstructedTerrain            ; bool LokiProjection::SimpleProjectToUnobstructedTerrain(const UObject@, FVector, FVector&, float32, float32, AActor@, bool, float64, int, FName)
+        02A4  CpyRtoV4      v1
+        02A8  CpyVtoR1      v1
+        02AC  JLowNZ        4                                             -> L02C4
+        02B4  SetV4         v1 0
+        02BC  JMP           11                                            -> L02F0
+      L02C4:
+        02C4  PSF           v22
+        02C8  PshVPtr       v8
+        02CC  PshGPtr       __WorldContext
+        02D8  CALLSYS       IsValidItemLocation                           ; bool ALokiBaseItem::IsValidItemLocation(UObject@, AActor@, const FVector&)
+        02E4  CpyRtoV4      v27
+        02E8  CpyVtoV4      v1 v27
+      L02F0:
+        02F0  CpyVtoR1      v1
+        02F4  JLowZ         7                                             -> L0318
+        02FC  PSF           v40
+        0300  PSF           v22
+        0304  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        0310  JMP           11                                            -> L0344
+      L0318:
+        0318  PshVPtr       v8
+        031C  PSF           v22
+        0320  PSF           v16
+        0324  PshVPtr       this
+        0328  CALLINTF      85198                                         ; FVector ULokiTeamElimBoxComponent::FindLocationForBox(const FVector&, AActor@)
+        0330  PSF           v16
+        0334  PSF           v22
+        0338  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+      L0344:
+        0344  PshNull
+        0348  SetV1         v57 1
+        0350  PshV4         v57
+        0354  PshNull
+        0358  PSF           v56
+        035C  CALLSYS       FRotator::$beh0                               ; void FRotator::$beh0()
+        0368  PSF           v56
+        036C  PSF           v40
+        0370  PshVPtr       this
+        0374  ADDSi         224 134230895                                 ; .TeamElimBoxClass
+        037C  PshGPtr       __WorldContext
+        0388  CALLSYS       SpawnActorFromClass                           ; AActor@ LokiGameplay::SpawnActorFromClass(UObject@, TSubclassOf<AActor@>, FVector, FRotator, AActor@, ESpawnActorCollisionHandlingMethod, APawn@)
+        0394  STOREOBJ      v60
+        0398  PshVPtr       v60
+        039C  RefCpyV       v50
+        03A0  PshV4         TeamIndex
+        03A4  PshGPtr       __WorldContext
+        03B0  PSF           v64
+        03B4  CALLSYS       GetPlayerStatesOnTeam                         ; TArray<ALokiPlayerState@> LokiGameplay::GetPlayerStatesOnTeam(const UObject@, int)
+        03C0  PshVPtr       v50
+        03C4  CALLSYS       GetInventoryComponent                         ; ULokiInventoryComponentBase@ ULokiInventoryComponentBase::GetInventoryComponent(const AActor@)
+        03D0  STOREOBJ      v72
+        03D4  PSF           v76
+        03D8  CALLSYS       TArray::$beh0                                 ; void TArray<ALokiBaseItem@>::$beh0()
+        03E4  PSF           v82
+        03E8  PSF           v64
+        03EC  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiPlayerState@> TArray<ALokiPlayerState@>::Iterator()
+        03F8  JMP           15                                            -> L043C
+      L0400:
+        0400  SUSPEND
+        0404  PSF           v82
+        0408  CALLSYS       TArrayIterator::Proceed                       ; ALokiPlayerState@& TArrayIterator<ALokiPlayerState@>::Proceed()
+        0414  PshRPtr
+        0418  RDSPtr
+        041C  RefCpyV       v90
+        0420  PSF           v76
+        0424  PshVPtr       v72
+        0428  PshVPtr       v90
+        042C  PshVPtr       this
+        0430  CALLINTF      85199                                         ; void ULokiTeamElimBoxComponent::TransferInventoryItems(ALokiPlayerState@, ULokiInventoryComponentBase@, TArray<ALokiBaseItem@>&)
+        0438  FreeNullV8    v90
+      L043C:
+        043C  LoadVObjR     v82 16 268448510                              ; .CanProceed
+        0448  RDR1          v1
+        044C  CpyVtoR1      v1
+        0450  JLowNZ        -22                                           -> L0400
+        0458  PshVPtr       v72
+        045C  PshVPtr       v8
+        0460  PshVPtr       this
+        0464  CALLINTF      85200                                         ; void ULokiTeamElimBoxComponent::TransferKilledPlayerGold(ALokiHeroCharacter@, ULokiInventoryComponentBase@)
+        046C  PSF           v76
+        0470  PshVPtr       v72
+        0474  PshVPtr       this
+        0478  CALLINTF      85203                                         ; void ULokiTeamElimBoxComponent::PostTransferToTeamElimBox(ULokiInventoryComponentBase@, const TArray<ALokiBaseItem@>&)
+        0480  PSF           v76
+        0484  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiBaseItem@>::$beh2()
+        0490  PSF           v64
+        0494  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+        04A0  LOADOBJ       v50
+      L04A4:
+        04A4  RET           7
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    FVector FindLocationForBox(const FVector& Origin, AActor@ KilledCharacter)   // traits=0x20
+    {
+        FVector v6;
+        auto v7;
+        FVector v14;
+        FVector v20;
+        auto v21;
+        bool v22;
+        TSubclassOf<UNavigationQueryFilter@> v26;
+        FName v29;
+        auto v32;
+        auto v34;
+        auto v36;
+
+        v6 = FVector(Origin);
+        v7 = 10;
+        v14 = FVector();
+        v20 = FVector();
+        v21 = 0;
+        while (true) {
+            if (v21 >= v7) break;
+            v26 = TSubclassOf<UNavigationQueryFilter@>(nullptr);
+            v22 = UNavigationSystemV1::GetRandomLocationInNavigableRadius(__WorldContext, Origin, v14, 250.0, nullptr, v26);
+            if (v22) {
+                v29 = FName("");
+                v22 = false;
+                v34 = LokiProjection::SimpleProjectToUnobstructedTerrain(__WorldContext, Origin, v20, 1000.0, 5000.0, KilledCharacter, v22, 0, 10, v29);
+                if (v34) {
+                    if (ALokiBaseItem::IsValidItemLocation(__WorldContext, KilledCharacter, Origin)) {
+                        v6 = v20;
+                        __ret = FVector(v6);
+                        return;
+                    }
+                }
+            }
+            v21++;
+        }
+        v36 = 90.0;
+        v32 = v6.Z;
+        v32 = v32 - v36;
+        v6.Z = v32;
+        __ret = FVector(v6);
+        return;
+    }
+    /* ---- FindLocationForBox: 117 dwords / 66 instructions (cache offset 0xa45f5) ----
+        0000  PshVPtr       Origin
+        0004  PSF           v6
+        0008  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+        0014  SetV4         v7 10
+        001C  PSF           v14
+        0020  CALLSYS       FVector::$beh0                                ; void FVector::$beh0()
+        002C  PSF           v20
+        0030  CALLSYS       FVector::$beh0                                ; void FVector::$beh0()
+        003C  SetV4         v21 0
+        0044  JMP           78                                            -> L0184
+      L004C:
+        004C  SUSPEND
+        0050  PshNull
+        0054  PSF           v26
+        0058  CALLSYS       TSubclassOf::$beh0                            ; void TSubclassOf<UNavigationQueryFilter@>::$beh0(UClass@)
+        0064  PSF           v26
+        0068  PshNull
+        006C  PshC4         1132068864
+        0074  PSF           v14
+        0078  PshVPtr       Origin
+        007C  PshGPtr       __WorldContext
+        0088  CALLSYS       GetRandomLocationInNavigableRadius            ; bool UNavigationSystemV1::GetRandomLocationInNavigableRadius(UObject@, const FVector&, FVector&, float32, ANavigationData@, TSubclassOf<UNavigationQueryFilter@>)
+        0094  CpyRtoV4      v22
+        0098  CpyVtoR1      v22
+        009C  JLowZ         55                                            -> L0180
+        00A4  PGA           ""
+        00B0  PSF           v29
+        00B4  CALLSYS       FName::$beh0                                  ; void FName::$beh0(const FString&)
+        00C0  PSF           v29
+        00C4  PshC4         10
+        00CC  PshC8         0x0
+        00D8  SetV1         v22 0
+        00E0  PshV4         v22
+        00E4  PshVPtr       KilledCharacter
+        00E8  PshC4         1167867904
+        00F0  PshC4         1148846080
+        00F8  PSF           v20
+        00FC  PshVPtr       Origin
+        0100  PshGPtr       __WorldContext
+        010C  CALLSYS       SimpleProjectToUnobstructedTerrain            ; bool LokiProjection::SimpleProjectToUnobstructedTerrain(const UObject@, FVector, FVector&, float32, float32, AActor@, bool, float64, int, FName)
+        0118  CpyRtoV4      v34
+        011C  CpyVtoR1      v34
+        0120  JLowZ         22                                            -> L0180
+        0128  PshVPtr       Origin
+        012C  PshVPtr       KilledCharacter
+        0130  PshGPtr       __WorldContext
+        013C  CALLSYS       IsValidItemLocation                           ; bool ALokiBaseItem::IsValidItemLocation(UObject@, AActor@, const FVector&)
+        0148  JLowZ         12                                            -> L0180
+        0150  PSF           v20
+        0154  PSF           v6
+        0158  CALLSYS       FVector::opAssign                             ; FVector& FVector::opAssign(const FVector&)
+        0164  PSF           v6
+        0168  PshVPtr       __ret
+        016C  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+        0178  JMP           20                                            -> L01D0
+      L0180:
+        0180  IncVi         v21
+      L0184:
+        0184  CMPi          v21 v7
+        018C  JS            -82                                           -> L004C
+        0194  SetV8         v36 0x4056800000000000
+        01A0  LoadVObjR     v6 16 67117444                                ; .Z
+        01AC  RDR8          v32
+        01B0  SUBd          v32 v32 v36
+        01B8  WRTV8         v32
+        01BC  PSF           v6
+        01C0  PshVPtr       __ret
+        01C4  CALLSYS       FVector::$beh0                                ; void FVector::$beh0(const FVector&)
+      L01D0:
+        01D0  RET           8
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void TransferInventoryItems(ALokiPlayerState@ PlayerState, ULokiInventoryComponentBase@ DestinationInventory, TArray<ALokiBaseItem@>&inout OutDeniedItems)   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+        ULokiInventoryComponentComboItems v4;
+        TArray<ALokiBaseItem@> v14;
+        TArrayIterator<ALokiBaseItem@> v20;
+        ALokiBaseItem v28;
+        FName v30;
+        FName v32;
+        auto v33;
+        auto v34;
+
+        v1 = IsValid(PlayerState);
+        v1 = !v1;
+        if (v1) {
+            v1 = true;
+        } else {
+            v2 = IsValid(DestinationInventory);
+            v2 = !v2;
+            v1 = v2;
+        }
+        if (v1) {
+            return;
+        } else {
+            v4 = PlayerState.GetInventory();
+            v2 = IsValid(v4);
+            v2 = !v2;
+            if (v2) {
+                return;
+            } else {
+                v14 = v4.GetAllValidItems();
+                v20 = v14.Iterator();
+                while (true) {
+                    v1 = v20.CanProceed;
+                    if (!v1) break;
+                    v28 = v20.Proceed();
+                    v20.Proceed();
+                    v2 = IsValid(v28);
+                    v2 = !v2;
+                    if (!v2) {
+                        PlayerState.AddItemToElimInventorySnapShot(v28);
+                        v1 = v28.bDropOnTeamElimination;
+                        v1 = !v1;
+                        if (!v1) {
+                            v2 = v28.bStarterItem;
+                            if (!v2) {
+                                v32 = v28.GetSlotName();
+                                v30 = FName(v32);
+                                v1 = this.InventorySlots.Contains(v30);
+                                v1 = !v1;
+                                if (!v1) {
+                                    if (!this.T0SlotsToDestroy.Contains(v30)) {
+                                        v2 = 0;
+                                    } else {
+                                        v33 = v28.TierNumber;
+                                        v1 = v33 == 0;
+                                        v2 = v1;
+                                    }
+                                    if (!v2) {
+                                        v1 = this.ShouldTransferItem(v28, PlayerState);
+                                        v1 = !v1;
+                                        if (v1) {
+                                            OutDeniedItems.Add(v28);
+                                        } else {
+                                            v34 = v28.PlayerStateDupeArray.Num();
+                                            if (v34 > 0) {
+                                                v28.PlayerStateDupeArray.Reset(0);
+                                            }
+                                            v1 = false;
+                                            v4.TryTransferToInventory(v28, DestinationInventory, NAME_None, -1, v1);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- TransferInventoryItems: 218 dwords / 135 instructions (cache offset 0xa4ae7) ----
+        0000  PshVPtr       PlayerState
+        0004  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0010  CpyRtoV4      v1
+        0014  NOT           v1
+        0018  CpyVtoR1      v1
+        001C  JLowZ         4                                             -> L0034
+        0024  SetV1         v1 1
+        002C  JMP           8                                             -> L0054
+      L0034:
+        0034  PshVPtr       DestinationInventory
+        0038  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0044  CpyRtoV4      v2
+        0048  NOT           v2
+        004C  CpyVtoV4      v1 v2
+      L0054:
+        0054  CpyVtoR1      v1
+        0058  JLowZ         2                                             -> L0068
+        0060  JMP           191                                           -> L0364
+      L0068:
+        0068  PshVPtr       PlayerState
+        006C  CALLSYS       ALokiPlayerState::GetInventory                ; ULokiInventoryComponentComboItems@ ALokiPlayerState::GetInventory() const
+        0078  STOREOBJ      v4
+        007C  PshVPtr       v4
+        0080  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        008C  CpyRtoV4      v2
+        0090  NOT           v2
+        0094  CpyVtoR1      v2
+        0098  JLowZ         2                                             -> L00A8
+        00A0  JMP           175                                           -> L0364
+      L00A8:
+        00A8  PSF           v14
+        00AC  PshVPtr       v4
+        00B0  CALLSYS       ULokiInventoryComponentBase::GetAllValidItems  ; TArray<ALokiBaseItem@> ULokiInventoryComponentBase::GetAllValidItems() const
+        00BC  PSF           v20
+        00C0  PSF           v14
+        00C4  CALLSYS       TArray::Iterator                              ; TArrayIterator<ALokiBaseItem@> TArray<ALokiBaseItem@>::Iterator()
+        00D0  JMP           152                                           -> L0338
+      L00D8:
+        00D8  SUSPEND
+        00DC  PSF           v20
+        00E0  CALLSYS       TArrayIterator::Proceed                       ; ALokiBaseItem@& TArrayIterator<ALokiBaseItem@>::Proceed()
+        00EC  PshRPtr
+        00F0  RDSPtr
+        00F4  RefCpyV       v28
+        00F8  PshVPtr       v28
+        00FC  CALLSYS       IsValid                                       ; bool IsValid(const UObject@)
+        0108  CpyRtoV4      v2
+        010C  NOT           v2
+        0110  CpyVtoR1      v2
+        0114  JLowZ         3                                             -> L0128
+        011C  FreeNullV8    v28
+        0120  JMP           132                                           -> L0338
+      L0128:
+        0128  PshVPtr       v28
+        012C  PshVPtr       PlayerState
+        0130  CALLSYS       ALokiPlayerState::AddItemToElimInventorySnapShot  ; void ALokiPlayerState::AddItemToElimInventorySnapShot(ALokiBaseItem@)
+        013C  LoadRObjR     v28 1690 67114958                             ; .bDropOnTeamElimination
+        0148  RDR1          v1
+        014C  NOT           v1
+        0150  CpyVtoR1      v1
+        0154  JLowZ         3                                             -> L0168
+        015C  FreeNullV8    v28
+        0160  JMP           116                                           -> L0338
+      L0168:
+        0168  LoadRObjR     v28 1129 67114958                             ; .bStarterItem
+        0174  RDR1          v2
+        0178  CpyVtoR1      v2
+        017C  JLowZ         3                                             -> L0190
+        0184  FreeNullV8    v28
+        0188  JMP           106                                           -> L0338
+      L0190:
+        0190  PSF           v32
+        0194  PshVPtr       v28
+        0198  CALLSYS       ALokiBaseItem::GetSlotName                    ; FName ALokiBaseItem::GetSlotName() const
+        01A4  PSF           v32
+        01A8  PSF           v30
+        01AC  CALLSYS       FName::$beh0                                  ; void FName::$beh0(const FName&)
+        01B8  PSF           v30
+        01BC  PshVPtr       this
+        01C0  ADDSi         208 134230895                                 ; .InventorySlots
+        01C8  CALLSYS       TArray::Contains                              ; bool TArray<FName>::Contains(const FName&) const
+        01D4  CpyRtoV4      v1
+        01D8  NOT           v1
+        01DC  CpyVtoR1      v1
+        01E0  JLowZ         3                                             -> L01F4
+        01E8  FreeNullV8    v28
+        01EC  JMP           81                                            -> L0338
+      L01F4:
+        01F4  PSF           v30
+        01F8  PshVPtr       this
+        01FC  ADDSi         240 134230895                                 ; .T0SlotsToDestroy
+        0204  CALLSYS       TArray::Contains                              ; bool TArray<FName>::Contains(const FName&) const
+        0210  JLowNZ        4                                             -> L0228
+        0218  SetV4         v2 0
+        0220  JMP           10                                            -> L0250
+      L0228:
+        0228  LoadRObjR     v28 1120 67114958                             ; .TierNumber
+        0234  RDR4          v33
+        0238  CMPIi         v33 0
+        0240  TZ
+        0244  CpyRtoV4      v1
+        0248  CpyVtoV4      v2 v1
+      L0250:
+        0250  CpyVtoR1      v2
+        0254  JLowZ         3                                             -> L0268
+        025C  FreeNullV8    v28
+        0260  JMP           52                                            -> L0338
+      L0268:
+        0268  PshVPtr       PlayerState
+        026C  PshVPtr       v28
+        0270  PshVPtr       this
+        0274  CALLINTF      85201                                         ; bool ULokiTeamElimBoxComponent::ShouldTransferItem(ALokiBaseItem@, ALokiPlayerState@)
+        027C  CpyRtoV4      v1
+        0280  NOT           v1
+        0284  CpyVtoR1      v1
+        0288  JLowZ         8                                             -> L02B0
+        0290  PSF           v28
+        0294  PshVPtr       OutDeniedItems
+        0298  CALLSYS       TArray::Add                                   ; void TArray<ALokiBaseItem@>::Add(const ALokiBaseItem@ const&)
+        02A4  FreeNullV8    v28
+        02A8  JMP           34                                            -> L0338
+      L02B0:
+        02B0  PshVPtr       v28
+        02B4  ADDSi         1464 67114958                                 ; .PlayerStateDupeArray
+        02BC  CALLSYS       TArray::Num                                   ; int TArray<ALokiPlayerState@>::Num() const
+        02C8  CpyRtoV4      v34
+        02CC  CMPIi         v34 0
+        02D4  JNP           8                                             -> L02FC
+        02DC  PshC4         0
+        02E4  PshVPtr       v28
+        02E8  ADDSi         1464 67114958                                 ; .PlayerStateDupeArray
+        02F0  CALLSYS       TArray::Reset                                 ; void TArray<ALokiPlayerState@>::Reset(int)
+      L02FC:
+        02FC  SetV1         v1 0
+        0304  PshV4         v1
+        0308  PshC4         -1
+        0310  PshGPtr       NAME_None
+        031C  PshVPtr       DestinationInventory
+        0320  PshVPtr       v28
+        0324  PshVPtr       v4
+        0328  CALLSYS       ULokiInventoryComponentBase::TryTransferToInventory  ; bool ULokiInventoryComponentBase::TryTransferToInventory(ALokiBaseItem@, ULokiInventoryComponentBase@, FName, int, bool)
+        0334  FreeNullV8    v28
+      L0338:
+        0338  LoadVObjR     v20 16 268448622                              ; .CanProceed
+        0344  RDR1          v1
+        0348  CpyVtoR1      v1
+        034C  JLowNZ        -159                                          -> L00D8
+        0354  PSF           v14
+        0358  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiBaseItem@>::$beh2()
+      L0364:
+        0364  RET           8
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void TransferKilledPlayerGold(ALokiHeroCharacter@ KilledCharacter, ULokiInventoryComponentBase@ BoxInventory)   // traits=0x20
+    {
+        ALokiHeroCharacter v2;
+        bool v3;
+        APlayerState v6;
+        ALokiPlayerState v8;
+        ALokiPlayerState v10;
+        ALokiGameMode v14;
+        auto v15;
+        int v16;
+        float32 v17;
+        float32 v18;
+        ALokiBaseItem v24;
+        bool v25;
+        ELokiAddToInventoryReason v26;
+
+        v2 = KilledCharacter;
+        if (v2 == nullptr) {
+            return;
+        } else {
+            v6 = KilledCharacter.PlayerState;
+            if (v6 != nullptr) {
+                v8 = cast<ALokiPlayerState@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v10 = v8;
+            if (v10 == nullptr) {
+                return;
+            } else {
+                v14 = Loki::GetLokiGameMode(__WorldContext);
+                v3 = v14.bDropCurrencyOnPlayerDeath;
+                v3 = !v3;
+                if (v3) {
+                    return;
+                } else {
+                    v15 = v10.GetWalletGold();
+                    if (v15 <= 0) {
+                        return;
+                    } else {
+                        v17 = v14.GetGoldDeathboxTransferRatio();
+                        v18 = float32(v15);
+                        v17 = v17 * v18;
+                        v16 = Math::RoundToInt(v17);
+                        v3 = false;
+                        v24 = SpawnActor(this.GoldDropClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v3, nullptr);
+                        v24.DroppedAsCurrency(v10, v16)  /* UFunction ReceiveDroppedAsCurrency */;
+                        v3 = false;
+                        v25 = true;
+                        v26 = ELokiAddToInventoryReason::Created;
+                        v3 = false;
+                        BoxInventory.TryAddToInventory(v24, v26, NAME_None, -1, v25, v3);
+                        v10.ConsumeWalletCurrency("Gold", v16, v3);
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- TransferKilledPlayerGold: 131 dwords / 77 instructions (cache offset 0xa5238) ----
+        0000  PshVPtr       KilledCharacter
+        0004  RefCpyV       v2
+        0008  CmpPtrNull    v2
+        000C  JNZ           2                                             -> L001C
+        0014  JMP           123                                           -> L0208
+      L001C:
+        001C  PshVPtr       KilledCharacter
+        0020  ADDSi         984 67111506                                  ; .PlayerState
+        0028  RDSPtr
+        002C  RefCpyV       v6
+        0030  CmpPtrNull    v6
+        0034  JZ            9                                             -> L0060
+        003C  TYPEID        1140857146                                    ; ALokiPlayerState@
+        0044  PSF           v8
+        0048  PshVPtr       v6
+        004C  CALLSYS       UObject::opCast                               ; void UObject::opCast(?&) const
+        0058  JMP           1                                             -> L0064
+      L0060:
+        0060  ClrVPtr       v8
+      L0064:
+        0064  PshVPtr       v8
+        0068  RefCpyV       v10
+        006C  CmpPtrNull    v10
+        0070  JNZ           2                                             -> L0080
+        0078  JMP           98                                            -> L0208
+      L0080:
+        0080  PshGPtr       __WorldContext
+        008C  CALLSYS       GetLokiGameMode                               ; ALokiGameMode@ Loki::GetLokiGameMode(UObject@)
+        0098  STOREOBJ      v14
+        009C  LoadRObjR     v14 1283 67114962                             ; .bDropCurrencyOnPlayerDeath
+        00A8  RDR1          v3
+        00AC  NOT           v3
+        00B0  CpyVtoR1      v3
+        00B4  JLowZ         2                                             -> L00C4
+        00BC  JMP           81                                            -> L0208
+      L00C4:
+        00C4  PshVPtr       v10
+        00C8  CALLSYS       ALokiPlayerState::GetWalletGold               ; int ALokiPlayerState::GetWalletGold() const
+        00D4  CpyRtoV4      v15
+        00D8  CMPIi         v15 0
+        00E0  JP            2                                             -> L00F0
+        00E8  JMP           70                                            -> L0208
+      L00F0:
+        00F0  PshVPtr       v14
+        00F4  CALLSYS       ALokiGameMode::GetGoldDeathboxTransferRatio   ; float32 ALokiGameMode::GetGoldDeathboxTransferRatio()
+        0100  CpyRtoV4      v17
+        0104  iTOf          v18 v15
+        010C  MULf          v17 v17 v18
+        0114  PshV4         v17
+        0118  CALLSYS       RoundToInt                                    ; int Math::RoundToInt(float32)
+        0124  CpyRtoV4      v16
+        0128  PshNull
+        012C  SetV1         v3 0
+        0134  PshV4         v3
+        0138  PshGPtr       NAME_None
+        0144  PshGPtr       FRotator::ZeroRotator
+        0150  PshGPtr       FVector::ZeroVector
+        015C  PshVPtr       this
+        0160  ADDSi         232 134230895                                 ; .GoldDropClass
+        0168  CALLSYS       SpawnActor                                    ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+        0174  STOREOBJ      v24
+        0178  PshV4         v16
+        017C  PshVPtr       v10
+        0180  PshVPtr       v24
+        0184  CALLSYS       ALokiBaseItem::DroppedAsCurrency              ; void ALokiBaseItem::DroppedAsCurrency(ALokiPlayerState@, int)
+        0190  SetV1         v3 0
+        0198  PshV4         v3
+        019C  SetV1         v25 1
+        01A4  PshV4         v25
+        01A8  PshC4         -1
+        01B0  PshGPtr       NAME_None
+        01BC  SetV1         v26 1
+        01C4  PshV4         v26
+        01C8  PshVPtr       v24
+        01CC  PshVPtr       BoxInventory
+        01D0  CALLSYS       ULokiInventoryComponentBase::TryAddToInventory  ; bool ULokiInventoryComponentBase::TryAddToInventory(ALokiBaseItem@, ELokiAddToInventoryReason, FName, int, bool, bool)
+        01DC  SetV1         v3 0
+        01E4  PshV4         v3
+        01E8  PshV4         v16
+        01EC  PGA           "Gold"
+        01F8  PshVPtr       v10
+        01FC  CALLSYS       ALokiPlayerState::ConsumeWalletCurrency       ; bool ALokiPlayerState::ConsumeWalletCurrency(const FString&, int, bool)
+      L0208:
+        0208  RET           6
+    */
+
+    bool ShouldTransferItem(ALokiBaseItem@ Item, ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+
+        __Evt_PushArgument__ALokiBaseItem(Item);
+        __Evt_PushArgument__ALokiPlayerState(PlayerState);
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"ShouldTransferItem");
+        return v1;
+    }
+    /* ---- ShouldTransferItem: 28 dwords / 15 instructions (cache offset 0xa566d) ----
+        0000  PSF           Item
+        0004  CALLSYS       __Evt_PushArgument__ALokiBaseItem             ; void __Evt_PushArgument__ALokiBaseItem(const ALokiBaseItem@&)
+        0010  PSF           PlayerState
+        0014  CALLSYS       __Evt_PushArgument__ALokiPlayerState          ; void __Evt_PushArgument__ALokiPlayerState(const ALokiPlayerState@&)
+        0020  SetV1         v2 0
+        0028  CpyVtoV4      v1 v2
+        0030  PSF           v1
+        0034  CALLSYS       __Evt_PushArgumentRef__bool                   ; void __Evt_PushArgumentRef__bool(const bool&)
+        0040  PshC4         185
+        0048  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        0054  PshRPtr
+        0058  PshVPtr       this
+        005C  CALLSYS       __Evt_Execute                                 ; void __Evt_Execute(const UObject@, const FName&)
+        0068  CpyVtoR4      v1
+        006C  RET           6
+    */
+
+    UFUNCTION(UnrealName=ShouldTransferItem, BlueprintEvent, CanOverrideEvent)
+    bool ShouldTransferItem_Implementation(ALokiBaseItem@ Item, ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        auto v1;
+
+        v1 = true;
+        return v1;
+    }
+    /* ---- ShouldTransferItem_Implementation: 4 dwords / 3 instructions (cache offset 0xa57e8) ----
+        0000  SetV1         v1 1
+        0008  CpyVtoR4      v1
+        000C  RET           6
+    */
+
+    void PostTransferToTeamElimBox(ULokiInventoryComponentBase@ TeamElimBox, const TArray<ALokiBaseItem@>& DeniedItems)   // traits=0x20
+    {
+        __Evt_PushArgument__ULokiInventoryComponentBase(TeamElimBox);
+        __Evt_PushArgument(DeniedItems, typeid(TArray));
+        __Evt_Execute(this, n"PostTransferToTeamElimBox");
+        return;
+    }
+    /* ---- PostTransferToTeamElimBox: 21 dwords / 11 instructions (cache offset 0xa5969) ----
+        0000  PSF           TeamElimBox
+        0004  CALLSYS       __Evt_PushArgument__ULokiInventoryComponentBase  ; void __Evt_PushArgument__ULokiInventoryComponentBase(const ULokiInventoryComponentBase@&)
+        0010  TYPEID        268448621                                     ; TArray
+        0018  PshVPtr       DeniedItems
+        001C  CALLSYS       __Evt_PushArgument                            ; void __Evt_PushArgument(const ?&)
+        0028  PshC4         186
+        0030  CALLSYS       __STATIC_NAME                                 ; const FName& __STATIC_NAME(int)
+        003C  PshRPtr
+        0040  PshVPtr       this
+        0044  CALLSYS       __Evt_Execute                                 ; void __Evt_Execute(const UObject@, const FName&)
+        0050  RET           6
+    */
+
+    UFUNCTION(UnrealName=PostTransferToTeamElimBox, BlueprintEvent, CanOverrideEvent, NoOp)
+    void PostTransferToTeamElimBox_Implementation(ULokiInventoryComponentBase@ TeamElimBox, const TArray<ALokiBaseItem@>& DeniedItems)   // traits=0x20
+    {
+        return;
+    }
+    /* ---- PostTransferToTeamElimBox_Implementation: 1 dwords / 1 instructions (cache offset 0xa5ad6) ----
+        0000  RET           6
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.PrimaryComponentTick.SetbAllowTickOnDedicatedServer(v1);
+        v1 = false;
+        this.PrimaryComponentTick.SetbStartWithTickEnabled(v1);
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 26 dwords / 15 instructions (cache offset 0xa5bcf) ----
+        0000  SetV1         v1 0
+        0008  PshV4         v1
+        000C  PshVPtr       this
+        0010  ADDSi         64 67111352                                   ; .PrimaryComponentTick
+        0018  CALLSYS       FActorComponentTickFunction::SetbAllowTickOnDedicatedServer  ; void FActorComponentTickFunction::SetbAllowTickOnDedicatedServer(bool)
+        0024  SetV1         v1 0
+        002C  PshV4         v1
+        0030  PshVPtr       this
+        0034  ADDSi         64 67111352                                   ; .PrimaryComponentTick
+        003C  CALLSYS       FActorComponentTickFunction::SetbStartWithTickEnabled  ; void FActorComponentTickFunction::SetbStartWithTickEnabled(bool)
+        0048  SetV1         v1 1
+        0050  PshV4         v1
+        0054  PshVPtr       this
+        0058  CALLSYS       UActorComponent::SetbExcludeFromClient        ; void UActorComponent::SetbExcludeFromClient(bool)
+        0064  RET           2
+    */
+
+    void ~ULokiTeamElimBoxComponent()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ULokiTeamElimBoxComponent: 31 dwords / 16 instructions (cache offset 0xa5eec) ----
+        0000  PshVPtr       this
+        0004  ADDSi         208 134230895                                 ; .InventorySlots
+        000C  CALLSYS       TArray::$beh2                                 ; void TArray<FName>::$beh2()
+        0018  PshVPtr       this
+        001C  ADDSi         240 134230895                                 ; .T0SlotsToDestroy
+        0024  CALLSYS       TArray::$beh2                                 ; void TArray<FName>::$beh2()
+        0030  PshVPtr       this
+        0034  ADDSi         264 134230895                                 ; .TeamIndexToBoxMap
+        003C  CALLSYS       TMap::$beh2                                   ; void TMap<int, ALokiSearchableBox@>::$beh2()
+        0048  PshVPtr       this
+        004C  ADDSi         344 134230895                                 ; .PlayersQueue
+        0054  CALLSYS       TArray::$beh2                                 ; void TArray<ALokiPlayerState@>::$beh2()
+        0060  PshVPtr       this
+        0064  ADDSi         360 134230895                                 ; .UpdateTimerHandle
+        006C  CALLSYS       FTimerHandle::$beh2                           ; void FTimerHandle::$beh2()
+        0078  RET           2
+    */
+
+}
+

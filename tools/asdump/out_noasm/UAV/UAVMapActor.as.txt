@@ -1,0 +1,169 @@
+// ============================================================================
+//  MODULE   UAV.UAVMapActor
+//  SOURCE   UAV/UAVMapActor.as
+//  CONTENT  1 class(es), 10 function(s), 0 enum(s), 1 global(s), 1124 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_AUAVMapActor;
+
+AUAVMapActor@ AUAVMapActor()   // traits=0x20
+{
+    AUAVMapActor v2;
+
+    v2 = AUAVMapActor();
+    return v2;
+}
+
+UClass@ AUAVMapActor::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_AUAVMapActor);
+    return v2;
+}
+
+AUAVMapActor@ AUAVMapActor::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    AUAVMapActor v8;
+
+    v2 = __StaticType_AUAVMapActor.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<AUAVMapActor@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class AUAVMapActor : AActor
+// unreal base : /Script/Engine.Actor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+// static class global: __StaticType_AUAVMapActor
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Transient)
+    int MyItemID;
+
+    AUAVMapActor()   // traits=0x21
+    {
+        return;
+    }
+
+    void ClientUpdateIcon(const FLokiFuzzyPlayerLocationItem& Item)   // traits=0x20
+    {
+        __Evt_PushArgument__FLokiFuzzyPlayerLocationItem(Item);
+        __Evt_Execute(this, n"ClientUpdateIcon");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientUpdateIcon, BlueprintEvent, CanOverrideEvent, NoOp)
+    void ClientUpdateIcon_Implementation(const FLokiFuzzyPlayerLocationItem& Item)   // traits=0x20
+    {
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void Init(const FLokiFuzzyPlayerLocationItem& Item)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        auto v3;
+        UGameEventRouterComponent v6;
+        FGameEvent_FuzzyPlayerLocation_Update v34;
+        auto v35;
+        FGameEventListenerHandle v48;
+        FGameEvent_FuzzyPlayerLocation_Remove v74;
+
+        v2 = true;
+        v1 = v2;
+        v3 = Item.ID;
+        this.MyItemID = v3;
+        v3 = Item.ID;
+        if (v3 < 0) {
+            v2 = false;
+            v1 = v2;
+        }
+        v6 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v6 != nullptr) {
+            v35 = false;
+            v34 = FGameEvent_FuzzyPlayerLocation_Update();
+            v48 = v6.RegisterForEvent(this, v34, typeid(FGameEvent_FuzzyPlayerLocation_Update), nullptr, n"OnUpdate", v35);
+            v35 = false;
+            v74 = FGameEvent_FuzzyPlayerLocation_Remove();
+            v48 = v6.RegisterForEvent(this, v74, typeid(FGameEvent_FuzzyPlayerLocation_Remove), nullptr, n"OnRemove", v35);
+        } else {
+            v2 = false;
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientUpdateIcon(Item);
+            return;
+        } else {
+            this.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnUpdate(const FGameEvent_FuzzyPlayerLocation_Update& Event, const AActor@& Context)   // traits=0x28
+    {
+        FLokiFuzzyPlayerLocationItem v24;
+        auto v25;
+        auto v26;
+
+        v24 = FLokiFuzzyPlayerLocationItem(Event.PlayerLocationItem);
+        v25 = v24.ID;
+        v26 = this.MyItemID;
+        if (v25 != v26) {
+            return;
+        } else {
+            this.SetActorLocation(v24.Location)  /* UFunction K2_SetActorLocation */;
+            this.ClientUpdateIcon(v24);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnRemove(const FGameEvent_FuzzyPlayerLocation_Remove& Event, const AActor@& Context)   // traits=0x28
+    {
+        FLokiFuzzyPlayerLocationItem v24;
+        auto v25;
+        auto v26;
+
+        v24 = FLokiFuzzyPlayerLocationItem(Event.PlayerLocationItem);
+        v25 = v24.ID;
+        v26 = this.MyItemID;
+        if (v25 != v26) {
+            return;
+        } else {
+            this.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = false;
+        this.SetbReplicates(v1);
+        v1 = false;
+        this.PrimaryActorTick.SetbStartWithTickEnabled(v1);
+        return;
+    }
+
+}
+

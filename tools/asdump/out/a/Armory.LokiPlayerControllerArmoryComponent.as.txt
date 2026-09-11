@@ -1,0 +1,2382 @@
+==============================================================================
+MODULE   Armory.LokiPlayerControllerArmoryComponent
+SOURCE   Armory/LokiPlayerControllerArmoryComponent.as
+==============================================================================
+
+// Decompiled from Loki/Script/PrecompiledScript.Cache (build 2025-12-17,
+// UE_BUILD_SHIPPING).  The shipping cache carries NO line numbers and NO
+// local-variable names, so locals are synthesised as v<stack-offset>.
+// Parameter names, default-argument source text and all UPROPERTY /
+// UFUNCTION metadata ARE preserved and are reproduced verbatim.
+
+
+const TSubclassOf<UObject@> __StaticType_ULokiPlayerControllerArmoryComponent;
+
+==============================================================================
+// module-level functions
+==============================================================================
+
+------------------------------------------------------------------------------
+ULokiPlayerControllerArmoryComponent@ ULokiPlayerControllerArmoryComponent()
+// 4 instr, 28 B bytecode, id=0x179CF7C2, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiPlayerControllerArmoryComponent v2;
+
+    v2 = ULokiPlayerControllerArmoryComponent();
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:2
+    //     1  ALLOC          DW3:84046 q:0x26e6e875500; new ULokiPlayerControllerArmoryComponent   ctor=ULokiPlayerControllerArmoryComponent::ULokiPlayerControllerArmoryComponent
+    //     5  LOADOBJ        rW0:2
+    //     6  RET            W0:0
+
+------------------------------------------------------------------------------
+UClass@ StaticClass()
+// 6 instr, 40 B bytecode, id=0xBDE574E0, varspace=2
+------------------------------------------------------------------------------
+{
+    UClass v2;
+
+    v2 = cast<UClass@>(__StaticType_ULokiPlayerControllerArmoryComponent);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x26e6f1b7158         ; __StaticType_ULokiPlayerControllerArmoryComponent
+    //     3  CHKREF
+    //     4  CALLSYS        q:0x26e6ee86d00         ; UClass@ TSubclassOf<UObject@>::opImplConv() const
+    //     7  STOREOBJ       wW0:2
+    //     8  LOADOBJ        rW0:2
+    //     9  RET            W0:0
+
+------------------------------------------------------------------------------
+ULokiPlayerControllerArmoryComponent@ Get(const AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x2AD7FB0C, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiPlayerControllerArmoryComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiPlayerControllerArmoryComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972588            ; ULokiPlayerControllerArmoryComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7158         ; __StaticType_ULokiPlayerControllerArmoryComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141580         ; void __Actor_GetComponentByClass(const AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiPlayerControllerArmoryComponent@ GetOrCreate(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x2A55669C, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiPlayerControllerArmoryComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerArmoryComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972588            ; ULokiPlayerControllerArmoryComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7158         ; __StaticType_ULokiPlayerControllerArmoryComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b1413c0         ; void __Actor_GetOrCreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+------------------------------------------------------------------------------
+ULokiPlayerControllerArmoryComponent@ Create(AActor@ Actor, const FName&inout WithName = NAME_None)
+// 9 instr, 56 B bytecode, id=0x6CEFCB20, varspace=2
+------------------------------------------------------------------------------
+{
+    ULokiPlayerControllerArmoryComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerArmoryComponent, v2, WithName);
+    return v2;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  TYPEID         d:1207972588            ; ULokiPlayerControllerArmoryComponent@
+    //     3  PSF            rW0:2
+    //     4  PshGPtr        q:0x26e6f1b7158         ; __StaticType_ULokiPlayerControllerArmoryComponent
+    //     7  CHKREF
+    //     8  PshVPtr        rW0:0
+    //     9  CALLSYS        q:0x26e7b141040         ; void __Actor_CreateComponentByClass(AActor@, const TSubclassOf<UObject@>&, ?&, const FName&)
+    //    12  LOADOBJ        rW0:2
+    //    13  RET            W0:4
+
+==============================================================================
+UCLASS(meta=(IsBlueprintBase=true, Blueprintable=true))
+class ULokiPlayerControllerArmoryComponent : ULokiPlayerControllerArmoryComponentBase
+// base /Script/Loki.LokiPlayerControllerArmoryComponentBase  ->  ../../../Loki/Source/Loki/Armory/LokiPlayerControllerArmoryComponent.h
+==============================================================================
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) const FName RelicSlotName;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) const FName PerkSlotName;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) const FName BootsSlotName;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) bool bLoadComplete;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance) TArray<FString> PurchasedKits;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance, Transient) TArray<UClass@> LoadedClasses;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults) FPlayerArmory DefaultArmory;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance) ULoadAssetHandle@ Handle;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, RepCond=0) TArray<TSubclassOf<AActor@>> DisabledItems;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, RepCond=0) TArray<FPrimaryAssetId> DisabledItemAssetIDs;
+    FGameEventListenerHandle OnPlayerInitializedHandle;
+
+}
+
+------------------------------------------------------------------------------
+ULokiPlayerControllerArmoryComponent() const
+// 42 instr, 328 B bytecode, id=0xC3B619FB, varspace=2
+------------------------------------------------------------------------------
+{
+    this.PurchasedKits = TArray<FString>();
+    this.LoadedClasses = TArray<UClass@>();
+    this.DefaultArmory = FPlayerArmory();
+    this.DisabledItems = TArray<TSubclassOf<AActor@>>();
+    this.DisabledItemAssetIDs = TArray<FPrimaryAssetId>();
+    this.OnPlayerInitializedHandle = FGameEventListenerHandle();
+    this.RelicSlotName = FName(__STATIC_NAME(2));
+    this.PerkSlotName = FName(__STATIC_NAME(3));
+    this.BootsSlotName = FName(__STATIC_NAME(4));
+    this.bLoadComplete = false;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:368 d:134230764      ; ULokiPlayerControllerArmoryComponent::PurchasedKits  (+368)
+    //     3  CALLSYS        q:0x26e6ee867c0         ; void TArray<FString>::$beh0()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:384 d:134230764      ; ULokiPlayerControllerArmoryComponent::LoadedClasses  (+384)
+    //     9  CALLSYS        q:0x26e6ee88200         ; void TArray<UClass@>::$beh0()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:400 d:134230764      ; ULokiPlayerControllerArmoryComponent::DefaultArmory  (+400)
+    //    15  CALLSYS        q:0x26e79358e40         ; void FPlayerArmory::$beh0()
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:456 d:134230764      ; ULokiPlayerControllerArmoryComponent::DisabledItems  (+456)
+    //    21  CALLSYS        q:0x26e6ee88040         ; void TArray<TSubclassOf<AActor@>>::$beh0()
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:472 d:134230764      ; ULokiPlayerControllerArmoryComponent::DisabledItemAssetIDs  (+472)
+    //    27  CALLSYS        q:0x26e6ee89000         ; void TArray<FPrimaryAssetId>::$beh0()
+    //    30  PshVPtr        rW0:0
+    //    31  ADDSi          W0:488 d:134230764      ; ULokiPlayerControllerArmoryComponent::OnPlayerInitializedHandle  (+488)
+    //    33  CALLSYS        q:0x26e7934f200         ; void FGameEventListenerHandle::$beh0()
+    //    36  PshC4          d:2
+    //    38  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    41  PshRPtr
+    //    42  PshVPtr        rW0:0
+    //    43  ADDSi          W0:336 d:134230764      ; ULokiPlayerControllerArmoryComponent::RelicSlotName  (+336)
+    //    45  CALLSYS        q:0x26e69d22540         ; void FName::$beh0(const FName&)
+    //    48  PshC4          d:3
+    //    50  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    53  PshRPtr
+    //    54  PshVPtr        rW0:0
+    //    55  ADDSi          W0:344 d:134230764      ; ULokiPlayerControllerArmoryComponent::PerkSlotName  (+344)
+    //    57  CALLSYS        q:0x26e69d22540         ; void FName::$beh0(const FName&)
+    //    60  PshC4          d:4
+    //    62  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    65  PshRPtr
+    //    66  PshVPtr        rW0:0
+    //    67  ADDSi          W0:352 d:134230764      ; ULokiPlayerControllerArmoryComponent::BootsSlotName  (+352)
+    //    69  CALLSYS        q:0x26e69d22540         ; void FName::$beh0(const FName&)
+    //    72  SetV1          wW0:2 d:0
+    //    74  LoadThisR      W0:360 d:134230764      ; ULokiPlayerControllerArmoryComponent::bLoadComplete  (+360)
+    //    76  WRTV1          rW0:2
+    //    77  PshVPtr        rW0:0
+    //    78  FinConstruct   q:0x26e6e875500         ; ULokiPlayerControllerArmoryComponent
+    //    81  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: BeginPlay
+void BeginPlay_Implementation()
+// 26 instr, 184 B bytecode, id=0x4E522B23, varspace=26
+------------------------------------------------------------------------------
+{
+    UGameEventRouterComponent v2;
+    FGameEvent_GameReady_Controller v12;
+    FGameEventListenerHandle v26;
+
+    v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+    v12 = FGameEvent_GameReady_Controller();
+    v26 = v2.RegisterForEvent(this, v12, null, __STATIC_NAME(5), false);
+    this.OnPlayerInitializedHandle = v26;
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //     6  STOREOBJ       wW0:2
+    //     7  SetV1          wW0:13 d:0
+    //     9  PshV4          rW0:13
+    //    10  PshC4          d:5
+    //    12  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    15  PshRPtr
+    //    16  PshNull
+    //    17  TYPEID         d:67120899              ; FGameEvent_GameReady_Controller
+    //    19  PSF            rW0:12
+    //    20  CALLSYS        q:0x26e7939c640         ; void FGameEvent_GameReady_Controller::$beh0()
+    //    23  PSF            rW0:12
+    //    24  PshVPtr        rW0:0
+    //    25  PSF            rW0:26
+    //    26  PshVPtr        rW0:2
+    //    27  CALLSYS        q:0x26e7968b140         ; FGameEventListenerHandle UGameEventRouterComponent::RegisterForEvent(UObject@, const ?&, UObject@, FName, EGameEventPassingRule)
+    //    30  PSF            rW0:12
+    //    31  CALLSYS        q:0x26e7939c480         ; void FGameEvent_GameReady_Controller::$beh2()
+    //    34  PSF            rW0:26
+    //    35  PshVPtr        rW0:0
+    //    36  ADDSi          W0:488 d:134230764      ; ULokiPlayerControllerArmoryComponent::OnPlayerInitializedHandle  (+488)
+    //    38  CALLSYS        q:0x26e7934ecc0         ; FGameEventListenerHandle& FGameEventListenerHandle::opAssign(const FGameEventListenerHandle&)
+    //    41  PSF            rW0:26
+    //    42  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    45  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: EndPlay
+void EndPlay_Implementation(const EEndPlayReason EndPlayReason)
+// 11 instr, 64 B bytecode, id=0x3009EE72, varspace=3
+------------------------------------------------------------------------------
+{
+    if (this.Handle != null) {
+        this.Handle.Done();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:448 d:134230764      ; ULokiPlayerControllerArmoryComponent::Handle  (+448)
+    //     3  RDSPtr
+    //     4  RefCpyV        wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->15
+    //     8  PshVPtr        rW0:0
+    //     9  ADDSi          W0:448 d:134230764      ; ULokiPlayerControllerArmoryComponent::Handle  (+448)
+    //    11  RDSPtr
+    //    12  CALLSYS        q:0x26e7a0abd80         ; void ULoadAssetHandle::Done()
+    //    15  RET            W0:3
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+bool IsArmoryEnabled()
+// 13 instr, 100 B bytecode, id=0xC2A2944D, varspace=2
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (!LokiGameplay::GetFeatureTogglesReady(__WorldContext)) {
+        v1 = false;
+    } else {
+        v1 = LokiGameplay::GetFeatureToggleValue(__WorldContext, 106);
+    }
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a252e00         ; bool LokiGameplay::GetFeatureTogglesReady(const UObject@)
+    //     6  JLowZ          ->21
+    //     8  SetV1          wW0:2 d:106
+    //    10  PshV4          rW0:2
+    //    11  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    14  CALLSYS        q:0x26e7a252c40         ; bool LokiGameplay::GetFeatureToggleValue(const UObject@, ELokiGameFeatureToggle)
+    //    17  CpyRtoV4       wW0:1
+    //    18  CpyVtoR4       rW0:1
+    //    19  JMP            ->24
+    //    21  SetV1          wW0:1 d:0
+    //    23  CpyVtoR4       rW0:1
+    //    24  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+TArray<FArmoryShopItem> GetArmoryItemsForShop()
+// 156 instr, 1092 B bytecode, id=0x9B4A3E56, varspace=77
+------------------------------------------------------------------------------
+{
+    TArray<FArmoryShopItem> v4;
+    FPlayerArmory v28;
+    TArrayIterator<FGameArmoryItem> v34;
+    auto v41;
+    auto v44;
+    TSubclassOf<ALokiBaseItem@> v46;
+    auto v49;
+    ALokiBaseItem v52;
+    auto v55;
+    auto v56;
+    auto v57;
+    FName v59;
+    FArmoryShopItem v76;
+
+    v4 = TArray<FArmoryShopItem>();
+    v28 = this.GetArmory();
+    v34 = v28.ItemsCollection.Iterator();
+    while (true) {
+        v41 = v34.CanProceed;
+        if (!v41) break;
+        v44 = v34.Proceed();
+        v46 = this.GetClassFromPrimaryAssetId(v44.PrimaryAssetId);
+        if (v46 == null) {
+            continue;
+        }
+        if (this.IsAssetIDEnabled(v44.PrimaryAssetId)) {
+            v49 = this.IsAssetEnabled(v46);
+            v41 = v49;
+        } else {
+            v41 = 0;
+        }
+        if (v41) {
+            v52 = v46.GetDefaultObject();
+            if (v52 == null) {
+                continue;
+            }
+            v56 = false;
+            v55 = false;
+            v59 = v52.GetSlotName();
+            v41 = v59 == __STATIC_NAME(4);
+            if (!v41) {
+                v59 = v52.GetSlotName();
+                v49 = v59 == __STATIC_NAME(3);
+                if (!v49) {
+                    v59 = v52.GetSlotName();
+                    v49 = v59 == __STATIC_NAME(2);
+                    if (!v49) {
+                        v59 = v52.GetSlotName();
+                        v41 = v59 == __STATIC_NAME(6);
+                        v49 = v41;
+                    } else {
+                        v49 = true;
+                    }
+                    if (v49) {
+                        v56 = 2;
+                        v55 = 2;
+                    }
+                } else {
+                    v56 = true;
+                    v55 = true;
+                }
+            } else {
+                v56 = 3;
+                v55 = 3;
+            }
+            v76 = FArmoryShopItem();
+            v76.ItemClass = v46;
+            v76.AssetId = v44.PrimaryAssetId;
+            v76.ItemType = v55;
+            v57 = v46.GetDefaultObject().ShopkeeperGoldPrice;
+            v76.Price = v57;
+            v57 = v44.StarLevel;
+            v57 = v57 - 1;
+            v76.StarCount = v57;
+            v41 = this.GetIsPrototypeItem(v44.PrimaryAssetId);
+            v76.bPrototype = v41;
+            v4.Add(v76);
+        }
+    }
+    LokiGameplay::SortArmoryItems(v4);
+    __return = TArray<FArmoryShopItem>();
+    __return = v4;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e6ee8a880         ; void TArray<FArmoryShopItem>::$beh0()
+    //     4  PSF            rW0:28
+    //     5  PshVPtr        rW0:0
+    //     6  CALLSYS        q:0x26e7a359000         ; FPlayerArmory ULokiPlayerControllerArmoryComponentBase::GetArmory()
+    //     9  PSF            rW0:34
+    //    10  PSF            rW0:28
+    //    11  ADDSi          W0:24 d:67120828        ; FPlayerArmory::ItemsCollection  (+24)
+    //    13  CALLSYS        q:0x26e6ee8a340         ; TArrayIterator<FGameArmoryItem> TArray<FGameArmoryItem>::Iterator()
+    //    16  JMP            ->244
+    //    18  SUSPEND
+    //    19  PSF            rW0:34
+    //    20  CALLSYS        q:0x26e6ee89fc0         ; FGameArmoryItem& TArrayIterator<FGameArmoryItem>::Proceed()
+    //    23  CpyRtoV8       wW0:44
+    //    24  PshVPtr        rW0:44
+    //    25  ADDSi          W0:0 d:67120826         ; FGameArmoryItem::PrimaryAssetId  (+0)
+    //    27  PSF            rW0:46
+    //    28  PshVPtr        rW0:0
+    //    29  CALLINTF       d:84037                 ; TSubclassOf<ALokiBaseItem@> ULokiPlayerControllerArmoryComponent::GetClassFromPrimaryAssetId(const FPrimaryAssetId&)
+    //    31  PshNull
+    //    32  PSF            rW0:46
+    //    33  CALLSYS        q:0x26e6ee83a40         ; bool TSubclassOf<ALokiBaseItem@>::opEquals(UClass@) const
+    //    36  JLowZ          ->40
+    //    38  JMP            ->244
+    //    40  PshVPtr        rW0:44
+    //    41  ADDSi          W0:0 d:67120826         ; FGameArmoryItem::PrimaryAssetId  (+0)
+    //    43  PshVPtr        rW0:0
+    //    44  CALLINTF       d:84044                 ; bool ULokiPlayerControllerArmoryComponent::IsAssetIDEnabled(const FPrimaryAssetId&)
+    //    46  JLowNZ         ->52
+    //    48  SetV4          wW0:41 d:0
+    //    50  JMP            ->59
+    //    52  PSF            rW0:46
+    //    53  PshVPtr        rW0:0
+    //    54  CALLINTF       d:84043                 ; bool ULokiPlayerControllerArmoryComponent::IsAssetEnabled(const TSubclassOf<AActor@>&)
+    //    56  CpyRtoV4       wW0:49
+    //    57  CpyVtoV4       wW0:41 rW1:49
+    //    59  CpyVtoR1       rW0:41
+    //    60  JLowZ          ->244
+    //    62  PSF            rW0:46
+    //    63  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //    66  STOREOBJ       wW0:52
+    //    67  CmpPtrNull     rW0:52
+    //    68  JNZ            ->73
+    //    70  FreeNullV8     wW0:52
+    //    71  JMP            ->244
+    //    73  SetV1          wW0:56 d:0
+    //    75  CpyVtoV4       wW0:55 rW1:56
+    //    77  PSF            rW0:59
+    //    78  PshVPtr        rW0:52
+    //    79  CALLSYS        q:0x26e7a0eaf80         ; FName ALokiBaseItem::GetSlotName() const
+    //    82  PshC4          d:4
+    //    84  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    87  PshRPtr
+    //    88  PSF            rW0:59
+    //    89  CALLSYS        q:0x26e69d22000         ; bool FName::opEquals(const FName&) const
+    //    92  CpyRtoV4       wW0:41
+    //    93  CpyVtoR1       rW0:41
+    //    94  JLowZ          ->102
+    //    96  SetV1          wW0:56 d:3
+    //    98  CpyVtoV4       wW0:55 rW1:56
+    //   100  JMP            ->175
+    //   102  PSF            rW0:59
+    //   103  PshVPtr        rW0:52
+    //   104  CALLSYS        q:0x26e7a0eaf80         ; FName ALokiBaseItem::GetSlotName() const
+    //   107  PshC4          d:3
+    //   109  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   112  PshRPtr
+    //   113  PSF            rW0:59
+    //   114  CALLSYS        q:0x26e69d22000         ; bool FName::opEquals(const FName&) const
+    //   117  CpyRtoV4       wW0:49
+    //   118  CpyVtoR1       rW0:49
+    //   119  JLowZ          ->127
+    //   121  SetV1          wW0:56 d:1
+    //   123  CpyVtoV4       wW0:55 rW1:56
+    //   125  JMP            ->175
+    //   127  PSF            rW0:59
+    //   128  PshVPtr        rW0:52
+    //   129  CALLSYS        q:0x26e7a0eaf80         ; FName ALokiBaseItem::GetSlotName() const
+    //   132  PshC4          d:2
+    //   134  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   137  PshRPtr
+    //   138  PSF            rW0:59
+    //   139  CALLSYS        q:0x26e69d22000         ; bool FName::opEquals(const FName&) const
+    //   142  CpyRtoV4       wW0:49
+    //   143  CpyVtoR1       rW0:49
+    //   144  JLowZ          ->150
+    //   146  SetV1          wW0:49 d:1
+    //   148  JMP            ->168
+    //   150  PSF            rW0:59
+    //   151  PshVPtr        rW0:52
+    //   152  CALLSYS        q:0x26e7a0eaf80         ; FName ALokiBaseItem::GetSlotName() const
+    //   155  PshC4          d:6
+    //   157  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   160  PshRPtr
+    //   161  PSF            rW0:59
+    //   162  CALLSYS        q:0x26e69d22000         ; bool FName::opEquals(const FName&) const
+    //   165  CpyRtoV4       wW0:41
+    //   166  CpyVtoV4       wW0:49 rW1:41
+    //   168  CpyVtoR1       rW0:49
+    //   169  JLowZ          ->175
+    //   171  SetV1          wW0:56 d:2
+    //   173  CpyVtoV4       wW0:55 rW1:56
+    //   175  PSF            rW0:76
+    //   176  CALLSYS        q:0x26e793ee940         ; void FArmoryShopItem::$beh0()
+    //   179  PSF            rW0:46
+    //   180  PSF            rW0:76
+    //   181  ADDSi          W0:0 d:67121011         ; FArmoryShopItem::ItemClass  (+0)
+    //   183  CALLSYS        q:0x26e79312380         ; TSubclassOf<ALokiBaseItem@>& TSubclassOf<ALokiBaseItem@>::opAssign(const TSubclassOf<ALokiBaseItem@>&)
+    //   186  PshVPtr        rW0:44
+    //   187  ADDSi          W0:0 d:67120826         ; FGameArmoryItem::PrimaryAssetId  (+0)
+    //   189  PSF            rW0:76
+    //   190  ADDSi          W0:40 d:67121011        ; FArmoryShopItem::AssetId  (+40)
+    //   192  CALLSYS        q:0x26e786a0e80         ; FPrimaryAssetId& FPrimaryAssetId::opAssign(const FPrimaryAssetId&)
+    //   195  LoadVObjR      rW0:76 W1:8 DW2:67121011; FArmoryShopItem::ItemType  (+8)
+    //   198  WRTV1          rW0:55
+    //   199  PSF            rW0:46
+    //   200  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //   203  STOREOBJ       wW0:54
+    //   204  LoadRObjR      rW0:54 W1:1132 DW2:67114958; ALokiBaseItem::ShopkeeperGoldPrice  (+1132)
+    //   207  RDR4           wW0:57
+    //   208  LoadVObjR      rW0:76 W1:16 DW2:67121011; FArmoryShopItem::Price  (+16)
+    //   211  WRTV4          rW0:57
+    //   212  LoadRObjR      rW0:44 W1:16 DW2:67120826; FGameArmoryItem::StarLevel  (+16)
+    //   215  RDR4           wW0:57
+    //   216  SUBIi          wW0:57 rW1:57 DW2:1
+    //   219  LoadVObjR      rW0:76 W1:12 DW2:67121011; FArmoryShopItem::StarCount  (+12)
+    //   222  WRTV4          rW0:57
+    //   223  PshVPtr        rW0:44
+    //   224  ADDSi          W0:0 d:67120826         ; FGameArmoryItem::PrimaryAssetId  (+0)
+    //   226  PshVPtr        rW0:0
+    //   227  CALLINTF       d:84038                 ; bool ULokiPlayerControllerArmoryComponent::GetIsPrototypeItem(const FPrimaryAssetId&)
+    //   229  CpyRtoV4       wW0:41
+    //   230  LoadVObjR      rW0:76 W1:56 DW2:67121011; FArmoryShopItem::bPrototype  (+56)
+    //   233  WRTV1          rW0:41
+    //   234  PSF            rW0:76
+    //   235  PSF            rW0:4
+    //   236  CALLSYS        q:0x26e6ee89c40         ; void TArray<FArmoryShopItem>::Add(const FArmoryShopItem&)
+    //   239  PSF            rW0:76
+    //   240  CALLSYS        q:0x26e793ee780         ; void FArmoryShopItem::$beh2()
+    //   243  FreeNullV8     wW0:52
+    //   244  LoadVObjR      rW0:34 W1:16 DW2:268448495; TArrayIterator::CanProceed  (+16)
+    //   247  RDR1           wW0:41
+    //   248  CpyVtoR1       rW0:41
+    //   249  JLowNZ         ->18
+    //   251  PSF            rW0:4
+    //   252  CALLSYS        q:0x26e7a25e5c0         ; void LokiGameplay::SortArmoryItems(TArray<FArmoryShopItem>&)
+    //   255  PshVPtr        rW0:-2
+    //   256  CALLSYS        q:0x26e6ee8a880         ; void TArray<FArmoryShopItem>::$beh0()
+    //   259  PSF            rW0:4
+    //   260  PshVPtr        rW0:-2
+    //   261  CALLSYS        q:0x26e7a25e240         ; TArray<FArmoryShopItem>& TArray<FArmoryShopItem>::opAssign(const TArray<FArmoryShopItem>&)
+    //   264  PSF            rW0:28
+    //   265  CALLSYS        q:0x26e79358c80         ; void FPlayerArmory::$beh2()
+    //   268  PSF            rW0:4
+    //   269  CALLSYS        q:0x26e7a25e400         ; void TArray<FArmoryShopItem>::$beh2()
+    //   272  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+TArray<FArmoryShopItem> GetArmoryTrinkets()
+// 15 instr, 108 B bytecode, id=0x73C2BE08, varspace=28
+------------------------------------------------------------------------------
+{
+    TArray<FArmoryShopItem> v4;
+    FPlayerArmory v28;
+
+    v4 = TArray<FArmoryShopItem>();
+    v28 = this.GetArmory();
+    __return = TArray<FArmoryShopItem>();
+    __return = v4;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e6ee8a880         ; void TArray<FArmoryShopItem>::$beh0()
+    //     4  PSF            rW0:28
+    //     5  PshVPtr        rW0:0
+    //     6  CALLSYS        q:0x26e7a359000         ; FPlayerArmory ULokiPlayerControllerArmoryComponentBase::GetArmory()
+    //     9  PshVPtr        rW0:-2
+    //    10  CALLSYS        q:0x26e6ee8a880         ; void TArray<FArmoryShopItem>::$beh0()
+    //    13  PSF            rW0:4
+    //    14  PshVPtr        rW0:-2
+    //    15  CALLSYS        q:0x26e7a25e240         ; TArray<FArmoryShopItem>& TArray<FArmoryShopItem>::opAssign(const TArray<FArmoryShopItem>&)
+    //    18  PSF            rW0:28
+    //    19  CALLSYS        q:0x26e79358c80         ; void FPlayerArmory::$beh2()
+    //    22  PSF            rW0:4
+    //    23  CALLSYS        q:0x26e7a25e400         ; void TArray<FArmoryShopItem>::$beh2()
+    //    26  RET            W0:4
+
+------------------------------------------------------------------------------
+void ServerSwapSlotAndBuyKit(const FArmoryShopItem&inout Item, const TSubclassOf<ALokiBaseItem@>&inout ItemClass, const int InventorySlotIndex)
+// 13 instr, 100 B bytecode, id=0x730DD21F, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__FArmoryShopItem(Item);
+    __Evt_PushArgument(ItemClass);
+    __Evt_PushArgument__int(InventorySlotIndex);
+    __Evt_Execute(this, __STATIC_NAME(92));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e7853e240         ; void __Evt_PushArgument__FArmoryShopItem(const FArmoryShopItem&)
+    //     4  TYPEID         d:268448387             ; TSubclassOf<ALokiBaseItem@>
+    //     6  PshVPtr        rW0:-4
+    //     7  CALLSYS        q:0x26e7861c640         ; void __Evt_PushArgument(const ?&)
+    //    10  PSF            rW0:-6
+    //    11  CALLSYS        q:0x26e77fc8ac0         ; void __Evt_PushArgument__int(const int&)
+    //    14  PshC4          d:92
+    //    16  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    19  PshRPtr
+    //    20  PshVPtr        rW0:0
+    //    21  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    24  RET            W0:7
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: ServerSwapSlotAndBuyKit
+void ServerSwapSlotAndBuyKit_Implementation(const FArmoryShopItem&inout Item, const TSubclassOf<ALokiBaseItem@>&inout ItemClass, const int InventorySlotIndex)
+// 24 instr, 140 B bytecode, id=0x3BDB37A8, varspace=6
+------------------------------------------------------------------------------
+{
+    auto v1;
+    FName v6;
+
+    v1 = ItemClass.IsValid();
+    v1 = !v1;
+    if (!v1) {
+        v6 = ItemClass.GetDefaultObject().GetSlotName();
+        v1 = this.AuthDropPowerAtSlot(v6, InventorySlotIndex);
+        if (v1) {
+            this.AuthBuyItem(Item);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  CALLSYS        q:0x26e6ee86600         ; bool TSubclassOf<ALokiBaseItem@>::IsValid() const
+    //     4  CpyRtoV4       wW0:1
+    //     5  NOT            rW0:1
+    //     6  CpyVtoR1       rW0:1
+    //     7  JLowZ          ->11
+    //     9  JMP            ->34
+    //    11  PshV4          rW0:-6
+    //    12  PSF            rW0:6
+    //    13  PshVPtr        rW0:-4
+    //    14  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //    17  STOREOBJ       wW0:4
+    //    18  PshVPtr        rW0:4
+    //    19  CALLSYS        q:0x26e7a0eaf80         ; FName ALokiBaseItem::GetSlotName() const
+    //    22  PSF            rW0:6
+    //    23  PshVPtr        rW0:0
+    //    24  CALLINTF       d:84030                 ; bool ULokiPlayerControllerArmoryComponent::AuthDropPowerAtSlot(const FName&, const int)
+    //    26  CpyRtoV4       wW0:1
+    //    27  CpyVtoR1       rW0:1
+    //    28  JLowZ          ->34
+    //    30  PshVPtr        rW0:-2
+    //    31  PshVPtr        rW0:0
+    //    32  CALLINTF       d:84033                 ; void ULokiPlayerControllerArmoryComponent::AuthBuyItem(const FArmoryShopItem&)
+    //    34  RET            W0:7
+
+------------------------------------------------------------------------------
+void ServerSellSlotAndBuyItem(const FArmoryShopItem&inout Item, const TSubclassOf<ALokiBaseItem@>&inout ItemClass, const int InventorySlotIndex)
+// 13 instr, 100 B bytecode, id=0x605F3BB4, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__FArmoryShopItem(Item);
+    __Evt_PushArgument(ItemClass);
+    __Evt_PushArgument__int(InventorySlotIndex);
+    __Evt_Execute(this, __STATIC_NAME(93));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e7853e240         ; void __Evt_PushArgument__FArmoryShopItem(const FArmoryShopItem&)
+    //     4  TYPEID         d:268448387             ; TSubclassOf<ALokiBaseItem@>
+    //     6  PshVPtr        rW0:-4
+    //     7  CALLSYS        q:0x26e7861c640         ; void __Evt_PushArgument(const ?&)
+    //    10  PSF            rW0:-6
+    //    11  CALLSYS        q:0x26e77fc8ac0         ; void __Evt_PushArgument__int(const int&)
+    //    14  PshC4          d:93
+    //    16  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    19  PshRPtr
+    //    20  PshVPtr        rW0:0
+    //    21  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    24  RET            W0:7
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: ServerSellSlotAndBuyItem
+void ServerSellSlotAndBuyItem_Implementation(const FArmoryShopItem&inout Item, const TSubclassOf<ALokiBaseItem@>&inout ItemClass, const int InventorySlotIndex)
+// 24 instr, 140 B bytecode, id=0x8C4B843B, varspace=6
+------------------------------------------------------------------------------
+{
+    auto v1;
+    FName v6;
+
+    v1 = ItemClass.IsValid();
+    v1 = !v1;
+    if (!v1) {
+        v6 = ItemClass.GetDefaultObject().GetSlotName();
+        v1 = this.AuthSellItemAtSlot(v6, InventorySlotIndex);
+        if (v1) {
+            this.AuthBuyItem(Item);
+        }
+    } else {
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  CALLSYS        q:0x26e6ee86600         ; bool TSubclassOf<ALokiBaseItem@>::IsValid() const
+    //     4  CpyRtoV4       wW0:1
+    //     5  NOT            rW0:1
+    //     6  CpyVtoR1       rW0:1
+    //     7  JLowZ          ->11
+    //     9  JMP            ->34
+    //    11  PshV4          rW0:-6
+    //    12  PSF            rW0:6
+    //    13  PshVPtr        rW0:-4
+    //    14  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //    17  STOREOBJ       wW0:4
+    //    18  PshVPtr        rW0:4
+    //    19  CALLSYS        q:0x26e7a0eaf80         ; FName ALokiBaseItem::GetSlotName() const
+    //    22  PSF            rW0:6
+    //    23  PshVPtr        rW0:0
+    //    24  CALLINTF       d:84025                 ; bool ULokiPlayerControllerArmoryComponent::AuthSellItemAtSlot(const FName&, const int)
+    //    26  CpyRtoV4       wW0:1
+    //    27  CpyVtoR1       rW0:1
+    //    28  JLowZ          ->34
+    //    30  PshVPtr        rW0:-2
+    //    31  PshVPtr        rW0:0
+    //    32  CALLINTF       d:84033                 ; void ULokiPlayerControllerArmoryComponent::AuthBuyItem(const FArmoryShopItem&)
+    //    34  RET            W0:7
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+bool AuthSellItemAtSlot(const FName&inout SlotName, const int SlotIndex)
+// 41 instr, 240 B bytecode, id=0x120FCE4A, varspace=14
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiPlayerState v6;
+    ULokiInventoryComponentComboItems v10;
+    ALokiBaseItem v14;
+
+    v1 = this.IsArmoryEnabled();
+    v1 = !v1;
+    if (!v1) {
+        v6 = this.GetPlayerState();
+        if (v6 != null) {
+            v10 = v6.GetInventory();
+            if (v10 != null) {
+                v14 = v10.GetItemFromSlot(SlotName, SlotIndex);
+                if (v14 == null) {
+                    v1 = false;
+                } else {
+                    v1 = this.AuthSellItem_BP(v14);
+                }
+            } else {
+                v1 = false;
+            }
+        } else {
+            v1 = false;
+        }
+    } else {
+        v1 = false;
+    }
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84018                 ; bool ULokiPlayerControllerArmoryComponent::IsArmoryEnabled()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->13
+    //     8  SetV1          wW0:1 d:0
+    //    10  CpyVtoR4       rW0:1
+    //    11  JMP            ->59
+    //    13  PshVPtr        rW0:0
+    //    14  CALLINTF       d:84036                 ; ALokiPlayerState@ ULokiPlayerControllerArmoryComponent::GetPlayerState()
+    //    16  STOREOBJ       wW0:6
+    //    17  CmpPtrNull     rW0:6
+    //    18  JNZ            ->25
+    //    20  SetV1          wW0:1 d:0
+    //    22  CpyVtoR4       rW0:1
+    //    23  JMP            ->59
+    //    25  PshVPtr        rW0:6
+    //    26  CALLSYS        q:0x26e7a391900         ; ULokiInventoryComponentComboItems@ ALokiPlayerState::GetInventory() const
+    //    29  STOREOBJ       wW0:10
+    //    30  CmpPtrNull     rW0:10
+    //    31  JNZ            ->38
+    //    33  SetV1          wW0:1 d:0
+    //    35  CpyVtoR4       rW0:1
+    //    36  JMP            ->59
+    //    38  PshV4          rW0:-4
+    //    39  PshVPtr        rW0:-2
+    //    40  PshVPtr        rW0:10
+    //    41  CALLSYS        q:0x26e7a2aa500         ; ALokiBaseItem@ ULokiInventoryComponentBase::GetItemFromSlot(FName, int) const
+    //    44  STOREOBJ       wW0:14
+    //    45  CmpPtrNull     rW0:14
+    //    46  JZ             ->56
+    //    48  PshVPtr        rW0:14
+    //    49  PshVPtr        rW0:0
+    //    50  CALLINTF       d:84026                 ; bool ULokiPlayerControllerArmoryComponent::AuthSellItem_BP(ALokiBaseItem@)
+    //    52  CpyRtoV4       wW0:1
+    //    53  CpyVtoR4       rW0:1
+    //    54  JMP            ->59
+    //    56  SetV1          wW0:1 d:0
+    //    58  CpyVtoR4       rW0:1
+    //    59  RET            W0:5
+
+------------------------------------------------------------------------------
+bool AuthSellItem_BP(ALokiBaseItem@ Item)
+// 13 instr, 96 B bytecode, id=0xA6759B15, varspace=3
+------------------------------------------------------------------------------
+{
+    bool v1;
+
+    __Evt_PushArgument__ALokiBaseItem(Item);
+    v1 = false;
+    __Evt_PushArgumentRef__bool(v1);
+    __Evt_Execute(this, __STATIC_NAME(94));
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  CALLSYS        q:0x26e77b94840         ; void __Evt_PushArgument__ALokiBaseItem(const ALokiBaseItem@&)
+    //     4  SetV1          wW0:2 d:0
+    //     6  CpyVtoV4       wW0:1 rW1:2
+    //     8  PSF            rW0:1
+    //     9  CALLSYS        q:0x26e77fce080         ; void __Evt_PushArgumentRef__bool(const bool&)
+    //    12  PshC4          d:94
+    //    14  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    17  PshRPtr
+    //    18  PshVPtr        rW0:0
+    //    19  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    22  CpyVtoR4       rW0:1
+    //    23  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintEvent, CanOverrideEvent)
+// UFunction name: AuthSellItem_BP
+bool AuthSellItem_BP_Implementation(ALokiBaseItem@ Item)
+// 3 instr, 16 B bytecode, id=0x0A30544D, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  CpyVtoR4       rW0:1
+    //     3  RET            W0:4
+
+------------------------------------------------------------------------------
+bool ShouldShopSellItem_BP(const TSubclassOf<ALokiBaseItem@>&inout ItemClass, AActor@ SourceShopkeep)
+// 16 instr, 120 B bytecode, id=0xB3A9E0E1, varspace=3
+------------------------------------------------------------------------------
+{
+    bool v1;
+
+    __Evt_PushArgument(ItemClass);
+    __Evt_PushArgument__AActor(SourceShopkeep);
+    v1 = false;
+    __Evt_PushArgumentRef__bool(v1);
+    __Evt_Execute(this, __STATIC_NAME(95));
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  TYPEID         d:268448387             ; TSubclassOf<ALokiBaseItem@>
+    //     2  PshVPtr        rW0:-2
+    //     3  CALLSYS        q:0x26e7861c640         ; void __Evt_PushArgument(const ?&)
+    //     6  PSF            rW0:-4
+    //     7  CALLSYS        q:0x26e7762b300         ; void __Evt_PushArgument__AActor(const AActor@&)
+    //    10  SetV1          wW0:2 d:0
+    //    12  CpyVtoV4       wW0:1 rW1:2
+    //    14  PSF            rW0:1
+    //    15  CALLSYS        q:0x26e77fce080         ; void __Evt_PushArgumentRef__bool(const bool&)
+    //    18  PshC4          d:95
+    //    20  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    23  PshRPtr
+    //    24  PshVPtr        rW0:0
+    //    25  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    28  CpyVtoR4       rW0:1
+    //    29  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+// UFunction name: ShouldShopSellItem_BP
+bool ShouldShopSellItem_BP_Implementation(const TSubclassOf<ALokiBaseItem@>&inout ItemClass, AActor@ SourceShopkeep)
+// 3 instr, 16 B bytecode, id=0x1E62CD4C, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = true;
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  CpyVtoR4       rW0:1
+    //     3  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+bool AuthDropPowerAtSlot(const FName&inout SlotName, const int SlotIndex)
+// 44 instr, 264 B bytecode, id=0x4A5A3E2E, varspace=16
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiPlayerState v6;
+    ULokiInventoryComponentComboItems v10;
+    ALokiBaseItem v14;
+
+    v1 = this.IsArmoryEnabled();
+    v1 = !v1;
+    if (!v1) {
+        v6 = this.GetPlayerState();
+        if (v6 != null) {
+            v10 = v6.GetInventory();
+            if (v10 != null) {
+                v14 = v10.GetItemFromSlot(SlotName, SlotIndex);
+                if (v14 == null) {
+                    v1 = false;
+                } else {
+                    v1 = v10.TryRemoveFromInventory(v14, 2);
+                }
+            } else {
+                v1 = false;
+            }
+        } else {
+            v1 = false;
+        }
+    } else {
+        v1 = false;
+    }
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84018                 ; bool ULokiPlayerControllerArmoryComponent::IsArmoryEnabled()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->13
+    //     8  SetV1          wW0:1 d:0
+    //    10  CpyVtoR4       rW0:1
+    //    11  JMP            ->65
+    //    13  PshVPtr        rW0:0
+    //    14  CALLINTF       d:84036                 ; ALokiPlayerState@ ULokiPlayerControllerArmoryComponent::GetPlayerState()
+    //    16  STOREOBJ       wW0:6
+    //    17  CmpPtrNull     rW0:6
+    //    18  JNZ            ->25
+    //    20  SetV1          wW0:1 d:0
+    //    22  CpyVtoR4       rW0:1
+    //    23  JMP            ->65
+    //    25  PshVPtr        rW0:6
+    //    26  CALLSYS        q:0x26e7a391900         ; ULokiInventoryComponentComboItems@ ALokiPlayerState::GetInventory() const
+    //    29  STOREOBJ       wW0:10
+    //    30  CmpPtrNull     rW0:10
+    //    31  JNZ            ->38
+    //    33  SetV1          wW0:1 d:0
+    //    35  CpyVtoR4       rW0:1
+    //    36  JMP            ->65
+    //    38  PshV4          rW0:-4
+    //    39  PshVPtr        rW0:-2
+    //    40  PshVPtr        rW0:10
+    //    41  CALLSYS        q:0x26e7a2aa500         ; ALokiBaseItem@ ULokiInventoryComponentBase::GetItemFromSlot(FName, int) const
+    //    44  STOREOBJ       wW0:14
+    //    45  CmpPtrNull     rW0:14
+    //    46  JZ             ->62
+    //    48  SetV1          wW0:16 d:2
+    //    50  CpyVtoV4       wW0:15 rW1:16
+    //    52  PshV4          rW0:15
+    //    53  PshVPtr        rW0:14
+    //    54  PshVPtr        rW0:10
+    //    55  CALLSYS        q:0x26e7a2a8c80         ; bool ULokiInventoryComponentBase::TryRemoveFromInventory(ALokiBaseItem@, ELokiRemoveFromInventoryReason)
+    //    58  CpyRtoV4       wW0:1
+    //    59  CpyVtoR4       rW0:1
+    //    60  JMP            ->65
+    //    62  SetV1          wW0:1 d:0
+    //    64  CpyVtoR4       rW0:1
+    //    65  RET            W0:5
+
+------------------------------------------------------------------------------
+void ServerBuyItem(const FArmoryShopItem&inout Item)
+// 8 instr, 60 B bytecode, id=0x28E587A9, varspace=1
+------------------------------------------------------------------------------
+{
+    __Evt_PushArgument__FArmoryShopItem(Item);
+    __Evt_Execute(this, __STATIC_NAME(96));
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  CALLSYS        q:0x26e7853e240         ; void __Evt_PushArgument__FArmoryShopItem(const FArmoryShopItem&)
+    //     4  PshC4          d:96
+    //     6  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //     9  PshRPtr
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7861c2c0         ; void __Evt_Execute(const UObject@, const FName&)
+    //    14  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintEvent, NetServer)
+// UFunction name: ServerBuyItem
+void ServerBuyItem_Implementation(const FArmoryShopItem&inout Item)
+// 4 instr, 20 B bytecode, id=0xA7812E39, varspace=0
+------------------------------------------------------------------------------
+{
+    this.AuthBuyItem(Item);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  CALLINTF       d:84033                 ; void ULokiPlayerControllerArmoryComponent::AuthBuyItem(const FArmoryShopItem&)
+    //     4  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+void AuthBuyItem(const FArmoryShopItem&inout Item)
+// 199 instr, 1424 B bytecode, id=0x7BAD64CB, varspace=79
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ALokiPlayerState v6;
+    UAbilitySystemComponent v8;
+    int v11;
+    int v12;
+    auto v13;
+    auto v16;
+    ULokiInventoryComponentComboItems v22;
+    ALokiBaseItem v26;
+    auto v28;
+    FGameEvent_OnItemPurchase_PlayerState v44;
+    FString v52;
+    ALokiServerAnalyticsManager v54;
+    FAnalyticsItemPurchaseEvent v74;
+
+    v1 = this.IsArmoryEnabled();
+    v1 = !v1;
+    if (!v1) {
+        v6 = this.GetPlayerState();
+        if (v6 != null) {
+            if (this.CanBuyItem(Item)) {
+                v8 = AbilitySystem::GetAbilitySystemComponent(v6);
+                v12 = Item.Price;
+                v11 = v12;
+                if (v8 != null) {
+                    v13 = v8.HasMatchingGameplayTag(GameplayTags::Item_ShopDiscount_DiscountApplied);
+                    v1 = v13;
+                } else {
+                    v1 = 0;
+                }
+                if (v1) {
+                    v16 = float64(v11);
+                    v16 = v16 * 0.8;
+                    v12 = int(v16);
+                    v11 = v12;
+                }
+                v12 = v6.GetWalletGold();
+                if (v12 >= v11) {
+                    v22 = v6.GetInventory();
+                    if (v22 == null) {
+                        goto L355;
+                    }
+                    if (Item.ItemClass.IsValid()) {
+                        v1 = true;
+                        v26 = SpawnActor(Item.ItemClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, true, null);
+                        if (v26 != null) {
+                            v12 = this.GetStarCountForItem(Item.ItemClass);
+                            v26.StarCount = v12;
+                            FinishSpawningActor(v26);
+                        }
+                        v13 = false;
+                        v1 = true;
+                        v28 = v22.TryAddToInventory(v26, 2, NAME_None, -1, true, false);
+                        v28 = !v28;
+                        if (!v28) {
+                            v13 = false;
+                            v44 = FGameEvent_OnItemPurchase_PlayerState();
+                            v44.Item = v26;
+                            v44.GoldCost = v11;
+                            v44.PlayerState = v6;
+                            UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext).BroadcastEvent(v44, v6);
+                            v52 = FString();
+                            Log::Log(v52.Append("AuthBuyItem - Sent Purchase Event"));
+                            v54 = ALokiServerAnalyticsManager::GetFromContext(__WorldContext);
+                            v6.ConsumeWalletCurrency("Gold", v11, false);
+                            if (v54 != null) {
+                                v74 = FAnalyticsItemPurchaseEvent();
+                                v52 = LokiAnalytics::GetMatchId(__WorldContext);
+                                v74.Game_Id = v52;
+                                v74.Player_Id = v6.PlatformPlayerID;
+                                v52 = System::GetClassDisplayName(cast<UClass@>(Item.ItemClass));
+                                v74.Item_Id = v52;
+                                v12 = v6.GetWalletCurrencyAmount("Gold");
+                                v74.Remaining_Gold = v12;
+                                v74.Cost = v11;
+                                v74.Game_Time = Gameplay::GetServerTime(__WorldContext);
+                                v74.Source = 3;
+                                v12 = Item.StarCount;
+                                v12 = v12 + 1;
+                                v74.StarLevel = v12;
+                                v54.AddItemPurchaseEvent(v74);
+                            }
+                        } else {
+                            v26.DestroyActor();
+                        }
+                    }
+                }
+            }
+        } else {
+        }
+    } else {
+    }
+    L355:
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLINTF       d:84018                 ; bool ULokiPlayerControllerArmoryComponent::IsArmoryEnabled()
+    //     3  CpyRtoV4       wW0:1
+    //     4  NOT            rW0:1
+    //     5  CpyVtoR1       rW0:1
+    //     6  JLowZ          ->10
+    //     8  JMP            ->355
+    //    10  PshVPtr        rW0:0
+    //    11  CALLINTF       d:84036                 ; ALokiPlayerState@ ULokiPlayerControllerArmoryComponent::GetPlayerState()
+    //    13  STOREOBJ       wW0:6
+    //    14  CmpPtrNull     rW0:6
+    //    15  JNZ            ->19
+    //    17  JMP            ->355
+    //    19  PshVPtr        rW0:-2
+    //    20  PshVPtr        rW0:0
+    //    21  CALLINTF       d:84045                 ; bool ULokiPlayerControllerArmoryComponent::CanBuyItem(const FArmoryShopItem&)
+    //    23  JLowZ          ->355
+    //    25  PshVPtr        rW0:6
+    //    26  CALLSYS        q:0x26e79e99000         ; UAbilitySystemComponent@ AbilitySystem::GetAbilitySystemComponent(AActor@)
+    //    29  STOREOBJ       wW0:8
+    //    30  LoadRObjR      rW0:-2 W1:16 DW2:67121011; FArmoryShopItem::Price  (+16)
+    //    33  RDR4           wW0:12
+    //    34  CpyVtoV4       wW0:11 rW1:12
+    //    36  CmpPtrNull     rW0:8
+    //    37  JNZ            ->43
+    //    39  SetV4          wW0:1 d:0
+    //    41  JMP            ->53
+    //    43  PshGPtr        q:0x26e705b3ec8         ; GameplayTags::Item_ShopDiscount_DiscountApplied
+    //    46  PshVPtr        rW0:8
+    //    47  CALLSYS        q:0x26e79e78740         ; bool UAbilitySystemComponent::HasMatchingGameplayTag(FGameplayTag) const   [UFunction Script_HasMatchingGameplayTag]
+    //    50  CpyRtoV4       wW0:13
+    //    51  CpyVtoV4       wW0:1 rW1:13
+    //    53  CpyVtoR1       rW0:1
+    //    54  JLowZ          ->67
+    //    56  iTOd           wW0:16 rW1:11
+    //    58  SetV8          wW0:18 q:0x3fe999999999999a
+    //    61  MULd           wW0:16 rW1:16 rW2:18
+    //    63  dTOi           wW0:12 rW1:16
+    //    65  CpyVtoV4       wW0:11 rW1:12
+    //    67  PshVPtr        rW0:6
+    //    68  CALLSYS        q:0x26e7a395f00         ; int ALokiPlayerState::GetWalletGold() const
+    //    71  CpyRtoV4       wW0:12
+    //    72  CMPi           rW0:12 rW1:11
+    //    74  JS             ->352
+    //    76  PshVPtr        rW0:6
+    //    77  CALLSYS        q:0x26e7a391900         ; ULokiInventoryComponentComboItems@ ALokiPlayerState::GetInventory() const
+    //    80  STOREOBJ       wW0:22
+    //    81  CmpPtrNull     rW0:22
+    //    82  JNZ            ->86
+    //    84  JMP            ->355
+    //    86  PshVPtr        rW0:-2
+    //    87  ADDSi          W0:0 d:67121011         ; FArmoryShopItem::ItemClass  (+0)
+    //    89  CALLSYS        q:0x26e6ee86600         ; bool TSubclassOf<ALokiBaseItem@>::IsValid() const
+    //    92  JLowZ          ->351
+    //    94  PshNull
+    //    95  SetV1          wW0:1 d:1
+    //    97  PshV4          rW0:1
+    //    98  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   101  PshGPtr        q:0x26e76817c48         ; FRotator::ZeroRotator
+    //   104  PshGPtr        q:0x26e768184c8         ; FVector::ZeroVector
+    //   107  PshVPtr        rW0:-2
+    //   108  ADDSi          W0:0 d:67121011         ; FArmoryShopItem::ItemClass  (+0)
+    //   110  CALLSYS        q:0x26e7b1a2380         ; AActor@ SpawnActor(const TSubclassOf<AActor@>&, const FVector&, const FRotator&, const FName&, bool, ULevel@)
+    //   113  STOREOBJ       wW0:26
+    //   114  CmpPtrNull     rW0:26
+    //   115  JZ             ->132
+    //   117  PshVPtr        rW0:-2
+    //   118  ADDSi          W0:0 d:67121011         ; FArmoryShopItem::ItemClass  (+0)
+    //   120  PshVPtr        rW0:0
+    //   121  CALLINTF       d:84035                 ; int ULokiPlayerControllerArmoryComponent::GetStarCountForItem(const TSubclassOf<ALokiBaseItem@>&)
+    //   123  CpyRtoV4       wW0:12
+    //   124  LoadRObjR      rW0:26 W1:1124 DW2:67114958; ALokiBaseItem::StarCount  (+1124)
+    //   127  WRTV4          rW0:12
+    //   128  PshVPtr        rW0:26
+    //   129  CALLSYS        q:0x26e7b1a21c0         ; void FinishSpawningActor(AActor@)
+    //   132  SetV1          wW0:13 d:0
+    //   134  PshV4          rW0:13
+    //   135  SetV1          wW0:1 d:1
+    //   137  PshV4          rW0:1
+    //   138  PshC4          d:-1
+    //   140  PshGPtr        q:0x26e7681cfc8         ; NAME_None
+    //   143  SetV1          wW0:27 d:2
+    //   145  PshV4          rW0:27
+    //   146  PshVPtr        rW0:26
+    //   147  PshVPtr        rW0:22
+    //   148  CALLSYS        q:0x26e7a2a8e40         ; bool ULokiInventoryComponentBase::TryAddToInventory(ALokiBaseItem@, ELokiAddToInventoryReason, FName, int, bool, bool)
+    //   151  CpyRtoV4       wW0:28
+    //   152  NOT            rW0:28
+    //   153  CpyVtoR1       rW0:28
+    //   154  JLowZ          ->162
+    //   156  PshVPtr        rW0:26
+    //   157  CALLSYS        q:0x26e79712fc0         ; void AActor::DestroyActor()   [UFunction K2_DestroyActor]
+    //   160  JMP            ->350
+    //   162  SetV1          wW0:13 d:0
+    //   164  PshV4          rW0:13
+    //   165  PshV4          rW0:11
+    //   166  PGA            q:0x26e6f112df0         ; "Gold"
+    //   169  PshVPtr        rW0:6
+    //   170  CALLSYS        q:0x26e7a35f200         ; bool ALokiPlayerState::ConsumeWalletCurrency(const FString&, int, bool)
+    //   173  PSF            rW0:44
+    //   174  CALLSYS        q:0x26e793a83c0         ; void FGameEvent_OnItemPurchase_PlayerState::$beh0()
+    //   177  PshVPtr        rW0:26
+    //   178  PSF            rW0:44
+    //   179  ADDSi          W0:8 d:67120928         ; FGameEvent_OnItemPurchase_PlayerState::Item  (+8)
+    //   181  REFCPY
+    //   182  PopPtr
+    //   183  LoadVObjR      rW0:44 W1:16 DW2:67120928; FGameEvent_OnItemPurchase_PlayerState::GoldCost  (+16)
+    //   186  WRTV4          rW0:11
+    //   187  PshVPtr        rW0:6
+    //   188  PSF            rW0:44
+    //   189  ADDSi          W0:24 d:67120928        ; FGameEvent_OnItemPurchase_PlayerState::PlayerState  (+24)
+    //   191  REFCPY
+    //   192  PopPtr
+    //   193  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   196  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //   199  STOREOBJ       wW0:46
+    //   200  PshVPtr        rW0:6
+    //   201  TYPEID         d:67120928              ; FGameEvent_OnItemPurchase_PlayerState
+    //   203  PSF            rW0:44
+    //   204  PshVPtr        rW0:46
+    //   205  CALLSYS        q:0x26e7968b4c0         ; void UGameEventRouterComponent::BroadcastEvent(const ?&, UObject@)
+    //   208  PGA            q:0x26e6f112a50         ; "AuthBuyItem - Sent Purchase Event"
+    //   211  PSF            rW0:52
+    //   212  CALLSYS        q:0x26e628a8c80         ; void FString::$beh0()
+    //   215  PSF            rW0:52
+    //   216  CALLSYS        q:0x26e628a7b00         ; FString& FString::Append(const FString&)
+    //   219  PshRPtr
+    //   220  CALLSYS        q:0x26e7a0483c0         ; void Log::Log(FString)
+    //   223  PSF            rW0:52
+    //   224  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //   227  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   230  CALLSYS        q:0x26e7a3beb00         ; ALokiServerAnalyticsManager@ ALokiServerAnalyticsManager::GetFromContext(UObject@)
+    //   233  STOREOBJ       wW0:54
+    //   234  CmpPtrNull     rW0:54
+    //   235  JZ             ->344
+    //   237  PSF            rW0:74
+    //   238  CALLSYS        q:0x26e793e8200         ; void FAnalyticsItemPurchaseEvent::$beh0()
+    //   241  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   244  PSF            rW0:52
+    //   245  CALLSYS        q:0x26e7a0aaa40         ; FString LokiAnalytics::GetMatchId(UObject@)
+    //   248  PSF            rW0:52
+    //   249  PSF            rW0:74
+    //   250  ADDSi          W0:0 d:67120998         ; FAnalyticsItemPurchaseEvent::Game_Id  (+0)
+    //   252  CALLSYS        q:0x26e628a8740         ; FString& FString::opAssign(const FString&)
+    //   255  PSF            rW0:52
+    //   256  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //   259  PshVPtr        rW0:6
+    //   260  ADDSi          W0:2240 d:67115322      ; ALokiPlayerState::PlatformPlayerID  (+2240)
+    //   262  PSF            rW0:74
+    //   263  ADDSi          W0:16 d:67120998        ; FAnalyticsItemPurchaseEvent::Player_Id  (+16)
+    //   265  CALLSYS        q:0x26e628a8740         ; FString& FString::opAssign(const FString&)
+    //   268  PshVPtr        rW0:-2
+    //   269  ADDSi          W0:0 d:67121011         ; FArmoryShopItem::ItemClass  (+0)
+    //   271  CALLSYS        q:0x26e6ee84a00         ; UClass@ TSubclassOf<ALokiBaseItem@>::opImplConv() const
+    //   274  STOREOBJ       wW0:76
+    //   275  PshVPtr        rW0:76
+    //   276  PSF            rW0:52
+    //   277  CALLSYS        q:0x26e79b11ac0         ; FString System::GetClassDisplayName(const UClass@)
+    //   280  PSF            rW0:52
+    //   281  PSF            rW0:74
+    //   282  ADDSi          W0:32 d:67120998        ; FAnalyticsItemPurchaseEvent::Item_Id  (+32)
+    //   284  CALLSYS        q:0x26e628a8740         ; FString& FString::opAssign(const FString&)
+    //   287  PSF            rW0:52
+    //   288  CALLSYS        q:0x26e628a8900         ; void FString::$beh2()
+    //   291  PGA            q:0x26e6f112a80         ; "Gold"
+    //   294  PshVPtr        rW0:6
+    //   295  CALLSYS        q:0x26e7a396280         ; int ALokiPlayerState::GetWalletCurrencyAmount(const FString&) const
+    //   298  CpyRtoV4       wW0:12
+    //   299  LoadVObjR      rW0:74 W1:48 DW2:67120998; FAnalyticsItemPurchaseEvent::Remaining_Gold  (+48)
+    //   302  WRTV4          rW0:12
+    //   303  LoadVObjR      rW0:74 W1:52 DW2:67120998; FAnalyticsItemPurchaseEvent::Cost  (+52)
+    //   306  WRTV4          rW0:11
+    //   307  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //   310  CALLSYS        q:0x26e79aaf740         ; float Gameplay::GetServerTime(const UObject@)
+    //   313  CpyRtoV4       wW0:77
+    //   314  LoadVObjR      rW0:74 W1:56 DW2:67120998; FAnalyticsItemPurchaseEvent::Game_Time  (+56)
+    //   317  WRTV4          rW0:77
+    //   318  SetV1          wW0:78 d:3
+    //   320  LoadVObjR      rW0:74 W1:60 DW2:67120998; FAnalyticsItemPurchaseEvent::Source  (+60)
+    //   323  WRTV1          rW0:78
+    //   324  LoadRObjR      rW0:-2 W1:12 DW2:67121011; FArmoryShopItem::StarCount  (+12)
+    //   327  RDR4           wW0:12
+    //   328  ADDIi          wW0:12 rW1:12 DW2:1
+    //   331  LoadVObjR      rW0:74 W1:64 DW2:67120998; FAnalyticsItemPurchaseEvent::StarLevel  (+64)
+    //   334  WRTV4          rW0:12
+    //   335  PSF            rW0:74
+    //   336  PshVPtr        rW0:54
+    //   337  CALLSYS        q:0x26e7a3bfe40         ; void ALokiServerAnalyticsManager::AddItemPurchaseEvent(const FAnalyticsItemPurchaseEvent&)
+    //   340  PSF            rW0:74
+    //   341  CALLSYS        q:0x26e793e8040         ; void FAnalyticsItemPurchaseEvent::$beh2()
+    //   344  FreeNullV8     wW0:54
+    //   345  FreeNullV8     wW0:46
+    //   346  PSF            rW0:44
+    //   347  CALLSYS        q:0x26e793a8200         ; void FGameEvent_OnItemPurchase_PlayerState::$beh2()
+    //   350  FreeNullV8     wW0:26
+    //   351  FreeNullV8     wW0:22
+    //   352  FreeNullV8     wW0:8
+    //   353  JMP            ->355
+    //   355  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+TArray<TSubclassOf<ALokiBaseItem@>> GetArmoryEvolveChoices(ALokiBaseItem@ Item, const int InventorySlotIndex)
+// 10 instr, 72 B bytecode, id=0x9CA20FF4, varspace=4
+------------------------------------------------------------------------------
+{
+    TArray<TSubclassOf<ALokiBaseItem@>> v4;
+
+    v4 = TArray<TSubclassOf<ALokiBaseItem@>>();
+    __return = TArray<TSubclassOf<ALokiBaseItem@>>();
+    __return = v4;
+    return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e6ee89a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh0()
+    //     4  PshVPtr        rW0:-2
+    //     5  CALLSYS        q:0x26e6ee89a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh0()
+    //     8  PSF            rW0:4
+    //     9  PshVPtr        rW0:-2
+    //    10  CALLSYS        q:0x26e793c98c0         ; TArray<TSubclassOf<ALokiBaseItem@>>& TArray<TSubclassOf<ALokiBaseItem@>>::opAssign(const TArray<TSubclassOf<ALokiBaseItem@>>&)
+    //    13  PSF            rW0:4
+    //    14  CALLSYS        q:0x26e793c9a80         ; void TArray<TSubclassOf<ALokiBaseItem@>>::$beh2()
+    //    17  RET            W0:7
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+int GetStarCountForItem(const TSubclassOf<ALokiBaseItem@>&inout ItemClass)
+// 44 instr, 300 B bytecode, id=0x63FB961E, varspace=45
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    FPlayerArmory v26;
+    TArrayIterator<FGameArmoryItem> v32;
+    auto v40;
+    TSubclassOf<ALokiBaseItem@> v42;
+    auto v45;
+
+    if (ItemClass != null) {
+        v26 = this.GetArmory();
+        v32 = v26.ItemsCollection.Iterator();
+        while (true) {
+            v1 = v32.CanProceed;
+            if (!v1) break;
+            v40 = v32.Proceed();
+            v42 = this.GetClassFromPrimaryAssetId(v40.PrimaryAssetId);
+            if (v42 == ItemClass) {
+                v2 = v40.StarLevel;
+                v2 = v2 - 1;
+                goto L74;
+            }
+        }
+        v45 = -1;
+    } else {
+        v2 = -1;
+    }
+    L74:
+    return v45;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshNull
+    //     1  PshVPtr        rW0:-2
+    //     2  CALLSYS        q:0x26e6ee83a40         ; bool TSubclassOf<ALokiBaseItem@>::opEquals(UClass@) const
+    //     5  JLowZ          ->12
+    //     7  SetV4          wW0:2 d:-1
+    //     9  CpyVtoR4       rW0:2
+    //    10  JMP            ->74
+    //    12  PSF            rW0:26
+    //    13  PshVPtr        rW0:0
+    //    14  CALLSYS        q:0x26e7a359000         ; FPlayerArmory ULokiPlayerControllerArmoryComponentBase::GetArmory()
+    //    17  PSF            rW0:32
+    //    18  PSF            rW0:26
+    //    19  ADDSi          W0:24 d:67120828        ; FPlayerArmory::ItemsCollection  (+24)
+    //    21  CALLSYS        q:0x26e6ee8a340         ; TArrayIterator<FGameArmoryItem> TArray<FGameArmoryItem>::Iterator()
+    //    24  JMP            ->60
+    //    26  SUSPEND
+    //    27  PSF            rW0:32
+    //    28  CALLSYS        q:0x26e6ee89fc0         ; FGameArmoryItem& TArrayIterator<FGameArmoryItem>::Proceed()
+    //    31  CpyRtoV8       wW0:40
+    //    32  PshVPtr        rW0:40
+    //    33  ADDSi          W0:0 d:67120826         ; FGameArmoryItem::PrimaryAssetId  (+0)
+    //    35  PSF            rW0:42
+    //    36  PshVPtr        rW0:0
+    //    37  CALLINTF       d:84037                 ; TSubclassOf<ALokiBaseItem@> ULokiPlayerControllerArmoryComponent::GetClassFromPrimaryAssetId(const FPrimaryAssetId&)
+    //    39  PshVPtr        rW0:-2
+    //    40  PSF            rW0:42
+    //    41  CALLSYS        q:0x26e6ee8ac00         ; bool TSubclassOf<ALokiBaseItem@>::opEquals(const TSubclassOf<ALokiBaseItem@>&) const
+    //    44  JLowZ          ->60
+    //    46  LoadRObjR      rW0:40 W1:16 DW2:67120826; FGameArmoryItem::StarLevel  (+16)
+    //    49  RDR4           wW0:2
+    //    50  SUBIi          wW0:2 rW1:2 DW2:1
+    //    53  PSF            rW0:26
+    //    54  CALLSYS        q:0x26e79358c80         ; void FPlayerArmory::$beh2()
+    //    57  CpyVtoR4       rW0:2
+    //    58  JMP            ->74
+    //    60  LoadVObjR      rW0:32 W1:16 DW2:268448495; TArrayIterator::CanProceed  (+16)
+    //    63  RDR1           wW0:1
+    //    64  CpyVtoR1       rW0:1
+    //    65  JLowNZ         ->26
+    //    67  SetV4          wW0:45 d:-1
+    //    69  PSF            rW0:26
+    //    70  CALLSYS        q:0x26e79358c80         ; void FPlayerArmory::$beh2()
+    //    73  CpyVtoR4       rW0:45
+    //    74  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+ALokiPlayerState@ GetPlayerState()
+// 23 instr, 136 B bytecode, id=0x2BA894E9, varspace=10
+------------------------------------------------------------------------------
+{
+    AActor v2;
+    ALokiPlayerController v4;
+    ALokiPlayerController v6;
+    ALokiPlayerState v10;
+
+    v2 = this.GetOwner();
+    if (v2 == null) {
+        v4 = null;
+    } else {
+        v4 = cast<ALokiPlayerController>(v2);
+    }
+    v6 = v4;
+    if (v4 != null) {
+        v10 = v6.GetLokiPlayerState();
+    } else {
+    }
+    return v10;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  CALLSYS        q:0x26e79737780         ; AActor@ UActorComponent::GetOwner() const
+    //     4  STOREOBJ       wW0:2
+    //     5  CmpPtrNull     rW0:2
+    //     6  JZ             ->17
+    //     8  TYPEID         d:1140857134            ; ALokiPlayerController@
+    //    10  PSF            rW0:4
+    //    11  PshVPtr        rW0:2
+    //    12  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    15  JMP            ->18
+    //    17  ClrVPtr        wW0:4
+    //    18  PshVPtr        rW0:4
+    //    19  RefCpyV        wW0:6
+    //    20  CmpPtrNull     rW0:6
+    //    21  JNZ            ->27
+    //    23  FreeNullV8     wW0:10
+    //    24  LOADOBJ        rW0:10
+    //    25  JMP            ->33
+    //    27  PshVPtr        rW0:6
+    //    28  CALLSYS        q:0x26e7a32e780         ; ALokiPlayerState@ ALokiPlayerController::GetLokiPlayerState() const
+    //    31  STOREOBJ       wW0:10
+    //    32  LOADOBJ        rW0:10
+    //    33  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+TSubclassOf<ALokiBaseItem@> GetClassFromPrimaryAssetId(const FPrimaryAssetId&inout Asset)
+// 71 instr, 456 B bytecode, id=0xAE841F4F, varspace=18
+------------------------------------------------------------------------------
+{
+    TSubclassOf<UObject@> v2;
+    auto v5;
+    ULokiDataAsset_Power v8;
+    UObject v10;
+    ULokiDataAsset_Power v12;
+    TSubclassOf<ALokiBaseItem@> v14;
+    ULokiDataAsset_Equipment v16;
+    ULokiDataAsset_Equipment v18;
+
+    // control flow not structured (structuring dropped 1 of 14 block(s)); flat form:
+        v2 = System::GetClassFromPrimaryAssetId(Asset);
+        v5 = v2 == null;
+        v5 = !v5;
+        if (!v5) goto L99; else goto L15;
+    L15:
+        v10 = v2.GetDefaultObject();
+        if (v10 == null) goto L32; else goto L23;
+    L23:
+        v12 = cast<ULokiDataAsset_Power>(v10);
+        goto L33;
+    L32:
+        v12 = null;
+    L33:
+        v8 = v12;
+        if (v12 == null) goto L56; else goto L38;
+    L38:
+        __return = TSubclassOf<ALokiBaseItem@>();
+        v14 = v8.Power.Get();
+        __return = v14;
+        goto L113;
+    L56:
+        v10 = v2.GetDefaultObject();
+        if (v10 == null) goto L73; else goto L64;
+    L64:
+        v18 = cast<ULokiDataAsset_Equipment>(v10);
+        goto L74;
+    L73:
+        v18 = null;
+    L74:
+        v16 = v18;
+        if (v18 == null) goto L97; else goto L79;
+    L79:
+        __return = TSubclassOf<ALokiBaseItem@>();
+        v14 = v16.Equipment.Get();
+        __return = v14;
+        goto L113;
+    L97:
+    L99:
+        __return = TSubclassOf<ALokiBaseItem@>();
+        v14 = TSubclassOf<ALokiBaseItem@>(null);
+        __return = v14;
+    L113:
+        return;   // value returned via the caller's temp
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-4
+    //     1  PSF            rW0:2
+    //     2  CALLSYS        q:0x26e79b11900         ; TSubclassOf<UObject@> System::GetClassFromPrimaryAssetId(FPrimaryAssetId)
+    //     5  PshNull
+    //     6  PSF            rW0:2
+    //     7  CALLSYS        q:0x26e6ee898c0         ; bool TSubclassOf<UObject@>::opEquals(UClass@) const
+    //    10  CpyRtoV4       wW0:5
+    //    11  NOT            rW0:5
+    //    12  CpyVtoR1       rW0:5
+    //    13  JLowZ          ->99
+    //    15  PSF            rW0:2
+    //    16  CALLSYS        q:0x26e6ee89380         ; UObject@ TSubclassOf<UObject@>::GetDefaultObject() const
+    //    19  STOREOBJ       wW0:10
+    //    20  CmpPtrNull     rW0:10
+    //    21  JZ             ->32
+    //    23  TYPEID         d:1140856898            ; ULokiDataAsset_Power@
+    //    25  PSF            rW0:12
+    //    26  PshVPtr        rW0:10
+    //    27  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    30  JMP            ->33
+    //    32  ClrVPtr        wW0:12
+    //    33  PshVPtr        rW0:12
+    //    34  RefCpyV        wW0:8
+    //    35  CmpPtrNull     rW0:8
+    //    36  JZ             ->56
+    //    38  PshVPtr        rW0:-2
+    //    39  CALLSYS        q:0x26e6ee891c0         ; void TSubclassOf<ALokiBaseItem@>::$beh0()
+    //    42  PSF            rW0:14
+    //    43  PshVPtr        rW0:8
+    //    44  ADDSi          W0:112 d:67115074       ; ULokiDataAsset_Power::Power  (+112)
+    //    46  CALLSYS        q:0x26e6ee83c00         ; TSubclassOf<ALokiBaseItem@> TSoftClassPtr<ALokiBaseItem@>::Get() const
+    //    49  PSF            rW0:14
+    //    50  PshVPtr        rW0:-2
+    //    51  CALLSYS        q:0x26e79312380         ; TSubclassOf<ALokiBaseItem@>& TSubclassOf<ALokiBaseItem@>::opAssign(const TSubclassOf<ALokiBaseItem@>&)
+    //    54  JMP            ->113
+    //    56  PSF            rW0:2
+    //    57  CALLSYS        q:0x26e6ee89380         ; UObject@ TSubclassOf<UObject@>::GetDefaultObject() const
+    //    60  STOREOBJ       wW0:10
+    //    61  CmpPtrNull     rW0:10
+    //    62  JZ             ->73
+    //    64  TYPEID         d:1140856883            ; ULokiDataAsset_Equipment@
+    //    66  PSF            rW0:18
+    //    67  PshVPtr        rW0:10
+    //    68  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    71  JMP            ->74
+    //    73  ClrVPtr        wW0:18
+    //    74  PshVPtr        rW0:18
+    //    75  RefCpyV        wW0:16
+    //    76  CmpPtrNull     rW0:16
+    //    77  JZ             ->97
+    //    79  PshVPtr        rW0:-2
+    //    80  CALLSYS        q:0x26e6ee891c0         ; void TSubclassOf<ALokiBaseItem@>::$beh0()
+    //    83  PSF            rW0:14
+    //    84  PshVPtr        rW0:16
+    //    85  ADDSi          W0:112 d:67115059       ; ULokiDataAsset_Equipment::Equipment  (+112)
+    //    87  CALLSYS        q:0x26e6ee83c00         ; TSubclassOf<ALokiBaseItem@> TSoftClassPtr<ALokiBaseItem@>::Get() const
+    //    90  PSF            rW0:14
+    //    91  PshVPtr        rW0:-2
+    //    92  CALLSYS        q:0x26e79312380         ; TSubclassOf<ALokiBaseItem@>& TSubclassOf<ALokiBaseItem@>::opAssign(const TSubclassOf<ALokiBaseItem@>&)
+    //    95  JMP            ->113
+    //    97  FreeNullV8     wW0:16
+    //    98  FreeNullV8     wW0:8
+    //    99  PshVPtr        rW0:-2
+    //   100  CALLSYS        q:0x26e6ee891c0         ; void TSubclassOf<ALokiBaseItem@>::$beh0()
+    //   103  PshNull
+    //   104  PSF            rW0:14
+    //   105  CALLSYS        q:0x26e6ee84d80         ; void TSubclassOf<ALokiBaseItem@>::$beh0(UClass@)
+    //   108  PSF            rW0:14
+    //   109  PshVPtr        rW0:-2
+    //   110  CALLSYS        q:0x26e79312380         ; TSubclassOf<ALokiBaseItem@>& TSubclassOf<ALokiBaseItem@>::opAssign(const TSubclassOf<ALokiBaseItem@>&)
+    //   113  RET            W0:6
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool GetIsPrototypeItem(const FPrimaryAssetId&inout Asset)
+// 53 instr, 324 B bytecode, id=0x96859102, varspace=16
+------------------------------------------------------------------------------
+{
+    TSubclassOf<UObject@> v2;
+    auto v5;
+    ULokiDataAsset_Power v8;
+    UObject v10;
+    ULokiDataAsset_Power v12;
+    ULokiDataAsset_Equipment v14;
+    ULokiDataAsset_Equipment v16;
+
+    // control flow not structured (structuring dropped 1 of 14 block(s)); flat form:
+        v2 = System::GetClassFromPrimaryAssetId(Asset);
+        v5 = v2 == null;
+        v5 = !v5;
+        if (!v5) goto L77; else goto L15;
+    L15:
+        v10 = v2.GetDefaultObject();
+        if (v10 == null) goto L32; else goto L23;
+    L23:
+        v12 = cast<ULokiDataAsset_Power>(v10);
+        goto L33;
+    L32:
+        v12 = null;
+    L33:
+        v8 = v12;
+        if (v12 == null) goto L45; else goto L38;
+    L38:
+        v5 = v8.Prototype;
+        goto L80;
+    L45:
+        v10 = v2.GetDefaultObject();
+        if (v10 == null) goto L62; else goto L53;
+    L53:
+        v16 = cast<ULokiDataAsset_Equipment>(v10);
+        goto L63;
+    L62:
+        v16 = null;
+    L63:
+        v14 = v16;
+        if (v16 == null) goto L75; else goto L68;
+    L68:
+        v5 = v14.Prototype;
+        goto L80;
+    L75:
+    L77:
+        v5 = false;
+    L80:
+        return v5;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  PSF            rW0:2
+    //     2  CALLSYS        q:0x26e79b11900         ; TSubclassOf<UObject@> System::GetClassFromPrimaryAssetId(FPrimaryAssetId)
+    //     5  PshNull
+    //     6  PSF            rW0:2
+    //     7  CALLSYS        q:0x26e6ee898c0         ; bool TSubclassOf<UObject@>::opEquals(UClass@) const
+    //    10  CpyRtoV4       wW0:5
+    //    11  NOT            rW0:5
+    //    12  CpyVtoR1       rW0:5
+    //    13  JLowZ          ->77
+    //    15  PSF            rW0:2
+    //    16  CALLSYS        q:0x26e6ee89380         ; UObject@ TSubclassOf<UObject@>::GetDefaultObject() const
+    //    19  STOREOBJ       wW0:10
+    //    20  CmpPtrNull     rW0:10
+    //    21  JZ             ->32
+    //    23  TYPEID         d:1140856898            ; ULokiDataAsset_Power@
+    //    25  PSF            rW0:12
+    //    26  PshVPtr        rW0:10
+    //    27  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    30  JMP            ->33
+    //    32  ClrVPtr        wW0:12
+    //    33  PshVPtr        rW0:12
+    //    34  RefCpyV        wW0:8
+    //    35  CmpPtrNull     rW0:8
+    //    36  JZ             ->45
+    //    38  LoadRObjR      rW0:8 W1:104 DW2:67115074; ULokiDataAsset_Power::Prototype  (+104)
+    //    41  RDR1           wW0:5
+    //    42  CpyVtoR4       rW0:5
+    //    43  JMP            ->80
+    //    45  PSF            rW0:2
+    //    46  CALLSYS        q:0x26e6ee89380         ; UObject@ TSubclassOf<UObject@>::GetDefaultObject() const
+    //    49  STOREOBJ       wW0:10
+    //    50  CmpPtrNull     rW0:10
+    //    51  JZ             ->62
+    //    53  TYPEID         d:1140856883            ; ULokiDataAsset_Equipment@
+    //    55  PSF            rW0:16
+    //    56  PshVPtr        rW0:10
+    //    57  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    60  JMP            ->63
+    //    62  ClrVPtr        wW0:16
+    //    63  PshVPtr        rW0:16
+    //    64  RefCpyV        wW0:14
+    //    65  CmpPtrNull     rW0:14
+    //    66  JZ             ->75
+    //    68  LoadRObjR      rW0:14 W1:104 DW2:67115059; ULokiDataAsset_Equipment::Prototype  (+104)
+    //    71  RDR1           wW0:5
+    //    72  CpyVtoR4       rW0:5
+    //    73  JMP            ->80
+    //    75  FreeNullV8     wW0:14
+    //    76  FreeNullV8     wW0:8
+    //    77  SetV1          wW0:5 d:0
+    //    79  CpyVtoR4       rW0:5
+    //    80  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnPlayerInitialized(const FGameEvent_GameReady_Controller&inout Event, const EGameEventStatefulEventType EventType, const AController@ Context)
+// 15 instr, 116 B bytecode, id=0xB5E24E78, varspace=5
+------------------------------------------------------------------------------
+{
+    UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext).StopListeningToEvent(this.OnPlayerInitializedHandle);
+    if (this.ShouldUnlockFullArmory()) {
+        this.UnlockFullArmory();
+    }
+    this.AsyncLoadArmory();
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e79fa13c0         ; UGameEventRouterComponent@ UGameEventRouterSubsystem::GetGlobalGameEventRouter(const UObject@)
+    //     6  STOREOBJ       wW0:2
+    //     7  PshVPtr        rW0:0
+    //     8  ADDSi          W0:488 d:134230764      ; ULokiPlayerControllerArmoryComponent::OnPlayerInitializedHandle  (+488)
+    //    10  PshVPtr        rW0:2
+    //    11  CALLSYS        q:0x26e79fa21c0         ; void UGameEventRouterComponent::StopListeningToEvent(FGameEventListenerHandle&)
+    //    14  PshVPtr        rW0:0
+    //    15  CALLSYS        q:0x26e7a358ac0         ; bool ULokiPlayerControllerArmoryComponentBase::ShouldUnlockFullArmory()
+    //    18  JLowZ          ->24
+    //    20  PshVPtr        rW0:0
+    //    21  CALLSYS        q:0x26e7a358900         ; void ULokiPlayerControllerArmoryComponentBase::UnlockFullArmory()
+    //    24  PshVPtr        rW0:0
+    //    25  CALLSYS        q:0x26e7a3591c0         ; void ULokiPlayerControllerArmoryComponentBase::AsyncLoadArmory()
+    //    28  RET            W0:7
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+// UFunction name: AsyncLoadArmory
+void AsyncLoadArmory_Implementation()
+// 47 instr, 324 B bytecode, id=0xC280A728, varspace=52
+------------------------------------------------------------------------------
+{
+    TArray<FPrimaryAssetId> v4;
+    FPlayerArmory v28;
+    TArrayIterator<FGameArmoryItem> v34;
+    auto v41;
+    FOnLoadComplete v48;
+
+    v4 = TArray<FPrimaryAssetId>();
+    v28 = this.GetArmory();
+    v34 = v28.ItemsCollection.Iterator();
+    while (true) {
+        v41 = v34.CanProceed;
+        if (!v41) break;
+        v4.Add(v34.Proceed().PrimaryAssetId);
+    }
+    v48 = FOnLoadComplete();
+    v48.BindUFunction(this, __STATIC_NAME(7));
+    this.Handle = ULokiAssetManager::AsyncLoadPrimaryAssets(__WorldContext, v4, v48);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:4
+    //     1  CALLSYS        q:0x26e6ee89000         ; void TArray<FPrimaryAssetId>::$beh0()
+    //     4  PSF            rW0:28
+    //     5  PshVPtr        rW0:0
+    //     6  CALLSYS        q:0x26e7a359000         ; FPlayerArmory ULokiPlayerControllerArmoryComponentBase::GetArmory()
+    //     9  PSF            rW0:34
+    //    10  PSF            rW0:28
+    //    11  ADDSi          W0:24 d:67120828        ; FPlayerArmory::ItemsCollection  (+24)
+    //    13  CALLSYS        q:0x26e6ee8a340         ; TArrayIterator<FGameArmoryItem> TArray<FGameArmoryItem>::Iterator()
+    //    16  JMP            ->31
+    //    18  SUSPEND
+    //    19  PSF            rW0:34
+    //    20  CALLSYS        q:0x26e6ee89fc0         ; FGameArmoryItem& TArrayIterator<FGameArmoryItem>::Proceed()
+    //    23  CpyRtoV8       wW0:44
+    //    24  PshVPtr        rW0:44
+    //    25  ADDSi          W0:0 d:67120826         ; FGameArmoryItem::PrimaryAssetId  (+0)
+    //    27  PSF            rW0:4
+    //    28  CALLSYS        q:0x26e6ee88e40         ; void TArray<FPrimaryAssetId>::Add(const FPrimaryAssetId&)
+    //    31  LoadVObjR      rW0:34 W1:16 DW2:268448495; TArrayIterator::CanProceed  (+16)
+    //    34  RDR1           wW0:41
+    //    35  CpyVtoR1       rW0:41
+    //    36  JLowNZ         ->18
+    //    38  PSF            rW0:48
+    //    39  CALLSYS        q:0x26e65377940         ; void FOnLoadComplete::$beh0()
+    //    42  PshC4          d:7
+    //    44  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //    47  PshRPtr
+    //    48  PshVPtr        rW0:0
+    //    49  PSF            rW0:48
+    //    50  CALLSYS        q:0x26e712ac800         ; void FOnLoadComplete::BindUFunction(UObject@, const FName&)
+    //    53  PSF            rW0:48
+    //    54  PSF            rW0:4
+    //    55  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    58  CALLSYS        q:0x26e7a0abbc0         ; ULoadAssetHandle@ ULokiAssetManager::AsyncLoadPrimaryAssets(UObject@, TArray<FPrimaryAssetId>, FOnLoadComplete)
+    //    61  STOREOBJ       wW0:52
+    //    62  PshVPtr        rW0:52
+    //    63  PshVPtr        rW0:0
+    //    64  ADDSi          W0:448 d:134230764      ; ULokiPlayerControllerArmoryComponent::Handle  (+448)
+    //    66  REFCPY
+    //    67  PopPtr
+    //    68  PSF            rW0:48
+    //    69  CALLSYS        q:0x26e65377780         ; void FOnLoadComplete::$beh2()
+    //    72  PSF            rW0:28
+    //    73  CALLSYS        q:0x26e79358c80         ; void FPlayerArmory::$beh2()
+    //    76  PSF            rW0:4
+    //    77  CALLSYS        q:0x26e7861f3c0         ; void TArray<FPrimaryAssetId>::$beh2()
+    //    80  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnAssetLoadComplete()
+// 119 instr, 820 B bytecode, id=0x82D6FBDB, varspace=64
+------------------------------------------------------------------------------
+{
+    auto v1;
+    ULokiAssetManager v6;
+    FPlayerArmory v30;
+    TArray<FPrimaryAssetId> v34;
+    TArrayIterator<FGameArmoryItem> v40;
+    auto v48;
+    ULokiDataAsset_Power v50;
+    ULokiDataAsset_Base v52;
+    ULokiDataAsset_Power v54;
+    FOnSoftClassLoaded v58;
+    ULokiDataAsset_Equipment v62;
+    ULokiDataAsset_Equipment v64;
+
+    v1 = true;
+    this.bLoadComplete = true;
+    v6 = ULokiAssetManager::GetLokiAssetManager();
+    v30 = this.GetArmory();
+    v34 = TArray<FPrimaryAssetId>();
+    v40 = v30.ItemsCollection.Iterator();
+    while (true) {
+        v1 = v40.CanProceed;
+        if (!v1) break;
+        v48 = v40.Proceed();
+        if (Loki::LokiIsServer(__WorldContext)) {
+            v1 = LokiGameplay::IsAssetIDEnabled(__WorldContext, v48.PrimaryAssetId);
+            v1 = !v1;
+            if (v1) {
+                v1 = true;
+                this.SetIsReplicated(true);
+                this.DisabledItemAssetIDs.AddUnique(v48.PrimaryAssetId);
+            }
+        }
+        v52 = v6.GetLokiDataAsset(v48.PrimaryAssetId);
+        if (v52 == null) {
+            v54 = null;
+        } else {
+            v54 = cast<ULokiDataAsset_Power>(v52);
+        }
+        v50 = v54;
+        if (v54 == null) {
+            v52 = v6.GetLokiDataAsset(v48.PrimaryAssetId);
+            if (v52 == null) {
+                v64 = null;
+            } else {
+                v64 = cast<ULokiDataAsset_Equipment>(v52);
+            }
+            v62 = v64;
+            if (v64 != null) {
+                v58 = FOnSoftClassLoaded();
+                v58.BindUFunction(this, __STATIC_NAME(8));
+                v62.Equipment.LoadAsync(v58);
+            }
+        } else {
+            v58 = FOnSoftClassLoaded();
+            v58.BindUFunction(this, __STATIC_NAME(8));
+            v50.Power.LoadAsync(v58);
+        }
+    }
+    v1 = this.bFullyUnlockedArmory;
+    if (v1) {
+        this.RemoveSeasonContentFromFullArmory();
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:1
+    //     2  LoadThisR      W0:360 d:134230764      ; ULokiPlayerControllerArmoryComponent::bLoadComplete  (+360)
+    //     4  WRTV1          rW0:1
+    //     5  CALLSYS        q:0x26e7a0ab680         ; ULokiAssetManager@ ULokiAssetManager::GetLokiAssetManager()
+    //     8  STOREOBJ       wW0:6
+    //     9  PSF            rW0:30
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7a359000         ; FPlayerArmory ULokiPlayerControllerArmoryComponentBase::GetArmory()
+    //    14  PSF            rW0:34
+    //    15  CALLSYS        q:0x26e6ee89000         ; void TArray<FPrimaryAssetId>::$beh0()
+    //    18  PSF            rW0:40
+    //    19  PSF            rW0:30
+    //    20  ADDSi          W0:24 d:67120828        ; FPlayerArmory::ItemsCollection  (+24)
+    //    22  CALLSYS        q:0x26e6ee8a340         ; TArrayIterator<FGameArmoryItem> TArray<FGameArmoryItem>::Iterator()
+    //    25  JMP            ->179
+    //    27  SUSPEND
+    //    28  PSF            rW0:40
+    //    29  CALLSYS        q:0x26e6ee89fc0         ; FGameArmoryItem& TArrayIterator<FGameArmoryItem>::Proceed()
+    //    32  CpyRtoV8       wW0:48
+    //    33  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    36  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //    39  JLowZ          ->71
+    //    41  PshVPtr        rW0:48
+    //    42  ADDSi          W0:0 d:67120826         ; FGameArmoryItem::PrimaryAssetId  (+0)
+    //    44  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    47  CALLSYS        q:0x26e7a254a00         ; bool LokiGameplay::IsAssetIDEnabled(UObject@, const FPrimaryAssetId&)
+    //    50  CpyRtoV4       wW0:1
+    //    51  NOT            rW0:1
+    //    52  CpyVtoR1       rW0:1
+    //    53  JLowZ          ->71
+    //    55  SetV1          wW0:1 d:1
+    //    57  PshV4          rW0:1
+    //    58  PshVPtr        rW0:0
+    //    59  CALLSYS        q:0x26e7973cf00         ; void UActorComponent::SetIsReplicated(bool)
+    //    62  PshVPtr        rW0:48
+    //    63  ADDSi          W0:0 d:67120826         ; FGameArmoryItem::PrimaryAssetId  (+0)
+    //    65  PshVPtr        rW0:0
+    //    66  ADDSi          W0:472 d:134230764      ; ULokiPlayerControllerArmoryComponent::DisabledItemAssetIDs  (+472)
+    //    68  CALLSYS        q:0x26e6ee88c80         ; bool TArray<FPrimaryAssetId>::AddUnique(const FPrimaryAssetId&)
+    //    71  PshVPtr        rW0:48
+    //    72  ADDSi          W0:0 d:67120826         ; FGameArmoryItem::PrimaryAssetId  (+0)
+    //    74  PshVPtr        rW0:6
+    //    75  CALLSYS        q:0x26e7a0ab4c0         ; const ULokiDataAsset_Base@ ULokiAssetManager::GetLokiDataAsset(FPrimaryAssetId) const
+    //    78  STOREOBJ       wW0:52
+    //    79  CmpPtrNull     rW0:52
+    //    80  JZ             ->91
+    //    82  TYPEID         d:1140856898            ; ULokiDataAsset_Power@
+    //    84  PSF            rW0:54
+    //    85  PshVPtr        rW0:52
+    //    86  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //    89  JMP            ->92
+    //    91  ClrVPtr        wW0:54
+    //    92  PshVPtr        rW0:54
+    //    93  RefCpyV        wW0:50
+    //    94  CmpPtrNull     rW0:50
+    //    95  JZ             ->125
+    //    97  PSF            rW0:58
+    //    98  CALLSYS        q:0x26e63074680         ; void FOnSoftClassLoaded::$beh0()
+    //   101  PshC4          d:8
+    //   103  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   106  PshRPtr
+    //   107  PshVPtr        rW0:0
+    //   108  PSF            rW0:58
+    //   109  CALLSYS        q:0x26e71014300         ; void FOnSoftClassLoaded::BindUFunction(UObject@, const FName&)
+    //   112  PSF            rW0:58
+    //   113  PshVPtr        rW0:50
+    //   114  ADDSi          W0:112 d:67115074       ; ULokiDataAsset_Power::Power  (+112)
+    //   116  CALLSYS        q:0x26e6ee88ac0         ; void TSoftClassPtr<ALokiBaseItem@>::LoadAsync(FOnSoftClassLoaded) const
+    //   119  PSF            rW0:58
+    //   120  CALLSYS        q:0x26e630744c0         ; void FOnSoftClassLoaded::$beh2()
+    //   123  JMP            ->178
+    //   125  PshVPtr        rW0:48
+    //   126  ADDSi          W0:0 d:67120826         ; FGameArmoryItem::PrimaryAssetId  (+0)
+    //   128  PshVPtr        rW0:6
+    //   129  CALLSYS        q:0x26e7a0ab4c0         ; const ULokiDataAsset_Base@ ULokiAssetManager::GetLokiDataAsset(FPrimaryAssetId) const
+    //   132  STOREOBJ       wW0:52
+    //   133  CmpPtrNull     rW0:52
+    //   134  JZ             ->145
+    //   136  TYPEID         d:1140856883            ; ULokiDataAsset_Equipment@
+    //   138  PSF            rW0:64
+    //   139  PshVPtr        rW0:52
+    //   140  CALLSYS        q:0x26e7039a340         ; void UObject::opCast(?&) const
+    //   143  JMP            ->146
+    //   145  ClrVPtr        wW0:64
+    //   146  PshVPtr        rW0:64
+    //   147  RefCpyV        wW0:62
+    //   148  CmpPtrNull     rW0:62
+    //   149  JZ             ->177
+    //   151  PSF            rW0:58
+    //   152  CALLSYS        q:0x26e63074680         ; void FOnSoftClassLoaded::$beh0()
+    //   155  PshC4          d:8
+    //   157  CALLSYS        q:0x26e69d20cc0         ; const FName& __STATIC_NAME(int)
+    //   160  PshRPtr
+    //   161  PshVPtr        rW0:0
+    //   162  PSF            rW0:58
+    //   163  CALLSYS        q:0x26e71014300         ; void FOnSoftClassLoaded::BindUFunction(UObject@, const FName&)
+    //   166  PSF            rW0:58
+    //   167  PshVPtr        rW0:62
+    //   168  ADDSi          W0:112 d:67115059       ; ULokiDataAsset_Equipment::Equipment  (+112)
+    //   170  CALLSYS        q:0x26e6ee88ac0         ; void TSoftClassPtr<ALokiBaseItem@>::LoadAsync(FOnSoftClassLoaded) const
+    //   173  PSF            rW0:58
+    //   174  CALLSYS        q:0x26e630744c0         ; void FOnSoftClassLoaded::$beh2()
+    //   177  FreeNullV8     wW0:62
+    //   178  FreeNullV8     wW0:50
+    //   179  LoadVObjR      rW0:40 W1:16 DW2:268448495; TArrayIterator::CanProceed  (+16)
+    //   182  RDR1           wW0:1
+    //   183  CpyVtoR1       rW0:1
+    //   184  JLowNZ         ->27
+    //   186  LoadThisR      W0:208 d:67115314       ; ULokiPlayerControllerArmoryComponentBase::bFullyUnlockedArmory  (+208)
+    //   188  RDR1           wW0:1
+    //   189  CpyVtoR1       rW0:1
+    //   190  JLowZ          ->196
+    //   192  PshVPtr        rW0:0
+    //   193  CALLSYS        q:0x26e7a358c80         ; void ULokiPlayerControllerArmoryComponentBase::RemoveSeasonContentFromFullArmory()
+    //   196  PSF            rW0:34
+    //   197  CALLSYS        q:0x26e7861f3c0         ; void TArray<FPrimaryAssetId>::$beh2()
+    //   200  PSF            rW0:30
+    //   201  CALLSYS        q:0x26e79358c80         ; void FPlayerArmory::$beh2()
+    //   204  RET            W0:2
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+void OnClassLoadComplete(UClass@ LoadedClass)
+// 29 instr, 208 B bytecode, id=0x82BBC967, varspace=4
+------------------------------------------------------------------------------
+{
+    auto v1;
+    TSubclassOf<AActor@> v4;
+
+    this.LoadedClasses.AddUnique(LoadedClass);
+    if (Loki::LokiIsServer(__WorldContext)) {
+        v4 = TSubclassOf<AActor@>(LoadedClass);
+        v1 = LokiGameplay::IsAssetEnabled(__WorldContext, v4);
+        v1 = !v1;
+        if (v1) {
+            v1 = true;
+            this.SetIsReplicated(true);
+            v4 = TSubclassOf<AActor@>(LoadedClass);
+            this.DisabledItems.AddUnique(v4);
+        }
+    }
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PSF            rW0:-2
+    //     1  PshVPtr        rW0:0
+    //     2  ADDSi          W0:384 d:134230764      ; ULokiPlayerControllerArmoryComponent::LoadedClasses  (+384)
+    //     4  CALLSYS        q:0x26e6ee88900         ; bool TArray<UClass@>::AddUnique(const UClass@ const&)
+    //     7  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    10  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //    13  JLowZ          ->51
+    //    15  PshVPtr        rW0:-2
+    //    16  PSF            rW0:4
+    //    17  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    20  PSF            rW0:4
+    //    21  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    24  CALLSYS        q:0x26e7a254bc0         ; bool LokiGameplay::IsAssetEnabled(UObject@, TSubclassOf<AActor@>)
+    //    27  CpyRtoV4       wW0:1
+    //    28  NOT            rW0:1
+    //    29  CpyVtoR1       rW0:1
+    //    30  JLowZ          ->51
+    //    32  SetV1          wW0:1 d:1
+    //    34  PshV4          rW0:1
+    //    35  PshVPtr        rW0:0
+    //    36  CALLSYS        q:0x26e7973cf00         ; void UActorComponent::SetIsReplicated(bool)
+    //    39  PshVPtr        rW0:-2
+    //    40  PSF            rW0:4
+    //    41  CALLSYS        q:0x26e6ee86980         ; void TSubclassOf<AActor@>::$beh0(UClass@)
+    //    44  PSF            rW0:4
+    //    45  PshVPtr        rW0:0
+    //    46  ADDSi          W0:456 d:134230764      ; ULokiPlayerControllerArmoryComponent::DisabledItems  (+456)
+    //    48  CALLSYS        q:0x26e6ee88740         ; bool TArray<TSubclassOf<AActor@>>::AddUnique(const TSubclassOf<AActor@>&)
+    //    51  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool IsAssetEnabled(const TSubclassOf<AActor@>&inout ItemClass)
+// 17 instr, 120 B bytecode, id=0x41730B1E, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (!Loki::LokiIsServer(__WorldContext)) {
+        v1 = this.DisabledItems.Contains(ItemClass);
+        v1 = !v1;
+    } else {
+        v1 = LokiGameplay::IsAssetEnabled(__WorldContext, ItemClass);
+    }
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->19
+    //     8  PshVPtr        rW0:-2
+    //     9  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    12  CALLSYS        q:0x26e7a254bc0         ; bool LokiGameplay::IsAssetEnabled(UObject@, TSubclassOf<AActor@>)
+    //    15  CpyRtoV4       wW0:1
+    //    16  CpyVtoR4       rW0:1
+    //    17  JMP            ->29
+    //    19  PshVPtr        rW0:-2
+    //    20  PshVPtr        rW0:0
+    //    21  ADDSi          W0:456 d:134230764      ; ULokiPlayerControllerArmoryComponent::DisabledItems  (+456)
+    //    23  CALLSYS        q:0x26e6ee88580         ; bool TArray<TSubclassOf<AActor@>>::Contains(const TSubclassOf<AActor@>&) const
+    //    26  CpyRtoV4       wW0:1
+    //    27  NOT            rW0:1
+    //    28  CpyVtoR4       rW0:1
+    //    29  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool IsAssetIDEnabled(const FPrimaryAssetId&inout ItemAssetID)
+// 17 instr, 120 B bytecode, id=0xA019845D, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    if (!Loki::LokiIsServer(__WorldContext)) {
+        v1 = this.DisabledItemAssetIDs.Contains(ItemAssetID);
+        v1 = !v1;
+    } else {
+        v1 = LokiGameplay::IsAssetIDEnabled(__WorldContext, ItemAssetID);
+    }
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //     3  CALLSYS        q:0x26e7a132a80         ; bool Loki::LokiIsServer(const UObject@)
+    //     6  JLowZ          ->19
+    //     8  PshVPtr        rW0:-2
+    //     9  PshGPtr        q:0x7ff698305098        ; __WorldContext
+    //    12  CALLSYS        q:0x26e7a254a00         ; bool LokiGameplay::IsAssetIDEnabled(UObject@, const FPrimaryAssetId&)
+    //    15  CpyRtoV4       wW0:1
+    //    16  CpyVtoR4       rW0:1
+    //    17  JMP            ->29
+    //    19  PshVPtr        rW0:-2
+    //    20  PshVPtr        rW0:0
+    //    21  ADDSi          W0:472 d:134230764      ; ULokiPlayerControllerArmoryComponent::DisabledItemAssetIDs  (+472)
+    //    23  CALLSYS        q:0x26e6ee883c0         ; bool TArray<FPrimaryAssetId>::Contains(const FPrimaryAssetId&) const
+    //    26  CpyRtoV4       wW0:1
+    //    27  NOT            rW0:1
+    //    28  CpyVtoR4       rW0:1
+    //    29  RET            W0:4
+
+------------------------------------------------------------------------------
+UFUNCTION(BlueprintCallable, CanOverrideEvent)
+bool CanBuyItem(const FArmoryShopItem&inout Item)
+// 99 instr, 632 B bytecode, id=0x0D82596E, varspace=58
+------------------------------------------------------------------------------
+{
+    auto v1;
+    auto v2;
+    FPlayerArmory v26;
+    TArrayIterator<FGameArmoryItem> v32;
+    FPrimaryAssetId v44;
+    ALokiBaseItem v46;
+    FName v50;
+    ALokiPlayerState v54;
+    ULokiInventoryComponentComboItems v58;
+
+    v1 = this.IsAssetIDEnabled(Item.AssetId);
+    v1 = !v1;
+    if (!v1) {
+        v2 = this.IsAssetEnabled(Item.ItemClass);
+        v2 = !v2;
+        v1 = v2;
+    } else {
+        v1 = true;
+    }
+    if (!v1) {
+        v26 = this.GetArmory();
+        v32 = v26.ItemsCollection.Iterator();
+        while (true) {
+            v1 = v32.CanProceed;
+            if (!v1) break;
+            v44 = FPrimaryAssetId(v32.Proceed().PrimaryAssetId);
+            v2 = v44 == Item.AssetId;
+            if (v2) {
+                v46 = Item.ItemClass.GetDefaultObject();
+                if (v46 != null) {
+                    v50 = v46.GetSlotName();
+                    v2 = v50 == this.PerkSlotName;
+                    if (v2) {
+                        v54 = this.GetPlayerState();
+                        if (v54 != null) {
+                            v58 = v54.GetInventory();
+                            if (v58 != null) {
+                                v1 = v58.HasItemByClass(Item.ItemClass);
+                                v1 = !v1;
+                                goto L157;
+                            }
+                        }
+                    }
+                }
+                v2 = true;
+                goto L157;
+            }
+        }
+        v1 = false;
+    } else {
+        v2 = false;
+    }
+    L157:
+    return v1;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:-2
+    //     1  ADDSi          W0:40 d:67121011        ; FArmoryShopItem::AssetId  (+40)
+    //     3  PshVPtr        rW0:0
+    //     4  CALLINTF       d:84044                 ; bool ULokiPlayerControllerArmoryComponent::IsAssetIDEnabled(const FPrimaryAssetId&)
+    //     6  CpyRtoV4       wW0:1
+    //     7  NOT            rW0:1
+    //     8  CpyVtoR1       rW0:1
+    //     9  JLowZ          ->15
+    //    11  SetV1          wW0:1 d:1
+    //    13  JMP            ->25
+    //    15  PshVPtr        rW0:-2
+    //    16  ADDSi          W0:0 d:67121011         ; FArmoryShopItem::ItemClass  (+0)
+    //    18  PshVPtr        rW0:0
+    //    19  CALLINTF       d:84043                 ; bool ULokiPlayerControllerArmoryComponent::IsAssetEnabled(const TSubclassOf<AActor@>&)
+    //    21  CpyRtoV4       wW0:2
+    //    22  NOT            rW0:2
+    //    23  CpyVtoV4       wW0:1 rW1:2
+    //    25  CpyVtoR1       rW0:1
+    //    26  JLowZ          ->33
+    //    28  SetV1          wW0:2 d:0
+    //    30  CpyVtoR4       rW0:2
+    //    31  JMP            ->157
+    //    33  PSF            rW0:26
+    //    34  PshVPtr        rW0:0
+    //    35  CALLSYS        q:0x26e7a359000         ; FPlayerArmory ULokiPlayerControllerArmoryComponentBase::GetArmory()
+    //    38  PSF            rW0:32
+    //    39  PSF            rW0:26
+    //    40  ADDSi          W0:24 d:67120828        ; FPlayerArmory::ItemsCollection  (+24)
+    //    42  CALLSYS        q:0x26e6ee8a340         ; TArrayIterator<FGameArmoryItem> TArray<FGameArmoryItem>::Iterator()
+    //    45  JMP            ->143
+    //    47  SUSPEND
+    //    48  PSF            rW0:32
+    //    49  CALLSYS        q:0x26e6ee89fc0         ; FGameArmoryItem& TArrayIterator<FGameArmoryItem>::Proceed()
+    //    52  CpyRtoV8       wW0:40
+    //    53  PshVPtr        rW0:40
+    //    54  ADDSi          W0:0 d:67120826         ; FGameArmoryItem::PrimaryAssetId  (+0)
+    //    56  PSF            rW0:44
+    //    57  CALLSYS        q:0x26e786a1040         ; void FPrimaryAssetId::$beh0(const FPrimaryAssetId&)
+    //    60  PshVPtr        rW0:-2
+    //    61  ADDSi          W0:40 d:67121011        ; FArmoryShopItem::AssetId  (+40)
+    //    63  PSF            rW0:44
+    //    64  CALLSYS        q:0x26e7861fe40         ; bool FPrimaryAssetId::opEquals(const FPrimaryAssetId&) const
+    //    67  CpyRtoV4       wW0:2
+    //    68  PSF            rW0:44
+    //    69  CALLSYS        q:0x26e786a1200         ; void FPrimaryAssetId::$beh2()
+    //    72  CpyVtoR1       rW0:2
+    //    73  JLowZ          ->143
+    //    75  PshVPtr        rW0:-2
+    //    76  ADDSi          W0:0 d:67121011         ; FArmoryShopItem::ItemClass  (+0)
+    //    78  CALLSYS        q:0x26e6ee86440         ; ALokiBaseItem@ TSubclassOf<ALokiBaseItem@>::GetDefaultObject() const
+    //    81  STOREOBJ       wW0:46
+    //    82  CmpPtrNull     rW0:46
+    //    83  JZ             ->134
+    //    85  PSF            rW0:50
+    //    86  PshVPtr        rW0:46
+    //    87  CALLSYS        q:0x26e7a0eaf80         ; FName ALokiBaseItem::GetSlotName() const
+    //    90  PshVPtr        rW0:0
+    //    91  ADDSi          W0:344 d:134230764      ; ULokiPlayerControllerArmoryComponent::PerkSlotName  (+344)
+    //    93  PSF            rW0:50
+    //    94  CALLSYS        q:0x26e69d22000         ; bool FName::opEquals(const FName&) const
+    //    97  CpyRtoV4       wW0:2
+    //    98  CpyVtoR1       rW0:2
+    //    99  JLowZ          ->134
+    //   101  PshVPtr        rW0:0
+    //   102  CALLINTF       d:84036                 ; ALokiPlayerState@ ULokiPlayerControllerArmoryComponent::GetPlayerState()
+    //   104  STOREOBJ       wW0:54
+    //   105  CmpPtrNull     rW0:54
+    //   106  JZ             ->133
+    //   108  PshVPtr        rW0:54
+    //   109  CALLSYS        q:0x26e7a391900         ; ULokiInventoryComponentComboItems@ ALokiPlayerState::GetInventory() const
+    //   112  STOREOBJ       wW0:58
+    //   113  CmpPtrNull     rW0:58
+    //   114  JZ             ->132
+    //   116  PshVPtr        rW0:-2
+    //   117  ADDSi          W0:0 d:67121011         ; FArmoryShopItem::ItemClass  (+0)
+    //   119  PshVPtr        rW0:58
+    //   120  CALLSYS        q:0x26e7a2a9a80         ; bool ULokiInventoryComponentBase::HasItemByClass(TSubclassOf<ALokiBaseItem@>) const
+    //   123  CpyRtoV4       wW0:1
+    //   124  NOT            rW0:1
+    //   125  PSF            rW0:26
+    //   126  CALLSYS        q:0x26e79358c80         ; void FPlayerArmory::$beh2()
+    //   129  CpyVtoR4       rW0:1
+    //   130  JMP            ->157
+    //   132  FreeNullV8     wW0:58
+    //   133  FreeNullV8     wW0:54
+    //   134  SetV1          wW0:2 d:1
+    //   136  PSF            rW0:26
+    //   137  CALLSYS        q:0x26e79358c80         ; void FPlayerArmory::$beh2()
+    //   140  CpyVtoR4       rW0:2
+    //   141  JMP            ->157
+    //   143  LoadVObjR      rW0:32 W1:16 DW2:268448495; TArrayIterator::CanProceed  (+16)
+    //   146  RDR1           wW0:1
+    //   147  CpyVtoR1       rW0:1
+    //   148  JLowNZ         ->47
+    //   150  SetV1          wW0:1 d:0
+    //   152  PSF            rW0:26
+    //   153  CALLSYS        q:0x26e79358c80         ; void FPlayerArmory::$beh2()
+    //   156  CpyVtoR4       rW0:1
+    //   157  RET            W0:4
+
+------------------------------------------------------------------------------
+void __InitDefaults()
+// 9 instr, 60 B bytecode, id=0xC209D86A, varspace=1
+------------------------------------------------------------------------------
+{
+    auto v1;
+
+    v1 = false;
+    this.SetComponentTickEnabled(false);
+    v1 = false;
+    this.SetbReplicates(false);
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  SetV1          wW0:1 d:0
+    //     2  PshV4          rW0:1
+    //     3  PshVPtr        rW0:0
+    //     4  CALLSYS        q:0x26e7973d440         ; void UActorComponent::SetComponentTickEnabled(bool)
+    //     7  SetV1          wW0:1 d:0
+    //     9  PshV4          rW0:1
+    //    10  PshVPtr        rW0:0
+    //    11  CALLSYS        q:0x26e7a62c640         ; void UActorComponent::SetbReplicates(bool)
+    //    14  RET            W0:2
+
+------------------------------------------------------------------------------
+~ULokiPlayerControllerArmoryComponent()
+// 19 instr, 148 B bytecode, id=0x628B26AD, varspace=0
+------------------------------------------------------------------------------
+{
+    return;
+}
+
+    // ---- disassembly ------------------------------------------------
+    //     0  PshVPtr        rW0:0
+    //     1  ADDSi          W0:368 d:134230764      ; ULokiPlayerControllerArmoryComponent::PurchasedKits  (+368)
+    //     3  CALLSYS        q:0x26e69d29fc0         ; void TArray<FString>::$beh2()
+    //     6  PshVPtr        rW0:0
+    //     7  ADDSi          W0:384 d:134230764      ; ULokiPlayerControllerArmoryComponent::LoadedClasses  (+384)
+    //     9  CALLSYS        q:0x26e70395d40         ; void TArray<UClass@>::$beh2()
+    //    12  PshVPtr        rW0:0
+    //    13  ADDSi          W0:400 d:134230764      ; ULokiPlayerControllerArmoryComponent::DefaultArmory  (+400)
+    //    15  CALLSYS        q:0x26e79358c80         ; void FPlayerArmory::$beh2()
+    //    18  PshVPtr        rW0:0
+    //    19  ADDSi          W0:456 d:134230764      ; ULokiPlayerControllerArmoryComponent::DisabledItems  (+456)
+    //    21  CALLSYS        q:0x26e7a110cc0         ; void TArray<TSubclassOf<AActor@>>::$beh2()
+    //    24  PshVPtr        rW0:0
+    //    25  ADDSi          W0:472 d:134230764      ; ULokiPlayerControllerArmoryComponent::DisabledItemAssetIDs  (+472)
+    //    27  CALLSYS        q:0x26e7861f3c0         ; void TArray<FPrimaryAssetId>::$beh2()
+    //    30  PshVPtr        rW0:0
+    //    31  ADDSi          W0:488 d:134230764      ; ULokiPlayerControllerArmoryComponent::OnPlayerInitializedHandle  (+488)
+    //    33  CALLSYS        q:0x26e7934f040         ; void FGameEventListenerHandle::$beh2()
+    //    36  RET            W0:2
+

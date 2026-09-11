@@ -1,0 +1,103 @@
+
+[2026.09.10-23.22.12:465][ 74]LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Sh
+ieldBot.DashAttack.OffCooldown.ShieldBot_SanctuarySentinel_SAC,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/C
+hromas/SAC/Abilities/RMB/ActiveShield/GC_ShieldBot_SANCT_SAC_DashAttack_OffCooldown_Cosmetic_Default.GC_ShieldBot_SANCT
+_SAC_DashAttack_OffCooldown_Cosmetic_Default_C] when it already existed [GameplayCue.Ability.ShieldBot.DashAttack.OffCo
+oldown.ShieldBot_SanctuarySentinel_SAC,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Chromas/SAC/Abilities/RMB
+/ShieldBash/GC_ShieldBot_SANCT_SAC_DashAttack_OffCooldown.GC_ShieldBot_SANCT_SAC_DashAttack_OffCooldown_C]. Skipping.
+[2026.09.10-23.22.12:465][ 74]LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Sh
+ieldBot.DashAttack.OffCooldown.ShieldBot_SanctuarySentinel_NIG,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/C
+hromas/NIG/Abilities/RMB/ActiveShield/GC_ShieldBot_SANCT_NIG_DashAttack_OffCooldown_Cosmetic_Default.GC_ShieldBot_SANCT
+_NIG_DashAttack_OffCooldown_Cosmetic_Default_C] when it already existed [GameplayCue.Ability.ShieldBot.DashAttack.OffCo
+oldown.ShieldBot_SanctuarySentinel_NIG,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Chromas/NIG/Abilities/RMB
+/ShieldBash/GC_ShieldBot_SANCT_NIG_DashAttack_OffCooldown.GC_ShieldBot_SANCT_NIG_DashAttack_OffCooldown_C]. Skipping.
+[2026.09.10-23.22.12:465][ 74]LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Sh
+ieldBot.DashAttack.OffCooldown.ShieldBot_SanctuarySentinel_FIE,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/C
+hromas/FIE/Abilities/RMB/ActiveShield/GC_ShieldBot_SANCT_FIE_DashAttack_OffCooldown_Cosmetic_Default.GC_ShieldBot_SANCT
+_FIE_DashAttack_OffCooldown_Cosmetic_Default_C] when it already existed [GameplayCue.Ability.ShieldBot.DashAttack.OffCo
+oldown.ShieldBot_SanctuarySentinel_FIE,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Chromas/FIE/Abilities/RMB
+/ShieldBash/GC_ShieldBot_SANCT_FIE_DashAttack_OffCooldown.GC_ShieldBot_SANCT_FIE_DashAttack_OffCooldown_C]. Skipping.
+[2026.09.10-23.22.12:465][ 74]LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Sh
+ieldBot.DashAttack.OffCooldown.ShieldBot_SanctuarySentinel,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Abili
+ties/RMB/ActiveShield/GC_ShieldBot_SANCT_DashAttack_OffCooldown_Cosmetic_Default.GC_ShieldBot_SANCT_DashAttack_OffCoold
+own_Cosmetic_Default_C] when it already existed [GameplayCue.Ability.ShieldBot.DashAttack.OffCooldown.ShieldBot_Sanctua
+rySentinel,/Game/Loki/Characters/Heroes/ShieldBot/Cosmetics/SANCT/Abilities/RMB/ShieldBash/GC_ShieldBot_SANCT_DashAttac
+k_OffCooldown.GC_ShieldBot_SANCT_DashAttack_OffCooldown_C]. Skipping.
+[2026.09.10-23.22.12:465][ 74]LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Fl
+ash.OffCD,/Game/Loki/Characters/Heroes/Shared/Abilities/Flash/GC_Instant_HasFlash.GC_Instant_HasFlash_C] when it 
+already existed 
+[GameplayCue.Ability.Flash.OffCD,/Game/Loki/Characters/Heroes/Shared/Abilities/Flash/GC_HasFlash.GC_HasFlash_C]. 
+Skipping.
+[2026.09.10-23.22.12:465][ 74]LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Ho
+ok.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/HolyKnight/Abilities/Hook
+/GC_HookGuy_Hook_Impact_HellKnight_HOL.GC_HookGuy_Hook_Impact_HellKnight_HOL_C] when it already existed [GameplayCue.Ab
+ility.Hook.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/LUX/Abilities/Hoo
+k/GC_HookGuy_Hook_Impact_HellKnight_LUX.GC_HookGuy_Hook_Impact_HellKnight_LUX_C]. Skipping.
+[2026.09.10-23.22.12:465][ 74]LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Ho
+ok.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/DeathKnight/Abilities/Hoo
+k/GC_HookGuy_Hook_Impact_HellKnight_DEA.GC_HookGuy_Hook_Impact_HellKnight_DEA_C] when it already existed [GameplayCue.A
+bility.Hook.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/LUX/Abilities/Ho
+ok/GC_HookGuy_Hook_Impact_HellKnight_LUX.GC_HookGuy_Hook_Impact_HellKnight_LUX_C]. Skipping.
+[2026.09.10-23.22.12:465][ 74]LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Ho
+ok.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/BrimstoneKnight/Abilities
+/Hook/GC_HookGuy_Hook_Impact_HellKnight_BRI.GC_HookGuy_Hook_Impact_HellKnight_BRI_C] when it already existed [GameplayC
+ue.Ability.Hook.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/LUX/Abilitie
+s/Hook/GC_HookGuy_Hook_Impact_HellKnight_LUX.GC_HookGuy_Hook_Impact_HellKnight_LUX_C]. Skipping.
+[2026.09.10-23.22.12:465][ 74]LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Ho
+ok.Impact.HookGuyHellknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Abilities/Hook/GC_HookGuy_Hook_Im
+pact_HellKnight.GC_HookGuy_Hook_Impact_HellKnight_C] when it already existed [GameplayCue.Ability.Hook.Impact.HookGuyHe
+llknight,/Game/Loki/Characters/Heroes/HookGuy/Cosmetics/HellKnight/Chromas/LUX/Abilities/Hook/GC_HookGuy_Hook_Impact_He
+llKnight_LUX.GC_HookGuy_Hook_Impact_HellKnight_LUX_C]. Skipping.
+[2026.09.10-23.22.12:465][ 74]LogAbilitySystem: Warning: AddGameplayCueData_Internal called for [GameplayCue.Ability.Ho
+okGuy.ChargeBlast.Fire,/Game/Loki/Characters/Heroes/HookGuy/Abilities/HookGuyChargeBlast/GC_HookGuy_ChargeBlast_Fire.GC
+_HookGuy_ChargeBlast_Fire_C] when it already existed [GameplayCue.Ability.HookGuy.ChargeBlast.Fire,/Game/Loki/Character
+s/Heroes/HookGuy/Abilities/HookGuyChargeBlast/GC_HookGuy_ChargeBlast_Fire_BaseCosmetic.GC_HookGuy_ChargeBlast_Fire_Base
+Cosmetic_C]. Skipping.
+[2026.09.10-23.22.12:465][ 74]LogLokiGameplayCueManager: Clearing all cached gameplay cue BPs.
+[2026.09.10-23.22.13:301][ 74]LogBlueprintUserMessages: MENUSPAWNER BP_MainMenuSpawner_CoreGame_SlotCapture_C_1: 
+Entering SetHero with CosmeticsAssetId and ShowUnknownForEmpty (HeroCosmeticsBundle:RoninDefault - true)
+[2026.09.10-23.22.13:302][ 74]LogBlueprintUserMessages: MENUSPAWNER BP_MainMenuSpawner_CoreGame_SlotCapture_C_1: 
+SetHero is setting target cosmetic HeroCosmeticsBundle:RoninDefault
+[2026.09.10-23.22.13:302][ 74]LogBlueprintUserMessages: MENUSPAWNER BP_MainMenuSpawner_CoreGame_SlotCapture_C_1: 
+Changing TargetAssetID from  to HeroCosmeticsBundle:RoninDefault.
+[2026.09.10-23.22.13:302][ 74]LogBlueprintUserMessages: MENUSPAWNER BP_MainMenuSpawner_CoreGame_SlotCapture_C_1: 
+Beginning async load of HeroCosmeticsBundle:RoninDefault...
+[2026.09.10-23.22.13:335][ 74]LogBlueprintUserMessages: [WBP_UI_HeroSelect_WIP_CosmeticSelector] CosmeticSelector 
+Updated - Hero:RONIN - 
+[2026.09.10-23.22.14:319][ 78]LogBlueprintUserMessages: MENUSPAWNER BP_MainMenuSpawner_CoreGame_SlotCapture_C_1: 
+Completed async load of HeroCosmeticsBundle:RoninDefault...
+[2026.09.10-23.22.14:354][ 79]LogSkeletalMesh: Display: 
+OnRegister[/Game/Loki/Characters/Heroes/Ronin/Modeling/Default/SK_Ronin_Default.SK_Ronin_Default]: 
+[ClothingSimulationFactoryNv] is currently unable to provide a fully functional simulation for each of this 
+SkeletalMesh's clothing assets.
+[2026.09.10-23.22.14:355][ 79]LogSkeletalMesh: Display: 
+OnRegister[/Game/Loki/Characters/Heroes/Ronin/Modeling/Default/SK_Ronin_Default.SK_Ronin_Default]: The 
+ClothingSimulationFactory property will now be automatically updated to use the most functional simulation that can be 
+found.
+[2026.09.10-23.22.14:362][ 79]LogBlueprintUserMessages: MENUSPAWNER BP_MainMenuSpawner_CoreGame_SlotCapture_C_1: 
+UpdateActor switching Actor from None to BP_LokiHeroSelectPreview_Ronin_C_2147472409.
+[2026.09.10-23.22.14:362][ 79]LogBlueprintUserMessages: [BP_MainMenuSpawner_CoreGame_SlotCapture_C_1] RESTARTED 
+CAPTURE WITH TARGET BP_LokiHeroSelectPreview_Ronin_C_2147472409
+[2026.09.10-23.22.14:371][ 79]LogRenderer: Scene Capture has ShowOnlyComponents or ShowOnlyActors ignored by the 
+PrimitiveRenderMode setting! /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.BP_L
+okiHeroSelectPreview_Ronin_C_2147472409.SceneCaptureComponent2D
+[2026.09.10-23.22.29:232][519]LogLokiBattlepassProgressManager: Match () Progress Notif: {"progressionTrackId":"HeroMas
+tery:RONIN","purchasableTierSKU":"","rewardTracks":[],"currentTierIndex":0,"currentXP":0,"requiredXP":25000,"cleared":f
+alse,"claimableRewards":[]}
+[2026.09.10-23.53.25:807][906]LogLokiGameplayCueManager: Clearing all cached gameplay cue BPs.
+[2026.09.10-23.53.55:598][843]LogLokiCharacter: Verbose: [Client][BP_HERO_Ronin_C_2147470735] Cleared ignored allies 
+when moving
+[2026.09.10-23.54.46:425][303]LogLokiGameplaySpell: Verbose: 
+[BP_HERO_Ronin_C_2147470735][GS_Ronin_MiniDash_Charges_C_2147470636] Attempted to dash outside of Invoke, Channeling 
+and Warmup phase
+[2026.09.10-23.57.42:515][271]LogLokiGameplaySpell: Verbose: 
+[BP_HERO_Ronin_C_2147470735][GS_Ronin_MiniDash_Charges_C_2147470636][] Pre Dash Start
+[2026.09.10-23.57.42:516][271]LogAbilitySystem: Display: GameplayCueNotify 
+/Game/Loki/Core/VFX/Test/TestCues/GC_GlobalImpulse_DASH.GC_GlobalImpulse_DASH_C was not loaded when GameplayCue was 
+invoked. Starting async loading.
+[2026.09.10-23.57.42:516][271]LogLokiGameplaySpell: Verbose: 
+[BP_HERO_Ronin_C_2147470735][GS_Ronin_MiniDash_Charges_C_2147470636][][0] Post Dash Start
+[2026.09.10-23.57.46:815][272]LogLokiGameplaySpell: Verbose: 
+[BP_HERO_Ronin_C_2147470735][GS_Ronin_MiniDash_Charges_C_2147470636][0] Dash Ended
+
+

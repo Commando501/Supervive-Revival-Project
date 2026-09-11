@@ -1,0 +1,11 @@
+watch-now: waiting for "SUPERVIVE-Win64-Shipping.exe", then mmap-injecting G:/git/Supervive Revival Project/tools/sigbypass-mod/veh_capture.dll
+watch-now: process appeared after 799 poll(s); PID=58428
+watch-now: PROCESS_ALL_ACCESS handle obtained after 0 poll(s)
+Manual-mapping G:\git\Supervive Revival Project\tools\sigbypass-mod\veh_capture.dll into PID 58428
+  remote image base: 0x1BC6D640000 (size 0x26000)
+  relocations applied (delta 0x1BAED640000)
+  import: KERNEL32.dll
+  exception table: 0x15B entries at 0x1BC6D663000 (will RtlAddFunctionTable)
+  DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+  verify: MZ at 0x1BC6D640000 ✓
+OK: manual-map complete (DllMain returned).

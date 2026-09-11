@@ -1,0 +1,6 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[PH] phase-ladder mode (S124/FK-22): GoToPhase(1) control -> GoToPhase(4) treatment ->
+[PH] re-read +0xA44 -> poke 3/hold/poke 4 -> BP_AuthSetCurrentPhase(6) if the delegate has subscribers.
+[PH] Inject into the STAGED TUTORIAL WORLD (gft -> fo -> sp -> this). Not meaningful at the menu.
+[PH] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write

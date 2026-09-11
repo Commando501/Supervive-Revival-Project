@@ -1,0 +1,514 @@
+// ============================================================================
+//  MODULE   Barracuda.GameMode.BarracudaPlayerSpawnerComponent
+//  SOURCE   Barracuda/GameMode/BarracudaPlayerSpawnerComponent.as
+//  CONTENT  1 class(es), 11 function(s), 0 enum(s), 1 global(s), 1760 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaPlayerSpawnerComponent;
+
+UBarracudaPlayerSpawnerComponent@ UBarracudaPlayerSpawnerComponent()   // traits=0x20
+{
+    v2 = UBarracudaPlayerSpawnerComponent();
+    return v2;
+}
+/* ---- UBarracudaPlayerSpawnerComponent: 7 dwords / 4 instructions (cache offset 0x20630) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84201 UBarracudaPlayerSpawnerComponent      
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ UBarracudaPlayerSpawnerComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_UBarracudaPlayerSpawnerComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x206fd) ----
+    0000  PshGPtr       __StaticType_UBarracudaPlayerSpawnerComponent
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+UBarracudaPlayerSpawnerComponent@ UBarracudaPlayerSpawnerComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaPlayerSpawnerComponent, v2, typeid(UBarracudaPlayerSpawnerComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x20847) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972608                                    ; UBarracudaPlayerSpawnerComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaPlayerSpawnerComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaPlayerSpawnerComponent@ UBarracudaPlayerSpawnerComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaPlayerSpawnerComponent, v2, typeid(UBarracudaPlayerSpawnerComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x209a9) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972608                                    ; UBarracudaPlayerSpawnerComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaPlayerSpawnerComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+UBarracudaPlayerSpawnerComponent@ UBarracudaPlayerSpawnerComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaPlayerSpawnerComponent, v2, typeid(UBarracudaPlayerSpawnerComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x20b06) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972608                                    ; UBarracudaPlayerSpawnerComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_UBarracudaPlayerSpawnerComponent
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaPlayerSpawnerComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaPlayerSpawnerComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TArray<float64> RespawnTimePerLevel;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 MatchTimeRespawnCeiling;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 MatchRespawnTimeFactor;
+
+    UBarracudaPlayerSpawnerComponent()   // traits=0x21
+    {
+        this.RespawnTimePerLevel = TArray();
+        return;
+    }
+    /* ---- UBarracudaPlayerSpawnerComponent: 11 dwords / 6 instructions (cache offset 0x21939) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230784                                 ; .RespawnTimePerLevel
+        000C  CALLSYS       TArray::$beh0                               
+        0018  PshVPtr       this                                        
+        001C  FinConstruct  UBarracudaPlayerSpawnerComponent            
+        0028  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        this.TryRespawningPlayers();
+        return;
+    }
+    /* ---- Tick_Implementation: 4 dwords / 3 instructions (cache offset 0x20e03) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84200                                         ; UBarracudaPlayerSpawnerComponent::TryRespawningPlayers
+        000C  RET           4                                           
+    */
+
+    float64 CalculateDeathTimer(ALokiPlayerState@ PlayerState)   // traits=0x20
+    {
+        v1 = this.RespawnTimePerLevel.Num();
+        if (v1 > 0) {
+            v1 = PlayerState.GetPlayerLevel();
+            v2 = this.RespawnTimePerLevel.Num();
+            v2 = v2 - 1;
+            v4 = Math::Min(v2, v1);
+            v8 = *refReg;
+            v6 = v8;
+            v8 = GetCurrentBarracudaPhaseTime();
+            v12 = this.MatchTimeRespawnCeiling;
+            v8 = v8 / v12;
+            v14 = 4607182418800017408;
+            v12 = 0;
+            v10 = Math::Lerp(v8, v12, v8);
+            v12 = v14 + v10;
+            v6 = v6 * v12;
+            return v6;
+        } else {
+            v2 = PlayerState.GetPlayerLevel();
+            v1 = v2 * 5;
+            v12 = float64(v1);
+            return v12;
+        }
+        return v12;
+    }
+    /* ---- CalculateDeathTimer: 86 dwords / 49 instructions (cache offset 0x20f34) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230784                                 ; .RespawnTimePerLevel
+        000C  CALLSYS       TArray::Num                                 
+        0018  CpyRtoV4      v1                                          
+        001C  CMPIi         v1 0                                        
+        0024  JNP           61                                            -> L0120
+        002C  PshVPtr       PlayerState                                 
+        0030  CALLSYS       ALokiPlayerState::GetPlayerLevel            
+        003C  CpyRtoV4      v1                                          
+        0040  PshV4         v1                                          
+        0044  PshVPtr       this                                        
+        0048  ADDSi         208 134230784                                 ; .RespawnTimePerLevel
+        0050  CALLSYS       TArray::Num                                 
+        005C  CpyRtoV4      v2                                          
+        0060  SUBIi         v2 v2 1                                     
+        006C  PshV4         v2                                          
+        0070  CALLSYS       Min                                         
+        007C  CpyRtoV4      v4                                          
+        0080  PshV4         v4                                          
+        0084  PshVPtr       this                                        
+        0088  ADDSi         208 134230784                                 ; .RespawnTimePerLevel
+        0090  Thiscall1     TArray::opIndex                             
+        009C  RDR8          v8                                          
+        00A0  CpyVtoV8      v6 v8                                       
+        00A8  CALL          84266                                         ; GetCurrentBarracudaPhaseTime
+        00B0  CpyRtoV8      v8                                          
+        00B4  LoadThisR     224 134230784                                 ; this.MatchTimeRespawnCeiling
+        00BC  RDR8          v12                                         
+        00C0  DIVd          v8 v8 v12                                   
+        00C8  SetV8         v14 0x3ff0000000000000                      
+        00D4  LoadThisR     232 134230784                                 ; this.MatchRespawnTimeFactor
+        00DC  PshRPtr                                                   
+        00E0  SetV8         v12 0x0                                     
+        00EC  PSF           v12                                         
+        00F0  PSF           v8                                          
+        00F4  CALLSYS       Lerp                                        
+        0100  CpyRtoV8      v10                                         
+        0104  ADDd          v12 v14 v10                                 
+        010C  MULd          v6 v6 v12                                   
+        0114  CpyVtoR8      v6                                          
+        0118  JMP           13                                            -> L0154
+      L0120:
+        0120  PshVPtr       PlayerState                                 
+        0124  CALLSYS       ALokiPlayerState::GetPlayerLevel            
+        0130  CpyRtoV4      v2                                          
+        0134  MULIi         v1 v2 5                                     
+        0140  iTOd          v12 v1                                      
+        0148  CpyVtoR8      v12                                         
+        014C  JMP           0                                             -> L0154
+      L0154:
+        0154  RET           4                                           
+    */
+
+    private void TryRespawningPlayers()   // traits=0x28
+    {
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v6 = v4.GetCurrentPhase();
+            v7 = int(v6);
+            if (v7 != 7) {
+                return;
+            } else {
+                v10 = this.GetOwner();
+                if (v10 != nullptr) {
+                    v12 = cast<ABarracudaGameMode@>(v10);
+                } else {
+                    v12 = nullptr;
+                }
+                v14 = v12;
+                if (v14 == nullptr) {
+                    return;
+                } else {
+                    v17 = Gameplay::GetServerTime(__WorldContext);
+                    v20 = float64(v17);
+                    v16 = v20;
+                    v24 = v4.GetLokiPlayerStates();
+                    v30 = v24.Iterator();
+                    while (true) {
+                        v5 = v30.CanProceed;
+                        if (!v5) break;
+                        v38 = v30.Proceed();
+                        v30.Proceed();
+                        v42 = UBarracudaPlayerStateComponent::Get(v38, NAME_None);
+                        if (v42 != nullptr) {
+                            v46 = v38.GetLokiCharacter();
+                            if (v46 == nullptr) {
+                                v5 = 0;
+                            } else {
+                                v47 = v46.IsDead();
+                                v47 = !v47;
+                                v5 = v47;
+                            }
+                            if (v5) {
+                                v42.SetNextRespawnTime(13830554455654793216);
+                            } else {
+                                if (!v42.HasNextRespawnTime()) {
+                                    v5 = 0;
+                                } else {
+                                    v20 = v42.GetNextRespawnTime();
+                                    v47 = v20 < v16;
+                                    v5 = v47;
+                                }
+                                if (v5) {
+                                    v96 = FTransform();
+                                    v100 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+                                    if (v100 != nullptr) {
+                                        v8 = LokiTeam::GetTeamFromActor(v38);
+                                        v104 = v100.GetRespawnStructure(v8);
+                                        if (v104 != nullptr) {
+                                            v110 = v104.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                                            v96.SetLocation(v110);
+                                        }
+                                    }
+                                    v42.ClearNextRespawnTime();
+                                    v5 = false;
+                                    v14.SpawnPlayer(v38, v96, nullptr, v5);
+                                } else {
+                                    v47 = v42.HasNextRespawnTime();
+                                    v47 = !v47;
+                                    if (v47) {
+                                        v20 = this.CalculateDeathTimer(v38);
+                                        v112 = v16 + v20;
+                                        v42.SetNextRespawnTime(v112);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- TryRespawningPlayers: 239 dwords / 150 instructions (cache offset 0x21149) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetLokiGameState                            
+        0018  STOREOBJ      v4                                          
+        001C  CmpPtrNull    v4                                          
+        0020  JNZ           2                                             -> L0030
+        0028  JMP           226                                           -> L03B8
+      L0030:
+        0030  PshVPtr       v4                                          
+        0034  CALLSYS       ALokiGameState::GetCurrentPhase             
+        0040  CpyRtoV4      v6                                          
+        0044  sbTOi         v7 v6                                       
+        004C  CMPIi         v7 7                                        
+        0054  JZ            2                                             -> L0064
+        005C  JMP           213                                           -> L03B8
+      L0064:
+        0064  PshVPtr       this                                        
+        0068  CALLSYS       UActorComponent::GetOwner                   
+        0074  STOREOBJ      v10                                         
+        0078  CmpPtrNull    v10                                         
+        007C  JZ            9                                             -> L00A8
+        0084  TYPEID        1207972605                                    ; ABarracudaGameMode@
+        008C  PSF           v12                                         
+        0090  PshVPtr       v10                                         
+        0094  CALLSYS       UObject::opCast                             
+        00A0  JMP           1                                             -> L00AC
+      L00A8:
+        00A8  ClrVPtr       v12                                         
+      L00AC:
+        00AC  PshVPtr       v12                                         
+        00B0  RefCpyV       v14                                         
+        00B4  CmpPtrNull    v14                                         
+        00B8  JNZ           2                                             -> L00C8
+        00C0  JMP           188                                           -> L03B8
+      L00C8:
+        00C8  PshGPtr       __WorldContext                              
+        00D4  CALLSYS       GetServerTime                               
+        00E0  CpyRtoV4      v17                                         
+        00E4  fTOd          v20 v17                                     
+        00EC  CpyVtoV8      v16 v20                                     
+        00F4  PSF           v30                                         
+        00F8  PSF           v24                                         
+        00FC  PshVPtr       v4                                          
+        0100  CALLSYS       ALokiGameState::GetLokiPlayerStates         
+        010C  PSF           v24                                         
+        0110  CALLSYS       TArray::Iterator                            
+        011C  JMP           154                                           -> L038C
+      L0124:
+        0124  SUSPEND                                                   
+        0128  PSF           v30                                         
+        012C  CALLSYS       TArrayConstIterator::Proceed                
+        0138  PshRPtr                                                   
+        013C  RDSPtr                                                    
+        0140  RefCpyV       v38                                         
+        0144  PshGPtr       NAME_None                                   
+        0150  PshVPtr       v38                                         
+        0154  CALL          84145                                         ; Get
+        015C  STOREOBJ      v42                                         
+        0160  CmpPtrNull    v42                                         
+        0164  JNZ           4                                             -> L017C
+        016C  FreeNullV8    v42                                         
+        0170  FreeNullV8    v38                                         
+        0174  JMP           132                                           -> L038C
+      L017C:
+        017C  PshVPtr       v38                                         
+        0180  CALLSYS       ALokiPlayerState::GetLokiCharacter          
+        018C  STOREOBJ      v46                                         
+        0190  CmpPtrNull    v46                                         
+        0194  JNZ           4                                             -> L01AC
+        019C  SetV4         v5 0                                        
+        01A4  JMP           8                                             -> L01CC
+      L01AC:
+        01AC  PshVPtr       v46                                         
+        01B0  CALLSYS       ALokiCharacter::IsDead                      
+        01BC  CpyRtoV4      v47                                         
+        01C0  NOT           v47                                         
+        01C4  CpyVtoV4      v5 v47                                      
+      L01CC:
+        01CC  CpyVtoR1      v5                                          
+        01D0  JLowZ         11                                            -> L0204
+        01D8  PshC8         0xbff0000000000000                          
+        01E4  PshVPtr       v42                                         
+        01E8  CALLINTF      84126                                         ; UBarracudaPlayerStateComponent::SetNextRespawnTime
+        01F0  FreeNullV8    v46                                         
+        01F4  FreeNullV8    v42                                         
+        01F8  FreeNullV8    v38                                         
+        01FC  JMP           98                                            -> L038C
+      L0204:
+        0204  PshVPtr       v42                                         
+        0208  CALLINTF      84124                                         ; UBarracudaPlayerStateComponent::HasNextRespawnTime
+        0210  JLowNZ        4                                             -> L0228
+        0218  SetV4         v5 0                                        
+        0220  JMP           10                                            -> L0250
+      L0228:
+        0228  PshVPtr       v42                                         
+        022C  CALLINTF      84127                                         ; UBarracudaPlayerStateComponent::GetNextRespawnTime
+        0234  CpyRtoV8      v20                                         
+        0238  CMPd          v20 v16                                     
+        0240  TS                                                        
+        0244  CpyRtoV4      v47                                         
+        0248  CpyVtoV4      v5 v47                                      
+      L0250:
+        0250  CpyVtoR1      v5                                          
+        0254  JLowZ         54                                            -> L0334
+        025C  PSF           v96                                         
+        0260  CALLSYS       FTransform::$beh0                           
+        026C  PshGPtr       NAME_None                                   
+        0278  PshVPtr       v4                                          
+        027C  CALL          84255                                         ; Get
+        0284  STOREOBJ      v100                                        
+        0288  CmpPtrNull    v100                                        
+        028C  JZ            24                                            -> L02F4
+        0294  PshVPtr       v38                                         
+        0298  CALLSYS       GetTeamFromActor                            
+        02A4  CpyRtoV4      v8                                          
+        02A8  PshV4         v8                                          
+        02AC  PshVPtr       v100                                        
+        02B0  CALLINTF      84227                                         ; UBarracudaGameStateComponent::GetRespawnStructure
+        02B8  STOREOBJ      v104                                        
+        02BC  CmpPtrNull    v104                                        
+        02C0  JZ            10                                            -> L02F0
+        02C8  PSF           v110                                        
+        02CC  PshVPtr       v104                                        
+        02D0  CALLSYS       AActor::GetActorLocation                    
+        02DC  PSF           v110                                        
+        02E0  PSF           v96                                         
+        02E4  CALLSYS       FTransform::SetLocation                     
+      L02F0:
+        02F0  FreeNullV8    v104                                        
+      L02F4:
+        02F4  PshVPtr       v42                                         
+        02F8  CALLINTF      84125                                         ; UBarracudaPlayerStateComponent::ClearNextRespawnTime
+        0300  SetV1         v5 0                                        
+        0308  PshV4         v5                                          
+        030C  PshNull                                                   
+        0310  PSF           v96                                         
+        0314  PshVPtr       v38                                         
+        0318  PshVPtr       v14                                         
+        031C  CALLSYS       ALokiGameMode::SpawnPlayer                  
+        0328  FreeNullV8    v100                                        
+        032C  JMP           19                                            -> L0380
+      L0334:
+        0334  PshVPtr       v42                                         
+        0338  CALLINTF      84124                                         ; UBarracudaPlayerStateComponent::HasNextRespawnTime
+        0340  CpyRtoV4      v47                                         
+        0344  NOT           v47                                         
+        0348  CpyVtoR1      v47                                         
+        034C  JLowZ         11                                            -> L0380
+        0354  PshVPtr       v38                                         
+        0358  PshVPtr       this                                        
+        035C  CALLINTF      84199                                         ; UBarracudaPlayerSpawnerComponent::CalculateDeathTimer
+        0364  CpyRtoV8      v20                                         
+        0368  ADDd          v112 v16 v20                                
+        0370  PshV8         v112                                        
+        0374  PshVPtr       v42                                         
+        0378  CALLINTF      84126                                         ; UBarracudaPlayerStateComponent::SetNextRespawnTime
+      L0380:
+        0380  FreeNullV8    v46                                         
+        0384  FreeNullV8    v42                                         
+        0388  FreeNullV8    v38                                         
+      L038C:
+        038C  LoadVObjR     v30 16 268448511                              ; .CanProceed
+        0398  RDR1          v5                                          
+        039C  CpyVtoR1      v5                                          
+        03A0  JLowNZ        -161                                          -> L0124
+        03A8  PSF           v24                                         
+        03AC  CALLSYS       TArray::$beh2                               
+      L03B8:
+        03B8  RET           2                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = false;
+        this.SetbReplicates(v1);
+        v1 = true;
+        this.SetbExcludeFromClient(v1);
+        v1 = true;
+        this.SetComponentTickEnabled(v1);
+        v4 = 4655631299166339072;
+        this.MatchTimeRespawnCeiling = v4;
+        v4 = 4596373779694328218;
+        this.MatchRespawnTimeFactor = v4;
+        return;
+    }
+    /* ---- __InitDefaults: 34 dwords / 19 instructions (cache offset 0x217f0) ----
+        0000  SetV1         v1 0                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       UActorComponent::SetbReplicates             
+        001C  SetV1         v1 1                                        
+        0024  PshV4         v1                                          
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       UActorComponent::SetbExcludeFromClient      
+        0038  SetV1         v1 1                                        
+        0040  PshV4         v1                                          
+        0044  PshVPtr       this                                        
+        0048  CALLSYS       UActorComponent::SetComponentTickEnabled    
+        0054  SetV8         v4 0x409c200000000000                       
+        0060  LoadThisR     224 134230784                                 ; this.MatchTimeRespawnCeiling
+        0068  WRTV8         v4                                          
+        006C  SetV8         v4 0x3fc999999999999a                       
+        0078  LoadThisR     232 134230784                                 ; this.MatchRespawnTimeFactor
+        0080  WRTV8         v4                                          
+        0084  RET           2                                           
+    */
+
+    void ~UBarracudaPlayerSpawnerComponent()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~UBarracudaPlayerSpawnerComponent: 7 dwords / 4 instructions (cache offset 0x21a4b) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230784                                 ; .RespawnTimePerLevel
+        000C  CALLSYS       TArray::$beh2                               
+        0018  RET           2                                           
+    */
+
+}
+

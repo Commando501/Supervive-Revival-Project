@@ -1,0 +1,30 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[PH] phase-ladder mode (S124/FK-22): GoToPhase(1) control -> GoToPhase(4) treatment ->
+[PH] re-read +0xA44 -> poke 3/hold/poke 4 -> BP_AuthSetCurrentPhase(6) if the delegate has subscribers.
+[PH] Inject into the STAGED TUTORIAL WORLD (gft -> fo -> sp -> this). Not meaningful at the menu.
+[PH] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[PH] gm-cand[0] 0x1B2700D0040 'EndOfGameModel'  chain=EndOfGameModel<-Object  [+0x258]=0x0 not-live
+[PH] world 0x1B39ECF4B60 'LVL_Tutorial' AuthorityGameMode@0x250=0x0  GameState@0x258=0x0
+[PH] gm-cand[1] 0x1B37ED25CE0 'Comp_GameMode_EoGFinisher'  chain=Comp_GameMode_EoGFinisher_C<-Comp_GameMode_EoGFinisher_Code_C<-ActorComponent<-Object  [+0x258]=0x44060BAB43FC1BA2 not-live
+[PH] gm-cand[2] 0x1B305F6C800 'Comp_GameMode_DeathCircle'  chain=Comp_GameMode_DeathCircle_C<-ActorComponent<-Object  [+0x258]=0x1DA420001DA41 not-live
+[PH] gm-cand[3] 0x1B3771413C0 'Comp_GameMode_DropPlane_Tutorial'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object  [+0x258]=0x1B40516AA98 not-live
+[PH] gm-cand[4] 0x1B361978F80 'Comp_GameMode_ShopKeepers'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x258]=0x29C8D00029C6A not-live
+[PH] gm-cand[5] 0x1B3857EA4C0 'BP_LokiGameMode_Tutorial_C'  chain=BP_LokiGameMode_Tutorial_C<-LokiTutorialGameMode<-LokiRoundGameMode<-LokiGameMode<-LokiGameModeBase<-GameModeBase<-Info<-LokiActor<-Actor<-Object  [+0x258]=0x1B405BE1000 not-live
+[PH] gm-cand[6] 0x1B406CC9580 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x258]=0x0 not-live
+[PH] gm-cand[7] 0x1B3737CD8A0 'Comp_GameMode_EoGFinisher_GEN_VARIABLE'  chain=Comp_GameMode_EoGFinisher_C<-Comp_GameMode_EoGFinisher_Code_C<-ActorComponent<-Object  [+0x258]=0x8A674D not-live
+[PH] gm-cand[8] 0x1B40053B5C0 'Comp_GameMode_DropPlane_Tutorial_GEN_VARIABLE'  chain=Comp_GameMode_DropPlane_Tutorial_C<-LokiGameModeDropPlaneComponent<-ActorComponent<-Object  [+0x258]=0x89898A9F9F8A8989 not-live
+[PH] gm-cand[9] 0x1B382AAAF00 'Comp_GameMode_DeathCircle_GEN_VARIABLE'  chain=Comp_GameMode_DeathCircle_C<-ActorComponent<-Object  [+0x258]=0x1B3BF1AEB80 LIVE-UOBJECT
+[PH] gm-cand[10] 0x1B3735FE380 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x258]=0x0 not-live
+[PH] gm-cand[11] 0x1B37B7E0E00 'Comp_GameMode_WipeoutRespawns_GEN_VARIABLE'  chain=Comp_GameMode_WipeoutRespawns_C<-ActorComponent<-Object  [+0x258]=0x6C83F900000004 not-live
+[PH] gm-cand[12] 0x1B37B7E4000 'Comp_GameMode_Vaults_GEN_VARIABLE'  chain=Comp_GameMode_Vaults_C<-ActorComponent<-Object  [+0x258]=0x42EC60646A3E3812 not-live
+[PH] gm-cand[13] 0x1B388498500 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x258]=0xFFFFFFFFF not-live
+[PH] gm-cand[14] 0x1B36B0E14E0 'Comp_GameMode_QuestManager_GEN_VARIABLE'  chain=Comp_GameMode_QuestManager_C<-ActorComponent<-Object  [+0x258]=0x172B2 not-live
+[PH] gm-cand[15] 0x1B39438CAE0 'Comp_GameMode_Biomes_GEN_VARIABLE'  chain=Comp_GameMode_Biomes_C<-Comp_GameMode_Biomes_Code_C<-LokiBiomeManagerComponent<-ActorComponent<-Object  [+0x258]=0x0 not-live
+[PH] gm-cand[16] 0x1B3879E1600 'Comp_GameMode_ShopKeepers_GEN_VARIABLE'  chain=Comp_GameMode_ShopKeepers_C<-ActorComponent<-Object  [+0x258]=0x3F5537C53F911111 not-live
+[PH] gm-cand[17] 0x1B36B0ED300 'Comp_GameMode_RoundReset_GEN_VARIABLE'  chain=Comp_GameMode_RoundReset_C<-ActorComponent<-Object  [+0x258]=0x1B231884E80 LIVE-UOBJECT
+[PH] gm enumeration: 18 live *GameMode instance(s), 2 with a live [+0x258]; world=0x1B39ECF4B60
+[PH] !! AMBIGUOUS: 2 equally-qualified GameModes and no World AuthorityGameMode to break the tie. REFUSING to guess.
+[PH] GameMode selection: 0x0  reason: AMBIGUOUS
+[PH] ABORT: could not select a GameMode unambiguously -- see the enumeration above. No arm was run and NOTHING was written. This is a statement about STAGING (or about a stale world), not about the phase machine.
+[PH] ABORT before arming: resolve failed. Nothing was armed, nothing was written, no `.text` was touched, and no game-thread time was spent.

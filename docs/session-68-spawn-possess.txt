@@ -1,0 +1,48 @@
+SESSION 68 — force-open spawn+possess BUILT + exhausted; force-open CEILING confirmed; PIVOT to the DS route
+===========================================================================================================
+Date: 2026-07-11. Continues S67 (spawn+possess path confirmed callable). Built the full spawn+possess into
+tools/sigbypass-mod/tutorial_launch.cpp and tested live. Result: the force-open route CANNOT produce a playable
+hero — decided (with the user) to PIVOT to the dedicated-server route. Handoff: docs/next-session-prompt-ds-stub.md.
+
+TWO REUSABLE BUG FIXES (keep — they made force-open reliable + fixed the probes)
+-------------------------------------------------------------------------------
+1. FORCE-OPEN LOGIN-HOLD: the "intermittent" force-open crashes were a timing bug. The slot-285 CustomLogin
+   de-override is transient; the `open` console command is DEFERRED (Login runs ~7s later, after LoadMap).
+   Restoring the login patch too early -> the strict native Login runs -> "ALokiGameMode::Login failed to Login"
+   fatal. FIX (Worker RM_FORCEOPEN branch): hold CustomLogin installed until Login fires (poll g_loginCalls),
+   max 16s, then restore. Force-open now RELIABLY passes login + the tutorial STAYS alive.
+2. UStruct::SuperStruct is @+0x48 THIS BUILD (not 0x40). Diagnostic: cls+0x48 = the parent UClass;
+   cls+0x40 = garbage. Children@0x50 / ChildProperties@0x58 were already right. The wrong 0x40 silently broke
+   EVERY super-walk -> probes only saw a class's OWN funcs/props, PropOffset("PlayerState")=0xFFFFFFFF, Possess
+   not found. FIXED all 6 super-walk sites. After the fix the PC super chain resolves (Controller::Possess found;
+   PlayerState prop @0x3C0 resolves — the force-open PC does have a BP_LokiPlayerState).
+
+SPAWN+POSSESS (LEAD B) — BUILT, 4 methods, NONE yield a hero
+------------------------------------------------------------
+Infra added: kRunMode {RM_FORCEOPEN, RM_SPAWNPOSSESS}; FindInstByClass / FindObjExact / ResolveFuncSuper /
+ResolveFuncNative (skip BP_ classes -> native thunk, since the primitive's FFrame.Code=NULL crashes a BP-VM Func
+but is correct for native thunks) / ResolveSpawnPossess / DoSpawnPossess. Two DLLs: tutorial_launch_fo.dll
+(force-open) + tutorial_launch_sp.dll (spawn+possess into the running tutorial). Recon in the live tutorial:
+  - NO live hero pawns exist (round stuck at EGP_BeginInit never spawns them; only CDOs). Hero classes are
+    BP_HERO_<Name>_C (Ronin/Reaper/Void/BountyHunter/BurstCaster); minions BP_Minion_*.
+  - A placed BP_LokiPlayerStart_C (_UAID_) exists (valid StartSpot); gamemode DefaultPawnClass@0x3F0 = "DefaultPawn"
+    (stock spectator). Local PC + gamemode found; Controller::Possess is a native UFunction (InPawn@0x0).
+ATTEMPTS (all clean-resolved, all fail to produce a hero):
+  (1) BP-override SpawnDefaultPawnFor via the primitive -> CRASH (BP bytecode; Code=NULL kills the BP VM).
+  (2) NATIVE SpawnDefaultPawnFor (ResolveFuncNative on the AGameModeBase super) -> no crash, returns pawn=NULL:
+      GetDefaultPawnClassForController (BP override) returns null (no hero-select/round context).
+  (3) + poke DefaultPawnClass@0x3F0 = BP_HERO_Ronin_C -> STILL NULL (the BP resolver ignores the member).
+  (4) UGameplayStatics BeginDeferredActorSpawnFromClass + FinishSpawningActor (bypass the resolver) ->
+      GetActorTransform didn't resolve (no spawn transform -> origin) + several Begin param names didn't match
+      (fell back to guessed offsets) -> CRASH in BeginDeferred.
+
+CEILING CONFIRMED (~5 angles): round won't advance past BeginInit; feature toggles never "ready" (CursorCharacterAim/
+DeadSpectatorCameraLock gate hero input/camera); gamemode won't resolve/spawn/control a hero without match context.
+The tutorial gamemode is SERVER-AUTHORITATIVE; hand-forcing a hero into an un-orchestrated client-only round fights
+the engine at every step, and each fix reveals the next layer. => the force-open route has a hard ceiling.
+
+STATE AT END: tutorial_launch.cpp has all the infra + both fixes (kRunMode / kInvestigateOnly / kUseGameplayStatics
+flags). Not needed for the DS route (kept for reference). ags hybrid still on. Game crashed at end (relaunch fresh).
+DECISION: pivot to the dedicated-server route (see docs/next-session-prompt-ds-stub.md + supervive-dedicated-server-
+status.md). The DS route already clears the PlayerState/Login walls for free (server-provided session) and works WITH
+the engine netcode instead of against the packer.

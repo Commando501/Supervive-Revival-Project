@@ -1,0 +1,111 @@
+{
+ "lane": "Identify the reflected UPROPERTY at +0x898 returned by the ULokiActorPoolManager pool gate (0x56363F0)",
+ "headline": "The pool gate returns `ALokiGameState::bSupportsActorPoolPriming` — a plain EditDefaultsOnly `bool` at +0x898, NOT config-backed and NOT replicated — and the tutorial's own Blueprint class default sets it False (`Default__BP_LokiGameState_Tutorial_C.bSupportsActorPoolPriming = False`) while the C++ constructor sets it 1.",
+ "traps_hit": "FOUR, all caught before they reached a conclusion. (1) HAND VA->RVA ARITHMETIC DROPPED A HEX DIGIT: 0x7FF7BB9C7100-0x7FF7B86D0000 computed by hand as 0x12F7100 instead of 0x32F7100; the wrong address disassembled to PLAUSIBLE code (`add edi,ebp; mov qword ptr [r14],rax`) rather than obvious garbage. Caught only by recomputing in python — exactly CLAUDE.md's \"recompute with a machine\" rule. (2) THE INSTRUMENT-ARTIFACT NEAR-MISS THAT WOULD HAVE MANUFACTURED A FALSE ABSENCE: my first FPropertyParams scan read `Offset` at +0x32 and returned FOUR hits at 0x898, none a bool — i.e. \"there is no bool UPROPERTY at 0x898\". FALSE: `FBoolPropertyParams` derives from `FPropertyParamsBase`, NOT `...WithOffset`, so +0x32 holds ElementSize and ALL 13,156 bool records read off=0x1. Caught by the impossible distribution (13,156/13,156 identical), not by suspicion. The real offset lives in a generated `SetBitFunc`. (3) My first EPropertyGenFlags table was off by two entries and labelled the known `CurrentPhase` enum as `LargeWorldCoordinatesReal`; caught by the calibration control, not by review. (4) `fkdis.py d <rva> n` takes n in BYTES, not instructions — `d 0x5676EF4 20` printed 2 instructions and read like the disassembler halting on undecodable bytes.",
+ "claims": [
+  {
+   "claim": "The gate's final read `movzx eax, byte ptr [rax + 0x898]` is at .text 0x05636438, bytes 0F B6 80 98 08 00 00 — no AND mask, so it returns the WHOLE byte.",
+   "grade": "M",
+   "evidence": "fkdis.py x 0x05636438 8 --dump s129 -> `0x05636438  0f b6 80 98 08 00 00 48`. fkdis.py cov 0x05636438 16 --dump s129 -> `page 0x05636000 present` (not coverage-blocked). fkdis.py d 0x56363F0 100 --dump s129 reproduces the whole gate including `0x05636438  0fb68098080000  movzx eax, byte ptr [rax + 0x898]`.",
+   "load_bearing": true
+  },
+  {
+   "claim": "THE ANSWER: the reflected property at +0x898 is `bSupportsActorPoolPriming`, and it is the ONLY bool UPROPERTY at that offset in the entire image (13,156 Bool RECORDS swept; 0 coverage-blocked, 0 unrecognised).",
+   "grade": "M",
+   "evidence": "Wrote scratchpad/fk27/propscan.py (FPropertyParams decoder) + boolscan.py (SetBitFunc offset decoder). `python boolscan.py --dump s129 --stats --off 0x898` -> `Bool records: 13156 / mov 10310 / or 2791 / badptr 55` then `selected: 1` -> `0x08983A50 .rdata bSupportsActorPoolPriming off=0x1 dim=1 gen=Bool|NativeBool ... SetBitFunc=0x053800D0 [mov byte ptr [rcx + 0x898], 1] disp=0x898 mask=0x1 fold=1`. The 55 `badptr` all have SetBitFunc==NULL (container-inner / param bools with no outer object) — verified: `distinct raw pointer values: Counter({0: 55})` — so none can hide a candidate.",
+   "load_bearing": true
+  },
+  {
+   "claim": "The SetBitFunc at .text 0x053800D0 is `mov byte ptr [rcx+0x898], 1; ret` (C6 81 98 08 00 00 01 C3), byte-identical in all three images, with fold multiplicity 1 — exactly ONE qword pointer to it image-wide, so it is uniquely identifying and not a shared fold.",
+   "grade": "M",
+   "evidence": "`fkdis.py x 0x053800D0 8` on s129 / merged2 / tuthero all -> `c6 81 98 08 00 00 01 c3`. Python scan of the whole image for the little-endian qword (0x053800D0+ImageBase): `qword pointers to SetBitFunc 0x053800D0 image-wide: 1`. `fkdis.py cov 0x053800D0 16 --dump s129` -> `page 0x05380000 present`.",
+   "load_bearing": true
+  },
+  {
+   "claim": "CONTROL that the bool decoder is sound: `mov` vs `or` in SetBitFunc partitions EXACTLY on the 0x40 gen-flag bit — 2,791 `or` (bitfield bools) == 2,791 Bool records WITHOUT bit 0x40; 10,310 `mov` + 55 null == 10,365 records WITH it. Zero disagreement over 13,156 records.",
+   "grade": "M",
+   "evidence": "boolscan --stats: `mov 10310, or 2791, badptr 55`. Independent gen-flag census: `Bool hi=0x40 10365` of 13,156. 10310+55=10365 exactly; 13156-10365=2791 exactly. Worked bitfield examples: AActor::bAlwaysRelevant -> 0x032F7100 `or byte ptr [rcx+0x68], 8; ret`; AActor::bHidden -> 0x03368980 `or byte ptr [rcx+0x68], 0x80; ret`. Our target uses `mov ...,1` = whole-byte native bool, matching the maskless `movzx` read.",
+   "load_bearing": true
+  },
+  {
+   "claim": "OWNER = `ALokiGameState`. Record 0x08983A50 has exactly ONE qword pointer to it (PropPointers slot .rdata 0x08984AF0, index 106 of the 155-entry array at 0x089847A0); the FClassParams at 0x08985450 owns that array at +0x28, and its ClassNoRegisterFunc is rva 0x5380690 — which is EXACTLY the `call 0x5380690` the gate makes at 0x0563641C immediately before the read.",
+   "grade": "M",
+   "evidence": "`fkdis.py findptr 0x08983A50 --dump s129` -> `.rdata 0x08984AF0` (one hit). propowner.py 0x08983A50 -> `slot 0x08984AF0 array 0x089847A0 idx 106 FClassParams 0x08985450 ctor rva 0x5380690 NumProperties=155 ClassFlags=0x009002A4`. The FClassParams bitfield NumProperties=155 EXACTLY equals the 155 entries my independent array-boundary walk found — positive control on the walk. strxref.py func 0x5380690 -> `extent 0x5380690..0x538073E (174 bytes) EXACT`, `+0x46 lea 0x08981C70 U 'ALokiGameState'`, `+0x55 lea 0x088152C0 U '/Script/Loki'`, `+0x72 lea 0x0769ABD8 U 'Game'`. strxref xref 0x08981C70 -> `refs=1  site 0x53806D6 lea fn 0x5380690`.",
+   "load_bearing": true
+  },
+  {
+   "claim": "Independent corroboration that this array is ALokiGameState's: three of its offsets match previously-measured project facts — CurrentPhase off=0xA44 (repnotify OnRep_CurrentPhase_Internal), MatchStartDetails off=0x738 (repnotify OnRep_MatchStartDetails), OnRoundPhaseChanged off=0x590.",
+   "grade": "M",
+   "evidence": "`propscan.py --name CurrentPhase` -> `0x08984400 off=0xA44 gen=Enum pflags=0x0040000100000020 Net|RepNotify|NativeAccessSpecifierPrivate repnotify=OnRep_CurrentPhase_Internal`; `--name MatchStartDetails` -> `0x08983630 off=0x738 gen=Struct repnotify=OnRep_MatchStartDetails`; `--name OnRoundPhaseChanged` -> `0x08982770 off=0x590`. CLAUDE.md records all three as [M] on ALokiGameState. propowner.py 0x08984400 lands in the SAME array 0x089847A0 / FClassParams 0x08985450.",
+   "load_bearing": true
+  },
+  {
+   "claim": "FLAGS: pflags = 0x0010040000010001 = Edit | DisableEditOnInstance | AdvancedDisplay | NativeAccessSpecifierPublic, with NO unknown bits — i.e. `UPROPERTY(EditDefaultsOnly, AdvancedDisplay) bool bSupportsActorPoolPriming;`. It is NOT CPF_Config (0x4000), NOT CPF_GlobalConfig (0x40000), NOT CPF_Net (0x20), NOT BlueprintVisible/BlueprintReadOnly, NOT Transient, NOT SaveGame.",
+   "grade": "M",
+   "evidence": "Raw record bytes (s129; identical in merged2/tuthero apart from relocated pointers): `0x08983A60  01 00 01 00 00 04 10 00 | 4c 00 00 00 | 45 00 00 00` -> PropertyFlags=0x0010040000010001, GenFlags=0x4C (0x0C Bool | 0x40 NativeBool), ObjectFlags=0x45. Per-bit readout printed: Config `.` GlobalConfig `.` Net `.` BlueprintVisible `.` BlueprintReadOnly `.` Transient `.` SaveGame `.` Edit SET DisableEditOnInstance SET AdvancedDisplay SET. POSITIVE CONTROL for the Config bit: 2,294 records image-wide carry 0x4000 and they include UNetDriver's MinDynamicBandwidth / MaxDynamicBandwidth / TotalNetBandwidth decoded as `Edit|Config|GlobalConfig` — the stock-UE ground truth for `UPROPERTY(Config, GlobalConfig)`. So the bit is real and discriminating, and it is absent here.",
+   "load_bearing": true
+  },
+  {
+   "claim": "REPAIR CLASS = class-default only. CPF_Config clear ⇒ no ini can set it; CPF_Net clear ⇒ not replicated, so no backend/replication route; BlueprintVisible clear ⇒ no Blueprint getter/setter. The only shim-free levers are a one-byte DATA poke on the live GameState at +0x898, or on the CDO `Default__BP_LokiGameState_Tutorial_C + 0x898` so every instance inherits it. Both are this project's safest write class (data poke 0/22 deaths vs standing .text 7/8).",
+   "grade": "I",
+   "evidence": "Inference from the [M] flag bits above plus CLAUDE.md's measured write-hazard ladder. The poke itself is UNTESTED — no launch and no injection was performed this lane.",
+   "load_bearing": true
+  },
+  {
+   "claim": "THE C++ CONSTRUCTOR DEFAULT IS TRUE: `.text 0x05676F10  c6 87 98 08 00 00 01  mov byte ptr [rdi + 0x898], 1`, in the SAME chained function as CLAUDE.md's measured ALokiGameState ctor init `0x056772CF  mov byte ptr [rdi+0xa44], r12b` (CurrentPhase = 0), on the same `rdi`, inside a run of [rdi+0x878/0x880/0x888/0x890/0x8a0/0x8a8] initialisers.",
+   "grade": "M",
+   "evidence": "Exhaustive regex sweep of .text for ANY byte access at displacement 0x898 (mov imm8 / or-and imm8 / movzx / cmp imm8, all non-REX base regs) found exactly 7 sites: 0x01438825, 0x023469AF, 0x031D830F, 0x03C995E1, 0x053800D0 (SetBitFunc), 0x05636438 (the gate read), 0x05676F10. strxref func 0x5676F10 -> `entry 0x5676AC3  extent 0x5676AC3..0x5676FCC EXACT`; tools/strxref/index/pdata_union.csv shows the contiguous chain 0x5676AA0 -> 0x5676AC3 -> 0x5676FCC -> 0x5676FE6 -> 0x567701E -> 0x56773FD, one chained function spanning 0x5676AA0..0x5677405 containing BOTH 0x5676F10 and 0x56772CF. Disassembly quoted via `fkdis d 0x5676EF4 90` and `fkdis d 0x56772C6 40`. UNIT/SCOPE CAVEAT: the sweep covers non-REX encodings only (base regs rax-rdi), so a store through r8-r15 would be missed; and .text is ~53% decrypted, so a site in a dark page is COVERAGE-BLOCKED, not absent. That the chained function IS the ALokiGameState ctor is [I], resting on CLAUDE.md's prior [M] for 0x56772CF plus the shared extent and shared rdi.",
+   "load_bearing": true
+  },
+  {
+   "claim": "THE TUTORIAL BLUEPRINT TURNS IT OFF: `Default__BP_LokiGameState_Tutorial_C.bSupportsActorPoolPriming = False`.",
+   "grade": "M",
+   "evidence": "`dotnet run -c Release -- bpdump BP_LokiGameState_Tutorial @props` -> out/bpdump_BP_LokiGameState_Tutorial_PROPS.txt, line 10 header `## [UObject] Default__BP_LokiGameState_Tutorial_C  (ExportType=BP_LokiGameState_Tutorial_C)`, line 52 `   - bSupportsActorPoolPriming (BoolProperty) = False (BoolProperty)`. Asset located first with `wherefile LokiGameState` -> `Loki/Content/Loki/Core/GameModes/BP_LokiGameState_Tutorial.uasset` in pakchunk0_s8-WindowsClient.utoc. Read-only: no game file was written; bpdump writes only into tools/extractor/out. Per CLAUDE.md this is `bpdump @props`, the sanctioned presence test — NOT a .names.txt scan.",
+   "load_bearing": true
+  },
+  {
+   "claim": "CONTROL across the GameState Blueprint family: 3 of 6 override it and EVERY override is False; the other 3 do not serialize it at all, so they inherit the native `true`. False: _Tutorial, _PvE_Holdout, _FFA. Absent: BP_LokiGameState (base), BP_LokiGameStateRounds, BP_LokiGameState_Battlefield.",
+   "grade": "M",
+   "evidence": "grep -c over five bpdump *_PROPS.txt: BP_LokiGameState n=0; BP_LokiGameStateRounds n=0; BP_LokiGameState_Battlefield n=0; BP_LokiGameState_PvE_Holdout n=1 `= False`; BP_LokiGameState_Tutorial n=1 `= False`. Plus tools/extractor/out/BP_LokiGameState_FFA.json containing `\"bSupportsActorPoolPriming\": false` inside `Default__BP_LokiGameState_FFA_C`. That 3 of 6 OMIT the key is what proves CUE4Parse serializes DELTAS from the archetype, which is what makes the omissions readable as `inherits true` — and it agrees independently with the ctor store above.",
+   "load_bearing": true
+  },
+  {
+   "claim": "ALL OTHER CANDIDATE OWNERS ARE EXCLUDED. The property is declared exactly once image-wide, so it is not on AGameStateBase, ULokiGameInstance, AWorldSettings, ALokiWorldSettings or UWorld. Separately, the object the gate reads is `UWorld->GameState` (UWorld+0x258), NOT GameMode+0x258.",
+   "grade": "M",
+   "evidence": "`strxref find 'SupportsActorPool'` -> 1 ASCII match, `0x08986178 A len=25 'bSupportsActorPoolPriming'`, and the record's NameUTF8 pointer resolves to exactly that RVA; only one qword points at the record. For the object: `propscan --name GameState` returns 4 records; the off=0x258 one (private, Transient) belongs to the array at 0x0825DFA0 whose 49 names are PersistentLevel@0x38, NetDriver@0x40, StreamingLevels@0x180, AuthorityGameMode@0x250, GameState@0x258, OwningGameInstance@0x2D0, PSCPool@0x928 — unambiguously UWorld. The off=0x418 record resolves via propowner.py to ctor 0x37AC410, named by strxref as `lea 0x0805DD68 U 'AGameModeBase'` + `lea 0x0773DBE0 U '/Script/Engine'`. This RECONCILES the apparent conflict in CLAUDE.md (S124 'GameState IS at GameMode+0x418, NOT +0x258'): both are correct, on different classes, and the gate's `lea rbx,[rax+0x258]` after `call 0x12C7260` is UWorld's.",
+   "load_bearing": true
+  },
+  {
+   "claim": "sizeof(ALokiGameState) == 0xB20 (2,848 bytes), from the record's SizeOfOuter; 0x898 < 0xB20, so the offset is in range.",
+   "grade": "M",
+   "evidence": "Record bytes at 0x08983A80: `01 00 01 00 20 0b 00 00` -> ArrayDim=1, ElementSize=1, SizeOfOuter=0x00000B20. Identical in all three images.",
+   "load_bearing": false
+  },
+  {
+   "claim": "Approach (b) binds_members.csv is INAPPLICABLE, not negative. It is the Angelscript binding dump and carries no property-offset column; its only numeric column is `file_offset`, a byte offset into the asdump source text. Approach (c) class_props.py / struct_layout.py are live-RPM tools, unusable under the no-launch constraint — I built an offline equivalent (scratchpad/fk27/propowner.py) instead.",
+   "grade": "M",
+   "evidence": "head -1 tools/asdump/out/binds_members.csv -> `owner_kind,owner_index,owner_type,owner_unreal_path,member_kind,member_index,declaration,unreal_name,as_class_name,script_name,static_in_unreal,static_in_script,global_scope,not_as_property,trivial,world_context_arg,determines_output_arg,can_write,can_read,can_edit,gen_getter,gen_setter,gen_name,gen_handle,gen_unresolved_object,file_offset` (49,289 rows). No offset field exists.",
+   "load_bearing": false
+  },
+  {
+   "claim": "The FPropertyParams layout used is CALIBRATED, not assumed: three independently-measured project offsets round-trip exactly.",
+   "grade": "M",
+   "evidence": "`propscan --name CheatManager` -> off=0x520 (CLAUDE.md [M] APlayerController::CheatManager +0x520); `--name CheatClass` -> off=0x528 (CLAUDE.md [M] +0x528); `--name LokiPlayerCheats` -> off=0xA30 with Net (CLAUDE.md [M] PC+0xA30). Layout: +0x00 NameUTF8, +0x08 RepNotifyFuncUTF8, +0x10 PropertyFlags u64, +0x18 GenFlags u32, +0x1C ObjectFlags u32 (==0x45 on 89,212/89,212 accepted RECORDS), +0x20 Setter, +0x28 Getter, +0x30 ArrayDim u16, +0x32 Offset u16 (ElementSize for bools); for bools additionally +0x34 SizeOfOuter u32, +0x38 SetBitFunc.",
+   "load_bearing": true
+  },
+  {
+   "claim": "Two neighbouring pool knobs exist and are UNEXPLORED: `DeferActorPoolClassLoading` (a bool UPROPERTY at record 0x0887A9A0, pflags 0x0010000000000000 = NativeAccessSpecifierPublic ONLY — no Edit, no Config, so C++-set), and the string `ActorPoolManagerPrimingConfig` (0x07DDCB20), which is a CLASS/struct name and not a property.",
+   "grade": "M",
+   "evidence": "`strxref find 'ActorPool'` -> 18 matches incl. `0x07DDCB20 U 'ActorPoolManagerPrimingConfig'`, `0x0887AB78 A 'DeferActorPoolClassLoading'`, `0x08986178 A 'bSupportsActorPoolPriming'`. `propscan --name DeferActorPoolClassLoading` -> 1 hit, gen=Bool|NativeBool. `propscan --name ActorPoolManagerPrimingConfig` -> `hits: 0`.",
+   "load_bearing": false
+  }
+ ],
+ "open_questions": [
+  "Does `SpawnPoolableActorFromClass{,Deferred}` read this SAME byte, or a different gate? +0x898 is only DEMONSTRATED to gate `PrimePools` (0x33560C5 -> vtable slot 0x2D0 -> 0x56363F0). My .text sweep found only one READ of that displacement (0x05636438), but it covered non-REX encodings only and .text is ~53% decrypted — a read in a dark page or through r8-r15 is COVERAGE-BLOCKED, not absent.",
+  "Poke the CDO or the live instance? If `PrimePools` runs before the world's GameState is constructed, only the CDO write lands. Untested; a live/caller-lane question.",
+  "Exact ancestry BP_LokiGameState_Tutorial_C -> ? -> ALokiGameState. Its import names list contains BOTH /Game/Loki/Core/GameModes/BP_LokiGameState and BP_LokiGameStateRounds, so the chain is probably Tutorial -> Rounds -> Base -> ALokiGameState, but I did not parse a SuperStruct — [I]. It is redundancy only: the native `true` default is established directly from the ctor store.",
+  "`DeferActorPoolClassLoading` (bool, no Edit and no Config flags, so set purely in C++) and the `ActorPoolManagerPrimingConfig` type are unexplored. If priming is re-enabled, one of them may be the next gate.",
+  "Why do exactly the three non-BattleRoyale modes (Tutorial, PvE_Holdout, FFA) disable pool priming? If it is a deliberate perf/correctness decision for those maps, flipping it may have side effects the pooling code assumes away."
+ ],
+ "next_experiment": "READ-ONLY first; no launch needed if a tutorial client is already up, otherwise one staged sitting. (1) RPM-read `GameState + 0x898` on the live `BP_LokiGameState_Tutorial_C` — PRE-REGISTERED PREDICTION: reads 0. Get the GameState pointer from `UWorld+0x258` (measured this session), NOT GameMode+0x258. POSITIVE CONTROL in the same read: `GameState + 0xA44` (CurrentPhase) must be a sane ERoundPhase value and `GameState + 0x738` (MatchStartDetails) a readable FString header — if those are garbage the pointer is wrong and the 0 is uninterpretable, not negative. (2) Also read `Default__BP_LokiGameState_Tutorial_C + 0x898` — predict 0, since the CDO carries the serialized False. (3) ONLY THEN, if a write is authorised: poke ONE byte to 1 (data poke, no .text write, readback-verified). The receipt is the DISAPPEARANCE of `UActorPoolManager::PrimePools : Feature is not enabled, skipping.` (literal at .rdata 0x07F14B40) and the appearance of a sibling at 0x07F14BF0 / 0x07F14CB0. That log line is emitted unconditionally on the FALSE branch, so its persistence after a verified poke would falsify \"this byte is the gate\" — a free built-in negative control."
+}

@@ -1,0 +1,8 @@
+﻿Manual-mapping C:\Users\eastr\.codex\worktrees\78d0\Supervive Revival Project\tools\sigbypass-mod\build\s149-bind-flight1-b2\tutorial_launch_botfight_bind_only.dll into PID 41816
+  remote image base: 0x15F8D7B0000 (size 0x3D000)
+  relocations applied (delta 0x15E0D7B0000)
+  import: KERNEL32.dll
+  exception table: 0x1C2 entries at 0x15F8D7EA000 (will RtlAddFunctionTable)
+  DllMain remote-thread exit: 0x1 (DllMain returned BOOL; nonzero = OK)
+  verify: MZ at 0x15F8D7B0000 ✓
+OK: manual-map complete (DllMain returned).

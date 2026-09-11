@@ -93,6 +93,31 @@ func b64(b []byte) string { return base64.RawURLEncoding.EncodeToString(b) }
 
 // ---- simple monotonic-ish user id allocation for synthetic accounts ----
 
+// LocalPlayerKey is the canonical login key for the single local player in this
+// single-account revival.
+//
+// ★ IDENTITY MUST BE STABLE ACROSS AUTH PATHS (2026-07-20, S85). The client
+// authenticates through several endpoints (Steam platform token, the IAM
+// /oauth/token grant, users/me, updateMe) and refreshes its token on a timer.
+// Whenever a request cannot pin a SPECIFIC user — no platform_user_id, no
+// username, no bearer sub — that path MUST fall back to THIS one key, or the
+// same physical player is handed two different user ids and the subsystems
+// disagree about who "me" is.
+//
+// That is exactly the avatar-switch bug: the Steam login keyed "platform:steam"
+// (id 9b9d2c88…, which the party and ALL persisted state use), while the
+// /oauth/token grant fell through to the ad-hoc key "player" (id b70b628c…). The
+// client then wrote avatar equips under b70b628c… while the party rendered
+// 9b9d2c88…'s loadout, so no switch could ever reach the card.
+//
+// Anchored to the Steam-login fallback ("platform:"+"steam") so LocalPlayerID()
+// equals the id the client's party and state already hold — zero migration.
+const LocalPlayerKey = "platform:steam"
+
+// LocalPlayerID is the canonical single-player user id. Every "we don't know who
+// this is" fallback in the auth layer resolves here.
+func LocalPlayerID() string { return UserIDFor(LocalPlayerKey) }
+
 var (
 	mu        sync.Mutex
 	userIDs   = map[string]string{}

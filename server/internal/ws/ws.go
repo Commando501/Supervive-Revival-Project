@@ -25,6 +25,8 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 )
 
 // rfc6455GUID is the magic value concatenated with Sec-WebSocket-Key to derive
@@ -38,9 +40,30 @@ func IsUpgrade(r *http.Request) bool {
 }
 
 // Conn is a minimal WebSocket connection over a hijacked TCP socket.
+//
+// writeMu serializes WriteFrame calls so a goroutine pushing a server-initiated
+// notification (e.g. the dedicated-server-stub chapter's matchmaking-notif
+// probe in package lobby) doesn't race the read-loop's frame writes (hb echoes,
+// reply text). Reads are still single-goroutine (the read loop's responsibility).
 type Conn struct {
-	c  net.Conn
-	br *bufio.Reader
+	c       net.Conn
+	br      *bufio.Reader
+	writeMu sync.Mutex
+
+	// EnvelopeStart/End are the AccelByte lobby message delimiters the CLIENT
+	// asks for in its handshake, via the X-Ab-EnvelopeStart / X-Ab-EnvelopeEnd
+	// request headers (literals at .rdata 0x8604890 / 0x86048A8).
+	//
+	// ★ S117: this is why NOTHING we have ever sent on /lobby was dispatched.
+	// The client stores these two markers as FStrings on its Lobby object
+	// (+0xA8 / +0xB8) and Lobby::OnMessage's completeness check (.text
+	// 0x4b35a80) takes the "no framing" fast path ONLY when BOTH are empty
+	// (cmp dword [X+8],1 / jg — an FString ArrayNum <= 1 is empty). Ours are
+	// not empty, so every unwrapped frame we sent was logged as
+	// "Message fragmented, current content buffer" and buffered forever:
+	// 14 Raw Lobby Response -> 14 fragmented -> 0 dispatches, measured.
+	EnvelopeStart string
+	EnvelopeEnd   string
 }
 
 // Opcodes (RFC 6455 §5.2).
@@ -70,6 +93,10 @@ func Upgrade(w http.ResponseWriter, r *http.Request) (*Conn, error) {
 		return nil, fmt.Errorf("ws: hijack: %w", err)
 	}
 
+	// Capture the envelope markers BEFORE hijacking loses the request.
+	envStart := r.Header.Get("X-Ab-EnvelopeStart")
+	envEnd := r.Header.Get("X-Ab-EnvelopeEnd")
+
 	sum := sha1.Sum([]byte(key + rfc6455GUID))
 	accept := base64.StdEncoding.EncodeToString(sum[:])
 
@@ -86,7 +113,7 @@ func Upgrade(w http.ResponseWriter, r *http.Request) (*Conn, error) {
 		conn.Close()
 		return nil, fmt.Errorf("ws: write 101: %w", err)
 	}
-	return &Conn{c: conn, br: brw.Reader}, nil
+	return &Conn{c: conn, br: brw.Reader, EnvelopeStart: envStart, EnvelopeEnd: envEnd}, nil
 }
 
 // Frame is a decoded WebSocket frame.
@@ -140,7 +167,11 @@ func (c *Conn) ReadFrame() (Frame, error) {
 }
 
 // WriteFrame writes a single (FIN) server→server frame, unmasked per spec.
+// Serialized via writeMu so concurrent writers (e.g. the read loop's hb echo
+// + a probe-push goroutine) don't interleave on the underlying TCP socket.
 func (c *Conn) WriteFrame(opcode byte, payload []byte) error {
+	c.writeMu.Lock()
+	defer c.writeMu.Unlock()
 	var hdr []byte
 	b0 := byte(0x80) | (opcode & 0x0f) // FIN + opcode
 	n := len(payload)
@@ -162,8 +193,22 @@ func (c *Conn) WriteFrame(opcode byte, payload []byte) error {
 	return err
 }
 
-// WriteText sends a text frame.
-func (c *Conn) WriteText(s string) error { return c.WriteFrame(OpText, []byte(s)) }
+// WriteText sends a text frame, wrapped in the client's negotiated envelope.
+//
+// ★ S117 — THIS IS THE FIX FOR "/lobby frames are never dispatched". The client
+// asks for delimiters in its handshake (measured: X-Ab-EnvelopeStart "LbS",
+// X-Ab-EnvelopeEnd "LbE" on /lobby) and its Lobby::OnMessage buffers anything
+// that does not carry them, forever. Wrapping here is automatically correct
+// per-socket: the messenger negotiates EMPTY markers, so this is a no-op there,
+// which is exactly why the messenger probes worked while every /lobby frame in
+// this project's history was silently swallowed.
+func (c *Conn) WriteText(s string) error {
+	return c.WriteFrame(OpText, []byte(c.EnvelopeStart+s+c.EnvelopeEnd))
+}
+
+// WriteTextRaw sends a text frame with NO envelope. For probes that need to put
+// exact bytes on the wire (e.g. re-testing the unwrapped form).
+func (c *Conn) WriteTextRaw(s string) error { return c.WriteFrame(OpText, []byte(s)) }
 
 // Pong replies to a ping with the same payload.
 func (c *Conn) Pong(payload []byte) error { return c.WriteFrame(OpPong, payload) }
@@ -173,6 +218,20 @@ func (c *Conn) Close() error {
 	_ = c.WriteFrame(OpClose, nil)
 	return c.c.Close()
 }
+
+// Drop closes the underlying connection WITHOUT sending a WS close frame — an
+// abrupt disconnect the client treats like a dropped socket, exactly like its own
+// heartbeat-watchdog teardown. The lobby service uses this to force a fast
+// messenger reconnect (which drives the client's party state-resync + apply, the
+// S85 avatar-switch latency fix). Safe to call from another goroutine while
+// ReadFrame is blocked: net.Conn.Close unblocks the pending read.
+func (c *Conn) Drop() error { return c.c.Close() }
+
+// SetReadDeadline forwards to the underlying net.Conn. Used by the lobby
+// service to wake a blocked ReadFrame on a timer so it can push a proactive
+// server-initiated heartbeat (the Theorycraft messenger socket's watchdog
+// trips ~60s after connect even though we echo "hb" on receive).
+func (c *Conn) SetReadDeadline(t time.Time) error { return c.c.SetReadDeadline(t) }
 
 func tokenHeaderContains(header, want string) bool {
 	for _, part := range strings.Split(header, ",") {

@@ -1,0 +1,7438 @@
+{
+ "types": [
+  {
+   "module": "Airship.LokiAirship",
+   "as_name": "ALokiAirship_AS",
+   "ue_name": "LokiAirship_AS",
+   "kind": "class",
+   "as_super": "ALokiAirship",
+   "ue_super": "LokiAirship",
+   "code_super": "/Script/Loki.LokiAirship",
+   "props": [
+    {
+     "name": "BoostTag",
+     "as_type": "FGameplayTag",
+     "usmap_render": "Struct<GameplayTag>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "GenericCollisionEffect",
+     "as_type": "TSubclassOf<UGameplayEffect@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MaxHeadOnCollisionAngle",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinGenericCollisionDamage",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MaxGenericCollisionDamage",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinGenericCollisionSpeed",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MaxGenericCollisionSpeed",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "AirshipCollisionFrontMultiplier",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "AirshipCollisionRearMultiplier",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RoadkillImpactEffect",
+     "as_type": "TSubclassOf<UGameplayEffect@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinRoadkillDamage",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MaxRoadkillDamage",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RoadkillDamageMinionCoefficient",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RoadkillDamageDestructibleCoefficient",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinRoadkillDamageSpeed",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MaxRoadkillDamageSpeed",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinRoadkillBoopSpeed",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MaxRoadkillBoopSpeed",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinRoadkillBoopForceXY",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MaxRoadkillBoopForceXY",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinRoadkillBoopForceZ",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MaxRoadkillBoopForceZ",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RunningEffect",
+     "as_type": "TSubclassOf<UGameplayEffect@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "NumSecondsOfFuel",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "NumSecondsOfFuelWhileBoosting",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "FuelTickInterval",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinEjectionRelativeSpeed",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "HealthRegenTickInterval",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "HealthRegenThresholds",
+     "as_type": "TArray<float64>",
+     "usmap_render": "Array<DoubleProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "HealthRegenDamagePhaseEffects",
+     "as_type": "TArray<TSubclassOf<UGameplayEffect@>>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CurrentHealthRegenDamagePhase",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Armory.LokiPlayerControllerArmoryComponent",
+   "as_name": "ULokiPlayerControllerArmoryComponent",
+   "ue_name": "LokiPlayerControllerArmoryComponent",
+   "kind": "class",
+   "as_super": "ULokiPlayerControllerArmoryComponentBase",
+   "ue_super": "LokiPlayerControllerArmoryComponentBase",
+   "code_super": "/Script/Loki.LokiPlayerControllerArmoryComponentBase",
+   "props": [
+    {
+     "name": "RelicSlotName",
+     "as_type": "const FName",
+     "usmap_render": "NameProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "PerkSlotName",
+     "as_type": "const FName",
+     "usmap_render": "NameProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "BootsSlotName",
+     "as_type": "const FName",
+     "usmap_render": "NameProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bLoadComplete",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "PurchasedKits",
+     "as_type": "TArray<FString>",
+     "usmap_render": "Array<StrProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LoadedClasses",
+     "as_type": "TArray<UClass@>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DefaultArmory",
+     "as_type": "FPlayerArmory",
+     "usmap_render": "Struct<PlayerArmory>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Handle",
+     "as_type": "ULoadAssetHandle@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DisabledItems",
+     "as_type": "TArray<TSubclassOf<AActor@>>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "DisabledItemAssetIDs",
+     "as_type": "TArray<FPrimaryAssetId>",
+     "usmap_render": "Array<Struct<PrimaryAssetId>>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Armory.LokiPlayerControllerShopSkylandsComponent",
+   "as_name": "ULokiPlayerControllerShopSkylandsComponent",
+   "ue_name": "LokiPlayerControllerShopSkylandsComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "SaleItem",
+     "as_type": "FLokiShopInventory",
+     "usmap_render": "Struct<LokiShopInventory>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "ShopSaleTable",
+     "as_type": "TSubclassOf<ULokiLootTable@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bPlayAnimation",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Components.BarracudaJungleCreepComponent",
+   "as_name": "UBarracudaJungleCreepComponent",
+   "ue_name": "BarracudaJungleCreepComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "UnstuckTeleportTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "StuckDetectionTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Components.BarracudaJungleCreepTargetingComponent",
+   "as_name": "UBarracudaJungleCreepTargetingComponent",
+   "ue_name": "BarracudaJungleCreepTargetingComponent",
+   "kind": "class",
+   "as_super": "UBarracudaMinionTargetingComponent",
+   "ue_super": "BarracudaMinionTargetingComponent",
+   "code_super": "/Script/Loki.LokiMinionTargetingComponent",
+   "props": []
+  },
+  {
+   "module": "Barracuda.Components.BarracudaLaneComponent",
+   "as_name": "UBarracudaLaneComponent",
+   "ue_name": "BarracudaLaneComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "LaneIndex",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnLaneIndexUpdated",
+     "as_type": "FOnLaneIndexUpdated",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Components.BarracudaLaneCreepTargetingComponent",
+   "as_name": "UBarracudaLaneCreepTargetingComponent",
+   "ue_name": "BarracudaLaneCreepTargetingComponent",
+   "kind": "class",
+   "as_super": "UBarracudaMinionTargetingComponent",
+   "ue_super": "BarracudaMinionTargetingComponent",
+   "code_super": "/Script/Loki.LokiMinionTargetingComponent",
+   "props": []
+  },
+  {
+   "module": "Barracuda.Components.BarracudaMinionTargetingComponent",
+   "as_name": "UBarracudaMinionTargetingComponent",
+   "ue_name": "BarracudaMinionTargetingComponent",
+   "kind": "class",
+   "as_super": "ULokiMinionTargetingComponent",
+   "ue_super": "LokiMinionTargetingComponent",
+   "code_super": "/Script/Loki.LokiMinionTargetingComponent",
+   "props": [
+    {
+     "name": "HighPriorityEnemyCharacter",
+     "as_type": "ALokiCharacter@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CurrentTargetEnemy",
+     "as_type": "AActor@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ReleaseHighPriorityEnemyTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "HighPriorityEnemyMemory",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Components.BarracudaPlayerStateComponent",
+   "as_name": "UBarracudaPlayerStateComponent",
+   "ue_name": "BarracudaPlayerStateComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "InternalNextRespawnTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "OnNextRespawnTimeChanged",
+     "as_type": "FNextRespawnTimeChanged",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Components.BarracudaStructureComponent",
+   "as_name": "UBarracudaStructureComponent",
+   "ue_name": "BarracudaStructureComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "bAttackable",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bRespawnLocation",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Components.BarracudaTowerTargetingComponent",
+   "as_name": "UBarracudaTowerTargetingComponent",
+   "ue_name": "BarracudaTowerTargetingComponent",
+   "kind": "class",
+   "as_super": "UBarracudaMinionTargetingComponent",
+   "ue_super": "BarracudaMinionTargetingComponent",
+   "code_super": "/Script/Loki.LokiMinionTargetingComponent",
+   "props": []
+  },
+  {
+   "module": "Barracuda.GameMode.BarracudaGameMode",
+   "as_name": "ABarracudaGameMode",
+   "ue_name": "BarracudaGameMode",
+   "kind": "class",
+   "as_super": "ALokiTowerDefenseGameMode",
+   "ue_super": "LokiTowerDefenseGameMode",
+   "code_super": "/Script/Loki.LokiTowerDefenseGameMode",
+   "props": [
+    {
+     "name": "RallyMinionsComponent",
+     "as_type": "UBarracudaRallyMinionsComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "BarracudaPlayerSpawnerComponent",
+     "as_type": "UBarracudaPlayerSpawnerComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MatchStartTime",
+     "as_type": "float32",
+     "usmap_render": "FloatProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "GoldLossOnDeath",
+     "as_type": "float32",
+     "usmap_render": "FloatProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "GoldBountyPerCurrentStreak",
+     "as_type": "TArray<int>",
+     "usmap_render": "Array<IntProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DayNightDuration",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bIsDay",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinionSplitXPBonuses",
+     "as_type": "TArray<float32>",
+     "usmap_render": "Array<FloatProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MercyHeroKillXPCoefficients",
+     "as_type": "TArray<float32>",
+     "usmap_render": "Array<FloatProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "UnderdogHeroKillXPBonusPerLevel",
+     "as_type": "float32",
+     "usmap_render": "FloatProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bAnyTowersKilled",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DragonRewards",
+     "as_type": "TArray<TSubclassOf<UGameplayEffect@>>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "NumDragonsKilled",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LastKnockedTimeTable",
+     "as_type": "TMap<ALokiPlayerState@, float64>",
+     "usmap_render": "Map<ObjectProperty,DoubleProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "KnockXPCooldownTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.GameMode.BarracudaPlayerSpawnerComponent",
+   "as_name": "UBarracudaPlayerSpawnerComponent",
+   "ue_name": "BarracudaPlayerSpawnerComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "RespawnTimePerLevel",
+     "as_type": "TArray<float64>",
+     "usmap_render": "Array<DoubleProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MatchTimeRespawnCeiling",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MatchRespawnTimeFactor",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.GameMode.BarracudaRallyMinionsComponent",
+   "as_name": "UBarracudaRallyMinionsComponent",
+   "ue_name": "BarracudaRallyMinionsComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "RallyAggroRange",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.GameState.BarracudaGameStateComponent",
+   "as_name": "UBarracudaGameStateComponent",
+   "ue_name": "BarracudaGameStateComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "NextDayNightSwapTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "bDayNightTransitionEnabled",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Structures",
+     "as_type": "TSet<AActor@>",
+     "usmap_render": "Set<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinionWaypoints",
+     "as_type": "TSet<ABarracudaMinionWaypoint@>",
+     "usmap_render": "Set<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ShopClass",
+     "as_type": "TSubclassOf<ABarracudaShop@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Shop",
+     "as_type": "ABarracudaShop@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "DisabledSpawnerTypes",
+     "as_type": "FGameplayTagContainer",
+     "usmap_render": "Struct<GameplayTagContainer>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "BarracudaPhases",
+     "as_type": "TArray<FBarracudaPhase>",
+     "usmap_render": "Array<Struct<BarracudaPhase>>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CurrentPhaseIndex",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "CurrentPhaseStartTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "TeamKillScores",
+     "as_type": "TArray<int>",
+     "usmap_render": "Array<IntProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "OnTeamKillsUpdated",
+     "as_type": "FOnTeamKillsUpdated",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "NumDragonsKilled",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "OnDragonKillsUpdated",
+     "as_type": "FOnDragonKillsUpdated",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.GameState.BarracudaTeamState",
+   "as_name": "ABarracudaTeamState",
+   "ue_name": "BarracudaTeamState",
+   "kind": "class",
+   "as_super": "ALokiTeamState",
+   "ue_super": "LokiTeamState",
+   "code_super": "/Script/Loki.LokiTeamState",
+   "props": []
+  },
+  {
+   "module": "Barracuda.GameState.BarracudaTeamState_TeamOnly",
+   "as_name": "ABarracudaTeamState_TeamOnly",
+   "ue_name": "BarracudaTeamState_TeamOnly",
+   "kind": "class",
+   "as_super": "ALokiTeamState_TeamOnly",
+   "ue_super": "LokiTeamState_TeamOnly",
+   "code_super": "/Script/Loki.LokiTeamState_TeamOnly",
+   "props": [
+    {
+     "name": "SpawnerToSpawnTime",
+     "as_type": "TMap<ABarracudaMinionSpawner@, float64>",
+     "usmap_render": "Map<ObjectProperty,DoubleProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Minion.BarracudaLaneMinionConfig",
+   "as_name": "FBarracudaLaneMinionConfig",
+   "ue_name": "BarracudaLaneMinionConfig",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "GenericDamage",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "AdditionalTowerDamage",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ProjectileMaxDistance",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ProjectileInitialSpeed",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ProjectileHomingAcceleration",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Minion.BarracudaMinionRewardComponent",
+   "as_name": "UBarracudaMinionRewardComponent",
+   "ue_name": "BarracudaMinionRewardComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "GoldRewardMethod",
+     "as_type": "EBarracudaMinionGoldRewardMethod",
+     "usmap_render": "Enum<EBarracudaMinionGoldRewardMethod:IntProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bGrantLoot",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LastHitGoldBonus",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Minion.Waypoints.BarracudaMinionWaypoint",
+   "as_name": "ABarracudaMinionWaypoint",
+   "ue_name": "BarracudaMinionWaypoint",
+   "kind": "class",
+   "as_super": "AActor",
+   "ue_super": "Actor",
+   "code_super": "/Script/Engine.Actor",
+   "props": [
+    {
+     "name": "InitialLaneIndex",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "WaypointTowardTeam0",
+     "as_type": "ABarracudaMinionWaypoint@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "WaypointTowardTeam1",
+     "as_type": "ABarracudaMinionWaypoint@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "TriggerComponent",
+     "as_type": "UBoxComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaneComponent",
+     "as_type": "UBarracudaLaneComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Minion.Waypoints.BarracudaMinionWaypointFollowerComponent",
+   "as_name": "UBarracudaMinionWaypointFollowerComponent",
+   "ue_name": "BarracudaMinionWaypointFollowerComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "LastWaypointTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bDrawDebug",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DebugDrawPathDurationWarningThreshold",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DebugDrawPathDurationErrorThreshold",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CurrentWaypoint",
+     "as_type": "ABarracudaMinionWaypoint@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LastWaypoint",
+     "as_type": "ABarracudaMinionWaypoint@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LastCombatTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CachedLocation",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "TimeFirstArrivedAtCachedLocation",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Minion.Waypoints.BTService_UpdateMinionWaypoint",
+   "as_name": "UBTService_BarracudaUpdateMinionWaypoint",
+   "ue_name": "BTService_BarracudaUpdateMinionWaypoint",
+   "kind": "class",
+   "as_super": "UBTService_BlueprintBase",
+   "ue_super": "BTService_BlueprintBase",
+   "code_super": "/Script/AIModule.BTService_BlueprintBase",
+   "props": [
+    {
+     "name": "WaypointLocationKey",
+     "as_type": "FBlackboardKeySelector",
+     "usmap_render": "Struct<BlackboardKeySelector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Shop.BarracudaShop",
+   "as_name": "UBarracudaShopItemGraphNode",
+   "ue_name": "BarracudaShopItemGraphNode",
+   "kind": "class",
+   "as_super": "UObject",
+   "ue_super": "Object",
+   "code_super": "/Script/CoreUObject.Object",
+   "props": [
+    {
+     "name": "Item",
+     "as_type": "TSubclassOf<ALokiBaseItem@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RecipeCost",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "TotalCost",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Inputs",
+     "as_type": "TArray<UBarracudaShopItemGraphNode@>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Outputs",
+     "as_type": "TSet<UBarracudaShopItemGraphNode@>",
+     "usmap_render": "Set<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bHasTotalCost",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Shop.BarracudaShop",
+   "as_name": "FBarracudaShopPurchasePlan",
+   "ue_name": "BarracudaShopPurchasePlan",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "Gold",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ItemsToConsume",
+     "as_type": "TSet<ALokiBaseItem@>",
+     "usmap_render": "Set<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Shop.BarracudaShop",
+   "as_name": "ABarracudaShop",
+   "ue_name": "BarracudaShop",
+   "kind": "class",
+   "as_super": "AActor",
+   "ue_super": "Actor",
+   "code_super": "/Script/Engine.Actor",
+   "props": [
+    {
+     "name": "SellValueCoefficient",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ItemLootTables",
+     "as_type": "TArray<TSubclassOf<ULokiLootTableFull@>>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ItemGraphNodes",
+     "as_type": "TMap<TSubclassOf<ALokiBaseItem@>, UBarracudaShopItemGraphNode@>",
+     "usmap_render": "Map<ObjectProperty,ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ClientNameFilterString",
+     "as_type": "FString",
+     "usmap_render": "StrProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ClientTagFilters",
+     "as_type": "TArray<FGameplayTag>",
+     "usmap_render": "Array<Struct<GameplayTag>>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ClientCurrentFocus",
+     "as_type": "TSubclassOf<ALokiBaseItem@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Shop.BarracudaShopItemListWidget",
+   "as_name": "UBarracudaShopItemListWidget",
+   "ue_name": "BarracudaShopItemListWidget",
+   "kind": "class",
+   "as_super": "UUserWidget",
+   "ue_super": "UserWidget",
+   "code_super": "/Script/UMG.UserWidget",
+   "props": []
+  },
+  {
+   "module": "Barracuda.Shop.BarracudaShopItemTreeNodeWidget",
+   "as_name": "UBarracudaShopItemTreeNodeWidget",
+   "ue_name": "BarracudaShopItemTreeNodeWidget",
+   "kind": "class",
+   "as_super": "UUserWidget",
+   "ue_super": "UserWidget",
+   "code_super": "/Script/UMG.UserWidget",
+   "props": [
+    {
+     "name": "ChildContainer",
+     "as_type": "UPanelWidget@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ItemName",
+     "as_type": "UTextBlock@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OwnedIndicator",
+     "as_type": "UOverlay@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ShopItemWidget",
+     "as_type": "UBarracudaShopItemWidget@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DesignTimePrviewInputCount",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DesignTimePreviewDepthCount",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bDesignTimePreviewOwned",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ItemClass",
+     "as_type": "TSubclassOf<ALokiBaseItem@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Tree",
+     "as_type": "UBarracudaShopItemTreeWidget@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Shop.BarracudaShopItemTreeWidget",
+   "as_name": "UBarracudaShopItemTreeWidget",
+   "ue_name": "BarracudaShopItemTreeWidget",
+   "kind": "class",
+   "as_super": "UUserWidget",
+   "ue_super": "UserWidget",
+   "code_super": "/Script/UMG.UserWidget",
+   "props": [
+    {
+     "name": "RootNode",
+     "as_type": "UBarracudaShopItemTreeNodeWidget@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ItemsToPotentiallyMarkAsOwned",
+     "as_type": "TSet<ALokiBaseItem@>",
+     "usmap_render": "Set<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Shop.BarracudaShopItemWidget",
+   "as_name": "UBarracudaShopItemWidget",
+   "ue_name": "BarracudaShopItemWidget",
+   "kind": "class",
+   "as_super": "UUserWidget",
+   "ue_super": "UserWidget",
+   "code_super": "/Script/UMG.UserWidget",
+   "props": [
+    {
+     "name": "ValueType",
+     "as_type": "EBarracudaShopValueType",
+     "usmap_render": "Enum<EBarracudaShopValueType:IntProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RepresentedItem",
+     "as_type": "ALokiBaseItem@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Shop.BarracudaShopPlayerControllerComponent",
+   "as_name": "UBarracudaShopPlayerControllerComponent",
+   "ue_name": "BarracudaShopPlayerControllerComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": []
+  },
+  {
+   "module": "Barracuda.Shop.BarraucdaShopFilterWidget",
+   "as_name": "FBarracudaShopTagFilter",
+   "ue_name": "BarracudaShopTagFilter",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "Label",
+     "as_type": "FText",
+     "usmap_render": "TextProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Tag",
+     "as_type": "FGameplayTag",
+     "usmap_render": "Struct<GameplayTag>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RecommendedHeroTag",
+     "as_type": "FGameplayTag",
+     "usmap_render": "Struct<GameplayTag>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Shop.BarraucdaShopFilterWidget",
+   "as_name": "UBarraucdaShopFilterWidget",
+   "ue_name": "BarraucdaShopFilterWidget",
+   "kind": "class",
+   "as_super": "UUserWidget",
+   "ue_super": "UserWidget",
+   "code_super": "/Script/UMG.UserWidget",
+   "props": [
+    {
+     "name": "TagFilters",
+     "as_type": "TArray<FBarracudaShopTagFilter>",
+     "usmap_render": "Array<Struct<BarracudaShopTagFilter>>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Spawners.BarracudaMinionSpawner",
+   "as_name": "FGametimeToLevel",
+   "ue_name": "GametimeToLevel",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "Gametime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Level",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Spawners.BarracudaMinionSpawner",
+   "as_name": "FMinionWaveEntry",
+   "ue_name": "MinionWaveEntry",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "MinionClass",
+     "as_type": "TSubclassOf<ALokiMinionCharacter@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Count",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinimumMatchTime",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Spawners.BarracudaMinionSpawner",
+   "as_name": "FMinionWave",
+   "ue_name": "MinionWave",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "Entries",
+     "as_type": "TArray<FMinionWaveEntry>",
+     "usmap_render": "Array<Struct<MinionWaveEntry>>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Barracuda.Spawners.BarracudaMinionSpawner",
+   "as_name": "ABarracudaMinionSpawner",
+   "ue_name": "BarracudaMinionSpawner",
+   "kind": "class",
+   "as_super": "ALokiActor",
+   "ue_super": "LokiActor",
+   "code_super": "/Script/Engine.LokiActor",
+   "props": [
+    {
+     "name": "InitialTeam",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "SpawnPeriod",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinimumBarracudaPhaseType",
+     "as_type": "EBarracudaPhaseType",
+     "usmap_render": "Enum<EBarracudaPhaseType:IntProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "InitialSpawnDelay",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bStaggerSpawn",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bSpawnAtAveragePlayerLevel",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LevelThresholdsByGametime",
+     "as_type": "TArray<FGametimeToLevel>",
+     "usmap_render": "Array<Struct<GametimeToLevel>>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RespawnType",
+     "as_type": "EBarracudaRespawnBehaviorType",
+     "usmap_render": "Enum<EBarracudaRespawnBehaviorType:IntProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "Wave",
+     "as_type": "FMinionWave",
+     "usmap_render": "Struct<MinionWave>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bShowTimer",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bTimerRequiresVision",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bSpawnLoopHasStarted",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "LastSpawnTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SpawnLoopStartTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "NextSpawnTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bHasLivingMinion",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CapsuleCollision",
+     "as_type": "UCapsuleComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "TeamComponent",
+     "as_type": "ULokiTeamComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaneComponent",
+     "as_type": "UBarracudaLaneComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MapIconComponent",
+     "as_type": "UMapIconComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "VisibilityReceiver",
+     "as_type": "UVisibilityReceiver@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "StartingEffects",
+     "as_type": "TArray<TSubclassOf<UGameplayEffect@>>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinionInstances",
+     "as_type": "TArray<ALokiMinionCharacter@>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SpawnAudioEvent",
+     "as_type": "UAkAudioEvent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SpawnPilotVO",
+     "as_type": "FGameplayTag",
+     "usmap_render": "Struct<GameplayTag>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "BarracksDownEffect",
+     "as_type": "TSubclassOf<UGameplayEffect@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "BarracksClass",
+     "as_type": "TSubclassOf<AActor@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Character.LokiHeroCharacter",
+   "as_name": "ALokiHeroCharacter_AS",
+   "ue_name": "LokiHeroCharacter_AS",
+   "kind": "class",
+   "as_super": "ALokiHeroCharacter",
+   "ue_super": "LokiHeroCharacter",
+   "code_super": "/Script/Loki.LokiHeroCharacter",
+   "props": [
+    {
+     "name": "OnBiomeTouchUnlocked",
+     "as_type": "FBiomeTouchUnlockedDelegate",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Character.LokiHeroGroundIndicator",
+   "as_name": "ULokiHeroGroundIndicator",
+   "ue_name": "LokiHeroGroundIndicator",
+   "kind": "class",
+   "as_super": "ULokiHeroGroundIndicatorBase",
+   "ue_super": "LokiHeroGroundIndicatorBase",
+   "code_super": "/Script/Loki.LokiHeroGroundIndicatorBase",
+   "props": [
+    {
+     "name": "ShadowDecalSize",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ShadowDecalRotation",
+     "as_type": "FRotator",
+     "usmap_render": "Struct<Rotator>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RingDecalSize",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RingDecalRotation",
+     "as_type": "FRotator",
+     "usmap_render": "Struct<Rotator>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Content.TemporaryFloor",
+   "as_name": "ATemporaryFloor",
+   "ue_name": "TemporaryFloor",
+   "kind": "class",
+   "as_super": "ALokiTemporaryFloorBase",
+   "ue_super": "LokiTemporaryFloorBase",
+   "code_super": "/Script/Loki.LokiTemporaryFloorBase",
+   "props": [
+    {
+     "name": "RootSceneComponent",
+     "as_type": "USceneComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "StaticMeshComponent",
+     "as_type": "UStaticMeshComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "BackupMantleCollision",
+     "as_type": "UBoxComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bGenerateBackupMantleCollision",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "StaticMesh",
+     "as_type": "UStaticMesh@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DefaultTriggeredDuration",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DefaultFadingDuration",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DefaultDeadDuration",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DefaultRespawningDuration",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "StateAudioEvents",
+     "as_type": "TMap<ETemporaryFloorState, UAkAudioEvent@>",
+     "usmap_render": "Map<Enum<ETemporaryFloorState:IntProperty>,ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bShowDebug",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LocalState",
+     "as_type": "ETemporaryFloorState",
+     "usmap_render": "Enum<ETemporaryFloorState:IntProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LastTriggerTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "LastHeightMapDirtyTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "StateToCumulativeDurationMap",
+     "as_type": "TMap<ETemporaryFloorState, float64>",
+     "usmap_render": "Map<Enum<ETemporaryFloorState:IntProperty>,DoubleProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Content.Train.TrainMovableBaseComponent",
+   "as_name": "UTrainAnchor",
+   "ue_name": "TrainAnchor",
+   "kind": "class",
+   "as_super": "USceneComponent",
+   "ue_super": "SceneComponent",
+   "code_super": "/Script/Engine.SceneComponent",
+   "props": []
+  },
+  {
+   "module": "Content.Train.TrainMovableBaseComponent",
+   "as_name": "UBackTrainAnchor",
+   "ue_name": "BackTrainAnchor",
+   "kind": "class",
+   "as_super": "UTrainAnchor",
+   "ue_super": "TrainAnchor",
+   "code_super": "/Script/Engine.SceneComponent",
+   "props": []
+  },
+  {
+   "module": "Content.Train.TrainMovableBaseComponent",
+   "as_name": "UFrontTrainAnchor",
+   "ue_name": "FrontTrainAnchor",
+   "kind": "class",
+   "as_super": "UTrainAnchor",
+   "ue_super": "TrainAnchor",
+   "code_super": "/Script/Engine.SceneComponent",
+   "props": []
+  },
+  {
+   "module": "Content.Train.TrainMovableBaseComponent",
+   "as_name": "UTrainMovableBaseComponent",
+   "ue_name": "TrainMovableBaseComponent",
+   "kind": "class",
+   "as_super": "UMovableBaseComponent",
+   "ue_super": "MovableBaseComponent",
+   "code_super": "/Script/Engine.MovableBaseComponent",
+   "props": [
+    {
+     "name": "InitialOffset",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "Speed",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "TrackSpline",
+     "as_type": "USplineComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Core.AimingVis.LokiAimingLaser",
+   "as_name": "FLaserTraceResult",
+   "ue_name": "LaserTraceResult",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "bDidHit",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "HitLocation",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "HitTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "HitHeightIndicator",
+     "as_type": "ALokiHeroHeightIndicator@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Core.AimingVis.LokiAimingLaser",
+   "as_name": "FAimingLaserSettings",
+   "ue_name": "AimingLaserSettings",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "LaserClass",
+     "as_type": "TSubclassOf<ALokiAimingLaser@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MaxDistance",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bShowTraceHitFlare",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bLimitLaserToTraceHit",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bOverrideLimitLaserToCursor",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bLimitLaserToCursor",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaserMaterial",
+     "as_type": "UMaterialInterface@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "EndpointMaterial",
+     "as_type": "UMaterialInterface@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "HitFlareNiagaraSystem",
+     "as_type": "UNiagaraSystem@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bOverrideBrightness",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Brightness",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bUnconditionallyVisibleWhenActive",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bIgnoresHeroes",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bBenefitsFromBonusPrimaryAttackDistance",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Core.AimingVis.LokiAimingLaser",
+   "as_name": "ALokiAimingLaser",
+   "ue_name": "LokiAimingLaser",
+   "kind": "class",
+   "as_super": "AActor",
+   "ue_super": "Actor",
+   "code_super": "/Script/Engine.Actor",
+   "props": [
+    {
+     "name": "RootComponent",
+     "as_type": "USceneComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaserEndpoint",
+     "as_type": "UStaticMeshComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaserHitFlare",
+     "as_type": "UNiagaraComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaserProjectilePath",
+     "as_type": "ULokiProjectilePathComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OwnerHero",
+     "as_type": "ALokiHeroCharacter@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OwnerAimingVisComponent",
+     "as_type": "ULokiAimingVisComponentScript@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CurrentEndPathTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CurrentCursorPathTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CurrentTraceHitPathTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MaxDistance",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ProjectileSourceOffsetDistanceXY",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bShowTraceHitFlare",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bLimitLaserToTraceHit",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bIgnoresHeroes",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bOverrideDesaturationAndOpacity",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bOverrideRangeAndAlphaStep",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "BehindGeoDottedLinesPerMeter",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ProgressCurve",
+     "as_type": "UCurveFloat@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bUsesProgressSequence",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Core.AimingVis.LokiAimingLaserRangeMarker",
+   "as_name": "ALokiAimingLaserRangeMarker",
+   "ue_name": "LokiAimingLaserRangeMarker",
+   "kind": "class",
+   "as_super": "ALokiAimingLaser",
+   "ue_super": "LokiAimingLaser",
+   "code_super": "/Script/Engine.Actor",
+   "props": [
+    {
+     "name": "RangeMarker",
+     "as_type": "UStaticMeshComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bShowRangeMarkerOnSpawn",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bShowRangeMarker",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MarkerDistance",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Core.AimingVis.LokiAimingLaserSpreadLines",
+   "as_name": "ALokiAimingLaserSpreadLines",
+   "ue_name": "LokiAimingLaserSpreadLines",
+   "kind": "class",
+   "as_super": "ALokiAimingLaser",
+   "ue_super": "LokiAimingLaser",
+   "code_super": "/Script/Engine.Actor",
+   "props": [
+    {
+     "name": "LaserSpreadRoot1",
+     "as_type": "USceneComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaserSpreadRoot2",
+     "as_type": "USceneComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaserSpread1",
+     "as_type": "UStaticMeshComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaserSpread2",
+     "as_type": "UStaticMeshComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bSetSpreadAngleViaBloom",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bInterpolateBloomValue",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "InterpolationRampHalfLife",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "NonBloomSpreadAngle",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "HideSpreadLasersAngle",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DimSpreadLasersAngleWindow",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaserOpacityMultWhenSpread",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LastBloomAngle",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Core.AimingVis.LokiAimingVisComponent",
+   "as_name": "FLaserScriptOverrides",
+   "ue_name": "LaserScriptOverrides",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "bOverrideDesaturationAndOpacity",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bOverrideRangeAndAlphaStep",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Core.AimingVis.LokiAimingVisComponent",
+   "as_name": "ULokiAimingVisComponentScript",
+   "ue_name": "LokiAimingVisComponentScript",
+   "kind": "class",
+   "as_super": "ULokiAimingVisComponent",
+   "ue_super": "LokiAimingVisComponent",
+   "code_super": "/Script/Loki.LokiAimingVisComponent",
+   "props": [
+    {
+     "name": "OwnerCharacter",
+     "as_type": "ALokiCharacter@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bHasInitializedClient",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bHasInitializedLocalClient",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bHeroUsesAimingLaser",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ClientLaserInstance",
+     "as_type": "ALokiAimingLaser@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaserSettings",
+     "as_type": "TArray<FAimingLaserSettings>",
+     "usmap_render": "Array<Struct<AimingLaserSettings>>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SpawnLaserSettingsIndex",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CurrentLaserSettingsIndex",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ReplicatedLaserSettingsIndex",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Core.AimingVis.HunterSpecific.LokiAimingLaserSpreadLines_HookGuy",
+   "as_name": "ALokiAimingLaserSpreadLines_HookGuy",
+   "ue_name": "LokiAimingLaserSpreadLines_HookGuy",
+   "kind": "class",
+   "as_super": "ALokiAimingLaserSpreadLines",
+   "ue_super": "LokiAimingLaserSpreadLines",
+   "code_super": "/Script/Engine.Actor",
+   "props": [
+    {
+     "name": "RangeMin",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RangeMax",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Core.AimingVis.HunterSpecific.LokiAimingLaserSpreadLines_Ronin",
+   "as_name": "ALokiAimingLaserSpreadLines_Ronin",
+   "ue_name": "LokiAimingLaserSpreadLines_Ronin",
+   "kind": "class",
+   "as_super": "ALokiAimingLaserSpreadLines",
+   "ue_super": "LokiAimingLaserSpreadLines",
+   "code_super": "/Script/Engine.Actor",
+   "props": [
+    {
+     "name": "PostAttackVisDuration",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "PostAttackVisFadeout",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Core.AimingVis.HunterSpecific.LokiAimingLaser_Huntress",
+   "as_name": "ALokiAimingLaser_Huntress",
+   "ue_name": "LokiAimingLaser_Huntress",
+   "kind": "class",
+   "as_super": "ALokiAimingLaserRangeMarker",
+   "ue_super": "LokiAimingLaserRangeMarker",
+   "code_super": "/Script/Engine.Actor",
+   "props": [
+    {
+     "name": "ProgressMarker",
+     "as_type": "UStaticMeshComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SettingsIndexBase",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SettingsIndexLMB",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LMBRangeMarkerDistance",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ArrowRangeMinGreen",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ArrowRangeMaxGreen",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ArrowRangeMaxBlue",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ArrowRangeMaxBluePerfect",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ArrowPerfectGreenChargeMin",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ArrowPerfectGreenChargeMax",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ArrowStartChargeFrac",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RangeMarkerDimmedMaterial",
+     "as_type": "UMaterialInterface@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RangeMarkerLitMaterial",
+     "as_type": "UMaterialInterface@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaserEndpointDimmedMaterial",
+     "as_type": "UMaterialInterface@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LaserEndpointLitMaterial",
+     "as_type": "UMaterialInterface@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SettingsIndexRMB",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ImpaleRangeMin",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ImpaleRangeMax",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SettingsIndexUlt",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "UltArrowRangeMax",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Core.Components.LokiMajorStatusEffectComponent",
+   "as_name": "ULokiMajorStatusEffectComponent_AS",
+   "ue_name": "LokiMajorStatusEffectComponent_AS",
+   "kind": "class",
+   "as_super": "ULokiMajorStatusEffectComponent",
+   "ue_super": "LokiMajorStatusEffectComponent",
+   "code_super": "/Script/Loki.LokiMajorStatusEffectComponent",
+   "props": [
+    {
+     "name": "MyCharacter",
+     "as_type": "ALokiCharacter@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "EffectHandles",
+     "as_type": "TMap<FGameplayTag, FActiveGameplayEffectHandle>",
+     "usmap_render": "Map<Struct<GameplayTag>,Struct<ActiveGameplayEffectHandle>>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "DayNightController.LokiDayNightController",
+   "as_name": "ALokiDayNightController_AS",
+   "ue_name": "LokiDayNightController_AS",
+   "kind": "class",
+   "as_super": "ALokiDayNightController",
+   "ue_super": "LokiDayNightController",
+   "code_super": "/Script/Loki.LokiDayNightController",
+   "props": [
+    {
+     "name": "OnTimelineChanged",
+     "as_type": "FTimelineChangedDelegate",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnDayNightStateChanged",
+     "as_type": "FDayNightStateChangedDelegate",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnDayBegin",
+     "as_type": "FDayBeginDelegate",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnDayEnd",
+     "as_type": "FDayEndDelegate",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "FFA.Comp_PC_LokiRespawnComponent",
+   "as_name": "UComp_PC_LokiRespawnComponent",
+   "ue_name": "Comp_PC_LokiRespawnComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "RespawnTimerWidget",
+     "as_type": "TSubclassOf<UUserWidget@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "FFA.FFABotSpawner",
+   "as_name": "UFFABotSpawnerComponent",
+   "ue_name": "FFABotSpawnerComponent",
+   "kind": "class",
+   "as_super": "ULokiBotSpawnerComponent",
+   "ue_super": "LokiBotSpawnerComponent",
+   "code_super": "/Script/Loki.LokiBotSpawnerComponent",
+   "props": [
+    {
+     "name": "AvailableBots",
+     "as_type": "TArray<FPrimaryAssetId>",
+     "usmap_render": "Array<Struct<PrimaryAssetId>>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "FFA.FFAGameMode",
+   "as_name": "AFFAGameMode",
+   "ue_name": "FFAGameMode",
+   "kind": "class",
+   "as_super": "ALokiDropInGameMode",
+   "ue_super": "LokiDropInGameMode",
+   "code_super": "/Script/Loki.LokiDropInGameMode",
+   "props": [
+    {
+     "name": "LevelToGrant",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "BandageItem",
+     "as_type": "TSubclassOf<ALokiBaseItem@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ArmorItem",
+     "as_type": "TSubclassOf<ALokiBaseItem@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "InitializedPlayerStates",
+     "as_type": "TSet<ALokiPlayerState@>",
+     "usmap_render": "Set<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ConnectedPlayerControllers",
+     "as_type": "TSet<ALokiPlayerController@>",
+     "usmap_render": "Set<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "FFA.LokiPlayerRespawnComponent",
+   "as_name": "ULokiPlayerRespawnComponent",
+   "ue_name": "LokiPlayerRespawnComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "RespawnTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "LocalPC",
+     "as_type": "ALokiPlayerController@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LocalRespawnTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnRespawnTimeUpdated",
+     "as_type": "FOnUpdated",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "InitialSpawnDelay",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SpawnDelay",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "IsCombatPhase",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bOnlyScheduleRespawnsDuringCombatPhase",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bStartTimerOnlyOnKill",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "FFA.LokiRespawnComponent",
+   "as_name": "ULokiRespawnComponent",
+   "ue_name": "LokiRespawnComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "Starts",
+     "as_type": "TArray<FVector>",
+     "usmap_render": "Array<Struct<Vector>>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "StartIndex",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "BarrierActor",
+     "as_type": "TSubclassOf<AActor@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnSpawnEffect",
+     "as_type": "TSubclassOf<UGameplayEffect@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "NonSpawningBotStates",
+     "as_type": "TSet<ALokiPlayerState@>",
+     "usmap_render": "Set<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "HumansBeforeBotDespawn",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SpawnRadius",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SpawnIndex",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "HasCreatedPlayerStarts",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnPlayerStartsCreated",
+     "as_type": "FOnUpdated",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "FFA.RespawnTimerWidget",
+   "as_name": "URespawnTimerWidget",
+   "ue_name": "RespawnTimerWidget",
+   "kind": "class",
+   "as_super": "UUserWidget",
+   "ue_super": "UserWidget",
+   "code_super": "/Script/UMG.UserWidget",
+   "props": [
+    {
+     "name": "PSC",
+     "as_type": "ULokiPlayerRespawnComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "GameMode.LokiGameMode_ExoticLootComponent",
+   "as_name": "ULokiExoticLootComponent",
+   "ue_name": "LokiExoticLootComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "DayToLootTable",
+     "as_type": "TMap<int, TSubclassOf<ULokiLootTable@>>",
+     "usmap_render": "Map<IntProperty,ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "GameMode.LokiGameMode_ExoticLootComponent",
+   "as_name": "FExoticItemList",
+   "ue_name": "ExoticItemList",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "Exotics",
+     "as_type": "TArray<TSubclassOf<AActor@>>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "GameMode.DropPhase.LokiDropPhase_PlayerStateComponent",
+   "as_name": "ULokiDropPhase_PlayerStateComponent",
+   "ue_name": "LokiDropPhase_PlayerStateComponent",
+   "kind": "class",
+   "as_super": "ULokiPlayerDropPlaneComponent",
+   "ue_super": "LokiPlayerDropPlaneComponent",
+   "code_super": "/Script/Loki.LokiPlayerDropPlaneComponent",
+   "props": []
+  },
+  {
+   "module": "GameMode.DropPhase.LokiDropPod",
+   "as_name": "FLokiPodDetachData",
+   "ue_name": "LokiPodDetachData",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "PodDetachDirection",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "PodDetachStartLocation",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LeaderDetachStartLocation",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CrewDetachState",
+     "as_type": "ELokiCrewPodDetachState",
+     "usmap_render": "Enum<ELokiCrewPodDetachState:IntProperty>",
+     "uproperty": true,
+     "flags": [],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MoveDirection",
+     "as_type": "ELokiMovementInputDirection",
+     "usmap_render": "Enum<ELokiMovementInputDirection:IntProperty>",
+     "uproperty": true,
+     "flags": [],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "GameMode.DropPhase.LokiDropPod",
+   "as_name": "ALokiDropPod",
+   "ue_name": "LokiDropPod",
+   "kind": "class",
+   "as_super": "ALokiDropPodBase",
+   "ue_super": "LokiDropPodBase",
+   "code_super": "/Script/Loki.LokiDropPodBase",
+   "props": [
+    {
+     "name": "CrewDropPodClass",
+     "as_type": "TSubclassOf<ALokiDropPod@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ImpactIndicatorClass",
+     "as_type": "TSubclassOf<ALokiDropPodImpactIndicator@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "GroundLaserIndicatorClass",
+     "as_type": "TSubclassOf<ALokiDropPodLaser@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "InitialDropPodSpeed",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "IntroSequenceTotalTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "TotalTimeForPodControls",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OutroSequenceTotalTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "TotalPodDestructionDelayTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OutroDistance",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "PodDetachTotalTime",
+     "as_type": "const float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "PodDetachTotalDistance",
+     "as_type": "const float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MaxSteerDistance",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MaxNonLeaderSteerDistance",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "IndicatorInterpSpeed",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "DisplayDropPhaseHiddenActorsHeight",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bIsCrewPod",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bPilotHasPodControl",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bIsTeamLeaderPod",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "PodTeamIndex",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "bIsLocalPlayerPilot",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ImpactIndicator",
+     "as_type": "ALokiDropPodImpactIndicator@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "GroundLaserIndicator",
+     "as_type": "ALokiDropPodLaser@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CurrPodDestination",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "AttachedCrewPods",
+     "as_type": "TArray<ALokiDropPod@>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "LeaderPod",
+     "as_type": "ALokiDropPod@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "DetachingCrewPods",
+     "as_type": "TArray<ALokiDropPod@>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "AllDetachedCrewPods",
+     "as_type": "TArray<ALokiDropPod@>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "PodDetachData",
+     "as_type": "FLokiPodDetachData",
+     "usmap_render": "Struct<LokiPodDetachData>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "PodStateEvent",
+     "as_type": "FGameEvent_OnDropPodStateChanged_PlayerState",
+     "usmap_render": "Struct<GameEvent_OnDropPodStateChanged_PlayerState>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "CrewDetachEvent",
+     "as_type": "FGameEvent_CrewDropPodDetach_PlayerState",
+     "usmap_render": "Struct<GameEvent_CrewDropPodDetach_PlayerState>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "LeaderDetachEvent",
+     "as_type": "FGameEvent_LeaderDropPodDetach_PlayerState",
+     "usmap_render": "Struct<GameEvent_LeaderDropPodDetach_PlayerState>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "CurrentInputDirection",
+     "as_type": "ELokiMovementInputDirection",
+     "usmap_render": "Enum<ELokiMovementInputDirection:IntProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated",
+      "Transient"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "LastInputDirection",
+     "as_type": "ELokiMovementInputDirection",
+     "usmap_render": "Enum<ELokiMovementInputDirection:IntProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bReadyForOutro",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnPodOutroStarted",
+     "as_type": "FOnPodOutroStarted",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnLeaderPodHasCrewPodDetached",
+     "as_type": "FOnLeaderPodHasCrewPodDetached",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnCrewPodDetached",
+     "as_type": "FOnCrewPodHasDetached",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnPodMoveDirectionChanged",
+     "as_type": "FOnPodMoveDirectionChanged",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "PodMeshComponent",
+     "as_type": "USkeletalMeshComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "PlayersToSpawnCrewPodFor",
+     "as_type": "TArray<ALokiPlayerState@>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "GameMode.DropPhase.LokiDropPodImpactIndicator",
+   "as_name": "ALokiDropPodImpactIndicator",
+   "ue_name": "LokiDropPodImpactIndicator",
+   "kind": "class",
+   "as_super": "ALokiActor",
+   "ue_super": "LokiActor",
+   "code_super": "/Script/Engine.LokiActor",
+   "props": [
+    {
+     "name": "OwningDropPod",
+     "as_type": "ALokiDropPod@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "OwningPlayerState",
+     "as_type": "ALokiPlayerState@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "LandingRadius",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bIsIndicatorInitialized",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "GameMode.DropPhase.LokiDropPodLaser",
+   "as_name": "ALokiDropPodLaser",
+   "ue_name": "LokiDropPodLaser",
+   "kind": "class",
+   "as_super": "ALokiActor",
+   "ue_super": "LokiActor",
+   "code_super": "/Script/Engine.LokiActor",
+   "props": [
+    {
+     "name": "OwningDropPod",
+     "as_type": "ALokiDropPod@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "GameMode.DropPhase.LokiDropShip",
+   "as_name": "ALokiDropShip",
+   "ue_name": "LokiDropShip",
+   "kind": "class",
+   "as_super": "ALokiDropPlane",
+   "ue_super": "LokiDropPlane",
+   "code_super": "/Script/Loki.LokiDropPlane",
+   "props": [
+    {
+     "name": "TeamDropPodClass",
+     "as_type": "TSubclassOf<ALokiDropPod@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "GameState.LokiGameState",
+   "as_name": "ALokiGameState_AS",
+   "ue_name": "LokiGameState_AS",
+   "kind": "class",
+   "as_super": "ALokiGameState",
+   "ue_super": "LokiGameState",
+   "code_super": "/Script/Loki.LokiGameState",
+   "props": [
+    {
+     "name": "UAVComponent",
+     "as_type": "ULokiGameStateUAVComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Interaction.LokiInteractionPlayerComponent",
+   "as_name": "FLokiUsableData",
+   "ue_name": "LokiUsableData",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "Actor",
+     "as_type": "AActor@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OverlapComponent",
+     "as_type": "UPrimitiveComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "UsableComponent",
+     "as_type": "ULokiUsableComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Interaction.LokiInteractionPlayerComponent",
+   "as_name": "ULokiInteractionPlayerComponent",
+   "ue_name": "LokiInteractionPlayerComponent",
+   "kind": "class",
+   "as_super": "ULokiPlayerInteractionComponent",
+   "ue_super": "LokiPlayerInteractionComponent",
+   "code_super": "/Script/Loki.LokiPlayerInteractionComponent",
+   "props": [
+    {
+     "name": "UsableNotFoundAudio",
+     "as_type": "UAkAudioEvent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnInteractionUsableChanged",
+     "as_type": "FOnInteractionUsableChangedDelegate",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnInteractionPressed",
+     "as_type": "FOnInteractionPressedDelegate",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnInteractionReleased",
+     "as_type": "FOnInteractionReleasedDelegate",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Items.LokiGem",
+   "as_name": "ALokiGem",
+   "ue_name": "LokiGem",
+   "kind": "class",
+   "as_super": "ALokiGemBase",
+   "ue_super": "LokiGemBase",
+   "code_super": "/Script/Loki.LokiGemBase",
+   "props": [
+    {
+     "name": "GemCount",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "BonusGemMultiplier",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "GemVacuumTag",
+     "as_type": "FGameplayTag",
+     "usmap_render": "Struct<GameplayTag>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bIsVaultItem",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "HeightToStop",
+     "as_type": "float32",
+     "usmap_render": "FloatProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bIsMoving",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    },
+    {
+     "name": "NoPickupTime",
+     "as_type": "float32",
+     "usmap_render": "FloatProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RootSceneComponent",
+     "as_type": "USceneComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SphereCollision",
+     "as_type": "USphereComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "VisibilityReceiver",
+     "as_type": "UVisibilityReceiver@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ProjMovementComp",
+     "as_type": "UProjectileMovementComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Items.LokiItemVisualsComponent",
+   "as_name": "ULokiItemVisualsComponent",
+   "ue_name": "LokiItemVisualsComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": []
+  },
+  {
+   "module": "Items.LokiTeamElimBoxComponent",
+   "as_name": "ULokiTeamElimBoxComponent",
+   "ue_name": "LokiTeamElimBoxComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "InventorySlots",
+     "as_type": "TArray<FName>",
+     "usmap_render": "Array<NameProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "TeamElimBoxClass",
+     "as_type": "TSubclassOf<ALokiSearchableBox@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "GoldDropClass",
+     "as_type": "TSubclassOf<ALokiBaseItem@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "T0SlotsToDestroy",
+     "as_type": "TArray<FName>",
+     "usmap_render": "Array<NameProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MinimumInsuredGoldValue",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "Minions.LokiNodePathingComponent",
+   "as_name": "ULokiNodePathingComponent",
+   "ue_name": "LokiNodePathingComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "PathNodeActors",
+     "as_type": "TArray<AActor@>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RotationPrecision",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CurrNodeActorList",
+     "as_type": "TArray<AActor@>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OwningCharacter",
+     "as_type": "ALokiCharacter@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OwningAIController",
+     "as_type": "AAIController@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LastPathingActor",
+     "as_type": "AActor@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RotateToActor",
+     "as_type": "AActor@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "MostWanted.LokiGameStateMostWantedComponent",
+   "as_name": "ULokiGameStateMostWantedComponent",
+   "ue_name": "LokiGameStateMostWantedComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "MostWantedCount",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    },
+    {
+     "name": "ActiveMostWantedCount",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "PlayerController.LokiDragCameraComponent",
+   "as_name": "ULokiDragCameraComponent",
+   "ue_name": "LokiDragCameraComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "MinimumDragDuration",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CameraPickupRadius",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bPanning",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bResetting",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "TimePressed",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CursorScreenLocationWhenPressed",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OffsetThisPress",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CumulativeOffset",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LastPawnLocation",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "PlayerController.LokiPlayerCheats",
+   "as_name": "ALokiPlayerCheats_AS",
+   "ue_name": "LokiPlayerCheats_AS",
+   "kind": "class",
+   "as_super": "ALokiPlayerCheats",
+   "ue_super": "LokiPlayerCheats",
+   "code_super": "/Script/Loki.LokiPlayerCheats",
+   "props": [
+    {
+     "name": "CheatDisableHealthRegenEffectClass",
+     "as_type": "TSubclassOf<UGameplayEffect@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CheatDisableHealthRegenEffectHandle",
+     "as_type": "FActiveGameplayEffectHandle",
+     "usmap_render": "Struct<ActiveGameplayEffectHandle>",
+     "uproperty": true,
+     "flags": [
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CheatDisableManaRegenEffectClass",
+     "as_type": "TSubclassOf<UGameplayEffect@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "CheatDisableManaRegenEffectHandle",
+     "as_type": "FActiveGameplayEffectHandle",
+     "usmap_render": "Struct<ActiveGameplayEffectHandle>",
+     "uproperty": true,
+     "flags": [
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "AutoJumpStartTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "AutoJumpPeriod",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "AutoJumpLastTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "AutoJumpPressed",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "WispControllerClass",
+     "as_type": "TSubclassOf<AAIController@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "WispHeroClass",
+     "as_type": "TSubclassOf<ALokiHeroCharacter@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "PlayerController.LokiPlayerController",
+   "as_name": "ALokiPlayerController_AS",
+   "ue_name": "LokiPlayerController_AS",
+   "kind": "class",
+   "as_super": "ALokiPlayerController",
+   "ue_super": "LokiPlayerController",
+   "code_super": "/Script/Loki.LokiPlayerController",
+   "props": [
+    {
+     "name": "UAVComponent",
+     "as_type": "ULokiPlayerControllerUAVComponent@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "InstancedReference"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnSneakPressed",
+     "as_type": "FOnSneakPressedDelegate",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnSneakReleased",
+     "as_type": "FOnSneakReleasedDelegate",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "OnPracticeRespawnPressed",
+     "as_type": "FOnPracticeRespawnPressedDelegate",
+     "usmap_render": "MulticastDelegateProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "UAV.LokiGameStateUAVComponent",
+   "as_name": "ULokiGameStateUAVComponent",
+   "ue_name": "LokiGameStateUAVComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "PlayerGroupingDistance",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "VaultVisionDistance",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "GlobalAudioActorClass",
+     "as_type": "TSubclassOf<AUAVAudioPlayer@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MarkedTeamGameplayEffectClass",
+     "as_type": "TSubclassOf<UGameplayEffect@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "MarkedIndividualGameplayEffectClass",
+     "as_type": "TSubclassOf<UGameplayEffect@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "UAVBlockedGameplayCueTag",
+     "as_type": "FGameplayTag",
+     "usmap_render": "Struct<GameplayTag>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "NextUAVID",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "UAV.LokiPlayerControllerUAVComponent",
+   "as_name": "ULokiPlayerControllerUAVComponent",
+   "ue_name": "LokiPlayerControllerUAVComponent",
+   "kind": "class",
+   "as_super": "UActorComponent",
+   "ue_super": "ActorComponent",
+   "code_super": "/Script/Engine.ActorComponent",
+   "props": [
+    {
+     "name": "UAVMapActorClass",
+     "as_type": "TSubclassOf<AUAVMapActor@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "UAVVaultContentActorClass",
+     "as_type": "TSubclassOf<AUAVVaultContentActor@>",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "UAVActivatedEventNotifyCooldown",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "UAV.UAVAudioPlayer",
+   "as_name": "AUAVAudioPlayer",
+   "ue_name": "UAVAudioPlayer",
+   "kind": "class",
+   "as_super": "AActor",
+   "ue_super": "Actor",
+   "code_super": "/Script/Engine.Actor",
+   "props": [
+    {
+     "name": "ActiveUAVCopy",
+     "as_type": "FActiveUAV",
+     "usmap_render": "Struct<ActiveUAV>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Replicated"
+     ],
+     "rep_condition": 0,
+     "rep_notify": true
+    }
+   ]
+  },
+  {
+   "module": "UAV.UAVMapActor",
+   "as_name": "AUAVMapActor",
+   "ue_name": "UAVMapActor",
+   "kind": "class",
+   "as_super": "AActor",
+   "ue_super": "Actor",
+   "code_super": "/Script/Engine.Actor",
+   "props": [
+    {
+     "name": "MyItemID",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance",
+      "Transient"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "UAV.UAVStructs",
+   "as_name": "FLokiUAVConfig",
+   "ue_name": "LokiUAVConfig",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "Duration",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "InitialDelay",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Period",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "BlinkDuration",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bShowIndividuals",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bShowTeam",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "InaccuracyDistance",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bRevealVaults",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Radius",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bShowCharacters",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bLocalRadar",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "UAV.UAVStructs",
+   "as_name": "FActiveUAV",
+   "ue_name": "ActiveUAV",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "bValid",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "ID",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "Config",
+     "as_type": "FLokiUAVConfig",
+     "usmap_render": "Struct<LokiUAVConfig>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "StartTime",
+     "as_type": "float64",
+     "usmap_render": "DoubleProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "TeamIndex",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "AudioActor",
+     "as_type": "AUAVAudioPlayer@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "SourceLocation",
+     "as_type": "FVector",
+     "usmap_render": "Struct<Vector>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "PulseCount",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "PlayersDetected",
+     "as_type": "int",
+     "usmap_render": "IntProperty",
+     "uproperty": true,
+     "flags": [
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "UAV.UAVStructs",
+   "as_name": "FUAVCharacterGrouping",
+   "ue_name": "UAVCharacterGrouping",
+   "kind": "struct",
+   "as_super": "",
+   "ue_super": null,
+   "code_super": "",
+   "props": [
+    {
+     "name": "Characters",
+     "as_type": "TArray<ALokiCharacter@>",
+     "usmap_render": "Array<ObjectProperty>",
+     "uproperty": true,
+     "flags": [],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "UAV.UAVVaultContentActor",
+   "as_name": "AUAVVaultContentActor",
+   "ue_name": "UAVVaultContentActor",
+   "kind": "class",
+   "as_super": "AActor",
+   "ue_super": "Actor",
+   "code_super": "/Script/Engine.Actor",
+   "props": [
+    {
+     "name": "VaultDataItem",
+     "as_type": "FLokiTeamVaultDataItem",
+     "usmap_render": "Struct<LokiTeamVaultDataItem>",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "UI.LokiWidgetHighlighterHitTestBlocker",
+   "as_name": "ULokiWidgetHighlighterHitTestBlocker_AS",
+   "ue_name": "LokiWidgetHighlighterHitTestBlocker_AS",
+   "kind": "class",
+   "as_super": "UUserWidget",
+   "ue_super": "UserWidget",
+   "code_super": "/Script/UMG.UserWidget",
+   "props": [
+    {
+     "name": "TargetWidget",
+     "as_type": "UWidget@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "TopBlocker",
+     "as_type": "UOverlay@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "LeftBlocker",
+     "as_type": "UOverlay@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "BottomBlocker",
+     "as_type": "UOverlay@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "RightBlocker",
+     "as_type": "UOverlay@",
+     "usmap_render": "ObjectProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    },
+    {
+     "name": "bHideBasedOnActivatableParent",
+     "as_type": "bool",
+     "usmap_render": "BoolProperty",
+     "uproperty": true,
+     "flags": [
+      "BlueprintReadable",
+      "BlueprintWritable",
+      "EditableOnDefaults",
+      "EditableOnInstance"
+     ],
+     "rep_condition": null,
+     "rep_notify": false
+    }
+   ]
+  },
+  {
+   "module": "UI.Character.LokiOffscreenTeamIndicatorWidget",
+   "as_name": "ULokiOffscreenTeamIndicatorWidget_AS",
+   "ue_name": "LokiOffscreenTeamIndicatorWidget_AS",
+   "kind": "class",
+   "as_super": "ULokiOffscreenTeamIndicatorWidget",
+   "ue_super": "LokiOffscreenTeamIndicatorWidget",
+   "code_super": "/Script/Loki.LokiOffscreenTeamIndicatorWidget",
+   "props": []
+  },
+  {
+   "module": "Vault.VaultItemSpawner",
+   "as_name": "AVaultItemSpawner",
+   "ue_name": "VaultItemSpawner",
+   "kind": "class",
+   "as_super": "AActor",
+   "ue_super": "Actor",
+   "code_super": "/Script/Engine.Actor",
+   "props": []
+  }
+ ],
+ "enums": [
+  {
+   "module": "Barracuda.Minion.BarracudaMinionRewardComponent",
+   "name": "EBarracudaMinionGoldRewardMethod",
+   "members": [
+    [
+     "LastHitterOnly",
+     0
+    ],
+    [
+     "SplitBetweenLastHitterTeam",
+     1
+    ]
+   ]
+  },
+  {
+   "module": "Barracuda.Shop.BarracudaShopItemWidget",
+   "name": "EBarracudaShopValueType",
+   "members": [
+    [
+     "TotalCost",
+     0
+    ],
+    [
+     "RecipeCost",
+     1
+    ],
+    [
+     "SellValue",
+     2
+    ],
+    [
+     "IncrementalCost",
+     3
+    ]
+   ]
+  },
+  {
+   "module": "Barracuda.Spawners.BarracudaMinionSpawner",
+   "name": "EBarracudaRespawnBehaviorType",
+   "members": [
+    [
+     "AlwaysSpawn",
+     0
+    ],
+    [
+     "ReplaceSpawns",
+     1
+    ],
+    [
+     "SkipSpawnWhenOldExists",
+     2
+    ],
+    [
+     "StartRespawnTimerAfterDeath",
+     3
+    ],
+    [
+     "AliveAtNight",
+     4
+    ],
+    [
+     "AliveDuringDay",
+     5
+    ]
+   ]
+  },
+  {
+   "module": "Content.TemporaryFloor",
+   "name": "ETemporaryFloorState",
+   "members": [
+    [
+     "Alive",
+     0
+    ],
+    [
+     "Triggered",
+     1
+    ],
+    [
+     "Fading",
+     2
+    ],
+    [
+     "Dead",
+     3
+    ],
+    [
+     "Respawning",
+     4
+    ],
+    [
+     "Max",
+     5
+    ]
+   ]
+  }
+ ]
+}

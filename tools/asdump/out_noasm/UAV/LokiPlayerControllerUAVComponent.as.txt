@@ -1,0 +1,354 @@
+// ============================================================================
+//  MODULE   UAV.LokiPlayerControllerUAVComponent
+//  SOURCE   UAV/LokiPlayerControllerUAVComponent.as
+//  CONTENT  1 class(es), 15 function(s), 0 enum(s), 1 global(s), 3420 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiPlayerControllerUAVComponent;
+
+ULokiPlayerControllerUAVComponent@ ULokiPlayerControllerUAVComponent()   // traits=0x20
+{
+    ULokiPlayerControllerUAVComponent v2;
+
+    v2 = ULokiPlayerControllerUAVComponent();
+    return v2;
+}
+
+UClass@ ULokiPlayerControllerUAVComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiPlayerControllerUAVComponent);
+    return v2;
+}
+
+ULokiPlayerControllerUAVComponent@ ULokiPlayerControllerUAVComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiPlayerControllerUAVComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiPlayerControllerUAVComponent, v2, typeid(ULokiPlayerControllerUAVComponent@), WithName);
+    return v2;
+}
+
+ULokiPlayerControllerUAVComponent@ ULokiPlayerControllerUAVComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiPlayerControllerUAVComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerUAVComponent, v2, typeid(ULokiPlayerControllerUAVComponent@), WithName);
+    return v2;
+}
+
+ULokiPlayerControllerUAVComponent@ ULokiPlayerControllerUAVComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiPlayerControllerUAVComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiPlayerControllerUAVComponent, v2, typeid(ULokiPlayerControllerUAVComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ULokiPlayerControllerUAVComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiPlayerControllerUAVComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    TSubclassOf<AUAVMapActor@> UAVMapActorClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    TSubclassOf<AUAVVaultContentActor@> UAVVaultContentActorClass;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, meta.Category=UAV)
+    float64 UAVActivatedEventNotifyCooldown;
+    private float64 LastEventNotifyTime;
+    private int LastRadarID;
+    private TArray<FLokiFuzzyPlayerLocationItem> LocalRadarPlayers;
+    private ALokiPlayerState@ LastRadarPlayer;
+
+    ULokiPlayerControllerUAVComponent()   // traits=0x21
+    {
+        auto v2;
+        auto v3;
+
+        this.UAVMapActorClass = TSubclassOf<AUAVMapActor@>();
+        this.UAVVaultContentActorClass = TSubclassOf<AUAVVaultContentActor@>();
+        this.LocalRadarPlayers = TArray<FLokiFuzzyPlayerLocationItem>();
+        v2 = 25.0;
+        this.UAVActivatedEventNotifyCooldown = v2;
+        v2 = 0;
+        this.LastEventNotifyTime = v2;
+        v3 = -1;
+        this.LastRadarID = v3;
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        auto v1;
+        UGameEventRouterComponent v4;
+        FGameEvent_FuzzyPlayerLocation_Add v34;
+        auto v35;
+        FGameEventListenerHandle v48;
+        FGameEvent_TeamVaultData_Add v68;
+        TSubclassOf<AUAVMapActor@> v70;
+        FString v74;
+        AActor v76;
+        FName v78;
+        TSubclassOf<AUAVVaultContentActor@> v80;
+
+        if (Loki::LokiIsServer(__WorldContext)) {
+            return;
+        } else {
+            v4 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+            if (v4 != nullptr) {
+                v35 = false;
+                v34 = FGameEvent_FuzzyPlayerLocation_Add();
+                v48 = v4.RegisterForEvent(this, v34, typeid(FGameEvent_FuzzyPlayerLocation_Add), nullptr, n"OnLocationAdded", v35);
+                v35 = false;
+                v68 = FGameEvent_TeamVaultData_Add();
+                v48 = v4.RegisterForEvent(this, v68, typeid(FGameEvent_TeamVaultData_Add), nullptr, n"OnVaultDataAdded", v35);
+            }
+            v70 = TSubclassOf<AUAVMapActor@>();
+            v70 = this.UAVMapActorClass;
+            v1 = v70 == nullptr;
+            if (v1) {
+                v76 = this.GetOwner();
+                v78 = v76.GetName();
+                v74 = FString();
+                v74.Append("[");
+                v74.Append("[").Append(v78);
+                v74.Append("[").Append(v78).Append("] ULokiPlayerControllerUAVComponent doesn't have UAVMapActorClass set on instance. This is required to show UAV Map Icons");
+                Log::Error(v74.Append("[").Append(v78).Append("] ULokiPlayerControllerUAVComponent doesn't have UAVMapActorClass set on instance. This is required to show UAV Map Icons"));
+            }
+            v80 = TSubclassOf<AUAVVaultContentActor@>();
+            v80 = this.UAVVaultContentActorClass;
+            v1 = v80 == nullptr;
+            if (v1) {
+                v76 = this.GetOwner();
+                v78 = v76.GetName();
+                v74 = FString();
+                v74.Append("[");
+                v74.Append("[").Append(v78);
+                v74.Append("[").Append(v78).Append("] ULokiPlayerControllerUAVComponent doesn't have UAVVaultContentActorClass set on instance. This is required to show UAV Map Icons");
+                Log::Error(v74.Append("[").Append(v78).Append("] ULokiPlayerControllerUAVComponent doesn't have UAVVaultContentActorClass set on instance. This is required to show UAV Map Icons"));
+            }
+        }
+        return;
+    }
+
+    void ClientNotifyLocalRadarEmpty()   // traits=0x20
+    {
+        __Evt_Execute(this, n"ClientNotifyLocalRadarEmpty");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientNotifyLocalRadarEmpty, BlueprintCallable, BlueprintEvent, NetClient, Unreliable)
+    void ClientNotifyLocalRadarEmpty_Implementation()   // traits=0x20
+    {
+        UGameEventRouterComponent v2;
+        FGameEvent_FuzzyPlayerLocation_LocalRadar v14;
+
+        v2 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+        if (v2 != nullptr) {
+            v14 = FGameEvent_FuzzyPlayerLocation_LocalRadar();
+            v14.PlayerState = this.LastRadarPlayer;
+            v2.BroadcastEvent(v14, typeid(FGameEvent_FuzzyPlayerLocation_LocalRadar), nullptr);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, CanOverrideEvent)
+    void AuthNotifyLocalRadarTeammates(ALokiPlayerState@ Instigator)   // traits=0x20
+    {
+        ALokiTeamState v4;
+        auto v5;
+        TArray<ALokiPlayerState@> v10;
+        TArrayIterator<ALokiPlayerState@> v20;
+        ALokiPlayerState v28;
+        APlayerController v32;
+        UClass v34;
+        TSubclassOf<UActorComponent@> v36;
+        UActorComponent v38;
+        ULokiPlayerControllerUAVComponent v40;
+        ULokiPlayerControllerUAVComponent v42;
+
+        v4 = Instigator.GetTeamState();
+        if (v4 == nullptr) {
+            return;
+        } else {
+            v10 = v4.GetLivingPlayers();
+            v20 = v10.Iterator();
+            while (true) {
+                v5 = v20.CanProceed;
+                if (!v5) break;
+                v28 = v20.Proceed();
+                v20.Proceed();
+                v32 = v28.GetPlayerController();
+                if (v32 != nullptr) {
+                    v34 = ULokiPlayerControllerUAVComponent::StaticClass();
+                    v36 = TSubclassOf<UActorComponent@>(v34);
+                    v38 = v32.GetComponentByClass(v36);
+                    if (v38 != nullptr) {
+                        v40 = cast<ULokiPlayerControllerUAVComponent@>(v38);
+                    } else {
+                        v40 = nullptr;
+                    }
+                    v42 = v40;
+                    if (v42 != nullptr) {
+                        v42.ClientNotifyLocalRadarInstigator(Instigator);
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    void ClientNotifyLocalRadarInstigator(ALokiPlayerState@ Instigator)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiPlayerState(Instigator);
+        __Evt_Execute(this, n"ClientNotifyLocalRadarInstigator");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientNotifyLocalRadarInstigator, BlueprintCallable, BlueprintEvent, NetClient, Unreliable)
+    void ClientNotifyLocalRadarInstigator_Implementation(ALokiPlayerState@ Instigator)   // traits=0x20
+    {
+        this.LastRadarPlayer = Instigator;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnLocationAdded(const FGameEvent_FuzzyPlayerLocation_Add& Event, const AActor@& Context)   // traits=0x28
+    {
+        FLokiFuzzyPlayerLocationItem v24;
+        auto v25;
+        int v26;
+        auto v27;
+        bool v28;
+        TSubclassOf<AUAVMapActor@> v30;
+        auto v31;
+        UGameEventRouterComponent v34;
+        FGameEvent_FuzzyPlayerLocation_LocalRadar v44;
+        TArray<FLokiLocalRadarEntry> v48;
+        TArrayIterator<FLokiFuzzyPlayerLocationItem> v54;
+        auto v62;
+        FLokiLocalRadarEntry v74;
+        auto v75;
+        AUAVMapActor v78;
+        auto v82;
+        float64 v84;
+        auto v86;
+
+        v24 = FLokiFuzzyPlayerLocationItem(Event.PlayerLocationItem);
+        v25 = v24.Source;
+        v26 = int(v25);
+        if (v26 != 1) {
+            return;
+        } else {
+            v30 = TSubclassOf<AUAVMapActor@>();
+            v30 = this.UAVMapActorClass;
+            v28 = v30 == nullptr;
+            if (v28) {
+                return;
+            } else {
+                v26 = v24.UAVID;
+                if (v26 != -1) {
+                    v27 = v24.UAVID;
+                    v26 = this.LastRadarID;
+                    if (v27 != v26) {
+                        this.LocalRadarPlayers.Reset(0);
+                    }
+                    v27 = v24.UAVID;
+                    this.LastRadarID = v27;
+                    this.LocalRadarPlayers.Add(v24);
+                    v26 = v24.TotalPlayerCount;
+                    if (v26 == -1) {
+                        v28 = 0;
+                    } else {
+                        v27 = this.LocalRadarPlayers.Num();
+                        v26 = v24.TotalPlayerCount;
+                        v31 = v27 == v26;
+                        v28 = v31;
+                    }
+                    if (v28) {
+                        v34 = UGameEventRouterSubsystem::GetGlobalGameEventRouter(__WorldContext);
+                        if (v34 != nullptr) {
+                            v44 = FGameEvent_FuzzyPlayerLocation_LocalRadar();
+                            v48 = TArray<FLokiLocalRadarEntry>();
+                            v54 = this.LocalRadarPlayers.Iterator();
+                            while (true) {
+                                v28 = v54.CanProceed;
+                                if (!v28) break;
+                                v62 = v54.Proceed();
+                                v74 = FLokiLocalRadarEntry();
+                                v27 = v62.TeamIndex;
+                                v74.TeamIndex = v27;
+                                v74.Location = v62.Location;
+                                v74.CharacterClass = v62.CharacterClasses[0];
+                                v75 = v62.AverageLevel;
+                                v74.PlayerLevel = v75;
+                                v48.Add(v74);
+                            }
+                            v44.PlayerState = this.LastRadarPlayer;
+                            v44.PlayerLocationItems = v48;
+                            v34.BroadcastEvent(v44, typeid(FGameEvent_FuzzyPlayerLocation_LocalRadar), nullptr);
+                        }
+                    }
+                    return;
+                } else {
+                    v28 = false;
+                    v78 = SpawnActor(this.UAVMapActorClass, v24.Location, FRotator::ZeroRotator, NAME_None, v28, nullptr);
+                    v78.Init(v24);
+                    v75 = Gameplay::GetServerTime(__WorldContext);
+                    v84 = float64(v75);
+                    v82 = v84;
+                    v84 = this.LastEventNotifyTime;
+                    v86 = this.UAVActivatedEventNotifyCooldown;
+                    v84 = v84 + v86;
+                    if (v82 > v84) {
+                        ULokiFuzzyPlayerLocationComponent::BroadcastUAVActivatedEvent(this);
+                        this.LastEventNotifyTime = v82;
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    private void OnVaultDataAdded(const FGameEvent_TeamVaultData_Add& Event, const AActor@& Context)   // traits=0x28
+    {
+        TSubclassOf<AUAVVaultContentActor@> v2;
+        bool v3;
+        AUAVVaultContentActor v6;
+        FTransform v32;
+
+        v2 = TSubclassOf<AUAVVaultContentActor@>();
+        v2 = this.UAVVaultContentActorClass;
+        v3 = v2 == nullptr;
+        if (v3) {
+            return;
+        } else {
+            v3 = true;
+            v6 = SpawnActor(this.UAVVaultContentActorClass, FVector::ZeroVector, FRotator::ZeroRotator, NAME_None, v3, nullptr);
+            v6.VaultDataItem = Event.VaultDataItem;
+            v32 = FTransform(FTransform::Identity);
+            v32.SetLocation(Event.VaultDataItem.Location);
+            FinishSpawningActor(v6, v32);
+        }
+        return;
+    }
+
+    void ~ULokiPlayerControllerUAVComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

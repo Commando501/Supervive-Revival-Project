@@ -1,0 +1,124 @@
+S137 PRE-REGISTRATION -- the bWantsPlayerState experiment
+Written 2026-08-21 BEFORE any injection. Nothing below may be edited after the flight; corrections
+go in the write-up, not here.
+
+================================================================================================
+0. WHAT IS BEING TESTED
+================================================================================================
+S136 measured an AI-controlled hero pawn with PlayerState NULL on BOTH sides:
+    controller+0x3C0 (AController::PlayerState) = NULL
+    pawn+0x3D8       (APawn::PlayerState)       = NULL
+and settled the cause offline. It was RE-DERIVED INDEPENDENTLY for this session from
+dumps/merged12.dump.exe, and the recorded version is INCOMPLETE -- there are THREE gates in front of
+InitPlayerState, not one:
+
+  AAIController::PostInitializeComponents  0x45D6D10   REAL (`40 53 48 83 ec 20 48 8b d9 ...`)
+    0x45D6D19  e8 e2 c2 10 ff             call 0x36E3000    Super::PostInitializeComponents
+    0x45D6D1E  f6 83 88 04 00 00 20       test byte [rbx+0x488],0x20   <- bWantsPlayerState
+    0x45D6D25  74 25                      je   0x45D6D4C    <== GATE 1  the recorded blocker
+    0x45D6D27  8b 43 0c / c1 e8 1e / f6 d0 / a8 01
+    0x45D6D31  74 19                      je   0x45D6D4C    <== GATE 2  !IsPendingKillPending()
+    0x45D6D36  e8 15 7a db fe             call 0x338E750    AActor::GetNetMode
+    0x45D6D3B  83 f8 03 / 74 0c           je   0x45D6D4C    <== GATE 3  bail if NM_Client(3)
+    0x45D6D40  48 8b 03 / 48 8b cb
+    0x45D6D46  ff 90 88 08 00 00          call [rax+0x888]  InitPlayerState, slot 0x888/8 = 273
+    0x45D6D4C  48 83 bb 98 04 00 00 00    cmp [rbx+0x498],0 <- the je TARGET is the BrainComponent
+                                             test, so the skipped block is the InitPlayerState call
+                                             and NOTHING ELSE.
+That is stock UE's `if (bWantsPlayerState && !IsPendingKillPending() && GetNetMode()!=NM_Client)`.
+GATE 2 reads ObjectFlags (+0x0C in this build) >> 30; bit 30 is RF_Garbage. GATE 3 is already
+[M]-passed on this client. Both are read out by the arm so a null is localisable to an exact gate.
+
+ALSO RE-DERIVED, and it creates a SECOND arm: AController::InitPlayerState (0x36DEE20) does NOT
+test bWantsPlayerState. Its own guards are only
+    0x36DEE45 call 0x338E750 / cmp eax,3 / je 0x36DF110   GetNetMode() != NM_Client
+    0x36DEE5E call 0x338C990 / test rax,rax / je          GetWorld() != null
+    0x36DEE77 mov rsi,[rax+0x250]                         UWorld::AuthorityGameMode
+    0x36DEE83 mov rcx,[rax+0x258] -> call 0x3841550       FALLBACK GameState->GetDefaultGameMode()
+    0x36DEED3 or dword [rsp+0x84],0x40                    SpawnInfo.ObjectFlags |= RF_Transient
+
+================================================================================================
+1. THE TWO ARMS, AND WHY BOTH FLY IN ONE WINDOW
+================================================================================================
+ARM A  poke CDO(AIControllerClass).bWantsPlayerState = 1, THEN spawn.
+       DEPENDS ON AN UNVERIFIED FACT: that UE copies the CDO's property block onto a new instance
+       AFTER the class constructor runs. AAIController's ctor CLEARS this bit on every instance
+       (0x45D19AD `and ecx,~0x20`), and the consumer reads the INSTANCE, not the CDO. S130's
+       bCanEverReplicate precedent does NOT establish this -- its consumer read the CDO DIRECTLY
+       (`cmp byte [CDO+0x6C],0`). This arm MEASURES the propagation rather than assuming it.
+ARM B  spawn normally, then call InitPlayerState DIRECTLY on the controller. Needs no poke and no
+       propagation. Dispatched THROUGH THE VTABLE and REFUSED unless [[ctl]+0x888] resolves to RVA
+       0x36DEE20 (it matters: [M] ALokiPlayerController's slot 273 is the void fold).
+
+CONTROL: WITHIN-RUN. Spawn #1 runs with the bit CLEAR and spawn #2 with it SET, same world, same
+instrument, milliseconds apart. The ONLY difference is one bit on one CDO. ARM B then runs on
+controller #1, whose PlayerState has already been printed as NULL.
+
+================================================================================================
+2. PREDICTIONS -- written before the flight
+================================================================================================
+P1  The CDO's bWantsPlayerState reads CLEAR at baseline (L1). Stock UE clears it in the ctor, so
+    a SET here would mean something else already changed it and the whole framing is wrong.
+P2  Spawn #1 (CONTROL) reproduces S136 exactly: controller created, its bit reads CLEAR (L2),
+    ctl.PlayerState NULL (L3), pawn.PlayerState NULL (L4).
+P3  The poke lands and readbacks: CDO byte gains exactly bit 0x20, dword delta == 0x20 exactly
+    (no neighbouring bit moves).
+P4  ARM A, IF the CDO value propagates: spawn #2's controller reads bit SET (L2), ctl.PlayerState
+    NON-NULL (L3), AND pawn.PlayerState NON-NULL (L4) -- both, because InitPlayerState runs inside
+    PostInitializeComponents, i.e. BEFORE SpawnDefaultController calls Possess -> PossessedBy ->
+    APawn::SetPlayerState, which is what copies it across.
+P5  ARM A, IF it does NOT propagate: spawn #2's controller reads bit CLEAR (L2) and PlayerState
+    NULL. That REFUTES the CDO-poke route as stated and is a real, reusable result, not a failure.
+P6  ARM B success signature is DIFFERENT from ARM A's and cannot be confused with it:
+    ctl.PlayerState NON-NULL and pawn.PlayerState STILL NULL -- possession already happened and
+    nothing re-runs SetPlayerState.
+P7  The PlayerState-chain census (corroborator) moves by +1 per controller that gains one, and the
+    A0==A1 stability re-scan holds with no call in between.
+P8  =BotController-chain stays 0 throughout. This does NOT produce a Loki bot and must not be
+    written up as one.
+
+================================================================================================
+3. WHAT WOULD MAKE THE SITTING VOID OR UNINTERPRETABLE
+================================================================================================
+V1  `[BS] done` never appears, or `called=0`. S136's flight 1 showed a clean 0/0/0 census under a
+    confident VERDICT line and was a NO-OP. A census delta with called=0 is UNINTERPRETABLE.
+V2  The A0/A1 stability re-scan MOVES with no call in between -- something else is spawning.
+V3  No controller on either pawn: SpawnDefaultController did not run, so the gate was never
+    reached. Says nothing about bWantsPlayerState.
+V4  The PRECONDITION line reports PlayerStateClass NULL. InitPlayerState then logs its own error
+    and bails, and a null PlayerState is attributable to that, not to the poke.
+V5  BOTH controllers end up with a PlayerState, including the one spawned with the bit clear. The
+    control is then broken and the poke is not what produced it.
+
+================================================================================================
+4. THE ARMS AS BUILT  (RAW = sha256(.text[PointerToRawData:+SizeOfRawData])[:16])
+================================================================================================
+  tutorial_launch_botps.dll           RAW=445fb5ce5b902bc3  VSIZE=c9740aa49a14fae0   all four arms
+  tutorial_launch_botps_readonly.dll  RAW=f860411a6ef7cb49  VSIZE=27d0ae05402a026b   spawn+read only
+  tutorial_launch_botps_arma.dll      RAW=623252907a68fd08  VSIZE=8f38ef7f5debc72f   ARM A alone
+  tutorial_launch_botps_armb.dll      RAW=c574c8ce5c3ccf95  VSIZE=4b82be0ad68482a0   ARM B alone
+  tutorial_launch_botai.dll           RAW=5e47c13cf7f0a158  VSIZE=f34ab2bf31cb0b34   S136 REGRESSION
+                                                                                     GATE -- unchanged
+All five digests are DISTINCT (checked with tools/sigbypass-mod/text_digest.py --dupes): none of
+these is a degenerate control arm byte-identical to its treatment, a hazard this repo has recorded
+three times (play/play_nopimutex/play_strictroot, poolspawn/poolspawn_cdoctrl, droppod_pe/_cdoctrl).
+
+PRE-FLIGHT STATIC CHECK, the S135->S136 lesson: every arm was byte-scanned for the long banner
+strings that exist only inside the branches it is supposed to contain, WITH positive controls in
+every row (KERNEL32 present in all; the old single-spawn path present ONLY in botai). 10/10 rows
+matched expectation, so no arm is dead-code-eliminated the way the shipped S135 botai was.
+verify_dll.py: PASS. WriteProcessMemory / FlushInstructionCache / VirtualAlloc all ABSENT.
+(VirtualProtect IS imported -- other run modes in the same TU use it -- so the S112 import-absence
+signature is suggestive here, not proof; the no-.text-write property rests on the source path.)
+
+================================================================================================
+5. INSTRUMENTS
+================================================================================================
+PRIMARY   the arm's own direct pointer reads, every offset resolved BY NAME off the live class with
+          the recorded offset printed beside it as a cross-check.
+SECOND    tools/re/playerstate_readout.py -- external, read-only RPM, no injection. It carries its
+          own POSITIVE CONTROL (the player hero's real possession + real PlayerState); if that
+          control fails, its NULLs are UNINTERPRETABLE and it says so.
+THIRD     the PlayerState-chain census inside the arm (catches a PlayerState created but not linked).
+FOURTH    Loki.log -- AController::InitPlayerState names ITSELF in its own UE_LOG
+          (.rdata 0x8018A50) when PlayerStateClass is null. Grep for it either way.

@@ -1,0 +1,115 @@
+// ============================================================================
+//  MODULE   Core.AimingVis.HunterSpecific.LokiAimingLaserSpreadLines_HookGuy
+//  SOURCE   Core/AimingVis/HunterSpecific/LokiAimingLaserSpreadLines_HookGuy.as
+//  CONTENT  1 class(es), 6 function(s), 0 enum(s), 1 global(s), 604 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiAimingLaserSpreadLines_HookGuy;
+
+ALokiAimingLaserSpreadLines_HookGuy@ ALokiAimingLaserSpreadLines_HookGuy()   // traits=0x20
+{
+    ALokiAimingLaserSpreadLines_HookGuy v2;
+
+    v2 = ALokiAimingLaserSpreadLines_HookGuy();
+    return v2;
+}
+
+UClass@ ALokiAimingLaserSpreadLines_HookGuy::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiAimingLaserSpreadLines_HookGuy);
+    return v2;
+}
+
+ALokiAimingLaserSpreadLines_HookGuy@ ALokiAimingLaserSpreadLines_HookGuy::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiAimingLaserSpreadLines_HookGuy v8;
+
+    v2 = __StaticType_ALokiAimingLaserSpreadLines_HookGuy.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiAimingLaserSpreadLines_HookGuy@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class ALokiAimingLaserSpreadLines_HookGuy : ALokiAimingLaserSpreadLines
+// static class global: __StaticType_ALokiAimingLaserSpreadLines_HookGuy
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 RangeMin;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 RangeMax;
+
+    ALokiAimingLaserSpreadLines_HookGuy()   // traits=0x21
+    {
+        auto v2;
+
+        this.ALokiAimingLaserSpreadLines();
+        v2 = 650.0;
+        this.RangeMin = v2;
+        v2 = 725.0;
+        this.RangeMax = v2;
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v1;
+        float64 v4;
+        auto v5;
+        auto v6;
+        float64 v8;
+        auto v10;
+        auto v12;
+        auto v14;
+
+        v1 = this.ValidateOwner();
+        v1 = !v1;
+        if (v1) {
+            this.OwnerAimingVisComponent.DestroyLaser();
+            return;
+        } else {
+            v5 = this.OwnerHero.GetCurrentBloomAngle();
+            v6 = this.OwnerHero.MaxBloom;
+            v5 = v5 / v6;
+            v8 = float64(v5);
+            v4 = v8;
+            v8 = Math::Lerp(this.RangeMax, this.RangeMin, v4);
+            v14 = 1.0;
+            v12 = this.PrimaryAttackDistance;
+            v14 = v14 + v12;
+            v12 = v8 * v14;
+            v14 = this.ProjectileSourceOffsetDistanceXY;
+            v10 = v12 + v14;
+            this.MaxDistance = v10;
+            this.Tick_Implementation(DeltaSeconds);
+        }
+        return;
+    }
+
+    void ~ALokiAimingLaserSpreadLines_HookGuy()   // traits=0x22
+    {
+        this.~ALokiAimingLaserSpreadLines();
+        return;
+    }
+
+}
+

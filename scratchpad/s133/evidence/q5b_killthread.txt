@@ -1,0 +1,62 @@
+====================================================================================================
+Q5b  IS THE FK-31 KILL A FRESHLY-CREATED THREAD?
+====================================================================================================
+FK-31-family reports: 108 ; contrast family (our own 0x205d scan fault): 14
+
+[FK-31 boot 0x7FFD3B150000]  41cdafa3-ceff-4d83-8d11-69fa9b75b54a.dmp
+  exc addr 0x7FFD3B400001  tid 6104  name=''
+  T1 stack: region 0x15F813B000..0x15F8140000  RSP 0x15F813F9B8  bytes above RSP = 0x648  (201 qwords)
+  T4 regs: rax=0x0 rcx=0x0 rdx=0x7378BF7888CA3EAA r8=0xAAD340C414200EA8 r9=0xF5422C22166F00F1 rbp=0x537AC9E1 rdi=0x15F813F9B8 rsi=0x0
+  T2 other threads with a captured stack tail: 135
+  T5 crashed tid rank: 8 of 136 (1 = lowest tid).  tid=6104  max tid=40900
+
+[FK-31 boot 0x7FFA422D0000]  27517e1c-65de-4803-a045-16f47d5d8b4c.dmp
+  exc addr 0x7FFA42600001  tid 48940  name=''
+  T1 stack: region 0x78D393B000..0x78D3940000  RSP 0x78D393FCD8  bytes above RSP = 0x328  (101 qwords)
+  T4 regs: rax=0x0 rcx=0x0 rdx=0x7471D06A18576968 r8=0xF6AF88165A41E1A7 r9=0x91BA137244622B10 rbp=0x537AC9E1 rdi=0x78D393FCD8 rsi=0x0
+  T2 other threads with a captured stack tail: 135
+  T5 crashed tid rank: 121 of 136 (1 = lowest tid).  tid=48940  max tid=50116
+
+[FK-31 boot 0x7FFB57050000]  c82826bf-3edd-4997-8000-8c5da1979c2c.dmp
+  exc addr 0x7FFB57400001  tid 17720  name=''
+  T1 stack: region 0xFF08F3B000..0xFF08F40000  RSP 0xFF08F3F968  bytes above RSP = 0x698  (211 qwords)
+  T4 regs: rax=0x0 rcx=0x0 rdx=0xD9B185D09E7109BA r8=0x676F8F7249A79F29 r9=0xBD64F0CEAEE75B8 rbp=0x537AC9E1 rdi=0xFF08F3F968 rsi=0x0
+  T2 other threads with a captured stack tail: 121
+  T5 crashed tid rank: 35 of 122 (1 = lowest tid).  tid=17720  max tid=35792
+
+----------------------------------------------------------------------------------------------------
+T3  CONTRAST CONTROL -- our own catalog_store_fix heap-scan faults
+----------------------------------------------------------------------------------------------------
+
+[0x205d]  590cfd83-b140-479b-8bbb-6b77c1cf7efb.dmp
+  exc addr 0x1C835EC205D  tid 32920  name=''
+  T1 stack: region 0x9D2C87A000..0x9D2C880000  RSP 0x9D2C87F3E0  bytes above RSP = 0xC20  (388 qwords)
+  T4 regs: rax=0x7FF6AF721758 rcx=0x7FFD3B1EDA00 rdx=0x0 r8=0x9D2C87F398 r9=0x7FFD3A9A5980 rbp=0x7FFD3A9A5980 rdi=0x1C8B1260000 rsi=0x7FF6AF77CEE8
+         rax -> SUPERVIVE-Win64-Shipping.exe+0x8831758
+         rcx -> ntdll.dll+0x9DA00
+         r9 -> KERNEL32.DLL+0x15980
+         rsi -> SUPERVIVE-Win64-Shipping.exe+0x888CEE8
+  T2 other threads with a captured stack tail: 150
+  T5 crashed tid rank: 80 of 151 (1 = lowest tid).  tid=32920  max tid=43804
+
+[0x205d]  e7d14df5-ddfb-4f74-902c-29acae9bb0ab.dmp
+  exc addr 0x14BA020205D  tid 38880  name=''
+  T1 stack: region 0x42D383B000..0x42D3840000  RSP 0x42D383FB70  bytes above RSP = 0x490  (146 qwords)
+  T4 regs: rax=0x7FF7EC4E1758 rcx=0x7FFD3B1EDA00 rdx=0x0 r8=0x42D383FB28 r9=0x7FFD3A9A5980 rbp=0x7FFD3A9A5980 rdi=0x14C91E60000 rsi=0x7FF7EC53CEE8
+         rax -> SUPERVIVE-Win64-Shipping.exe+0x8831758
+         rcx -> ntdll.dll+0x9DA00
+         r9 -> KERNEL32.DLL+0x15980
+         rsi -> SUPERVIVE-Win64-Shipping.exe+0x888CEE8
+  T2 other threads with a captured stack tail: 150
+  T5 crashed tid rank: 54 of 151 (1 = lowest tid).  tid=38880  max tid=55196
+
+[0x205d]  5e4cce11-0836-4b55-96ed-a5aef4d21aae.dmp
+  exc addr 0x1830F7C205D  tid 48044  name=''
+  T1 stack: region 0x64B347B000..0x64B3480000  RSP 0x64B347FA80  bytes above RSP = 0x580  (176 qwords)
+  T4 regs: rax=0x7FF7EC4E1758 rcx=0x7FFD3B1EDA00 rdx=0x0 r8=0x64B347FA38 r9=0x7FFD3A9A5980 rbp=0x7FFD3A9A5980 rdi=0x183CA5C0000 rsi=0x7FF7EC53CEE8
+         rax -> SUPERVIVE-Win64-Shipping.exe+0x8831758
+         rcx -> ntdll.dll+0x9DA00
+         r9 -> KERNEL32.DLL+0x15980
+         rsi -> SUPERVIVE-Win64-Shipping.exe+0x888CEE8
+  T2 other threads with a captured stack tail: 147
+  T5 crashed tid rank: 96 of 148 (1 = lowest tid).  tid=48044  max tid=55268

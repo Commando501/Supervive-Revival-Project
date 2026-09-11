@@ -1,0 +1,17 @@
+26:LogCsvProfiler: Display: Metadata set : commandline="" "G:\git\Supervive Revival Project\unreal-stub\Loki.uproject" /Engine/Maps/Entry?listen -game -server -log -Port=7777 -nullrhi -NoSplash -Unattended -LogCmds="LogHandshake Verbose, LogNet Verbose, LogLokiNet Verbose, LogLokiStateless Verbose, LogLokiIpConnection Verbose, LogLokiGameInstance Verbose, LogLokiStub Verbose" -abslog=C:\Users\eastr\AppData\Local\Temp\claude\G--git-Supervive-Revival-Project\5b4acdf2-d9b7-4354-9798-58d8015eafa3\scratchpad\stub-s20b.log""
+229:LogHAL: Log category LogLokiGameInstance verbosity has been raised to Verbose.
+272:LogInit: Command Line: /Engine/Maps/Entry?listen -game -server -log -Port=7777 -nullrhi -NoSplash -Unattended -LogCmds="LogHandshake Verbose, LogNet Verbose, LogLokiNet Verbose, LogLokiStateless Verbose, LogLokiIpConnection Verbose, LogLokiGameInstance Verbose, LogLokiStub Verbose" -abslog=C:\Users\eastr\AppData\Local\Temp\claude\G--git-Supervive-Revival-Project\5b4acdf2-d9b7-4354-9798-58d8015eafa3\scratchpad\stub-s20b.log
+795:[2026.07.01-02.20.16:450][  0]LogLokiNet: Display: LokiNetDriver: NetworkChecksumMode set to None (bypasses per-class schema fingerprint check on client).
+821:[2026.07.01-02.21.00:448][327]LogNet: Server accepting post-challenge connection from: 127.0.0.1:58135
+825:[2026.07.01-02.21.00:449][327]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from Invalid to LoggingIn
+831:[2026.07.01-02.21.00:452][327]LogNet: NotifyAcceptingChannel Control 0 server World /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent: Accepted
+839:[2026.07.01-02.21.00:481][328]LogNet: Login request: ?Name=9b9d2c887e2524f918e383a895f2f1c2 userId: NULL:9b9d2c887e2524f918e383a895f2f1c2 platform: NULL
+840:[2026.07.01-02.21.00:481][328]LogLokiGameInstance: Display: ModifyClientTravelLevelURL: /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent -> /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent
+841:[2026.07.01-02.21.00:482][328]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from LoggingIn to Welcomed
+848:[2026.07.01-02.21.01:345][354]LogNet: Join request: /Engine/Maps/Entry?Name=9b9d2c887e2524f918e383a895f2f1c2?SplitscreenCount=1
+849:[2026.07.01-02.21.01:348][354]LogNet: Join succeeded: 9b9d2c887e2524f918e3
+850:[2026.07.01-02.21.01:348][354]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from Welcomed to ReceivedJoin
+853:[2026.07.01-02.21.01:579][361]LogNet: Error: ReceivedRPC: ReceivePropertiesForRPC - Mismatch read. Function: ServerVerifyViewTarget, Object: PlayerController /Game/Loki/Maps/LobbyV2/LVL_LobbyV2_Persistent.LVL_LobbyV2_Persistent:PersistentLevel.PlayerController_0
+856:[2026.07.01-02.21.01:581][361]LogNet: UNetConnection::SendCloseReason:
+857:[2026.07.01-02.21.01:581][361]LogNet:  - Result=ObjectReplicatorReceivedBunchFail, ErrorContext="ObjectReplicatorReceivedBunchFail"
+860:[2026.07.01-02.21.01:584][361]LogNet: Verbose: UNetConnection::SetClientLoginState: State changing from ReceivedJoin to CleanedUp

@@ -1,0 +1,544 @@
+// ============================================================================
+//  MODULE   FFA.LokiPlayerRespawnComponent
+//  SOURCE   FFA/LokiPlayerRespawnComponent.as
+//  CONTENT  1 class(es), 24 function(s), 0 enum(s), 1 global(s), 3632 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiPlayerRespawnComponent;
+
+ULokiPlayerRespawnComponent@ ULokiPlayerRespawnComponent()   // traits=0x20
+{
+    ULokiPlayerRespawnComponent v2;
+
+    v2 = ULokiPlayerRespawnComponent();
+    return v2;
+}
+
+UClass@ ULokiPlayerRespawnComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiPlayerRespawnComponent);
+    return v2;
+}
+
+ULokiPlayerRespawnComponent@ ULokiPlayerRespawnComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiPlayerRespawnComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiPlayerRespawnComponent, v2, typeid(ULokiPlayerRespawnComponent@), WithName);
+    return v2;
+}
+
+ULokiPlayerRespawnComponent@ ULokiPlayerRespawnComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiPlayerRespawnComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiPlayerRespawnComponent, v2, typeid(ULokiPlayerRespawnComponent@), WithName);
+    return v2;
+}
+
+ULokiPlayerRespawnComponent@ ULokiPlayerRespawnComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiPlayerRespawnComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiPlayerRespawnComponent, v2, typeid(ULokiPlayerRespawnComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiPlayerRespawnComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiPlayerRespawnComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0, RepNotify, meta.ReplicatedUsing=OnRep_RespawnTime)
+    float64 RespawnTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    ALokiPlayerController@ LocalPC;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 LocalRespawnTime;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    FOnUpdated OnRespawnTimeUpdated;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 InitialSpawnDelay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    float64 SpawnDelay;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool IsCombatPhase;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    bool bOnlyScheduleRespawnsDuringCombatPhase;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    bool bStartTimerOnlyOnKill;
+
+    ULokiPlayerRespawnComponent()   // traits=0x21
+    {
+        auto v2;
+        auto v3;
+
+        this.OnRespawnTimeUpdated = FOnUpdated();
+        v2 = -1.0;
+        this.RespawnTime = v2;
+        v2 = -1.0;
+        this.LocalRespawnTime = v2;
+        v2 = 10.0;
+        this.InitialSpawnDelay = v2;
+        v2 = 10.0;
+        this.SpawnDelay = v2;
+        v3 = false;
+        this.IsCombatPhase = v3;
+        v3 = false;
+        this.bOnlyScheduleRespawnsDuringCombatPhase = v3;
+        v3 = false;
+        this.bStartTimerOnlyOnKill = v3;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRep_RespawnTime()   // traits=0x20
+    {
+        auto v2;
+
+        v2 = this.RespawnTime;
+        this.LocalRespawnTime = v2;
+        this.OnRespawnTimeUpdated.Broadcast();
+        return;
+    }
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        auto v1;
+        AActor v4;
+        ALokiPlayerState v6;
+        ALokiPlayerState v8;
+        int v9;
+        ALokiGameState v14;
+        ERoundPhase v15;
+        ALokiGameMode v20;
+        UClass v22;
+        TSubclassOf<UActorComponent@> v24;
+        UActorComponent v26;
+        ULokiRespawnComponent v28;
+        ULokiRespawnComponent v30;
+
+        if (Loki::LokiIsClient(__WorldContext)) {
+            return;
+        } else {
+            v4 = this.GetOwner();
+            if (v4 != nullptr) {
+                v6 = cast<ALokiPlayerState@>(v4);
+            } else {
+                v6 = nullptr;
+            }
+            v8 = v6;
+            if (v8 != nullptr) {
+                v8.OnDisconnected.AddUFunction(this, n"OnPlayerDisconnected");
+            }
+            v14 = Loki::GetLokiGameState(__WorldContext);
+            if (v14 != nullptr) {
+                v15 = v14.GetCurrentPhase();
+                v9 = int(v15);
+                if (v9 == 7) {
+                    v15 = ERoundPhase::EGP_Combat;
+                    this.OnRoundPhaseChanged(v15);
+                } else {
+                    v14.OnRoundPhaseChanged.AddUFunction(this, n"OnRoundPhaseChanged");
+                }
+            }
+            v20 = Loki::GetLokiGameMode(__WorldContext);
+            v22 = ULokiRespawnComponent::StaticClass();
+            v24 = TSubclassOf<UActorComponent@>(v22);
+            v26 = v20.GetComponentByClass(v24);
+            if (v26 != nullptr) {
+                v28 = cast<ULokiRespawnComponent@>(v26);
+            } else {
+                v28 = nullptr;
+            }
+            v30 = v28;
+            if (v30 != nullptr) {
+                v1 = v30.HasCreatedPlayerStarts;
+                if (v1) {
+                    this.OnPlayerStartsCreated();
+                } else {
+                    v30.OnPlayerStartsCreated.AddUFunction(this, n"OnPlayerStartsCreated");
+                }
+            }
+            this.CheckSetInitialRespawn();
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnPlayerStartsCreated()   // traits=0x20
+    {
+        this.CheckSetInitialRespawn();
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnRoundPhaseChanged(const ERoundPhase NewPhase)   // traits=0x20
+    {
+        int v1;
+        auto v3;
+        ALokiGameState v8;
+
+        v1 = int(NewPhase);
+        if (v1 == ERoundPhase::EGP_Combat) {
+            v3 = true;
+            this.IsCombatPhase = v3;
+            this.CheckSetInitialRespawn();
+            v8 = Loki::GetLokiGameState(__WorldContext);
+            v8.OnRoundPhaseChanged.Unbind(this, n"OnRoundPhaseChanged");
+        }
+        return;
+    }
+
+    void CheckSetInitialRespawn()   // traits=0x20
+    {
+        auto v1;
+        ALokiGameMode v6;
+        UClass v8;
+        TSubclassOf<UActorComponent@> v10;
+        UActorComponent v12;
+        ULokiRespawnComponent v14;
+        ULokiRespawnComponent v16;
+        auto v17;
+        float64 v20;
+
+        v1 = Loki::LokiIsServer(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v1 = this.IsCombatPhase;
+            if (v1) {
+                v6 = Loki::GetLokiGameMode(__WorldContext);
+                v8 = ULokiRespawnComponent::StaticClass();
+                v10 = TSubclassOf<UActorComponent@>(v8);
+                v12 = v6.GetComponentByClass(v10);
+                if (v12 != nullptr) {
+                    v14 = cast<ULokiRespawnComponent@>(v12);
+                } else {
+                    v14 = nullptr;
+                }
+                v16 = v14;
+                if (v16 == nullptr) {
+                    v1 = 0;
+                } else {
+                    v17 = v16.HasCreatedPlayerStarts;
+                    v1 = v17;
+                }
+                if (!v1) {
+                    v1 = 0;
+                } else {
+                    v17 = this.ShouldScheduleRespawn();
+                    v1 = v17;
+                }
+                if (v1) {
+                    v20 = this.InitialSpawnDelay;
+                    this.SetRespawnTime(v20);
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnPlayerDisconnected()   // traits=0x20
+    {
+        AActor v2;
+        ALokiPlayerState v4;
+        ALokiPlayerState v6;
+        auto v7;
+        ALokiCharacter v12;
+        auto v13;
+        auto v14;
+        int v15;
+        auto v17;
+
+        v2 = this.GetOwner();
+        if (v2 != nullptr) {
+            v4 = cast<ALokiPlayerState@>(v2);
+        } else {
+            v4 = nullptr;
+        }
+        v6 = v4;
+        if (v6 != nullptr) {
+            v12 = v6.GetLokiCharacter();
+            v7 = v6.bDisconnected;
+            v7 = !v7;
+            if (!v7) {
+                v17 = 0;
+            } else {
+                if (v12 == nullptr) {
+                    v13 = true;
+                } else {
+                    v14 = v12.GetLivingState();
+                    v15 = int(v14);
+                    v17 = v15 != 1;
+                    v13 = v17;
+                }
+                v17 = v13;
+            }
+            if (v17) {
+                this.ScheduleRespawn();
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v2;
+        auto v4;
+        auto v5;
+        auto v6;
+
+        v2 = this.LocalRespawnTime;
+        v4 = 0;
+        if (v2 > v4) {
+            v2 = this.LocalRespawnTime;
+            v4 = v2 - DeltaSeconds;
+            this.LocalRespawnTime = v4;
+            if (!Loki::LokiIsServer(__WorldContext)) {
+                v5 = 0;
+            } else {
+                v4 = this.LocalRespawnTime;
+                v2 = 0;
+                v6 = v4 <= v2;
+                v5 = v6;
+            }
+            if (v5) {
+                this.Respawn();
+                v4 = 0;
+                this.RespawnTime = v4;
+                v2 = 0;
+                this.LocalRespawnTime = v2;
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool ShouldScheduleRespawn()   // traits=0x20
+    {
+        auto v1;
+        ALokiGameState v6;
+        auto v7;
+        int v8;
+        auto v10;
+        AActor v12;
+        ALokiPlayerState v14;
+        ALokiPlayerState v16;
+        ALokiCharacter v20;
+        auto v21;
+
+        v1 = this.bOnlyScheduleRespawnsDuringCombatPhase;
+        if (v1) {
+            v6 = Loki::GetLokiGameState(__WorldContext);
+            if (!IsValid(v6)) {
+                v1 = 0;
+            } else {
+                v7 = v6.GetCurrentPhase();
+                v8 = int(v7);
+                v10 = v8 != 7;
+                v1 = v10;
+            }
+            if (v1) {
+                v10 = false;
+                return v10;
+            }
+        }
+        v12 = this.GetOwner();
+        if (v12 != nullptr) {
+            v14 = cast<ALokiPlayerState@>(v12);
+        } else {
+            v14 = nullptr;
+        }
+        v16 = v14;
+        if (IsValid(v16)) {
+            v20 = v16.GetLokiCharacter();
+            v10 = IsValid(v20);
+            v10 = !v10;
+            if (v10) {
+                v1 = true;
+                return v1;
+            }
+            v10 = this.bStartTimerOnlyOnKill;
+            v10 = !v10;
+            if (v10) {
+                v10 = true;
+            } else {
+                v21 = v20.GetLivingState();
+                v8 = int(v21);
+                v1 = v8 == 0;
+                v10 = v1;
+            }
+            if (v10) {
+                v1 = true;
+                return v1;
+            }
+        }
+        v10 = false;
+        return v10;
+    }
+
+    float64 GetSpawnDelay()   // traits=0x20
+    {
+        float64 v2;
+
+        v2 = 0;
+        __Evt_PushArgumentRef__float(v2);
+        __Evt_Execute(this, n"GetSpawnDelay");
+        return v2;
+    }
+
+    UFUNCTION(UnrealName=GetSpawnDelay, BlueprintEvent, CanOverrideEvent)
+    float64 GetSpawnDelay_Implementation()   // traits=0x20
+    {
+        auto v2;
+
+        v2 = this.SpawnDelay;
+        return v2;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void ScheduleRespawn()   // traits=0x20
+    {
+        AActor v2;
+        ALokiPlayerState v4;
+        ALokiPlayerState v6;
+        float64 v10;
+
+        v2 = this.GetOwner();
+        if (v2 != nullptr) {
+            v4 = cast<ALokiPlayerState@>(v2);
+        } else {
+            v4 = nullptr;
+        }
+        v6 = v4;
+        if (this.ShouldScheduleRespawn()) {
+            v10 = this.GetSpawnDelay();
+            this.SetRespawnTime(v10);
+        }
+        return;
+    }
+
+    void SetRespawnTime(const float64 Time)   // traits=0x20
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            this.RespawnTime = Time;
+            this.LocalRespawnTime = Time;
+        }
+        this.OnRespawnTimeUpdated.Broadcast();
+        return;
+    }
+
+    bool IsRespawnTimeSet()   // traits=0x20
+    {
+        auto v2;
+        auto v4;
+        auto v5;
+
+        v2 = this.RespawnTime;
+        v4 = 0;
+        v5 = v2 > v4;
+        return v5;
+    }
+
+    void Respawn()   // traits=0x20
+    {
+        auto v2;
+        AActor v4;
+        ALokiPlayerState v6;
+        ALokiPlayerState v8;
+        auto v9;
+        auto v10;
+        ALokiGameMode v14;
+        UClass v16;
+        TSubclassOf<UActorComponent@> v18;
+        UActorComponent v20;
+        ULokiRespawnComponent v22;
+        ULokiRespawnComponent v24;
+
+        v2 = 0;
+        this.RespawnTime = v2;
+        v4 = this.GetOwner();
+        if (v4 != nullptr) {
+            v6 = cast<ALokiPlayerState@>(v4);
+        } else {
+            v6 = nullptr;
+        }
+        v8 = v6;
+        if (v8 == nullptr) {
+            v9 = 0;
+        } else {
+            v10 = v8.bDisconnected;
+            v9 = v10;
+        }
+        if (v9) {
+            return;
+        } else {
+            v14 = Loki::GetLokiGameMode(__WorldContext);
+            v16 = ULokiRespawnComponent::StaticClass();
+            v18 = TSubclassOf<UActorComponent@>(v16);
+            v20 = v14.GetComponentByClass(v18);
+            if (v20 != nullptr) {
+                v22 = cast<ULokiRespawnComponent@>(v20);
+            } else {
+                v22 = nullptr;
+            }
+            v24 = v22;
+            if (v24 != nullptr) {
+                v4 = this.GetOwner();
+                if (v4 != nullptr) {
+                    v6 = cast<ALokiPlayerState@>(v4);
+                } else {
+                    v6 = nullptr;
+                }
+                v24.Respawn(v6);
+            }
+        }
+        return;
+    }
+
+    void AuthRequestRespawn()   // traits=0x20
+    {
+        __Evt_Execute(this, n"AuthRequestRespawn");
+        return;
+    }
+
+    UFUNCTION(UnrealName=AuthRequestRespawn, BlueprintCallable, BlueprintEvent, NetServer)
+    void AuthRequestRespawn_Implementation()   // traits=0x20
+    {
+        this.Respawn();
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = true;
+        this.SetbReplicates(v1);
+        v1 = true;
+        this.SetComponentTickEnabled(v1);
+        return;
+    }
+
+    void ~ULokiPlayerRespawnComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

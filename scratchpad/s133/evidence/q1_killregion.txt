@@ -1,0 +1,44 @@
+====================================================================================================
+Q1  KILL-REGION CENSUS  (unit: distinct crashpad reports, deduped by report GUID)
+====================================================================================================
+corpus: 124 distinct reports
+FK-31 family {0xC0000005, ExceptionInformation[0]==8, addr&0xFFF==1}: 108 reports
+
+distinct faulting addresses in family (unit: reports):
+   0x7FFD3B400001      99
+   0x7FFB57400001      5
+   0x7FFA42600001      4
+
+--- per-address region shape (all reports agree unless noted) ---
+
+  0x7FFD3B400001   n=99  distinct shapes=1
+     n=99  region: COMMIT/IMAGE prot=READONLY aprot=EXECUTE_WRITECOPY size=0x7000
+           alloc : base=0x7FFD3B400000  regions=15  span=0x4066000  exec_regions=4  in_modlist=0
+           AllocationBase == addr&~0xFFF ? YES
+
+  0x7FFA42600001   n=4  distinct shapes=1
+     n=4   region: COMMIT/IMAGE prot=READONLY aprot=EXECUTE_WRITECOPY size=0x7000
+           alloc : base=0x7FFA42600000  regions=15  span=0x4066000  exec_regions=4  in_modlist=0
+           AllocationBase == addr&~0xFFF ? YES
+
+  0x7FFB57400001   n=5  distinct shapes=1
+     n=5   region: COMMIT/IMAGE prot=READONLY aprot=EXECUTE_WRITECOPY size=0x7000
+           alloc : base=0x7FFB57400000  regions=15  span=0x4066000  exec_regions=4  in_modlist=0
+           AllocationBase == addr&~0xFFF ? YES
+
+====================================================================================================
+POSITIVE CONTROL: run the identical region+modlist query against ntdll.dll's base
+  (a module that IS in the loader list).  Expect type=IMAGE, in_modlist=1.
+====================================================================================================
+control PASS=108  FAIL=0   (unit: reports)
+   n=108 ntdll region: type=IMAGE state=COMMIT prot=READONLY in_modlist=1 span=0x10000 regions=2
+
+--- 'hidden from the module list' check across the family ---
+   killalloc_in_modlist counts: {'0': 108}
+   runtime.dll present in ModuleList, whole corpus: {'0': 124}
+
+--- corpus-wide: every MEM_IMAGE AllocationBase whose span == 0x4066000 ---
+   base=0xFF760000       in_modlist=0 regions=10   seen in 123 reports
+   base=0x7FFD3B400000   in_modlist=0 regions=15   seen in 113 reports
+   base=0x7FFA42600000   in_modlist=0 regions=15   seen in 6 reports
+   base=0x7FFB57400000   in_modlist=0 regions=15   seen in 5 reports

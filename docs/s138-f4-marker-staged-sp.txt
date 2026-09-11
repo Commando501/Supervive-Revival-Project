@@ -1,0 +1,60 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[SP] spawn+possess mode (inject into the RUNNING tutorial)
+[SP] gm=0x24D01A06E00 pc=0x24D002E2770 startSpot=0x24DFFB26050 heroClass=0x24D223C89E0
+[COS] resolve: getController=0x7FF75E6BC7A0 getAssetID=0x7FF75E6BC770 refresh=0x7FF75E6BE420 defLoadout=0x7FF75E6BC850
+[GS] gsCDO=0x24C4CB7A140 beginThunk=0x7FF75CB1EEC0 finishThunk=0x7FF75CB22CC0 xfThunk=0x0
+[GS] B[world@0 class@8 xform@10 coll@70 owner@78 ret@88] F[actor@0 xform@10 ret@78] xfRet@0
+[SP] spawnThunk=0x7FF75CB2E070(NP@0x0 SS@0x8 ret@0x10) possessThunk=0x7FF75CA22740(InPawn@0x0)
+[PIM] PI hook mutex acquired (clean)
+[GS] camera viewpoint=(0,0,19240) -> spawn there + sweep down (streamed ground)
+[GS] Scale3D@0x40 was (0.000,0.000,0.000) -> now (1.0,1.0,1.0) *** ZERO-SCALE BUG FIXED ***
+[GS] xform T=(0.0,0.0,19440.0)
+[GS] deferred=0x24DA09E5580 cls=BP_HERO_Ronin_C
+[GS] spawned actor=0x24DA09E5580 cls=BP_HERO_Ronin_C
+[MESH] Mesh@0x450 comp=0x0(-) SkeletalMesh@0xFFFFFFFF=0x0(-)
+[GS] swept: bBlockingHit=1 hero NOW at (0,0,11440) [spawned Z=19440, sweep target Z=11440]
+[GS] possess called
+[COS] controller=0x0(-) CosmeticsAssetID Type=None Name=None (raw 0,0)
+[COS] SET CosmeticsAssetID@0x1FF0 = HeroCosmeticsBundle:RoninDefault
+[COS] OnRep_CosmeticsAssetID called
+[COS] RefreshCosmetics called
+[COS] after inject: controller=0x0 base Mesh=0x0
+[CAM] SetViewTargetWithBlend(hero) called
+[LIFT] gravity OFF (CMC=0x24DECC61C80 GravityScale@0x1A0)
+[LIFT] hero lifted (0,0,11440) -> Z+1800=13240
+[GAS] ===== S101: driving LokiPlayerState's own ability-system wiring chain =====
+[GAS] PlayerState @0x3C0 = 0x24D1A024450 (BP_LokiPlayerState_C)
+[GAS] BEFORE AbilitySystemComponentStorage  @0xF00 = 0x0 (NULL)
+[GAS] BEFORE AttributeSetStorage            @0xF08 = 0x0 (NULL)
+[GAS] BEFORE AttributeSetHealthStorage      @0xF10 = 0x0 (NULL)
+[GAS] BEFORE IsAbilitySystemInitialized -> parm@0x0=0 res=0
+[GAS] HeroAffiliatedObject@0x4F8 = 0x0
+[GAS] carrier class = 0x24C521A7680
+[XF] KXFORMFIX=1  Scale3D@0x40  copy=0x60 bytes  (B.xform@0x10 coll@0x70)  scale=(1.00,1.00,1.00)
+[QST] LokiPlayerState_HeroAffiliated FinishSpawning -> res=0x24D8AF33740 par=0x0 | proxy(root)=null
+[GAS] carrier=0x24D8AF33740 AbilitySystemComponent@0x3E8 = 0x24DA0193400 (constructor built it)
+[GAS] K2_InitStats(LokiAttributeSet, null) ok
+[GAS] carrier.AttributeSet@0x3F0 = 0x24DAC4E64E0
+[GAS] K2_InitStats(LokiAttributeSetHealth, null) ok
+[GAS] carrier.AttributeSetHealth@0x3F8 = 0x24D8DE06820
+[GAS] *** PlayerState.HeroAffiliatedObject@0x4F8 = 0x24D8AF33740 (carrier installed) ***
+[GAS] BEFORE ASC 0x24DA0193400 Owner@0x408=0x24D8AF33740(LokiPlayerState_HeroAffiliated) Avatar@0x410=0x0(NULL)
+[GAS] *** cache: hero.AbilitySystemComponentStorage@0xF00 (expect 0xF00)  0 -> 24DA0193400  OK ***
+[GAS] step1 heroClass(BP_HERO_Ronin_C)=0x24D223C89E0
+[GAS] step1 ServerSetHeroClass(NewClass@0x0) ok
+[GAS] step1 HeroClass@0x620 was NULL -> poked
+[GAS] PlayerState Role@0x160=3 RemoteRole@0x72=1  (3=ROLE_Authority)
+[GAS] hero Role@0x160=3
+[GAS] GetHeroAsset -> 0x24C15947F40 (BP_HeroAsset_Ronin_C)
+[FOW] GAS step2: OnRep_HeroClass (native) ok
+[FOW] GAS step3: TryUpdateAbilitySystem (native) ok
+[GAS] AFTER  AbilitySystemComponentStorage  @0xF00 = 0x24DA0193400 (LokiAbilitySystemComponent)
+[GAS] AFTER  AttributeSetStorage            @0xF08 = 0x0 (NULL)
+[GAS] AFTER  AttributeSetHealthStorage      @0xF10 = 0x0 (NULL)
+[GAS] AFTER  ASC 0x24DA0193400 Owner@0x408=0x24D8AF33740(LokiPlayerState_HeroAffiliated) Avatar@0x410=0x0(NULL)
+[GAS] AFTER  IsAbilitySystemInitialized -> parm@0x0=0 res=0
+[GAS] GetLokiAbilitySystem_BP -> 0x24DA0193400 (LokiAbilitySystemComponent)
+[GAS] ===== RESULT: initialised 0 -> 0  *** STILL NOT INITIALISED *** =====
+[PIM] PI hook mutex released
+[SP] done step=4 spawnedPawn=0x24DA09E5580 cls=BP_HERO_Ronin_C (called=1 hitsGT=1)

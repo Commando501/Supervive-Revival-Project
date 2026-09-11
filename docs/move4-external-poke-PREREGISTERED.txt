@@ -1,0 +1,335 @@
+MOVE 4 EXTERNAL-POKE FOLLOW-UP — PRE-REGISTERED PREDICTIONS
+==============================================================
+Written BEFORE the poke or the re-inject. Do NOT edit after; append a
+post-flight results section instead.
+
+Timestamp: 2026-09-02 (session started 2026-09-01)
+Live process: PID 41816, uptime ~10.9h, from Move 4 attempt 3
+Bind: verified live via move4_bind_verify.py (PASS, Num=2 SpawnedAttributes)
+S148 previous result: PREFLIGHT_REFUSED issues=0x200 (MAX_HEALTH_BELOW_SEED)
+
+Target
+------
+Health target set base: 0x15F109D5500 (LokiAttributeSetHealth)
+  Health @+0x70    FGameplayAttributeData -> BaseValue@+0x78, CurrentValue@+0x7C
+  MaxHealth @+0x80 FGameplayAttributeData -> BaseValue@+0x88, CurrentValue@+0x8C
+
+Poke
+----
+Four aligned 4-byte writes via WriteProcessMemory:
+  [0x15F109D5578] = 0x447A0000  (Health.BaseValue     = 1000.0f)
+  [0x15F109D557C] = 0x447A0000  (Health.CurrentValue  = 1000.0f)
+  [0x15F109D5588] = 0x447A0000  (MaxHealth.BaseValue  = 1000.0f)
+  [0x15F109D558C] = 0x447A0000  (MaxHealth.CurrentValue = 1000.0f)
+
+Verifier gate
+-------------
+After the writes, re-run scratchpad/move4_health_read.py; ALL FOUR values must
+read exactly 1000.0 (bits = 0x447A0000). If ANY reads back with different bits,
+ABORT (address is stale / GC / access-denied). No S148 injection.
+
+S148 re-inject
+--------------
+Same DLL used in the r3 flight (same sha256 pin):
+  C7204964B896E376B3E0FBFBBFCD7ACC7146FFBE9D0BF320ADDDE5DF0D78421E
+
+Pre-registered predictions (each is a discriminating outcome; MUST commit to
+one BEFORE the flight, not after)
+------------------------------------------------------------------------------
+
+CASE H (headline) -- HEALTH_APPLIED
+  Marker line matching '^\[S148\] .*RESULT=HEALTH_APPLIED'.
+  After: move4_health_read shows Health.CurrentValue == 0x443B8000 (=750.0)
+         (matches S148's expectedCurrent=443B8000 in the r3 marker; -250 delta
+         from 1000).
+  ==> WALL E Phase 1a PROVED. First live AdjustHealth receipt on the force-open
+      route. The mechanism is now known end to end (bind + attribute-set
+      registration are live; seeding attribute VALUES is the missing native
+      step; a data poke substitutes for it).
+
+CASE R2 -- preflight still refuses, but on a DIFFERENT bit
+  Marker line matching 'RESULT=PREFLIGHT_REFUSED issues=0x<mask>' with
+  mask & 0x200 == 0.
+  ==> The MAX_HEALTH_BELOW_SEED path is unblocked; a novel precondition still
+      fires. Read the mask against s148_damage_calibration.h:388-410. Common
+      possibilities: bit 5 HEALTH_CLASS, bit 7 HEALTH_NONFINITE, bit 10
+      HEALTH_OUT_OF_RANGE, bit 21 STRUCT_PAYLOAD.
+
+CASE R2a -- MAX_HEALTH_BELOW_SEED still fires (mask & 0x200 != 0)
+  Poke was rejected by an unseen mechanism -- readback said OK but S148 saw the
+  old values. Candidates: struct-payload copy-on-read (unlikely, values are
+  raw floats not pointers); a second, canonical AttributeSet the shim reads
+  from instead of our poked set; the r3 marker's set pointer moved.
+  ==> Diagnose from the new marker's active-owner line (does it name the same
+      ASC 0x15FA0D19A00 and the same set 0x15F109D5500?).
+
+CASE I -- LATER_IDENTITY_CHANGED
+  Marker line matching 'RESULT=LATER_IDENTITY_CHANGED'.
+  ==> Hero was re-possessed / world change between the poke and S148's later
+      re-read. Not evidence about seeding; a retry after re-verifying the
+      addresses would settle it.
+
+CASE F -- FK-32 (protector kill)
+  Process dies mid-sequence, no RESULT, no crashpad (or a 0x0000DEAD exit).
+  ==> The 5-injection depth hazard finally fires (this would be injection #6
+      into the same process). Preserve all state. Interpretation: 10+h of
+      injections is unprecedented; the outcome is expected under CLAUDE.md's
+      known FK-32 baseline for this depth.
+
+CASE E -- inject.exe failure
+  inject.exe returns non-zero. ==> No S148 fired. Preserve marker; game state
+  unchanged relative to the poke.
+
+Failure-of-the-instrument controls
+----------------------------------
+(a) The verifier gate (all 4 == 1000.0) is what protects against "we thought
+    the poke landed but it didn't". If it fails, do NOT inject S148 -- diagnose.
+
+(b) The marker is truncated by every injection (FK-25). Before injecting S148,
+    copy the current marker to docs/move4-poke-<UTC>/marker-BEFORE-s148.txt so
+    we don't lose the pre-registration receipt of Health/MaxHealth values.
+
+(c) Do NOT re-derive success from S148's exit code -- ONLY the marker's own
+    RESULT= line counts. (FK-13 rule: "the call returned ok is never a success
+    criterion; only the verb's own output is".)
+
+Why 1000.0 exactly
+------------------
+The S148 seed is 0x447A0000 = 1000.0. Setting MaxHealth = seed satisfies
+S148PositiveAtLeastSeed (which checks >= seed). Setting Health = seed puts it
+inside [0, MaxHealth]. Using a larger value (e.g. 5000.0) would give more
+range headroom but no measured benefit; keeping to the seed minimizes the
+"could this value trip something else" surface.
+
+--- end of pre-registration ---
+
+
+==============================================================
+POST-FLIGHT RESULTS (2026-09-02, appended AFTER the flight)
+==============================================================
+
+Outcome
+-------
+NEW CASE not in the pre-registered set. Call it CASE X (ADJUST_UNRESOLVED).
+
+The poke landed cleanly: 4/4 writes readback-verified 0.0->1000.0. S148 injected
+successfully (DllMain returned 1). S148's preflight then PASSED: the marker's
+next flight of receipts reads `issues=0x0` for the first time in this
+project's history on the force-open route.
+
+The pipeline then hit a novel downstream blocker at the AdjustHealth resolve
+step:
+
+  [S148] AdjustHealth native resolve ufunc=0x15E48626E40 flags=0x04020401
+         thunk=0x7FF637A94270 class=0x15E389FB000 functionClassExact=yes
+         owner=0x15E4D1E0100 ownerExact=yes thunkExact=NO
+         child=0x15E8BD05C00 declaredChild=0x15E8BD05C00 PropertiesSize=4
+         parmCount=1 chainComplete=yes HealthDeltaProp=0x15E8BD05C00 off=0x0
+         size=4 arrayDim=1 propFlags=0x0018001040000280 resolved=NO
+  [S148] ADJUST_UNRESOLVED RESULT=ADJUST_UNRESOLVED; exact native wrapper and
+         one FloatProperty input named HealthDelta were not proven, no Health
+         write, callCount=0
+
+Post-flight readback: Health/MaxHealth still 1000.0/1000.0 on all four fields.
+No Health write attempted; the poke persisted through the entire S148 cycle.
+
+Interpretation
+--------------
+The value-seeding wall is DOWN. The refusal is now on a DIFFERENT protective
+gate inside S148: it demands the reflected AdjustHealth thunk match a specific
+byte signature ("thunkExact") before dispatching. All other reflection checks
+passed:
+  - class match          : yes  (0x15E389FB000)
+  - owner match          : yes  (0x15E4D1E0100)
+  - parameter chain      : yes  (single FloatProperty HealthDelta)
+  - property offset/size : ok   (off=0x0 size=4)
+  - HealthDeltaProp      : found (0x15E8BD05C00 == declaredChild)
+
+`thunkExact=NO` alone means the frozen S148 DLL's expected thunk-code
+signature doesn't match this build's AdjustHealth thunk bytes. This is
+protective, not fatal.
+
+Match against pre-registered cases
+----------------------------------
+Best fit: CASE R2 (preflight refuses on a DIFFERENT bit) DID NOT APPLY --
+preflight itself PASSED. The refusal moved to a NEW stage the pre-registration
+didn't enumerate.
+
+Neither did CASE R2a (poke rejected), CASE H (Health applied), CASE I
+(identity change), CASE F (protector kill), or CASE E (inject failure).
+
+Predictions I want to check:
+  - The pre-registration listed CASE H's after-condition as
+    Health.CurrentValue == 0x443B8000 (=750.0). Post-flight reads
+    1000.0/1000.0 (bits 0x447A0000). PREDICTION MATCHED for the refusal
+    branches (no Health write on any non-H case).
+  - The pre-registration said "If ANY readback with different bits, ABORT
+    (address is stale / GC / access-denied)". Poke readback was 4/4 exact
+    match; ABORT correctly did not fire.
+
+Ground gained
+-------------
+  1. External Health/MaxHealth poke is CONFIRMED WORKING as a data-poke
+     substitute for the missing native seeder. Persists across S148's full
+     lifecycle.
+  2. S148 preflight (22 bits) reached issues=0x0 for the first time on the
+     force-open route -- everything the preflight tests is now valid.
+  3. First-known case of `thunkExact=NO` on this build: the frozen S148 DLL
+     was built against a different build than what's running now, or the
+     `AdjustHealth` reflected wrapper's thunk bytes differ from what the shim
+     hard-coded.
+
+Next-arm options (offline / no launch needed to formulate):
+  (a) Read the shim source to see what BYTES it expects at `thunkExact` and
+      compare to this build's `AdjustHealth` thunk (RVA derivable from
+      ufunc=0x15E48626E40, thunk=0x7FF637A94270).
+  (b) Build a new S148 variant with the check relaxed / adapted to this build.
+  (c) Skip AdjustHealth and directly poke Health.CurrentValue = 750.0
+      externally as the equivalent of "self-damage" (loses the receipt that
+      the game's own AdjustHealth path works, but proves the outcome).
+
+--- end of post-flight results ---
+
+
+================================================================
+FOLLOW-UP OFFLINE RE: thunkExact bytes vs live (2026-09-02)
+================================================================
+
+Shim expectation
+----------------
+tools/sigbypass-mod/tutorial_launch.cpp:21224 (codex worktree):
+    bool thunkExact = adjustThunk == g_modBase + 0x5516610;
+
+The comment at :17261 documents this address as:
+    //   AdjustHealth(float HealthDelta)  ULokiAbilitySystemComponent  [M] REAL 0x5516610
+
+Live measurement (PID 41816, module base 0x7FF632800000)
+--------------------------------------------------------
+Reflected UFunction 'AdjustHealth' on class 0x15E4D1E0100 has:
+  Func @+0xE0 = 0x7FF637A94270 = RVA 0x5294270
+
+RVA 0x5294270 is DECRYPTED (COMMIT RX region 0xA000) — the exec-wrapper.
+Prologue: 48 89 5C 24 08 57 48 83 EC 20 = classic MSVC / UHT execXxx thunk.
+
+RVA 0x5516610 is UNDECRYPTED (COMMIT NOACCESS region 0x1000) — the impl.
+0 bytes readable because nothing has ever executed there in this process.
+
+Mechanism (proven by disassembling the exec wrapper)
+----------------------------------------------------
+The exec wrapper at 0x5294270 makes 4 calls, the LAST of which is:
+    0x52942DF: call 0x5516610
+
+That is EXACTLY the shim's expected address. So:
+  - The shim's `thunkExact` check hard-codes the IMPL RVA (0x5516610).
+  - The reflected UFunction.Func points to the EXEC WRAPPER (0x5294270).
+  - The wrapper unpacks HealthDelta from FFrame.Locals, then calls the impl.
+  - By UE's design, a reflected native function with parameters ALWAYS gets
+    a UHT-generated exec wrapper; Func can never equal the impl address.
+
+Consequence
+-----------
+`thunkExact` is a check that CANNOT PASS on this build (and probably on any
+build with the same UE version). The comment "[M] REAL 0x5516610" appears to
+have documented the impl address, but the shim's runtime check uses that
+constant to compare against a value (Func) that has a different semantic.
+
+Two fix paths
+-------------
+(A) REBUILD the S148 DLL with the check corrected to either:
+    - Compare Func to the exec-wrapper RVA (0x5294270), OR
+    - Read Func's own contents and find the tail `call <impl>` to derive the
+      impl address dynamically (portable across builds), OR
+    - Trust the reflection resolution and skip the byte-level check entirely.
+
+(B) BYPASS AdjustHealth: externally poke Health.CurrentValue = 0x443B8000
+    (750.0f) as a 4-byte write. Achieves the same end-state
+    (Health drops by 250 from the seed we already poked). Loses the receipt
+    "the game's own AdjustHealth function is callable" but proves the mover
+    end-to-end via pure data pokes.
+
+Path A requires shim source access; path B is one WriteProcessMemory in this
+same live session.
+
+--- end of follow-up ---
+
+
+================================================================
+FOLLOW-UP: AuthCheatSetHealth stripped-stub finding (2026-09-02)
+================================================================
+
+Question: is ULokiCharacter::AuthCheatSetHealth a real Health-writer or a
+FK-1-family stripped stub?
+
+Live disassembly at RVA 0x52FD620 (from PID 41816, module base 0x7FF632800000):
+
+  052FD620: mov    [rsp+8], rbx          ; classic MSVC prologue
+  052FD625: push   rdi                   ; ...
+  052FD626: sub    rsp, 0x20             ; ...
+  052FD62A: mov    rbx, rdx              ; rbx = FFrame*
+  052FD62D: mov    [rsp+0x38], 0         ; local NewHealth = 0
+  052FD635: mov    rdi, rcx              ; rdi = this (ULokiCharacter*)
+  052FD638: call   0x133EBE0             ; FFrame::Step wrapper
+  052FD63D: cmp    [rbx+0x20], 0
+  052FD642: mov    rcx, rbx
+  052FD645: je     52FD657
+  052FD647: mov    rdx, [rbx+0x18]
+  052FD64B: lea    r8, [rsp+0x38]
+  052FD650: call   0x1345FB0             ; FFrame::Step wrapper (unpack NewHealth)
+  052FD655: jmp    52FD673
+  052FD657: mov    r8, [rbx+0x88]
+  052FD65E: lea    rdx, [rsp+0x38]
+  052FD663: mov    rax, [r8+0x18]
+  052FD667: mov    [rbx+0x88], rax
+  052FD66E: call   0x1345FE0             ; FFrame::Step wrapper
+  052FD673: mov    rax, [rbx+0x20]
+  052FD677: xor    ecx, ecx
+  052FD679: movss  xmm1, [rsp+0x38]      ; xmm1 = NewHealth (the param)
+  052FD67F: test   rax, rax
+  052FD682: setne  cl
+  052FD685: add    rcx, rax
+  052FD688: mov    [rbx+0x20], rcx       ; advance FFrame cursor
+  052FD68C: mov    rcx, rdi              ; rcx = this
+  052FD68F: call   0xF7EC20              ; *** CALL void_ret STUB (FK-1 family) ***
+  052FD694: mov    rbx, [rsp+0x30]
+  052FD699: add    rsp, 0x20
+  052FD69D: pop    rdi
+  052FD69E: ret
+
+The impl called at 052FD68F is the well-known stripped-stub fold at RVA
+0xF7EC20 (bytes c2 00 00 = ret 0). This is IDENTICAL to FK-1's registered
+family — the reflected exec wrapper has a real UHT-generated prologue for
+FFrame param unpacking, but the actual impl is stripped.
+
+Interpretation
+--------------
+Calling AuthCheatSetHealth via the S55 primitive (which was the user-selected
+next experiment) would have:
+  - resolved fine (Func @+0xE0 = 0x52FD620, real MSVC prologue)
+  - unpacked the NewHealth float from FFrame correctly
+  - tail-called 0xF7EC20 (ret 0)
+  - returned with Health UNCHANGED
+
+Reading exactly like "the call succeeded and produced no effect".
+
+This is why we needed the disassembly BEFORE building a shim. The probe that
+graded `AuthCheatSetHealth` as "REAL (not a known fold)" earlier was CORRECT
+for the exec wrapper's first 8 bytes but MISSED the tail-call to the fold.
+The prologue-signature check cannot distinguish "real function" from "real
+exec wrapper around a stripped impl".
+
+FK-1 register — 5th recorded instance
+-------------------------------------
+| function                                    | Func RVA  | impl RVA |
+|---------------------------------------------|-----------|----------|
+| ALokiGameMode::SpawnPlayer                  | ...       | 0xF7EB50 |
+| ALokiPlayerState::AuthSetSpawnTeamLeader    | 0x5254180 | 0xF7EC20 |
+| ALokiTeamState_TeamOnly::SetDropLeader      | 0x2C2CE30 | 0xF7EC20 |
+| ALokiDropPlane::OverridePlaneLocations      | 0x53372A0 | 0xF7EC20 |
+| ULokiCharacter::AuthCheatSetHealth          | 0x52FD620 | 0xF7EC20 |  <-- NEW
+
+The naming convention (`AuthCheat*` prefix) matches FK-1's observed
+enrichment: "Auth* is enriched, not 'drop'". This finding corroborates it
+on a Cheat-family verb that has no drop-phase relationship — the strip
+pattern is about server authority, not subsystem.
+
+--- end of follow-up ---

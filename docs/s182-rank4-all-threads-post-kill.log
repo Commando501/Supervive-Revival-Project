@@ -1,0 +1,100 @@
+﻿[AT] pid=9672 threads=137 gameTid=33704
+[AT] --- top RIP sites (thread count) ---
+     59  ntdll.dll!NtWaitForSingleObject
+     25  ntdll.dll!NtWaitForMultipleObjects
+     18  ntdll.dll!NtWaitForAlertByThreadId
+     10  ntdll.dll!NtWaitForWorkViaWorkerFactory
+      9  ntdll.dll!NtDelayExecution
+      4  win32u.dll
+      3  ntdll.dll!NtRemoveIoCompletion
+      2  ntdll.dll!NtRemoveIoCompletionEx
+      1  0x7ffca1c4abed
+      1  0x7ffca27a0e68
+      1  0x7ffca28536c7
+      1  0x7ffca26b7efd
+      1  0x7ffca26d55c8
+      1  0x7ffca26c2897
+      1  0x7ffca45cb56a
+[AT] --- game thread ---
+    tid=33704 rip=ntdll.dll!NtDelayExecution+0x14 rsp=0x4ec29df2c8 dr7=0x405
+[AT] --- non-Wait threads (interesting non-idle sites) ---
+    tid= 33428 dr7=0x0000000000000005  0x7ffca1c4abed
+    tid= 36828 dr7=0x0000000000000005  0x7ffca27a0e68
+    tid= 23896 dr7=0x0000000000000405  0x7ffca28536c7
+    tid= 26688 dr7=0x0000000000000405  0x7ffca26b7efd
+    tid= 42440 dr7=0x0000000000000405  0x7ffca26d55c8
+    tid= 41232 dr7=0x0000000000000005  win32u.dll+0x1104
+    tid= 15520 dr7=0x0000000000000005  win32u.dll+0xa124
+    tid= 39468 dr7=0x0000000000000005  win32u.dll+0xa124
+    tid= 26720 dr7=0x0000000000000005  win32u.dll+0xa124
+    tid= 11780 dr7=0x0000000000000405  0x7ffca26c2897
+    tid= 37400 dr7=0x0000000000000405  0x7ffca45cb56a
+[AT] --- threads with DRs armed (dr7 != 0) ---
+    tid= 33704 dr7=0x0000000000000405  ntdll.dll!NtDelayExecution+0x14
+    tid= 33428 dr7=0x0000000000000005  0x7ffca1c4abed
+    tid= 36828 dr7=0x0000000000000005  0x7ffca27a0e68
+    tid= 23896 dr7=0x0000000000000405  0x7ffca28536c7
+    tid= 26688 dr7=0x0000000000000405  0x7ffca26b7efd
+    tid= 38388 dr7=0x0000000000000005  ntdll.dll!NtWaitForWorkViaWorkerFactory+0x14
+    tid= 42440 dr7=0x0000000000000405  0x7ffca26d55c8
+    tid= 41728 dr7=0x0000000000000405  ntdll.dll!NtWaitForMultipleObjects+0x14
+    tid= 16420 dr7=0x0000000000000005  ntdll.dll!NtWaitForWorkViaWorkerFactory+0x14
+    tid= 39184 dr7=0x0000000000000405  ntdll.dll!NtDelayExecution+0x14
+    tid= 45680 dr7=0x0000000000000005  ntdll.dll!NtWaitForAlertByThreadId+0x14
+    tid= 34604 dr7=0x0000000000000405  ntdll.dll!NtWaitForWorkViaWorkerFactory+0x14
+    tid= 42928 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 38724 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 32528 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 19732 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 20156 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 40452 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 39844 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 24860 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 16652 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 28656 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 24088 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 24980 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 40516 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 45512 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid=  5004 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 42868 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 23176 dr7=0x0000000000000405  ntdll.dll!NtDelayExecution+0x14
+    tid=  5924 dr7=0x0000000000000405  ntdll.dll!NtDelayExecution+0x14
+    tid= 41492 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 37552 dr7=0x0000000000000005  ntdll.dll!NtWaitForWorkViaWorkerFactory+0x14
+    tid= 44912 dr7=0x0000000000000405  ntdll.dll!NtDelayExecution+0x14
+    tid= 26148 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 15588 dr7=0x0000000000000005  ntdll.dll!NtWaitForAlertByThreadId+0x14
+    tid=  3568 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 32736 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 25516 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 19272 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 44816 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 21124 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 40384 dr7=0x0000000000000005  ntdll.dll!NtRemoveIoCompletion+0x14
+    tid= 43848 dr7=0x0000000000000005  ntdll.dll!NtWaitForAlertByThreadId+0x14
+    tid= 40432 dr7=0x0000000000000005  ntdll.dll!NtWaitForAlertByThreadId+0x14
+    tid= 21340 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 39704 dr7=0x0000000000000005  ntdll.dll!NtWaitForMultipleObjects+0x14
+    tid= 29512 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 25684 dr7=0x0000000000000005  ntdll.dll!NtWaitForAlertByThreadId+0x14
+    tid= 42580 dr7=0x0000000000000005  ntdll.dll!NtWaitForAlertByThreadId+0x14
+    tid= 41608 dr7=0x0000000000000005  ntdll.dll!NtWaitForAlertByThreadId+0x14
+    tid= 21824 dr7=0x0000000000000005  ntdll.dll!NtWaitForAlertByThreadId+0x14
+    tid= 44652 dr7=0x0000000000000005  ntdll.dll!NtWaitForMultipleObjects+0x14
+    tid= 18872 dr7=0x0000000000000005  ntdll.dll!NtWaitForMultipleObjects+0x14
+    tid= 44616 dr7=0x0000000000000005  ntdll.dll!NtWaitForMultipleObjects+0x14
+    tid= 26820 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 26228 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 40552 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid=  6420 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 41848 dr7=0x0000000000000405  ntdll.dll!NtDelayExecution+0x14
+    tid= 41712 dr7=0x0000000000000005  ntdll.dll!NtWaitForMultipleObjects+0x14
+    tid= 41232 dr7=0x0000000000000005  win32u.dll+0x1104
+    tid= 38720 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid=  7712 dr7=0x0000000000000405  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 42884 dr7=0x0000000000000005  ntdll.dll!NtWaitForMultipleObjects+0x14
+    tid=  4696 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 26896 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 24172 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14
+    tid= 42100 dr7=0x0000000000000005  ntdll.dll!NtWaitForSingleObject+0x14

@@ -1,0 +1,423 @@
+// ============================================================================
+//  MODULE   Minions.LokiNodePathingComponent
+//  SOURCE   Minions/LokiNodePathingComponent.as
+//  CONTENT  1 class(es), 22 function(s), 0 enum(s), 1 global(s), 3320 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiNodePathingComponent;
+
+ULokiNodePathingComponent@ ULokiNodePathingComponent()   // traits=0x20
+{
+    ULokiNodePathingComponent v2;
+
+    v2 = ULokiNodePathingComponent();
+    return v2;
+}
+
+UClass@ ULokiNodePathingComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiNodePathingComponent);
+    return v2;
+}
+
+ULokiNodePathingComponent@ ULokiNodePathingComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiNodePathingComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiNodePathingComponent, v2, typeid(ULokiNodePathingComponent@), WithName);
+    return v2;
+}
+
+ULokiNodePathingComponent@ ULokiNodePathingComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiNodePathingComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiNodePathingComponent, v2, typeid(ULokiNodePathingComponent@), WithName);
+    return v2;
+}
+
+ULokiNodePathingComponent@ ULokiNodePathingComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiNodePathingComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiNodePathingComponent, v2, typeid(ULokiNodePathingComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class ULokiNodePathingComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiNodePathingComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnInstance)
+    TArray<AActor@> PathNodeActors;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 RotationPrecision;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<AActor@> CurrNodeActorList;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    ALokiCharacter@ OwningCharacter;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    AAIController@ OwningAIController;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    AActor@ LastPathingActor;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    AActor@ RotateToActor;
+
+    ULokiNodePathingComponent()   // traits=0x21
+    {
+        auto v2;
+
+        this.PathNodeActors = TArray<AActor@>();
+        this.CurrNodeActorList = TArray<AActor@>();
+        v2 = 10.0;
+        this.RotationPrecision = v2;
+        return;
+    }
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        AActor v2;
+        ALokiCharacter v4;
+
+        v2 = this.GetOwner();
+        if (v2 != nullptr) {
+            v4 = cast<ALokiCharacter@>(v2);
+        } else {
+            v4 = nullptr;
+        }
+        this.OwningCharacter = v4;
+        if (Loki::LokiIsServer(__WorldContext)) {
+            this.InitializeAIController();
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        if (Loki::LokiIsServer(__WorldContext)) {
+            this.UpdateRotationToActor(DeltaSeconds);
+        }
+        return;
+    }
+
+    void InitializeAIController()   // traits=0x20
+    {
+        AController v2;
+        AAIController v4;
+
+        v2 = this.OwningCharacter.GetController();
+        if (v2 != nullptr) {
+            v4 = cast<AAIController@>(v2);
+        } else {
+            v4 = nullptr;
+        }
+        this.OwningAIController = v4;
+        v4 = this.OwningAIController;
+        if (v4 != nullptr) {
+            this.OnAIControllerInitialized();
+            return;
+        } else {
+            this.OwningCharacter.ReceiveControllerChangedDelegate.AddUFunction(this, n"OnControllerChanged");
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void SetPathNodes(TArray<AActor@>&inout PathActors)   // traits=0x20
+    {
+        this.PathNodeActors = PathActors;
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnControllerChanged(APawn@ Pawn, AController@ OldController, AController@ NewController)   // traits=0x20
+    {
+        AAIController v2;
+
+        if (NewController != nullptr) {
+            v2 = cast<AAIController@>(NewController);
+        } else {
+            v2 = nullptr;
+        }
+        this.OwningAIController = v2;
+        v2 = this.OwningAIController;
+        if (v2 != nullptr) {
+            this.OwningCharacter.ReceiveControllerChangedDelegate.UnbindObject(this);
+            this.OnAIControllerInitialized();
+        }
+        return;
+    }
+
+    void OnAIControllerInitialized()   // traits=0x20
+    {
+        FTimerHandle v4;
+
+        this.OwningAIController.ReceiveMoveCompleted.AddUFunction(this, n"OnMoveCompleted");
+        v4 = System::SetTimerForNextTick(this, "StartMoving");
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void StartMoving()   // traits=0x20
+    {
+        AActor v2;
+        bool v3;
+
+        v2 = this.FindClosestPathingActor();
+        this.LastPathingActor = v2;
+        v2 = this.LastPathingActor;
+        if (v2 != nullptr) {
+            this.StartRotatingToActor(this.LastPathingActor);
+        }
+        v3 = false;
+        this.OwningCharacter.SetIdle(v3);
+        return;
+    }
+
+    void BuildNodeActorList()   // traits=0x20
+    {
+        auto v1;
+        TArray<AActor@> v6;
+        AActor v8;
+        AActor v12;
+        auto v13;
+
+        this.CurrNodeActorList.Empty(0);
+        v6 = TArray<AActor@>();
+        v8 = this.LastPathingActor;
+        if (v8 != nullptr) {
+            v6.Add(this.LastPathingActor);
+            v12 = this.FindRandomPathingActor(v6);
+            this.CurrNodeActorList.Add(v12);
+            v6 = this.CurrNodeActorList;
+        }
+        v1 = this.CurrNodeActorList.Num();
+        v13 = this.PathNodeActors.Num();
+        while (v1 < v13) {
+            v12 = this.FindRandomPathingActor(v6);
+            this.CurrNodeActorList.Add(v12);
+            v6.Add(v12);
+            continue;
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnMoveCompleted(const FAIRequestID& RequestID, const EPathFollowingResult MovementResult)   // traits=0x20
+    {
+        auto v1;
+
+        v1 = this.CurrNodeActorList.Num();
+        if (v1 == 0) {
+            this.BuildNodeActorList();
+        }
+        v1 = this.CurrNodeActorList.Num();
+        if (v1 > 0) {
+            this.LastPathingActor = this.CurrNodeActorList[0];
+            this.CurrNodeActorList.RemoveAt(0);
+            this.StartRotatingToActor(this.LastPathingActor);
+        }
+        return;
+    }
+
+    void StartRotatingToActor(AActor@ RotateActor)   // traits=0x20
+    {
+        AActor v2;
+
+        v2 = RotateActor;
+        if (v2 != nullptr) {
+            this.RotateToActor = RotateActor;
+            this.OwningAIController.SetFocus(this.RotateToActor)  /* UFunction K2_SetFocus */;
+        }
+        return;
+    }
+
+    void UpdateRotationToActor(const float64 DeltaSeconds)   // traits=0x20
+    {
+        AActor v2;
+        auto v3;
+        FVector v10;
+        FVector v16;
+        FVector v28;
+        FVector v34;
+        auto v36;
+        auto v38;
+        auto v39;
+        float64 v42;
+        float64 v44;
+
+        v2 = this.RotateToActor;
+        if (v2 == nullptr) {
+            return;
+        } else {
+            v16 = this.OwningCharacter.GetActorForwardVector();
+            v10 = this.RotateToActor.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v28 = this.OwningCharacter.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+            v34 = v10 - v28;
+            v34.Normalize(9.99999993922529e-09);
+            if (v16.IsNearlyZero(9.999999747378752e-05)) {
+                v3 = true;
+            } else {
+                v39 = v34.IsNearlyZero(9.999999747378752e-05);
+                v3 = v39;
+            }
+            if (v3) {
+                v42 = 1.0;
+            } else {
+                v36 = v16.CosineAngle2D(v34);
+                v42 = v36;
+            }
+            v44 = Math::Acos(v42);
+            v38 = Math::RadiansToDegrees(v44);
+            v42 = v38;
+            v36 = this.RotationPrecision;
+            if (v42 < v36) {
+                this.RotateToActor = nullptr;
+                this.OnFinishedRotatingToActor();
+            }
+        }
+        return;
+    }
+
+    void OnFinishedRotatingToActor()   // traits=0x20
+    {
+        AActor v2;
+
+        v2 = this.LastPathingActor;
+        if (v2 != nullptr) {
+            this.MoveToActor(this.LastPathingActor);
+        }
+        return;
+    }
+
+    bool MoveToActor(AActor@ LocationActor)   // traits=0x20
+    {
+        AActor v2;
+        bool v3;
+        TSubclassOf<UNavigationQueryFilter@> v6;
+        bool v7;
+        bool v8;
+        bool v9;
+        auto v11;
+        int v12;
+
+        v2 = LocationActor;
+        if (v2 != nullptr) {
+            v3 = true;
+            v6 = TSubclassOf<UNavigationQueryFilter@>(nullptr);
+            v7 = false;
+            v8 = true;
+            v9 = true;
+            v11 = this.OwningAIController.MoveToActor(LocationActor, 100.0, v9, v8, v7, v6, v3);
+            v12 = int(v11);
+            if (v12 == 2) {
+                v7 = true;
+                return v7;
+            }
+        } else {
+            v3 = false;
+        }
+        return v3;
+    }
+
+    AActor@ FindClosestPathingActor()   // traits=0x20
+    {
+        AActor v2;
+        FVector v8;
+        auto v10;
+        auto v12;
+        AActor v14;
+        FVector v22;
+        FVector v28;
+        TArrayIterator<AActor@> v34;
+        auto v41;
+        AActor v44;
+        auto v53;
+
+        v8 = FVector();
+        v10 = -1.0;
+        v14 = this.GetOwner();
+        v28 = v14.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+        v34 = this.PathNodeActors.Iterator();
+        while (true) {
+            v41 = v34.CanProceed;
+            if (!v41) break;
+            v44 = v34.Proceed();
+            v34.Proceed();
+            if (v44 != nullptr) {
+                v22 = v44.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                v12 = v28.DistSquared(v22);
+                if (v2 == nullptr) {
+                    v41 = true;
+                } else {
+                    v53 = v12 < v10;
+                    v41 = v53;
+                }
+                if (v41) {
+                    v2 = v44;
+                    v8 = v22;
+                    v10 = v12;
+                }
+            }
+        }
+        return v2;
+    }
+
+    AActor@ FindRandomPathingActor(TArray<AActor@>&inout IgnoreActors)   // traits=0x20
+    {
+        auto v1;
+        int v2;
+        auto v3;
+        int v4;
+        auto v5;
+        auto v6;
+        AActor v8;
+        auto v9;
+        AActor v12;
+
+        v2 = this.PathNodeActors.Num();
+        v2 = v2 - 1;
+        v4 = Math::RandRange(0, v2);
+        v5 = 0;
+        v1 = this.PathNodeActors.Num();
+        while (v5 < v1) {
+            v8 = this.PathNodeActors[v4];
+            if (v8 == nullptr) {
+                v6 = 0;
+            } else {
+                v9 = IgnoreActors.Contains(v8);
+                v9 = !v9;
+                v6 = v9;
+            }
+            if (v6) {
+                return v8;
+            }
+            v3 = v4 + 1;
+            v2 = this.PathNodeActors.Num();
+            v4 = v3 % v2;
+            v5++;
+            continue;
+        }
+        return v12;
+    }
+
+    void ~ULokiNodePathingComponent()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

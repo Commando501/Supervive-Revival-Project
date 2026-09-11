@@ -1,0 +1,22 @@
+[0] tutorial_launch (force-open LVL_Tutorial via ExecuteConsoleCommand) started
+[0] command (default fallback): 'open LVL_Tutorial?game=/Game/Loki/Core/GameModes/BP_LokiGameMode_Tutorial.BP_LokiGameMode_Tutorial_C'
+[RD] RM_RIDEABLE (S131): AuthPlayerEnterWorldAttachedToRidable, called DIRECTLY.
+[RD] S131's Route-E flight handed it a NULL PlayerState, so it returned at instruction
+[RD] #1 (`test rdx,rdx; je`) and its silence said NOTHING about the wall. The obvious
+[RD] fix -- poke [TeamState+0x688] -- is BLOCKED: zero live TeamState actors exist in
+[RD] this world (MEASURED). So both arguments are resolved live, BY NAME, instead.
+[RD] Inject into a STAGED TUTORIAL WORLD that already contains an INITIALISED pod
+[RD] (gft -> fo -> sp -> dropplane_b1only -> droppod-pe-cdopoke -> this).
+[RD] KFUNCSWAP=1: game-thread callbacks via UFunction.Func (+0xE0) -- NO .text write
+[RD] resolve: 4 pod actor(s), 2 live ALokiPlayerState(s), one GUObjectArray pass, 4094 ms
+[RD] pod-cand[0] 0x2BDA97A0200 cls=BP_DropPod_Tutorial_C PodTeamIndex@0x460=0 LokiRideable@0x6C8=0x2BDCFA4FA00(LokiRideableComponent)
+[RD] pod-cand[1] 0x2BD375119D0 cls=BP_DropPod_Tutorial_C PodTeamIndex@0x460=-1 LokiRideable@0x6C8=0x2BD42A2CC00(LokiRideableComponent)
+[RD] pod-cand[2] 0x2BD2B2DB0A0 cls=BP_DropPod_Tutorial_C PodTeamIndex@0x460=-1 LokiRideable@0x6C8=0x2BDC266AA00(LokiRideableComponent)
+[RD] pod-cand[3] 0x2BD2B2DA8B0 cls=BP_DropPod_Tutorial_C PodTeamIndex@0x460=-1 LokiRideable@0x6C8=0x0(-)
+[RD] ps-cand[0] 0x2BDCFA012C0 'LokiPlayerState_HeroAffiliated' cls=LokiPlayerState_HeroAffiliated
+[RD] ps-cand[1] 0x2BDBC6199A0 'BP_LokiPlayerState_C' cls=BP_LokiPlayerState_C
+[RD] *** 2 live ALokiPlayerState candidates -- REFUSING to guess which one the wall should be handed. A wrong PlayerState makes a silent bail unattributable. ***
+[RD] ABORT before arming: resolve failed. Nothing was armed and no call was made -- this is a RESOLVE statement, not a result about the wall.
+[RD] ---------------- RM_RIDEABLE SUMMARY ----------------
+[RD] resolved=0 pod=0x0 comp=0x2BDCFA4FA00 ps=0x0 | R0c ran=0 before=-1 | R1 ran=0 fault=-1 | R2 after=-1
+[RD] VERDICT: NOT RESOLVED -- no call was made; nothing here is a statement about the fifth wall.

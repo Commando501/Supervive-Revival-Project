@@ -1,0 +1,116 @@
+// ============================================================================
+//  MODULE   Barracuda.Components.BarracudaStructureComponent
+//  SOURCE   Barracuda/Components/BarracudaStructureComponent.as
+//  CONTENT  1 class(es), 9 function(s), 0 enum(s), 1 global(s), 540 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_UBarracudaStructureComponent;
+
+UBarracudaStructureComponent@ UBarracudaStructureComponent()   // traits=0x20
+{
+    UBarracudaStructureComponent v2;
+
+    v2 = UBarracudaStructureComponent();
+    return v2;
+}
+
+UClass@ UBarracudaStructureComponent::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_UBarracudaStructureComponent);
+    return v2;
+}
+
+UBarracudaStructureComponent@ UBarracudaStructureComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaStructureComponent v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_UBarracudaStructureComponent, v2, typeid(UBarracudaStructureComponent@), WithName);
+    return v2;
+}
+
+UBarracudaStructureComponent@ UBarracudaStructureComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaStructureComponent v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_UBarracudaStructureComponent, v2, typeid(UBarracudaStructureComponent@), WithName);
+    return v2;
+}
+
+UBarracudaStructureComponent@ UBarracudaStructureComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    UBarracudaStructureComponent v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_UBarracudaStructureComponent, v2, typeid(UBarracudaStructureComponent@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class UBarracudaStructureComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_UBarracudaStructureComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bAttackable;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bRespawnLocation;
+
+    UBarracudaStructureComponent()   // traits=0x21
+    {
+        return;
+    }
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        UBarracudaGameStateComponent v2;
+        ALokiGameState v4;
+        AActor v10;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        v2 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+        if (v2 != nullptr) {
+            v10 = this.GetOwner();
+            v2.Structures.Add(v10);
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=LokiEndPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiEndPlay_Implementation()   // traits=0x20
+    {
+        UBarracudaGameStateComponent v2;
+        ALokiGameState v4;
+        AActor v10;
+
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        v2 = UBarracudaGameStateComponent::Get(v4, NAME_None);
+        if (v2 != nullptr) {
+            v10 = this.GetOwner();
+            v2.Structures.Remove(v10);
+        }
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = false;
+        this.bRespawnLocation = v1;
+        v1 = false;
+        this.bAttackable = v1;
+        return;
+    }
+
+}
+

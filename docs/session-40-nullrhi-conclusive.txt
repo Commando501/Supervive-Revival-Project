@@ -1,0 +1,129 @@
+=== SESSION 40 NULLRHI TEST — CRASH IS DEFINITIVELY NOT RENDERER-RELATED ===
+
+Final renderer-variant test. Prediction was that -nullrhi (no rendering
+hardware interface at all) might not even boot, or might skip the crash
+if it's renderer-tied.
+
+**Actual result: client BOOTED, reached ReceivedJoin, LOADED MENU (25
+heroes fetched, wallet fetched), and CRASHED at ~32 seconds post-Join
+via Sentry HandleBeforeCrash.**
+
+--- Test setup ---
+
+New batch `scratchpad/launch-sv-open-nullrhi.bat` = same as -DX11 variant
+with `-nullrhi` swapped in. Same session-38 stub + session-38 code state.
+
+--- Test result ---
+
+Client timeline (from Loki.log):
+    23:55:34   Sentry init succeeds
+    23:55:35   LogLokiGameInstance: Warning: Using Sentry: Yes
+    23:55:37   LogPlatformStorefront: Unlockable heroes fetched: 25 heroes
+    23:55:37   LogPlatformStorefront: Wallet fetched: 1 balances
+    23:55:44   [stub side] SetClientLoginState: Welcomed -> ReceivedJoin
+    23:55:46+  VivoxCore init sequence (Vivox login fails, expected)
+    23:56:16   LogSentrySdk: flushing session and queue before crashpad handler
+    23:56:16   LogSentrySdk: Sentry HandleBeforeCrash Begin/End
+    23:56:16   LogSentrySdk: handing control over to crashpad
+
+Time from Join → crash: **32 seconds**.
+
+No `LogRHI:` / `LogD3D11RHI` / `LogVulkanRHI` lines in the client log —
+nullrhi is genuinely active (no rendering).
+
+--- Renderer test matrix (FINAL, decisive) ---
+
+| Renderer  | Result                              | Time to crash  |
+|-----------|-------------------------------------|----------------|
+| D3D12     | Menu loads, crashes after wallet    | 64 s post-Join |
+| DX11      | Menu loads, crashes after wallet    | 24 s post-Join |
+| **nullrhi** | **Menu loads, crashes silently**  | **32 s post-Join** |
+| Vulkan    | Hangs in RHI init, never boots      | N/A            |
+
+**Since -nullrhi has no rendering at all yet the crash still happens,
+the crash class is DEFINITIVELY NOT renderer-related.**
+
+The FD3D12CommandContext identification in
+`session-40-path-a1-D3D12-identified.txt` is fully retracted. The
+log-string evidence (D3D12CommandList.cpp / GraphicsCommandList /
+CopyCommandList) was misleading — those strings are near our target
+vtable in `.rdata` but the vtable does not belong to a D3D12 class.
+The MSVC linker just packed the strings near our unrelated vtable.
+
+--- What IS the crash class, then? ---
+
+Given:
+- Crash happens at post-menu-load timing (after 25 heroes + wallet
+  data have arrived over WebSocket from ags)
+- Timing varies by renderer (24s DX11 / 32s nullrhi / 64s D3D12) —
+  something related to how frequently a subsystem ticks
+- Class object size 15,504 bytes; parent 232 bytes; multi-inheritance
+- Class holds sub-object arrays keyed by index (0, 1, 2 → 2 or 3
+  entries each), a 768-byte hash table, 6 inline 0x38-byte slots
+- Crashing method is a "get subarray by index, append value" pattern
+- Class has smart-pointer (ref-counted) members (LOCK; xadd pattern)
+- Only 2 live instances observed via findptr
+
+New leading hypothesis: **The class is a UE 5.4 Slate / UMG / UI
+subsystem** — something like FSlateApplication, FSlateWindowElementList,
+or a per-viewport UI batch recorder. UI subsystems in UE 5.4 are:
+- Large (multi-KB)
+- Reference-counted
+- Batched per-frame (tick-timing sensitive)
+- Present in ALL renderer modes (including nullrhi, since the game engine
+  still processes UI state even without rendering — the batch just isn't
+  submitted to a GPU)
+
+The 24s (DX11) / 32s (nullrhi) / 64s (D3D12) timing hierarchy is
+consistent with UI batch buffers filling up at different rates depending
+on frame rate: DX11 batches fastest (uncapped or higher-fps DX11
+renderer), nullrhi mid, D3D12 slowest (capped by vsync or D3D12's
+render-queue).
+
+Alternative hypothesis: **The class is a UE 5.4 replication or
+delegate-tracking subsystem** — something in the Actor Iris replication
+graph or a delegate-notification list that ticks per frame. Also
+consistent with the timing hierarchy.
+
+--- What to try next (session 41+) ---
+
+Renderer matrix exhausted. Only truly informative next steps:
+
+- **Live debugger attach with breakpoint at the crash instruction**
+  (0x2976F70+0x80 approximately). Set breakpoint, launch client with
+  our stub, wait for hit, inspect the `this` pointer + call stack.
+  If Ghidra Debugger works past SUPERVIVE's anti-debug, this is the
+  fastest path. WinDbg is an alternative.
+- **Path B-lite** — schema-inject replicated fields on PC and
+  un-suppress. The nullrhi result makes it slightly more likely to
+  help IF the crash class's subscribers come from AActor replication
+  (delegate tracking, UI-actor references, etc.). Still multi-hour
+  engineering.
+- **Accept the ceiling and pause the project** — we've made major
+  progress (client reaches menu, fetches 25 heroes). The crash is a
+  fundamental issue tied to running the shipping client against a
+  stub server with drastically reduced replication. Full fix might
+  require the full "match SUPERVIVE's replication schema exactly"
+  investment we've been scoping.
+
+--- Chapter state (end of session 40, all renderer probes done) ---
+
+- Route-around fires cleanly against live bunches: DONE (S35)
+- Full suppression keeps connection stable through Join: DONE (S39)
+- Client reaches menu, fetches 25 heroes + inventory + wallet: DONE (S39)
+- Crash class identified as UE 5.4 FD3D12CommandContext: FALSIFIED (S40 DX11)
+- Crash class is renderer-independent: PROVEN (S40 nullrhi)
+- Crash is post-menu-load timing, subscriber-add pattern in a 15KB class
+  with multi-inheritance and ref-counted members: CHARACTERIZED
+- Class identity: STILL UNKNOWN
+- Menu-data replication: TODO
+
+--- DO NOT for session 41+ ---
+
+- Don't rely on renderer flags — matrix is exhausted, nothing works.
+- Don't invest more time in identifying the class via static Ghidra —
+  the .rdata string neighborhood is misleading (as we now know).
+- Don't assume the crash class is FD3D12CommandContext or any D3D12
+  class — the DX11 and nullrhi results conclusively rule this out.
+- If pursuing Path B-lite, remember it's a multi-hour engineering
+  commitment with no guarantee of fixing the crash.

@@ -1,0 +1,29 @@
+S136 FLIGHT 3 -- PRE-REGISTERED PREDICTIONS (written BEFORE injection)
+=====================================================================
+Arm : tutorial_launch_botai.dll  .text d2d07d5e85dfe4b3
+      = flight-2 arm + widened census predicate (BotController OR AIController)
+Into: THE SAME live client, PID 43456, world already staged, already holding
+      1 AIController + 3 LokiHeroCharacter from flight 2.
+
+THE DESIGN: A0 is itself the instrument-fix receipt. The OLD predicate
+("BotController" chain only) read 0 for the very object that flight 2 created and
+that an independent read-only chain census found. Same world, same object, ONLY the
+predicate changed. If A0 now reads 1, the old 0 was an INSTRUMENT ARTIFACT -- measured
+within one world, single variable, not argued.
+
+P-A0ctl  census A0 BotOrAIController-chain = 1     <- THE INSTRUMENT FIX RECEIPT
+P-A0hero census A0 LokiHeroCharacter-chain = 3     <- player + flight-2 bot + 1 staged
+P-STAB   A1 == A0 on both counters                 <- stability control; else VOID
+P-A2ctl  census A2 BotOrAIController-chain = 2     (+1)
+P-A2hero census A2 LokiHeroCharacter-chain = 4     (+1)
+P-VERD   VERDICT takes the dCtl>0 && dHero>0 branch ("A BOT SPAWNED")
+P-RET    ReturnValue is a non-null BP_HERO_Ronin_C, DIFFERENT pointer from
+         flight 2's 0x1B3E6922AE0
+P-LOC    the new pawn settles at X=600.0 Y=0.0 (requested), Z ~= 90.15 (floor)
+
+FALSIFIERS, stated up front:
+ - A0ctl = 0 would mean the widened predicate STILL does not see the AIController,
+   i.e. my fix is wrong -- and would put the flight-2 conclusion back in doubt.
+ - A1 != A0 => SITTING VOID, nothing after is attributable.
+ - dCtl = 0 with dHero = +1 would mean flight 2's controller was NOT created by the
+   call (something else made it) -- the strongest possible refutation of the headline.

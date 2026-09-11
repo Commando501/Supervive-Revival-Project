@@ -1,0 +1,21 @@
+2026/08/21 00:42:11 menu: config "state\\menu-config.json" not read (open state\menu-config.json: The system cannot find the file specified.) — using built-in defaults
+2026/08/21 00:42:12 [pingecho] UDP echo responder on 127.0.0.1:443 (UE ICMP-module ping, 8..128 byte datagrams)
+2026/08/21 00:42:12 SUPERVIVE Revival AGS backend
+2026/08/21 00:42:12   capture log: G:\git\Supervive Revival Project\docs\capture.log
+2026/08/21 00:42:12   ADMIN  panel on http://[::1]:9210/
+2026/08/21 00:42:12   ADMIN  panel on http://127.0.0.1:9210/
+2026/08/21 00:42:12   TLS cert (append to game cacert.pem): G:\git\Supervive Revival Project\certs\root.crt
+2026/08/21 00:42:12   HTTP   listening on :8080
+2026/08/21 00:42:12   HTTPS  listening on :443
+2026/08/21 00:42:21 [pingecho] first ping is 30 bytes: 829bf54a4b3321a7c410080c55d657946baa4e010000aaaaaaaabbbbbbbb
+2026/08/21 00:42:21 [pingecho] NOTE: stock UE 5.4 UDPEchoImpl builds 22 bytes; this build sends 30. Echoing verbatim, which is layout-independent.
+2026/08/21 00:42:21 [pingecho] first echo -> 127.0.0.1:54276 (30 bytes); latency should now resolve
+2026/08/21 00:45:18 interactive: setTargetQueues player=9b9d2c887e2524f918e383a895f2f1c2 queue="default" (was "default")
+2026/08/21 00:45:19 interactive: setTargetQueues player=9b9d2c887e2524f918e383a895f2f1c2 queue="default" (was "default")
+2026/08/21 00:45:21 interactive: setTargetQueues player=9b9d2c887e2524f918e383a895f2f1c2 queue="training" (was "default")
+2026/08/21 00:45:22 interactive: setTargetQueues player=9b9d2c887e2524f918e383a895f2f1c2 queue="bots" (was "training")
+2026/08/21 00:45:25 interactive: joinQueue player=9b9d2c887e2524f918e383a895f2f1c2 queue="bots"
+2026/08/21 00:45:25 interactive: armqueue: will arm player=9b9d2c887e2524f918e383a895f2f1c2 queue="bots" in 8s (mode=1)
+2026/08/21 00:45:33 interactive: armqueue: ARMED player=9b9d2c887e2524f918e383a895f2f1c2 queue="bots" matchID="match-9b9d2c887e2524f918e383a895f2f1c2" version=1787291133 mode=1
+2026/08/21 00:45:33 interactive: armqueue: pushed /core-game/players/9b9d2c887e2524f918e383a895f2f1c2 version=1787291133 label=armqueue
+2026/08/21 00:46:50 [pingecho] 50 echoes (last from 127.0.0.1:60285)

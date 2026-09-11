@@ -1,0 +1,18 @@
+﻿Building community backend...
+Starting community backend (:8080 HTTP + :443 HTTPS)...
+Server up; cert chain generated.
+Backend serving HTTP (probe http://127.0.0.1:8080/revival/missions/progress -> 200).
+Appending Root CA to game cacert.pem...
+Hosts entries added:
+  127.0.0.1  accounts.projectloki.theorycraftgames.com
+  127.0.0.1  client-config-jx-prod.prodcluster.awsinfra.theorycraftgames.com
+bVerifyPeer override already present.
+  (Engine.ini set read-only)
+
+[crashdump] 1 pending crash report(s) found -- archiving before launch.
+             c00ded16-fa8a-4b05-8039-9d8f43b589f9.dmp  41,465,632 bytes  8/8/2026 12:46:23 PM
+[crashdump]   session log captured  344,580 bytes (authoritative; bundled copy is truncated)
+[crashdump]   verified c00ded16-fa8a-4b05-8039-9d8f43b589f9.dmp  sha256=494F44CF9501A205
+[crashdump] archived to dumps\crashpad-20260808-124700  (1 verified)
+
+Launching SUPERVIVE (PostAuth -> http://localhost:8080)...

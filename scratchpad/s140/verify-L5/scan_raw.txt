@@ -1,0 +1,198 @@
+HIT 0x0127850e  nmem=1 nimm=0 ncand=1
+    start=0x0127850b mov dword ptr [rsp + 0x12b0], eax size=7 kind=MEM mem=[(44, 0, 4784, 4, 2)]
+HIT 0x01278525  nmem=1 nimm=0 ncand=1
+    start=0x01278522 mov edx, dword ptr [rsp + 0x12b0] size=7 kind=MEM mem=[(44, 0, 4784, 4, 1)]
+HIT 0x0127bfa0  nmem=2 nimm=0 ncand=2
+    start=0x0127bf9c mov qword ptr [rsp + 0x12b0], rax size=8 kind=MEM mem=[(44, 0, 4784, 8, 2)]
+    start=0x0127bf9d mov dword ptr [rsp + 0x12b0], eax size=7 kind=MEM mem=[(44, 0, 4784, 4, 2)]
+HIT 0x0127bfbe  nmem=2 nimm=0 ncand=2
+    start=0x0127bfba mov r8, qword ptr [rsp + 0x12b0] size=8 kind=MEM mem=[(44, 0, 4784, 8, 1)]
+    start=0x0127bfbb mov eax, dword ptr [rsp + 0x12b0] size=7 kind=MEM mem=[(44, 0, 4784, 4, 1)]
+HIT 0x012923b7  nmem=2 nimm=0 ncand=2
+    start=0x012923b3 mov qword ptr [rsp + 0x12b0], rax size=8 kind=MEM mem=[(44, 0, 4784, 8, 2)]
+    start=0x012923b4 mov dword ptr [rsp + 0x12b0], eax size=7 kind=MEM mem=[(44, 0, 4784, 4, 2)]
+HIT 0x012923c6  nmem=2 nimm=0 ncand=2
+    start=0x012923c2 mov rcx, qword ptr [rsp + 0x12b0] size=8 kind=MEM mem=[(44, 0, 4784, 8, 1)]
+    start=0x012923c3 mov ecx, dword ptr [rsp + 0x12b0] size=7 kind=MEM mem=[(44, 0, 4784, 4, 1)]
+HIT 0x013a40e1  nmem=2 nimm=0 ncand=2
+    start=0x013a40dd mov qword ptr [rsp + 0x12b0], rax size=8 kind=MEM mem=[(44, 0, 4784, 8, 2)]
+    start=0x013a40de mov dword ptr [rsp + 0x12b0], eax size=7 kind=MEM mem=[(44, 0, 4784, 4, 2)]
+HIT 0x013a40fa  nmem=2 nimm=0 ncand=2
+    start=0x013a40f6 mov qword ptr [rsp + 0x12b0], rax size=8 kind=MEM mem=[(44, 0, 4784, 8, 2)]
+    start=0x013a40f7 mov dword ptr [rsp + 0x12b0], eax size=7 kind=MEM mem=[(44, 0, 4784, 4, 2)]
+HIT 0x013a4102  nmem=2 nimm=0 ncand=2
+    start=0x013a40fe mov rax, qword ptr [rsp + 0x12b0] size=8 kind=MEM mem=[(44, 0, 4784, 8, 1)]
+    start=0x013a40ff mov eax, dword ptr [rsp + 0x12b0] size=7 kind=MEM mem=[(44, 0, 4784, 4, 1)]
+HIT 0x014db936  nmem=2 nimm=0 ncand=3
+    start=0x014db933 lea rcx, [rbp + 0x12b0] size=7 kind=MEM mem=[(36, 0, 4784, 8, 1)]
+    start=0x014db934 lea ecx, [rbp + 0x12b0] size=6 kind=MEM mem=[(36, 0, 4784, 4, 1)]
+    start=0x014db935 lea esi, [rax + 0x4c000012] size=6 kind=OTHER mem=[(35, 0, 1275068434, 4, 1)]
+HIT 0x01c2489e  nmem=2 nimm=0 ncand=2
+    start=0x01c2489a movaps xmmword ptr [rsp + 0x12b0], xmm6 size=8 kind=MEM mem=[(44, 0, 4784, 16, 2)]
+    start=0x01c2489b sub dword ptr [rsp + 0x12b0], esi size=7 kind=MEM mem=[(44, 0, 4784, 4, 3)]
+HIT 0x01c25e78  nmem=3 nimm=0 ncand=3
+    start=0x01c25e73 movaps xmmword ptr [rsp + 0x12b0], xmm9 size=9 kind=MEM mem=[(44, 0, 4784, 16, 2)]
+    start=0x01c25e74 movaps xmmword ptr [rsp + 0x12b0], xmm1 size=8 kind=MEM mem=[(44, 0, 4784, 16, 2)]
+    start=0x01c25e75 sub dword ptr [rsp + 0x12b0], ecx size=7 kind=MEM mem=[(44, 0, 4784, 4, 3)]
+HIT 0x020b1342  nmem=2 nimm=0 ncand=2
+    start=0x020b133f movups xmm0, xmmword ptr [rdx + 0x12b0] size=7 kind=MEM mem=[(40, 0, 4784, 16, 1)]
+    start=0x020b1340 adc byte ptr [rdx + 0x12b0], al size=6 kind=MEM mem=[(40, 0, 4784, 1, 3)]
+HIT 0x0211a630  nmem=2 nimm=0 ncand=3
+    start=0x0211a62d mov rcx, qword ptr [rbp + 0x12b0] size=7 kind=MEM mem=[(36, 0, 4784, 8, 1)]
+    start=0x0211a62e mov ecx, dword ptr [rbp + 0x12b0] size=6 kind=MEM mem=[(36, 0, 4784, 4, 1)]
+    start=0x0211a62f lea esi, [rax + 0x33000012] size=6 kind=OTHER mem=[(35, 0, 855638034, 4, 1)]
+HIT 0x02347502  nmem=2 nimm=0 ncand=3
+    start=0x023474ff lea rcx, [rbp + 0x12b0] size=7 kind=MEM mem=[(36, 0, 4784, 8, 1)]
+    start=0x02347500 lea ecx, [rbp + 0x12b0] size=6 kind=MEM mem=[(36, 0, 4784, 4, 1)]
+    start=0x02347501 lea esi, [rax + 0x48000012] size=6 kind=OTHER mem=[(35, 0, 1207959570, 4, 1)]
+HIT 0x025888be  nmem=2 nimm=0 ncand=3
+    start=0x025888bb mov qword ptr [rbp + 0x12b0], rax size=7 kind=MEM mem=[(36, 0, 4784, 8, 2)]
+    start=0x025888bc mov dword ptr [rbp + 0x12b0], eax size=6 kind=MEM mem=[(36, 0, 4784, 4, 2)]
+    start=0x025888bd test dword ptr [rax + 0x48000012], esi size=6 kind=OTHER mem=[(35, 0, 1207959570, 4, 0)]
+HIT 0x0261d02c  nmem=2 nimm=0 ncand=3
+    start=0x0261d029 lea rcx, [rbp + 0x12b0] size=7 kind=MEM mem=[(36, 0, 4784, 8, 1)]
+    start=0x0261d02a lea ecx, [rbp + 0x12b0] size=6 kind=MEM mem=[(36, 0, 4784, 4, 1)]
+    start=0x0261d02b lea esi, [rax - 0x77ffffee] size=6 kind=OTHER mem=[(35, 0, -2013265902, 4, 1)]
+HIT 0x026a54c6  nmem=2 nimm=0 ncand=2
+    start=0x026a54c3 mov r12d, dword ptr [rbp + 0x12b0] size=7 kind=MEM mem=[(36, 0, 4784, 4, 1)]
+    start=0x026a54c4 mov esp, dword ptr [rbp + 0x12b0] size=6 kind=MEM mem=[(36, 0, 4784, 4, 1)]
+HIT 0x0331cdbe  nmem=1 nimm=0 ncand=2
+    start=0x0331cdbc mov byte ptr [rbp + 0x12b0], 3 size=7 kind=MEM mem=[(36, 0, 4784, 1, 2)]
+    start=0x0331cdbd test dword ptr [rax + 0x3000012], esi size=6 kind=OTHER mem=[(35, 0, 50331666, 4, 0)]
+HIT 0x0331ce73  nmem=3 nimm=0 ncand=4
+    start=0x0331ce6f movsd xmm1, qword ptr [rbp + 0x12b0] size=8 kind=MEM mem=[(36, 0, 4784, 8, 1)]
+    start=0x0331ce70 movups xmm1, xmmword ptr [rbp + 0x12b0] size=7 kind=MEM mem=[(36, 0, 4784, 16, 1)]
+    start=0x0331ce71 adc byte ptr [rbp + 0x12b0], cl size=6 kind=MEM mem=[(36, 0, 4784, 1, 3)]
+    start=0x0331ce72 lea esi, [rax + 0xf000012] size=6 kind=OTHER mem=[(35, 0, 251658258, 4, 1)]
+HIT 0x03933814  nmem=1 nimm=0 ncand=2
+    start=0x03933812 mov byte ptr [rbp + 0x12b0], 2 size=7 kind=MEM mem=[(36, 0, 4784, 1, 2)]
+    start=0x03933813 test dword ptr [rax + 0x2000012], esi size=6 kind=OTHER mem=[(35, 0, 33554450, 4, 0)]
+HIT 0x03933832  nmem=3 nimm=0 ncand=4
+    start=0x0393382e movsd xmm0, qword ptr [rbp + 0x12b0] size=8 kind=MEM mem=[(36, 0, 4784, 8, 1)]
+    start=0x0393382f movups xmm0, xmmword ptr [rbp + 0x12b0] size=7 kind=MEM mem=[(36, 0, 4784, 16, 1)]
+    start=0x03933830 adc byte ptr [rbp + 0x12b0], al size=6 kind=MEM mem=[(36, 0, 4784, 1, 3)]
+    start=0x03933831 test dword ptr [rax + 0xf000012], esi size=6 kind=OTHER mem=[(35, 0, 251658258, 4, 0)]
+HIT 0x03a426e6  nmem=1 nimm=0 ncand=1
+    start=0x03a426e4 mov dword ptr [rbx + 0x12b0], esi size=6 kind=MEM mem=[(37, 0, 4784, 4, 2)]
+HIT 0x03a5929c  nmem=2 nimm=0 ncand=2
+    start=0x03a59298 mov byte ptr [rdi + r8 + 0x12b0], r12b size=8 kind=MEM mem=[(39, 106, 4784, 1, 2)]
+    start=0x03a59299 mov byte ptr [rdi + rax + 0x12b0], ah size=7 kind=MEM mem=[(39, 35, 4784, 1, 2)]
+HIT 0x03c5452e  nmem=1 nimm=0 ncand=2
+    start=0x03c5452c mov byte ptr [rbp + 0x12b0], 3 size=7 kind=MEM mem=[(36, 0, 4784, 1, 2)]
+    start=0x03c5452d test dword ptr [rax + 0x3000012], esi size=6 kind=OTHER mem=[(35, 0, 50331666, 4, 0)]
+HIT 0x03c545e3  nmem=3 nimm=0 ncand=4
+    start=0x03c545df movsd xmm1, qword ptr [rbp + 0x12b0] size=8 kind=MEM mem=[(36, 0, 4784, 8, 1)]
+    start=0x03c545e0 movups xmm1, xmmword ptr [rbp + 0x12b0] size=7 kind=MEM mem=[(36, 0, 4784, 16, 1)]
+    start=0x03c545e1 adc byte ptr [rbp + 0x12b0], cl size=6 kind=MEM mem=[(36, 0, 4784, 1, 3)]
+    start=0x03c545e2 lea esi, [rax + 0xf000012] size=6 kind=OTHER mem=[(35, 0, 251658258, 4, 1)]
+HIT 0x03d431d7  nmem=3 nimm=0 ncand=3
+    start=0x03d431d3 movss dword ptr [rbx + 0x12b0], xmm5 size=8 kind=MEM mem=[(37, 0, 4784, 4, 2)]
+    start=0x03d431d4 movups xmmword ptr [rbx + 0x12b0], xmm5 size=7 kind=MEM mem=[(37, 0, 4784, 16, 1)]
+    start=0x03d431d5 adc dword ptr [rbx + 0x12b0], ebp size=6 kind=MEM mem=[(37, 0, 4784, 4, 3)]
+HIT 0x03d43209  nmem=2 nimm=0 ncand=3
+    start=0x03d43206 mov qword ptr [rbx + 0x12b0], r12 size=7 kind=MEM mem=[(37, 0, 4784, 8, 2)]
+    start=0x03d43207 mov dword ptr [rbx + 0x12b0], esp size=6 kind=MEM mem=[(37, 0, 4784, 4, 2)]
+    start=0x03d43208 movabs dword ptr [0xab110ff3000012b0], eax size=9 kind=OTHER mem=[(0, 0, -6120092882268319056, 4, 2)]
+HIT 0x03d4a0df  nmem=0 nimm=1 ncand=1
+    start=0x03d4a0db mov dword ptr [rsp + 0x34], 0x12b0 size=8 kind=IMM mem=[(44, 0, 52, 4, 2)]
+HIT 0x03d6033f  nmem=0 nimm=1 ncand=1
+    start=0x03d6033b mov dword ptr [rsp + 0x34], 0x12b0 size=8 kind=IMM mem=[(44, 0, 52, 4, 2)]
+HIT 0x04516c6e  nmem=3 nimm=0 ncand=3
+    start=0x04516c69 movaps xmmword ptr [rsp + 0x12b0], xmm8 size=9 kind=MEM mem=[(44, 0, 4784, 16, 2)]
+    start=0x04516c6a movaps xmmword ptr [rsp + 0x12b0], xmm0 size=8 kind=MEM mem=[(44, 0, 4784, 16, 2)]
+    start=0x04516c6b sub dword ptr [rsp + 0x12b0], eax size=7 kind=MEM mem=[(44, 0, 4784, 4, 3)]
+HIT 0x04516d44  nmem=3 nimm=0 ncand=3
+    start=0x04516d3f movaps xmm8, xmmword ptr [rsp + 0x12b0] size=9 kind=MEM mem=[(44, 0, 4784, 16, 1)]
+    start=0x04516d40 movaps xmm0, xmmword ptr [rsp + 0x12b0] size=8 kind=MEM mem=[(44, 0, 4784, 16, 1)]
+    start=0x04516d41 sub byte ptr [rsp + 0x12b0], al size=7 kind=MEM mem=[(44, 0, 4784, 1, 3)]
+HIT 0x0472cc63  nmem=2 nimm=0 ncand=2
+    start=0x0472cc60 mov byte ptr [rbp + 0x12b0], r14b size=7 kind=MEM mem=[(36, 0, 4784, 1, 2)]
+    start=0x0472cc61 mov byte ptr [rbp + 0x12b0], dh size=6 kind=MEM mem=[(36, 0, 4784, 1, 2)]
+HIT 0x04835322  nmem=2 nimm=0 ncand=2
+    start=0x0483531f mov qword ptr [rbp + 0x12b0], rsi size=7 kind=MEM mem=[(36, 0, 4784, 8, 2)]
+    start=0x04835320 mov dword ptr [rbp + 0x12b0], esi size=6 kind=MEM mem=[(36, 0, 4784, 4, 2)]
+HIT 0x0483d312  nmem=2 nimm=0 ncand=2
+    start=0x0483d30f mov qword ptr [rbp + 0x12b0], rsi size=7 kind=MEM mem=[(36, 0, 4784, 8, 2)]
+    start=0x0483d310 mov dword ptr [rbp + 0x12b0], esi size=6 kind=MEM mem=[(36, 0, 4784, 4, 2)]
+HIT 0x0483d32e  nmem=2 nimm=0 ncand=3
+    start=0x0483d32b lea rcx, [rbp + 0x12b0] size=7 kind=MEM mem=[(36, 0, 4784, 8, 1)]
+    start=0x0483d32c lea ecx, [rbp + 0x12b0] size=6 kind=MEM mem=[(36, 0, 4784, 4, 1)]
+    start=0x0483d32d lea esi, [rax - 0x74ffffee] size=6 kind=OTHER mem=[(35, 0, -1962934254, 4, 1)]
+HIT 0x0483d33c  nmem=2 nimm=0 ncand=3
+    start=0x0483d339 mov rcx, qword ptr [rbp + 0x12b0] size=7 kind=MEM mem=[(36, 0, 4784, 8, 1)]
+    start=0x0483d33a mov ecx, dword ptr [rbp + 0x12b0] size=6 kind=MEM mem=[(36, 0, 4784, 4, 1)]
+    start=0x0483d33b lea esi, [rax + 0x4c000012] size=6 kind=OTHER mem=[(35, 0, 1275068434, 4, 1)]
+HIT 0x0484231c  nmem=1 nimm=0 ncand=1
+    start=0x0484231a mov dword ptr [rbp + 0x12b0], ebx size=6 kind=MEM mem=[(36, 0, 4784, 4, 2)]
+HIT 0x048467dd  nmem=2 nimm=0 ncand=2
+    start=0x048467da mov byte ptr [rbp + 0x12b0], r14b size=7 kind=MEM mem=[(36, 0, 4784, 1, 2)]
+    start=0x048467db mov byte ptr [rbp + 0x12b0], dh size=6 kind=MEM mem=[(36, 0, 4784, 1, 2)]
+HIT 0x048504a7  nmem=2 nimm=0 ncand=2
+    start=0x048504a4 mov byte ptr [rbp + 0x12b0], r14b size=7 kind=MEM mem=[(36, 0, 4784, 1, 2)]
+    start=0x048504a5 mov byte ptr [rbp + 0x12b0], dh size=6 kind=MEM mem=[(36, 0, 4784, 1, 2)]
+HIT 0x0485962b  nmem=2 nimm=0 ncand=2
+    start=0x04859628 mov qword ptr [rbp + 0x12b0], rsi size=7 kind=MEM mem=[(36, 0, 4784, 8, 2)]
+    start=0x04859629 mov dword ptr [rbp + 0x12b0], esi size=6 kind=MEM mem=[(36, 0, 4784, 4, 2)]
+HIT 0x0485dc46  nmem=2 nimm=0 ncand=2
+    start=0x0485dc43 mov qword ptr [rbp + 0x12b0], rsi size=7 kind=MEM mem=[(36, 0, 4784, 8, 2)]
+    start=0x0485dc44 mov dword ptr [rbp + 0x12b0], esi size=6 kind=MEM mem=[(36, 0, 4784, 4, 2)]
+HIT 0x0486c33f  nmem=2 nimm=0 ncand=3
+    start=0x0486c33c lea r8, [rbp + 0x12b0] size=7 kind=MEM mem=[(36, 0, 4784, 8, 1)]
+    start=0x0486c33d lea eax, [rbp + 0x12b0] size=6 kind=MEM mem=[(36, 0, 4784, 4, 1)]
+    start=0x0486c33e test dword ptr [rax + 0x4c000012], esi size=6 kind=OTHER mem=[(35, 0, 1275068434, 4, 0)]
+HIT 0x0486c35d  nmem=2 nimm=0 ncand=3
+    start=0x0486c35a movaps xmmword ptr [rbp + 0x12b0], xmm1 size=7 kind=MEM mem=[(36, 0, 4784, 16, 2)]
+    start=0x0486c35b sub dword ptr [rbp + 0x12b0], ecx size=6 kind=MEM mem=[(36, 0, 4784, 4, 3)]
+    start=0x0486c35c lea esi, [rax - 0xdffffee] size=6 kind=OTHER mem=[(35, 0, -234881006, 4, 1)]
+HIT 0x049175cd  nmem=2 nimm=0 ncand=2
+    start=0x049175ca mov dword ptr [rbp + 0x12b0], r12d size=7 kind=MEM mem=[(36, 0, 4784, 4, 2)]
+    start=0x049175cb mov dword ptr [rbp + 0x12b0], esp size=6 kind=MEM mem=[(36, 0, 4784, 4, 2)]
+HIT 0x04af336b  nmem=2 nimm=0 ncand=2
+    start=0x04af3368 mov qword ptr [rdi + 0x12b0], r14 size=7 kind=MEM mem=[(39, 0, 4784, 8, 2)]
+    start=0x04af3369 mov dword ptr [rdi + 0x12b0], esi size=6 kind=MEM mem=[(39, 0, 4784, 4, 2)]
+HIT 0x04b03577  nmem=2 nimm=0 ncand=2
+    start=0x04b03574 mov rcx, qword ptr [rdi + 0x12b0] size=7 kind=MEM mem=[(39, 0, 4784, 8, 1)]
+    start=0x04b03575 mov ecx, dword ptr [rdi + 0x12b0] size=6 kind=MEM mem=[(39, 0, 4784, 4, 1)]
+HIT 0x052c8f62  nmem=1 nimm=0 ncand=2
+    start=0x052c8f60 mov byte ptr [rbp + 0x12b0], 3 size=7 kind=MEM mem=[(36, 0, 4784, 1, 2)]
+    start=0x052c8f61 test dword ptr [rax + 0x3000012], esi size=6 kind=OTHER mem=[(35, 0, 50331666, 4, 0)]
+HIT 0x052c8fd4  nmem=3 nimm=0 ncand=4
+    start=0x052c8fd0 movsd xmm1, qword ptr [rbp + 0x12b0] size=8 kind=MEM mem=[(36, 0, 4784, 8, 1)]
+    start=0x052c8fd1 movups xmm1, xmmword ptr [rbp + 0x12b0] size=7 kind=MEM mem=[(36, 0, 4784, 16, 1)]
+    start=0x052c8fd2 adc byte ptr [rbp + 0x12b0], cl size=6 kind=MEM mem=[(36, 0, 4784, 1, 3)]
+    start=0x052c8fd3 lea esi, [rax + 0xf000012] size=6 kind=OTHER mem=[(35, 0, 251658258, 4, 1)]
+HIT 0x055a56fb  nmem=1 nimm=0 ncand=2
+    start=0x055a56f8 comiss xmm0, dword ptr [rbx + 0x12b0] size=7 kind=MEM mem=[(37, 0, 4784, 4, 1)]
+    start=0x055a56fa xor dword ptr [rax + 0x76000012], 0x1d size=7 kind=OTHER mem=[(35, 0, 1979711506, 4, 3)]
+HIT 0x055a74da  nmem=3 nimm=0 ncand=3
+    start=0x055a74d6 movss dword ptr [rsi + 0x12b0], xmm6 size=8 kind=MEM mem=[(43, 0, 4784, 4, 2)]
+    start=0x055a74d7 movups xmmword ptr [rsi + 0x12b0], xmm6 size=7 kind=MEM mem=[(43, 0, 4784, 16, 1)]
+    start=0x055a74d8 adc dword ptr [rsi + 0x12b0], esi size=6 kind=MEM mem=[(43, 0, 4784, 4, 3)]
+HIT 0x055b7ccf  nmem=1 nimm=0 ncand=1
+    start=0x055b7ccd mov dword ptr [rbx + 0x12b0], ebp size=6 kind=MEM mem=[(37, 0, 4784, 4, 2)]
+HIT 0x055b8410  nmem=2 nimm=0 ncand=3
+    start=0x055b840c addss xmm0, dword ptr [rsi + 0x12b0] size=8 kind=MEM mem=[(43, 0, 4784, 4, 1)]
+    start=0x055b840d addps xmm0, xmmword ptr [rsi + 0x12b0] size=7 kind=MEM mem=[(43, 0, 4784, 16, 1)]
+    start=0x055b840f xchg byte ptr [rax - 0xcffffee], dh size=6 kind=OTHER mem=[(35, 0, -218103790, 1, 3)]
+HIT 0x055b8418  nmem=3 nimm=0 ncand=4
+    start=0x055b8414 movss dword ptr [rsi + 0x12b0], xmm0 size=8 kind=MEM mem=[(43, 0, 4784, 4, 2)]
+    start=0x055b8415 movups xmmword ptr [rsi + 0x12b0], xmm0 size=7 kind=MEM mem=[(43, 0, 4784, 16, 1)]
+    start=0x055b8416 adc dword ptr [rsi + 0x12b0], eax size=6 kind=MEM mem=[(43, 0, 4784, 4, 3)]
+    start=0x055b8417 xchg byte ptr [rax - 0xcffffee], dh size=6 kind=OTHER mem=[(35, 0, -218103790, 1, 3)]
+HIT 0x055bdd24  nmem=1 nimm=0 ncand=2
+    start=0x055bdd22 mov dword ptr [rsi + 0x12b0], eax size=6 kind=MEM mem=[(43, 0, 4784, 4, 2)]
+    start=0x055bdd23 xchg byte ptr [rax - 0x74ffffee], dh size=6 kind=OTHER mem=[(35, 0, -1962934254, 1, 3)]
+HIT 0x055c0a52  nmem=1 nimm=0 ncand=2
+    start=0x055c0a50 mov eax, dword ptr [rsi + 0x12b0] size=6 kind=MEM mem=[(43, 0, 4784, 4, 1)]
+    start=0x055c0a51 xchg byte ptr [rax - 0x76ffffee], dh size=6 kind=OTHER mem=[(35, 0, -1996488686, 1, 3)]
+HIT 0x055c2487  nmem=2 nimm=0 ncand=3
+    start=0x055c2483 addss xmm0, dword ptr [rcx + 0x12b0] size=8 kind=MEM mem=[(38, 0, 4784, 4, 1)]
+    start=0x055c2484 addps xmm0, xmmword ptr [rcx + 0x12b0] size=7 kind=MEM mem=[(38, 0, 4784, 16, 1)]
+    start=0x055c2486 xor dword ptr [rax - 0xcffffee], 0xb081110f size=10 kind=OTHER mem=[(35, 0, -218103790, 4, 3)]
+HIT 0x055c248f  nmem=3 nimm=0 ncand=4
+    start=0x055c248b movss dword ptr [rcx + 0x12b0], xmm0 size=8 kind=MEM mem=[(38, 0, 4784, 4, 2)]
+    start=0x055c248c movups xmmword ptr [rcx + 0x12b0], xmm0 size=7 kind=MEM mem=[(38, 0, 4784, 16, 1)]
+    start=0x055c248d adc dword ptr [rcx + 0x12b0], eax size=6 kind=MEM mem=[(38, 0, 4784, 4, 3)]
+    start=0x055c248e xor dword ptr [rax + 0xf000012], 0xf5e9ca28 size=10 kind=OTHER mem=[(35, 0, 251658258, 4, 3)]
+HIT 0x0715e1bc  nmem=0 nimm=0 ncand=1
+    start=0x0715e1bb call 0x715f470 size=5 kind=OTHER mem=[]

@@ -1,0 +1,182 @@
+// ============================================================================
+//  MODULE   Vault.VaultItemSpawner
+//  SOURCE   Vault/VaultItemSpawner.as
+//  CONTENT  1 class(es), 8 function(s), 0 enum(s), 1 global(s), 524 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_AVaultItemSpawner;
+
+AVaultItemSpawner@ AVaultItemSpawner()   // traits=0x20
+{
+    v2 = AVaultItemSpawner();
+    return v2;
+}
+/* ---- AVaultItemSpawner: 7 dwords / 4 instructions (cache offset 0xc500a) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         85451 AVaultItemSpawner                     
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ AVaultItemSpawner::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_AVaultItemSpawner);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0xc50c8) ----
+    0000  PshGPtr       __StaticType_AVaultItemSpawner              
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+AVaultItemSpawner@ AVaultItemSpawner::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    v2 = __StaticType_AVaultItemSpawner.Get();
+    v4 = TSubclassOf(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<AVaultItemSpawner@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+/* ---- Spawn: 38 dwords / 25 instructions (cache offset 0xc52ee) ----
+    0000  PshVPtr       Level                                       
+    0004  PshV4         bDeferredSpawn                              
+    0008  PshVPtr       Name                                        
+    000C  PshVPtr       Rotation                                    
+    0010  PshVPtr       Location                                    
+    0014  PshGPtr       __StaticType_AVaultItemSpawner              
+    0020  CHKREF                                                    
+    0024  CALLSYS       TSubclassOf::Get                            
+    0030  STOREOBJ      v2                                          
+    0034  PshVPtr       v2                                          
+    0038  PSF           v4                                          
+    003C  CALLSYS       TSubclassOf::$beh0                          
+    0048  PSF           v4                                          
+    004C  CALLSYS       SpawnActor                                  
+    0058  STOREOBJ      v6                                          
+    005C  CmpPtrNull    v6                                          
+    0060  JZ            9                                             -> L008C
+    0068  TYPEID        1207972733                                    ; AVaultItemSpawner@
+    0070  PSF           v8                                          
+    0074  PshVPtr       v6                                          
+    0078  CALLSYS       UObject::opCast                             
+    0084  JMP           1                                             -> L0090
+  L008C:
+    008C  ClrVPtr       v8                                          
+  L0090:
+    0090  LOADOBJ       v8                                          
+    0094  RET           9                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Abstract, Placeable, meta.IsBlueprintBase=true, meta.Blueprintable=true)
+class AVaultItemSpawner : AActor
+// unreal base : /Script/Engine.Actor
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/GameFramework/Actor.h
+// static class global: __StaticType_AVaultItemSpawner
+{
+    AVaultItemSpawner()   // traits=0x21
+    {
+        return;
+    }
+    /* ---- AVaultItemSpawner: 5 dwords / 3 instructions (cache offset 0xc5929) ----
+        0000  PshVPtr       this                                        
+        0004  FinConstruct  AVaultItemSpawner                           
+        0010  RET           2                                           
+    */
+
+    TArray<TSubclassOf<ALokiBaseItem@>> GetItemsForUAV()   // traits=0x20
+    {
+        v4 = TArray();
+        __Evt_PushArgumentRef(v4, typeid(TArray));
+        __Evt_Execute(this, n"GetItemsForUAV");
+        arg_m2 = TArray();
+        arg_m2 = v4;
+        return;
+    }
+    /* ---- GetItemsForUAV: 34 dwords / 18 instructions (cache offset 0xc547f) ----
+        0000  PSF           v4                                          
+        0004  CALLSYS       TArray::$beh0                               
+        0010  TYPEID        268448653                                     ; TArray
+        0018  PSF           v4                                          
+        001C  CALLSYS       __Evt_PushArgumentRef                       
+        0028  PshC4         206                                         
+        0030  CALLSYS       __STATIC_NAME                               
+        003C  PshRPtr                                                   
+        0040  PshVPtr       this                                        
+        0044  CALLSYS       __Evt_Execute                               
+        0050  PshVPtr       arg_m2                                      
+        0054  CALLSYS       TArray::$beh0                               
+        0060  PSF           v4                                          
+        0064  PshVPtr       arg_m2                                      
+        0068  CALLSYS       TArray::opAssign                            
+        0074  PSF           v4                                          
+        0078  CALLSYS       TArray::$beh2                               
+        0084  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=GetItemsForUAV, BlueprintEvent, CanOverrideEvent)
+    TArray<TSubclassOf<ALokiBaseItem@>> GetItemsForUAV_Implementation()   // traits=0x20
+    {
+        arg_m2 = TArray();
+        v4 = TArray();
+        arg_m2 = v4;
+        return;
+    }
+    /* ---- GetItemsForUAV_Implementation: 18 dwords / 10 instructions (cache offset 0xc55d9) ----
+        0000  PshVPtr       arg_m2                                      
+        0004  CALLSYS       TArray::$beh0                               
+        0010  PSF           v4                                          
+        0014  CALLSYS       TArray::$beh0                               
+        0020  PSF           v4                                          
+        0024  PshVPtr       arg_m2                                      
+        0028  CALLSYS       TArray::opAssign                            
+        0034  PSF           v4                                          
+        0038  CALLSYS       TArray::$beh2                               
+        0044  RET           4                                           
+    */
+
+    ALokiDestructible@ GetDoor()   // traits=0x20
+    {
+        __Evt_PushArgumentRef__ALokiDestructible(v2);
+        __Evt_Execute(this, n"GetDoor");
+        return v2;
+    }
+    /* ---- GetDoor: 16 dwords / 9 instructions (cache offset 0xc5728) ----
+        0000  PSF           v2                                          
+        0004  CALLSYS       __Evt_PushArgumentRef__ALokiDestructible    
+        0010  PshC4         207                                         
+        0018  CALLSYS       __STATIC_NAME                               
+        0024  PshRPtr                                                   
+        0028  PshVPtr       this                                        
+        002C  CALLSYS       __Evt_Execute                               
+        0038  LOADOBJ       v2                                          
+        003C  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=GetDoor, BlueprintEvent, CanOverrideEvent)
+    ALokiDestructible@ GetDoor_Implementation()   // traits=0x20
+    {
+        return v2;
+    }
+    /* ---- GetDoor_Implementation: 3 dwords / 3 instructions (cache offset 0xc5803) ----
+        0000  FreeNullV8    v2                                          
+        0004  LOADOBJ       v2                                          
+        0008  RET           2                                           
+    */
+
+}
+

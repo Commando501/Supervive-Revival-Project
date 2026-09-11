@@ -1,0 +1,1492 @@
+// ============================================================================
+//  MODULE   Core.AimingVis.LokiAimingVisComponent
+//  SOURCE   Core/AimingVis/LokiAimingVisComponent.as
+//  CONTENT  2 class(es), 89 function(s), 0 enum(s), 1 global(s), 11756 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiAimingVisComponentScript;
+
+ULokiAimingVisComponentScript@ ULokiAimingVisComponentScript()   // traits=0x20
+{
+    ULokiAimingVisComponentScript v2;
+
+    v2 = ULokiAimingVisComponentScript();
+    return v2;
+}
+
+UClass@ ULokiAimingVisComponentScript::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ULokiAimingVisComponentScript);
+    return v2;
+}
+
+ULokiAimingVisComponentScript@ ULokiAimingVisComponentScript::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiAimingVisComponentScript v2;
+
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiAimingVisComponentScript, v2, typeid(ULokiAimingVisComponentScript@), WithName);
+    return v2;
+}
+
+ULokiAimingVisComponentScript@ ULokiAimingVisComponentScript::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiAimingVisComponentScript v2;
+
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiAimingVisComponentScript, v2, typeid(ULokiAimingVisComponentScript@), WithName);
+    return v2;
+}
+
+ULokiAimingVisComponentScript@ ULokiAimingVisComponentScript::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    ULokiAimingVisComponentScript v2;
+
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiAimingVisComponentScript, v2, typeid(ULokiAimingVisComponentScript@), WithName);
+    return v2;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class FLaserScriptOverrides
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bOverrideDesaturationAndOpacity;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool bOverrideRangeAndAlphaStep;
+
+    FLaserScriptOverrides()   // traits=0x21
+    {
+        auto v1;
+
+        v1 = false;
+        this.bOverrideDesaturationAndOpacity = v1;
+        v1 = false;
+        this.bOverrideRangeAndAlphaStep = v1;
+        return;
+    }
+
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiAimingVisComponentScript : ULokiAimingVisComponent
+// unreal base : /Script/Loki.LokiAimingVisComponent
+// C++ header  : ../../../Loki/Source/Loki/LokiAimingVisComponent.h
+// static class global: __StaticType_ULokiAimingVisComponentScript
+{
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    ALokiCharacter@ OwnerCharacter;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bHasInitializedClient;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance, Transient)
+    bool bHasInitializedLocalClient;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    bool bHeroUsesAimingLaser;
+    UPROPERTY(EditableOnDefaults, EditableOnInstance, Transient)
+    ALokiAimingLaser@ ClientLaserInstance;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TArray<FAimingLaserSettings> LaserSettings;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    int SpawnLaserSettingsIndex;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    int CurrentLaserSettingsIndex;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance, Replicated, ReplicationCondition=0)
+    int ReplicatedLaserSettingsIndex;
+
+    ULokiAimingVisComponentScript()   // traits=0x21
+    {
+        auto v1;
+        auto v2;
+
+        this.LaserSettings = TArray<FAimingLaserSettings>();
+        v1 = false;
+        this.bHasInitializedClient = v1;
+        v1 = false;
+        this.bHasInitializedLocalClient = v1;
+        v1 = true;
+        this.bHeroUsesAimingLaser = v1;
+        v2 = 0;
+        this.SpawnLaserSettingsIndex = v2;
+        v2 = -1;
+        this.ReplicatedLaserSettingsIndex = v2;
+        return;
+    }
+
+    UFUNCTION(UnrealName=LokiBeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void LokiBeginPlay_Implementation()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = this.ReplicatedLaserSettingsIndex;
+        if (v1 >= 0) {
+            v1 = this.ReplicatedLaserSettingsIndex;
+            this.SpawnLaserSettingsIndex = v1;
+        }
+        return;
+    }
+
+    void InitClient()   // traits=0x20
+    {
+        __Evt_Execute(this, n"InitClient");
+        return;
+    }
+
+    UFUNCTION(UnrealName=InitClient, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    void InitClient_Implementation()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = Loki::LokiIsClient(__WorldContext);
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v1 = this.bHasInitializedClient;
+            v1 = !v1;
+            if (v1) {
+                v1 = this.ValidateOwner();
+                v1 = !v1;
+                if (v1) {
+                    return;
+                } else {
+                    this.OnShowAimingLaserChanged();
+                    this.OnLimitLaserToCursorChanged();
+                    this.InitClientLaser();
+                    this.OwnerCharacter.OnDestroyed.AddUFunction(this, n"OnOwnerDestroyed");
+                    this.BindHardCodedDelegates();
+                    v1 = true;
+                    this.bHasInitializedClient = v1;
+                }
+            }
+        }
+        return;
+    }
+
+    void InitLocalClient()   // traits=0x20
+    {
+        __Evt_Execute(this, n"InitLocalClient");
+        return;
+    }
+
+    UFUNCTION(UnrealName=InitLocalClient, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    void InitLocalClient_Implementation()   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        FOnGenericPlayerConfigValueUpdated v7;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.IsOwnerLocallyControlled();
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = this.bHasInitializedLocalClient;
+            v2 = !v2;
+            if (v2) {
+                v7 = FOnGenericPlayerConfigValueUpdated(this, n"OnShowAimingLaserChanged");
+                UPlayerConfigManager::RegisterOnGenericPlayerConfigValueUpdated(__WorldContext, n"Aiming", n"UseAimingLaser", v7);
+                v7 = FOnGenericPlayerConfigValueUpdated(this, n"OnLimitLaserToCursorChanged");
+                UPlayerConfigManager::RegisterOnGenericPlayerConfigValueUpdated(__WorldContext, n"Aiming", n"LimitLaserToCursor", v7);
+                this.OnShowAimingLaserChanged();
+                this.OnLimitLaserToCursorChanged();
+                this.InitClientLaser();
+                v1 = true;
+                this.bHasInitializedLocalClient = v1;
+            }
+        }
+        return;
+    }
+
+    void InitOnLocalASC()   // traits=0x20
+    {
+        __Evt_Execute(this, n"InitOnLocalASC");
+        return;
+    }
+
+    UFUNCTION(UnrealName=InitOnLocalASC, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    void InitOnLocalASC_Implementation()   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateOwner();
+            v1 = v2;
+        }
+        if (v1) {
+            this.OwnerCharacter.OnLivingStateChanged.AddUFunction(this, n"OnLivingStateChanged");
+        }
+        return;
+    }
+
+    float64 GetBonusPrimaryAttackDistance()   // traits=0x20
+    {
+        float64 v2;
+
+        v2 = 0;
+        __Evt_PushArgumentRef__float(v2);
+        __Evt_Execute(this, n"GetBonusPrimaryAttackDistance");
+        return v2;
+    }
+
+    UFUNCTION(UnrealName=GetBonusPrimaryAttackDistance, BlueprintEvent, CanOverrideEvent)
+    float64 GetBonusPrimaryAttackDistance_Implementation()   // traits=0x20
+    {
+        auto v2;
+
+        v2 = 0;
+        return v2;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnBonusPrimaryAttackDistanceChanged(const float64 NewBonusMaxDist)   // traits=0x20
+    {
+        auto v4;
+        int v5;
+        float64 v8;
+
+        if (this.HasValidAimingLaser()) {
+            v5 = this.CurrentLaserSettingsIndex;
+            v8 = this.LaserSettings[v5].MaxDistance;
+            v4 = v8;
+            v8 = 1.0;
+            v8 = v8 + NewBonusMaxDist;
+            v8 = v4 * v8;
+            this.ClientLaserInstance.SetMaxDistance(v8);
+            this.ClientLaserInstance.PrimaryAttackDistance = NewBonusMaxDist;
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool ValidateOwner()   // traits=0x20
+    {
+        auto v1;
+        AActor v4;
+        ALokiCharacter v8;
+        ALokiCharacter v10;
+
+        v1 = IsValid(this.OwnerCharacter);
+        v1 = !v1;
+        if (v1) {
+            v4 = this.GetOwner();
+            v1 = IsValid(v4);
+            v1 = !v1;
+            if (v1) {
+                v1 = false;
+                return v1;
+            }
+            if (v4 != nullptr) {
+                v10 = cast<ALokiCharacter@>(v4);
+            } else {
+                v10 = nullptr;
+            }
+            v8 = v10;
+            v1 = IsValid(v8);
+            v1 = !v1;
+            if (v1) {
+                v1 = false;
+                return v1;
+            }
+            this.OwnerCharacter = v8;
+        }
+        v1 = true;
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool IsOwnerLocallyControlled()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = this.ValidateOwner();
+        v1 = !v1;
+        if (v1) {
+            v1 = false;
+            return v1;
+        } else {
+            v1 = this.OwnerCharacter.IsLocallyControlled();
+        }
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool ValidateLaser()   // traits=0x20
+    {
+        auto v1;
+
+        if (Loki::LokiIsClient(__WorldContext)) {
+            if (this.UsesAimingLaser()) {
+                v1 = this.HasValidAimingLaser();
+                return v1;
+            }
+        } else {
+            v1 = false;
+        }
+        return v1;
+    }
+
+    bool UsesAimingLaser()   // traits=0x20
+    {
+        bool v1;
+        auto v2;
+
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"UsesAimingLaser");
+        return v1;
+    }
+
+    UFUNCTION(UnrealName=UsesAimingLaser, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    bool UsesAimingLaser_Implementation()   // traits=0x20
+    {
+        auto v1;
+        int v2;
+        auto v3;
+
+        v1 = this.bHeroUsesAimingLaser;
+        if (v1) {
+            v3 = this.LaserSettings.Num();
+            if (v3 > 0) {
+                if (UPlayerConfigManager::GetGenericPlayerConfigBoolValue(__WorldContext, n"Aiming", n"UseAimingLaser")) {
+                    v1 = true;
+                    return v1;
+                }
+                v2 = this.CurrentLaserSettingsIndex;
+                if (v2 < v3) {
+                    v2 = this.CurrentLaserSettingsIndex;
+                    v1 = this.LaserSettings[v2].bUnconditionallyVisibleWhenActive;
+                    return v1;
+                }
+            }
+        } else {
+            v1 = false;
+        }
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool HasValidAimingLaser()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = IsValid(this.ClientLaserInstance);
+        return v1;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    ALokiAimingLaser@ GetAimingLaserInstanceIfValid()   // traits=0x20
+    {
+        ALokiAimingLaser v4;
+
+        if (Loki::LokiIsClient(__WorldContext)) {
+            if (this.HasValidAimingLaser()) {
+                v4 = this.ClientLaserInstance;
+                return v4;
+            }
+        } else {
+        }
+        return v4;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    ALokiAimingLaser@ GetOrCreateAimingLaserInstance()   // traits=0x20
+    {
+        ALokiAimingLaser v4;
+
+        if (Loki::LokiIsClient(__WorldContext)) {
+            if (this.ValidateLaser()) {
+                v4 = this.ClientLaserInstance;
+                return v4;
+            }
+        } else {
+        }
+        return v4;
+    }
+
+    void InitClientLaser()   // traits=0x20
+    {
+        __Evt_Execute(this, n"InitClientLaser");
+        return;
+    }
+
+    UFUNCTION(UnrealName=InitClientLaser, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    void InitClientLaser_Implementation()   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        int v3;
+        int v4;
+        FAimingLaserSettings v22;
+
+        if (!this.UsesAimingLaser()) {
+            v1 = 0;
+        } else {
+            v2 = this.HasValidAimingLaser();
+            v2 = !v2;
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v3 = this.SpawnLaserSettingsIndex;
+            v2 = v3 >= 0;
+            v1 = v2;
+        }
+        if (v1) {
+            v22.FAimingLaserSettings();
+            v4 = this.SpawnLaserSettingsIndex;
+            this.SpawnLaser(v22);
+            v3 = this.SpawnLaserSettingsIndex;
+            this.SwitchLaserSettingsInternal(v3);
+        }
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnGamepadHasCursorChanged, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void OnGamepadHasCursorChanged_Implementation(const bool bGamepadHasCursor)   // traits=0x20
+    {
+        ALokiAimingLaser v2;
+        auto v3;
+        ULokiProjectilePathComponent v6;
+        auto v7;
+        float32 v8;
+        ALokiHeroCharacter v10;
+        ALokiCharacter v12;
+        ALokiHeroCharacter v14;
+        auto v16;
+
+        v2 = this.ClientLaserInstance;
+        if (v2 == nullptr) {
+            v3 = 0;
+        } else {
+            v6 = this.ClientLaserInstance.LaserProjectilePath;
+            v7 = v6 != nullptr;
+            v3 = v7;
+        }
+        if (v3) {
+            if (bGamepadHasCursor) {
+                v8 = 30.0;
+                this.ClientLaserInstance.LaserProjectilePath.ProjectileHeight = v8;
+                return;
+            } else {
+                v12 = this.OwnerCharacter;
+                if (v12 != nullptr) {
+                    v14 = cast<ALokiHeroCharacter@>(v12);
+                } else {
+                    v14 = nullptr;
+                }
+                v10 = v14;
+                if (v10 != nullptr) {
+                    v16 = v10.GetCharacterProjectileTerrainHeightOffset();
+                    v8 = float32(v16);
+                    this.ClientLaserInstance.LaserProjectilePath.ProjectileHeight = v8;
+                }
+            }
+        }
+        return;
+    }
+
+    void SpawnLaser(const FAimingLaserSettings& Settings)   // traits=0x20
+    {
+        __Evt_PushArgument(Settings, typeid(FAimingLaserSettings));
+        __Evt_Execute(this, n"SpawnLaser");
+        return;
+    }
+
+    UFUNCTION(UnrealName=SpawnLaser, BlueprintCallable, BlueprintEvent, CanOverrideEvent)
+    void SpawnLaser_Implementation(const FAimingLaserSettings& Settings)   // traits=0x20
+    {
+        bool v1;
+        bool v2;
+        UClass v4;
+        ALokiCharacter v6;
+        ALokiHeroCharacter v8;
+        ALokiHeroCharacter v10;
+        FVector v16;
+        FVector v22;
+        FVector v28;
+        FVector v40;
+        float64 v42;
+        FVector v48;
+        ALokiAimingLaser v50;
+        EAttachmentRule v53;
+        float64 v56;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateOwner();
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v2 = this.UsesAimingLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = Settings.bUnconditionallyVisibleWhenActive;
+            v2 = !v2;
+            if (!v2) {
+                v2 = 0;
+            } else {
+                v1 = this.IsOwnerLocallyControlled();
+                v1 = !v1;
+                v2 = v1;
+            }
+            if (v2) {
+                return;
+            } else {
+                v1 = Settings.LaserClass.IsValid();
+                v1 = !v1;
+                if (v1) {
+                    return;
+                } else {
+                    if (this.HasValidAimingLaser()) {
+                        v4 = UClass@(Settings.LaserClass);
+                        if (this.ClientLaserInstance.IsA(v4)) {
+                            return;
+                        }
+                        this.DestroyLaser();
+                    }
+                    v6 = this.OwnerCharacter;
+                    if (v6 != nullptr) {
+                        v8 = cast<ALokiHeroCharacter@>(v6);
+                    } else {
+                        v8 = nullptr;
+                    }
+                    v10 = v8;
+                    if (IsValid(v10)) {
+                        v22 = v10.GetCharacterProjectileSpawnLocation();
+                        v10.GetActorTransform()  /* UFunction GetTransform */;
+                        v16 = v10.GetActorTransform()  /* UFunction GetTransform */.InverseTransformPosition(v22);
+                        v28 = this.OwnerCharacter.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                        v40 = FVector(FVector::UpVector);
+                        v42 = v16.Z;
+                        v48 = v40 * v42;
+                        v40 = v28 + v48;
+                        v1 = false;
+                        v50 = SpawnActor(Settings.LaserClass, v40, FRotator::ZeroRotator, NAME_None, v1, nullptr);
+                        v50.SetInstigator(this.OwnerCharacter);
+                        v50.OwnerAimingVisComponent = this;
+                        v50.UpdateOwner(v10);
+                        v53 = EAttachmentRule::SnapToTarget;
+                        v50.AttachToActor(this.OwnerCharacter, NAME_None, v53)  /* UFunction K2_AttachToActor */;
+                        v42 = v10.GetCharacterProjectileTerrainHeightOffset();
+                        v56 = v16.Size2D();
+                        v50.SetProjectileSpawnLocation(v56, v42);
+                        v2 = true;
+                        this.ClientLaserSetVisibility(v2);
+                        this.ClientLaserInstance = v50;
+                        this.OnLimitLaserToCursorChanged();
+                        this.ClientLaserInstance.OnLaserSpawned();
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void DestroyLaser()   // traits=0x20
+    {
+        if (this.HasValidAimingLaser()) {
+            this.ClientLaserInstance.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+
+    protected void SwitchLaserSettingsInternal(const int NewIndex)   // traits=0x30
+    {
+        __Evt_PushArgument__int(NewIndex);
+        __Evt_Execute(this, n"SwitchLaserSettingsInternal");
+        return;
+    }
+
+    UFUNCTION(UnrealName=SwitchLaserSettingsInternal, BlueprintEvent, CanOverrideEvent, meta.BlueprintProtected)
+    protected void SwitchLaserSettingsInternal_Implementation(const int NewIndex)   // traits=0x30
+    {
+        bool v1;
+        int v2;
+        auto v3;
+        FAimingLaserSettings v22;
+        UObject v24;
+        float64 v26;
+        float64 v28;
+        auto v30;
+
+        if (Loki::LokiIsClient(__WorldContext)) {
+            if (this.ValidateOwner()) {
+                if (this.LaserSettings.IsValidIndex(NewIndex)) {
+                    v3 = this.CurrentLaserSettingsIndex;
+                    v2 = v3;
+                    this.CurrentLaserSettingsIndex = NewIndex;
+                    v22.FAimingLaserSettings();
+                    v24 = UObject@(v22.LaserClass);
+                    if (IsValid(v24)) {
+                        this.DestroyLaser();
+                        this.SpawnLaser(v22);
+                    }
+                    v1 = this.HasValidAimingLaser();
+                    v1 = !v1;
+                    if (v1) {
+                        return;
+                    } else {
+                        v1 = v22.bOverrideLimitLaserToCursor;
+                        if (v1) {
+                            v1 = v22.bLimitLaserToCursor;
+                            this.ClientLaserInstance.OverrideLimitLaserToCursor(v1);
+                        } else {
+                            this.ClientLaserInstance.ClearOverrideLimitLaserToCursor();
+                        }
+                        v28 = v22.MaxDistance;
+                        v26 = v28;
+                        v1 = v22.bBenefitsFromBonusPrimaryAttackDistance;
+                        if (v1) {
+                            v28 = this.GetBonusPrimaryAttackDistance();
+                            this.ClientLaserInstance.PrimaryAttackDistance = v28;
+                            v30 = 1.0;
+                            v28 = this.GetBonusPrimaryAttackDistance();
+                            v30 = v30 + v28;
+                            v26 = v26 * v30;
+                        }
+                        this.ClientLaserInstance.SetMaxDistance(v26);
+                        if (IsValid(v22.LaserMaterial)) {
+                            this.ClientLaserInstance.SetLaserMaterial(v22.LaserMaterial);
+                        }
+                        if (IsValid(v22.EndpointMaterial)) {
+                            this.ClientLaserInstance.SetEndpointMaterial(v22.EndpointMaterial);
+                        }
+                        if (IsValid(v22.HitFlareNiagaraSystem)) {
+                            this.ClientLaserInstance.SetHitFlareNiagaraSystem(v22.HitFlareNiagaraSystem);
+                        }
+                        v1 = v22.bOverrideBrightness;
+                        if (v1) {
+                            v28 = v22.Brightness;
+                            this.ClientLaserInstance.SetBrightness(v28);
+                        }
+                        v1 = v22.bShowTraceHitFlare;
+                        this.ClientLaserInstance.bShowTraceHitFlare = v1;
+                        v1 = v22.bLimitLaserToTraceHit;
+                        this.ClientLaserInstance.bLimitLaserToTraceHit = v1;
+                        v1 = v22.bIgnoresHeroes;
+                        this.ClientLaserInstance.bIgnoresHeroes = v1;
+                        this.ClientLaserInstance.OnLaserSettingsIndexChanged(v2, NewIndex);
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    void OnLivingStateChangedLaser(const ELivingState NewLivingState)   // traits=0x20
+    {
+        __Evt_PushArgument__ELivingState(NewLivingState);
+        __Evt_Execute(this, n"OnLivingStateChangedLaser");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnLivingStateChangedLaser, BlueprintEvent, CanOverrideEvent)
+    void OnLivingStateChangedLaser_Implementation(const ELivingState NewLivingState)   // traits=0x20
+    {
+        bool v1;
+        bool v2;
+        int v3;
+        int v4;
+        FAimingLaserSettings v22;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.UsesAimingLaser();
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateOwner();
+            v1 = v2;
+        }
+        if (v1) {
+            v3 = int(NewLivingState);
+            if (v3 <= ELivingState::ELivingStateKnocked) {
+                if (v3 >= ELivingState::ELivingStateDead) {
+                    v4 = v3 - 0;
+                    switch (v4)
+                    {
+                        case 0: goto L00F4;
+                        case 1: goto L011C;
+                    }
+                    v2 = false;
+                    this.ClientLaserSetVisibility(v2);
+                    return;
+    L00F4:
+                    if (this.HasValidAimingLaser()) {
+                        this.DestroyLaser();
+                    }
+                    return;
+    L011C:
+                    if (this.HasValidAimingLaser()) {
+                        v1 = true;
+                        this.ClientLaserSetVisibility(v1);
+                    } else {
+                        v22.FAimingLaserSettings();
+                        v3 = this.SpawnLaserSettingsIndex;
+                        this.SpawnLaser(v22);
+                        v4 = this.SpawnLaserSettingsIndex;
+                        this.SwitchLaserSettingsInternal(v4);
+                    }
+                    return;
+                }
+            }
+        }
+        return;
+    }
+
+    void OnShowAimingLaserChanged()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnShowAimingLaserChanged");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnShowAimingLaserChanged, BlueprintEvent, CanOverrideEvent)
+    void OnShowAimingLaserChanged_Implementation()   // traits=0x20
+    {
+        auto v1;
+        int v2;
+        FAimingLaserSettings v20;
+
+        v1 = this.UsesAimingLaser();
+        v1 = !v1;
+        if (v1) {
+            if (this.HasValidAimingLaser()) {
+                this.DestroyLaser();
+            }
+            return;
+        } else {
+            v1 = this.HasValidAimingLaser();
+            v1 = !v1;
+            if (v1) {
+                v20.FAimingLaserSettings();
+                v2 = this.SpawnLaserSettingsIndex;
+                this.SpawnLaser(v20);
+                v2 = this.SpawnLaserSettingsIndex;
+                this.SwitchLaserSettingsInternal(v2);
+            }
+        }
+        return;
+    }
+
+    void OnLimitLaserToCursorChanged()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnLimitLaserToCursorChanged");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnLimitLaserToCursorChanged, BlueprintEvent, CanOverrideEvent)
+    void OnLimitLaserToCursorChanged_Implementation()   // traits=0x20
+    {
+        auto v1;
+        bool v2;
+
+        if (Loki::LokiIsClient(__WorldContext)) {
+            if (!this.UsesAimingLaser()) {
+                v1 = 0;
+            } else {
+                v2 = this.HasValidAimingLaser();
+                v1 = v2;
+            }
+            if (v1) {
+                v2 = UPlayerConfigManager::GetGenericPlayerConfigBoolValue(__WorldContext, n"Aiming", n"LimitLaserToCursor");
+                this.ClientLaserInstance.SetLimitLaserToCursorUserSetting(v2);
+            }
+        }
+        return;
+    }
+
+    void ClientLaserSetVisibility(const bool bNewVisibility)   // traits=0x20
+    {
+        __Evt_PushArgument__bool(bNewVisibility);
+        __Evt_Execute(this, n"ClientLaserSetVisibility");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserSetVisibility, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetVisibility_Implementation(const bool bNewVisibility)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetVisibilityOnAll(bNewVisibility);
+        }
+        return;
+    }
+
+    void ClientLaserSetScriptOverrides(const FLaserScriptOverrides& Overrides)   // traits=0x20
+    {
+        __Evt_PushArgument(Overrides, typeid(FLaserScriptOverrides));
+        __Evt_Execute(this, n"ClientLaserSetScriptOverrides");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserSetScriptOverrides, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetScriptOverrides_Implementation(const FLaserScriptOverrides& Overrides)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = Overrides.bOverrideDesaturationAndOpacity;
+            this.ClientLaserInstance.bOverrideDesaturationAndOpacity = v2;
+            v1 = Overrides.bOverrideRangeAndAlphaStep;
+            this.ClientLaserInstance.bOverrideRangeAndAlphaStep = v1;
+        }
+        return;
+    }
+
+    void ClientLaserSetProgressCurve(UCurveFloat@ NewCurve)   // traits=0x20
+    {
+        __Evt_PushArgument__UCurveFloat(NewCurve);
+        __Evt_Execute(this, n"ClientLaserSetProgressCurve");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserSetProgressCurve, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetProgressCurve_Implementation(UCurveFloat@ NewCurve)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetProgressCurve(NewCurve);
+        }
+        return;
+    }
+
+    void ClientLaserRestartProgressSequence(const float64 Duration, const bool bIsCurveNormalized)   // traits=0x20
+    {
+        __Evt_PushArgument__float(Duration);
+        __Evt_PushArgument__bool(bIsCurveNormalized);
+        __Evt_Execute(this, n"ClientLaserRestartProgressSequence");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserRestartProgressSequence, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserRestartProgressSequence_Implementation(const float64 Duration, const bool bIsCurveNormalized)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.RestartProgressSequence(Duration, bIsCurveNormalized);
+        }
+        return;
+    }
+
+    void ClientLaserResetProgress()   // traits=0x20
+    {
+        __Evt_Execute(this, n"ClientLaserResetProgress");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserResetProgress, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserResetProgress_Implementation()   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.ResetProgress();
+        }
+        return;
+    }
+
+    void ClientLaserTriggerCustomEvent(const int EventNumber, const float64 Value)   // traits=0x20
+    {
+        __Evt_PushArgument__int(EventNumber);
+        __Evt_PushArgument__float(Value);
+        __Evt_Execute(this, n"ClientLaserTriggerCustomEvent");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserTriggerCustomEvent, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserTriggerCustomEvent_Implementation(const int EventNumber, const float64 Value)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        auto v3;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            if (EventNumber <= 3) {
+                if (EventNumber <= 3) {
+                    if (EventNumber >= 0) {
+                        v3 = EventNumber - 0;
+                        switch (v3)
+                        {
+                            case 0: goto L00B8;
+                            case 1: goto L00DC;
+                            case 2: goto L0100;
+                            case 3: goto L0124;
+                        }
+    L00B8:
+                        this.ClientLaserInstance.CustomEvent0(Value);
+                        return;
+    L00DC:
+                        this.ClientLaserInstance.CustomEvent1(Value);
+                        return;
+    L0100:
+                        this.ClientLaserInstance.CustomEvent2(Value);
+                        return;
+    L0124:
+                        this.ClientLaserInstance.CustomEvent3(Value);
+                        return;
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    void ClientLaserSetMaxDistance(const float64 MaxDistance)   // traits=0x20
+    {
+        __Evt_PushArgument__float(MaxDistance);
+        __Evt_Execute(this, n"ClientLaserSetMaxDistance");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserSetMaxDistance, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetMaxDistance_Implementation(const float64 MaxDistance)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetMaxDistance(MaxDistance);
+        }
+        return;
+    }
+
+    void ClientLaserSetHueShift(const float64 NewHueShift)   // traits=0x20
+    {
+        __Evt_PushArgument__float(NewHueShift);
+        __Evt_Execute(this, n"ClientLaserSetHueShift");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserSetHueShift, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetHueShift_Implementation(const float64 NewHueShift)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetHueShift(NewHueShift);
+        }
+        return;
+    }
+
+    void ClientLaserSetLaserMaterial(UMaterialInterface@ NewMaterial)   // traits=0x20
+    {
+        __Evt_PushArgument__UMaterialInterface(NewMaterial);
+        __Evt_Execute(this, n"ClientLaserSetLaserMaterial");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserSetLaserMaterial, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetLaserMaterial_Implementation(UMaterialInterface@ NewMaterial)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetLaserMaterial(NewMaterial);
+        }
+        return;
+    }
+
+    void ClientLaserSetEndpointMaterial(UMaterialInterface@ NewMaterial)   // traits=0x20
+    {
+        __Evt_PushArgument__UMaterialInterface(NewMaterial);
+        __Evt_Execute(this, n"ClientLaserSetEndpointMaterial");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserSetEndpointMaterial, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetEndpointMaterial_Implementation(UMaterialInterface@ NewMaterial)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetEndpointMaterial(NewMaterial);
+        }
+        return;
+    }
+
+    void ClientLaserSetHitFlareNiagaraSystem(UNiagaraSystem@ NewNiagaraSystem)   // traits=0x20
+    {
+        __Evt_PushArgument__UNiagaraSystem(NewNiagaraSystem);
+        __Evt_Execute(this, n"ClientLaserSetHitFlareNiagaraSystem");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserSetHitFlareNiagaraSystem, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetHitFlareNiagaraSystem_Implementation(UNiagaraSystem@ NewNiagaraSystem)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetHitFlareNiagaraSystem(NewNiagaraSystem);
+        }
+        return;
+    }
+
+    void ClientLaserSetBrightness(const float64 NewBrightness)   // traits=0x20
+    {
+        __Evt_PushArgument__float(NewBrightness);
+        __Evt_Execute(this, n"ClientLaserSetBrightness");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserSetBrightness, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetBrightness_Implementation(const float64 NewBrightness)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.SetBrightness(NewBrightness);
+        }
+        return;
+    }
+
+    void ClientLaserOverrideLimitLaserToCursor(const bool bNewLimitLaserToCursorOverride)   // traits=0x20
+    {
+        __Evt_PushArgument__bool(bNewLimitLaserToCursorOverride);
+        __Evt_Execute(this, n"ClientLaserOverrideLimitLaserToCursor");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserOverrideLimitLaserToCursor, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserOverrideLimitLaserToCursor_Implementation(const bool bNewLimitLaserToCursorOverride)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.OverrideLimitLaserToCursor(bNewLimitLaserToCursorOverride);
+        }
+        return;
+    }
+
+    void ClientLaserClearOverrideLimitLaserToCursor()   // traits=0x20
+    {
+        __Evt_Execute(this, n"ClientLaserClearOverrideLimitLaserToCursor");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserClearOverrideLimitLaserToCursor, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserClearOverrideLimitLaserToCursor_Implementation()   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (v1) {
+            this.ClientLaserInstance.ClearOverrideLimitLaserToCursor();
+        }
+        return;
+    }
+
+    void ClientLaserSwitchSettings(const int NewSettingsIndex)   // traits=0x20
+    {
+        __Evt_PushArgument__int(NewSettingsIndex);
+        __Evt_Execute(this, n"ClientLaserSwitchSettings");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserSwitchSettings, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSwitchSettings_Implementation(const int NewSettingsIndex)   // traits=0x20
+    {
+        int v2;
+
+        this.ReplicatedLaserSettingsIndex = NewSettingsIndex;
+        if (Loki::LokiIsClient(__WorldContext)) {
+            v2 = this.ReplicatedLaserSettingsIndex;
+            this.SwitchLaserSettingsInternal(v2);
+        }
+        return;
+    }
+
+    void ClientLaserShowRangeMarker(const bool bNewShowRangeMarker)   // traits=0x20
+    {
+        __Evt_PushArgument__bool(bNewShowRangeMarker);
+        __Evt_Execute(this, n"ClientLaserShowRangeMarker");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserShowRangeMarker, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserShowRangeMarker_Implementation(const bool bNewShowRangeMarker)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        UClass v4;
+        ALokiAimingLaser v6;
+        ALokiAimingLaserRangeMarker v8;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v4 = UClass@(__StaticType_ALokiAimingLaserRangeMarker);
+            v2 = this.ClientLaserInstance.IsA(v4);
+            v1 = v2;
+        }
+        if (v1) {
+            v6 = this.ClientLaserInstance;
+            if (v6 != nullptr) {
+                v8 = cast<ALokiAimingLaserRangeMarker@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v8.SetShowRangeMarker(<?>);
+        }
+        return;
+    }
+
+    void ClientLaserSetRangeMarkerDistance(const float64 NewDistance)   // traits=0x20
+    {
+        __Evt_PushArgument__float(NewDistance);
+        __Evt_Execute(this, n"ClientLaserSetRangeMarkerDistance");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserSetRangeMarkerDistance, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetRangeMarkerDistance_Implementation(const float64 NewDistance)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        UClass v4;
+        ALokiAimingLaser v6;
+        ALokiAimingLaserRangeMarker v8;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v4 = UClass@(__StaticType_ALokiAimingLaserRangeMarker);
+            v2 = this.ClientLaserInstance.IsA(v4);
+            v1 = v2;
+        }
+        if (v1) {
+            v6 = this.ClientLaserInstance;
+            if (v6 != nullptr) {
+                v8 = cast<ALokiAimingLaserRangeMarker@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v8.SetRangeMarkerDistance(<?>);
+        }
+        return;
+    }
+
+    void ClientLaserSetRangeMarkerMaterial(UMaterialInterface@ NewMaterial)   // traits=0x20
+    {
+        __Evt_PushArgument__UMaterialInterface(NewMaterial);
+        __Evt_Execute(this, n"ClientLaserSetRangeMarkerMaterial");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientLaserSetRangeMarkerMaterial, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientLaserSetRangeMarkerMaterial_Implementation(UMaterialInterface@ NewMaterial)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+        UClass v4;
+        ALokiAimingLaser v6;
+        ALokiAimingLaserRangeMarker v8;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.ValidateLaser();
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v4 = UClass@(__StaticType_ALokiAimingLaserRangeMarker);
+            v2 = this.ClientLaserInstance.IsA(v4);
+            v1 = v2;
+        }
+        if (v1) {
+            v6 = this.ClientLaserInstance;
+            if (v6 != nullptr) {
+                v8 = cast<ALokiAimingLaserRangeMarker@>(v6);
+            } else {
+                v8 = nullptr;
+            }
+            v8.SetRangeMarkerMaterial(<?>);
+        }
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    bool HasValidHeightIndicator()   // traits=0x20
+    {
+        auto v1;
+
+        v1 = IsValid(this.HeightIndicator);
+        return v1;
+    }
+
+    void DestroyHeightIndicator()   // traits=0x20
+    {
+        __Evt_Execute(this, n"DestroyHeightIndicator");
+        return;
+    }
+
+    UFUNCTION(UnrealName=DestroyHeightIndicator, BlueprintEvent, CanOverrideEvent)
+    void DestroyHeightIndicator_Implementation()   // traits=0x20
+    {
+        if (this.HasValidHeightIndicator()) {
+            this.HeightIndicator.DestroyActor()  /* UFunction K2_DestroyActor */;
+        }
+        return;
+    }
+
+    void OnTookDamageHeightIndicator(ALokiCharacter@ SourceCharacter, AActor@ TargetActor, const float32 TotalDamage, const FLokiDamageStatistic&in DamageStatistic, const FGameplayEffectSpec&in EffectSpec, const FGameplayTagContainer&in ExecutionTags)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiCharacter(SourceCharacter);
+        __Evt_PushArgument__AActor(TargetActor);
+        __Evt_PushArgument__float32(TotalDamage);
+        __Evt_PushArgument__FLokiDamageStatistic(DamageStatistic);
+        __Evt_PushArgument__FGameplayEffectSpec(EffectSpec);
+        __Evt_PushArgument__FGameplayTagContainer(ExecutionTags);
+        __Evt_Execute(this, n"OnTookDamageHeightIndicator");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnTookDamageHeightIndicator, BlueprintEvent, CanOverrideEvent)
+    void OnTookDamageHeightIndicator_Implementation(ALokiCharacter@ SourceCharacter, AActor@ TargetActor, const float32 TotalDamage, const FLokiDamageStatistic&in DamageStatistic, const FGameplayEffectSpec&in EffectSpec, const FGameplayTagContainer&in ExecutionTags)   // traits=0x20
+    {
+        auto v1;
+        auto v2;
+
+        if (!this.ValidateOwner()) {
+            v1 = 0;
+        } else {
+            v2 = this.HasValidHeightIndicator();
+            v1 = v2;
+        }
+        if (v1) {
+            this.HeightIndicator.OnTookDamage(SourceCharacter, TargetActor, TotalDamage, DamageStatistic, EffectSpec, ExecutionTags);
+        }
+        return;
+    }
+
+    void ClientSetHeightIndicatorVisibility(const bool bNewVisibility)   // traits=0x20
+    {
+        __Evt_PushArgument__bool(bNewVisibility);
+        __Evt_Execute(this, n"ClientSetHeightIndicatorVisibility");
+        return;
+    }
+
+    UFUNCTION(UnrealName=ClientSetHeightIndicatorVisibility, BlueprintCallable, BlueprintEvent, NetMulticast, CanOverrideEvent)
+    void ClientSetHeightIndicatorVisibility_Implementation(const bool bNewVisibility)   // traits=0x20
+    {
+        auto v1;
+        bool v2;
+        USceneComponent v4;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.HasValidHeightIndicator();
+            v1 = v2;
+        }
+        if (!v1) {
+            v1 = 0;
+        } else {
+            v2 = this.HeightIndicator.ShouldShowHeightIndicator();
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = true;
+            v4 = this.HeightIndicator.GetRootComponent()  /* UFunction K2_GetRootComponent */;
+            v4.SetVisibility(bNewVisibility, v2);
+        }
+        return;
+    }
+
+    void OnShowHeightIndicatorsChanged()   // traits=0x20
+    {
+        __Evt_Execute(this, n"OnShowHeightIndicatorsChanged");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnShowHeightIndicatorsChanged, BlueprintEvent, CanOverrideEvent)
+    void OnShowHeightIndicatorsChanged_Implementation()   // traits=0x20
+    {
+        auto v1;
+        bool v2;
+
+        if (!Loki::LokiIsClient(__WorldContext)) {
+            v1 = 0;
+        } else {
+            v2 = this.HasValidHeightIndicator();
+            v1 = v2;
+        }
+        if (v1) {
+            v2 = this.HeightIndicator.ShouldShowHeightIndicator();
+            this.ClientSetHeightIndicatorVisibility(v2);
+        }
+        return;
+    }
+
+    void OnLivingStateChanged(const ELivingState NewLivingState, ALokiCharacter@ Character)   // traits=0x20
+    {
+        __Evt_PushArgument__ELivingState(NewLivingState);
+        __Evt_PushArgument__ALokiCharacter(Character);
+        __Evt_Execute(this, n"OnLivingStateChanged");
+        return;
+    }
+
+    UFUNCTION(UnrealName=OnLivingStateChanged, BlueprintEvent, CanOverrideEvent)
+    void OnLivingStateChanged_Implementation(const ELivingState NewLivingState, ALokiCharacter@ Character)   // traits=0x20
+    {
+        this.OnLivingStateChangedLaser(NewLivingState);
+        return;
+    }
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnOwnerDestroyed(AActor@ DestroyedActor)   // traits=0x20
+    {
+        this.DestroyHeightIndicator();
+        return;
+    }
+
+    void __InitDefaults()   // traits=0x20
+    {
+        bool v1;
+
+        v1 = true;
+        this.SetbReplicates(v1);
+        return;
+    }
+
+    void ~ULokiAimingVisComponentScript()   // traits=0x22
+    {
+        return;
+    }
+
+}
+

@@ -1,0 +1,123 @@
+# cited addresses RVA>=0x1000000 that are DARK in dumps/merged6.dump.exe
+0x05875000	11
+	docs\coverage-audit-s101.md:187	> `TryJoinQueue`'s page `0x5875000` is 100 % zero in every dump. **★ The settling experiment costs
+	docs\coverage-audit-s101.md:685	> UNKNOWN**: `TryJoinQueue`'s implementation page `0x5875000` is 100 % zero in every dump we own.
+	docs\fk5-battle-gate-settled.md:59	| 5 | `UPartyManager::TryJoinQueue`'s implementation page `0x5875000` is likewise **100 % zero**. The real matchmaking path has ne
+	docs\fk5-battle-gate-settled.md:191	| **`TryJoinQueue` impl `0x5875E90`** | `0x05875000` | **0 / 4096** | never executed |
+	docs\fk5-battle-gate-settled.md:391	| **4** | **`TryJoinQueue`'s own native preconditions.** Page `0x5875000` is 100 % zero. | BATTLE | §2.5 | **`[U]` — the largest r
+	docs\fk5-battle-gate-settled.md:891	`0x5875000` and makes `TryJoinQueue` disassemblable — **the single highest-value capture available**,
+	docs\fk5-battle-gate-settled.md:913	| **1** | **`UPartyManager::TryJoinQueue`'s own preconditions.** *The largest residual.* Whether anything in it requires a complet
+	docs\fk5-battle-practice-gate-s105.md:390	`0x5875000`, which is **100 % zero in `dumps/merged.dump.exe`** — i.e. across every game state we
+	docs\fk5-battle-practice-gate-s105.md:581	* **`UPartyManager::TryJoinQueue`'s own preconditions.** Its entry page (`0x5875000`) is 100 % zero
+	docs\ignorance-map-s101.md:401	> page `0x5875000` is 100 % zero in every dump we own, so its preconditions are unreadable offline.
+	docs\ignorance-map-s101.md:2270	| ↳ | **✅ SETTLED S105 → `docs/fk5-battle-gate-settled.md`.** *Row preserved above; its diagnosis was right and is now measured.* 
+0x05875e90	7
+	docs\fk5-battle-gate-settled.md:191	| **`TryJoinQueue` impl `0x5875E90`** | `0x05875000` | **0 / 4096** | never executed |
+	docs\fk5-battle-gate-settled.md:896	# then: python tools\strxref\strxref.py func 0x5875E90
+	docs\fk5-battle-gate-settled.md:913	| **1** | **`UPartyManager::TryJoinQueue`'s own preconditions.** *The largest residual.* Whether anything in it requires a complet
+	docs\fk5-battle-practice-gate-s105.md:382	| `POST /party/parties/{id}/joinQueue` | `0x08B4C218` | `0x584C520` (501 B, exact) → caller `0x5875E90` = `UPartyManager::TryJoinQ
+	docs\fk5-battle-practice-gate-s105.md:389	**Diagnostic worth recording:** `UPartyManager::TryJoinQueue`'s entry (`0x5875E90`) sits in page
+	docs\fk5-latency-subsystem-re.md:204	The same test on `UPartyManager::TryJoinQueue` (impl `0x5875E90`, resolved via
+	docs\fk5-latency-subsystem-re.md:502	| `UPartyManager::TryJoinQueue` (impl, **undecrypted**) | `0x5875E90` |
+0x07649000	6
+	docs\fk1-stub-claim-recheck.md:45	| `.text` | `0x1000 + 0x7649000` | identical |
+	docs\next-session-prompt-s63.md:118	- .text range for the vtable-end guard: rva 0x1000 .. 0x7649000 (above that = .rdata/data, NOT code).
+	docs\next-session-prompt-s64.md:88	- `.text` range for the vtable-end guard: rva `0x1000` .. `0x7649000`.
+	docs\next-session-prompt-s65.md:93	- .text range `0x1000`..`0x7649000`. UFunction.Func@+0xE0; FProperty Offset_Internal@+0x44; FField Next@+0x18, Name@+0x20.
+	docs\next-session-prompt-s66.md:91	model bIsValid@0x30 / MatchState@0x48 / MatchInfo@0xB0. .text range `0x1000`..`0x7649000`.
+	docs\next-session-prompt-s67.md:88	- Loki PC vtable rva `0x8A1AEE0`; InitPlayerState slots 260/273. .text range `0x1000`..`0x7649000`.
+0x0534be80	6
+	docs\fk13-exec-reach-plan.md:71	| `cchThunk=0x7FF6BA83BE80` | `0x0534BE80` | `CheatChangeHero` **`0x0534BE80`** ✅ |
+	docs\fk13-exec-reach-plan.md:71	| `cchThunk=0x7FF6BA83BE80` | `0x0534BE80` | `CheatChangeHero` **`0x0534BE80`** ✅ |
+	docs\fk13-exec-reach-plan.md:212	in a buffer the shim owns and keep it alive across the call. The thunk is `0x0534BE80`, **live-
+	docs\fk3-fk4-settled.md:557	`0x534BE80` → impl `0x5611090`, whose enclosing function's only string is
+	docs\fk6-cheat-surface-settled.md:741	`0x534BE80`, `CheatSetTeamEliminated` `0x5422250`, `ULokiBotSpawnerComponent::SpawnBot` impl
+	docs\strxref-open-questions.md:337	→ exec `0x534BE80` → impl `0x5611090`, inside `0x5610CE0`, whose only string reference is
+0x03c8edf2	5
+	CLAUDE.md:411	only xref image-wide, and the next thing to read after `0x03C8EDF2`.
+	docs\fk10-protector-identified.md:386	first time. ⚠ The role of the `0x03C8EDF2` site is **[S]**, not the kill: its surrounding
+	docs\fk10-protector-identified.md:481	search *was* decisive: it produced the `0x03C8EDF2` hit (§5, poison-jump annotation) that the
+	docs\fk10-protector-identified.md:494	| the 13 `movabs ±(ImageBase+1)` sites | **refuted as literal constants** | 9 of the 10 positives are consumed by `and reg,<just-s
+	docs\fk10-protector-identified.md:655	`0x03C8EDF2` counter-example fell into.
+0x04bdc3c0	4
+	docs\session-79-moonshot-plan.md:788	**`obj+0x38` -> vtable base+0x865CC30, slot19 = `base+0x4BDC3C0` (UNIQUE)**. Consistent with the exec thunk calling
+	docs\session-79-moonshot-plan.md:789	`[vtable+0x98]` on the interface-adjusted `this`. ⇒ **`AddMappingContext` impl = `base+0x4BDC3C0`** (strong, by
+	docs\session-79-moonshot-plan.md:791	- ⚠ **Disasm confirmation of `base+0x4BDC3C0` is BLOCKED: the page is NOT demand-decrypted (RPM/peek both fail).** This
+	docs\session-79-moonshot-plan.md:802	route. To find the IMC, use `usmapdump findptr <base+0x4BDC3C0>` (locate the vtables) or -- better -- go back to the
+0x03c8eff3	3
+	CLAUDE.md:406	`variable + ImageBase + 1`, and the result is DEREFERENCED at `0x03C8EFF3`. READ IT.**
+	docs\fk10-protector-identified.md:381	inputs, 2000/2000) and the result **is dereferenced** at `0x03C8EFF3 movzx r12d, byte ptr [r9]`.
+	docs\next-session-prompt-s133.md:210	at `0x03C8EFF3 movzx r12d, byte ptr [r9]`. The `+1` comes from the polynomial, not the immediate —
+0x0560ee70	3
+	docs\fk22-dropphase-reachability.md:549	**★★ The tutorial receives the event.** `ALokiTutorialGameMode` (`GetPrivateStaticClass 0x548C030`, sole `lea` to `"LokiTutorialGa
+	docs\fk22-dropphase-reachability.md:626	- **(ii) Bank a `usmapdump dumpimage` from the staged sitting as a rider.** Pages `0x560EE70` (BR phase-4 body), `0x5456000` (all 
+	docs\fk22-dropphase-reachability.md:662	- **Coverage-blocked, denominator stated:** `0x560EE70`, `0x5456C80`, `0x55A34E0/37F0/3F50`, the five `AuthPlayerEnterWorld*`, `Tr
+0x0560f8ae	3
+	docs\fk8-crash-clusters.md:179	| **2** | `SUPERVIVE+0x560f8ae` | uecc | read `0x0` | GameThread | 2/2 | tutorial 2 | 60, 677 | 2026-07-12 |
+	docs\session-74-b2-roundadvance-recon.md:73	`Unhandled Exception: EXCEPTION_ACCESS_VIOLATION reading address 0x0` — callstack top frames rva ~0x560F8AE/
+	docs\session-74-pathA-step0-null.md:16	[NULL] fatal 0xC0000005 RIP=0x7FF6BAAFF8AE rva=0x560F8AE access=READ addr=0x0
+0x056680f0	3
+	docs\next-session-prompt-s132.md:104	`0x56680F0`, then `SpawnAndMoveLokiCharacter_MoveStep` `0x55C1B20`, collision toggled around them) and
+	docs\s131-pod-functionality-settled.md:745	(`0x56680F0`) then `SpawnAndMoveLokiCharacter_MoveStep` (`0x55C1B20`), with collision toggled on and
+	docs\s131-pod-functionality-settled.md:766	* ⚠ **`LokiTeleportActor` (`0x56680F0`) is COVERAGE-BLOCKED** — its page is all-zero in `merged4`. Not
+0x05a6ac40	2
+	CLAUDE.md:2077	(`0x5A6AC40`), `ALokiDropShip::SpawnDropPodForTeam` (`0x597E730`), the `ALokiDropPod` steppers,
+	docs\fk1-angelscript-settled.md:304	door*: `ULokiRespawnComponent::Respawn` (`0x5A6AC40`), `ULokiPlayerRespawnComponent::AuthRequestRespawn`,
+0x0166aa7b	2
+	docs\fk10-protector-identified.md:536	`−C = ImageBase + 0x166AA7B`. **Prediction registered from the algebra, then tested: `0x166AA7B`
+	docs\fk10-protector-identified.md:536	`−C = ImageBase + 0x166AA7B`. **Prediction registered from the algebra, then tested: `0x166AA7B`
+0x05422360	2
+	docs\fk13-console-exec-settled.md:244	(`CheatTeleportLocation 0x5422360`, `CheatChangeHero 0x54179B0`, `EnableHotkeyCheats 0x5424670`).
+	docs\fk13-exec-reach-plan.md:183	Registered thunk `0x05422360` (coverage-blocked in the dumps; §1 shows blocked ≠ absent).
+0x055a33f0	2
+	docs\fk22-dropphase-reachability.md:673	5. **★ Grading REAL under coverage blindness.** `BeginFollowingActor` was listed as REAL in the same paragraph that correctly list
+	docs\method-rules.md:147	| **★ S124-m** | grading REAL while coverage-blind | — | `BeginFollowingActor` listed **REAL** in the same paragraph that correctl
+0x01818a81	2
+	docs\fk22-dropphase-reachability.md:1813	not contain `SpawnDropPodForTeam`). Recovered directly: cache **Id `0x01818A81`** via
+	docs\fk22-dropphase-reachability.md:1815	3 params); that Id appears **exactly once** in `.text` as `mov edx,0x1818A81` inside the registration
+0x052fef50	2
+	docs\fk3-fk4-settled.md:528	| `FeatureTogglesReadyOrChanged` | exec `0x52FEF50` | all-zero page | same |
+	docs\strxref-open-questions.md:117	| `FeatureTogglesReadyOrChanged` | `0x52FEF50` | **all-zero page — undecrypted** |
+0x0556d910	2
+	docs\fk6-cheat-surface-settled.md:592	⚠ **Downgraded per the evidence skeptic, and I confirm:** `SpawnBot`'s impl `0x556D910` is
+	docs\fk6-cheat-surface-settled.md:742	`0x556D910`, `ALokiBattleRoyaleSpawner::SpawnSingleActor` impl `0x5611A50`,
+0x07649f39	2
+	docs\ignorance-map-s101.md:2133	| B5 | **Minidump stream 13 = the entire missing `.pdata`** — `SizeOfDescriptor=32, SizeOfFunctionEntry=12, NumberOfDescriptors=7`
+	docs\strxref-state-coverage.md:303	`base=0x7FF6E7D30000, 524,439 entries, RVA 0x8A00 … 0x7649F39` — the entire `.text`
+0x05483c00	2
+	docs\strxref-known-addresses.md:113	| `GetTrainingManager  native+0x5483C00` | `ALokiTeamState_TeamOnly::GetDropLeader` |
+	docs\tutorial-playability-plan.md:230	GetTrainingManager  native+0x5483C00 / IsDisabledForConfig native+0x548A4F0
+0x019dc131	1
+	docs\fk10-protector-identified.md:499	for `0x019DC131`**, whose preceding eight instructions contain no `shl` at all and whose constant is
+0x056face0	1
+	docs\fk22-dropphase-reachability.md:136	- The two RPC verdicts were taken through the **class vtable** because their `_Implementation` is virtual: `ULokiPlayerDropPlaneCo
+0x056fae90	1
+	docs\fk22-dropphase-reachability.md:136	- The two RPC verdicts were taken through the **class vtable** because their `_Implementation` is virtual: `ULokiPlayerDropPlaneCo
+0x055653e0	1
+	docs\fk22-dropphase-reachability.md:360	| **COVERAGE negative control** `ALokiGameState::AuthSetDeathCircle` | must report separately, never as EMPTY | impl `0x55653e0`, 
+0x04420405	1
+	docs\fk22-dropphase-reachability.md:521	- **1→2** is `0x560AF10` (vtable disp `0x8F0`): `call 0x55FE680` → `cmp dword [rax+8],1; jle` (**`ALokiGameState::MatchStartDetail
+0x05442960	1
+	docs\fk22-dropphase-reachability.md:579	- ⚠ **Line 3 mis-verdicted `ULokiPreloadComponent::OnRoundPhaseChanged` as COVERAGE-BLOCKED.** Its thunk `0x5442960` really is 32 
+0x055a3000	1
+	docs\fk22-dropphase-reachability.md:626	- **(ii) Bank a `usmapdump dumpimage` from the staged sitting as a rider.** Pages `0x560EE70` (BR phase-4 body), `0x5456000` (all 
+0x055a34e0	1
+	docs\fk22-dropphase-reachability.md:662	- **Coverage-blocked, denominator stated:** `0x560EE70`, `0x5456C80`, `0x55A34E0/37F0/3F50`, the five `AuthPlayerEnterWorld*`, `Tr
+0x04bbea3d	1
+	docs\fk22-dropphase-reachability.md:2584	0x33560DC   48 8d 15 3d ea bb 04  lea  rdx,[rip+0x4BBEA3D]     -> 0x7F14B20
+0x05422250	1
+	docs\fk6-cheat-surface-settled.md:741	`0x534BE80`, `CheatSetTeamEliminated` `0x5422250`, `ULokiBotSpawnerComponent::SpawnBot` impl
+0x0755524e	1
+	docs\fk8-crashpad-class.md:399	0x1153803  0x755524E  0x349596D  0x3405F13  0x3691A72  0x3691704  0x367B462  0xF84697
+0x03259330	1
+	docs\next-session-prompt-s132.md:387	`GetTeamState` (`0x56F02E0`) → `rcx = [TeamState+0x688]` → resolve (`0x3259330`) → `sete al` on
+0x05969000	1
+	docs\s132-dismount-settled.md:478	found only the second — because the first sits in an AOT body on page `0x5969000`, which is
+0x0560f210	1
+	docs\session-74-b2-roundadvance-recon.md:74	0x560F210/0x560F27C reached via the GoToPhase thunk (0x7FF6BA947270, +0x70 into the resolved thunk) from the
+0x0560f27c	1
+	docs\session-74-b2-roundadvance-recon.md:74	0x560F210/0x560F27C reached via the GoToPhase thunk (0x7FF6BA947270, +0x70 into the resolved thunk) from the
+0x0635d44c	1
+	docs\session-79-moonshot-plan.md:1076	mov [rip+0x635d44c],rdi     ; stash InPlayer in a GLOBAL
+0x0560f200	1
+	docs\tutorial-playability-plan.md:118	- Round phase machine drivable: native `GoToPhase` (thunk rva 0x560F200); {2,3,6,7} -> Combat stable (S74).

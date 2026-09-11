@@ -1,0 +1,53 @@
+# Asset:         Loki/Content/Loki/UI/Widgets/FrontEnd/MainMenu/Leaderboard/WBP_UI_Leaderboard_ComboBox_Queues.uasset
+# UFunction:     GetDisplayTextForSelectedOption
+# FunctionFlags: FUNC_Public, FUNC_HasOutParms, FUNC_HasDefaults, FUNC_BlueprintCallable, FUNC_BlueprintEvent, FUNC_BlueprintPure
+# Outer class:   WBP_UI_Leaderboard_ComboBox_Queues_C
+# ScriptBytecode entries: 4
+# ChildProperties: 2
+# --- Parameters / locals (FField chain) ---
+#   [0] FTextProperty  ?
+#   [1] FTextProperty  ?
+
+# --- ScriptBytecode tree ---
+[  0] EX_Context
+  ObjectExpression:
+    EX_ObjectConst
+      Value: Default__BPFL_Matchmaking_C
+      StatementIndex: 1
+  Offset: 34
+  RValuePointer: 0
+  ContextExpression:
+    EX_LocalVirtualFunction
+      VirtualFunctionName: Queue ID to Name
+      Parameters: [4]
+        [  0] EX_InstanceVariable
+          Variable: SelectedItemKey
+          StatementIndex: 35
+        [  1] EX_False
+          StatementIndex: 44
+        [  2] EX_Self
+          StatementIndex: 45
+        [  3] EX_LocalVariable
+          Variable: CallFunc_Queue_ID_to_Name_QueueName
+          StatementIndex: 46
+      StatementIndex: 22
+  StatementIndex: 0
+[  1] EX_Let
+  Property: ReturnValue
+  Variable:
+    EX_LocalOutVariable
+      Variable: ReturnValue
+      StatementIndex: 65
+  Assignment:
+    EX_LocalVariable
+      Variable: CallFunc_Queue_ID_to_Name_QueueName
+      StatementIndex: 74
+  StatementIndex: 56
+[  2] EX_Return
+  ReturnExpression:
+    EX_LocalOutVariable
+      Variable: ReturnValue
+      StatementIndex: 84
+  StatementIndex: 83
+[  3] EX_EndOfScript
+  StatementIndex: 93

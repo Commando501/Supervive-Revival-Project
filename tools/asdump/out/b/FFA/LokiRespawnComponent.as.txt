@@ -1,0 +1,1286 @@
+// ============================================================================
+//  MODULE   FFA.LokiRespawnComponent
+//  SOURCE   FFA/LokiRespawnComponent.as
+//  CONTENT  1 class(es), 21 function(s), 0 enum(s), 1 global(s), 5036 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/impl_b/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ULokiRespawnComponent;
+
+ULokiRespawnComponent@ ULokiRespawnComponent()   // traits=0x20
+{
+    v2 = ULokiRespawnComponent();
+    return v2;
+}
+/* ---- ULokiRespawnComponent: 7 dwords / 4 instructions (cache offset 0x78030) ----
+    0000  PSF           v2                                          
+    0004  ALLOC         84898 ULokiRespawnComponent                 
+    0014  LOADOBJ       v2                                          
+    0018  RET           0                                           
+*/
+
+UClass@ ULokiRespawnComponent::StaticClass()   // traits=0x40020
+{
+    v2 = UClass@(__StaticType_ULokiRespawnComponent);
+    return v2;
+}
+/* ---- StaticClass: 10 dwords / 6 instructions (cache offset 0x780f2) ----
+    0000  PshGPtr       __StaticType_ULokiRespawnComponent          
+    000C  CHKREF                                                    
+    0010  CALLSYS       TSubclassOf::opImplConv                     
+    001C  STOREOBJ      v2                                          
+    0020  LOADOBJ       v2                                          
+    0024  RET           0                                           
+*/
+
+ULokiRespawnComponent@ ULokiRespawnComponent::Get(const AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetComponentByClass(Actor, __StaticType_ULokiRespawnComponent, v2, typeid(ULokiRespawnComponent@), WithName);
+    return v2;
+}
+/* ---- Get: 14 dwords / 9 instructions (cache offset 0x78231) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972688                                    ; ULokiRespawnComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiRespawnComponent          
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetComponentByClass                 
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiRespawnComponent@ ULokiRespawnComponent::GetOrCreate(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_GetOrCreateComponentByClass(Actor, __StaticType_ULokiRespawnComponent, v2, typeid(ULokiRespawnComponent@), WithName);
+    return v2;
+}
+/* ---- GetOrCreate: 14 dwords / 9 instructions (cache offset 0x78388) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972688                                    ; ULokiRespawnComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiRespawnComponent          
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_GetOrCreateComponentByClass         
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+ULokiRespawnComponent@ ULokiRespawnComponent::Create(AActor@ Actor, const FName& WithName = NAME_None)   // traits=0x40020
+{
+    __Actor_CreateComponentByClass(Actor, __StaticType_ULokiRespawnComponent, v2, typeid(ULokiRespawnComponent@), WithName);
+    return v2;
+}
+/* ---- Create: 14 dwords / 9 instructions (cache offset 0x784da) ----
+    0000  PshVPtr       WithName                                    
+    0004  TYPEID        1207972688                                    ; ULokiRespawnComponent@
+    000C  PSF           v2                                          
+    0010  PshGPtr       __StaticType_ULokiRespawnComponent          
+    001C  CHKREF                                                    
+    0020  PshVPtr       Actor                                       
+    0024  CALLSYS       __Actor_CreateComponentByClass              
+    0030  LOADOBJ       v2                                          
+    0034  RET           4                                           
+*/
+
+// ----------------------------------------------------------------------------
+UCLASS(SuperIsCodeClass, Placeable)
+class ULokiRespawnComponent : UActorComponent
+// unreal base : /Script/Engine.ActorComponent
+// C++ header  : ../../../Engine/Source/Runtime/Engine/Classes/Components/ActorComponent.h
+// static class global: __StaticType_ULokiRespawnComponent
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TArray<FVector> Starts;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int StartIndex;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSubclassOf<AActor@> BarrierActor;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    TSubclassOf<UGameplayEffect@> OnSpawnEffect;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    TSet<ALokiPlayerState@> NonSpawningBotStates;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int HumansBeforeBotDespawn;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 SpawnRadius;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    int SpawnIndex;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults, EditableOnInstance)
+    bool HasCreatedPlayerStarts;
+    UPROPERTY(BlueprintReadable, EditableOnDefaults, EditableOnInstance)
+    FOnUpdated OnPlayerStartsCreated;
+
+    ULokiRespawnComponent()   // traits=0x21
+    {
+        this.Starts = TArray();
+        this.BarrierActor = TSubclassOf();
+        this.OnSpawnEffect = TSubclassOf();
+        this.NonSpawningBotStates = TSet();
+        this.OnPlayerStartsCreated = FOnUpdated();
+        v1 = 3;
+        this.HumansBeforeBotDespawn = v1;
+        v4 = 4658815484840378368;
+        this.SpawnRadius = v4;
+        v1 = 0;
+        this.SpawnIndex = v1;
+        v5 = false;
+        this.HasCreatedPlayerStarts = v5;
+        return;
+    }
+    /* ---- ULokiRespawnComponent: 56 dwords / 30 instructions (cache offset 0x7b355) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230864                                 ; .Starts
+        000C  CALLSYS       TArray::$beh0                               
+        0018  PshVPtr       this                                        
+        001C  ADDSi         232 134230864                                 ; .BarrierActor
+        0024  CALLSYS       TSubclassOf::$beh0                          
+        0030  PshVPtr       this                                        
+        0034  ADDSi         240 134230864                                 ; .OnSpawnEffect
+        003C  CALLSYS       TSubclassOf::$beh0                          
+        0048  PshVPtr       this                                        
+        004C  ADDSi         248 134230864                                 ; .NonSpawningBotStates
+        0054  CALLSYS       TSet::$beh0                                 
+        0060  PshVPtr       this                                        
+        0064  ADDSi         352 134230864                                 ; .OnPlayerStartsCreated
+        006C  CALLSYS       FOnUpdated::$beh0                           
+        0078  SetV4         v1 3                                        
+        0080  LoadThisR     328 134230864                                 ; this.HumansBeforeBotDespawn
+        0088  WRTV4         v1                                          
+        008C  SetV8         v4 0x40a7700000000000                       
+        0098  LoadThisR     336 134230864                                 ; this.SpawnRadius
+        00A0  WRTV8         v4                                          
+        00A4  SetV4         v1 0                                        
+        00AC  LoadThisR     344 134230864                                 ; this.SpawnIndex
+        00B4  WRTV4         v1                                          
+        00B8  SetV1         v5 0                                        
+        00C0  LoadThisR     348 134230864                                 ; this.HasCreatedPlayerStarts
+        00C8  WRTV1         v5                                          
+        00CC  PshVPtr       this                                        
+        00D0  FinConstruct  ULokiRespawnComponent                       
+        00DC  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        v1 = this.HasCreatedPlayerStarts;
+        v1 = !v1;
+        if (v1) {
+            if (this.GeneratePlayerStarts()) {
+                v1 = true;
+                this.HasCreatedPlayerStarts = v1;
+                this.OnPlayerStartsCreated.Broadcast();
+            }
+        }
+        return;
+    }
+    /* ---- Tick_Implementation: 24 dwords / 15 instructions (cache offset 0x78b8a) ----
+        0000  LoadThisR     348 134230864                                 ; this.HasCreatedPlayerStarts
+        0008  RDR1          v1                                          
+        000C  NOT           v1                                          
+        0010  CpyVtoR1      v1                                          
+        0014  JLowZ         16                                            -> L005C
+        001C  PshVPtr       this                                        
+        0020  CALLINTF      84887                                         ; ULokiRespawnComponent::GeneratePlayerStarts
+        0028  JLowZ         11                                            -> L005C
+        0030  SetV1         v1 1                                        
+        0038  LoadThisR     348 134230864                                 ; this.HasCreatedPlayerStarts
+        0040  WRTV1         v1                                          
+        0044  PshVPtr       this                                        
+        0048  ADDSi         352 134230864                                 ; .OnPlayerStartsCreated
+        0050  CALLSYS       FOnUpdated::Broadcast                       
+      L005C:
+        005C  RET           4                                           
+    */
+
+    UFUNCTION(UnrealName=BeginPlay, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void BeginPlay_Implementation()   // traits=0x20
+    {
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        v4.OnPlayerKilled.AddUFunction(this, n"OnPlayerKilled");
+        v10 = Loki::GetLokiGameMode(__WorldContext);
+        v10.OnPlayerLogout.AddUFunction(this, n"OnLogout");
+        return;
+    }
+    /* ---- BeginPlay_Implementation: 41 dwords / 21 instructions (cache offset 0x78d04) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetLokiGameState                            
+        0018  STOREOBJ      v4                                          
+        001C  PshC4         9                                           
+        0024  CALLSYS       __STATIC_NAME                               
+        0030  PshRPtr                                                   
+        0034  PshVPtr       this                                        
+        0038  PshVPtr       v4                                          
+        003C  ADDSi         1800 67115161                                 ; .OnPlayerKilled
+        0044  CALLSYS       FPlayerKillEventSignature::AddUFunction     
+        0050  PshGPtr       __WorldContext                              
+        005C  CALLSYS       GetLokiGameMode                             
+        0068  STOREOBJ      v10                                         
+        006C  PshC4         57                                          
+        0074  CALLSYS       __STATIC_NAME                               
+        0080  PshRPtr                                                   
+        0084  PshVPtr       this                                        
+        0088  PshVPtr       v10                                         
+        008C  ADDSi         1296 67114962                                 ; .OnPlayerLogout
+        0094  CALLSYS       FOnPlayerControllerLogout::AddUFunction     
+        00A0  RET           2                                           
+    */
+
+    bool GeneratePlayerStarts()   // traits=0x20
+    {
+        v2 = false;
+        v1 = v2;
+        __Evt_PushArgumentRef__bool(v1);
+        __Evt_Execute(this, n"GeneratePlayerStarts");
+        return v1;
+    }
+    /* ---- GeneratePlayerStarts: 20 dwords / 11 instructions (cache offset 0x78ec3) ----
+        0000  SetV1         v2 0                                        
+        0008  CpyVtoV4      v1 v2                                       
+        0010  PSF           v1                                          
+        0014  CALLSYS       __Evt_PushArgumentRef__bool                 
+        0020  PshC4         176                                         
+        0028  CALLSYS       __STATIC_NAME                               
+        0034  PshRPtr                                                   
+        0038  PshVPtr       this                                        
+        003C  CALLSYS       __Evt_Execute                               
+        0048  CpyVtoR4      v1                                          
+        004C  RET           2                                           
+    */
+
+    UFUNCTION(UnrealName=GeneratePlayerStarts, BlueprintEvent, CanOverrideEvent)
+    bool GeneratePlayerStarts_Implementation()   // traits=0x20
+    {
+        v4 = TArray();
+        GetAllActorsOfClassWithTag(n"SafeTeamSpawnPathfindingAnchor", v4, typeid(TArray));
+        v12 = v4.Iterator();
+        while (true) {
+            v19 = v12.CanProceed;
+            if (!v19) break;
+            v22 = v12.Proceed();
+            v12.Proceed();
+            if (v22 != nullptr) {
+                v28 = v22.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                this.Starts.Add(v28);
+            }
+        }
+        v5 = this.Starts.Num();
+        v5 = v5 - 1;
+        v30 = Math::RandRange(0, v5);
+        this.StartIndex = v30;
+        v19 = true;
+        return v19;
+    }
+    /* ---- GeneratePlayerStarts_Implementation: 82 dwords / 48 instructions (cache offset 0x78faf) ----
+        0000  PSF           v4                                          
+        0004  CALLSYS       TArray::$beh0                               
+        0010  TYPEID        268448552                                     ; TArray
+        0018  PSF           v4                                          
+        001C  PshC4         58                                          
+        0024  CALLSYS       __STATIC_NAME                               
+        0030  PshRPtr                                                   
+        0034  CALLSYS       GetAllActorsOfClassWithTag                  
+        0040  PSF           v12                                         
+        0044  PSF           v4                                          
+        0048  CALLSYS       TArray::Iterator                            
+        0054  JMP           24                                            -> L00BC
+      L005C:
+        005C  SUSPEND                                                   
+        0060  PSF           v12                                         
+        0064  CALLSYS       TArrayIterator::Proceed                     
+        0070  PshRPtr                                                   
+        0074  RDSPtr                                                    
+        0078  RefCpyV       v22                                         
+        007C  CmpPtrNull    v22                                         
+        0080  JZ            12                                            -> L00B8
+        0088  PSF           v28                                         
+        008C  PshVPtr       v22                                         
+        0090  CALLSYS       AActor::GetActorLocation                    
+        009C  PSF           v28                                         
+        00A0  PshVPtr       this                                        
+        00A4  ADDSi         208 134230864                                 ; .Starts
+        00AC  CALLSYS       TArray::Add                                 
+      L00B8:
+        00B8  FreeNullV8    v22                                         
+      L00BC:
+        00BC  LoadVObjR     v12 16 268448553                              ; .CanProceed
+        00C8  RDR1          v19                                         
+        00CC  CpyVtoR1      v19                                         
+        00D0  JLowNZ        -31                                           -> L005C
+        00D8  PshVPtr       this                                        
+        00DC  ADDSi         208 134230864                                 ; .Starts
+        00E4  CALLSYS       TArray::Num                                 
+        00F0  CpyRtoV4      v5                                          
+        00F4  SUBIi         v5 v5 1                                     
+        0100  PshV4         v5                                          
+        0104  PshC4         0                                           
+        010C  CALLSYS       RandRange                                   
+        0118  CpyRtoV4      v30                                         
+        011C  LoadThisR     224 134230864                                 ; this.StartIndex
+        0124  WRTV4         v30                                         
+        0128  SetV1         v19 1                                       
+        0130  PSF           v4                                          
+        0134  CALLSYS       TArray::$beh2                               
+        0140  CpyVtoR4      v19                                         
+        0144  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnPlayerKilled(const FPlayerKillEventData& Data)   // traits=0x20
+    {
+        v2 = Data.VictimPlayerState;
+        if (v2 != nullptr) {
+            v3 = this.NonSpawningBotStates.Contains(Data.VictimPlayerState);
+            v3 = !v3;
+            if (!v3) {
+                v5 = 0;
+            } else {
+                v4 = Data.VictimPlayerState.IsABot();
+                v4 = !v4;
+                if (v4) {
+                    v4 = true;
+                } else {
+                    v5 = this.ShouldSpawnBot();
+                    v4 = v5;
+                }
+                v5 = v4;
+            }
+            if (v5) {
+                v10 = this.GetPlayerRespawnComponent(Data.VictimPlayerState);
+                v12 = Data.VictimPlayerState.GetOwner();
+                if (v12 == nullptr) {
+                    v5 = 0;
+                } else {
+                    v4 = v10 != nullptr;
+                    v5 = v4;
+                }
+                if (v5) {
+                    v10.ScheduleRespawn();
+                }
+                return;
+            } else {
+                v12 = this.GetOwner();
+                v18 = v12.GetName();
+                v16 = FString();
+                v16.Append("[");
+                v16.Append("[").Append(v18);
+                v16.Append("[").Append(v18).Append("] Adding bot (");
+                v16.Append("[").Append(v18).Append("] Adding bot (").Append(Data.VictimPlayerState.PlatformPlayerID);
+                v16.Append("[").Append(v18).Append("] Adding bot (").Append(Data.VictimPlayerState.PlatformPlayerID).Append(") to non-spawning list");
+                Log::Log(v16.Append("[").Append(v18).Append("] Adding bot (").Append(Data.VictimPlayerState.PlatformPlayerID).Append(") to non-spawning list"));
+                this.NonSpawningBotStates.Add(Data.VictimPlayerState);
+            }
+        }
+        return;
+    }
+    /* ---- OnPlayerKilled: 158 dwords / 95 instructions (cache offset 0x792e8) ----
+        0000  PshVPtr       Data                                        
+        0004  ADDSi         48 67120796                                   ; .VictimPlayerState
+        000C  RDSPtr                                                    
+        0010  RefCpyV       v2                                          
+        0014  CmpPtrNull    v2                                          
+        0018  JZ            149                                           -> L0274
+        0020  PshVPtr       Data                                        
+        0024  ADDSi         48 67120796                                   ; .VictimPlayerState
+        002C  PshVPtr       this                                        
+        0030  ADDSi         248 134230864                                 ; .NonSpawningBotStates
+        0038  CALLSYS       TSet::Contains                              
+        0044  CpyRtoV4      v3                                          
+        0048  NOT           v3                                          
+        004C  CpyVtoR1      v3                                          
+        0050  JLowNZ        4                                             -> L0068
+        0058  SetV4         v5 0                                        
+        0060  JMP           24                                            -> L00C8
+      L0068:
+        0068  PshVPtr       Data                                        
+        006C  ADDSi         48 67120796                                   ; .VictimPlayerState
+        0074  RDSPtr                                                    
+        0078  CALLSYS       APlayerState::IsABot                        
+        0084  CpyRtoV4      v4                                          
+        0088  NOT           v4                                          
+        008C  CpyVtoR1      v4                                          
+        0090  JLowZ         4                                             -> L00A8
+        0098  SetV1         v4 1                                        
+        00A0  JMP           6                                             -> L00C0
+      L00A8:
+        00A8  PshVPtr       this                                        
+        00AC  CALLINTF      84894                                         ; ULokiRespawnComponent::ShouldSpawnBot
+        00B4  CpyRtoV4      v5                                          
+        00B8  CpyVtoV4      v4 v5                                       
+      L00C0:
+        00C0  CpyVtoV4      v5 v4                                       
+      L00C8:
+        00C8  CpyVtoR1      v5                                          
+        00CC  JLowZ         37                                            -> L0168
+        00D4  PshVPtr       Data                                        
+        00D8  ADDSi         48 67120796                                   ; .VictimPlayerState
+        00E0  RDSPtr                                                    
+        00E4  PshVPtr       this                                        
+        00E8  CALLINTF      84896                                         ; ULokiRespawnComponent::GetPlayerRespawnComponent
+        00F0  STOREOBJ      v10                                         
+        00F4  PshVPtr       Data                                        
+        00F8  ADDSi         48 67120796                                   ; .VictimPlayerState
+        0100  RDSPtr                                                    
+        0104  CALLSYS       AActor::GetOwner                            
+        0110  STOREOBJ      v12                                         
+        0114  CmpPtrNull    v12                                         
+        0118  JNZ           4                                             -> L0130
+        0120  SetV4         v5 0                                        
+        0128  JMP           5                                             -> L0144
+      L0130:
+        0130  CmpPtrNull    v10                                         
+        0134  TNZ                                                       
+        0138  CpyRtoV4      v4                                          
+        013C  CpyVtoV4      v5 v4                                       
+      L0144:
+        0144  CpyVtoR1      v5                                          
+        0148  JLowZ         3                                             -> L015C
+        0150  PshVPtr       v10                                         
+        0154  CALLINTF      84872                                         ; ULokiPlayerRespawnComponent::ScheduleRespawn
+      L015C:
+        015C  FreeNullV8    v10                                         
+        0160  JMP           67                                            -> L0274
+      L0168:
+        0168  PGA           ") to non-spawning list"                    
+        0174  PshVPtr       Data                                        
+        0178  ADDSi         48 67120796                                   ; .VictimPlayerState
+        0180  RDSPtr                                                    
+        0184  ADDSi         2240 67115322                                 ; .PlatformPlayerID
+        018C  PGA           "] Adding bot ("                            
+        0198  PSF           v18                                         
+        019C  PshVPtr       this                                        
+        01A0  CALLSYS       UActorComponent::GetOwner                   
+        01AC  STOREOBJ      v12                                         
+        01B0  PshVPtr       v12                                         
+        01B4  CALLSYS       UObject::GetName                            
+        01C0  PSF           v18                                         
+        01C4  PGA           "["                                         
+        01D0  PSF           v16                                         
+        01D4  CALLSYS       FString::$beh0                              
+        01E0  PSF           v16                                         
+        01E4  CALLSYS       FString::Append                             
+        01F0  PshRPtr                                                   
+        01F4  CALLSYS       FString::Append                             
+        0200  PshRPtr                                                   
+        0204  CALLSYS       FString::Append                             
+        0210  PshRPtr                                                   
+        0214  CALLSYS       FString::Append                             
+        0220  PshRPtr                                                   
+        0224  CALLSYS       FString::Append                             
+        0230  PshRPtr                                                   
+        0234  CALLSYS       Log                                         
+        0240  PSF           v16                                         
+        0244  CALLSYS       FString::$beh2                              
+        0250  PshVPtr       Data                                        
+        0254  ADDSi         48 67120796                                   ; .VictimPlayerState
+        025C  PshVPtr       this                                        
+        0260  ADDSi         248 134230864                                 ; .NonSpawningBotStates
+        0268  CALLSYS       TSet::Add                                   
+      L0274:
+        0274  RET           4                                           
+    */
+
+    FTransform GetValidPlayerStart(ALokiPlayerState@ PS)   // traits=0x20
+    {
+        __Evt_PushArgument__ALokiPlayerState(arg_m4);
+        v24 = FTransform();
+        __Evt_PushArgumentRef__FTransform(v24);
+        __Evt_Execute(this, n"GetValidPlayerStart");
+        PS = FTransform(v24);
+        return;
+    }
+    /* ---- GetValidPlayerStart: 28 dwords / 15 instructions (cache offset 0x7975a) ----
+        0000  PSF           arg_m4                                      
+        0004  CALLSYS       __Evt_PushArgument__ALokiPlayerState        
+        0010  PSF           v24                                         
+        0014  CALLSYS       FTransform::$beh0                           
+        0020  PSF           v24                                         
+        0024  CALLSYS       __Evt_PushArgumentRef__FTransform           
+        0030  PshC4         177                                         
+        0038  CALLSYS       __STATIC_NAME                               
+        0044  PshRPtr                                                   
+        0048  PshVPtr       this                                        
+        004C  CALLSYS       __Evt_Execute                               
+        0058  PSF           v24                                         
+        005C  PshVPtr       PS                                          
+        0060  CALLSYS       FTransform::$beh0                           
+        006C  RET           6                                           
+    */
+
+    UFUNCTION(UnrealName=GetValidPlayerStart, BlueprintEvent, CanOverrideEvent)
+    FTransform GetValidPlayerStart_Implementation(ALokiPlayerState@ PS)   // traits=0x20
+    {
+        v1 = this.StartIndex;
+        v1 = v1 + 1;
+        v2 = this.Starts.Num();
+        v1 = v1 % v2;
+        this.StartIndex = v1;
+        v2 = this.StartIndex;
+        v28 = FTransform(this.Starts[v2]);
+        PS = FTransform(v28);
+        return;
+    }
+    /* ---- GetValidPlayerStart_Implementation: 39 dwords / 23 instructions (cache offset 0x798d4) ----
+        0000  LoadThisR     224 134230864                                 ; this.StartIndex
+        0008  RDR4          v1                                          
+        000C  ADDIi         v1 v1 1                                     
+        0018  PshVPtr       this                                        
+        001C  ADDSi         208 134230864                                 ; .Starts
+        0024  CALLSYS       TArray::Num                                 
+        0030  CpyRtoV4      v2                                          
+        0034  MODi          v1 v1 v2                                    
+        003C  LoadThisR     224 134230864                                 ; this.StartIndex
+        0044  WRTV4         v1                                          
+        0048  LoadThisR     224 134230864                                 ; this.StartIndex
+        0050  RDR4          v2                                          
+        0054  PshV4         v2                                          
+        0058  PshVPtr       this                                        
+        005C  ADDSi         208 134230864                                 ; .Starts
+        0064  Thiscall1     TArray::opIndex                             
+        0070  PshRPtr                                                   
+        0074  PSF           v28                                         
+        0078  CALLSYS       FTransform::$beh0                           
+        0084  PSF           v28                                         
+        0088  PshVPtr       PS                                          
+        008C  CALLSYS       FTransform::$beh0                           
+        0098  RET           6                                           
+    */
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, CanOverrideEvent)
+    FVector2D GetRandomPointInCircle(const float64 Radius)   // traits=0x20
+    {
+        v1 = float32(arg_m4);
+        v6 = Math::RandPointInCircle(v1);
+        Radius = FVector2D(v6);
+        return;
+    }
+    /* ---- GetRandomPointInCircle: 13 dwords / 8 instructions (cache offset 0x79ac2) ----
+        0000  dTOf          v1 arg_m4                                   
+        0008  PshV4         v1                                          
+        000C  PSF           v6                                          
+        0010  CALLSYS       RandPointInCircle                           
+        001C  PSF           v6                                          
+        0020  PshVPtr       Radius                                      
+        0024  CALLSYS       FVector2D::$beh0                            
+        0030  RET           6                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void Respawn(ALokiPlayerState@ PS)   // traits=0x20
+    {
+        v1 = this.HasCreatedPlayerStarts;
+        v1 = !v1;
+        if (v1) {
+            return;
+        } else {
+            v6 = PS.GetLokiCharacter();
+            if (v6 == nullptr) {
+                v1 = 0;
+            } else {
+                v7 = v6.GetLivingState();
+                v8 = int(v7);
+                v10 = v8 == 1;
+                v1 = v10;
+            }
+            if (v1) {
+                return;
+            } else {
+                v14 = Loki::GetLokiGameMode(__WorldContext);
+                v40 = this.GetValidPlayerStart(PS);
+                v10 = false;
+                v6 = v14.SpawnPlayer(PS, v40, nullptr, v10);
+                if (v6 == nullptr) {
+                    return;
+                } else {
+                    v66 = TSubclassOf();
+                    v66 = this.OnSpawnEffect;
+                    v10 = v66 == nullptr;
+                    v10 = !v10;
+                    if (v10) {
+                        v70 = v6.GetLokiAbilitySystem_BP();
+                        v82 = v70.MakeEffectContext();
+                        v92 = v70.MakeOutgoingSpec(this.OnSpawnEffect, 0, v82);
+                        v94 = v70.ApplyGameplayEffectSpecToSelf(v92)  /* UFunction BP_ApplyGameplayEffectSpecToSelf */;
+                    }
+                }
+            }
+        }
+        return;
+    }
+    /* ---- Respawn: 129 dwords / 80 instructions (cache offset 0x79c38) ----
+        0000  LoadThisR     348 134230864                                 ; this.HasCreatedPlayerStarts
+        0008  RDR1          v1                                          
+        000C  NOT           v1                                          
+        0010  CpyVtoR1      v1                                          
+        0014  JLowZ         2                                             -> L0024
+        001C  JMP           119                                           -> L0200
+      L0024:
+        0024  PshVPtr       PS                                          
+        0028  CALLSYS       ALokiPlayerState::GetLokiCharacter          
+        0034  STOREOBJ      v6                                          
+        0038  CmpPtrNull    v6                                          
+        003C  JNZ           4                                             -> L0054
+        0044  SetV4         v1 0                                        
+        004C  JMP           13                                            -> L0088
+      L0054:
+        0054  PshVPtr       v6                                          
+        0058  CALLSYS       ALokiCharacter::GetLivingState              
+        0064  CpyRtoV4      v7                                          
+        0068  sbTOi         v8 v7                                       
+        0070  CMPIi         v8 1                                        
+        0078  TZ                                                        
+        007C  CpyRtoV4      v10                                         
+        0080  CpyVtoV4      v1 v10                                      
+      L0088:
+        0088  CpyVtoR1      v1                                          
+        008C  JLowZ         2                                             -> L009C
+        0094  JMP           89                                            -> L0200
+      L009C:
+        009C  PshGPtr       __WorldContext                              
+        00A8  CALLSYS       GetLokiGameMode                             
+        00B4  STOREOBJ      v14                                         
+        00B8  PshVPtr       PS                                          
+        00BC  PSF           v40                                         
+        00C0  PshVPtr       this                                        
+        00C4  CALLINTF      84890                                         ; ULokiRespawnComponent::GetValidPlayerStart
+        00CC  SetV1         v10 0                                       
+        00D4  PshV4         v10                                         
+        00D8  PshNull                                                   
+        00DC  PSF           v40                                         
+        00E0  PshVPtr       PS                                          
+        00E4  PshVPtr       v14                                         
+        00E8  CALLSYS       ALokiGameMode::SpawnPlayer                  
+        00F4  STOREOBJ      v6                                          
+        00F8  CmpPtrNull    v6                                          
+        00FC  JNZ           2                                             -> L010C
+        0104  JMP           61                                            -> L0200
+      L010C:
+        010C  PSF           v66                                         
+        0110  CALLSYS       TSubclassOf::$beh0                          
+        011C  PshVPtr       this                                        
+        0120  ADDSi         240 134230864                                 ; .OnSpawnEffect
+        0128  PSF           v66                                         
+        012C  CALLSYS       TSubclassOf::opAssign                       
+        0138  PshNull                                                   
+        013C  PSF           v66                                         
+        0140  CALLSYS       TSubclassOf::opEquals                       
+        014C  CpyRtoV4      v10                                         
+        0150  NOT           v10                                         
+        0154  CpyVtoR1      v10                                         
+        0158  JLowZ         40                                            -> L0200
+        0160  PshVPtr       v6                                          
+        0164  CALLSYS       ALokiCharacter::GetLokiAbilitySystem_BP     
+        0170  STOREOBJ      v70                                         
+        0174  PSF           v82                                         
+        0178  PshVPtr       v70                                         
+        017C  CALLSYS       UAbilitySystemComponent::MakeEffectContext  
+        0188  PSF           v82                                         
+        018C  PshC4         0                                           
+        0194  PshVPtr       this                                        
+        0198  ADDSi         240 134230864                                 ; .OnSpawnEffect
+        01A0  PSF           v92                                         
+        01A4  PshVPtr       v70                                         
+        01A8  CALLSYS       UAbilitySystemComponent::MakeOutgoingSpec   
+        01B4  PSF           v92                                         
+        01B8  PSF           v94                                         
+        01BC  PshVPtr       v70                                         
+        01C0  CALLSYS       UAbilitySystemComponent::ApplyGameplayEffectSpecToSelf
+        01CC  PSF           v94                                         
+        01D0  CALLSYS       FActiveGameplayEffectHandle::$beh2          
+        01DC  PSF           v92                                         
+        01E0  CALLSYS       FGameplayEffectSpecHandle::$beh2            
+        01EC  PSF           v82                                         
+        01F0  CALLSYS       FGameplayEffectContextHandle::$beh2         
+        01FC  FreeNullV8    v70                                         
+      L0200:
+        0200  RET           4                                           
+    */
+
+    bool ShouldSpawnBot()   // traits=0x20
+    {
+        v4 = Loki::GetLokiGameState(__WorldContext);
+        v8 = Loki::GetLokiGameMode(__WorldContext);
+        v9 = 0;
+        v14 = v4.GetLokiPlayerStates();
+        v20 = v14.Iterator();
+        while (true) {
+            v27 = v20.CanProceed;
+            if (!v27) break;
+            v30 = v20.Proceed();
+            v20.Proceed();
+            v27 = v30.IsABot();
+            v27 = !v27;
+            if (!v27) {
+                v27 = 0;
+            } else {
+                v31 = v8.DisconnectedPlayerStates.Contains(v30.PlatformPlayerID);
+                v31 = !v31;
+                v27 = v31;
+            }
+            if (v27) {
+                v9++;
+            }
+        }
+        v10 = this.HumansBeforeBotDespawn;
+        v10 = v9 - v10;
+        v32 = this.NonSpawningBotStates.Num();
+        v27 = v10 <= v32;
+        return v27;
+    }
+    /* ---- ShouldSpawnBot: 96 dwords / 58 instructions (cache offset 0x7a0c3) ----
+        0000  PshGPtr       __WorldContext                              
+        000C  CALLSYS       GetLokiGameState                            
+        0018  STOREOBJ      v4                                          
+        001C  PshGPtr       __WorldContext                              
+        0028  CALLSYS       GetLokiGameMode                             
+        0034  STOREOBJ      v8                                          
+        0038  SetV4         v9 0                                        
+        0040  PSF           v20                                         
+        0044  PSF           v14                                         
+        0048  PshVPtr       v4                                          
+        004C  CALLSYS       ALokiGameState::GetLokiPlayerStates         
+        0058  PSF           v14                                         
+        005C  CALLSYS       TArray::Iterator                            
+        0068  JMP           39                                            -> L010C
+      L0070:
+        0070  SUSPEND                                                   
+        0074  PSF           v20                                         
+        0078  CALLSYS       TArrayConstIterator::Proceed                
+        0084  PshRPtr                                                   
+        0088  RDSPtr                                                    
+        008C  RefCpyV       v30                                         
+        0090  PshVPtr       v30                                         
+        0094  CALLSYS       APlayerState::IsABot                        
+        00A0  CpyRtoV4      v27                                         
+        00A4  NOT           v27                                         
+        00A8  CpyVtoR1      v27                                         
+        00AC  JLowNZ        4                                             -> L00C4
+        00B4  SetV4         v27 0                                       
+        00BC  JMP           13                                            -> L00F8
+      L00C4:
+        00C4  PshVPtr       v30                                         
+        00C8  ADDSi         2240 67115322                                 ; .PlatformPlayerID
+        00D0  PshVPtr       v8                                          
+        00D4  ADDSi         1424 67114962                                 ; .DisconnectedPlayerStates
+        00DC  CALLSYS       TMap::Contains                              
+        00E8  CpyRtoV4      v31                                         
+        00EC  NOT           v31                                         
+        00F0  CpyVtoV4      v27 v31                                     
+      L00F8:
+        00F8  CpyVtoR1      v27                                         
+        00FC  JLowZ         1                                             -> L0108
+        0104  IncVi         v9                                          
+      L0108:
+        0108  FreeNullV8    v30                                         
+      L010C:
+        010C  LoadVObjR     v20 16 268448511                              ; .CanProceed
+        0118  RDR1          v27                                         
+        011C  CpyVtoR1      v27                                         
+        0120  JLowNZ        -46                                           -> L0070
+        0128  PSF           v14                                         
+        012C  CALLSYS       TArray::$beh2                               
+        0138  LoadThisR     328 134230864                                 ; this.HumansBeforeBotDespawn
+        0140  RDR4          v10                                         
+        0144  SUBi          v10 v9 v10                                  
+        014C  PshVPtr       this                                        
+        0150  ADDSi         248 134230864                                 ; .NonSpawningBotStates
+        0158  CALLSYS       TSet::Num                                   
+        0164  CpyRtoV4      v32                                         
+        0168  CMPi          v10 v32                                     
+        0170  TNP                                                       
+        0174  CpyRtoV4      v27                                         
+        0178  CpyVtoR4      v27                                         
+        017C  RET           2                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    void OnLogout(AController@ ExitingController)   // traits=0x20
+    {
+        if (this.ShouldSpawnBot()) {
+            v12 = this.NonSpawningBotStates.Iterator();
+            while (true) {
+                v3 = v12.CanProceed;
+                if (!v3) break;
+                v22 = v12.Proceed();
+                v2 = v22;
+                v12.Proceed();
+                break;
+            }
+        }
+        if (v2 != nullptr) {
+            this.NonSpawningBotStates.Remove(v2);
+            v28 = this.GetOwner();
+            v30 = v28.GetName();
+            v26 = FString();
+            v26.Append("[");
+            v26.Append("[").Append(v30);
+            v26.Append("[").Append(v30).Append("] Removing bot from non-spawning list");
+            Log::Log(v26.Append("[").Append(v30).Append("] Removing bot from non-spawning list"));
+            this.Respawn(v2);
+        }
+        return;
+    }
+    /* ---- OnLogout: 90 dwords / 53 instructions (cache offset 0x7a3c6) ----
+        0000  PshVPtr       this                                        
+        0004  CALLINTF      84894                                         ; ULokiRespawnComponent::ShouldSpawnBot
+        000C  JLowZ         29                                            -> L0088
+        0014  PSF           v12                                         
+        0018  PshVPtr       this                                        
+        001C  ADDSi         248 134230864                                 ; .NonSpawningBotStates
+        0024  CALLSYS       TSet::Iterator                              
+        0030  JMP           13                                            -> L006C
+      L0038:
+        0038  SUSPEND                                                   
+        003C  PSF           v12                                         
+        0040  CALLSYS       TSetIterator::Proceed                       
+        004C  PshRPtr                                                   
+        0050  RDSPtr                                                    
+        0054  RefCpyV       v22                                         
+        0058  PshVPtr       v22                                         
+        005C  RefCpyV       v2                                          
+        0060  FreeNullV8    v22                                         
+        0064  JMP           7                                             -> L0088
+      L006C:
+        006C  LoadVObjR     v12 24 268448593                              ; .CanProceed
+        0078  RDR1          v3                                          
+        007C  CpyVtoR1      v3                                          
+        0080  JLowNZ        -20                                           -> L0038
+      L0088:
+        0088  CmpPtrNull    v2                                          
+        008C  JZ            52                                            -> L0164
+        0094  PSF           v2                                          
+        0098  PshVPtr       this                                        
+        009C  ADDSi         248 134230864                                 ; .NonSpawningBotStates
+        00A4  CALLSYS       TSet::Remove                                
+        00B0  PGA           "] Removing bot from non-spawning list"     
+        00BC  PSF           v30                                         
+        00C0  PshVPtr       this                                        
+        00C4  CALLSYS       UActorComponent::GetOwner                   
+        00D0  STOREOBJ      v28                                         
+        00D4  PshVPtr       v28                                         
+        00D8  CALLSYS       UObject::GetName                            
+        00E4  PSF           v30                                         
+        00E8  PGA           "["                                         
+        00F4  PSF           v26                                         
+        00F8  CALLSYS       FString::$beh0                              
+        0104  PSF           v26                                         
+        0108  CALLSYS       FString::Append                             
+        0114  PshRPtr                                                   
+        0118  CALLSYS       FString::Append                             
+        0124  PshRPtr                                                   
+        0128  CALLSYS       FString::Append                             
+        0134  PshRPtr                                                   
+        0138  CALLSYS       Log                                         
+        0144  PSF           v26                                         
+        0148  CALLSYS       FString::$beh2                              
+        0154  PshVPtr       v2                                          
+        0158  PshVPtr       this                                        
+        015C  CALLINTF      84893                                         ; ULokiRespawnComponent::Respawn
+      L0164:
+        0164  RET           4                                           
+    */
+
+    ULokiPlayerRespawnComponent@ GetPlayerRespawnComponent(ALokiPlayerState@ PS)   // traits=0x20
+    {
+        v2 = ULokiPlayerRespawnComponent::StaticClass();
+        v4 = TSubclassOf(v2);
+        v6 = PS.GetComponentByClass(v4);
+        if (v6 != nullptr) {
+            v8 = cast<ULokiPlayerRespawnComponent@>(v6);
+            return v8;
+        } else {
+            v8 = nullptr;
+        }
+        return v8;
+    }
+    /* ---- GetPlayerRespawnComponent: 29 dwords / 19 instructions (cache offset 0x7a74c) ----
+        0000  CALL          84881                                         ; StaticClass
+        0008  STOREOBJ      v2                                          
+        000C  PshVPtr       v2                                          
+        0010  PSF           v4                                          
+        0014  CALLSYS       TSubclassOf::$beh0                          
+        0020  PSF           v4                                          
+        0024  PshVPtr       PS                                          
+        0028  CALLSYS       AActor::GetComponentByClass                 
+        0034  STOREOBJ      v6                                          
+        0038  CmpPtrNull    v6                                          
+        003C  JZ            9                                             -> L0068
+        0044  TYPEID        1207972687                                    ; ULokiPlayerRespawnComponent@
+        004C  PSF           v8                                          
+        0050  PshVPtr       v6                                          
+        0054  CALLSYS       UObject::opCast                             
+        0060  JMP           1                                             -> L006C
+      L0068:
+        0068  ClrVPtr       v8                                          
+      L006C:
+        006C  LOADOBJ       v8                                          
+        0070  RET           4                                           
+    */
+
+    UFUNCTION(BlueprintCallable, CanOverrideEvent)
+    FVector FindFurthestPlayerStart()   // traits=0x20
+    {
+        v1 = this.Starts.Num();
+        if (v1 == 0) {
+            v10 = this.GetOwner();
+            v12 = v10.GetName();
+            v8 = FString();
+            v8.Append("[");
+            v8.Append("[").Append(v12);
+            v8.Append("[").Append(v12).Append("] No player starts found");
+            Log::Warning(v8.Append("[").Append(v12).Append("] No player starts found"));
+            arg_m2 = FVector(FVector::ZeroVector);
+            return;
+        } else {
+            v16 = TArray();
+            v20 = Loki::GetLokiGameState(__WorldContext);
+            v24 = v20.GetLokiPlayerStates();
+            v30 = v24.Iterator();
+            while (true) {
+                v3 = v30.CanProceed;
+                if (!v3) break;
+                v38 = v30.Proceed();
+                v30.Proceed();
+                v42 = v38.GetLokiCharacter();
+                if (v42 == nullptr) {
+                    v3 = 0;
+                } else {
+                    v43 = v42.IsAlive();
+                    v3 = v43;
+                }
+                if (v3) {
+                    v50 = v42.GetActorLocation()  /* UFunction K2_GetActorLocation */;
+                    v16.Add(v50);
+                }
+            }
+            v1 = v16.Num();
+            if (v1 == 0) {
+                v2 = this.SpawnIndex;
+                v2 = v2 + 1;
+                v1 = this.Starts.Num();
+                v2 = v2 % v1;
+                this.SpawnIndex = v2;
+                v1 = this.SpawnIndex;
+                arg_m2 = FVector(this.Starts[v1]);
+                return;
+            } else {
+                v56 = FVector(this.Starts[0]);
+                v58 = 0;
+                v1 = this.SpawnIndex;
+                v1 = -v1;
+                while (true) {
+                    v2 = this.SpawnIndex;
+                    v61 = v1 + v2;
+                    v2 = this.Starts.Num();
+                    if (v61 >= v2) break;
+                    v61 = this.Starts.Num();
+                    v2 = v61 + v1;
+                    v61 = this.Starts.Num();
+                    v2 = v2 % v61;
+                    v68 = FVector(this.Starts[v2]);
+                    v70 = 0;
+                    v76 = v16.Iterator();
+                    while (true) {
+                        v43 = v76.CanProceed;
+                        if (!v43) break;
+                        v84 = v76.Proceed();
+                        v50 = v68 - v84;
+                        v60 = v50.Size();
+                        if (v60 < v70) {
+                            v3 = true;
+                        } else {
+                            v86 = 0;
+                            v43 = v70 == v86;
+                            v3 = v43;
+                        }
+                        if (v3) {
+                            v70 = v60;
+                        }
+                    }
+                    if (v70 > v58) {
+                        v58 = v70;
+                        v56 = v68;
+                    }
+                    v86 = this.SpawnRadius;
+                    if (v70 > v86) {
+                        v2 = this.SpawnIndex;
+                        v2 = v2 + 1;
+                        v61 = this.Starts.Num();
+                        v2 = v2 % v61;
+                        this.SpawnIndex = v2;
+                        arg_m2 = FVector(v68);
+                        return;
+                    }
+                    v1++;
+                }
+                arg_m2 = FVector(v56);
+            }
+        }
+        return;
+    }
+    /* ---- FindFurthestPlayerStart: 368 dwords / 207 instructions (cache offset 0x7a898) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230864                                 ; .Starts
+        000C  CALLSYS       TArray::Num                                 
+        0018  CpyRtoV4      v1                                          
+        001C  CMPIi         v1 0                                        
+        0024  JNZ           50                                            -> L00F4
+        002C  PGA           "] No player starts found"                  
+        0038  PSF           v12                                         
+        003C  PshVPtr       this                                        
+        0040  CALLSYS       UActorComponent::GetOwner                   
+        004C  STOREOBJ      v10                                         
+        0050  PshVPtr       v10                                         
+        0054  CALLSYS       UObject::GetName                            
+        0060  PSF           v12                                         
+        0064  PGA           "["                                         
+        0070  PSF           v8                                          
+        0074  CALLSYS       FString::$beh0                              
+        0080  PSF           v8                                          
+        0084  CALLSYS       FString::Append                             
+        0090  PshRPtr                                                   
+        0094  CALLSYS       FString::Append                             
+        00A0  PshRPtr                                                   
+        00A4  CALLSYS       FString::Append                             
+        00B0  PshRPtr                                                   
+        00B4  CALLSYS       Warning                                     
+        00C0  PSF           v8                                          
+        00C4  CALLSYS       FString::$beh2                              
+        00D0  PshGPtr       FVector::ZeroVector                         
+        00DC  PshVPtr       arg_m2                                      
+        00E0  CALLSYS       FVector::$beh0                              
+        00EC  JMP           306                                           -> L05BC
+      L00F4:
+        00F4  PSF           v16                                         
+        00F8  CALLSYS       TArray::$beh0                               
+        0104  PshGPtr       __WorldContext                              
+        0110  CALLSYS       GetLokiGameState                            
+        011C  STOREOBJ      v20                                         
+        0120  PSF           v30                                         
+        0124  PSF           v24                                         
+        0128  PshVPtr       v20                                         
+        012C  CALLSYS       ALokiGameState::GetLokiPlayerStates         
+        0138  PSF           v24                                         
+        013C  CALLSYS       TArray::Iterator                            
+        0148  JMP           42                                            -> L01F8
+      L0150:
+        0150  SUSPEND                                                   
+        0154  PSF           v30                                         
+        0158  CALLSYS       TArrayConstIterator::Proceed                
+        0164  PshRPtr                                                   
+        0168  RDSPtr                                                    
+        016C  RefCpyV       v38                                         
+        0170  PshVPtr       v38                                         
+        0174  CALLSYS       ALokiPlayerState::GetLokiCharacter          
+        0180  STOREOBJ      v42                                         
+        0184  CmpPtrNull    v42                                         
+        0188  JNZ           4                                             -> L01A0
+        0190  SetV4         v3 0                                        
+        0198  JMP           7                                             -> L01BC
+      L01A0:
+        01A0  PshVPtr       v42                                         
+        01A4  CALLSYS       ALokiCharacter::IsAlive                     
+        01B0  CpyRtoV4      v43                                         
+        01B4  CpyVtoV4      v3 v43                                      
+      L01BC:
+        01BC  CpyVtoR1      v3                                          
+        01C0  JLowZ         10                                            -> L01F0
+        01C8  PSF           v50                                         
+        01CC  PshVPtr       v42                                         
+        01D0  CALLSYS       AActor::GetActorLocation                    
+        01DC  PSF           v50                                         
+        01E0  PSF           v16                                         
+        01E4  CALLSYS       TArray::Add                                 
+      L01F0:
+        01F0  FreeNullV8    v42                                         
+        01F4  FreeNullV8    v38                                         
+      L01F8:
+        01F8  LoadVObjR     v30 16 268448511                              ; .CanProceed
+        0204  RDR1          v3                                          
+        0208  CpyVtoR1      v3                                          
+        020C  JLowNZ        -49                                           -> L0150
+        0214  PSF           v24                                         
+        0218  CALLSYS       TArray::$beh2                               
+        0224  PSF           v16                                         
+        0228  CALLSYS       TArray::Num                                 
+        0234  CpyRtoV4      v1                                          
+        0238  CMPIi         v1 0                                        
+        0240  JNZ           39                                            -> L02E4
+        0248  LoadThisR     344 134230864                                 ; this.SpawnIndex
+        0250  RDR4          v2                                          
+        0254  ADDIi         v2 v2 1                                     
+        0260  PshVPtr       this                                        
+        0264  ADDSi         208 134230864                                 ; .Starts
+        026C  CALLSYS       TArray::Num                                 
+        0278  CpyRtoV4      v1                                          
+        027C  MODi          v2 v2 v1                                    
+        0284  LoadThisR     344 134230864                                 ; this.SpawnIndex
+        028C  WRTV4         v2                                          
+        0290  LoadThisR     344 134230864                                 ; this.SpawnIndex
+        0298  RDR4          v1                                          
+        029C  PshV4         v1                                          
+        02A0  PshVPtr       this                                        
+        02A4  ADDSi         208 134230864                                 ; .Starts
+        02AC  Thiscall1     TArray::opIndex                             
+        02B8  PshRPtr                                                   
+        02BC  PshVPtr       arg_m2                                      
+        02C0  CALLSYS       FVector::$beh0                              
+        02CC  PSF           v16                                         
+        02D0  CALLSYS       TArray::$beh2                               
+        02DC  JMP           182                                           -> L05BC
+      L02E4:
+        02E4  PshC4         0                                           
+        02EC  PshVPtr       this                                        
+        02F0  ADDSi         208 134230864                                 ; .Starts
+        02F8  Thiscall1     TArray::opIndex                             
+        0304  PshRPtr                                                   
+        0308  PSF           v56                                         
+        030C  CALLSYS       FVector::$beh0                              
+        0318  SetV8         v58 0x0                                     
+        0324  LoadThisR     344 134230864                                 ; this.SpawnIndex
+        032C  RDR4          v1                                          
+        0330  NEGi          v1                                          
+        0334  JMP           135                                           -> L0558
+      L033C:
+        033C  SUSPEND                                                   
+        0340  PshVPtr       this                                        
+        0344  ADDSi         208 134230864                                 ; .Starts
+        034C  CALLSYS       TArray::Num                                 
+        0358  CpyRtoV4      v61                                         
+        035C  ADDi          v2 v61 v1                                   
+        0364  PshVPtr       this                                        
+        0368  ADDSi         208 134230864                                 ; .Starts
+        0370  CALLSYS       TArray::Num                                 
+        037C  CpyRtoV4      v61                                         
+        0380  MODi          v2 v2 v61                                   
+        0388  PshV4         v2                                          
+        038C  PshVPtr       this                                        
+        0390  ADDSi         208 134230864                                 ; .Starts
+        0398  Thiscall1     TArray::opIndex                             
+        03A4  PshRPtr                                                   
+        03A8  PSF           v68                                         
+        03AC  CALLSYS       FVector::$beh0                              
+        03B8  SetV8         v70 0x0                                     
+        03C4  PSF           v76                                         
+        03C8  PSF           v16                                         
+        03CC  CALLSYS       TArray::Iterator                            
+        03D8  JMP           39                                            -> L047C
+      L03E0:
+        03E0  SUSPEND                                                   
+        03E4  PSF           v76                                         
+        03E8  CALLSYS       TArrayIterator::Proceed                     
+        03F4  CpyRtoV8      v84                                         
+        03F8  PshVPtr       v84                                         
+        03FC  PSF           v50                                         
+        0400  PSF           v68                                         
+        0404  CALLSYS       FVector::opSub                              
+        0410  PSF           v50                                         
+        0414  CALLSYS       FVector::Size                               
+        0420  CpyRtoV8      v60                                         
+        0424  CMPd          v60 v70                                     
+        042C  JNS           4                                             -> L0444
+        0434  SetV1         v3 1                                        
+        043C  JMP           9                                             -> L0468
+      L0444:
+        0444  SetV8         v86 0x0                                     
+        0450  CMPd          v70 v86                                     
+        0458  TZ                                                        
+        045C  CpyRtoV4      v43                                         
+        0460  CpyVtoV4      v3 v43                                      
+      L0468:
+        0468  CpyVtoR1      v3                                          
+        046C  JLowZ         2                                             -> L047C
+        0474  CpyVtoV8      v70 v60                                     
+      L047C:
+        047C  LoadVObjR     v76 16 268448594                              ; .CanProceed
+        0488  RDR1          v43                                         
+        048C  CpyVtoR1      v43                                         
+        0490  JLowNZ        -46                                           -> L03E0
+        0498  CMPd          v70 v58                                     
+        04A0  JNP           7                                             -> L04C4
+        04A8  CpyVtoV8      v58 v70                                     
+        04B0  PSF           v68                                         
+        04B4  PSF           v56                                         
+        04B8  CALLSYS       FVector::opAssign                           
+      L04C4:
+        04C4  LoadThisR     336 134230864                                 ; this.SpawnRadius
+        04CC  RDR8          v86                                         
+        04D0  CMPd          v70 v86                                     
+        04D8  JNP           29                                            -> L0554
+        04E0  LoadThisR     344 134230864                                 ; this.SpawnIndex
+        04E8  RDR4          v2                                          
+        04EC  ADDIi         v2 v2 1                                     
+        04F8  PshVPtr       this                                        
+        04FC  ADDSi         208 134230864                                 ; .Starts
+        0504  CALLSYS       TArray::Num                                 
+        0510  CpyRtoV4      v61                                         
+        0514  MODi          v2 v2 v61                                   
+        051C  LoadThisR     344 134230864                                 ; this.SpawnIndex
+        0524  WRTV4         v2                                          
+        0528  PSF           v68                                         
+        052C  PshVPtr       arg_m2                                      
+        0530  CALLSYS       FVector::$beh0                              
+        053C  PSF           v16                                         
+        0540  CALLSYS       TArray::$beh2                               
+        054C  JMP           26                                            -> L05BC
+      L0554:
+        0554  IncVi         v1                                          
+      L0558:
+        0558  LoadThisR     344 134230864                                 ; this.SpawnIndex
+        0560  RDR4          v2                                          
+        0564  ADDi          v61 v1 v2                                   
+        056C  PshVPtr       this                                        
+        0570  ADDSi         208 134230864                                 ; .Starts
+        0578  CALLSYS       TArray::Num                                 
+        0584  CpyRtoV4      v2                                          
+        0588  CMPi          v61 v2                                      
+        0590  JS            -151                                          -> L033C
+        0598  PSF           v56                                         
+        059C  PshVPtr       arg_m2                                      
+        05A0  CALLSYS       FVector::$beh0                              
+        05AC  PSF           v16                                         
+        05B0  CALLSYS       TArray::$beh2                               
+      L05BC:
+        05BC  RET           4                                           
+    */
+
+    void __InitDefaults()   // traits=0x20
+    {
+        v1 = true;
+        this.SetComponentTickEnabled(v1);
+        return;
+    }
+    /* ---- __InitDefaults: 8 dwords / 5 instructions (cache offset 0x7b257) ----
+        0000  SetV1         v1 1                                        
+        0008  PshV4         v1                                          
+        000C  PshVPtr       this                                        
+        0010  CALLSYS       UActorComponent::SetComponentTickEnabled    
+        001C  RET           2                                           
+    */
+
+    void ~ULokiRespawnComponent()   // traits=0x22
+    {
+        return;
+    }
+    /* ---- ~ULokiRespawnComponent: 19 dwords / 10 instructions (cache offset 0x7b510) ----
+        0000  PshVPtr       this                                        
+        0004  ADDSi         208 134230864                                 ; .Starts
+        000C  CALLSYS       TArray::$beh2                               
+        0018  PshVPtr       this                                        
+        001C  ADDSi         248 134230864                                 ; .NonSpawningBotStates
+        0024  CALLSYS       TSet::$beh2                                 
+        0030  PshVPtr       this                                        
+        0034  ADDSi         352 134230864                                 ; .OnPlayerStartsCreated
+        003C  CALLSYS       FOnUpdated::$beh2                           
+        0048  RET           2                                           
+    */
+
+}
+

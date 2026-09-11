@@ -33,6 +33,45 @@ cd tools/extractor/extractor
 & "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release            # enumerate -> out/
 & "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release -- names <pkgpath...>   # dump NameMap (needs usmap in this build)
 & "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release -- dump  <pkgpath...>   # dump exports as JSON (needs usmap)
+& "$env:ProgramFiles\dotnet\dotnet.exe" run -c Release -- assetregistry <sub> [ar.bin] [args...]
+```
+
+## `assetregistry` subcommands (Track B, AssetRegistry repack route)
+
+`AssetRegistry.bin` is a standalone serialized FAssetRegistryState that the cooker
+bakes alongside the paks; it carries every asset's class, path, tags, and bundles.
+LokiAssetManager bypasses the standard AssetManager directory scan, so these entries
+exist on disk but are never registered as primary assets at runtime — these
+subcommands read the registry without paks/usmap/Oodle so we can see exactly what's
+there and decide which entries to flip.
+
+Default location: `<outDir>/AssetRegistry.bin` (== `tools/extractor/out/AssetRegistry.bin`).
+Pass an explicit path as the second arg to point at the live `Loki/AssetRegistry.bin`
+in the game install instead.
+
+```sh
+# Class histogram + tag-key histogram. The tag-key histogram is the smoking gun:
+# if PrimaryAssetType / PrimaryAssetName appear, the cook already baked the
+# primary-asset metadata onto the FAssetData entries — the runtime is just
+# refusing to consult it.
+... run -c Release -- assetregistry stats
+
+# All unique AssetClass strings, sorted, one per line — small, grep-friendly.
+... run -c Release -- assetregistry classes
+
+# Filter every FAssetData by a needle across PackageName/PackagePath/AssetClass/AssetName
+# (case-insensitive). Writes full snapshot per hit (class, paths, all tags, bundles).
+... run -c Release -- assetregistry inspect Mission
+... run -c Release -- assetregistry inspect /Game/Loki/Core/Missions/
+
+# Same shape as inspect but matches ONLY on AssetClass — the input to the future
+# surgical-patch step (which class entries to flip).
+... run -c Release -- assetregistry candidates LokiDataAsset_Mission
+... run -c Release -- assetregistry candidates BP_HeroAsset
+
+# Full NameMap dump as "index : name" — needed to look up FName indices when
+# authoring patches.
+... run -c Release -- assetregistry namemap
 ```
 
 `out/` holds `allfiles.txt` (107,123 entries), `topdirs.txt`, `heroes_codenames.txt`

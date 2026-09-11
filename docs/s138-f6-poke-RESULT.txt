@@ -1,0 +1,63 @@
+livingstate_poke  PID=52496 BASE=0x7FF6CFF90000  *** WILL WRITE ONE BYTE ***   2026-08-23 02:35:37
+
+LokiBotController-chain objects : 1
+LokiHeroCharacter-chain objects : 4
+
+TARGET   bot controller 0x22FB5640200  ->  pawn 0x22E86EC0040 'BP_HERO_Ronin_C'
+CONTROLS 3 other hero pawn(s), NONE of which will be written: 0x22F9C3C2AE0, 0x22F140ED560, 0x22F9F04D560
+
+================================================================================================
+A -- BASELINE (before any write)
+================================================================================================
+  [A        ] botLivingState=0     GATE+0x6A0=0     force+0x602=0   
+              RandomMoveDir=(0.000,0.000,0.000)   ControlInputVector=(0.000,0.000,0.000)
+              pawn loc=(600.0,0.0,13240.0)
+              CONTROL other heroes LivingState=0, 0, 0
+
+================================================================================================
+B -- POKE  botPawn+0x1090 = 1 (ELivingStateAlive)   [ONE BYTE]
+================================================================================================
+  WriteProcessMemory ok=True   READBACK=1
+  P1 HOLDS.
+  [B+2s     ] botLivingState=1     GATE+0x6A0=0     force+0x602=0   
+              RandomMoveDir=(0.000,0.000,0.000)   ControlInputVector=(0.000,0.000,0.000)
+              pawn loc=(600.0,0.0,13240.0)
+              CONTROL other heroes LivingState=0, 0, 0
+  [B+4s     ] botLivingState=1     GATE+0x6A0=0     force+0x602=0   
+              RandomMoveDir=(0.000,0.000,0.000)   ControlInputVector=(0.000,0.000,0.000)
+              pawn loc=(600.0,0.0,13240.0)
+              CONTROL other heroes LivingState=0, 0, 0
+  [B+6s     ] botLivingState=1     GATE+0x6A0=0     force+0x602=0   
+              RandomMoveDir=(0.000,0.000,0.000)   ControlInputVector=(0.000,0.000,0.000)
+              pawn loc=(600.0,0.0,13240.0)
+              CONTROL other heroes LivingState=0, 0, 0
+  [B+8s     ] botLivingState=1     GATE+0x6A0=0     force+0x602=0   
+              RandomMoveDir=(0.000,0.000,0.000)   ControlInputVector=(0.000,0.000,0.000)
+              pawn loc=(600.0,0.0,13240.0)
+              CONTROL other heroes LivingState=0, 0, 0
+  [B+10s    ] botLivingState=1     GATE+0x6A0=0     force+0x602=0   
+              RandomMoveDir=(0.000,0.000,0.000)   ControlInputVector=(0.000,0.000,0.000)
+              pawn loc=(600.0,0.0,13240.0)
+              CONTROL other heroes LivingState=0, 0, 0
+
+================================================================================================
+C -- RESTORE  botPawn+0x1090 = 0   (this is what makes it a measurement)
+================================================================================================
+  WriteProcessMemory ok=True   READBACK=0
+  [C        ] botLivingState=0     GATE+0x6A0=0     force+0x602=0   
+              RandomMoveDir=(0.000,0.000,0.000)   ControlInputVector=(0.000,0.000,0.000)
+              pawn loc=(600.0,0.0,13240.0)
+              CONTROL other heroes LivingState=0, 0, 0
+
+================================================================================================
+VERDICT
+================================================================================================
+  P1 poke landed (readback==1)            : YES
+  P2 control heroes still 0 (specificity) : YES
+  P3 gate +0x6A0 flipped 0 -> 1           : YES
+
+  Read the B+ samples above for P3/P4/P5. If GATE stayed 0 while P1 and P2 held, that is the
+  PRE-REGISTERED expected outcome (docs/s138-f6-PREREGISTERED.txt P3-ALT): +0x6A0 is a CACHED
+  value recomputed by ALokiBotController::UpdateCharacterControllable (impl 0x5570B80) on the
+  OnLivingStateChanged delegate (hero+0xC38), not re-derived per Tick. The named next lever is
+  to DRIVE that recompute -- NOT evidence against the LivingState result.

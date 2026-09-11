@@ -1,0 +1,82 @@
+*** PROVENANCE WARNING -- READ THIS FIRST ***
+This file is a TRANSCRIPT RECONSTRUCTION, not a fresh capture. The original
+tools/re/playerstate_readout.py output for flight 3 was written here at 14:39:39 and then
+CLOBBERED a few minutes later when the same command was re-run with `| tee` after the client had
+already been killed by the protector (FK-32, exit 0x0000DEAD) -- so the re-run wrote
+"OpenProcess(43736) failed -- err 87. RUN IS VOID." over the real result.
+
+MY OWN INSTRUMENT DEFECT, recorded rather than hidden: do not `tee` over an evidence file. The
+re-run existed only to check a cosmetic fix to the probe's own output, and it destroyed the capture.
+
+The text below is copied verbatim from the session transcript of the 14:39:39 run. It is EVIDENCE OF
+LOWER GRADE than the files it sits beside. The claims it supports do NOT rest on it:
+  * the in-shim readout is intact at docs/s137-marker-flight3-lokibot.txt;
+  * the INDEPENDENT canonical census (tools/re/obj_by_chain.py) is quoted at the bottom of this file
+    and was run as a separate command, and it is the stronger evidence for the headline anyway.
+
+================================================================================================
+playerstate_readout  PID=43736 BASE=0x7FF7B89A0000   *** CENSUS TIMESTAMP 2026-08-21 14:39:39 ***
+(read-only RPM. no injection, no write of any kind.)
+
+scanned 157906 live objects (192357 slots, 1479 distinct classes)
+  =AIController-chain  : 6
+  =BotController-chain : 0   <- ! DEGENERATE QUERY, see below. The probe has since been FIXED.
+  =PlayerState-chain   : 4
+  =Pawn-chain          : 8
+
+--- AIController[1]: controller 0x17443C931A0 'LokiBotController' number=2147470688 class=LokiBotController
+      chain: LokiBotController <- LokiAIController <- AIController <- Controller <- LokiActor <- Actor <- Object
+      PlayerState @+0x3C0 (ObjectProperty) = 0x173B8D90010 'BP_LokiPlayerState_C' class=BP_LokiPlayerState_C   [offset AGREES with recorded +0x3C0]
+      Pawn @+0x3F8 (ObjectProperty) = 0x17577502AE0 'BP_HERO_Ronin_C' class=BP_HERO_Ronin_C
+      Character @+0x408 (ObjectProperty) = 0x17577502AE0 'BP_HERO_Ronin_C' class=BP_HERO_Ronin_C
+      bWantsPlayerState = false   [by name @+0x488 type=BoolProperty fs=1 bo=0 bm=0x20 fm=0x20; byte@0x17443C93628=0x4A; dword@+0x488=0x0000004A]
+        cross-check vs recorded +0x488 bit 0x20: AGREE
+      >> PlayerState 0x173B8D90010 class=BP_LokiPlayerState_C chain=BP_LokiPlayerState_C <- LokiPlayerState <- PlayerState <- Info <- LokiActor <- Actor <- Object
+      >> pawn 0x17577502AE0 'BP_HERO_Ronin_C' number=2147470756 class=BP_HERO_Ronin_C
+           PlayerState @+0x3D8 (ObjectProperty) = 0x173B8D90010 'BP_LokiPlayerState_C' class=BP_LokiPlayerState_C   [offset AGREES with recorded +0x3D8]
+           Controller @+0x400 (ObjectProperty) = 0x17443C931A0 'LokiBotController' class=LokiBotController   [offset AGREES with recorded +0x400]
+           AIControllerClass @+0x3D0 (ClassProperty) = 0x173B8595100 'LokiBotController' class=Class   [offset AGREES with recorded +0x3D0]
+           HANDSHAKE: pawn.Controller == this controller
+           PLAYERSTATE MATCH: pawn.PlayerState == controller.PlayerState
+================================================================================================
+
+THE INDEPENDENT CANONICAL CENSUS -- tools/re/obj_by_chain.py, run as its own command, and the
+evidence the headline actually rests on:
+
+  $ python tools/re/obj_by_chain.py 43736 0x7FF7B89A0000 =LokiBotController all
+    NumElements=192357
+    match mode: EXACT ancestor name  target='lokibotcontroller'
+    objects walked (readable class ptr): 157906
+    CDOs matched and EXCLUDED: 1
+    found 1 LIVE (non-CDO) instance(s) whose CLASS CHAIN contains '=LokiBotController':
+      obj=0x17443C931A0  Class=LokiBotController  Name=LokiBotController  Outer=PersistentLevel
+    distinct matching classes: 1   (this tally is NOT capped)
+           1  LokiBotController
+              chain: LokiBotController <- LokiAIController <- AIController <- Controller <- LokiActor <- Actor <- Object
+
+  ... the SAME POINTER the shim reported (ctl=0x17443C931A0). Two independently written instruments,
+  one object.
+
+================================================================================================
+!! AND THE DEGENERATE-QUERY TRAP, which this run is what exposed:
+
+  $ python tools/re/obj_by_chain.py 43736 0x7FF7B89A0000 =BotController all
+    match mode: EXACT ancestor name  target='botcontroller'
+    CDOs matched and EXCLUDED: 0            <-- NOT EVEN THE CDO MATCHED
+    found 0 LIVE (non-CDO) instance(s) ...
+    distinct matching classes: 0
+
+  ... 0, WHILE A LIVE LokiBotController WAS POSSESSING A HERO PAWN IN THAT VERY PROCESS.
+
+  The reason is simple and it invalidates the query, not the object: NO CLASS IN THIS HIERARCHY IS
+  NAMED `BotController`. The Loki class is `ALokiBotController` -> UHT-strips to `LokiBotController`,
+  and its ancestors are LokiAIController / AIController / Controller. So `=BotController` matches
+  nothing at all -- and note "CDOs matched and EXCLUDED: 0", i.e. it had NO POSITIVE CONTROL either.
+  The '=' exact form that obj_by_chain.py's own header tells you to PREFER is the wrong instrument
+  for this particular question.
+
+  => Use `=LokiBotController` (exact, correct) or `BotController` (substring, also correct here).
+  => CLAUDE.md records `[M] obj_by_chain BotController = 0 LIVE (the CDO is present as a passing
+     search-term control)`. The CONCLUSION was right for S136 -- no bot controller existed then --
+     but if that was run in the `=BotController` form its stated positive control cannot have
+     passed, because in that form not even the CDO matches. Re-derive before re-quoting it.

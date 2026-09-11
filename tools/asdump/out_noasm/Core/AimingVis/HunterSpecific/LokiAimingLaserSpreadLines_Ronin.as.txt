@@ -1,0 +1,131 @@
+// ============================================================================
+//  MODULE   Core.AimingVis.HunterSpecific.LokiAimingLaserSpreadLines_Ronin
+//  SOURCE   Core/AimingVis/HunterSpecific/LokiAimingLaserSpreadLines_Ronin.as
+//  CONTENT  1 class(es), 7 function(s), 0 enum(s), 1 global(s), 784 bytes of bytecode
+// ============================================================================
+//  Reconstructed by tools/asdump/asdump.py from
+//  Loki/Script/PrecompiledScript.Cache (SHIPPING build).
+//  DECLARATIONS are exact (stored verbatim). BODIES are decompiled:
+//  a shipping cache carries NO local-variable names and NO line
+//  numbers, so locals render as vN and there is no source mapping.
+// ============================================================================
+
+const TSubclassOf<UObject@> __StaticType_ALokiAimingLaserSpreadLines_Ronin;
+
+ALokiAimingLaserSpreadLines_Ronin@ ALokiAimingLaserSpreadLines_Ronin()   // traits=0x20
+{
+    ALokiAimingLaserSpreadLines_Ronin v2;
+
+    v2 = ALokiAimingLaserSpreadLines_Ronin();
+    return v2;
+}
+
+UClass@ ALokiAimingLaserSpreadLines_Ronin::StaticClass()   // traits=0x40020
+{
+    UClass v2;
+
+    v2 = UClass@(__StaticType_ALokiAimingLaserSpreadLines_Ronin);
+    return v2;
+}
+
+ALokiAimingLaserSpreadLines_Ronin@ ALokiAimingLaserSpreadLines_Ronin::Spawn(const FVector& Location = FVector :: ZeroVector, const FRotator& Rotation = FRotator :: ZeroRotator, const FName& Name = NAME_None, const bool bDeferredSpawn = false, ULevel@ Level = nullptr)   // traits=0x40020
+{
+    UClass v2;
+    TSubclassOf<AActor@> v4;
+    AActor v6;
+    ALokiAimingLaserSpreadLines_Ronin v8;
+
+    v2 = __StaticType_ALokiAimingLaserSpreadLines_Ronin.Get();
+    v4 = TSubclassOf<AActor@>(v2);
+    v6 = SpawnActor(v4, Location, Rotation, Name, bDeferredSpawn, Level);
+    if (v6 != nullptr) {
+        v8 = cast<ALokiAimingLaserSpreadLines_Ronin@>(v6);
+        return v8;
+    } else {
+        v8 = nullptr;
+    }
+    return v8;
+}
+
+// ----------------------------------------------------------------------------
+UCLASS(Placeable)
+class ALokiAimingLaserSpreadLines_Ronin : ALokiAimingLaserSpreadLines
+// static class global: __StaticType_ALokiAimingLaserSpreadLines_Ronin
+{
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 PostAttackVisDuration;
+    UPROPERTY(BlueprintReadable, BlueprintWritable, EditableOnDefaults)
+    float64 PostAttackVisFadeout;
+    float64 VisTimeRemaining;
+
+    ALokiAimingLaserSpreadLines_Ronin()   // traits=0x21
+    {
+        auto v2;
+
+        this.ALokiAimingLaserSpreadLines();
+        v2 = 1.0;
+        this.PostAttackVisDuration = v2;
+        v2 = 0.5;
+        this.PostAttackVisFadeout = v2;
+        v2 = 0;
+        this.VisTimeRemaining = v2;
+        return;
+    }
+
+    UFUNCTION(UnrealName=Tick, BlueprintOverride, BlueprintEvent, CanOverrideEvent)
+    void Tick_Implementation(const float64 DeltaSeconds)   // traits=0x20
+    {
+        auto v2;
+        float64 v4;
+        auto v6;
+        FVector2D v12;
+        FVector2D v16;
+        float64 v18;
+        float32 v20;
+
+        this.Tick_Implementation(DeltaSeconds);
+        v2 = 0;
+        v4 = this.VisTimeRemaining;
+        v6 = 0;
+        if (v4 > v6) {
+            v4 = this.VisTimeRemaining;
+            v6 = this.PostAttackVisFadeout;
+            if (v4 > v6) {
+                v2 = 1.0;
+            } else {
+                v18 = this.VisTimeRemaining;
+                v4 = this.PostAttackVisFadeout;
+                v12 = FVector2D(0, v4);
+                v16 = FVector2D(0, 1.0);
+                v4 = Math::GetMappedRangeValueClamped(v16, v12, v18);
+                v2 = v4;
+            }
+            v6 = this.VisTimeRemaining;
+            v4 = v6 - DeltaSeconds;
+            this.VisTimeRemaining = v4;
+        }
+        v20 = float32(v2);
+        this.LaserSpread1.SetScalarParameterValueOnMaterials(n"Final Opacity", v20);
+        v20 = float32(v2);
+        this.LaserSpread2.SetScalarParameterValueOnMaterials(n"Final Opacity", v20);
+        return;
+    }
+
+    UFUNCTION(UnrealName=CustomEvent0, BlueprintOverride, BlueprintEvent, CanOverrideEvent, meta.NoSuperCall)
+    void CustomEvent0_Implementation(const float64 Value)   // traits=0x20
+    {
+        auto v2;
+
+        v2 = this.PostAttackVisDuration;
+        this.VisTimeRemaining = v2;
+        return;
+    }
+
+    void ~ALokiAimingLaserSpreadLines_Ronin()   // traits=0x22
+    {
+        this.~ALokiAimingLaserSpreadLines();
+        return;
+    }
+
+}
+

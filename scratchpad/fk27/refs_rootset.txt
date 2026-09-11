@@ -1,0 +1,35 @@
+
+######## global 0x099D3CA0: 11 disp32 cands, 11 verified insns
+  0x0123E17C  fn 0x0123E0E1..0x0123E3A4 [read ] lea rcx, [rip + 0x8795b1d]
+  0x0123E1F3  fn 0x0123E0E1..0x0123E3A4 [read ] mov rdx, qword ptr [rip + 0x8795aa6]
+  0x0123E237  fn 0x0123E0E1..0x0123E3A4 [read ] mov r10, qword ptr [rip + 0x8795a62]
+  0x0123E315  fn 0x0123E0E1..0x0123E3A4 [read ] lea rcx, [rip + 0x8795984]
+  0x01243BD8  fn 0x01243B50..0x01243C8A [read ] mov r9, qword ptr [rip + 0x87900c1]
+  0x01243C38  fn 0x01243B50..0x01243C8A [read ] lea rcx, [rip + 0x8790061]
+  0x01259083  fn 0x01259020..0x01259371 [read ] lea rcx, [rip + 0x877ac16]
+  0x0129ACDF  fn 0x0129ACDA..0x0129ADA0 [read ] lea rcx, [rip + 0x8738fba]
+  0x0129AD77  fn 0x0129ACDA..0x0129ADA0 [read ] mov rdx, qword ptr [rip + 0x8738f22]
+  0x0129ADBF  fn 0x0129ADA0..0x0129AE5A [read ] mov rdx, qword ptr [rip + 0x8738eda]
+  0x0129AE90  fn 0x0129AE5A..0x0129AF0A [read ] lea rcx, [rip + 0x8738e09]
+
+######## global 0x099D3CA8: 5 disp32 cands, 5 verified insns
+  0x0123E19D  fn 0x0123E0E1..0x0123E3A4 [read ] mov r10d, dword ptr [rip + 0x8795b04]
+  0x0123E2C5  fn 0x0123E0E1..0x0123E3A4 [read ] mov r10d, dword ptr [rip + 0x87959dc]
+  0x01243B91  fn 0x01243B50..0x01243C8A [read ] mov eax, dword ptr [rip + 0x8790111]
+  0x0129AD0D  fn 0x0129ACDA..0x0129ADA0 [read ] mov r8d, dword ptr [rip + 0x8738f94]
+  0x0129AE45  fn 0x0129ADA0..0x0129AE5A [read ] mov r8d, dword ptr [rip + 0x8738e5c]
+
+######## global 0x099D3CB0: 2 disp32 cands, 2 verified insns
+  0x0123E0E6  fn 0x0123E0E1..0x0123E3A4 [read ] lea r12, [rip + 0x8795bc3]
+  0x0129ADEC  fn 0x0129ADA0..0x0129AE5A [read ] lea r8, [rip + 0x8738ebd]
+
+######## global 0x09E25DA1: 11 disp32 cands, 9 verified insns
+  0x012356C7  fn 0x012356B0..0x01235805 [read ] movzx eax, byte ptr [rip + 0x8bf06d3]
+  0x01235837  fn 0x01235810..0x01235983 [read ] movzx eax, byte ptr [rip + 0x8bf0563]
+  0x0123E550  fn 0x0123E540..0x0123E57C [read ] movzx r14d, byte ptr [rip + 0x8be7849]
+  0x012C7678  fn 0x012C7580..0x012C76A5 [WRITE] mov byte ptr [rip + 0x8b5e723], al
+  0x012C7690  fn 0x012C7580..0x012C76A5 [WRITE] mov byte ptr [rip + 0x8b5e70b], al
+  0x037EB731  fn 0x037EB560..0x037EB86F [WRITE] cmp byte ptr [rip + 0x663a669], bpl
+  0x039BAA5C  fn 0x039BA831..0x039BAD71 [WRITE] cmp byte ptr [rip + 0x646b33f], bl
+  0x03EC8D48  fn 0x03EC8A8F..0x03EC91D5 [WRITE] cmp byte ptr [rip + 0x5f5d052], r13b
+  0x03EC8EC8  fn 0x03EC8A8F..0x03EC91D5 [WRITE] cmp byte ptr [rip + 0x5f5ced2], r13b
