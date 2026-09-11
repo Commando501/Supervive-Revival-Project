@@ -987,6 +987,10 @@ $Variants = @{
         # -a6 = poke + first-match call (Invoke). -a6-chain = poke + full Warmup+Channel+Invoke+DashHit chain.
         'e4-t-a6'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_POKEPHASE=1')
         'e4-t-a6-chain'       = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_SEQUENCE=1','-DKBFE4T_CHANNEL=1','-DKBFE4T_POKEPHASE=1')
+        # E4T-A7: compound poke [+0xF58=2 + +0xF48=&WarmupSubobject] then call Invoke.
+        # E4T-A6 measured +0xF58 alone doesn't satisfy the Dash gate (poke persisted but refusal still fired).
+        # Testing hypothesis: Dash gate is `phase ∈ {2,3,4} && CurrentPhase != NULL`.
+        'e4-t-a7'             = @('-DKRUNMODE=RM_BOTFIGHT','-DKFSNAME=\"\"','-DKFRAMEINIT=1','-DKFAULTINFO=1','-DKOUTPARMRET=1','-DKBFARMS=0xC6','-DKBFABIL=\"Ability3\"','-DKBFINPUTID=5','-DKBFE4CALLID=5','-DKBFE4=1','-DKBFE4T=1','-DKBFE4T_POKEPHASE=1','-DKBFE4T_POKECURPHASE=1')
 
         #   READ-ONLY CONTROL: every guard + both censuses, CALL bit cleared. Its census delta MUST
         #   be zero; it converts a null in the real arm from 'something is broken' into 'the call

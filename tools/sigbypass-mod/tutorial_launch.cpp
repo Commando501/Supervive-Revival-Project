@@ -18466,6 +18466,9 @@ static void DoBotSpawn(){
 #ifndef KBFE4T_POKEVALUE
 #define KBFE4T_POKEVALUE 2 // ELokiSpellPhaseType: 0=Inactive 1=Targeting 2=Warmup 3=Channeling 4=Invoke 5=Winddown 6=Count. Default 2=Warmup; Dash gate accepts phase ∈ {2,3,4}.
 #endif
+#ifndef KBFE4T_POKECURPHASE
+#define KBFE4T_POKECURPHASE 0 // S191 E4T-A7 (2026-09-10): when set, ALSO poke [inst+0xF48] CurrentPhase pointer to point at the sub-object at [inst+0xF20] (WarmupPhase). Requires KBFE4T_POKEPHASE=1. E4T-A6 measured that the Dash gate is COMPOUND (phase byte alone not sufficient).
+#endif
 #ifndef KBFE4T
 #define KBFE4T 0 // S191 E4 OPTION T (2026-09-10, tag [E4T] in markers): ProcessEvent K2_ActivateAbility
                 // bypass. Grants ability via plain GiveAbility (K_GRANT), then invokes K2_ActivateAbility
@@ -19052,6 +19055,9 @@ static void DoBotSpawn(){
 #endif
 #if KBFE4T_POKEVALUE > 6
 #error S191 KBFE4T_POKEVALUE must be a valid ELokiSpellPhaseType (0..6)
+#endif
+#if KBFE4T_POKECURPHASE && !KBFE4T_POKEPHASE
+#error S191 KBFE4T_POKECURPHASE requires KBFE4T_POKEPHASE=1
 #endif
 #if KBFSELFCAL && (KBFSELFLATERMS < 250)
 #error S148 delayed durability read must occur at least 250 ms after the immediate receipt
@@ -25626,6 +25632,45 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                             Markerf("[E4T-A6] POKE  wrote=%u@0xF58 readback=%u pokeOK=%s\r\n",
                                     (unsigned)KBFE4T_POKEVALUE,(unsigned)postPokeRead, pokeOK?"YES":"NO");
                             if(!pokeOK){ Marker("[E4T-A6] REFUSE: poke did not land — aborting Invoke call\r\n"); goto e4t_a6_done; }
+#if KBFE4T_POKECURPHASE
+                            // E4T-A7: also read the 5 phase sub-object pointers (+0xF18 Targeting, +0xF20 Warmup,
+                            // +0xF28 Channeling, +0xF30 Invoke, +0xF38 Winddown) and poke +0xF48 CurrentPhase to
+                            // point at the WarmupPhase sub-object. E4T-A6 showed +0xF58 alone doesn't satisfy the
+                            // Dash gate. Testing compound hypothesis: gate checks phase byte AND CurrentPhase != NULL.
+                            uintptr_t subTargeting = SafeReadable((void*)(inst+0xF18),8)?*(uintptr_t*)(inst+0xF18):0;
+                            uintptr_t subWarmup    = SafeReadable((void*)(inst+0xF20),8)?*(uintptr_t*)(inst+0xF20):0;
+                            uintptr_t subChannel   = SafeReadable((void*)(inst+0xF28),8)?*(uintptr_t*)(inst+0xF28):0;
+                            uintptr_t subInvoke    = SafeReadable((void*)(inst+0xF30),8)?*(uintptr_t*)(inst+0xF30):0;
+                            uintptr_t subWinddown  = SafeReadable((void*)(inst+0xF38),8)?*(uintptr_t*)(inst+0xF38):0;
+                            Markerf("[E4T-A7] SUBOBJECTS: Targeting@0xF18=0x%llX Warmup@0xF20=0x%llX Channel@0xF28=0x%llX Invoke@0xF30=0x%llX Winddown@0xF38=0x%llX\r\n",
+                                    (unsigned long long)subTargeting,(unsigned long long)subWarmup,
+                                    (unsigned long long)subChannel,(unsigned long long)subInvoke,
+                                    (unsigned long long)subWinddown);
+                            // Pick the target sub-object based on KBFE4T_POKEVALUE:
+                            //   2 (Warmup)     -> subWarmup
+                            //   3 (Channeling) -> subChannel
+                            //   4 (Invoke)     -> subInvoke
+                            //   else -> subWarmup (fallback)
+                            uintptr_t targetSub = ((uint8_t)KBFE4T_POKEVALUE == 3) ? subChannel
+                                                : ((uint8_t)KBFE4T_POKEVALUE == 4) ? subInvoke
+                                                : subWarmup;
+                            bool pokePhasePtrOK = false; uintptr_t postPhasePtrRead = 0;
+                            if(LooksLikePtr(targetSub) && SafeWritable((void*)(inst+0xF48),8)){
+                                __try {
+                                    *(volatile uintptr_t*)(inst+0xF48) = targetSub;
+                                    _mm_mfence();
+                                    postPhasePtrRead = *(uintptr_t*)(inst+0xF48);
+                                    pokePhasePtrOK = (postPhasePtrRead == targetSub);
+                                } __except(EXCEPTION_EXECUTE_HANDLER){ pokePhasePtrOK=false; }
+                            }
+                            Markerf("[E4T-A7] POKE_PHASE_PTR  wrote=0x%llX@0xF48 readback=0x%llX pokeOK=%s (target=%s subobj)\r\n",
+                                    (unsigned long long)targetSub,(unsigned long long)postPhasePtrRead,
+                                    pokePhasePtrOK?"YES":"NO",
+                                    ((uint8_t)KBFE4T_POKEVALUE == 3) ? "Channel"
+                                  : ((uint8_t)KBFE4T_POKEVALUE == 4) ? "Invoke"
+                                  : "Warmup");
+                            if(!pokePhasePtrOK){ Marker("[E4T-A7] WARN: CurrentPhase ptr poke did not land — Invoke call may still be gated\r\n"); }
+#endif // KBFE4T_POKECURPHASE
 #endif // KBFE4T_POKEPHASE
 #if KBFE4T_SEQUENCE
                             // E4T-A4: chained-call sequence. Look up specific phase-state functions
@@ -25783,6 +25828,18 @@ static void BfE4SpawnSeedTarget(uintptr_t hero){
                             Markerf("[E4T-A6] RESTORE phaseByte@0xF58=%u (from prePhase=%u)\r\n",
                                     (unsigned)(SafeReadable((void*)(inst+0xF58),1)?*(uint8_t*)(inst+0xF58):0xFF),
                                     (unsigned)prePhase);
+#if KBFE4T_POKECURPHASE
+                            // Also restore CurrentPhase ptr to its original value (was NULL at PRE)
+                            if(SafeWritable((void*)(inst+0xF48),8)){
+                                __try {
+                                    *(volatile uintptr_t*)(inst+0xF48) = preCurPhase;
+                                    _mm_mfence();
+                                } __except(EXCEPTION_EXECUTE_HANDLER){ }
+                            }
+                            Markerf("[E4T-A7] RESTORE CurrentPhase@0xF48=0x%llX (from preCurPhase=0x%llX)\r\n",
+                                    (unsigned long long)(SafeReadable((void*)(inst+0xF48),8)?*(uintptr_t*)(inst+0xF48):0),
+                                    (unsigned long long)preCurPhase);
+#endif
 #endif // KBFE4T_POKEPHASE
                         }
                     }
